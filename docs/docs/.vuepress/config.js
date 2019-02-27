@@ -2,11 +2,13 @@ const container = require("markdown-it-container");
 
 module.exports = ctx => ({
   dest: "dist/docs",
+  base: "/lear/",
   locales: {
     "/": {
       lang: "en-US",
-      title: "LEAR",
-      description: "Legal Entities and Asset Registry"
+      title: "LEAR Documentation",
+      description:
+        "Legal Entities and Asset Registry architectural and technical documentation"
     }
   },
   head: [
