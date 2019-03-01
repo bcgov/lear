@@ -58,7 +58,8 @@ module.exports = ctx => ({
             "Guide",
             "Web App",
             "API Services",
-            "Databases"
+            "Databases",
+            "Testing"
           ),
           "/design/": getDesignSidebar(
             "Wardley Map",
@@ -101,7 +102,7 @@ module.exports = ctx => ({
   }
 });
 
-function getGuideSidebar(groupA, groupB, groupC, groupD) {
+function getGuideSidebar(groupA, groupB, groupC, groupD, groupE) {
   return [
     {
       title: groupA,
@@ -131,6 +132,14 @@ function getGuideSidebar(groupA, groupB, groupC, groupD) {
       title: groupD,
       collapsable: false,
       children: ["database/"]
+    },
+    {
+      title: groupE,
+      collapsable: false,
+      children: [
+        "testing/quality-plan",
+        "testing/annual-report-test-plan"
+        ]
     }
   ];
 }
