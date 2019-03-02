@@ -6,7 +6,7 @@ The Entity's Team created the following WardleyMap to help rationalize the busin
 
 "However, all models are wrong but some are useful." -- Simon Wardley
 
-![WardleyMap of the Registry Services](/registry-wardleymap.png)
+![WardleyMap of the Registry Services](./registry-wardleymap.png)
 
 ## Pro-Customers
 

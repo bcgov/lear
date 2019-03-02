@@ -149,7 +149,7 @@ function getDesignSidebar(designTitle, pluginIntro, designMvp) {
     {
       title: designTitle,
       collapsable: false,
-      children: [""]
+      children: ["", "methodology"]
     },
     {
       title: designMvp,
