@@ -17,7 +17,12 @@ Developers will write unit and integration tests for each pull request they work
 QA resource(s) will expand existing test suites as needed with a focus on end-to-end tests. QA will work to define when code is ready to be released into production. 
 
 ### Pre-release checklist
-This is just draft for now but things like:
-- All test pipeline test suites green
-- Our users have been notified
-- Other good things...
+Prior to moving into production, the following steps should be completed or confirmed:
+1. Update version number in the code being released
+2. Create a draft release in GitHub and confirm the correct commits are present
+3. Dev to send commit list to QA (or otherwise publish changelog)
+4. QA to schedule the release with staff/clients (daytime's best or when staff are available for rollback)
+5. All dev/test pipeline test suites green
+6. Dev/QA chat to plan prod verification testing (unless already automated)
+7. Release the code to production and complete prod verification
+8. Finalise/publish the release in GitHub, tagging it
