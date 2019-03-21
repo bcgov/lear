@@ -125,12 +125,12 @@ EOF
   # enable archivelog + change global name + create spfile
       echo "db setup"
       NEW_ORA=/u01/app/oracle/product/12.2.0/dbhome_1/dbs/init$DB_SID.ora
+      #echo "*.db_name = 'oracle'" >> $NEW_ORA
       echo $NEW_ORA
+      cat $NEW_ORA
       sqlplus / as sysdba 2>&1 <<EOF
       create spfile from pfile='$NEW_ORA';
       startup;
-      echo $DB_SID
-      echo $DB_DOMAIN
       alter database rename global_name to $DB_SID.$DB_DOMAIN;
       show parameter spfile;
       show parameter encrypt_new_tablespaces;
