@@ -1,11 +1,11 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 
-import Tombstone from '@/components/Tombstone.vue'
+import EntityInfo from '@/components/EntityInfo.vue'
 Vue.use(Vuetify)
 
-describe('Tombstone.vue', () => {
-  const Constructor = Vue.extend(Tombstone)
+describe('EntityInfo.vue', () => {
+  const Constructor = Vue.extend(EntityInfo)
   let instance = new Constructor()
   let vm = instance.$mount()
 
@@ -40,7 +40,6 @@ describe('Tombstone.vue', () => {
       expect(vm.$el.querySelector('.entity-status').textContent).toContain('Pending Dissolution')
       expect(vm.$el.querySelector('.business-number').textContent).toEqual('123')
       expect(vm.$el.querySelector('.incorp-number').textContent).toEqual('456')
-
     }, 10)
   })
 

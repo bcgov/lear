@@ -1,5 +1,5 @@
 <template>
-  <div id="tombstone">
+  <div id="entity-info">
     <v-container>
         <div class="title-container">
           <div class="entity-name">{{ entityName }}</div>
@@ -35,7 +35,7 @@
 
 <script>
 export default {
-  name: 'tombstone',
+  name: 'entity-info',
 
   // Placeholder Data
   data () {
@@ -53,7 +53,7 @@ export default {
   // TODO: Explore how to expose this globally without having to include in each module
   @import "../assets/styles/theme.styl";
 
-  #tombstone
+  #entity-info
     background #fff
 
   .title-container
