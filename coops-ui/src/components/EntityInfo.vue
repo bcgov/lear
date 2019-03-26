@@ -1,5 +1,5 @@
 <template>
-  <div class="tombstone">
+  <div id="entity-info">
     <v-container>
         <div class="title-container">
           <div class="entity-name">{{ entityName }}</div>
@@ -25,9 +25,9 @@
         <dl class="meta-container">
           <dt>Business No:</dt>
           <!-- TODO: Strings should be pulled out into a globally accessible file (e.g. 'Not Available') -->
-          <dd>{{ entityBusinessNo ? entityBusinessNo : 'Not Available' }}</dd>
+          <dd class="business-number">{{ entityBusinessNo ? entityBusinessNo : 'Not Available' }}</dd>
           <dt>Incorporation No:</dt>
-          <dd>{{ entityIncNo ? entityIncNo : 'Not Available' }}</dd>
+          <dd class="incorp-number">{{ entityIncNo ? entityIncNo : 'Not Available' }}</dd>
         </dl>
     </v-container>
   </div>
@@ -35,7 +35,7 @@
 
 <script>
 export default {
-  name: 'tombstone',
+  name: 'entity-info',
 
   // Placeholder Data
   data () {
@@ -53,7 +53,7 @@ export default {
   // TODO: Explore how to expose this globally without having to include in each module
   @import "../assets/styles/theme.styl";
 
-  .tombstone
+  #entity-info
     background #fff
 
   .title-container
