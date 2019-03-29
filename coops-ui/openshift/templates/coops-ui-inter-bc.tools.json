@@ -1,0 +1,83 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "coops-ui-inter",
+        "creationTimestamp": null
+    },
+    "objects": [
+        {
+            "kind": "BuildConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "coops-ui-inter",
+                "creationTimestamp": null,
+                "labels": {
+                    "app": "coops-ui-inter"
+                },
+                "annotations": {
+                    "openshift.io/generated-by": "OpenShiftWebConsole"
+                }
+            },
+            "spec": {
+                "triggers": [
+                    {
+                        "type": "GitHub",
+                        "github": {
+                            "secret": "0f20aca6da7fffdb"
+                        }
+                    },
+                    {
+                        "type": "Generic",
+                        "generic": {
+                            "secret": "968b976ca77eca64"
+                        }
+                    },
+                    {
+                        "type": "ImageChange",
+                        "imageChange": {}
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ],
+                "runPolicy": "Serial",
+                "source": {
+                    "type": "Git",
+                    "git": {
+                        "uri": "https://github.com/bcgov/lear.git",
+                        "ref": "master"
+                    },
+                    "contextDir": "coops-ui"
+                },
+                "strategy": {
+                    "type": "Source",
+                    "sourceStrategy": {
+                        "from": {
+                            "kind": "ImageStreamTag",
+                            "namespace": "openshift",
+                            "name": "nodejs:8"
+                        }
+                    }
+                },
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "coops-ui-inter:latest"
+                    }
+                },
+                "resources": {
+                    "limits": {
+                        "cpu": "4",
+                        "memory": "4Gi"
+                    }
+                },
+                "postCommit": {},
+                "nodeSelector": null
+            },
+            "status": {
+                "lastVersion": 0
+            }
+        }
+    ]
+}
