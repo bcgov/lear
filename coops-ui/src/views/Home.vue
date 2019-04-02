@@ -1,16 +1,16 @@
 <template>
   <div class="home">
-    <Tombstone/>
+    <EntityInfo/>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
-import Tombstone from '@/components/Tombstone.vue'
+import EntityInfo from '@/components/EntityInfo.vue'
 
 @Component({
   components: {
-    Tombstone
+    EntityInfo
   }
 })
 export default class Home extends Vue {}

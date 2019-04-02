@@ -10,10 +10,10 @@
     <v-spacer></v-spacer>
 
     <v-btn to="/" flat dark class="hidden-xs-only">Home</v-btn>
-    <v-btn to="/" flat icon class="hidden-md-and-up"><v-icon>home</v-icon></v-btn>
+    <v-btn to="/" flat icon class="hidden-sm-and-up"><v-icon>home</v-icon></v-btn>
 
     <v-btn to="/about" flat dark class="hidden-xs-only">About</v-btn>
-    <v-btn to="/about" flat icon class="hidden-md-and-up"><v-icon>info</v-icon></v-btn>
+    <v-btn to="/about" flat icon class="hidden-sm-and-up"><v-icon>info</v-icon></v-btn>
   </v-toolbar>
 </template>
 <script>
