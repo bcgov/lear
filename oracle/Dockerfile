@@ -2,7 +2,6 @@ FROM store/oracle/database-enterprise:12.2.0.1
 USER root
 
 RUN useradd -l -u 1003849999 -g 0 -G 0,54321,54322 learDev
-RUN mkdir /ORCL2
 COPY bin/uid_entrypoint /home/uid_entrypoint
 COPY bin/dockerInit2.sh /home/oracle/setup/dockerInit2.sh
 COPY bin/startupDB2.sh /home/oracle/setup/startupDB2.sh
@@ -13,7 +12,6 @@ COPY bin/configDBora2.sh /home/oracle/setup/configDBora2.sh
 COPY bin/untarDB2.sh /home/oracle/setup/untarDB2.sh
 RUN \
    chown -R 1003849999 /ORCL && \
-   chown -R 1003849999 /ORCL2 && \
    chown -R 1003849999 /u01 && \
    chown -R 1003849999 /u02 && \
    chown -R 1003849999 /u03 && \
@@ -27,8 +25,6 @@ RUN \
    chmod 775 /home/oracle/setup/untarDB2.sh && \
    chgrp -R 0 /ORCL && \
    chmod -R g=u /ORCL && \
-   chgrp -R 0 /ORCL2 && \
-   chmod -R g=u /ORCL2 && \
    chgrp -R 0 /u01 && \
    chmod -R g=u /u01 && \
    chgrp -R 0 /u02 && \
