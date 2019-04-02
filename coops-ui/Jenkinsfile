@@ -13,11 +13,6 @@ def IMAGESTREAM_NAME = 'coops-ui'
 // you'll need to change this to point to your application component's folder within your repository
 def CONTEXT_DIRECTORY = 'coops-ui'
 
-// EDIT LINE BELOW
-// Add a reference to the RUNTIME_BUILD_CONFIG, if you are using a runtime that needs to be built.
-// Otherwise comment out the line and the associated build script.
-//def RUNTIME_BUILD_CONFIG = ''
-
 // EDIT LINE BELOW (Add a reference to the CHAINED_BUILD_CONFIG)
 def CHAINED_BUILD_CONFIG = 'coops-ui'
 
@@ -100,21 +95,6 @@ node {
       }
     }
 
-    // Build the runtime image, if you are not using an off the shelf one.
-    /*
-    stage("Build ${RUNTIME_BUILD_CONFIG}") {
-      script {
-        openshift.withCluster() {
-          openshift.withProject() {
-
-            echo "Building the ${RUNTIME_BUILD_CONFIG} image ..."
-            def build = openshift.selector("bc", "${RUNTIME_BUILD_CONFIG}")
-            build.startBuild().logs("-f")
-          }
-        }
-      }
-    }
-    */
 
     stage("Build ${IMAGESTREAM_NAME}") {
       script {
@@ -124,6 +104,9 @@ node {
             echo "Building the ${IMAGESTREAM_NAME} image ..."
             def build = openshift.selector("bc", "${CHAINED_BUILD_CONFIG}")
             build.startBuild().logs("-f")
+
+            def IMAGE_HASH_DEBUG = getImageTagHash("${IMAGESTREAM_NAME}")
+            echo "Completed build, image is: ${IMAGE_HASH_DEBUG}"
           }
         }
       }
@@ -143,18 +126,12 @@ node {
             openshift.tag("${IMAGESTREAM_NAME}@${IMAGE_HASH}", "${IMAGESTREAM_NAME}:${TAG_NAMES[0]}")
           }
 
-          openshift.withProject("${DEV_NAME_SPACE}") {
-              def dc = openshift.selector('dc', "${DEPLOYMENT_CONFIG_NAME}")
-              // Wait for the deployment to complete.
-              // This will wait until the desired replicas are all available
-              dc.rollout().status()
-          }
-
           echo "Deployment Complete."
         }
       }
     }
 
+    /* ZAP scan - commented out for now until can be implemented correctly
     stage('Trigger ZAP Scan') {
       script {
         openshift.withCluster() {
@@ -167,6 +144,7 @@ node {
         }
       }
     }
+    */
   }
   else {
     stage('No Changes') {
