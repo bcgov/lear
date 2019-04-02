@@ -3,10 +3,10 @@
 # Component: namex-db
 # Template File: templates/postgresql-deploy.json
 #=========================================================
-NAME=postgresql
+NAME=postgresql-prod
 IMAGE_NAMESPACE=gl2uos-tools
 SOURCE_IMAGE_NAME=postgresql
-TAG_NAME=gl2uos-prod
+TAG_NAME=prod
 POSTGRESQL_DATABASE_NAME=lear
 POSTGRESQL_USER=[a-zA-Z_][a-zA-Z0-9_]{10}
 POSTGRESQL_PASSWORD=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
