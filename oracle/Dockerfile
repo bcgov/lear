@@ -12,6 +12,7 @@ COPY bin/configDB2.sh /home/oracle/setup/configDB2.sh
 COPY bin/configDBora2.sh /home/oracle/setup/configDBora2.sh
 COPY bin/untarDB2.sh /home/oracle/setup/untarDB2.sh
 RUN \
+   chown -R 1003849999 /ORCL && \
    chown -R 1003849999 /ORCL2 && \
    chown -R 1003849999 /u01 && \
    chown -R 1003849999 /u02 && \
@@ -24,6 +25,8 @@ RUN \
    chmod 775 /home/oracle/setup/configDB2.sh && \
    chmod 775 /home/oracle/setup/configDBora2.sh && \
    chmod 775 /home/oracle/setup/untarDB2.sh && \
+   chgrp -R 0 /ORCL && \
+   chmod -R g=u /ORCL && \
    chgrp -R 0 /ORCL2 && \
    chmod -R g=u /ORCL2 && \
    chgrp -R 0 /u01 && \

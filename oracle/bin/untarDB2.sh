@@ -45,7 +45,7 @@ else
 
   # DB bits
   tar -zxf $DB_BIT -C / 2>&1 &
-  tar -zxf $DBF_BIT -C /ORCL2 2>&1 &
+  tar -zxf $DBF_BIT -C /ORCL 2>&1 &
 
   # wait for the tar operation to complete
   wait

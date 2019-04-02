@@ -42,14 +42,14 @@ fi
 
 #setup directories and soft links
 echo "Setup Database directories ..."
-mkdir -p /ORCL2/u01/app/oracle/diag /u01/app/oracle /u02/app/oracle /u03/app/oracle /u04/app/oracle
+mkdir -p /ORCL/u01/app/oracle/diag /u01/app/oracle /u02/app/oracle /u03/app/oracle /u04/app/oracle
 mkdir -p $TNS_ADMIN
-ln -s /ORCL2/$ORACLE_HOME/dbs $ORACLE_HOME/dbs
-ln -s /ORCL2/u01/app/oracle/diag /u01/app/oracle/diag
-ln -s /ORCL2/u02/app/oracle/audit /u02/app/oracle/audit
-ln -s /ORCL2/u02/app/oracle/oradata /u02/app/oracle/oradata
-ln -s /ORCL2/u03/app/oracle/fast_recovery_area /u03/app/oracle/fast_recovery_area
-ln -s /ORCL2/u04/app/oracle/redo /u04/app/oracle/redo
+ln -s /ORCL/$ORACLE_HOME/dbs $ORACLE_HOME/dbs
+ln -s /ORCL/u01/app/oracle/diag /u01/app/oracle/diag
+ln -s /ORCL/u02/app/oracle/audit /u02/app/oracle/audit
+ln -s /ORCL/u02/app/oracle/oradata /u02/app/oracle/oradata
+ln -s /ORCL/u03/app/oracle/fast_recovery_area /u03/app/oracle/fast_recovery_area
+ln -s /ORCL/u04/app/oracle/redo /u04/app/oracle/redo
 
 if [[ $EXISTING_DB = false ]];
 then
@@ -111,7 +111,6 @@ EOF
       create spfile from pfile='$NEW_ORA';
       startup mount;
       alter database open resetlogs;
-      echo $DB_SID
       alter database rename global_name to $DB_SID.$DB_DOMAIN;
       show parameter spfile;
       show parameter encrypt_new_tablespaces;
@@ -147,9 +146,6 @@ EOF
   # create pdb
   echo "create pdb : $DB_PDB"
   sqlplus / as sysdba 2>&1 <<EOF
-    echo "vars:"
-    echo $DB_PDB
-    echo $DB_PASSWD
     create pluggable database $DB_PDB ADMIN USER sys1 identified by "$DB_PASSWD"
     default tablespace users
       datafile '/u02/app/oracle/oradata/ORCLCDB/orclpdb1/users01.dbf'

@@ -34,7 +34,7 @@ PARAM_LOG=$LOG_DIR/paramChk.log
 UNTAR_LOG=$LOG_DIR/untarDB.log
 CONFIG_LOG=$LOG_DIR/configDB.log
 
-if [[ `ls -A /ORCL2` && `ls -A /ORCL2/${ORACLE_HOME}/dbs` && `ls -A /ORCL2/u02/app/oracle/oradata/ORCLCDB` ]];
+if [[ `ls -A /ORCL` && `ls -A /ORCL/${ORACLE_HOME}/dbs` && `ls -A /ORCL/u02/app/oracle/oradata/ORCLCDB` ]];
 then
   export EXISTING_DB=true;
 else
