@@ -1,0 +1,120 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  annotations:
+    openshift.io/generated-by: OpenShiftWebConsole
+  creationTimestamp: '2019-03-21T19:27:23Z'
+  generation: 56
+  labels:
+    app: oracle
+  name: oracle
+  namespace: gl2uos-dev
+  resourceVersion: '721699916'
+  selfLink: /apis/apps.openshift.io/v1/namespaces/gl2uos-dev/deploymentconfigs/oracle
+  uid: 5a09162c-4c0f-11e9-891c-0050568379a2
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    app: oracle
+    deploymentconfig: oracle
+  strategy:
+    activeDeadlineSeconds: 21600
+    resources: {}
+    rollingParams:
+      intervalSeconds: 1
+      maxSurge: 25%
+      maxUnavailable: 25%
+      timeoutSeconds: 600
+      updatePeriodSeconds: 1
+    type: Rolling
+  template:
+    metadata:
+      annotations:
+        openshift.io/generated-by: OpenShiftWebConsole
+      creationTimestamp: null
+      labels:
+        app: oracle
+        deploymentconfig: oracle
+    spec:
+      containers:
+        - env:
+            - name: ORACLE_SID
+              value: ORCLCDB
+            - name: ORACLE_PDB
+              value: oracle1
+          image: >-
+            docker-registry.default.svc:5000/gl2uos-dev/oradb2@sha256:d263666784db17cf911912972ccf32425afbde05cc60ae5ac7d571afc5c03138
+          imagePullPolicy: Always
+          name: oracle
+          ports:
+            - containerPort: 1521
+              protocol: TCP
+            - containerPort: 5500
+              protocol: TCP
+          resources:
+            limits:
+              memory: 2Gi
+          securityContext:
+            runAsUser: 1003849999
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /ORCL
+              name: oradb
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        supplementalGroups:
+          - 0
+          - 54321
+          - 54322
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: oradb
+          persistentVolumeClaim:
+            claimName: oradb
+  test: false
+  triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+          - oracle
+        from:
+          kind: ImageStreamTag
+          name: 'oradb2:latest'
+          namespace: gl2uos-dev
+        lastTriggeredImage: >-
+          docker-registry.default.svc:5000/gl2uos-dev/oradb2@sha256:d263666784db17cf911912972ccf32425afbde05cc60ae5ac7d571afc5c03138
+      type: ImageChange
+    - type: ConfigChange
+status:
+  availableReplicas: 1
+  conditions:
+    - lastTransitionTime: '2019-04-02T17:51:08Z'
+      lastUpdateTime: '2019-04-02T17:51:08Z'
+      message: Deployment config has minimum availability.
+      status: 'True'
+      type: Available
+    - lastTransitionTime: '2019-04-02T18:40:05Z'
+      lastUpdateTime: '2019-04-02T18:40:08Z'
+      message: replication controller "oracle-29" successfully rolled out
+      reason: NewReplicationControllerAvailable
+      status: 'True'
+      type: Progressing
+  details:
+    causes:
+      - imageTrigger:
+          from:
+            kind: DockerImage
+            name: >-
+              docker-registry.default.svc:5000/gl2uos-dev/oradb2@sha256:d263666784db17cf911912972ccf32425afbde05cc60ae5ac7d571afc5c03138
+        type: ImageChange
+    message: image change
+  latestVersion: 29
+  observedGeneration: 56
+  readyReplicas: 1
+  replicas: 1
+  unavailableReplicas: 0
+  updatedReplicas: 1
