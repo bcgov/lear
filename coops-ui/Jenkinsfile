@@ -65,11 +65,10 @@ String getImageTagHash(String imageName, String tag = "") {
   return istag.out.tokenize('@')[1].trim()
 }
 
-node {
-  def run_pipeline = true
+def run_pipeline = true
 
-  // build wasn't triggered by changes so check with user
-  if( !triggerBuild(CONTEXT_DIRECTORY) ) {
+// build wasn't triggered by changes so check with user
+if( !triggerBuild(CONTEXT_DIRECTORY) ) {
     try {
         timeout(time: 1, unit: 'DAYS') {
             input message: "Run pipeline?", id: "1234"//, submitter: 'admin,ljtrent-admin,thorwolpert-admin,rarmitag-admin,kialj876-edit,katiemcgoff-edit,waltermoar-admin'
@@ -78,9 +77,74 @@ node {
         run_pipeline = false;
     }
 
-  }
+}
 
-  if( run_pipeline ) {
+if( run_pipeline ) {
+
+
+    // create NodeJS pod to run verification steps
+    def nodejs_label = "jenkins-nodejs-${UUID.randomUUID().toString()}"
+    podTemplate(label: nodejs_label, name: nodejs_label, serviceAccount: 'jenkins', cloud: 'openshift', containers: [
+        containerTemplate(
+            name: 'jnlp',
+            image: '172.50.0.2:5000/openshift/jenkins-slave-nodejs:8',
+            resourceRequestCpu: '500m',
+            resourceLimitCpu: '1000m',
+            resourceRequestMemory: '1Gi',
+            resourceLimitMemory: '2Gi',
+            workingDir: '/tmp',
+            command: '',
+            args: '${computer.jnlpmac} ${computer.name}'
+        )
+    ])
+    {
+        node (nodejs_label) {
+            checkout scm
+            dir('coops-ui') {
+                try {
+                    sh '''
+                        node -v
+                        npm install
+                    '''
+                    stage("Run Jest tests") {
+                        def testResults = sh(script: "npm run test:unit", returnStatus: true)
+
+                        echo "Unit tests ran, returned ${testResults}"
+                        if (testResults > 0) {
+                            try {
+                                timeout(time: 1, unit: 'DAYS') {
+                                    input message: "Unit tests failed. Continue?", id: "1"
+                                }
+                            } catch (Exception e) {
+                                error('Abort')
+                            }
+                        }
+                    }
+                    stage("Check code quality (lint)") {
+                        def lintResults = sh(script: "npm run lint:nofix", returnStatus: true)
+
+                        echo "Linter ran, returned ${lintResults}"
+                        if (lintResults > 0) {
+                            try {
+                                timeout(time: 1, unit: 'DAYS') {
+                                    input message: "Linter failed. Continue?", id: "2"
+                                }
+                            } catch (Exception e) {
+                                error('Abort')
+                            }
+                        }
+                    }
+
+                } catch (Exception e) {
+                    error('Failure')
+                }
+
+            }
+        }
+    }
+
+
+  node {
 
     stage("Build ${BUILD_CONFIG}") {
       script {
@@ -94,7 +158,6 @@ node {
         }
       }
     }
-
 
     stage("Build ${IMAGESTREAM_NAME}") {
       script {
@@ -111,6 +174,7 @@ node {
         }
       }
     }
+
 
     stage("Deploy ${TAG_NAMES[0]}") {
       script {
@@ -145,11 +209,12 @@ node {
       }
     }
     */
+
   }
-  else {
+}
+else {
     stage('No Changes') {
       echo "No changes ..."
       currentBuild.result = 'SUCCESS'
     }
-  }
 }
