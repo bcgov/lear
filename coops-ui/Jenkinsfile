@@ -69,14 +69,15 @@ def run_pipeline = true
 
 // build wasn't triggered by changes so check with user
 if( !triggerBuild(CONTEXT_DIRECTORY) ) {
-    try {
-        timeout(time: 1, unit: 'DAYS') {
-            input message: "Run pipeline?", id: "1234"//, submitter: 'admin,ljtrent-admin,thorwolpert-admin,rarmitag-admin,kialj876-edit,katiemcgoff-edit,waltermoar-admin'
+    stage('No changes. Run pipeline?') {
+        try {
+            timeout(time: 1, unit: 'DAYS') {
+                input message: "Run pipeline?", id: "1234"//, submitter: 'admin,ljtrent-admin,thorwolpert-admin,rarmitag-admin,kialj876-edit,katiemcgoff-edit,waltermoar-admin'
+            }
+        } catch (Exception e) {
+            run_pipeline = false;
         }
-    } catch (Exception e) {
-        run_pipeline = false;
     }
-
 }
 
 if( run_pipeline ) {
