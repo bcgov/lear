@@ -16,7 +16,7 @@ We have oracle running in our lear dev namespace. To deploy an oracle image you 
 	    - will have local permission issues with /ORCL, but this won’t be the case in openshift
 - build image (docker build <path to folder containing dockerfile + bin folder with scripts> -t <image name>
 - push image to openshift (I used script from bcdevops repo: https://github.com/BCDevOps/openshift-developer-tools) 
-	- ./oc-push-image.sh -i <image name> -n <ns>
+	- ./oc-push-image.sh -i `<image name>` -n `<name space>`
 
 ##### Deployment Steps:
 - deploy the image 
