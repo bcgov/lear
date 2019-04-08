@@ -29,13 +29,14 @@ node {
             openshift.withCluster() {
                 openshift.withProject("gl2uos-tools") {
                   def deploy = openshift.selector("dc", "oradb1")
-                  deploy.rollout().latest()
                   def podSelector = openshift.selector('pod', [ app:'oradb1' ])
-                  
+                  def oldPod = podSelector.name()
+                  deploy.rollout().latest()
+
                   podSelector.untilEach {
                     echo "pod: ${it.name()}"
                     echo "${it}"
-                    return it.object().status.containerStatuses[0].ready
+                    return it.object().status.containerStatuses[0].ready && it.name() != oldPod
 }
                 }
             }
