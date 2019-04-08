@@ -27,11 +27,9 @@ node {
     stage('cleanup') {
         script {
             openshift.withCluster() {
-                openshift.withProject() {
-                  openshift.selector("all", [ 'dc' : 'oradb1' ]).delete()
-                  if (openshift.selector("secrets", 'oradb1').exists()) {
-                    openshift.selector("secrets", 'oradb1').delete()
-                  }
+                openshift.withProject("gl2uos-tools") {
+                  def deployment = openshift.selector('dc', 'oradb1')
+                  deployment.cancel()
                 }
             }
         }
