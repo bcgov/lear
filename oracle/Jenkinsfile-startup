@@ -44,8 +44,7 @@ node {
                             def pod = it.name().substring(4)
                             echo "${pod}"
                             sh '''
-                                echo oc rsh ${pod}
-                                oc rsh ${pod}
+                                oc rsh $pod
                                 $ORACLE_HOME/bin/sqlplus c##ctst/tiger
                             '''
                             return true;
