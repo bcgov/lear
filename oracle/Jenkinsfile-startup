@@ -37,7 +37,13 @@ node {
                     echo "pod: ${it.name()}"
                     echo "${it}"
                     return it.object().status.containerStatuses[0].ready && it.name() != oldPod
-}
+                  }
+
+                  sh '''
+                    ls -al
+
+                  '''
+
                 }
             }
         }
