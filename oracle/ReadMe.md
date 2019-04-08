@@ -14,7 +14,7 @@ We have oracle running in our lear dev namespace. To deploy an oracle image you 
 	    - add a new user that we can set in deployment config (highest one available in lear dev namespace should always be available because default is lowest one not used) and add to groups
 	    - copy needed setup/password scripts edited for new user into container, set permissions for all folders and files needed, set user to one we created, run password add script, expose port, run init script to setup oracle
 	    - will have local permission issues with /ORCL, but this won’t be the case in openshift
-- build image (docker build <path to folder containing dockerfile + bin folder with scripts> -t <image name>
+- build image (docker build `<path to folder containing dockerfile + bin folder with scripts>` -t `<image name>`
 - push image to openshift (I used script from bcdevops repo: https://github.com/BCDevOps/openshift-developer-tools) 
 	- ./oc-push-image.sh -i `<image name>` -n `<name space>`
 
@@ -23,7 +23,10 @@ We have oracle running in our lear dev namespace. To deploy an oracle image you 
 - go into deployment configuration:
 	- remove storage from /ORCL (if automatically created)
 	- create pvc with 8G (may be able to use less - 4G is used right away) and add it for /ORCL
-- edit the .yaml for the deployment config and add *runAsUser:* `<userid specified in Dockerfile>` under *spec: template: spec: container: securityContext:*
-	- this will set the userid for the container as long as it is an id within the range of your namespace (which you can find with `oc describe project <namespace name>`) and provided the id is not being used
+- edit the .yaml for the deployment config
+    - add *runAsUser:* `<userid specified in Dockerfile>` under *spec: template: spec: container: securityContext:*
+	    - this will set the userid for the container as long as it is an id within the range of your namespace (which you can find with `oc describe project <namespace name>`) and provided the id is not being used
+	- add *supplementalGroups: -0 -54321 -54322* under *spec: template: spec: securityContext*
+	- ##### NOTE: The two above are in *different* securityContexts
 - edit resource limits for the deployment and under *Memory* change *Limit* to 2G
 		
