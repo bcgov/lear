@@ -41,8 +41,10 @@ node {
                         try {
                             echo 'here 1'
                             echo "${it.name()}"
+                            def pod = it.name().substring(4)
+                            echo "${pod}"
                             sh '''
-                                oc rsh ${it.name()}
+                                oc rsh ${pod}
                                 $ORACLE_HOME/bin/sqlplus c##ctst/tiger
                             '''
                             return true;
