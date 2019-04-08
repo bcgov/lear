@@ -36,7 +36,15 @@ node {
                   podSelector.untilEach {
                     echo "pod: ${it.name()}"
                     echo "${it}"
-                    return it.object().status.containerStatuses[0].ready && it.name() != oldPod
+                    if (it.name() != oldPod && it.object().status.containerStatuses[0].ready) {
+                        sh '''
+                            oc rsh ${it.name()}
+                            $ORACLE_HOME/bin/sqlplus c##ctst/tiger
+                        '''
+                        return true;
+                    } else {
+                        return false;
+                    }
                   }
 
                   sh '''
