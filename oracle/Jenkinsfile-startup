@@ -43,10 +43,17 @@ node {
                             echo "${it.name()}"
                             def pod = it.name().substring(4)
                             echo "${pod}"
-                            sh '''
-                                oc rsh "${pod}"
+                            sh """
+                                echo ${pod}
+                                echo "${pod}"
+                                echo '${pod}'
+                                echo $pod
+                                echo "$pod"
+                                echo '$pod'
+                                echo \"${pod}\"
+                                oc rsh ${pod}
                                 $ORACLE_HOME/bin/sqlplus c##ctst/tiger
-                            '''
+                            """
                             return true;
                         } catch (Exception e) {
                             echo 'here2'
