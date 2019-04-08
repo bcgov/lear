@@ -52,7 +52,7 @@ node {
                                 echo '$pod'
                                 echo \"${pod}\"
                                 oc rsh ${pod}
-                                $ORACLE_HOME/bin/sqlplus c##ctst/tiger
+                                ${ORACLE_HOME}/bin/sqlplus c##ctst/tiger
                             """
                             return true;
                         } catch (Exception e) {
