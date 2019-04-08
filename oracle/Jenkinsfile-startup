@@ -37,10 +37,10 @@ node {
                     echo "pod: ${it.name()}"
                     echo "${it}"
                     if (it.name() != oldPod && it.object().status.containerStatuses[0].ready) {
-                        sleep 120
+                        sleep 100
                         try {
                             echo 'here 1'
-                            echo '${it.name()}'
+                            echo "${it.name()}"
                             sh '''
                                 oc rsh ${it.name()}
                                 $ORACLE_HOME/bin/sqlplus c##ctst/tiger
@@ -48,6 +48,7 @@ node {
                             return true;
                         } catch (Exception e) {
                             echo 'here2'
+                            echo "${e}"
                             return false;
                         }
                     } else {
