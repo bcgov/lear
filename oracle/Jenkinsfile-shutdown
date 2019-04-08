@@ -29,7 +29,8 @@ node {
             openshift.withCluster() {
                 openshift.withProject("gl2uos-tools") {
                   def deployment = openshift.selector('dc', 'oradb1')
-                  deployment.cancel()
+                  echo "${deployment}"
+                  deployment.rollout().cancel()
                 }
             }
         }

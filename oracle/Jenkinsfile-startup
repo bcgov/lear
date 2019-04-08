@@ -27,13 +27,9 @@ node {
     stage('deploy fresh oracle') {
         script {
             openshift.withCluster() {
-                openshift.withProject() {
-                  def rm = openshift.selector("dc", "oradb1").rollout()
-                  timeout(5) {
-                    openshift.selector("dc", "oradb1").related('pods').untilEach(1) {
-                      return (it.object().status.phase == "Running")
-                    }
-                  }
+                openshift.withProject("gl2uos-tools") {
+                  def deploy = openshift.selector("dc", "oradb1")
+                  deploy.rollout().latest()
                 }
             }
         }
