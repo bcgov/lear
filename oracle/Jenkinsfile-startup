@@ -37,14 +37,14 @@ node {
                     echo "pod: ${it.name()}"
                     echo "${it}"
                     if (it.name() != oldPod && it.object().status.containerStatuses[0].ready) {
-                        sleep 100
+                        sleep 80
                         try {
                             echo 'here 1'
                             echo "${it.name()}"
                             def pod = it.name().substring(4)
                             echo "${pod}"
                             sh '''
-                                oc rsh $pod
+                                oc rsh "${pod}"
                                 $ORACLE_HOME/bin/sqlplus c##ctst/tiger
                             '''
                             return true;
