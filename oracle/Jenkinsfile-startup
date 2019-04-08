@@ -31,9 +31,12 @@ node {
                   def deploy = openshift.selector("dc", "oradb1")
                   echo "${deploy.number}"
                   deploy.rollout().latest()
-                  sleep 10
-                  def deploy2 = openshift.selector("dc", "oradb1")
-                  echo "${deploy2.version}"
+                  sleep 30
+                  def podSelector = openshift.selector('pod', [deployment: "oradb1"])
+                  podSelector.untilEach {
+                    echo "pod: ${it.name()}"
+                    return it.object().status.containerStatuses[0].ready
+}
                 }
             }
         }
