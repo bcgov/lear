@@ -29,11 +29,11 @@ node {
             openshift.withCluster() {
                 openshift.withProject("gl2uos-tools") {
                   def deploy = openshift.selector("dc", "oradb1")
-                  echo "${deploy.namelist[0]}"
+                  echo "${deploy.number}"
                   deploy.rollout().latest()
                   sleep 10
                   def deploy2 = openshift.selector("dc", "oradb1")
-                  echo "${deploy2.namelist[0]}"
+                  echo "${deploy2.version}"
                 }
             }
         }
