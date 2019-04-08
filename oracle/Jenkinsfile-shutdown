@@ -29,6 +29,9 @@ node {
             openshift.withCluster() {
                 openshift.withProject() {
                   openshift.selector("all", [ 'dc' : 'oradb1' ]).delete()
+                  if (openshift.selector("secrets", templateName).exists()) {
+                    openshift.selector("secrets", templateName).delete()
+                  }
                 }
             }
         }
