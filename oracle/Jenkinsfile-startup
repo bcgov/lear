@@ -29,7 +29,6 @@ node {
             openshift.withCluster() {
                 openshift.withProject("gl2uos-tools") {
                   def deploy = openshift.selector("dc", "oradb1")
-                  echo "${deploy.number}"
                   deploy.rollout().latest()
                   sleep 30
                   def podSelector = openshift.selector('pod', [deployment: "oradb1"])
