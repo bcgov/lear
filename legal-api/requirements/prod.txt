@@ -1,0 +1,14 @@
+gunicorn
+Flask
+Flask-Migrate
+Flask-Script
+Flask-Moment
+Flask-SQLAlchemy
+Flask-RESTplus
+Flask-Marshmallow<3
+flask-jwt-oidc>=0.1.5
+python-dotenv
+psycopg2-binary
+marshmallow
+marshmallow-sqlalchemy
+jsonschema
