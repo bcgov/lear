@@ -31,8 +31,10 @@ node {
                   def deploy = openshift.selector("dc", "oradb1")
                   deploy.rollout().latest()
                   def podSelector = openshift.selector('pod', [ app:'oradb1' ])
+                  
                   podSelector.untilEach {
                     echo "pod: ${it.name()}"
+                    echo "${it}"
                     return it.object().status.containerStatuses[0].ready
 }
                 }
