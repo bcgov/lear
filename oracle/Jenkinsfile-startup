@@ -37,7 +37,6 @@ node {
                     echo "pod: ${it.name()}"
                     echo "${it}"
                     if (it.name() != oldPod && it.object().status.containerStatuses[0].ready) {
-                        sleep 80
                         try {
                             echo 'here 1'
                             echo "${it.name()}"
@@ -51,9 +50,9 @@ node {
                                 echo "$pod"
                                 echo '$pod'
                                 echo \"${pod}\"
-                                oc rsh ${pod}
+                                /u01/app/oracle/product/12.2.0/dbhome_1/bin/sqlplus c##ctst/tiger | oc rsh ${pod}
                                 ls -al
-                                /u01/app/oracle/product/12.2.0/dbhome_1/bin/sqlplus c##ctst/tiger
+                              
                             """
                             return true;
                         } catch (Exception e) {
