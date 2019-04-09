@@ -7,7 +7,7 @@ export PATH=/opt/app-root/bin:/opt/rh/rh-python35/root/usr/bin:/opt/rh/httpd24/r
 # psql -U postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'my_db'" | grep -q 1 || psql -U postgres -c "CREATE DATABASE my_db"
 
 cd /opt/app-root/src
-echo 'ensure database is created;
+echo 'ensure database is created'
 /opt/app-root/bin/python pre_hook_create_database.py
 
 echo 'starting upgrade'
