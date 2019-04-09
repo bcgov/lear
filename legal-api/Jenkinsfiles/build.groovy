@@ -96,14 +96,13 @@ if (!run_pipeline) {
     stage('No Changes') {
         node {
             currentBuild.result = 'SUCCESS'
-            System.exit(0)
+            return True
         }
     }
 } else {
     stage('Build {$COMPONENT_NAME}') {
         node {
             currentBuild.result = 'SUCCESS'
-            System.exit(0)
         }
     }
 }
