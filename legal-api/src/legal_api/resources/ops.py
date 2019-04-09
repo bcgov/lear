@@ -23,7 +23,7 @@ API = Namespace('OPS', description='Service - OPS checks')
 SQL = text('select 1')
 
 
-@API.route('/healthz')
+@API.route('healthz')
 class Healthz(Resource):
     """Determines if the service and required dependnecies are still working.
 
@@ -42,7 +42,7 @@ class Healthz(Resource):
         return {'message': 'api is healthy'}, 200
 
 
-@API.route('/readyz')
+@API.route('readyz')
 class Readyz(Resource):
     """Determines if the service is ready to respond."""
 

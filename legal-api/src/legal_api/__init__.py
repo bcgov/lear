@@ -23,7 +23,8 @@ from flask_jwt_oidc import JwtManager
 import config
 from legal_api import models
 from legal_api.models import db, ma
-from legal_api.resources import API
+from legal_api.resources import API_BLUEPRINT, OPS_BLUEPRINT
+# from legal_api.resources import API, ops_blueprint  # , api_blueprint
 from legal_api.utils.logging import setup_logging
 from legal_api.utils.run_version import get_run_version
 
@@ -42,7 +43,8 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     db.init_app(app)
     ma.init_app(app)
 
-    API.init_app(app)
+    app.register_blueprint(API_BLUEPRINT)
+    app.register_blueprint(OPS_BLUEPRINT)
     setup_jwt_manager(app, jwt)
 
     @app.after_request

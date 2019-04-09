@@ -20,12 +20,15 @@ All services have 2 defaults sets of endpoints:
  - meta
 That are used to expose operational health information about the service, and meta information.
 """
+from flask import Blueprint
 from flask_restplus import Api
 
 from .business import API as BUSINESS_API
 from .meta import API as META_API
 from .ops import API as OPS_API
 
+
+__all__ = ('API_BLUEPRINT', 'OPS_BLUEPRINT')
 
 # This will add the Authorize button to the swagger docs
 # TODO oauth2 & openid may not yet be supported by restplus <- check on this
@@ -37,15 +40,25 @@ AUTHORIZATIONS = {
     }
 }
 
-API = Api(
-    title='BC Registry Business API',
-    version='1.0',
-    description='The Core API for the Legal Entities System',
-    prefix='/api/v1',
-    security=['apikey'],
-    authorizations=AUTHORIZATIONS)
+OPS_BLUEPRINT = Blueprint('API_OPS', __name__, url_prefix='/ops')
 
-API.add_namespace(OPS_API, path='/ops')
+API_OPS = Api(OPS_BLUEPRINT,
+              title='Service OPS API',
+              version='1.0',
+              description='The Core API for the Legal Entities System',
+              security=['apikey'],
+              authorizations=AUTHORIZATIONS)
+
+API_OPS.add_namespace(OPS_API, path='/')
+
+API_BLUEPRINT = Blueprint('API', __name__, url_prefix='/api/v1')
+
+API = Api(API_BLUEPRINT,
+          title='BCROS Business API',
+          version='1.0',
+          description='The Core API for the Legal Entities System',
+          security=['apikey'],
+          authorizations=AUTHORIZATIONS)
+
 API.add_namespace(META_API, path='/meta')
 API.add_namespace(BUSINESS_API, path='/businesses')
-# api.add_namespace(users_api, path='/users')
