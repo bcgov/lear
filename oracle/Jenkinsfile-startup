@@ -52,6 +52,7 @@ node {
                                 echo '$pod'
                                 echo \"${pod}\"
                                 oc rsh ${pod}
+                                ls -al
                                 /u01/app/oracle/product/12.2.0/dbhome_1/bin/sqlplus c##ctst/tiger
                             """
                             return true;
