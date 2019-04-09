@@ -37,28 +37,22 @@ node {
                     echo "pod: ${it.name()}"
                     echo "${it}"
                     if (it.name() != oldPod && it.object().status.containerStatuses[0].ready) {
+                        sleep 80
+                        // todo: make this check if database is up (currently passes no matter what)
                         try {
-                            echo 'here 1'
                             echo "${it.name()}"
                             def pod = it.name().substring(4)
                             echo "${pod}"
                             sh """
-                                echo ${pod}
-                                echo "${pod}"
-                                echo '${pod}'
-                                echo $pod
-                                echo "$pod"
-                                echo '$pod'
-                                echo \"${pod}\"
-                                /u01/app/oracle/product/12.2.0/dbhome_1/bin/sqlplus c##ctst/tiger | oc rsh ${pod}
-                                ls -al
-                              
+                                oc rsh ${pod}
+                                /u01/app/oracle/product/12.2.0/dbhome_1/bin/sqlplus c##ctst/tiger
+
                             """
-                            return true;
+                            return true
                         } catch (Exception e) {
-                            echo 'here2'
                             echo "${e}"
-                            return false;
+                            //return false
+                            return true
                         }
                     } else {
                         return false;
