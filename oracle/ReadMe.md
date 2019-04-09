@@ -22,7 +22,7 @@ We have oracle running in our lear dev namespace. To deploy an oracle image you 
 - deploy the image 
 - go into deployment configuration:
 	- remove storage from /ORCL (if automatically created)
-	- create pvc with 8G (may be able to use less - 4G is used right away) and add it for /ORCL
+	- create pvc with 24G (may be able to use less - 4G is used right away, but CTST + dumpfile = ~22G) and add it for /ORCL
 - edit the .yaml for the deployment config
     - add *runAsUser:* `<userid specified in Dockerfile>` under *spec: template: spec: container: securityContext:*
 	    - this will set the userid for the container as long as it is an id within the range of your namespace (which you can find with `oc describe project <namespace name>`) and provided the id is not being used
@@ -30,3 +30,38 @@ We have oracle running in our lear dev namespace. To deploy an oracle image you 
 	- ##### NOTE: The two above are in *different* securityContexts
 - edit resource limits for the deployment and under *Memory* change *Limit* to 2G
 		
+### Importing CTST
+
+The steps for importing CTST are:
+
+1. Getting the dumpfile into the container
+    - it's too big to include in the image (the container will crash when it tries to deploy it)
+    - mount an empty pvc with enough space onto a container and use the `oc rsync` command to upload the dumpfile into it.
+    - mount this pvc onto the oracle container (I put it on */import*)
+    
+2. Setup the blank database for import
+    - create test_dir for import within container: `mkdir /ORCL/dumpfs` (do this within the deployed container)
+    - connect to the db as sysdba (`$ORACLE_HOME/bin/sqlplus / as sysdba`) and setup the a user for the import:
+    
+    ```
+    CREATE USER c##<username> IDENTIFIED BY <password> DEFAULT TABLESPACE USERS TEMPORARY TABLESPACE temp QUOTA 5M ON system QUOTA UNLIMITED on USERS;
+    GRANT CONNECT, RESOURCE, DBA TO c##<username>;
+    GRANT CREATE PROCEDURE TO c##<username>;
+    GRANT CREATE PUBLIC SYNONYM TO c##<username>;
+    GRANT CREATE SEQUENCE TO c##<username>;
+    GRANT CREATE SESSION TO c##<username>;
+    GRANT CREATE SNAPSHOT TO c##<username>;
+    GRANT CREATE SYNONYM TO c##<username>;
+    GRANT CREATE TABLE TO c##<username>;
+    GRANT CREATE TRIGGER TO c##<username>;
+    GRANT CREATE VIEW TO c##<username>;
+    GRANT SELECT ANY DICTIONARY to c##<username>;
+    GRANT CREATE TYPE TO c##<username>;
+    CREATE OR REPLACE DIRECTORY test_dir AS '/ORCL/dumpfs/';
+    GRANT READ, WRITE ON DIRECTORY test_dir TO c##<username>;
+    exit
+    ```
+
+3. Import from the dumpfile 
+    - copy the dumpfile into the test_dir folder: `cp /import/<dumpfile> /ORCL/dumpfs`
+    - import db: `$ORACLE_HOME/bin/impdp c##<username>/<password> schemas=COLIN_MGR_TST REMAP_SCHEMA=COLIN_MGR_TST:c##<username> REMAP_TABLESPACE=COLIN_TAB:USERS REMAP_TABLESPACE=COLIN_IDX:USERS directory=TEST_DIR dumpfile=<dumpfile>.dmp logfile=impdpCTST.log`
