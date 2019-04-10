@@ -69,6 +69,17 @@ String triggerBuild(String contextDirectory) {
         return changeString
     }
 }
+// Get an image's hash tag
+String getImageTagHash(String imageName, String tag = "") {
+
+  if(!tag?.trim()) {
+    tag = "latest"
+  }
+
+  def istag = openshift.raw("get istag ${imageName}:${tag} -o template --template='{{.image.dockerImageReference}}'")
+  return istag.out.tokenize('@')[1].trim()
+}
+
 // pipeline
 // define job properties - keep 10 builds only
 properties([
@@ -82,111 +93,46 @@ if( triggerBuild(COMPONENT_NAME) == "" ) {
     node {
         try {
             timeout(time: 1, unit: 'DAYS') {
-                input message: "Run {$COMPONENT_NAME}-{$TAG_NAME}-pipeline?", id: "1234", submitter: 'admin,ljtrent-admin,thorwolpert-admin,rarmitag-admin,kialj876-edit,katiemcgoff-edit,waltermoar-admin'
+                input message: "Run ${COMPONENT_NAME}-${TAG_NAME}-pipeline?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-edit,katiemcgoff-edit,WalterMoar-admin'
             }
         } catch (Exception e) {
             run_pipeline = false;
         }
     }
 }
-
 if (!run_pipeline) {
-    // The changeSets did not contain any changes within the project's context directory.
-    // Clearly indicate there were no changes.
-    stage('No Changes') {
-        node {
-            currentBuild.result = 'SUCCESS'
-            System.exit(0)
+    echo('No Build Wanted - End of Build.')
+    currentBuild.result = 'SUCCESS'
+    return
+}
+
+node {
+    stage("Build ${COMPONENT_NAME}") {
+      script {
+        openshift.withCluster() {
+          openshift.withProject() {
+
+            echo "Building ${COMPONENT_NAME} ..."
+            def build = openshift.selector("bc", "${COMPONENT_NAME}")
+            build.startBuild().logs("-f")
+          }
         }
+      }
     }
-} else {
-    //node/pod needs environment setup for testing
-    def py3njs_label = "jenkins-py3nodejs-${UUID.randomUUID().toString()}"
-    podTemplate(label: py3njs_label, name: py3njs_label, serviceAccount: 'jenkins', cloud: 'openshift', containers: [
-        containerTemplate(
-            name: 'jnlp',
-            image: '172.50.0.2: 5000/openshift/jenkins-slave-py3nodejs',
-            resourceRequestCpu: '500m',
-            resourceLimitCpu: '1000m',
-            resourceRequestMemory: '1Gi',
-            resourceLimitMemory: '2Gi',
-            workingDir: '/tmp',
-            command: '',
-            args: '${computer.jnlpmac
-        } ${computer.name
-        }',
-            envVars: [
-                envVar(key:'DATABASE_TEST_HOST', value: "postgresql-test"),
-                envVar(key:'DATABASE_TEST_PORT', value: "5432"),
-                secretEnvVar(key: 'DATABASE_TEST_USERNAME', secretName: 'postgresql-test', secretKey: 'database-user'),
-                secretEnvVar(key: 'DATABASE_TEST_PASSWORD', secretName: 'postgresql-test', secretKey: 'database-password'),
-                secretEnvVar(key: 'DATABASE_TEST_NAME', secretName: 'postgresql-test', secretKey: 'database-name'),
-                secretEnvVar(key: 'JWT_OIDC_WELL_KNOWN_CONFIG', secretName: 'namex-keycloak-secrets', secretKey: 'JWT_OIDC_WELL_KNOWN_CONFIG'),
-                secretEnvVar(key: 'JWT_OIDC_ALGORITHMS', secretName: 'namex-keycloak-secrets', secretKey: 'JWT_OIDC_ALGORITHMS'),
-                secretEnvVar(key: 'JWT_OIDC_AUDIENCE', secretName: 'namex-keycloak-secrets', secretKey: 'JWT_OIDC_AUDIENCE'),
-                secretEnvVar(key: 'JWT_OIDC_CLIENT_SECRET', secretName: 'namex-keycloak-secrets', secretKey: 'JWT_OIDC_CLIENT_SECRET')
-        ]
-        )
-    ])
-    {
-    node (py3njs_label){
- 
-        // Part 1 - CI - Source code scanning, build, dev deploy
+    stage("Deploy ${COMPONENT_NAME}:${TAG_NAME}") {
+      script {
+        openshift.withCluster() {
+          openshift.withProject() {
 
-        stage('Checkout') {
-            try {
-                echo "checking out source"
-                echo "Build: ${BUILD_ID}"
-                checkout scm
-                GIT_COMMIT_SHORT_HASH = sh (
-                        script: """git describe --always""", returnStdout: true
-                    ).trim()
-                GIT_COMMIT_AUTHOR = sh (
-                        script: """git show -s --pretty=%an""", returnStdout: true
-                    ).trim()
-            } catch (Exception e) {
-                echo "error during checkout: ${e}"
-                error('Aborted')
-            }
+            echo "Tagging ${COMPONENT_NAME} for deployment to ${TAG_NAME} ..."
 
-            stage ('local pytest') {
-                echo "Testing build: ${BUILD_ID}"
-                echo "Running tests "
-                try {
-                    sh '''
-                         cd api
-                         python --version
-                         pip install pip --upgrade
-                         pip install -r requirements/dev.txt
-                         pytest --junitxml=pytest_report.xml
-                    '''
-                    junit 'api/pytest_report.xml'
-                    stash includes: 'api/pytest_report.xml', name: 'namex-pytests'
-                } catch (Exception e) {
-                    echo "EXCEPTION: ${e}"
-                }
-            } // end stage - local pytest
-        } //end stage
-
-        stage('Build') {
-            try {
-                echo "Building..."
-                openshiftBuild bldCfg: COMPONENT_NAME-TAG_NAME, verbose: 'false', showBuildLogs: 'true'
-
-                sleep 5
-                    // openshiftVerifyBuild bldCfg: BUILDCFG_NAME
-                echo ">>> Get Image Hash"
-                IMAGE_HASH = sh (
-                    script: """oc get istag ${COMPONENT_NAME}:latest -o template --template=\"{{.image.dockerImageReference}}\"|awk -F \":\" \'{print \$3}\'""",
-                        returnStdout: true).trim()
-                echo ">> IMAGE_HASH: ${IMAGE_HASH}"
-                echo ">>>> Build Complete"
-            } catch (Exception e) {
-                echo "error during build: ${e}"
-                    // send msg to slack
-                error('Aborted')
-                }
-            } //end stage
+            // Don't tag with BUILD_ID so the pruner can do it's job; it won't delete tagged images.
+            // Tag the images for deployment based on the image's hash
+            def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}")
+            echo "IMAGE_HASH: ${IMAGE_HASH}"
+            openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${TAG_NAME}")
+          }
         }
+      }
     }
 }
