@@ -69,6 +69,17 @@ String triggerBuild(String contextDirectory) {
         return changeString
     }
 }
+// Get an image's hash tag
+String getImageTagHash(String imageName, String tag = "") {
+
+  if(!tag?.trim()) {
+    tag = "latest"
+  }
+
+  def istag = openshift.raw("get istag ${imageName}:${tag} -o template --template='{{.image.dockerImageReference}}'")
+  return istag.out.tokenize('@')[1].trim()
+}
+
 // pipeline
 // define job properties - keep 10 builds only
 properties([
@@ -96,8 +107,6 @@ if (!run_pipeline) {
 }
 
 node {
-  if( triggerBuild(COMPONENT_NAME) ) {
-
     stage("Build ${COMPONENT_NAME}") {
       script {
         openshift.withCluster() {
@@ -110,5 +119,20 @@ node {
         }
       }
     }
-  }
+    stage("Deploy ${COMPONENT_NAME}:${TAG_NAME}") {
+      script {
+        openshift.withCluster() {
+          openshift.withProject() {
+
+            echo "Tagging ${COMPONENT_NAME} for deployment to ${TAG_NAME} ..."
+
+            // Don't tag with BUILD_ID so the pruner can do it's job; it won't delete tagged images.
+            // Tag the images for deployment based on the image's hash
+            def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}")
+            echo "IMAGE_HASH: ${IMAGE_HASH}"
+            openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${TAG_NAME}")
+          }
+        }
+      }
+    }
 }
