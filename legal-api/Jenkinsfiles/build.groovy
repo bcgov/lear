@@ -108,41 +108,15 @@ if (!run_pipeline) {
             workingDir: '/tmp',
             command: '',
             args: '${computer.jnlpmac} ${computer.name}',
-            envVars: [
-                envVar(key:'DATABASE_TEST_HOST', value: "postgresql-test"),
-                envVar(key:'DATABASE_TEST_PORT', value: "5432"),
-                secretEnvVar(key: 'DATABASE_TEST_USERNAME', secretName: 'postgresql-test', secretKey: 'database-user'),
-                secretEnvVar(key: 'DATABASE_TEST_PASSWORD', secretName: 'postgresql-test', secretKey: 'database-password'),
-                secretEnvVar(key: 'DATABASE_TEST_NAME', secretName: 'postgresql-test', secretKey: 'database-name'),
-                secretEnvVar(key: 'JWT_OIDC_WELL_KNOWN_CONFIG', secretName: 'namex-keycloak-secrets', secretKey: 'JWT_OIDC_WELL_KNOWN_CONFIG'),
-                secretEnvVar(key: 'JWT_OIDC_ALGORITHMS', secretName: 'namex-keycloak-secrets', secretKey: 'JWT_OIDC_ALGORITHMS'),
-                secretEnvVar(key: 'JWT_OIDC_AUDIENCE', secretName: 'namex-keycloak-secrets', secretKey: 'JWT_OIDC_AUDIENCE'),
-                secretEnvVar(key: 'JWT_OIDC_CLIENT_SECRET', secretName: 'namex-keycloak-secrets', secretKey: 'JWT_OIDC_CLIENT_SECRET')
            ]
         )
     ]
-    
+
     node (py3njs_label){
-        // Part 1 - CI - Source code scanning, build, dev deploy
+               // Part 1 - CI - Source code scanning, build, dev deploy
         stage("Build ${COMPONENT_NAME}") {
-            try {
-                echo "Building..."
-                openshiftBuild bldCfg: COMPONENT_NAME, verbose: 'false', showBuildLogs: 'true'
 
-                sleep 5
-
-                // openshiftVerifyBuild bldCfg: BUILDCFG_NAME
-                echo ">>> Get Image Hash"
-                IMAGE_HASH = sh (
-                    script: """oc get istag ${COMPONENT_NAME}:latest -o template --template=\"{{.image.dockerImageReference}}\"|awk -F \":\" \'{print \$3}\'""",
-                        returnStdout: true).trim()
-                echo ">> IMAGE_HASH: ${IMAGE_HASH}"
-                echo ">>>> Build Complete"
-
-            } catch (Exception e) {
-                echo "error during build: ${e}"
-                error('Aborted')
-            }
         }//end stage
+    }
     }
 }
