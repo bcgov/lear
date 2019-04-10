@@ -99,10 +99,9 @@ if (!run_pipeline) {
             return True
         }
     }
-} else {
-    stage('Build {$COMPONENT_NAME}') {
-        node {
-            currentBuild.result = 'SUCCESS'
-        }
+} 
+stage('Build {$COMPONENT_NAME}') {
+    node {
+        currentBuild.result = 'SUCCESS'
     }
 }
