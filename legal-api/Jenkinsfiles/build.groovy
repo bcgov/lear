@@ -86,11 +86,13 @@ if( triggerBuild(COMPONENT_NAME) == "" ) {
             }
         } catch (Exception e) {
             run_pipeline = false;
-            currentBuild.result = 'SUCCESS'
-            echo('No Build Wanted - End of Build.')
-            return
         }
     }
+}
+if (!run_pipeline) {
+    echo('No Build Wanted - End of Build.')
+    currentBuild.result = 'SUCCESS'
+    return
 }
 
 // if (!run_pipeline) {
