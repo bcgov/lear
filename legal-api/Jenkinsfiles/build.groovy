@@ -95,19 +95,7 @@ if (!run_pipeline) {
     return
 }
 
-// if (!run_pipeline) {
-    // The changeSets did not contain any changes within the project's context directory.
-    // Clearly indicate there were no changes.
-//     stage('No Changes') {
-//         node {
-//             currentBuild.result = 'SUCCESS'
-//             echo('End of Build.')
-//             return True
-//         }
-//     }
-// } 
-
-stage('Build (COMPONENT_NAME)') {
+stage("Build ${COMPONENT_NAME}") {
     node {
         currentBuild.result = 'SUCCESS'
         echo('Full Build - End of Build.')
