@@ -94,7 +94,7 @@ if (!run_pipeline) {
     currentBuild.result = 'SUCCESS'
     return
 }
-
+{
 def py3njs_label = "jenkins-py3nodejs-${UUID.randomUUID().toString()}"
 podTemplate(label: py3njs_label, name: py3njs_label, serviceAccount: 'jenkins', cloud: 'openshift', containers: [
     containerTemplate(
@@ -110,6 +110,7 @@ podTemplate(label: py3njs_label, name: py3njs_label, serviceAccount: 'jenkins', 
         ]
     )
 ]
+}
 {
     node (py3njs_label){
                // Part 1 - CI - Source code scanning, build, dev deploy
