@@ -95,18 +95,20 @@ if (!run_pipeline) {
     return
 }
 
-def py3njs_label = "jenkins-py3nodejs-${UUID.randomUUID().toString()}"
-podTemplate(label: py3njs_label, name: py3njs_label, serviceAccount: 'jenkins', cloud: 'openshift', containers: [
-    containerTemplate(
-        name: 'jnlp',
-        image: '172.50.0.2:5000/openshift/jenkins-slave-py3nodejs',
-        resourceRequestCpu: '500m',
-        resourceLimitCpu: '1000m',
-        resourceRequestMemory: '1Gi',
-        resourceLimitMemory: '2Gi',
-        workingDir: '/tmp',
-        command: '',
-        args: '${computer.jnlpmac} ${computer.name}'
-        ]
-    )
-]
+node {
+  if( triggerBuild(COMPONENT_NAME) ) {
+
+    stage("Build ${COMPONENT_NAME}") {
+      script {
+        openshift.withCluster() {
+          openshift.withProject() {
+
+            echo "Building ${COMPONENT_NAME} ..."
+            def build = openshift.selector("bc", "${COMPONENT_NAME}")
+            build.startBuild().logs("-f")
+          }
+        }
+      }
+    }
+  }
+}
