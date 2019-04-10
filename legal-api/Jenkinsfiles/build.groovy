@@ -95,28 +95,26 @@ if (!run_pipeline) {
     return
 }
 
+def py3njs_label = "jenkins-py3nodejs-${UUID.randomUUID().toString()}"
+podTemplate(label: py3njs_label, name: py3njs_label, serviceAccount: 'jenkins', cloud: 'openshift', containers: [
+    containerTemplate(
+        name: 'jnlp',
+        image: '172.50.0.2:5000/openshift/jenkins-slave-py3nodejs',
+        resourceRequestCpu: '500m',
+        resourceLimitCpu: '1000m',
+        resourceRequestMemory: '1Gi',
+        resourceLimitMemory: '2Gi',
+        workingDir: '/tmp',
+        command: '',
+        args: '${computer.jnlpmac} ${computer.name}',
+        ]
+    )
+]
 {
-    def py3njs_label = "jenkins-py3nodejs-${UUID.randomUUID().toString()}"
-    podTemplate(label: py3njs_label, name: py3njs_label, serviceAccount: 'jenkins', cloud: 'openshift', containers: [
-        containerTemplate(
-            name: 'jnlp',
-            image: '172.50.0.2:5000/openshift/jenkins-slave-py3nodejs',
-            resourceRequestCpu: '500m',
-            resourceLimitCpu: '1000m',
-            resourceRequestMemory: '1Gi',
-            resourceLimitMemory: '2Gi',
-            workingDir: '/tmp',
-            command: '',
-            args: '${computer.jnlpmac} ${computer.name}',
-           ]
-        )
-    ]
-
     node (py3njs_label){
                // Part 1 - CI - Source code scanning, build, dev deploy
         stage("Build ${COMPONENT_NAME}") {
 
         }//end stage
-    }
     }
 }
