@@ -20,7 +20,7 @@ Download the yml file locally. For Lear we used
 
 
 ## Configure Keycloak:
-1) Add client "microcks-app-js" to your keycloak cliens.
+1) Add client "microcks-app-js" to your keycloak clients.
 2) Edit client "microcks-app-js" adding the host ("mock-lear-tools.pathfinder.gov.bc.ca") to the list of Valid Redirect URIs.
 3) Set baseURL=/* , Admin URL=/ , Web Origins=* . (The same as other sites)
 4) Set the Access Type = public
