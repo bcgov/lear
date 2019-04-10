@@ -82,13 +82,13 @@ if( triggerBuild(COMPONENT_NAME) == "" ) {
     node {
         try {
             timeout(time: 1, unit: 'DAYS') {
-                input message: "Run (COMPONENT_NAME)-(TAG_NAME)-pipeline?", id: "1234", submitter: 'admin,ljtrent-admin,thorwolpert-admin,rarmitag-admin,kialj876-edit,katiemcgoff-edit,waltermoar-admin'
+                input message: "Run ${COMPONENT_NAME}-${TAG_NAME}-pipeline?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-edit,katiemcgoff-edit,WalterMoar-admin'
             }
         } catch (Exception e) {
             run_pipeline = false;
             currentBuild.result = 'SUCCESS'
             echo('No Build Wanted - End of Build.')
-            return True
+            return
         }
     }
 }
