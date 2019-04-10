@@ -95,7 +95,8 @@ if (!run_pipeline) {
     return
 }
 
-def py3njs_label = "jenkins-py3nodejs-${UUID.randomUUID().toString()}"
+{
+    def py3njs_label = "jenkins-py3nodejs-${UUID.randomUUID().toString()}"
     podTemplate(label: py3njs_label, name: py3njs_label, serviceAccount: 'jenkins', cloud: 'openshift', containers: [
         containerTemplate(
             name: 'jnlp',
@@ -120,29 +121,28 @@ def py3njs_label = "jenkins-py3nodejs-${UUID.randomUUID().toString()}"
            ]
         )
     ]
-)
+    
+    node (py3njs_label){
+        // Part 1 - CI - Source code scanning, build, dev deploy
+        stage("Build ${COMPONENT_NAME}") {
+            try {
+                echo "Building..."
+                openshiftBuild bldCfg: COMPONENT_NAME, verbose: 'false', showBuildLogs: 'true'
 
+                sleep 5
 
-node (py3njs_label){
-    // Part 1 - CI - Source code scanning, build, dev deploy
-    stage("Build ${COMPONENT_NAME}") {
-        try {
-            echo "Building..."
-            openshiftBuild bldCfg: COMPONENT_NAME, verbose: 'false', showBuildLogs: 'true'
+                // openshiftVerifyBuild bldCfg: BUILDCFG_NAME
+                echo ">>> Get Image Hash"
+                IMAGE_HASH = sh (
+                    script: """oc get istag ${COMPONENT_NAME}:latest -o template --template=\"{{.image.dockerImageReference}}\"|awk -F \":\" \'{print \$3}\'""",
+                        returnStdout: true).trim()
+                echo ">> IMAGE_HASH: ${IMAGE_HASH}"
+                echo ">>>> Build Complete"
 
-            sleep 5
-
-            // openshiftVerifyBuild bldCfg: BUILDCFG_NAME
-            echo ">>> Get Image Hash"
-            IMAGE_HASH = sh (
-                script: """oc get istag ${COMPONENT_NAME}:latest -o template --template=\"{{.image.dockerImageReference}}\"|awk -F \":\" \'{print \$3}\'""",
-                    returnStdout: true).trim()
-            echo ">> IMAGE_HASH: ${IMAGE_HASH}"
-            echo ">>>> Build Complete"
-
-        } catch (Exception e) {
-            echo "error during build: ${e}"
-            error('Aborted')
-        }
-    }//end stage
+            } catch (Exception e) {
+                echo "error during build: ${e}"
+                error('Aborted')
+            }
+        }//end stage
+    }
 }
