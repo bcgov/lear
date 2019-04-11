@@ -1,0 +1,39 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  creationTimestamp: '2019-04-08T21:04:44Z'
+  labels:
+    app: oradb-startup-pipeline
+    name: oradb-startup-pipeline
+    template: oradb-startup-pipeline
+  name: oradb-startup-pipeline
+  namespace: gl2uos-tools
+  resourceVersion: '729599793'
+  selfLink: >-
+    /apis/build.openshift.io/v1/namespaces/gl2uos-tools/buildconfigs/oradb-startup-pipeline
+  uid: ef040171-5a41-11e9-9558-0050568379a2
+spec:
+  failedBuildsHistoryLimit: 5
+  nodeSelector: {}
+  output: {}
+  postCommit: {}
+  resources: {}
+  runPolicy: Parallel
+  source:
+    contextDir: oracle
+    git:
+      ref: 379-oracle-pipeline
+      uri: 'https://github.com/bcgov/lear.git'
+    type: Git
+  strategy:
+    jenkinsPipelineStrategy:
+      jenkinsfilePath: Jenkinsfile-startup
+    type: JenkinsPipeline
+  successfulBuildsHistoryLimit: 5
+  triggers:
+    - github:
+        secretReference:
+          name: github-lear
+      type: GitHub
+status:
+  lastVersion: 29
