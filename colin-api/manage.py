@@ -18,18 +18,12 @@ import logging
 
 from flask import url_for
 from flask_script import Manager  # class for handling a set of commands
-from flask_migrate import Migrate, MigrateCommand
 
 from colin_api import create_app
-from colin_api.models import db
-# models included so that migrate can build the database migrations
-from colin_api import models  # pylint: disable=unused-import
 
 APP = create_app()
-MIGRATE = Migrate(APP, db)
 MANAGER = Manager(APP)
 
-MANAGER.add_command('db', MigrateCommand)
 
 
 @MANAGER.command

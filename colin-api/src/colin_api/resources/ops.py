@@ -13,12 +13,10 @@
 # limitations under the License.
 """Endpoints to check and manage the health of the service."""
 from flask_restplus import Namespace, Resource
-from sqlalchemy import exc, text
-
+import cx_Oracle
+from colin_api.resources.db import db
 
 API = Namespace('OPS', description='Service - OPS checks')
-
-SQL = text('select 1')
 
 
 @API.route('healthz')
@@ -33,9 +31,10 @@ class Healthz(Resource):
         """Return a JSON object stating the health of the Service and dependencies."""
         try:
             # check db connection working TODO
-            #db.engine.execute(SQL)
-            print('TODO')
-        except exc.SQLAlchemyError:
+            cursor = db.connection.cursor()
+            cursor.execute("select 1 from dual")
+
+        except cx_Oracle.DatabaseError:
             return {'message': 'api is down'}, 500
 
         # made it here, so all checks passed

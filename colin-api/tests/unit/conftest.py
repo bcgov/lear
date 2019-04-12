@@ -19,7 +19,6 @@ from sqlalchemy.schema import DropConstraint, MetaData
 
 from colin_api import create_app
 from colin_api import jwt as _jwt
-from colin_api.models import db as _db
 
 
 @pytest.fixture(scope='session')

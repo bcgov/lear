@@ -17,7 +17,9 @@
 Test-Suite to ensure that the /ops endpoint is working as expected.
 """
 
+from tests import oracle_integration
 
+@oracle_integration
 def test_ops_healthz_success(client):
     """Assert that the service is healthy if it can successfully access the database."""
     rv = client.get('/ops/healthz')
@@ -28,7 +30,7 @@ def test_ops_healthz_success(client):
 
 def test_ops_healthz_fail(app_request):
     """Assert that the service is unhealthy if a connection toThe database cannot be made."""
-    app_request.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://does:not@exist:5432/nada'
+    app_request.config['ORACLE_DB_NAME'] = 'somethingnotreal'
     with app_request.test_client() as client:
         rv = client.get('/ops/healthz')
 

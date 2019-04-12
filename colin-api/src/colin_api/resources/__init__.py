@@ -25,6 +25,7 @@ from flask_restplus import Api
 
 from .meta import API as META_API
 from .ops import API as OPS_API
+from .business import API as BUSINESS_API
 
 
 __all__ = ('API_BLUEPRINT', 'OPS_BLUEPRINT')
@@ -53,10 +54,11 @@ API_OPS.add_namespace(OPS_API, path='/')
 API_BLUEPRINT = Blueprint('API', __name__, url_prefix='/api/v1')
 
 API = Api(API_BLUEPRINT,
-          title='COLIN Business API',
+          title='COLIN API',
           version='1.0',
           description='The COLIN API for the Legal Entities System',
           security=['apikey'],
           authorizations=AUTHORIZATIONS)
 
 API.add_namespace(META_API, path='/meta')
+API.add_namespace(BUSINESS_API, path='/businesses')

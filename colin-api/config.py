@@ -61,7 +61,7 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
-    # ORACLE - LEGACY NRO NAMESDB
+    # ORACLE - CDEV/CTST/CPRD
     ORACLE_USER = os.getenv('ORACLE_USER', '')
     ORACLE_SCHEMA = os.getenv('ORACLE_SCHEMA', None)
     ORACLE_PASSWORD = os.getenv('ORACLE_PASSWORD', '')
@@ -97,6 +97,14 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     """
     DEBUG = True
     TESTING = True
+
+    # TEST ORACLE
+    ORACLE_USER = os.getenv('TEST_ORACLE_USER', '')
+    ORACLE_SCHEMA = os.getenv('TEST_ORACLE_SCHEMA', None)
+    ORACLE_PASSWORD = os.getenv('TEST_ORACLE_PASSWORD', '')
+    ORACLE_DB_NAME = os.getenv('TEST_ORACLE_DB_NAME', '')
+    ORACLE_HOST = os.getenv('TEST_ORACLE_HOST', '')
+    ORACLE_PORT = int(os.getenv('TEST_ORACLE_PORT', '1521'))
 
 
     # JWT OIDC settings
