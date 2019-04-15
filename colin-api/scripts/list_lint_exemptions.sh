@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Copyright © 2019 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,14 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+# simple grep with full line output, to evaluate whether use of pylint disabling is valid
+grep -r --color -n -s 'pylint: disable=.*' $@
 
-import pytest
-from dotenv import load_dotenv, find_dotenv
-
-#this will load all the envars from a .env file located in the project root (api)
-load_dotenv(find_dotenv())
-
-
-oracle_integration = pytest.mark.skipif((os.getenv('ORACLE_INTEGRATION_TESTING', False) is False),
-                                                reason="requires access to a test version of Oracle CTST")
+exit 0
