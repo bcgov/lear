@@ -94,7 +94,6 @@ export default {
     var today = new Date()
     this.currentDate = today.getFullYear() + '-' + ('0' + (+today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2)
     console.log(this.currentDate)
-    this.$store.state.currentDate = this.currentDate
   },
   methods: {
     formatDate (date) {
@@ -115,22 +114,15 @@ export default {
       console.log('AGMDate.vue date watcher fired: ', val)
       if (!this.didNotHoldAGM && (val === null || val === '')) {
         this.$store.state.validated = false
-        this.$store.state.agmDate = val
       } else {
         this.$store.state.validated = true
-        this.$store.state.agmDate = val
       }
       this.dateFormatted = this.formatDate(this.date)
     },
     didNotHoldAGM: function (val) {
       console.log('AGMDate.vue didNotHoldAGM watcher fired: ', val)
-      if (val) {
-        this.$store.state.validated = true
-        this.$store.state.noAGM = true
-      } else {
-        this.$store.state.validated = false
-        this.$store.state.noAGM = false
-      }
+      if (val) this.$store.state.validated = true
+      else this.$store.state.validated = false
       this.date = ''
     }
   }
