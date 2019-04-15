@@ -56,15 +56,11 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     """
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
+    COLIN_URL = os.getenv('COLIN_URL', '')
+
     SECRET_KEY = 'a secret'
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
-    NRO_SERVICE_ACCOUNT = os.getenv('NRO_SERVICE_ACCOUNT', 'nro_service_account')
-
-    SOLR_BASE_URL = os.getenv('SOLR_BASE_URL', None)
-    SOLR_SYNONYMS_API_URL = os.getenv('SOLR_SYNONYMS_API_URL', None)
-    NRO_EXTRACTOR_URI = os.getenv('NRO_EXTRACTOR_URI', None)
 
     ALEMBIC_INI = 'migrations/alembic.ini'
 
@@ -81,13 +77,6 @@ class _Config(object):  # pylint: disable=too-few-public-methods
         port=int(DB_PORT),
         name=DB_NAME,
     )
-    # ORACLE - LEGACY NRO NAMESDB
-    NRO_USER = os.getenv('NRO_USER', '')
-    NRO_SCHEMA = os.getenv('NRO_SCHEMA', None)
-    NRO_PASSWORD = os.getenv('NRO_PASSWORD', '')
-    NRO_DB_NAME = os.getenv('NRO_DB_NAME', '')
-    NRO_HOST = os.getenv('NRO_HOST', '')
-    NRO_PORT = int(os.getenv('NRO_PORT', '1521'))
 
     # JWT_OIDC Settings
     JWT_OIDC_WELL_KNOWN_CONFIG = os.getenv('JWT_OIDC_WELL_KNOWN_CONFIG')

@@ -15,11 +15,13 @@
 
 This module manages the Business's Legal Information.
 """
-
+import asyncio
 from datetime import datetime
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business as BusinessModel
+
+from .colin import Colin
 
 
 class Business():  # pylint: disable=too-many-instance-attributes
@@ -194,6 +196,7 @@ class Business():  # pylint: disable=too-many-instance-attributes
         business_dao = BusinessModel.find_by_legal_name(legal_name)
 
         # TODO check if timestamp is valid in Colin
+
         if not business_dao:
             return None
 
@@ -210,6 +213,19 @@ class Business():  # pylint: disable=too-many-instance-attributes
         # find locally
         business_dao = None
         business_dao = BusinessModel.find_by_identifier(identifier)
+
+        # perform multiple async requests concurrently
+        loop = asyncio.get_event_loop()
+        responses = loop.run_until_complete(asyncio.gather(
+            Colin.fetch("http://localhost:8080/rest/colin-api/0.9/api/v1/businesses/CP7654321")
+            # Colin.get_business(identifier)
+        ))
+
+        print('Responses:', responses)
+        # print('Responses:', responses[0].status)
+        print('Responses:', responses[0][0], responses[0][1])
+
+        # business_remote = Colin.get_business()
 
         # TODO check if timestamp is valid in Colin
         if not business_dao:

@@ -240,6 +240,7 @@ def test_business_find_by_identifier(session):
     b = services.Business.find_by_identifier(identifier)
 
     assert b is not None
+    assert False
 
 
 def test_business_find_by_identifier_no_model_object(session):

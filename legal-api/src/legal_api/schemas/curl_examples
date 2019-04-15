@@ -1,0 +1,37 @@
+
+## get a businesses business_info
+
+curl -i -X GET \
+  http://localhost:8080/rest/colin-api/0.9/api/v1/businesses/CP7654321 \
+  -H 'cache-control: no-cache'
+
+## get a businesses annual_report
+ 
+curl -i -X GET \
+  'http://localhost:8080/rest/colin-api/0.9/api/v1/businesses/CP7654321/filings/annual_report?year=2017' \
+  -H 'cache-control: no-cache'
+
+## submit an annual_report
+
+curl -i -X POST \
+  http://localhost:8080/rest/colin-api/0.9/api/v1/businesses/CP7654321/filings/annual_report \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -d '{
+    "filing": {
+        "header": {
+            "name": "annual report",
+            "date": "2019-04-08"
+        },
+        "business_info": {
+            "founding_date": "2001-08-05",
+            "identifier": "CP1234567",
+            "legal_name": "legal name"
+        },
+        "annual_report": {
+            "annual_general_meeting_date": "2019-04-08",
+            "certified_by": "full name",
+            "email": "no_one@never.get"
+        }
+    }
+}'
