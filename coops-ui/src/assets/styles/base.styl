@@ -1,23 +1,39 @@
 @import "theme.styl";
 
+html, body
+  min-height 100vh
+
 html
-  background $gray1
-  font-size 16px
+  font-size 14px
+
+@media (min-width 960px)
+  html
+    font-size 16px
 
 body
   font-family 'Roboto', sans-serif
   font-size 1rem
 
-// Global Overrides
-.v-chip
-  font-weight 700
-  text-transform uppercase
+h1, h2
+  font-weight 500
 
-  .v-chip__content
-    padding 0 0.5rem
-    height auto
+h1
+  line-height 2.25rem
+  font-size 2rem
 
-.v-chip--small
-  padding: 0.25rem
-  height auto !important
-  font-size 0.7rem
+hr
+  margin-top 2rem
+  margin-bottom 2rem
+  border-color $gray4
+  border-style solid
+
+p
+  margin-bottom 1rem
+  line-height 1.5rem
+  font-size 1rem
+
+.app-container.theme--light
+  background $gray1
+
+.container
+  padding 1.25rem

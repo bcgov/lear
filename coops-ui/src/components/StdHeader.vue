@@ -1,31 +1,36 @@
 <template>
-  <v-toolbar dark color="#003366">
-
-    <router-link to="/" class="navbar-brand router-link-never-mark-active">
-      <img src="@/assets/images/gov3_bc_logo.png"
-           alt="Province of British Columbia"
-           title="Province of British Columbia logo"/>
-    </router-link>
-
-    <v-spacer></v-spacer>
-
-    <v-btn to="/" flat dark class="hidden-xs-only">Home</v-btn>
-    <v-btn to="/" flat icon class="hidden-sm-and-up"><v-icon>home</v-icon></v-btn>
-
-    <v-btn to="/about" flat dark class="hidden-xs-only">About</v-btn>
-    <v-btn to="/about" flat icon class="hidden-sm-and-up"><v-icon>info</v-icon></v-btn>
-  </v-toolbar>
+  <header class="app-header" fixed app>
+    <div class="container">
+      <router-link to="/" class="navbar-brand">
+        <img class="brand-img" src="@/assets/images/gov3_bc_logo.png"
+          alt="Province of British Columbia Logo"
+          title="Province of British Columbia"/>
+      </router-link>
+    </div>
+  </header>
 </template>
 <script>
+
 export default {
   name: 'std-header'
 }
 </script>
 
-<style scoped>
+<style lang="stylus" scoped>
+  @import "../assets/styles/theme.styl"
 
-  .navbar-brand {
-    margin-bottom: 13px;
-  }
+  .app-header
+    position fixed
+    width 100%
+    color #fff
+    border-bottom 3px solid $BCgovGold5
+    background-color $BCgovBlue5
+
+    .container
+      padding-top 0
+      padding-bottom 0
+
+  .brand-img
+    margin-top 0.3rem
 
 </style>
