@@ -65,6 +65,7 @@ export default {
   },
   mounted () {
     this.setCorpNum()
+    if (this.ARFilingYear == null) this.setARInfo(this.corpNum, this.json)
   },
   methods: {
     setCorpNum () {
