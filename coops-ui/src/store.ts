@@ -5,12 +5,21 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
+    userToken: null,
+    paymentToken: null,
+    corpNum: null,
+    ARFilingYear: null,
 
+    currentDate: null,
+    filedDate: null,
+    agmDate: null,
+    noAGM: false,
+    validated: false
   },
   mutations: {
-
   },
   actions: {
-
+  },
+  getters: {
   }
 })

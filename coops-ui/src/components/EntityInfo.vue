@@ -36,6 +36,14 @@
 <script>
 export default {
   name: 'entity-info',
+  computed: {
+    userToken () {
+      return this.$store.state.userToken
+    },
+    corpNum () {
+      return this.$store.state.corpNum
+    }
+  },
 
   // Placeholder Data
   data () {
@@ -45,6 +53,12 @@ export default {
       entityBusinessNo: '123456789',
       entityIncNo: '123456789'
     }
+  },
+  methods: {
+  },
+  mounted () {
+  },
+  watch: {
   }
 }
 </script>
