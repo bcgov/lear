@@ -10,6 +10,10 @@ export default new Vuex.Store({
     corpNum: null,
     ARFilingYear: null,
 
+    currentDate: null,
+    filedDate: null,
+    agmDate: null,
+    noAGM: false,
     validated: false
   },
   mutations: {
