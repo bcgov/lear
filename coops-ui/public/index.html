@@ -19,7 +19,7 @@
 <!-- get proper url-->
   <script src="https://sso-dev.pathfinder.gov.bc.ca/auth/js/keycloak.js"></script>
   <script>
-    var keycloak = Keycloak('keycloak.json')
+    var keycloak = Keycloak('keycloak/keycloak.json')
     var token
     keycloak.init({ token: token, onLoad: 'login-required' }).success(function (authenticated) {
       if (authenticated) {
