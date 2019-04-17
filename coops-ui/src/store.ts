@@ -8,9 +8,9 @@ export default new Vuex.Store({
     userToken: null,
     paymentToken: null,
     corpNum: null,
-    ARFilingYear: '2018',
+    ARFilingYear: null,
 
-    currentDate: null,
+    currentDate: '',
     filedDate: null,
     agmDate: null,
     noAGM: false,

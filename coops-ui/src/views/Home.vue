@@ -26,24 +26,7 @@ export default {
   },
   data () {
     return {
-      json: {
-        filing: {
-          header: {
-            name: 'annual report',
-            date: '2017-04-08'
-          },
-          business_info: {
-            founding_date: '2001-08-05',
-            identifier: 'CP6543210',
-            legal_name: 'legal name'
-          },
-          annual_report: {
-            annual_general_meeting_date: '2017-04-08',
-            certified_by: 'full name',
-            email: 'no_one@never.get'
-          }
-        }
-      }
+      lastARJson: null
     }
   },
   computed: {
@@ -64,48 +47,73 @@ export default {
     }
   },
   mounted () {
+    var today = new Date()
+    this.$store.state.currentDate = today.getFullYear() + '-' + ('0' + (+today.getMonth() + 1)).slice(-2) + '-' +
+      ('0' + today.getDate()).slice(-2)
+
     this.setCorpNum()
-    if (this.ARFilingYear == null) this.setARInfo(this.corpNum, this.json)
+    if (this.ARFilingYear == null) this.getARInfo(this.corpNum)
   },
   methods: {
     setCorpNum () {
       // set corpnum, check for error
       this.$store.state.corpNum = sessionStorage.getItem('USERNAME')
-      return true
+      if (this.$store.state.corpNum == null) {
+        console.error('No USERNAME set in sessionStorage - cannot get corpNum')
+      } else {
+        this.$store.state.corpNum = this.$store.state.corpNum.toUpperCase()
+      }
     },
-    setARInfo (corpNum, json) {
-      // call legal-api for AGM with corpnum/userToken
+    getARInfo (corpNum) {
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
-      console.log(corpNum, ' ', token)
-      // axios({
-      //   method: 'GET',
-      //   url: 'https://mock-lear-tools.pathfinder.gov.bc.ca/rest/legal-api/0.6/api/v1/businesses/CP6543210/filings/annual_report?year=2016',
-      //   headers: {}
-      // }).then(result => { json = result }, error => console.error(error))
-      console.log(json)
-      var lastARYear = json.filing.header.date.substring(0, 4)
-      var today = new Date()
-      var currentYear = today.getFullYear() + ''
+      // when calling the api make sure this url is for most recent AR - stub specifies 2017 + add token in header
+      var url = 'https://mock-lear-tools.pathfinder.gov.bc.ca/rest/legal-api/0.64/api/v1/businesses/' + corpNum +
+        '/filings/annual_report?year=2017'
+
+      axios.get(url).then(response => {
+        this.lastARJson = response.data
+        this.setARInfo()
+      }).catch(error => console.log('ERROR: ' + error))
+    },
+    setARInfo () {
+      var lastARYear = this.lastARJson.filing.annual_report.annual_general_meeting_date.substring(0, 4)
+      var currentYear = (new Date()).getFullYear() + ''
+
       if (lastARYear === currentYear) this.$store.state.ARFilingYear = null
       else this.$store.state.ARFilingYear = +lastARYear + 1 + ''
-      return true
     },
     submit () {
+      var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
+      // probably need to parametrize date=this.$store.state.currentDate + add token in header for api
+      var url = 'https://mock-lear-tools.pathfinder.gov.bc.ca/rest/Pay+API/0.4/pay-api/v1/fees/annual-report/CP?' +
+        'date=2019-04-15'
+      var paymentJson
+
+      // other team doing credit card entering/payment confirmation? - don't know what to check in resulting json for
+      // success/failure
+      axios.get(url).then(response => {
+        paymentJson = response.data
+        console.log('payment response: ', paymentJson)
+        if (paymentJson) this.$store.state.filedDate = this.$store.state.currentDate
+      }).catch(error => console.log('ERROR: ' + error))
       this.$store.state.filedDate = this.$store.state.currentDate
     },
-    nextAR () {
-      this.json.filing.header.date = '2018-04-08'
+    resetARInfo () {
       this.$store.state.agmDate = null
       this.$store.state.filedDate = null
       this.$store.state.validated = false
       this.$store.state.noAGM = false
-      this.setARInfo(this.corpNum, this.json)
+    },
+    nextAR () {
+      this.resetARInfo()
+      this.getARInfo(this.$store.state.corpNum)
     }
   },
   watch: {
     corpNum: function (val) {
+      console.log('Home.vue corpNum watcher fired: ', val)
       if (val != null) {
-        this.setARInfo(val, this.json)
+        this.getARInfo(val)
       }
     }
   }

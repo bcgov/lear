@@ -27,9 +27,6 @@
         keycloak.loadUserProfile().success(function (userProfile) {
                 var userName = userProfile.username
                 sessionStorage.setItem('USERNAME', userName)
-                console.log(userProfile)
-                console.log(userName)
-
               });
       } else {
         alert('not authenticated')
