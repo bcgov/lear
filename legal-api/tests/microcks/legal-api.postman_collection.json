@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "c75dc154-2ecb-4590-852b-a2872c53a988",
 		"name": "legal-api",
-		"description": "version=0.6 - This is a Legal API description",
+		"description": "version=0.64 - This is a Legal API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
 	"item": [
@@ -515,7 +515,32 @@
 					"status": "OK",
 					"code": 200,
 					"_postman_previewlanguage": "json",
-					"header": null,
+					"header": [
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "Allow",
+							"value": "Get",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "Access-Control-Allow-Headers",
+							"value": "Authorization, Content-Type",
+							"description": "",
+							"type": "text"
+						}
+					],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001193\",\n            \"legal_name\": \"legal name - CP0001193\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 				},
