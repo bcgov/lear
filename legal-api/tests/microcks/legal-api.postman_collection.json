@@ -1,13 +1,101 @@
 {
 	"info": {
-		"_postman_id": "c75dc154-2ecb-4590-852b-a2872c53a988",
+		"_postman_id": "f070b0e9-108c-41e9-b42e-42dd67db1450",
 		"name": "legal-api",
-		"description": "version=0.64 - This is a Legal API description",
-		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+		"description": "version=0.6 - This is a Legal API description",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
+			"name": "setup",
+			"item": [
+				{
+					"name": "fetch schema",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "a38325c2-ea89-4ea2-935d-704fc0b583a5",
+								"exec": [
+									"if (!pm.globals.has.legal_schema) {",
+									"    postman.setGlobalVariable('legal_schema', 'https://raw.githubusercontent.com/bcgov/lear/master/legal-api/src/legal_api/schemas/legal_filings.json');",
+									"}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "053fb49a-f5f0-4b13-912f-f53cf4ea3db1",
+								"exec": [
+									"postman.setGlobalVariable('legal_schema', responseBody);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://raw.githubusercontent.com/bcgov/lear/master/legal-api/src/legal_api/schemas/legal_filings.json",
+							"protocol": "https",
+							"host": [
+								"raw",
+								"githubusercontent",
+								"com"
+							],
+							"path": [
+								"bcgov",
+								"lear",
+								"master",
+								"legal-api",
+								"src",
+								"legal_api",
+								"schemas",
+								"legal_filings.json"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "get-business",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "c5ca7a52-e493-45c1-af91-a45a8f955c0b",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "3156dbab-b09f-4c19-bda0-3b96a7010bb0",
+						"exec": [
+							"var resp = JSON.parse(responseBody);",
+							"",
+							"tests[\"Validate agains schema\"] = tv4.validate(resp, pm.globals.get(\"legal_schema\"));",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -29,14 +117,14 @@
 					"variable": [
 						{
 							"key": "id",
-							"value": "CP7654321"
+							"value": "CP1234567"
 						}
 					]
 				}
 			},
 			"response": [
 				{
-					"name": "get-business - CP0001188",
+					"name": "get-business - missing id",
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -58,120 +146,50 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "CP0001188"
+									"value": ""
 								}
 							]
 						}
 					},
-					"status": "OK",
-					"code": 200,
+					"status": "BAD REQUEST",
+					"code": 400,
 					"_postman_previewlanguage": "json",
-					"header": null,
-					"cookie": [],
-					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP0001188\",\n        \"legal_name\": \"legal name - CP0001188\"\n    }\n}"
-				},
-				{
-					"name": "get-business - CP0001187",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
+					"header": [
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
 						},
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "CP0001187"
-								}
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": null,
-					"cookie": [],
-					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP0001187\",\n        \"legal_name\": \"legal name - CP0001187\"\n    }\n}"
-				},
-				{
-					"name": "get-business - CP0001193",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
+						{
+							"key": "Date",
+							"value": "Tue, 16 Apr 2019 18:24:58 GMT"
 						},
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "CP0001193"
-								}
-							]
-						}
-					},
-					"_postman_previewlanguage": "json",
-					"header": null,
-					"cookie": [],
-					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP0001193\",\n        \"legal_name\": \"legal name - CP0001193\"\n    }\n}"
-				},
-				{
-					"name": "get-business - CP6543210",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
+						{
+							"key": "Content-Type",
+							"value": "application/json"
 						},
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "CP6543210"
-								}
-							]
+						{
+							"key": "Content-Length",
+							"value": "34"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "HEAD, GET, OPTIONS"
+						},
+						{
+							"key": "Access-Control-Max-Age",
+							"value": "21600"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-42787bf4f555e62ca46690311828f1a46df134d2"
 						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": null,
+					],
 					"cookie": [],
-					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP7654321\",\n        \"legal_name\": \"legal name - CP6543210\"\n    }\n}"
+					"body": "{\n    \"message\": \"Missing required parameter 'id'. Cannot get business without 'id'\"\n}"
 				},
 				{
 					"name": "get-business - CP0001191",
@@ -202,7 +220,7 @@
 						}
 					},
 					"_postman_previewlanguage": "json",
-					"header": null,
+					"header": [],
 					"cookie": [],
 					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP0001191\",\n        \"legal_name\": \"legal name - CP0001191\"\n    }\n}"
 				},
@@ -237,14 +255,302 @@
 					"status": "OK",
 					"code": 200,
 					"_postman_previewlanguage": "json",
-					"header": null,
+					"header": [],
 					"cookie": [],
 					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP7654321\",\n        \"legal_name\": \"legal name - CP7654321\"\n    }\n}"
+				},
+				{
+					"name": "get-business - CP6543210",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP6543210"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP7654321\",\n        \"legal_name\": \"legal name - CP6543210\"\n    }\n}"
+				},
+				{
+					"name": "get-business - CP0001187",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0001187"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP0001187\",\n        \"legal_name\": \"legal name - CP0001187\"\n    }\n}"
+				},
+				{
+					"name": "get-business - CP0001188",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0001188"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP0001188\",\n        \"legal_name\": \"legal name - CP0001188\"\n    }\n}"
+				},
+				{
+					"name": "get-business - 404 not found",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP9999999"
+								}
+							]
+						}
+					},
+					"status": "NOT FOUND",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
+						},
+						{
+							"key": "Date",
+							"value": "Tue, 16 Apr 2019 18:21:58 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "34"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "HEAD, GET, OPTIONS"
+						},
+						{
+							"key": "Access-Control-Max-Age",
+							"value": "21600"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-42787bf4f555e62ca46690311828f1a46df134d2"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"message\": \"CP9999999 not found\"\n}"
+				},
+				{
+					"name": "get-business - CP0001193",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0001193"
+								}
+							]
+						}
+					},
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP0001193\",\n        \"legal_name\": \"legal name - CP0001193\"\n    }\n}"
+				},
+				{
+					"name": "get-business - invalid id",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP999"
+								}
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
+						},
+						{
+							"key": "Date",
+							"value": "Wed, 17 Apr 2019 15:06:25 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "30"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "HEAD, GET, OPTIONS"
+						},
+						{
+							"key": "Access-Control-Max-Age",
+							"value": "21600"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-42787bf4f555e62ca46690311828f1a46df134d2"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"message\": \"CP999 is not a valid id. The valid pattern for id is 'CP' followed by seven digits\"\n}"
 				}
 			]
 		},
 		{
 			"name": "get-business - annual report CP7654321:2017",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "02984695-aa2b-4165-bb86-e3436551e471",
+						"exec": [
+							"var resp = JSON.parse(responseBody);",
+							"",
+							"tests[\"Validate agains schema\"] = tv4.validate(resp, pm.globals.get(\"legal_schema\"));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -274,7 +580,7 @@
 					"variable": [
 						{
 							"key": "id",
-							"value": "CP7654321"
+							"value": "CP0001188"
 						},
 						{
 							"key": "type",
@@ -285,7 +591,7 @@
 			},
 			"response": [
 				{
-					"name": "get-business - annual report CP6543210:2016",
+					"name": "get-business - missing id and type",
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -294,7 +600,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id/filings/:type?year=2016",
+							"raw": "{{url}}/api/v1/businesses/:id/filings/:type?year=2017",
 							"host": [
 								"{{url}}"
 							],
@@ -309,27 +615,48 @@
 							"query": [
 								{
 									"key": "year",
-									"value": "2016"
+									"value": "2017"
 								}
 							],
 							"variable": [
 								{
 									"key": "id",
-									"value": "CP6543210"
+									"value": ""
 								},
 								{
 									"key": "type",
-									"value": "annual_report"
+									"value": ""
 								}
 							]
 						}
 					},
-					"status": "OK",
-					"code": 200,
+					"status": "Bad Request",
+					"code": 400,
 					"_postman_previewlanguage": "json",
-					"header": null,
+					"header": [
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
+						},
+						{
+							"key": "Date",
+							"value": "Tue, 16 Apr 2019 18:33:56 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "text/html"
+						},
+						{
+							"key": "Content-Length",
+							"value": "232"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-42787bf4f555e62ca46690311828f1a46df134d2"
+						}
+					],
 					"cookie": [],
-					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP6543210\",\n            \"legal_name\": \"legal name\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+					"body": "{\n    \"message\": \"Missing required parameters 'id' and 'type'. Cannot get a filing without 'id' and 'type'\"\n}"
 				},
 				{
 					"name": "get-business - annual report CP0001191:2017",
@@ -374,12 +701,12 @@
 					"status": "OK",
 					"code": 200,
 					"_postman_previewlanguage": "json",
-					"header": null,
+					"header": [],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001191\",\n            \"legal_name\": \"legal name - CP0001191\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 				},
 				{
-					"name": "get-business - annual report CP7654321:2017",
+					"name": "get-business - missing type",
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -409,140 +736,161 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "CP7654321"
+									"value": "CP1234567"
 								},
 								{
 									"key": "type",
-									"value": "annual_report"
+									"value": ""
 								}
 							]
 						}
 					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": null,
-					"cookie": [],
-					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP1234567\",\n            \"legal_name\": \"legal name\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
-				},
-				{
-					"name": "get-business - annual report CP0001187:2017",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id/filings/:type?year=2017",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								":id",
-								"filings",
-								":type"
-							],
-							"query": [
-								{
-									"key": "year",
-									"value": "2017"
-								}
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "CP0001187"
-								},
-								{
-									"key": "type",
-									"value": "annual_report"
-								}
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": null,
-					"cookie": [],
-					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001187\",\n            \"legal_name\": \"legal name - CP0001187\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
-				},
-				{
-					"name": "get-business - annual report CP0001193:2017",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id/filings/:type?year=2017",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								":id",
-								"filings",
-								":type"
-							],
-							"query": [
-								{
-									"key": "year",
-									"value": "2017"
-								}
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "CP0001193"
-								},
-								{
-									"key": "type",
-									"value": "annual_report"
-								}
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
+					"status": "NOT FOUND",
+					"code": 404,
 					"_postman_previewlanguage": "json",
 					"header": [
 						{
-							"key": "Access-Control-Allow-Origin",
-							"value": "*",
-							"description": "",
-							"type": "text"
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
 						},
 						{
-							"key": "Access-Control-Allow-Methods",
-							"value": "GET",
-							"description": "",
-							"type": "text"
+							"key": "Date",
+							"value": "Tue, 16 Apr 2019 19:08:57 GMT"
 						},
 						{
-							"key": "Allow",
-							"value": "Get",
-							"description": "",
-							"type": "text"
+							"key": "Connection",
+							"value": "close"
 						},
 						{
-							"key": "Access-Control-Allow-Headers",
-							"value": "Authorization, Content-Type",
-							"description": "",
-							"type": "text"
+							"key": "Content-Type",
+							"value": "text/html"
+						},
+						{
+							"key": "Content-Length",
+							"value": "232"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-42787bf4f555e62ca46690311828f1a46df134d2"
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001193\",\n            \"legal_name\": \"legal name - CP0001193\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+					"body": "{\n    \"message\": \"Missing required parameter 'type'. Cannot get a filing without 'id' and 'type'\"\n}"
+				},
+				{
+					"name": "get-business - missing type",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings/:type?year=2017",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings",
+								":type"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2017"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP1234567"
+								},
+								{
+									"key": "type",
+									"value": ""
+								}
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
+						},
+						{
+							"key": "Date",
+							"value": "Wed, 17 Apr 2019 21:50:35 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "text/html"
+						},
+						{
+							"key": "Content-Length",
+							"value": "232"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-42787bf4f555e62ca46690311828f1a46df134d2"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"message\": \"Missing required parameter 'type'. Cannot get a filing without 'id' and 'type'\"\n}"
+				},
+				{
+					"name": "get-business - annual report CP6543210:2016",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings/:type?year=2016",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings",
+								":type"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2016"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP6543210"
+								},
+								{
+									"key": "type",
+									"value": "annual_report"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP6543210\",\n            \"legal_name\": \"legal name\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 				},
 				{
 					"name": "get-business - annual report CP0001188:2017",
@@ -587,9 +935,218 @@
 					"status": "OK",
 					"code": 200,
 					"_postman_previewlanguage": "json",
-					"header": null,
+					"header": [],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001188\",\n            \"legal_name\": \"legal name - CP0001188\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+				},
+				{
+					"name": "get-business - annual report CP7654321:2017",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings/:type?year=2017",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings",
+								":type"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2017"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP7654321"
+								},
+								{
+									"key": "type",
+									"value": "annual_report"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP1234567\",\n            \"legal_name\": \"legal name\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+				},
+				{
+					"name": "get-business - missing id",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings/:type?year=2017",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings",
+								":type"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2017"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								},
+								{
+									"key": "type",
+									"value": "annual_report"
+								}
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
+						},
+						{
+							"key": "Date",
+							"value": "Tue, 16 Apr 2019 18:33:56 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "text/html"
+						},
+						{
+							"key": "Content-Length",
+							"value": "232"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-42787bf4f555e62ca46690311828f1a46df134d2"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"message\": \"Missing required parameter 'id'. Cannot get a filing without 'id' and 'type'\"\n}"
+				},
+				{
+					"name": "get-business - annual report CP0001193:2017",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings/:type?year=2017",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings",
+								":type"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2017"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0001193"
+								},
+								{
+									"key": "type",
+									"value": "annual_report"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001193\",\n            \"legal_name\": \"legal name - CP0001193\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+				},
+				{
+					"name": "get-business - annual report CP0001187:2017",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings/:type?year=2017",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings",
+								":type"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2017"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0001187"
+								},
+								{
+									"key": "type",
+									"value": "annual_report"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001187\",\n            \"legal_name\": \"legal name - CP0001187\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 				}
 			]
 		},
@@ -636,7 +1193,7 @@
 			},
 			"response": [
 				{
-					"name": "post - annual report CP0001191",
+					"name": "post - missing type and id",
 					"originalRequest": {
 						"method": "POST",
 						"header": [
@@ -667,21 +1224,21 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "CP0001191"
+									"value": ""
 								},
 								{
 									"key": "type",
-									"value": "annual_report"
+									"value": ""
 								}
 							]
 						}
 					},
-					"status": "Created",
-					"code": 201,
+					"status": "Bad Request",
+					"code": 400,
 					"_postman_previewlanguage": "json",
 					"header": null,
 					"cookie": [],
-					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001191\",\n            \"legal_name\": \"legal name - CP0001191\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+					"body": "{\n    \"message\": \"Missing required parameter 'id' and 'type'. Cannot post a filing without 'id' and 'type'\"\n}"
 				},
 				{
 					"name": "post - annual report CP0001188",
@@ -727,12 +1284,12 @@
 					"status": "Created",
 					"code": 201,
 					"_postman_previewlanguage": "json",
-					"header": null,
+					"header": [],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001187\",\n            \"legal_name\": \"legal name - CP0001188\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 				},
 				{
-					"name": "post - annual report CP0001193",
+					"name": "post - missing type",
 					"originalRequest": {
 						"method": "POST",
 						"header": [
@@ -763,21 +1320,21 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "CP0001193"
+									"value": "CP7654321"
 								},
 								{
 									"key": "type",
-									"value": "annual_report"
+									"value": ""
 								}
 							]
 						}
 					},
-					"status": "Created",
-					"code": 201,
+					"status": "Bad Request",
+					"code": 400,
 					"_postman_previewlanguage": "json",
 					"header": null,
 					"cookie": [],
-					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001193\",\n            \"legal_name\": \"legal name - CP0001193\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+					"body": "{\n    \"message\": \"Missing required parameter 'type'. Cannot post a filing without 'id' and 'type'\"\n}"
 				},
 				{
 					"name": "post - annual report CP0001187",
@@ -823,9 +1380,57 @@
 					"status": "Created",
 					"code": 201,
 					"_postman_previewlanguage": "json",
-					"header": null,
+					"header": [],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001187\",\n            \"legal_name\": \"legal name - CP0001187\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+				},
+				{
+					"name": "post - annual report CP0001193",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP1234567\",\n            \"legal_name\": \"legal name\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings/:type",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings",
+								":type"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0001193"
+								},
+								{
+									"key": "type",
+									"value": "annual_report"
+								}
+							]
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001193\",\n            \"legal_name\": \"legal name - CP0001193\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 				},
 				{
 					"name": "post - annual report CP7654321",
@@ -871,9 +1476,105 @@
 					"status": "Created",
 					"code": 201,
 					"_postman_previewlanguage": "json",
-					"header": null,
+					"header": [],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP1234567\",\n            \"legal_name\": \"legal name\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+				},
+				{
+					"name": "post - annual report CP0001191",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP1234567\",\n            \"legal_name\": \"legal name\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings/:type",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings",
+								":type"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0001191"
+								},
+								{
+									"key": "type",
+									"value": "annual_report"
+								}
+							]
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001191\",\n            \"legal_name\": \"legal name - CP0001191\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+				},
+				{
+					"name": "post - missing id",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP1234567\",\n            \"legal_name\": \"legal name\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings/:type",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings",
+								":type"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								},
+								{
+									"key": "type",
+									"value": "annual_report"
+								}
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"message\": \"Missing required parameter 'id'. Cannot post a filing without 'id' and 'type'\"\n}"
 				}
 			]
 		}
