@@ -1,0 +1,19 @@
+{
+    "filing": {
+        "header": {
+            "name": "annual report",
+            "date": "2017-04-15"
+        },
+        "business_info": {
+            "founding_date": "2007-04-08",
+            "identifier": "CP1234567",
+            "last_ledger_timestamp": "2019-04-15T20:05:49.068272+00:00",
+            "legal_name": "legal name - CP1234567"
+        },
+        "annual_report": {
+            "annual_general_meeting_date": "2017-04-08",
+            "certified_by": "certifying name",
+            "email": "no_one@never.get"
+        }
+    }
+}
