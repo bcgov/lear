@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The schemas and utilities to use them are maintained in this module.
+
+TODO: This should be pulled out to a common library.
 """
 from .utils import validate_schema
+
 
 __all__ = ('validate_schema')

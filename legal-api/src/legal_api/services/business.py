@@ -15,7 +15,6 @@
 
 This module manages the Business's Legal Information.
 """
-import asyncio
 from datetime import datetime
 from typing import Any, Dict, Tuple
 
@@ -243,13 +242,11 @@ class Business():  # pylint: disable=too-many-instance-attributes
     def _coalesce_cache(business_dao: BusinessModel, business_remote: Tuple[Dict[str, Any], int]) -> Tuple[object, int]:
         """Return the Business object and Status from the cache and remote api.
 
-        This gets the cache respones and remote, if available, 
+        This gets the cache respones and remote, if available,
         and if necessary the cache of the business info is updated.
         The comparison of the remote and cache ledger timestamp defines the state of the cache.
         """
-
         if not business_dao and not business_remote[0]:
-
             return None, http_status.HTTP_404_NOT_FOUND
 
         if business_remote[0] and business_remote[1] == 200:
@@ -258,8 +255,8 @@ class Business():  # pylint: disable=too-many-instance-attributes
 
                 return None, http_status.HTTP_204_NO_CONTENT
 
+            b = Business()
             if not business_dao:
-                b = Business()
                 b.identifier = remote.get('identifier')
                 b.last_remote_ledger_timestamp = datetime.fromisoformat(remote.get('last_ledger_timestamp'))
                 b.legal_name = remote.get('legal_name')
@@ -267,18 +264,12 @@ class Business():  # pylint: disable=too-many-instance-attributes
                 b.tax_id = remote.get('tax_id')
                 b.save()
 
-                return b, http_status.HTTP_200_OK
-
-            if business_dao.last_remote_ledger_timestamp.isoformat() \
+            elif business_dao.last_remote_ledger_timestamp.isoformat() \
                     == remote.get('last_ledger_timestamp'):
-                b = Business()
                 b._dao = business_dao  # pylint: disable=protected-access
 
-                return b, http_status.HTTP_200_OK
-
-            if business_dao.last_remote_ledger_timestamp.isoformat() \
+            elif business_dao.last_remote_ledger_timestamp.isoformat() \
                     < remote.get('last_ledger_timestamp'):
-                b = Business()
                 b._dao = business_dao  # pylint: disable=protected-access
                 b.last_remote_ledger_timestamp = datetime.fromisoformat(remote.get('last_ledger_timestamp'))
                 b.legal_name = remote.get('legal_name')
@@ -286,9 +277,9 @@ class Business():  # pylint: disable=too-many-instance-attributes
                 b.tax_id = remote.get('tax_id')
                 b.save()
 
-                return b, http_status.HTTP_200_OK
+            return b, http_status.HTTP_200_OK
 
-        elif business_dao:
+        if business_dao:
             b = Business()
             b._dao = business_dao  # pylint: disable=protected-access
 

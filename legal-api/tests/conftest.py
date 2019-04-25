@@ -32,7 +32,7 @@ def app():
 
 @pytest.fixture
 def config(app):
-    """An application config."""
+    """Return the application config."""
     return app.config
 
 

@@ -18,10 +18,10 @@ Test-Suite to ensure that the Business Service is working as expected.
 """
 from datetime import datetime
 
-from flask import current_app
 import pytest
 
-from legal_api import services, status as http_status
+from legal_api import services
+from legal_api import status as http_status
 
 
 def test_business_identifier_valid():

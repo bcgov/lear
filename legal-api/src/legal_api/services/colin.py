@@ -15,13 +15,7 @@
 
 This module manages the connection to the COlin-API.
 """
-# import aiohttp
-# import asyncio
-# import async_timeout
-# import concurrent
-
 import requests
-
 from flask import current_app
 
 
@@ -30,12 +24,15 @@ class Colin():
 
     All interaction withTHe Colin-API is constrained to this module.
     """
+
     COLIN_URL = None
 
     @staticmethod
     def get_business_by_identifier(identifier: str):
-        """Return a JSON representation of the business entity from Colin, for the provided identifier."""
+        """Return a JSON representation of the business entity from Colin.
 
+        Find the entity via its identifier.
+        """
         if not Colin.COLIN_URL:
             Colin.COLIN_URL = current_app.config.get('COLIN_URL')
             if not Colin.COLIN_URL:
@@ -43,7 +40,7 @@ class Colin():
                 return None, 500
 
         try:
-            rv = requests.get(Colin.COLIN_URL + "/api/v1/businesses/" + identifier)
+            rv = requests.get(Colin.COLIN_URL + '/api/v1/businesses/' + identifier)
             return rv.json(), rv.status_code
         except ValueError:
             return None, 404
@@ -56,8 +53,10 @@ class Colin():
 
     @staticmethod
     def get_business_by_legal_name(name: str):
-        """Return a JSON representation of the business entity from Colin, for the provided identifier."""
+        """Return a JSON representation of the business entity from Colin.
 
+        Find the entity via its legal name.
+        """
         if not Colin.COLIN_URL:
             Colin.COLIN_URL = current_app.config.get('COLIN_URL')
             if not Colin.COLIN_URL:
@@ -66,7 +65,7 @@ class Colin():
 
         try:
             payload = {'legal_name': name}
-            rv = requests.get(Colin.COLIN_URL + "/api/v1/businesses", params=payload)
+            rv = requests.get(Colin.COLIN_URL + '/api/v1/businesses', params=payload)
             return rv.json(), rv.status_code
         except ValueError:
             return None, 404
@@ -76,23 +75,3 @@ class Colin():
         except Exception as err:  # pylint: disable=broad-except
             current_app.logger.error(f'UNKNOWN {name}, {err}')
             return None, 500
-
-    @staticmethod
-    async def fetch(url):
-        timeout = aiohttp.ClientTimeout(total=1, connect=None,
-                                        sock_connect=None, sock_read=None)
-        try:
-            async with aiohttp.ClientSession() as session, async_timeout.timeout(60):
-
-                async with session.get(url, timeout=timeout) as response:
-                    test = await response.text()
-                    return [test, response.status]
-        except aiohttp.client_exceptions.ClientConnectorError as cce:
-            print(cce)
-            return 404
-        except concurrent.futures._base.TimeoutError as te:
-            print(te)
-            return 404
-        except Exception as err:
-            print('the exception', type(err))
-            return 500
