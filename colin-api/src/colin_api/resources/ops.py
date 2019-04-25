@@ -30,9 +30,9 @@ class Healthz(Resource):
     def get():
         """Return a JSON object stating the health of the Service and dependencies."""
         try:
-            # check db connection working TODO
+            # check db connection working
             cursor = db.connection.cursor()
-            cursor.execute("select 1 from dual")
+            cursor.execute('select 1 from dual')
 
         except cx_Oracle.DatabaseError:
             return {'message': 'api is down'}, 500
@@ -48,5 +48,4 @@ class Readyz(Resource):
     @staticmethod
     def get():
         """Return a JSON object that identifies if the service is setupAnd ready to work."""
-        # TODO: add a poll to the DB when called
         return {'message': 'api is ready'}, 200

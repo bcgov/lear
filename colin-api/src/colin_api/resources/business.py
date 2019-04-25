@@ -37,13 +37,11 @@ class Info(Resource):
         try:
             # get record
             cursor = db.connection.cursor()
-            cursor.execute(
-                "select corp.CORP_NUM as identifier, CORP_FROZEN_TYP_CD, corp_typ_cd type, "
+            cursor.execute("select corp.CORP_NUM as identifier, CORP_FROZEN_TYP_CD, corp_typ_cd type, "
                 "LAST_AR_FILED_DT last_ar_filed_date, LAST_AGM_DATE, "
                 "corp_op_state.full_desc as state, t_name.corp_nme as legal_name, "
                 "t_assumed_name.CORP_NME as assumed_name, RECOGNITION_DTS as founding_date,"
-                "TILMA_INVOLVED_IND, TILMA_CESSATION_DT, BN_15 as business_number, "
-                "CAN_JUR_TYP_CD, OTHR_JURIS_DESC, HOME_JURIS_NUM "
+                "BN_15 as business_number, CAN_JUR_TYP_CD, OTHR_JURIS_DESC "
                 "from CORPORATION corp "
                 "left join CORP_NAME t_name on t_name.corp_num = corp.corp_num and t_name.CORP_NAME_TYP_CD='CO' "
                 "AND t_name.END_EVENT_ID is null "
@@ -55,23 +53,28 @@ class Info(Resource):
                 "where corp_typ_cd = 'CP'"  # only include coops (not xpro coops) for now
                 "and corp.CORP_NUM='{}'".format(identifier))
             business = cursor.fetchone()
-            print(business)
 
             if not business:
                 return jsonify({'message': f'{identifier} not found'}), 404
 
-            # add column names to resultset to build out correct json structure and make manipulation below more robust (better than column numbers)
+            # add column names to resultset to build out correct json structure and make manipulation below more robust
+            # (better than column numbers)
             business = dict(zip([x[0].lower() for x in cursor.description], business))
-            current_app.logger.debug(business)
+
+            # get last ledger date from EVENT table and add to business record
+            # note - FILE event type is correct for new filings; CONVOTHER is for events/filings pulled over from COBRS
+            # during initial data import for Coops.
+            cursor.execute("select max(EVENT_TIMESTMP) as last_ledger_timestamp from EVENT "
+                           "where EVENT_TYP_CD in('FILE', 'CONVOTHER') and CORP_NUm = '{}'".format(identifier))
+            last_ledger_timestamp = cursor.fetchone()[0]
+            business['last_ledger_timestamp'] = last_ledger_timestamp
 
             # if this is an XPRO, get correct jurisdiction; otherwise, it's BC
-            # DISABLED (if False) until XPROs are implemented
-            if False and business['type'] == 'XCP':
+            if business['type'] == 'XCP':
                 if business['can_jur_typ_cd'] == 'OT':
                     business['jurisdiction'] = business['othr_juris_desc']
                 else:
                     business['jurisdiction'] = business['can_jur_typ_cd']
-
             else:
                 business['jurisdiction'] = 'BC'
 
@@ -80,34 +83,27 @@ class Info(Resource):
                 business['legal_name'] = business['assumed_name']
 
             # set status - In Good Standing if certain criteria met, otherwise use original value
-            if business['state'] == 'Active' and \
-                business['last_ar_filed_date'] is not None and type(business['last_ar_filed_date']) is datetime and \
-                business['last_agm_date'] is not None and type(business['last_agm_date']) is datetime:
+            if business['state'] == 'Active' and business['last_ar_filed_date'] is not None and \
+                    type(business['last_ar_filed_date']) is datetime and business['last_agm_date'] is not None and \
+                    type(business['last_agm_date']) is datetime:
 
                 if business['last_ar_filed_date'] > business['last_agm_date']:
                     business['status'] = 'In Good Standing'
             else:
                 business['status'] = business['state']
 
-
             # remove unnecessary fields
-            del business['home_juris_num']
             del business['can_jur_typ_cd']
             del business['othr_juris_desc']
             del business['assumed_name']
             del business['state']
 
-            retval = {
-                'business': {
-                    'business_info': business
-                }
-            }
-
-
-            return jsonify(retval)
+            return jsonify({
+                'business': business
+            })
 
         except Exception as err:
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
-                {'message': "Error when trying to retrieve business record from COLIN"}), 500
+                {'message': 'Error when trying to retrieve business record from COLIN'}), 500

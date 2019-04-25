@@ -13,7 +13,6 @@
 # limitations under the License.
 """Common setup and fixtures for the pytest suite used by this service."""
 import pytest
-from flask_migrate import Migrate, upgrade
 from sqlalchemy import event, text
 from sqlalchemy.schema import DropConstraint, MetaData
 
@@ -60,42 +59,9 @@ def client_ctx(app):  # pylint: disable=redefined-outer-name
 def db(app):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a session-wide initialised database.
 
-    Drops all existing tables - Meta follows Postgres FKs
     """
     with app.app_context():
         # Clear out any existing tables
-        metadata = MetaData(_db.engine)
-        metadata.reflect()
-        for table in metadata.tables.values():
-            for fk in table.foreign_keys:  # pylint: disable=invalid-name
-                _db.engine.execute(DropConstraint(fk.constraint))
-        metadata.drop_all()
-        _db.drop_all()
-
-        sequence_sql = """SELECT sequence_name FROM information_schema.sequences
-                          WHERE sequence_schema='public'
-                       """
-
-        sess = _db.session()
-        for seq in [name for (name,) in sess.execute(text(sequence_sql))]:
-            try:
-                sess.execute(text('DROP SEQUENCE public.%s ;' % seq))
-                print('DROP SEQUENCE public.%s ' % seq)
-            except Exception as err:  # pylint: disable=broad-except
-                print(f'Error: {err}')
-        sess.commit()
-
-        # ############################################
-        # There are 2 approaches, an empty database, or the same one that the app will use
-        #     create the tables
-        #     _db.create_all()
-        # or
-        # Use Alembic to load all of the DB revisions including supporting lookup data
-        # This is the path we'll use in colin_api!!
-
-        # even though this isn't referenced directly, it sets up the internal configs that upgrade needs
-        Migrate(app, _db)
-        upgrade()
 
         return _db
 
