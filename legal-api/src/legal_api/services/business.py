@@ -1,4 +1,4 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2019 Province of remotetish Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@ This module manages the Business's Legal Information.
 """
 import asyncio
 from datetime import datetime
+from typing import Any, Dict, Tuple
 
+from legal_api import status as http_status
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business as BusinessModel
 
@@ -39,7 +41,8 @@ class Business():  # pylint: disable=too-many-instance-attributes
         self._fiscal_year_end_date: datetime = None
         self._founding_date: datetime = None
         self._identifier: str = None
-        self._last_update: datetime = datetime.utcnow()
+        self._last_ledger_timestamp: datetime = None
+        self._last_remote_ledger_timestamp: datetime = None
         self._legal_name: str = None
         self._tax_id: str = None
 
@@ -56,7 +59,8 @@ class Business():  # pylint: disable=too-many-instance-attributes
         self.fiscal_year_end_date = self._dao.fiscal_year_end_date
         self.founding_date = self._dao.founding_date
         self.identifier = self._dao.identifier
-        self.last_update = self._dao.last_update
+        self.last_ledger_timestamp = self._dao.last_ledger_timestamp
+        self.last_remote_ledger_timestamp = self._dao.last_remote_ledger_timestamp
         self.legal_name = self._dao.legal_name
         self.tax_id = self._dao.tax_id
 
@@ -108,15 +112,26 @@ class Business():  # pylint: disable=too-many-instance-attributes
             raise BusinessException('invalid-identifier-format', 406)
 
     @property
-    def last_update(self):
+    def last_ledger_timestamp(self):
         """Return the last date-time the business was altered."""
-        return self._last_update
+        return self._last_ledger_timestamp
 
-    @last_update.setter
-    def last_update(self, value: str):
+    @last_ledger_timestamp.setter
+    def last_ledger_timestamp(self, value: datetime):
         """Set the business last_update."""
-        self._last_update = value
-        self._dao.last_update = value
+        self._last_ledger_timestamp = value
+        self._dao.last_ledger_timestamp = value
+
+    @property
+    def last_remote_ledger_timestamp(self):
+        """Return the last date-time the business was altered."""
+        return self._last_remote_ledger_timestamp
+
+    @last_remote_ledger_timestamp.setter
+    def last_remote_ledger_timestamp(self, value: datetime):
+        """Set the business last_update."""
+        self._last_remote_ledger_timestamp = value
+        self._dao.last_remote_ledger_timestamp = value
 
     @property
     def legal_name(self):
@@ -150,10 +165,16 @@ class Business():  # pylint: disable=too-many-instance-attributes
             'identifier': self.identifier,
             'legal_name': self.legal_name,
         }
+        if self.last_remote_ledger_timestamp:
+            # this is not a typo, we want the external facing view object ledger timestamp to be the remote one
+            d['last_ledger_timestamp'] = self.last_remote_ledger_timestamp.isoformat()
+        else:
+            d['last_ledger_timestamp'] = None
+
         if self.dissolution_date:
-            d['dissolution_date'] = self.dissolution_date.isoformat()
+            d['dissolution_date'] = datetime.date(self.dissolution_date).isoformat()
         if self.fiscal_year_end_date:
-            d['fiscal_year_end_date'] = self.fiscal_year_end_date.isoformat()
+            d['fiscal_year_end_date'] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.tax_id:
             d['tax_id'] = self.tax_id
         return d
@@ -186,10 +207,10 @@ class Business():  # pylint: disable=too-many-instance-attributes
         return True
 
     @classmethod
-    def find_by_legal_name(cls, legal_name: str = None):
+    def find_by_legal_name(cls, legal_name: str = None) -> Tuple[object, int]:
         """Given a legal_name, this will return an Active Business or None."""
         if not legal_name:
-            return None
+            return None, http_status.HTTP_400_BAD_REQUEST
 
         # find locally
         business_dao = None
@@ -205,33 +226,72 @@ class Business():  # pylint: disable=too-many-instance-attributes
         return b
 
     @classmethod
-    def find_by_identifier(cls, identifier: str = None):
+    def find_by_identifier(cls, identifier: str = None) -> Tuple[object, int]:
         """Given a business identifier, this will return an Active Business or None."""
         if not identifier:
-            return None
+            return None, http_status.HTTP_400_BAD_REQUEST
 
         # find locally
         business_dao = None
         business_dao = BusinessModel.find_by_identifier(identifier)
 
-        # perform multiple async requests concurrently
-        loop = asyncio.get_event_loop()
-        responses = loop.run_until_complete(asyncio.gather(
-            Colin.fetch("http://localhost:8080/rest/colin-api/0.9/api/v1/businesses/CP7654321")
-            # Colin.get_business(identifier)
-        ))
+        business_remote = Colin.get_business_by_identifier(identifier)
 
-        print('Responses:', responses)
-        # print('Responses:', responses[0].status)
-        print('Responses:', responses[0][0], responses[0][1])
+        return Business._coalesce_cache(business_dao, business_remote)
 
-        # business_remote = Colin.get_business()
+    @staticmethod
+    def _coalesce_cache(business_dao: BusinessModel, business_remote: Tuple[Dict[str, Any], int]) -> Tuple[object, int]:
+        """Return the Business object and Status from the cache and remote api.
 
-        # TODO check if timestamp is valid in Colin
-        if not business_dao:
-            return None
+        This gets the cache respones and remote, if available, 
+        and if necessary the cache of the business info is updated.
+        The comparison of the remote and cache ledger timestamp defines the state of the cache.
+        """
 
-        b = Business()
-        b._dao = business_dao  # pylint: disable=protected-access
+        if not business_dao and not business_remote[0]:
 
-        return b
+            return None, http_status.HTTP_404_NOT_FOUND
+
+        if business_remote[0] and business_remote[1] == 200:
+            remote = business_remote[0].get('business_info')
+            if not remote:
+
+                return None, http_status.HTTP_204_NO_CONTENT
+
+            if not business_dao:
+                b = Business()
+                b.identifier = remote.get('identifier')
+                b.last_remote_ledger_timestamp = datetime.fromisoformat(remote.get('last_ledger_timestamp'))
+                b.legal_name = remote.get('legal_name')
+                b.founding_date = datetime.fromisoformat(remote.get('founding_date'))
+                b.tax_id = remote.get('tax_id')
+                b.save()
+
+                return b, http_status.HTTP_200_OK
+
+            if business_dao.last_remote_ledger_timestamp.isoformat() \
+                    == remote.get('last_ledger_timestamp'):
+                b = Business()
+                b._dao = business_dao  # pylint: disable=protected-access
+
+                return b, http_status.HTTP_200_OK
+
+            if business_dao.last_remote_ledger_timestamp.isoformat() \
+                    < remote.get('last_ledger_timestamp'):
+                b = Business()
+                b._dao = business_dao  # pylint: disable=protected-access
+                b.last_remote_ledger_timestamp = datetime.fromisoformat(remote.get('last_ledger_timestamp'))
+                b.legal_name = remote.get('legal_name')
+                b.founding_date = datetime.fromisoformat(remote.get('founding_date'))
+                b.tax_id = remote.get('tax_id')
+                b.save()
+
+                return b, http_status.HTTP_200_OK
+
+        elif business_dao:
+            b = Business()
+            b._dao = business_dao  # pylint: disable=protected-access
+
+            return b, http_status.HTTP_203_NON_AUTHORITATIVE_INFORMATION
+
+        return None, http_status.HTTP_404_NOT_FOUND

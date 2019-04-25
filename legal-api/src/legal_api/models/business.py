@@ -23,18 +23,19 @@ from sqlalchemy.exc import OperationalError, ResourceClosedError
 from .db import db, ma
 
 
-class Business(db.Model):
+class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages all of the base data about a business.
 
     A business is base form of any entity that can interact directly
     with people and other businesses.
-    Businesses can be sole-propritors, corporations, societies, etc.
+    Businesses can be sole-proprietors, corporations, societies, etc.
     """
 
     __tablename__ = 'business'
 
     id = db.Column(db.Integer, primary_key=True)
-    last_update = db.Column('last_update', db.DateTime(timezone=True), default=None)
+    last_ledger_timestamp = db.Column('last_ledger_timestamp', db.DateTime(timezone=True), default=None)
+    last_remote_ledger_timestamp = db.Column('last_remote_ledger_timestamp', db.DateTime(timezone=True), default=None)
     legal_name = db.Column('legal_name', db.String(1000), index=True)
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)

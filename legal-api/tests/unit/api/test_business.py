@@ -24,6 +24,7 @@ from tests.utilities.schema_assertions import assert_valid_schema
 def factory_business_model(legal_name,
                            identifier,
                            founding_date,
+                           last_remote_ledger_timestamp,
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None):
@@ -32,6 +33,7 @@ def factory_business_model(legal_name,
     b = BusinessModel(legal_name=legal_name,
                       identifier=identifier,
                       founding_date=founding_date,
+                      last_remote_ledger_timestamp=last_remote_ledger_timestamp,
                       fiscal_year_end_date=fiscal_year_end_date,
                       dissolution_date=dissolution_date,
                       tax_id=tax_id
@@ -41,28 +43,35 @@ def factory_business_model(legal_name,
 
 
 def test_get_business_info(session, client):
-    """Assert that the business info can be recieved in a valid JDONSchema format."""
+    """Assert that the business info can be received in a valid JSONSchema format."""
     factory_business_model(legal_name='legal_name',
-                           identifier='CP1234567',
+                           identifier='CP7654321',
                            founding_date=datetime.utcfromtimestamp(0),
+                           last_remote_ledger_timestamp=datetime.utcfromtimestamp(0),
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None)
-    rv = client.get('/api/v1/businesses/CP1234567')
+    rv = client.get('/api/v1/businesses/CP7654321')
 
-    assert rv.json['business']['identifier'] == 'CP1234567'
+    print('business json', rv.json)
 
-    assert_valid_schema(rv.json, 'business.json')
+    assert rv.json['business']['identifier'] == 'CP7654321'
+
+    print('valid schema?', assert_valid_schema(rv.json, 'business.json'))
+
+    assert assert_valid_schema(rv.json, 'business.json')
 
 
 def test_get_business_info_dissolution(session, client):
-    """Assert that the business info can be recieved in a valid JDONSchema format."""
+    """Assert that the business info cannot be received in a valid JSONSchema format."""
     factory_business_model(legal_name='legal_name',
                            identifier='CP1234567',
                            founding_date=datetime.utcfromtimestamp(0),
+                           last_remote_ledger_timestamp=datetime.utcfromtimestamp(0),
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=datetime.utcfromtimestamp(0))
     rv = client.get('/api/v1/businesses/CP1234567')
 
+    # dissolved company cannot be found.
     assert rv.status_code == 404
