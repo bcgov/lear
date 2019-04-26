@@ -1,0 +1,30 @@
+{
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#3B107B",
+        "titleBar.activeBackground": "#5216AC",
+        "titleBar.activeForeground": "#FDFCFF"
+    },
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+    "python.envFile": "${workspaceFolder}/.env",
+    "python.pythonPath": "venv/bin/python",
+    "python.linting.pylintEnabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.enabled": true,
+    "python.linting.pylintArgs": [
+        "--rcfile=setup.cfg",
+        "--load-plugins=pylint_flask",
+        "--disable=C0301,W0511"
+    ],
+    "python.linting.flake8Args": [
+        "--rcfile=setup.cfg"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pyTestEnabled": true,
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}/src"
+    ],
+    "python.testing.pyTestArgs": [
+        "tests"
+    ],
+}

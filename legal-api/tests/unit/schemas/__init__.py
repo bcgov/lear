@@ -11,10 +11,5 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Exposes all of the Services used in the API."""
 
-from .business import Business
-from .colin import Colin
-
-
-# __all__ = ('Business', 'Colin')
+"""The Test-Suite used to ensure that the Schemas & Utilities are working correctly."""

@@ -11,10 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Exposes all of the Services used in the API."""
+"""The schemas and utilities to use them are maintained in this module.
 
-from .business import Business
-from .colin import Colin
+TODO: This should be pulled out to a common library.
+"""
+from .utils import validate_schema
 
 
-# __all__ = ('Business', 'Colin')
+__all__ = ('validate_schema')

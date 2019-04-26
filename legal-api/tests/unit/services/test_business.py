@@ -21,6 +21,7 @@ from datetime import datetime
 import pytest
 
 from legal_api import services
+from legal_api import status as http_status
 
 
 def test_business_identifier_valid():
@@ -68,6 +69,8 @@ def test_validate_format(test_name, identifier, expected):  # pylint: disable=un
 def factory_business_model(legal_name,
                            identifier,
                            founding_date,
+                           last_remote_ledger_timestamp,
+                           last_ledger_timestamp,
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None):
@@ -76,6 +79,8 @@ def factory_business_model(legal_name,
     b = BusinessModel(legal_name=legal_name,
                       identifier=identifier,
                       founding_date=founding_date,
+                      last_remote_ledger_timestamp=last_remote_ledger_timestamp,
+                      last_ledger_timestamp=last_ledger_timestamp,
                       fiscal_year_end_date=fiscal_year_end_date,
                       dissolution_date=dissolution_date,
                       tax_id=tax_id
@@ -86,84 +91,134 @@ def factory_business_model(legal_name,
 
 def test_as_dict():
     """Assert that the Business is rendered correctly as a dict."""
+    epoch_date = datetime.utcfromtimestamp(0)
+
     business = services.Business()
     business.legal_name = 'legal_name'
     business.identifier = 'CP1234567'
-    business.founding_date = datetime.utcfromtimestamp(0)
+    business.founding_date = epoch_date
+    business.last_remote_ledger_timestamp = epoch_date
 
     assert business.asdict() == {'legal_name': 'legal_name',
                                  'identifier': 'CP1234567',
-                                 'founding_date': datetime.utcfromtimestamp(0).isoformat()}
+                                 'founding_date': epoch_date.isoformat(),
+                                 'last_ledger_timestamp': epoch_date.isoformat(),
+                                 }
 
-    business.dissolution_date = datetime.utcfromtimestamp(0)
+    business.dissolution_date = epoch_date
     assert business.asdict() == {'legal_name': 'legal_name',
                                  'identifier': 'CP1234567',
-                                 'founding_date': datetime.utcfromtimestamp(0).isoformat(),
-                                 'dissolution_date': datetime.utcfromtimestamp(0).isoformat()}
+                                 'founding_date': epoch_date.isoformat(),
+                                 'last_ledger_timestamp': epoch_date.isoformat(),
+                                 'dissolution_date': datetime.date(epoch_date).isoformat()}
     business.dissolution_date = None
 
-    business.fiscal_year_end_date = datetime.utcfromtimestamp(0)
+    business.fiscal_year_end_date = epoch_date
     assert business.asdict() == {'legal_name': 'legal_name',
                                  'identifier': 'CP1234567',
-                                 'founding_date': datetime.utcfromtimestamp(0).isoformat(),
-                                 'fiscal_year_end_date': datetime.utcfromtimestamp(0).isoformat()}
+                                 'founding_date': epoch_date.isoformat(),
+                                 'last_ledger_timestamp': epoch_date.isoformat(),
+                                 'fiscal_year_end_date': datetime.date(epoch_date).isoformat()}
     business.fiscal_year_end_date = None
 
     business.tax_id = '12345'
     assert business.asdict() == {'legal_name': 'legal_name',
                                  'identifier': 'CP1234567',
-                                 'founding_date': datetime.utcfromtimestamp(0).isoformat(),
+                                 'founding_date': epoch_date.isoformat(),
+                                 'last_ledger_timestamp': epoch_date.isoformat(),
                                  'tax_id': '12345'}
     business.tax_id = None
 
 
-def test_business_saved_from_new(session):
-    """Assert that the business is saved to the cache."""
-    identifier = 'CP1234567'
-    b = services.Business()
-    b.identifier = identifier
-    b.legal_name = 'legal name'
-    b.founding_date = datetime.utcfromtimestamp(0)
-    b.save()
-
-    business = services.Business.find_by_identifier(identifier)
-
-    assert business is not None
-
-
 def test_business_set_disolution_date(session):
     """Assert that the business is saved to the cache."""
-    identifier = 'CP1234567'
+    identifier = 'CP7654321'
     b = services.Business()
     b.identifier = identifier
     b.legal_name = 'legal name'
     b.founding_date = datetime.utcfromtimestamp(0)
+    b.last_remote_ledger_timestamp = datetime.utcfromtimestamp(0)
     b.save()
 
-    business = services.Business.find_by_identifier(identifier)
+    business, _ = services.Business.find_by_identifier(identifier)
     business.dissolution_date = datetime.utcfromtimestamp(0)
     business.save()
 
     assert business is not None
 
 
-def test_business_retrieved_from_cache(session):
+TEST_BUSINESS_CACHE_DATA = [
+    ('Remote==Cache',  # test name
+     'CP7654321',      # ID
+     '2019-04-15T20:05:49.068272+00:00',  # remote ledger timestamp
+     '2019-04-15T20:05:49.068272+00:00',  # cache ledger timestamp
+     ),
+    ('Remote > Cache',  # test name
+     'CP7654321',       # ID
+     '2018-08-15T20:05:49.068272+00:00',  # remote ledger timestamp
+     '2018-08-15T20:05:49.068272+00:00',  # cache ledger timestamp
+     ),
+    ('Remote < Cache',  # test name
+     'CP7654321',       # ID
+     '2019-04-15T20:05:49.068272+00:00',  # remote ledger timestamp
+     '2019-04-20T20:05:49.068272+00:00',  # cache ledger timestamp
+     ),
+]
+
+
+@pytest.mark.parametrize('test_name,identifier,remote_ts, cache_ts', TEST_BUSINESS_CACHE_DATA)
+def test_business_retrieved_from_cache(session, test_name, identifier, remote_ts, cache_ts):
     """Assert that the business is saved to the cache."""
-    identifier = 'CP1234567'
+    if identifier:
+        factory_business_model(legal_name='legal_name',
+                               identifier=identifier,
+                               founding_date=datetime.utcfromtimestamp(0),
+                               last_remote_ledger_timestamp=datetime.fromisoformat(remote_ts),
+                               last_ledger_timestamp=datetime.fromisoformat(cache_ts),
+                               )
+
+    business, _ = services.Business.find_by_identifier(identifier)
+
+    assert business.identifier == identifier
+
+
+def test_business_retrieved_cache_miss(session):
+    """Assert that the business is retrieved from colin."""
+    identifier = 'CP7654321'
+    business, _ = services.Business.find_by_identifier(identifier)
+
+    assert business.identifier == identifier
+
+
+def test_business_cache_hit_remote_unavailable(session, config):
+    """Assert that a cached business is retrieved when colin is unavailable."""
+    from importlib import reload
+
+    identifier = 'CP7654321'
+    epoch = datetime.utcfromtimestamp(0)
     factory_business_model(legal_name='legal_name',
                            identifier=identifier,
-                           founding_date=datetime.utcfromtimestamp(0)
+                           founding_date=epoch,
+                           last_remote_ledger_timestamp=epoch,
+                           last_ledger_timestamp=epoch,
                            )
 
-    business = services.Business.find_by_identifier(identifier)
+    # setup, point to no end-point and reload colin
+    orig_url = config.get('COLIN_URL')
+    config.update(COLIN_URL='https://never.going.to.return')
+    reload(services.colin)
 
-    alt_name = 'modified legal name'
-    business.legal_name = alt_name
-    business.save()
+    # do test
+    business, status = services.Business.find_by_identifier(identifier)
 
-    business = services.Business.find_by_identifier(identifier)
+    # tear down (replace settings)
+    config.update(COLIN_URL=orig_url)
+    reload(services.colin)
 
-    assert business.legal_name == alt_name
+    # determine if test worked
+    assert business.identifier == identifier
+    assert business.last_remote_ledger_timestamp.replace(tzinfo=None) == epoch.replace(tzinfo=None)
+    assert status == http_status.HTTP_203_NON_AUTHORITATIVE_INFORMATION
 
 
 def test_business_find_by_legal_name_pass(session):
@@ -205,7 +260,7 @@ def test_business_cant_find_disolved_business(session):
     b.save()
 
     # business is disolved, it should not be found by name search
-    b = services.Business.find_by_identifier(identifier)
+    b, _ = services.Business.find_by_identifier(identifier)
     assert b is None
 
 
@@ -221,23 +276,24 @@ def test_business_find_by_legal_name_missing(session):
     b.fiscal_year_end_date = datetime(2001, 8, 5, 7, 7, 58, 272362)
     b.save()
 
-    business = services.Business.find_by_legal_name()
+    business, _ = services.Business.find_by_legal_name('')
     assert business is None
 
 
 def test_business_find_by_identifier(session):
     """Assert that the business can be found by name."""
-    identifier = 'CP1234567'
+    identifier = 'CP7654321'
     b = services.Business()
     b.legal_name = 'legal name'
     b.founding_date = datetime.utcfromtimestamp(0)
+    b.last_remote_ledger_timestamp = datetime.utcfromtimestamp(0)
     b.dissolution_date = None
     b.identifier = identifier
     b.tax_id = '123456789'
     b.fiscal_year_end_date = datetime(2001, 8, 5, 7, 7, 58, 272362)
     b.save()
 
-    b = services.Business.find_by_identifier(identifier)
+    b, _ = services.Business.find_by_identifier(identifier)
 
     assert b is not None
 
@@ -246,7 +302,7 @@ def test_business_find_by_identifier_no_model_object(session):
     """Assert that the business can't be found with no model."""
     identifier = 'CP1234567'
 
-    b = services.Business.find_by_identifier(identifier)
+    b, _ = services.Business.find_by_identifier(identifier)
 
     assert b is None
 
@@ -263,22 +319,19 @@ def test_business_find_by_identifier_missing_identifier(session):
     b.fiscal_year_end_date = datetime(2001, 8, 5, 7, 7, 58, 272362)
     b.save()
 
-    b = services.Business.find_by_identifier(None)
+    b, _ = services.Business.find_by_identifier(None)
 
     assert b is None
 
 
-def test_business_last_update(session):
+def test_business_manage_last_update(session):
     """Assert that the last_update is set and managed correctly."""
-    identifier = 'CP1234567'
-    b = factory_business_model(legal_name='legal_name',
-                               identifier=identifier,
-                               founding_date=datetime.utcfromtimestamp(0)
-                               )
+    identifier = 'CP7654321'
     now = datetime.utcnow()
-    b.last_update = now
-    b.save()
 
-    business = services.Business.find_by_identifier(identifier)
+    business, _ = services.Business.find_by_identifier(identifier)
+    business.last_ledger_timestamp = now
+    business.save()
+    business, _ = services.Business.find_by_identifier(identifier)
 
-    assert business.last_update.replace(tzinfo=None) == now.replace(tzinfo=None)
+    assert business.last_ledger_timestamp.replace(tzinfo=None) == now.replace(tzinfo=None)
