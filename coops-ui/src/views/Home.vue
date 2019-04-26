@@ -67,8 +67,7 @@ export default {
     getARInfo (corpNum) {
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
       // when calling the api make sure this url is for most recent AR - stub specifies 2017 + add token in header
-      var url = 'https://mock-lear-tools.pathfinder.gov.bc.ca/rest/legal-api/0.64/api/v1/businesses/' + corpNum +
-        '/filings/annual_report?year=2017'
+      var url = '/api/v1/businesses/' + corpNum + '/filings/annual_report?year=2017'
 
       axios.get(url).then(response => {
         this.lastARJson = response.data
@@ -85,8 +84,7 @@ export default {
     submit () {
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
       // probably need to parametrize date=this.$store.state.currentDate + add token in header for api
-      var url = 'https://mock-lear-tools.pathfinder.gov.bc.ca/rest/Pay+API/0.4/pay-api/v1/fees/annual-report/CP?' +
-        'date=2019-04-15'
+      var url = '/v1/fees/annual-report/CP?date=2019-04-15'
       var paymentJson
 
       // other team doing credit card entering/payment confirmation? - don't know what to check in resulting json for
