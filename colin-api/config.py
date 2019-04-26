@@ -63,7 +63,6 @@ class _Config(object):  # pylint: disable=too-few-public-methods
 
     # ORACLE - CDEV/CTST/CPRD
     ORACLE_USER = os.getenv('ORACLE_USER', '')
-    ORACLE_SCHEMA = os.getenv('ORACLE_SCHEMA', None)
     ORACLE_PASSWORD = os.getenv('ORACLE_PASSWORD', '')
     ORACLE_DB_NAME = os.getenv('ORACLE_DB_NAME', '')
     ORACLE_HOST = os.getenv('ORACLE_HOST', '')

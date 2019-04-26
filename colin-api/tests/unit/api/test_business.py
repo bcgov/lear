@@ -28,16 +28,6 @@ def test_get_business(client):
     assert rv.status_code == 200
     assert_valid_schema(rv.json, 'business.json')
 
-'''
-@oracle_integration
-def test_get_xpro_business(client):
-    """Assert that the business info for XPRO business is correct to spec."""
-    rv = client.get('/api/v1/businesses/XCP0001534')
-
-    assert rv.status_code == 200
-    assert_valid_schema(rv.json, 'business.json')
-'''
-
 @oracle_integration
 def test_get_business_no_results(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""

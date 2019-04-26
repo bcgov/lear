@@ -16,11 +16,12 @@
 These will get initialized by the application.
 """
 
-from flask import current_app, _app_ctx_stack
 import cx_Oracle
+from flask import current_app, _app_ctx_stack
 
 
 class OracleDB(object):
+    """Oracle database connection object for re-use in application."""
 
     def __init__(self, app=None):
         """initializer, supports setting the app context on instantiation"""
@@ -28,7 +29,7 @@ class OracleDB(object):
             self.init_app(app)
 
     def init_app(self, app):
-        """setup for the extension
+        """Setup for the extension.
         :param app: Flask app
         :return: naked
         """
@@ -36,17 +37,16 @@ class OracleDB(object):
         app.teardown_appcontext(self.teardown)
 
     def teardown(self, exception):
-        # the oracle session pool will clean up after itself
+        """Oracle session pool cleans up after itself."""
         ctx = _app_ctx_stack.top
         if hasattr(ctx, 'oracle_pool'):
             ctx.oracle_pool.close()
 
     def _create_pool(self):
-        """create the cx_oracle connection pool from the Flask Config Environment
+        """Create the cx_oracle connection pool from the Flask Config Environment.
 
         :return: an instance of the OCI Session Pool
         """
-
         # this uses the builtin session / connection pooling provided by
         # the Oracle OCI driver
         # setting threaded =True wraps the underlying calls in a Mutex
@@ -71,10 +71,10 @@ class OracleDB(object):
                                      timeout=3600,
                                      sessionCallback=InitSession)
 
-
     @property
     def connection(self):
-        """connection property of the NROService
+        """Connection property of the NROService.
+
         If this is running in a Flask context,
         then either get the existing connection pool or create a new one
         and then return an acquired session
