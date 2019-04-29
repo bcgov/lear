@@ -23,3 +23,6 @@ load_dotenv(find_dotenv())
 
 oracle_integration = pytest.mark.skipif((os.getenv('ORACLE_INTEGRATION_TESTING', False) is False),
                                                 reason="requires access to a test version of Oracle CTST")
+
+skip_in_pod = pytest.mark.skipif((os.getenv('POD_TESTING', False) is False),
+                                                reason="Skip test when running in pod")

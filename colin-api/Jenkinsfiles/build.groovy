@@ -90,8 +90,10 @@ properties([
 ])
 
 def run_pipeline = true
+
+// build wasn't triggered by changes so check with user
 if( triggerBuild(COMPONENT_NAME) == "" ) {
-    node {
+    stage('No changes. Run pipeline?') {
         try {
             timeout(time: 1, unit: 'DAYS') {
                 input message: "Run ${COMPONENT_NAME}-${TAG_NAME}-pipeline?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-edit,katiemcgoff-admin,WalterMoar-admin'

@@ -23,15 +23,7 @@
                 }
             },
             "spec": {
-                "triggers": [
-                    {
-                        "type": "ImageChange",
-                        "imageChange": {}
-                    },
-                    {
-                        "type": "ConfigChange"
-                    }
-                ],
+                "triggers": [],
                 "runPolicy": "Serial",
                 "source": {
                     "type": "Dockerfile",
