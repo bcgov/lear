@@ -1,53 +1,70 @@
 <template>
   <div id="agm-date">
     <v-container>
-      <v-flex xs10 sm4>
-        <v-menu
-          ref="agmDatePicker"
-          v-model="agmDatePicker"
-          :close-on-content-click="false"
-          :nudge-right="25"
-          lazy
-          transition="scale-transition"
-          offset-y
-          full-width
-          max-width="290px"
-          min-width="290px">
-          <template v-slot:activator="{ on }">
-            <v-text-field
-              :disabled="didNotHoldAGM"
-              v-model="dateFormatted"
-              label="Annual General Meeting Date"
-              hint="YYYY/MM/DD"
-              persistent-hint
-              append-icon="event"
-              @blur="date = parseDate(dateFormatted)"
-              v-on="on">
-            </v-text-field>
-          </template>
-          <v-date-picker id="agm-datepicker"
-                         v-model="date"
-                         :min=minDate
-                         :max=maxDate
-                         color="blue"
-                         show-current="false"
-                         no-title
-                         @input="agmDatePicker = true">
-            <v-btn flat color="blue" @click="$refs.agmDatePicker.save(date)">OK</v-btn>
-            <v-btn flat color="blue" @click="agmDatePicker = false">Cancel</v-btn>
-          </v-date-picker>
-        </v-menu>
-      </v-flex>
+        <v-flex xs10 sm4>
+          <v-menu
+            ref="agmDatePicker"
+            v-model="agmDatePicker"
+            :close-on-content-click="false"
+            :nudge-right="25"
+            lazy
+            transition="scale-transition"
+            offset-y
+            full-width
+            max-width="290px"
+            min-width="290px">
+            <template v-slot:activator="{ on }">
+              <div :class="{'validationError': $v.dateFormatted.$error}">
+                <v-text-field
+                  class="agm-date-text-field"
+                  :disabled="didNotHoldAGM"
+                  v-model="dateFormatted"
+                  :onchange="$v.dateFormatted.$touch()"
+                  label="Annual General Meeting Date"
+                  hint="YYYY/MM/DD"
+                  persistent-hint
+                  append-icon="event"
+                  @blur="date = parseDate(dateFormatted)"
+                  v-on="on">
+                </v-text-field>
+              </div>
+            </template>
+            <v-date-picker id="agm-datepicker"
+                           v-model="date"
+                           :min=minDate
+                           :max=maxDate
+                           color="blue"
+                           show-current="false"
+                           no-title
+                           @input="agmDatePicker = true">
+              <v-btn flat color="blue" @click="$refs.agmDatePicker.save(date)">OK</v-btn>
+              <v-btn flat color="blue" @click="agmDatePicker = false">Cancel</v-btn>
+            </v-date-picker>
+          </v-menu>
+          <div class="validationErrorInfo" v-if="!$v.dateFormatted.isISOFormat">Date must be in format YYYY/MM/DD.</div>
+          <div class="validationErrorInfo">
+            <span v-if="!$v.dateFormatted.isValidYear">
+              Please enter a date within {{this.year}}.
+            </span>
+            <span v-if="$v.dateFormatted.isValidYear && !$v.dateFormatted.isValidMonth">
+              Please enter a valid month in the past.
+            </span>
+            <span v-if="$v.dateFormatted.isValidYear && $v.dateFormatted.isValidMonth && !$v.dateFormatted.isValidDay">
+              Please enter a valid day in the past.
+            </span>
+          </div>
+        </v-flex>
       <v-checkbox v-if="this.year != this.currentDate.substring(0,4)"
                   id="agm-checkbox"
                   v-model="didNotHoldAGM"
-                  :label=checkBoxLabel></v-checkbox>
+                  :label=checkBoxLabel>
+      </v-checkbox>
     </v-container>
   </div>
 </template>
 
 <script>
-import { agmDate, isISOFormat } from '../../../validators'
+import { isValidYear, isValidMonth, isValidDay, isISOFormat, test } from '../../../validators'
 
 export default {
   name: 'AGMDate.vue',
@@ -79,13 +96,15 @@ export default {
     }
   },
   validations: function () {
-    var validations = {}
-    if (this.year != null) {
-      if (!this.didNotHoldAGM) {
-        validations.date = {
-          agmDate,
-          isISOFormat
-        }
+    var validations = {
+      didNotHoldAGM: {
+        test
+      },
+      dateFormatted: {
+        isISOFormat,
+        isValidYear,
+        isValidMonth,
+        isValidDay
       }
     }
     return validations
@@ -109,6 +128,7 @@ export default {
       return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
     },
     isValidDateFormat (date, separator) {
+      var day = (new Date(date)).getUTCDate()
       if (date != null && date !== '' && (
         date.indexOf(separator) !== 4 ||
         date.indexOf(separator, 5) !== 7 ||
@@ -116,7 +136,8 @@ export default {
         date.length !== 10 ||
         date.substring(0, 4) !== this.year ||
         !(+date.substring(5, 7) !== 0 && +date.substring(5, 7) <= +this.maxDate.substring(5, 7)) ||
-        !(+date.substring(8, 10) !== 0 && +date.substring(8, 10) <= +this.maxDate.substring(8, 10))
+        !(+date.substring(8, 10) === day &&
+          +date.substring(8, 10) !== 0 && +date.substring(8, 10) <= +this.maxDate.substring(8, 10))
       )) {
         return false
       } else {
@@ -164,4 +185,15 @@ export default {
   #agm-datepicker
     margin-bottom 0
 
+  .agm-date-text-field
+    padding 1rem
+
+  .validationError
+    border-color red
+    border-style groove
+    border-width thin
+    border-radius .3rem
+
+  .validationErrorInfo
+    color red
 </style>

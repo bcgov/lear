@@ -16,7 +16,6 @@ import { Component, Vue } from 'vue-property-decorator'
 import axios from '@/axios-auth.ts'
 import EntityInfo from '@/components/EntityInfo.vue'
 import AnnualReport from '@/components/AnnualReport.vue'
-import Keycloak from '../assets/js/keycloak.js'
 
 export default {
   name: 'Home.vue',
