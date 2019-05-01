@@ -37,21 +37,27 @@
 export default {
   name: 'entity-info',
   computed: {
-    userToken () {
-      return this.$store.state.userToken
+    entityName () {
+      if (this.$store.state.entityName == null) return ''
+      return this.$store.state.entityName
     },
-    corpNum () {
-      return this.$store.state.corpNum
+    entityStatus () {
+      if (this.$store.state.entityStatus == null) return ''
+      return this.$store.state.entityStatus
+    },
+    entityBusinessNo () {
+      if (this.$store.state.entityBusinessNo == null) return 'Not Available'
+      return this.$store.state.entityBusinessNo
+    },
+    entityIncNo () {
+      if (this.$store.state.entityIncNo == null) return 'Not Available'
+      return this.$store.state.entityIncNo
     }
   },
 
   // Placeholder Data
   data () {
     return {
-      entityName: 'My Business Name',
-      entityStatus: 'GOODSTANDING',
-      entityBusinessNo: '123456789',
-      entityIncNo: '123456789'
     }
   },
   methods: {

@@ -139,7 +139,6 @@ export default {
         this.dateFormatted = this.formatDate(this.date)
       }
       this.$store.state.agmDate = val
-      // this.dateFormatted = this.formatDate(this.date)
     },
     didNotHoldAGM: function (val) {
       console.log('AGMDate.vue didNotHoldAGM watcher fired: ', val)
@@ -151,6 +150,9 @@ export default {
         this.$store.state.noAGM = false
       }
       this.date = ''
+    },
+    year: function (val) {
+      console.log('AGMDate year watcher fired: ', val)
     }
   }
 }
