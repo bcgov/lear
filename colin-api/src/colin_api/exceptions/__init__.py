@@ -16,4 +16,39 @@
 @log_error - a decorator to automatically log the exception to the logger provided
 
 """
-import functools
+
+
+class GenericException(Exception):
+    """Exception that adds error code and error name, that can be used for i18n support."""
+
+    def __init__(self, error, status_code, *args, **kwargs):
+        """Return a valid GenericException."""
+        super(GenericException, self).__init__(*args, **kwargs)
+        self.error = error
+        self.status_code = status_code
+
+
+class BusinessNotFoundException(GenericException):
+    """Exception with defined error code and messaging."""
+
+    def __init__(self, identifier=None, *args, **kwargs):
+        """Return a valid BusinessNotFoundException."""
+        super(GenericException, self).__init__(*args, **kwargs)
+        if identifier:
+            self.error = f'{identifier} not found'
+        else:
+            self.error = 'Entity not found'
+        self.status_code = 404
+
+
+class FilingNotFoundException(GenericException):
+    """Exception with defined error code and messaging."""
+
+    def __init__(self, identifier=None, filing_type=None, *args, **kwargs):
+        """Return a valid FilingNotFoundException."""
+        super(GenericException, self).__init__(*args, **kwargs)
+        if identifier and filing_type:
+            self.error = f'{filing_type} not found for {identifier}'
+        else:
+            self.error = 'Filing not found'
+        self.status_code = 404
