@@ -30,6 +30,7 @@ class OracleDB(object):
 
     def init_app(self, app):
         """Setup for the extension.
+
         :param app: Flask app
         :return: naked
         """

@@ -18,8 +18,7 @@ from os import path
 
 
 def setup_logging(conf):
-    """Create the services logger.
-    """
+    """Create the services logger."""
     # log_file_path = path.join(path.abspath(path.dirname(__file__)), conf)
 
     if conf and path.isfile(conf):

@@ -15,47 +15,51 @@
 
 Currently this only provides API versioning information
 """
-
-from flask import current_app, jsonify
-from flask_restplus import Namespace, Resource, cors
+from flask import current_app, jsonify, request
+from flask_restplus import Resource, cors
 
 from colin_api.exceptions import GenericException
-from colin_api.models import Business
+from colin_api.models import Business, Filing
+from colin_api.resources.business import API
 from colin_api.utils.util import cors_preflight
-
-API = Namespace('businesses', description='Colin API Services - Businesses')
 
 
 @cors_preflight('GET')
-@API.route('/<string:identifier>')
-class BusinessInfo(Resource):
+@API.route('/<string:identifier>/filings/<string:filing_type>')
+class FilingInfo(Resource):
     """Meta information about the overall service."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def get(identifier):
+    def get(identifier, filing_type):
         """Return the complete business info."""
-        if not identifier:
-            return jsonify({'message': 'Identifier required'}), 404
-
         try:
 
+            # get optional YEAR parameter
+            year = request.args.get('year', None)
+            if year:
+                year = int(year)
+
+            # get business
             business = Business.find_by_identifier(identifier)
 
-            if not business:
-                return jsonify({'message': f'{identifier} not found'}), 404
+            # get filing
+            filing = Filing.find_filing(identifier, filing_type, year)
 
             return jsonify({
-                'business': business
+                'filing': {
+                    'filing_header': filing['filing_header'],
+                    filing_type: filing['filing_body'],
+                    'business': business,
+                }
             })
 
         except GenericException as err:
-
             return jsonify(
                 {'message': err.error}), err.status_code
 
-        except Exception as err:
+        except ValueError as err:
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
-                {'message': 'Error when trying to retrieve business  record from COLIN'}), 500
+                {'message': 'Error when trying to retrieve business record from COLIN'}), 500
