@@ -138,9 +138,8 @@
                           </div>
                         </v-expand-transition>
                         <div class="form__row form__btns">
-                          <v-btn class="update-btn" color="primary"
-                            @click="validate"
-                            v-bind:disabled="!deliveryAddressFormValid | !mailingAddressFormValid">
+                          <v-btn class="update-btn" color="primary" v-bind:disabled="isAddressChanged"
+                            @click="addAddressFee">
                             Update Addresses</v-btn>
                           <v-btn @click="cancelEditAddress">Cancel</v-btn>
                         </div>
@@ -159,7 +158,7 @@
 
       <aside>
         <affix relative-element-selector="#example-content" :offset="{ top: 120, bottom: 40 }">
-          <FeeSummary/>
+          <FeeSummary ref="feeSummary"/>
         </affix>
       </aside>
 
@@ -184,6 +183,7 @@ export default {
   data () {
     return {
       isEditing: false,
+      isAddressChanged: false,
       showAddressForm: false,
       inheritDeliveryAddress: true,
       deliveryAddressFormValid: true,
@@ -236,11 +236,9 @@ export default {
       this.isEditing = false
       this.showAddressForm = false
     },
-    validate: function() {
-      if (this.$refs.deliveryAddressForm.validate()) {
-        this.showAddressForm = false
-        this.isEditing = false
-      }
+    addAddressFee: function () {
+      this.$refs.feeSummary.addChangeAddressFee()
+      this.isAddressChanged = true
     }
   }
 }

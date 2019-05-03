@@ -1,18 +1,21 @@
 <template>
   <v-card>
     <header>Fee Summary</header>
-    <ul>
-      <li class="container" v-for="fee in fees" v-bind:key="fee.id">
-        <div class="fee-name">{{fee.name}}</div>
-        <div class="fee-value">${{fee.value}}</div>
+    <v-slide-y-transition group tag="ul" class="fee-list">
+      <li class="container fee-list__item" v-show="fee.name" v-for="fee in fees" :key="fee.id">
+        <div class="fee-list__item-name">{{fee.name}}</div>
+        <div class="fee-list__item-value">{{fee.value | currency}}</div>
       </li>
-      <li class="container summary">
-        <div class="fee-name">Total Fees</div>
-        <div class="fee-currency">CDN</div>
-        <div class="fee-value">
-          ${{totalFees}}</div>
-      </li>
-    </ul>
+    </v-slide-y-transition>
+    <div class="container fee-total">
+      <div class="fee-total__name">Total Fees</div>
+      <div class="fee-total__currency">CDN</div>
+      <div class="fee-total__value">
+        <v-slide-y-reverse-transition name="slide" mode="out-in">
+          <div :key="totalFees">{{totalFees | currency}}</div>
+        </v-slide-y-reverse-transition>
+      </div>
+    </div>
   </v-card>
 </template>
 
@@ -22,14 +25,27 @@ export default {
 
   data: () => ({
     fees: [
-      {name: "Annual Report Filing", value: 40.00},
-      {name: "Update Director Information", value: 15.00},
-      {name: "Update Registered Office Addresses", value: 15.00}
-    ]
+      {
+        id: "annualReport",
+        name: "Annual Report Filing",
+        value: 30.00
+      }
+    ],
+    addressFee: {
+      id: 1,
+      name: "Change Director Information",
+      value: 15.00
+    }
   }),
 
+  methods: {
+    addChangeAddressFee (index) {
+      this.fees.push({ id: 2, name: "Change Registered Office Addresses", value: 15.00 });
+    }
+  },
+
   computed: {
-    totalFees() {
+    totalFees () {
       return this.fees.reduce((acc, item) => acc + item.value, 0);
     },
   },
@@ -37,47 +53,56 @@ export default {
 </script>
 
 <style lang="stylus" scoped>
-  @import "../assets/styles/theme.styl"
+@import "../assets/styles/theme.styl"
 
-  header
-    padding 1rem 1.25rem
-    color #fff
-    background $BCgovBlue5
+header
+  padding 1rem 1.25rem
+  color #fff
+  background $BCgovBlue5
+  font-weight 700
+
+.container
+  display flex
+  flex-flow row nowrap
+  line-height 1.2rem
+  font-size 0.875rem
+
+.fee-list
+  border-bottom 1px solid $gray3
+
+.fee-list__item
+  &-name,
+  &-value
     font-weight 700
 
-  ul
-    li + li
-      border-top 1px solid $gray3
-
-  .container
-    display flex
-    flex-flow row nowrap
-    line-height 1.2rem
-    font-size 0.875rem
-
-  .fee-name,
-  .fee-value
-    font-weight 700
-
-  .fee-name
+  &-name
     flex 1 1 auto
     margin-right 2rem
 
-  .fee-value
+  &-value
     flex 0 0 auto
     text-align right
 
-  .summary
-    align-items center
-    letter-spacing -0.01rem
-    line-height auto
+.fee-list__item + .fee-list__item
+  border-top 1px solid $gray3
 
-    .fee-currency
-      margin-right 0.5rem
-      color $gray5
-      font-weight 500
+.fee-total
+  align-items center
+  letter-spacing -0.01rem
+  line-height auto
 
-    .fee-value
-      font-size 1.65rem
+  &__name
+    flex 1 1 auto
+    margin-right auto
+    font-weight 700
+
+  &__currency
+    margin-right 0.5rem
+    color $gray5
+    font-weight 500
+
+  &__value
+    font-size 1.65rem
+    font-weight 700
 
 </style>
