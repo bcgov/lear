@@ -15,24 +15,25 @@
     </noscript>
     <div id="app"></div>
     <!-- built files will be auto injected -->
+<!--  <script src="https://sso-dev.pathfinder.gov.bc.ca/auth/js/keycloak.js"></script>-->
   </body>
 <!-- get proper url-->
-  <script src="https://sso-dev.pathfinder.gov.bc.ca/auth/js/keycloak.js"></script>
   <script>
-    var keycloak = Keycloak('keycloak/keycloak.json')
-    var token
-    keycloak.init({ token: token, onLoad: 'login-required' }).success(function (authenticated) {
-      if (authenticated) {
-        sessionStorage.setItem('KEYCLOAK_TOKEN', keycloak.token)
-        keycloak.loadUserProfile().success(function (userProfile) {
-                var userName = userProfile.username
-                sessionStorage.setItem('USERNAME', userName)
-              });
-      } else {
-        alert('not authenticated')
-      }
-    }).error(function () {
-      alert('failed to initialize')
-    })
+    sessionStorage.setItem('REDIRECTED', 'false')
+    // var token
+    // var keycloak = Keycloak('keycloak/keycloak.json')
+    // keycloak.init({ token: token, onLoad: 'login-required' }).success(function (authenticated) {
+    //   if (authenticated) {
+    //     sessionStorage.setItem('KEYCLOAK_TOKEN', keycloak.token)
+    //     keycloak.loadUserProfile().success(function (userProfile) {
+    //             var userName = userProfile.username
+    //             sessionStorage.setItem('USERNAME', userName)
+    //           });
+    //   } else {
+    //     alert('not authenticated')
+    //   }
+    // }).error(function () {
+    //   alert('failed to initialize')
+    // })
   </script>
 </html>
