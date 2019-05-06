@@ -11,12 +11,12 @@
         <!-- Addresses -->
         <section>
           <header>
-            <h2>Registered Office Addresses</h2>
+            <h2>1. Registered Office Addresses</h2>
             <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium</p>
           </header>
           <v-card>
-            <ul class="address-list" v-bind:class="{ 'is-editing' : isEditing}">
-              <li>
+            <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
+              <li class="container">
                 <div class="meta-container">
                   <label>Delivery Address</label>
                   <div class="meta-container__inner">
@@ -51,13 +51,13 @@
                             </v-text-field>
                         </div>
                         <div class="form__row three-column">
-                          <v-text-field class="item" box label="City"
+                          <v-text-field box class="item" label="City"
                             v-model="DeliveryAddressCity"
                             :rules="DeliveryAddressCityRules"
                             required>
                           </v-text-field>
-                          <v-select class="item" box label="Province" :items="Regions" v-model="DeliveryAddressRegion" disabled></v-select>
-                          <v-text-field class="item" box label="Postal Code"
+                          <v-select box class="item" label="Province" :items="Regions" v-model="DeliveryAddressRegion" disabled></v-select>
+                          <v-text-field box class="item" label="Postal Code"
                             v-model="DeliveryAddressPostalCode"
                             :rules="DeliveryAddressPostalCodeRules"
                             required>
@@ -67,7 +67,7 @@
                           <v-text-field box label="Country" v-model="DeliveryAddressCountry" disabled></v-text-field>
                         </div>
                         <div class="form__row">
-                          <v-textarea box label="Special Delivery Instructions (Optional)" v-model="DeliveryAddressInstructions"
+                          <v-textarea box rows="2" auto-grow label="Delivery Instructions (Optional)" v-model="DeliveryAddressInstructions"
                           ></v-textarea>
                         </div>
                       </v-form>
@@ -77,7 +77,7 @@
                   </div>
                 </div>
               </li>
-              <li>
+              <li class="container">
                 <div class="meta-container">
                   <label>Mailing Address</label>
                   <div class="meta-container__inner">
@@ -132,13 +132,13 @@
                               <v-text-field box label="Country" v-model="MailingAddressCountry" disabled></v-text-field>
                             </div>
                             <div class="form__row">
-                              <v-textarea box label="Special Delivery Instructions (Optional)" v-model="MailingAddressInstructions"
+                              <v-textarea box rows="2" label="Delivery Instructions (Optional)" v-model="MailingAddressInstructions"
                               ></v-textarea>
                             </div>
                           </div>
                         </v-expand-transition>
                         <div class="form__row form__btns">
-                          <v-btn class="update-btn" color="primary" v-bind:disabled="isAddressChanged"
+                          <v-btn class="update-btn" color="primary"
                             @click="addAddressFee">
                             Update Addresses</v-btn>
                           <v-btn @click="cancelEditAddress">Cancel</v-btn>
@@ -147,6 +147,93 @@
                     </v-expand-transition>
                     <!-- END: Form / Editable Fields (Mailing Address) -->
 
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </v-card>
+        </section>
+
+        <section>
+          <header>
+            <h2>2. Director Information (as of April 1, 2019)</h2>
+            <p>Tell us who was elected or appointed and who ceased to be a director at your 2018 AGM.</p>
+            <v-form v-on:submit.prevent="addNewDirector">
+              <v-text-field box label="First Name" v-model="director.firstName"></v-text-field>
+              <v-text-field box label="Last Name" v-model="director.lastName"></v-text-field>
+              <v-btn @click="addNewDirector">Add New</v-btn>
+            </v-form>
+          </header>
+          <v-card>
+            <ul class="list director-list">
+              <li class="container"
+                v-for="(director, index) in orderBy(directors, 'id', -1)"
+                v-bind:key="index">
+                <div class="meta-container">
+                  <label><span>{{director.firstName}}</span><span>&nbsp;{{director.lastName}} {{ index }}</span></label>
+                  <div class="meta-container__inner">
+                    <v-expand-transition>
+                      <div class="address-block" v-show="activeIndex !== index">
+                        <div class="address-block__info">
+                          <div class="address-block__info-row">{{director.street}}</div>
+                          <div class="address-block__info-row">
+                            <span>{{director.city}}</span>
+                            <span>&nbsp;{{director.region}}</span>
+                            <span>&nbsp;{{director.postalCode}}</span>
+                          </div>
+                          <div class="address-block__info-row">{{director.country}}</div>
+                        </div>
+                        <div class="address-block__actions">
+                          <v-btn small outline color="blue" @click="editDirector(index)">Change</v-btn>
+                        </div>
+                      </div>
+                    </v-expand-transition>
+                    <v-expand-transition>
+                      <v-form ref="directorForm" v-show="activeIndex === index" v-model="directorFormValid" lazy-validation>
+                        <div class="form__row three-column">
+                          <v-text-field box label="First Name" class="item"
+                            v-model="director.firstName"
+                            required
+                          ></v-text-field>
+                          <v-text-field box label="Initial" class="item director-initial"
+                            v-model="director.initial"
+                          ></v-text-field>
+                          <v-text-field box label="Last Name" class="item"
+                            v-model="director.lastName"
+                          ></v-text-field>
+                        </div>
+                        <div class="form__row">
+                          <v-text-field box label="Street Address"
+                            v-model="director.street"
+                            required>
+                            </v-text-field>
+                        </div>
+                        <div class="form__row three-column">
+                          <v-text-field class="item" box label="City"
+                            v-model="director.city"
+                            required>
+                          </v-text-field>
+                          <v-select class="item" box label="Province" :items="Regions" v-model="director.region" disabled></v-select>
+                          <v-text-field class="item" box label="Postal Code"
+                            v-model="director.postalCode"
+                            required>
+                          </v-text-field>
+                        </div>
+                        <div class="form__row">
+                          <v-text-field box label="Country" v-model="director.country" disabled></v-text-field>
+                        </div>
+                        <div class="form__row">
+                          <v-textarea box rows="2" auto-grow label="Delivery Instructions (Optional)" v-model="DeliveryAddressInstructions"
+                          ></v-textarea>
+                        </div>
+                        <div class="form__row form__btns">
+                          <v-btn class="update-btn" color="primary"
+                            @click="addDirectorFee">
+                            Update Director</v-btn>
+                          <v-btn @click="cancelEditDirector(index)">Cancel</v-btn>
+                        </div>
+                      </v-form>
+                    </v-expand-transition>
                   </div>
                 </div>
               </li>
@@ -168,12 +255,16 @@
 
 <script lang='ts'>
 import { Component, Vue } from 'vue-property-decorator'
+import Vue2Filters from 'vue2-filters'
 import { Affix } from 'vue-affix'
 import EntityInfo from '@/components/EntityInfo.vue'
 import FeeSummary from '@/components/FeeSummary.vue'
 
+Vue.use(Vue2Filters)
+
 export default {
   name: 'AnnualReport',
+  mixins: [Vue2Filters.mixin],
   components: {
     Affix,
     EntityInfo,
@@ -182,10 +273,15 @@ export default {
 
   data () {
     return {
+      Regions: [
+        'BC'
+      ],
+
       isEditing: false,
-      isAddressChanged: false,
       showAddressForm: false,
       inheritDeliveryAddress: true,
+
+      // Validation
       deliveryAddressFormValid: true,
       mailingAddressFormValid: true,
       DeliveryAddressStreet: '1234 Main Street',
@@ -218,28 +314,69 @@ export default {
       ],
       MailingAddressCountry: 'Canada',
       MailingAddressInstructions: ' ',
-      Regions: [
-        'BC'
-      ]
+
+      // Directors
+      isEditingDirector: false,
+      directorFormValid: false,
+      director: { firstName: "", lastName: "" },
+      directors: [
+        { id: 1, firstName: "Alli", lastName: "Myers", initial: "", street: "1111 First Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
+        { id: 2, firstName: "Nora", lastName: "Patton", initial: "", street: "2222 Second Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
+        { id: 3, firstName: "Phoebe", lastName: "Jones", initial: "", street: "3333 Third Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
+        { id: 4, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
+      ],
+      activeIndex: undefined
     }
   },
 
   methods: {
+    // Registered Office Address
     editAddress: function () {
-      this.isEditing = true
       this.showAddressForm = true
+      this.cancelEditDirector()
     },
     editMailingAddress: function () {
       this.showMailingAddressForm = true
     },
     cancelEditAddress: function () {
-      this.isEditing = false
       this.showAddressForm = false
     },
+
+    // Directors
+    addNewDirector: function (index) {
+      let newDirector = {
+        firstName: this.director.firstName,
+        lastName: this.director.lastName
+      }
+      this.directors.push(newDirector)
+    },
+
+    editDirector: function (index) {
+      this.activeIndex = index
+      this.cancelEditAddress()
+    },
+    cancelEditDirector: function (index) {
+      this.activeIndex = undefined
+    },
+
+    // Add Fees
     addAddressFee: function () {
       this.$refs.feeSummary.addChangeAddressFee()
-      this.isAddressChanged = true
-    }
+    },
+    addDirectorFee: function () {
+      this.$refs.feeSummary.addChangeDirectorFee()
+    },
+  },
+
+  created () {
+    let count = 0;
+
+    this.directors.forEach(el => {
+      el.id = count;
+      count++;
+    });
+
+    console.log(this.directors);
   }
 }
 </script>
@@ -269,9 +406,9 @@ export default {
       width 20rem
 
   section
-    > p
+    header p
       color $gray6
-      font-size 0.875rem
+      font-size 1rem
 
 @media (max-width 768px)
   .view-container
@@ -358,15 +495,9 @@ ul
       width 12rem
 
 // List Layout
-.address-list
-  padding 1.25rem
-
+.list
   li + li
-    padding-top 1.25rem
-
-.address-list.is-editing
-  li + li
-    padding-top 0
+    border-top 1px solid $gray3
 
 .address-list .form
   margin-top 1rem
@@ -389,7 +520,7 @@ ul
 
 // Form Row Elements
 .form__row + .form__row
-  margin-top 0.5rem
+  margin-top 0.25rem
 
 .form__btns
   text-align right
@@ -414,8 +545,17 @@ ul
     margin-left 0.5rem
 
 .inherit-checkbox
-  margin-top -4px
-  margin-left -4px
+  margin-top -3px
+  margin-left -3px
   padding 0
+
+// Registered Office Address Form Behavior
+.show-address-form
+  li:first-child
+    padding-bottom 0
+
+// Director Form Fields
+.director-initial
+  max-width 8rem
 
 </style>

@@ -9,7 +9,7 @@
     </v-slide-y-transition>
     <div class="container fee-total">
       <div class="fee-total__name">Total Fees</div>
-      <div class="fee-total__currency">CDN</div>
+      <div class="fee-total__currency">{{currencyName}}</div>
       <div class="fee-total__value">
         <v-slide-y-reverse-transition name="slide" mode="out-in">
           <div :key="totalFees">{{totalFees | currency}}</div>
@@ -24,6 +24,7 @@ export default {
   name: 'FeeSummary',
 
   data: () => ({
+    currencyName: "CAD",
     fees: [
       {
         id: "annualReport",
@@ -31,16 +32,28 @@ export default {
         value: 30.00
       }
     ],
-    addressFee: {
-      id: 1,
-      name: "Change Director Information",
-      value: 15.00
-    }
+    canAddAddressFee: true,
+    canAddDirectorFee: true
   }),
 
   methods: {
     addChangeAddressFee (index) {
-      this.fees.push({ id: 2, name: "Change Registered Office Addresses", value: 15.00 });
+      if (this.canAddAddressFee == true) {
+        this.fees.push({ id: 1, name: "Change Registered Office Addresses", value: 20.00 });
+        this.canAddAddressFee = !this.canAddAddressFee;
+      }
+      else {
+        // Do nothing
+      }
+    },
+    addChangeDirectorFee (index) {
+      if (this.canAddDirectorFee == true) {
+        this.fees.push({ id: 2, name: "Change Director's Information", value: 20.00 });
+        this.canAddDirectorFee = !this.canAddDirectorFee;
+      }
+      else {
+        // Do nothing
+      }
     }
   },
 
