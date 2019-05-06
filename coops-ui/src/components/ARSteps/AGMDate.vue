@@ -128,6 +128,11 @@ export default {
       return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
     },
     isValidDateFormat (date, separator) {
+      // validates that date is:
+      //    in isso format
+      //    is within the year of the ar
+      //    the month is valid and in the past
+      //    the day is valid and in the past
       var day = (new Date(date)).getUTCDate()
       if (date != null && date !== '' && (
         date.indexOf(separator) !== 4 ||
