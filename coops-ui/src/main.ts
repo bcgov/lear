@@ -12,8 +12,7 @@ Vue.use(Vuelidate)
 Vue.config.productionTip = false
 
 window.addEventListener('message', function (e) {
-  sessionStorage.setItem('listening', 'true')
-  if (e.origin === process.env.VUE_APP_AUTH_REDIRECT_URL) {
+  if (e.origin === process.env.VUE_APP_AUTH_URL) {
     sessionStorage.setItem('KEYCLOAK_TOKEN', e.data)
     sessionStorage.setItem('REDIRECTED', 'false')
   }

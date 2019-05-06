@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Home from './views/Home.vue'
-import store from './store'
 
 Vue.use(Router)
 
@@ -29,6 +28,7 @@ let router = new Router({
 })
 router.afterEach((to, from) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
+    console.log('redirect check ', sessionStorage.getItem('REDIRECTED'))
     if (sessionStorage.getItem('REDIRECTED') !== 'true') {
       let auth = sessionStorage.getItem('KEYCLOAK_TOKEN')
       if (auth) {
@@ -36,7 +36,7 @@ router.afterEach((to, from) => {
       } else {
         console.log('AUTH FAILED')
         sessionStorage.setItem('REDIRECTED', 'true')
-        window.location.href = process.env.VUE_APP_AUTH_REDIRECT_URL
+        window.location.href = process.env.VUE_APP_AUTH_URL
       }
     }
   }
