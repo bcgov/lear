@@ -1,7 +1,7 @@
 import '@babel/polyfill'
 import Vue from 'vue'
 import App from './App.vue'
-import axios from 'axios'
+import axios from './axios-auth'
 import Vuelidate from 'vuelidate'
 import router from './router'
 import store from './store'
