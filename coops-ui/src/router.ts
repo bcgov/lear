@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Home from './views/Home.vue'
+import { AUTH_URL } from '../public/config/configuration.js'
 
 Vue.use(Router)
 
@@ -36,7 +37,7 @@ router.afterEach((to, from) => {
       } else {
         console.log('AUTH FAILED')
         sessionStorage.setItem('REDIRECTED', 'true')
-        window.location.href = process.env.VUE_APP_AUTH_URL
+        window.location.href = AUTH_URL
       }
     }
   }
