@@ -1,0 +1,5 @@
+include requirements/prod.txt
+include config.py
+include logging.conf
+include LICENSE
+include README.md

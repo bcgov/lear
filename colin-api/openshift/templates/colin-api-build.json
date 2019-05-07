@@ -1,0 +1,102 @@
+{
+    "kind": "Template",
+    "apiVersion": "template.openshift.io/v1",
+    "metadata": {
+        "name": "${NAME}-build-template",
+        "creationTimestamp": null
+    },
+    "objects": [
+        {
+            "apiVersion": "v1",
+            "kind": "ImageStream",
+            "metadata": {
+                "name": "${NAME}"
+            }
+        },
+        {
+            "kind": "BuildConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${NAME}",
+                "labels": {
+                    "app": "${NAME}"
+                }
+            },
+            "spec": {
+                "triggers": [],
+                "runPolicy": "Serial",
+                "source": {
+                    "type": "Dockerfile",
+                    "dockerfile": "FROM gl2uos-tools/${SOURCE_IMAGE_NAME}:${SOURCE_IMAGE_TAG}\nCOPY oraclelibs /tmp/.\nUSER root\nRUN id \u0026\u0026 \\\n    chmod 0777 -R /etc/pki/entitlement-host \u0026\u0026 \\\n    chmod 0777 /var/lib/rpm \u0026\u0026 \\\n    yum -y localinstall /tmp/oracle-instantclient*.rpm \u0026\u0026 \\\n    rm -rf /var/cache/yum \u0026\u0026 \\\n    rm -f /tmp/oracle-instantclient*.rpm \u0026\u0026 \\\n    echo /usr/lib/oracle/12.2/client64/lib \u003e /etc/ld.so.conf.d/oracle-instantclient12.2.conf \u0026\u0026 \\\n    ldconfig\n\nUSER 1001",
+                    "images": [
+                        {
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "namespace": "openshift",
+                                "name": "oracle-client-rpms:12.2"
+                            },
+                            "paths": [
+                                {
+                                    "sourcePath": "/tmp/oraclelibs",
+                                    "destinationDir": "."
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "strategy": {
+                    "type": "Docker",
+                    "dockerStrategy": {
+                        "from": {
+                            "kind": "${SOURCE_IMAGE_KIND}",
+                            "name": "${SOURCE_IMAGE_NAME}:${SOURCE_IMAGE_TAG}"
+                        }
+                    }
+                },
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "${NAME}:${OUTPUT_IMAGE_TAG}"
+                    }
+                }
+            }
+        }
+    ],
+    "parameters": [
+        {
+            "name": "NAME",
+            "displayName": "Name",
+            "description": "The name assigned to all of the resources defined in this template.",
+            "required": true,
+            "value": "colin-api"
+        },
+        {
+            "name": "SOURCE_IMAGE_KIND",
+            "displayName": "Source Image Kind",
+            "description": "The 'kind' (type) of the  source image; typically ImageStreamTag, or DockerImage.",
+            "required": true,
+            "value": "ImageStreamTag"
+        },
+        {
+            "name": "SOURCE_IMAGE_NAME",
+            "displayName": "Source Image Name",
+            "required": true,
+            "description": "The name of the source image.",
+            "value": "colin-api-base"
+        },
+        {
+            "name": "SOURCE_IMAGE_TAG",
+            "displayName": "Source Image Tag",
+            "required": true,
+            "description": "The tag of the source image.",
+            "value": "latest"
+        },
+        {
+            "name": "OUTPUT_IMAGE_TAG",
+            "displayName": "Output Image Tag",
+            "description": "The tag given to the built image.",
+            "required": true,
+            "value": "latest"
+        }
+    ]
+}

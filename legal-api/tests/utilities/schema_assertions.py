@@ -19,13 +19,13 @@ Test helper functions to load and assert that a JSON payload validates against a
 import json
 from os.path import dirname, join
 
-from jsonschema import validate
+from jsonschema import Draft7Validator, draft7_format_checker
 
 
 def assert_valid_schema(data: dict, schema_file: dict):
     """Do assertion that data validates against the JSONSchema in schema_file."""
     schema = _load_json_schema(schema_file)
-    return validate(data, schema)
+    return Draft7Validator(schema, format_checker=draft7_format_checker).is_valid(data)
 
 
 def _load_json_schema(filename: str):

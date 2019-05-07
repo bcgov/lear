@@ -30,6 +30,12 @@ def app():
     return _app
 
 
+@pytest.fixture
+def config(app):
+    """Return the application config."""
+    return app.config
+
+
 @pytest.fixture(scope='function')
 def app_request():
     """Return a session-wide application configured in TEST mode."""

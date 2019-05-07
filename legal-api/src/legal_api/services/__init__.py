@@ -14,3 +14,7 @@
 """Exposes all of the Services used in the API."""
 
 from .business import Business
+from .colin import Colin
+
+
+# __all__ = ('Business', 'Colin')

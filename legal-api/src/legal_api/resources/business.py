@@ -34,9 +34,9 @@ class Info(Resource):
     @cors.crossdomain(origin='*')
     def get(identifier):
         """Return a JSON object with meta information about the Service."""
-        business = Business.find_by_identifier(identifier)
+        business, status = Business.find_by_identifier(identifier)
 
         if not business:
             return jsonify({'message': f'{identifier} not found'}), 404
 
-        return jsonify(business=business.asdict())
+        return jsonify(business=business.asdict()), status

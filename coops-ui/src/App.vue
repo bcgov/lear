@@ -8,14 +8,38 @@
     </div>
   </v-app>
 </template>
-
 <script>
 import StdHeader from '@/components/StdHeader.vue'
 
 export default {
-  name: 'home',
+  name: 'App.vue',
   components: {
     StdHeader
+  },
+  mounted () {
+    if (sessionStorage.getItem('KEYCLOAK_TOKEN')) {
+      sessionStorage.setItem('USERNAME', this.parseJwt(sessionStorage.getItem('KEYCLOAK_TOKEN')).preferred_username)
+      this.setCorpNum()
+    }
+  },
+  methods: {
+    parseJwt (token) {
+      var base64Url = token.split('.')[1]
+      var base64 = decodeURIComponent(atob(base64Url).split('').map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+      }).join(''))
+
+      return JSON.parse(base64)
+    },
+    setCorpNum () {
+      // set corpnum, check for error'
+      this.$store.state.corpNum = sessionStorage.getItem('USERNAME')
+      if (this.$store.state.corpNum == null) {
+        console.error('No USERNAME - cannot get corpNum')
+      } else {
+        this.$store.state.corpNum = this.$store.state.corpNum.toUpperCase()
+      }
+    }
   }
 }
 </script>
