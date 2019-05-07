@@ -8,7 +8,7 @@
 import StdHeader from '@/components/StdHeader.vue'
 
 export default {
-  name: 'home',
+  name: 'App.vue',
   components: {
     StdHeader
   },
@@ -28,7 +28,7 @@ export default {
       return JSON.parse(base64)
     },
     setCorpNum () {
-      // set corpnum, check for error
+      // set corpnum, check for error'
       this.$store.state.corpNum = sessionStorage.getItem('USERNAME')
       if (this.$store.state.corpNum == null) {
         console.error('No USERNAME - cannot get corpNum')

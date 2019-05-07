@@ -51,7 +51,10 @@ export default {
     this.$store.state.currentDate = today.getFullYear() + '-' + ('0' + (+today.getMonth() + 1)).slice(-2) + '-' +
       ('0' + today.getDate()).slice(-2)
 
-    if (this.ARFilingYear == null && this.corpNum != null) this.getARInfo(this.corpNum)
+    if (this.ARFilingYear == null && this.corpNum != null) {
+      this.getARInfo(this.corpNum)
+      this.getEntityInfo(this.corpNum)
+    }
   },
   methods: {
     getARInfo (corpNum) {
@@ -66,7 +69,6 @@ export default {
     setARInfo () {
       var lastARYear = this.lastARJson.filing.annual_report.annual_general_meeting_date.substring(0, 4)
       var currentYear = (new Date()).getFullYear() + ''
-
       if (lastARYear === currentYear) this.$store.state.ARFilingYear = null
       else this.$store.state.ARFilingYear = +lastARYear + 1 + ''
     },

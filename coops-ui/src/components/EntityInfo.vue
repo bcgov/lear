@@ -35,7 +35,7 @@
 
 <script>
 export default {
-  name: 'entity-info',
+  name: 'EntityInfo.vue',
   computed: {
     entityName () {
       if (this.$store.state.entityName == null) return ''
