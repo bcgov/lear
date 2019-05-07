@@ -11,6 +11,7 @@ See https://github.com/BCDevOps/openshift-templates
   - oc create imagestream coops-ui
 - create the two build configs from the template
   - oc process -f coops-ui-bc.tools.json | oc create -f -
+  - oc process -f coops-ui-inter-bc.tools.json | oc create -f -
 
 ### in gl2uos-dev, gl2uos-test, and gl2uos-prod namespaces each:
 - create the service from the template
