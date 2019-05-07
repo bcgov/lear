@@ -11,6 +11,12 @@ import './registerServiceWorker'
 Vue.use(Vuelidate)
 Vue.config.productionTip = false
 
+window.addEventListener('message', function (e) {
+  if (e.origin === process.env.VUE_APP_AUTH_URL) {
+    sessionStorage.setItem('KEYCLOAK_TOKEN', e.data)
+    sessionStorage.setItem('REDIRECTED', 'false')
+  }
+})
 /* load configurations from file */
 var req = new XMLHttpRequest()
 // TODO - change request to async:true once UI is more complete - currently too quick because we jump straight to AR
@@ -20,7 +26,7 @@ req.setRequestHeader('ResponseType', 'application/json')
 req.onreadystatechange = function (response) {
   if (req.readyState === 4) {
     if (req.status === 200) {
-      axios.defaults.baseURL = JSON.parse(req.responseText)['API_URL']
+      axios.defaults.baseURL = process.env.VUE_APP_API_URL
       console.log('Setting axios.baseURL to: ' + axios.defaults.baseURL)
     } else {
       // nothing

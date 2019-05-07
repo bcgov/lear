@@ -4,14 +4,17 @@ import Home from './views/Home.vue'
 
 Vue.use(Router)
 
-export default new Router({
+let router = new Router({
   mode: 'history',
   base: process.env.BASE_URL,
   routes: [
     {
       path: '/',
       name: 'home',
-      component: Home
+      component: Home,
+      meta: {
+        requiresAuth: true
+      }
     },
     {
       path: '/about',
@@ -23,3 +26,20 @@ export default new Router({
     }
   ]
 })
+router.afterEach((to, from) => {
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    console.log('redirect check ', sessionStorage.getItem('REDIRECTED'))
+    if (sessionStorage.getItem('REDIRECTED') !== 'true') {
+      let auth = sessionStorage.getItem('KEYCLOAK_TOKEN')
+      if (auth) {
+        console.log('AUTH PASSED')
+      } else {
+        console.log('AUTH FAILED')
+        sessionStorage.setItem('REDIRECTED', 'true')
+        window.location.href = process.env.VUE_APP_AUTH_URL
+      }
+    }
+  }
+})
+
+export default router

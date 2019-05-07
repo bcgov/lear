@@ -51,25 +51,16 @@ export default {
     this.$store.state.currentDate = today.getFullYear() + '-' + ('0' + (+today.getMonth() + 1)).slice(-2) + '-' +
       ('0' + today.getDate()).slice(-2)
 
-    this.setCorpNum()
-    console.log('mounted', this.corpNum)
-    if (this.ARFilingYear == null) this.getARInfo(this.corpNum)
+    if (this.ARFilingYear == null && this.corpNum != null) {
+      this.getARInfo(this.corpNum)
+      this.getEntityInfo(this.corpNum)
+    }
   },
   methods: {
-    setCorpNum () {
-      // set corpnum, check for error
-      this.$store.state.corpNum = sessionStorage.getItem('USERNAME')
-      if (this.$store.state.corpNum == null) {
-        console.error('No USERNAME set in sessionStorage - cannot get corpNum')
-      } else {
-        this.$store.state.corpNum = this.$store.state.corpNum.toUpperCase()
-      }
-    },
     getARInfo (corpNum) {
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
       // when calling the api make sure this url is for most recent AR - stub specifies 2017 + add token in header
-      var url = 'https://mock-lear-tools.pathfinder.gov.bc.ca/rest/legal-api/0.64/api/v1/businesses/' +
-        corpNum + '/filings/annual_report?year=2017'
+      var url = corpNum + '/filings/annual_report?year=2017'
       axios.get(url).then(response => {
         this.lastARJson = response.data
         this.setARInfo()
@@ -78,7 +69,6 @@ export default {
     setARInfo () {
       var lastARYear = this.lastARJson.filing.annual_report.annual_general_meeting_date.substring(0, 4)
       var currentYear = (new Date()).getFullYear() + ''
-
       if (lastARYear === currentYear) this.$store.state.ARFilingYear = null
       else this.$store.state.ARFilingYear = +lastARYear + 1 + ''
     },
@@ -86,7 +76,7 @@ export default {
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
       // when calling the api make sure this url is for most recent AR - stub specifies 2017 + add token in header
       corpNum = 'CP0001187'
-      var url = 'https://mock-lear-tools.pathfinder.gov.bc.ca/rest/legal-api/0.64/api/v1/businesses/' + corpNum
+      var url = corpNum
       axios.get(url).then(response => {
         this.entityInfoJson = response.data
         this.setEntityInfo()
@@ -101,7 +91,7 @@ export default {
     submit () {
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
       // probably need to parametrize date=this.$store.state.currentDate + add token in header for api
-      var url = 'https://mock-lear-tools.pathfinder.gov.bc.ca/rest/pay/0.1/api/v1/payments/fees/AR/CP?date=2019-04-15'
+      var url = process.env.VUE_APP_PAY_URL
       var paymentJson
 
       // other team doing credit card entering/payment confirmation? - don't know what to check for in result
