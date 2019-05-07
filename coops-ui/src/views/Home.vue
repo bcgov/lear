@@ -16,6 +16,7 @@ import { Component, Vue } from 'vue-property-decorator'
 import axios from '@/axios-auth.ts'
 import EntityInfo from '@/components/EntityInfo.vue'
 import AnnualReport from '@/components/AnnualReport.vue'
+import { PAY_URL } from '../../public/config/configuration.js'
 
 export default {
   name: 'Home.vue',
@@ -91,7 +92,7 @@ export default {
     submit () {
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
       // probably need to parametrize date=this.$store.state.currentDate + add token in header for api
-      var url = process.env.VUE_APP_PAY_URL
+      var url = PAY_URL
       var paymentJson
 
       // other team doing credit card entering/payment confirmation? - don't know what to check for in result
