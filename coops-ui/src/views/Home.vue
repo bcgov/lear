@@ -16,7 +16,7 @@ import { Component, Vue } from 'vue-property-decorator'
 import axios from '@/axios-auth.ts'
 import EntityInfo from '@/components/EntityInfo.vue'
 import AnnualReport from '@/components/AnnualReport.vue'
-import { PAY_URL } from '../../public/config/configuration.js?1'
+import { PAY_URL } from '../../public/config/configuration.js'
 
 export default {
   name: 'Home.vue',

@@ -7,7 +7,7 @@ import router from './router'
 import store from './store'
 import './plugins/vuetify'
 import './registerServiceWorker'
-import { API_URL, AUTH_URL } from '../public/config/configuration.js?1'
+import { API_URL, AUTH_URL } from '../public/config/configuration.js'
 
 Vue.use(Vuelidate)
 Vue.config.productionTip = false
