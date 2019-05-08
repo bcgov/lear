@@ -1,5 +1,5 @@
 // Edit your app's name below
-def APP_NAME = 'coops-ui'
+def APP_NAME = 'proto-ui'
 
 // Edit your environment TAG names below
 def TAG_NAMES = ['dev', 'test', 'prod']
@@ -8,16 +8,16 @@ def TAG_NAMES = ['dev', 'test', 'prod']
 def BUILD_CONFIG = "${APP_NAME}-inter"
 
 //EDIT LINE BELOW (Change `IMAGESTREAM_NAME` so it matches the name of your *output*/deployable image stream.)
-def IMAGESTREAM_NAME = 'coops-ui'
+def IMAGESTREAM_NAME = 'proto-ui'
 
 // you'll need to change this to point to your application component's folder within your repository
-def CONTEXT_DIRECTORY = 'coops-ui'
+def CONTEXT_DIRECTORY = 'coops-prototypei'
 
 // EDIT LINE BELOW (Add a reference to the CHAINED_BUILD_CONFIG)
-def CHAINED_BUILD_CONFIG = 'coops-ui'
+def CHAINED_BUILD_CONFIG = 'proto-ui'
 
 // The name of your deployment configuration; used to verify the deployment
-def DEPLOYMENT_CONFIG_NAME= 'coops-ui'
+def DEPLOYMENT_CONFIG_NAME= 'proto-ui'
 
 // The namespace of you dev deployment environment.
 def DEV_NAME_SPACE = 'gl2uos-dev'
@@ -101,44 +101,7 @@ if( run_pipeline ) {
     {
         node (nodejs_label) {
             checkout scm
-            dir('coops-ui') {
-                try {
-                    sh '''
-                        node -v
-                        npm install
-                    '''
-                    stage("Run Jest tests") {
-                        def testResults = sh(script: "npm run test:unit", returnStatus: true)
-
-                        echo "Unit tests ran, returned ${testResults}"
-                        if (testResults > 0) {
-                            try {
-                                timeout(time: 1, unit: 'DAYS') {
-                                    input message: "Unit tests failed. Continue?", id: "1"
-                                }
-                            } catch (Exception e) {
-                                error('Abort')
-                            }
-                        }
-                    }
-                    stage("Check code quality (lint)") {
-                        def lintResults = sh(script: "npm run lint:nofix", returnStatus: true)
-
-                        echo "Linter ran, returned ${lintResults}"
-                        if (lintResults > 0) {
-                            try {
-                                timeout(time: 1, unit: 'DAYS') {
-                                    input message: "Linter failed. Continue?", id: "2"
-                                }
-                            } catch (Exception e) {
-                                error('Abort')
-                            }
-                        }
-                    }
-
-                } catch (Exception e) {
-                    error('Failure')
-                }
+            dir('coops-prototype') {               
 
             }
         }
