@@ -23,17 +23,17 @@
 
                     <!-- START: Static Details (Delivery Address) -->
                     <v-expand-transition>
-                      <div class="address-block" v-show="!showAddressForm">
-                        <div class="address-block__info">
-                          <div class="address-block__info-row">{{DeliveryAddressStreet}}</div>
-                          <div class="address-block__info-row">
+                      <div class="registered-office-address" v-show="!showAddressForm">
+                        <div class="address">
+                          <div class="address__row">{{DeliveryAddressStreet}}</div>
+                          <div class="address__row">
                             <span>{{DeliveryAddressCity}}</span>
                             <span>&nbsp;{{DeliveryAddressRegion}}</span>
                             <span>&nbsp;{{DeliveryAddressPostalCode}}</span>
                           </div>
-                          <div class="address-block__info-row">{{DeliveryAddressCountry}}</div>
+                          <div class="address__row">{{DeliveryAddressCountry}}</div>
                         </div>
-                        <div class="address-block__actions">
+                        <div class="actions">
                           <v-btn small outline color="blue" @click="editAddress">Change</v-btn>
                         </div>
                       </div>
@@ -56,7 +56,11 @@
                             :rules="DeliveryAddressCityRules"
                             required>
                           </v-text-field>
-                          <v-select box class="item" label="Province" :items="Regions" v-model="DeliveryAddressRegion" disabled></v-select>
+                          <v-select box class="item" label="Province"
+                            :items="regionList"
+                            v-model="DeliveryAddressRegion"
+                            disabled>
+                          </v-select>
                           <v-text-field box class="item" label="Postal Code"
                             v-model="DeliveryAddressPostalCode"
                             :rules="DeliveryAddressPostalCodeRules"
@@ -85,15 +89,15 @@
                     <!-- START: Static Details (Mailing Address) -->
                     <v-expand-transition>
                       <div class="meta-container__inner" v-show="!showAddressForm">
-                        <div class="address-block">
-                          <div class="address-block__info">
-                            <div class="address-block__info-row">{{MailingAddressStreet}}</div>
-                            <div class="address-block__info-row">
+                        <div class="registered-office-address">
+                          <div class="address">
+                            <div class="address__row">{{MailingAddressStreet}}</div>
+                            <div class="address__row">
                               <span>{{MailingAddressCity}}</span>
                               <span>&nbsp;{{MailingAddressRegion}}</span>
                               <span>&nbsp;{{MailingAddressPostalCode}}</span>
                             </div>
-                            <div class="address-block__row">{{MailingAddressCountry}}</div>
+                            <div class="address__row">{{MailingAddressCountry}}</div>
                           </div>
                         </div>
                       </div>
@@ -121,7 +125,11 @@
                                 :rules="MailingAddressCityRules"
                                 required>
                               </v-text-field>
-                              <v-select class="item" box label="Province" :items="Regions" v-model="MailingAddressRegion" disabled></v-select>
+                              <v-select class="item" box label="Province"
+                                :items="regionList"
+                                v-model="MailingAddressRegion"
+                                disabled>
+                              </v-select>
                               <v-text-field class="item" box label="Postal Code"
                                 v-model="MailingAddressPostalCode"
                                 :rules="MailingAddressPostalCodeRules"
@@ -169,39 +177,52 @@
               <ul class="list director-list" v-show="showNewDirectorForm">
                 <li class="container">
                   <div class="meta-container">
-                    <label>Add New Director</label>
+                    <label>Appoint New Director</label>
                     <div class="meta-container__inner">
-                      <v-form ref="newDirectorForm" v-on:submit.prevent="addNewDirector" v-model="newDirectorFormValid" lazy-validation>
+                      <v-form ref="newDirectorForm" v-on:submit.prevent="addNewDirector" v-model="directorFormValid" lazy-validation>
                         <div class="form__row three-column">
                           <v-text-field box class="item" label="First Name"
                             v-model="director.firstName"
-                            :rules="newDirectorFirstNameRules"
+                            :rules="directorFirstNameRules"
                             required></v-text-field>
                           <v-text-field box label="Initial" class="item director-initial"
                             v-model="director.initial"
                           ></v-text-field>
                           <v-text-field box class="item" label="Last Name"
                             v-model="director.lastName"
-                            :rules="newDirectorLastNameRules"
+                            :rules="directorLastNameRules"
                             required></v-text-field>
                         </div>
                         <div class="form__row">
-                          <v-text-field box label="Street Address">
-                          </v-text-field>
+                          <v-text-field box label="Street Address"
+                            v-model="director.street"
+                            :rules="directorStreetRules"
+                            required>
+                            </v-text-field>
                         </div>
                         <div class="form__row three-column">
-                          <v-text-field class="item" box label="City">
+                          <v-text-field class="item" box label="City"
+                            v-model="director.city"
+                            :rules="directorCityRules"
+                            required>
                           </v-text-field>
-                          <v-select class="item" box label="Province" :items="Regions" disabled></v-select>
-                          <v-text-field class="item" box label="Postal Code">
+                          <v-select class="item" box label="Province"
+                            :items="regionList"
+                            :rules="directorRegionRules"
+                            v-model="director.region">
+                          </v-select>
+                          <v-text-field class="item" box label="Postal Code"
+                            v-model="director.postalCode"
+                            :rules="directorPostalCodeRules"
+                            required>
                           </v-text-field>
                         </div>
                         <div class="form__row">
-                          <v-text-field box label="Country" disabled></v-text-field>
-                        </div>
-                        <div class="form__row">
-                          <v-textarea box rows="2" auto-grow label="Delivery Instructions (Optional)"
-                          ></v-textarea>
+                          <v-select box label="Country"
+                            :items="countryList"
+                            v-model="director.country"
+                            :rules="directorCountryRules">
+                          </v-select>
                         </div>
                         <div class="form__row form__btns">
                           <v-btn @click="validateNewDirectorForm" color="primary">Add New Director</v-btn>
@@ -215,32 +236,64 @@
             </v-expand-transition>
             <ul class="list director-list">
               <li class="container"
+                v-bind:class="{ 'remove' : !director.isDirectorActive }"
                 v-for="(director, index) in orderBy(directors, 'id', -1)"
                 v-bind:key="index">
                 <div class="meta-container">
-                  <label><span>{{director.firstName}}</span><span>&nbsp;{{director.lastName}} {{ director.id }}</span></label>
+                  <label>
+                    <span>{{director.firstName}}</span><span>&nbsp;{{director.lastName}}</span>
+                    <div class="director-status">
+                      <v-scale-transition>
+                        <v-chip small label disabled color="blue" text-color="white" v-show="director.isNew">
+                          New
+                        </v-chip>
+                      </v-scale-transition>
+                      <v-scale-transition>
+                        <v-chip small label disabled v-show="!director.isDirectorActive">
+                          Ceased
+                        </v-chip>
+                      </v-scale-transition>
+                    </div>
+                  </label>
                   <div class="meta-container__inner">
                     <v-expand-transition>
-                      <div class="address-block" v-show="activeIndex !== index">
-                        <div class="address-block__info">
-                          <div class="address-block__info-row">{{director.street}}</div>
-                          <div class="address-block__info-row">
+                      <div class="director-info" v-show="activeIndex !== index">
+                        <div class="address">
+                          <div class="address__row">{{director.street}}</div>
+                          <div class="address__row">
                             <span>{{director.city}}</span>
                             <span>&nbsp;{{director.region}}</span>
                             <span>&nbsp;{{director.postalCode}}</span>
                           </div>
-                          <div class="address-block__info-row">{{director.country}}</div>
+                          <div class="address__row">{{director.country}}</div>
                         </div>
-                        <div class="address-block__actions">
-                          <v-btn small outline color="blue" @click="editDirector(index)">Change</v-btn>
+                        <div class="actions">
+                          <v-btn small outline color="blue"
+                            v-show="director.isDirectorActive"
+                            @click="editDirector(index)">
+                            Edit
+                          </v-btn>
+                          <v-btn small outline color="blue"
+                            v-show="director.isNew"
+                            @click="deleteDirector(index)">
+                            Remove
+                          </v-btn>
+                          <v-btn small outline color="blue"
+                            v-show="!director.isNew"
+                            @click="removeDirector(director)" >
+                            {{director.isDirectorActive ? 'Cease':'Undo'}}
+                          </v-btn>
                         </div>
                       </div>
                     </v-expand-transition>
                     <v-expand-transition>
-                      <v-form ref="directorForm" v-show="activeIndex === index" v-model="directorFormValid" lazy-validation>
+                      <v-form ref="editDirectorForm"
+                        v-show="activeIndex === index"
+                        v-model="directorFormValid" lazy-validation>
                         <div class="form__row three-column">
                           <v-text-field box label="First Name" class="item"
                             v-model="director.firstName"
+                            :rules="directorFirstNameRules"
                             required
                           ></v-text-field>
                           <v-text-field box label="Initial" class="item director-initial"
@@ -248,35 +301,43 @@
                           ></v-text-field>
                           <v-text-field box label="Last Name" class="item"
                             v-model="director.lastName"
+                            :rules="directorLastNameRules"
                           ></v-text-field>
                         </div>
                         <div class="form__row">
                           <v-text-field box label="Street Address"
                             v-model="director.street"
+                            :rules="directorStreetRules"
                             required>
                             </v-text-field>
                         </div>
                         <div class="form__row three-column">
                           <v-text-field class="item" box label="City"
                             v-model="director.city"
+                            :rules="directorCityRules"
                             required>
                           </v-text-field>
-                          <v-select class="item" box label="Province" :items="Regions" v-model="director.region" disabled></v-select>
+                          <v-select class="item" box label="Province"
+                            :items="regionList"
+                            :rules="directorRegionRules"
+                            v-model="director.region">
+                          </v-select>
                           <v-text-field class="item" box label="Postal Code"
                             v-model="director.postalCode"
+                            :rules="directorPostalCodeRules"
                             required>
                           </v-text-field>
                         </div>
                         <div class="form__row">
-                          <v-text-field box label="Country" v-model="director.country" disabled></v-text-field>
-                        </div>
-                        <div class="form__row">
-                          <v-textarea box rows="2" auto-grow label="Delivery Instructions (Optional)" v-model="DeliveryAddressInstructions"
-                          ></v-textarea>
+                          <v-select box label="Country"
+                            :items="countryList"
+                            :rules="directorCountryRules"
+                            v-model="director.country" >
+                          </v-select>
                         </div>
                         <div class="form__row form__btns">
                           <v-btn class="update-btn" color="primary"
-                            @click="addDirectorFee">
+                            @click="cancelEditDirector(index)">
                             Update Director</v-btn>
                           <v-btn @click="cancelEditDirector(index)">Cancel</v-btn>
                         </div>
@@ -290,13 +351,11 @@
         </section>
 
       </article>
-
       <aside>
         <affix relative-element-selector="#example-content" :offset="{ top: 120, bottom: 40 }">
           <FeeSummary ref="feeSummary"/>
         </affix>
       </aside>
-
     </v-container>
   </div>
 </template>
@@ -321,7 +380,10 @@ export default {
 
   data () {
     return {
-      Regions: [
+      countryList: [
+        'Canada'
+      ],
+      regionList: [
         'BC'
       ],
 
@@ -365,24 +427,39 @@ export default {
       MailingAddressInstructions: ' ',
 
       // Directors
-      isEditingDirector: false,
-      directorFormValid: false,
-      director: { id:"", firstName: "", lastName: "" },
-      directors: [
-        { id: 1, firstName: "Alli", lastName: "Myers", initial: "", street: "1111 First Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
-        { id: 2, firstName: "Nora", lastName: "Patton", initial: "", street: "2222 Second Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
-        { id: 3, firstName: "Phoebe", lastName: "Jones", initial: "", street: "3333 Third Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
-        { id: 4, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
-      ],
       activeIndex: undefined,
+      isEditingDirector: false,
+      isDirectorActive: true,
+      director: { id:"", firstName: "", lastName: "", street: "", city: "", region: "", postalCode: "", country: "" },
+      directors: [
+        { id: 1, isNew: false, isDirectorActive: true, firstName: "Alli", lastName: "Myers", initial: "", street: "1111 First Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
+        { id: 2, isNew: false, isDirectorActive: true, firstName: "Nora", lastName: "Patton", initial: "", street: "2222 Second Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
+        { id: 3, isNew: false, isDirectorActive: true, firstName: "Phoebe", lastName: "Jones", initial: "", street: "3333 Third Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
+        { id: 4, isNew: false, isDirectorActive: true, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
+      ],
 
-      // New Director Form Validation
-      newDirectorFormValid: true,
-      newDirectorFirstNameRules: [
+      //Director Form Validation
+      directorFormValid: true,
+      directorFirstNameRules: [
         v => !!v || 'A first name is required',
       ],
-      newDirectorLastNameRules: [
+      directorLastNameRules: [
         v => !!v || 'A last name is required',
+      ],
+      directorStreetRules: [
+        v => !!v || 'A street address is required',
+      ],
+      directorCityRules: [
+        v => !!v || 'A city is required',
+      ],
+      directorRegionRules: [
+        v => !!v || 'A region is required',
+      ],
+      directorPostalCodeRules: [
+        v => !!v || 'A postal code is required',
+      ],
+      directorCountryRules: [
+        v => !!v || 'A country is required',
       ]
     }
   },
@@ -392,37 +469,80 @@ export default {
       this.showAddressForm = true
       this.cancelEditDirector()
     },
+
     editMailingAddress: function () {
       this.showMailingAddressForm = true
     },
+
     cancelEditAddress: function () {
       this.showAddressForm = false
     },
-
 
     // Add New Director
     addNewDirector: function () {
       this.showNewDirectorForm = true
       this.activeIndex = null
     },
+
+    cancelNewDirector: function () {
+      this.showNewDirectorForm = false
+      this.$refs.newDirectorForm.reset()
+    },
+
+    deleteDirector: function (director, index) {
+      if(this.directors[index] === director) {
+        this.directors.splice(index, 1)
+      } else {
+        let found = this.directors.indexOf(director)
+        this.directors.splice(found, 1)
+      }
+    },
+
     validateNewDirectorForm: function (index) {
       if (this.$refs.newDirectorForm.validate()) {
         this.pushNewDirectorData()
+        this.cancelNewDirector()
+        this.addDirectorFee()
       }
       else {
       }
     },
+
     pushNewDirectorData: function (index) {
       let newDirector = {
         id: this.directors.length + 1,
         firstName: this.director.firstName,
         initial: this.director.initial,
-        lastName: this.director.lastName
+        lastName: this.director.lastName,
+        street: this.director.street,
+        city: this.director.city,
+        region: this.director.region,
+        postalCode: this.director.postalCode,
+        country: this.director.country,
+        isDirectorActive: true,
+        isNew: true
       }
       this.directors.push(newDirector)
     },
-    cancelNewDirector: function () {
-      this.showNewDirectorForm = false
+
+    pushEditDirectorData: function (index) {
+      let updateDirector = {
+        firstName: this.director.firstName,
+        initial: this.director.initial,
+        lastName: this.director.lastName,
+        street: this.director.street,
+        city: this.director.city,
+        region: this.director.region,
+        postalCode: this.director.postalCode,
+        country: this.director.country,
+      }
+      this.directors.push(updateDirector)
+    },
+
+    // Remove Director
+    removeDirector: function (director) {
+      director.isDirectorActive = !director.isDirectorActive
+      this.addDirectorFee()
     },
 
     // Modify Existing Directors
@@ -430,6 +550,10 @@ export default {
       this.activeIndex = index
       this.cancelNewDirector()
       this.cancelEditAddress()
+    },
+
+    closeEditDirector: function (index) {
+      this.activeIndex = undefined
     },
 
     cancelEditDirector: function (index) {
@@ -440,20 +564,10 @@ export default {
     addAddressFee: function () {
       this.$refs.feeSummary.addChangeAddressFee()
     },
+
     addDirectorFee: function () {
       this.$refs.feeSummary.addChangeDirectorFee()
     },
-  },
-
-  created () {
-    let count = 0;
-
-    this.directors.forEach(el => {
-      el.id = count;
-      count++;
-    });
-
-    console.log(this.directors);
   }
 }
 </script>
@@ -562,14 +676,18 @@ ul
     top 0
     right 0
 
+    .v-btn + .v-btn
+      margin-left 0.5rem
+
 @media (min-width 768px)
   .meta-container
     flex-flow row nowrap
 
     > label:first-child
       flex 0 0 auto
-      padding-right: 4rem
+      padding-right: 2rem
       width 12rem
+
 
 // List Layout
 .list
@@ -583,17 +701,6 @@ ul
   .address-list .form
     margin-top 0
 
-// Address Block Layout
-.address-block
-  display flex
-
-.address-block__info
-  flex 1 1 auto
-
-.address-block__actions
-  position absolute
-  top 0
-  right 0
 
 // Form Row Elements
 .form__row + .form__row
@@ -626,13 +733,63 @@ ul
   margin-left -3px
   padding 0
 
-// Registered Office Address Form Behavior
+
+// Address Block Layout
+.address
+  display flex
+  flex-direction column
+
+.address__row
+  flex 1 1 auto
+
+.actions
+  position absolute
+  top 0
+  right 0
+
+// Registered Office Address
+.registered-address-info
+  display flex
+
+  .status
+    flex 1 1 auto
+
+  .actions
+    flex 0 0 auto
+
 .show-address-form
   li:first-child
     padding-bottom 0
 
-// Director Form Fields
+// Director Display
+.director-info
+  display flex
+
+  .status
+    flex 1 1 auto
+
+  .actions
+    flex 0 0 auto
+
 .director-initial
-  max-width 8rem
+  max-width 6rem
+
+// V-chip customization
+.v-chip--small
+  height 1.2rem !important
+  margin 0
+  margin-top 0.5rem
+  padding 0
+  text-transform uppercase
+  font-size 0.65rem
+  font-weight 700
+  vertical-align top
+
+  .v-chip__content
+    height 1.2rem !important
+    padding 0 0.5rem
+
+.remove
+  color $gray5 !important
 
 </style>
