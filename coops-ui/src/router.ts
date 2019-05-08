@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Home from './views/Home.vue'
-import { AUTH_URL } from '../public/config/configuration.js'
+import { AUTH_URL } from '../public/config/configuration.js?1'
 
 Vue.use(Router)
 
