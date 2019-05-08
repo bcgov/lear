@@ -1,5 +1,6 @@
 {
 	"info": {
+<<<<<<< HEAD
 		"_postman_id": "f070b0e9-108c-41e9-b42e-42dd67db1450",
 		"name": "legal-api",
 		"description": "version=0.6 - This is a Legal API description",
@@ -96,6 +97,16 @@
 					}
 				}
 			],
+=======
+		"_postman_id": "c75dc154-2ecb-4590-852b-a2872c53a988",
+		"name": "legal-api",
+		"description": "version=0.6 - This is a Legal API description",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "get-business",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -117,13 +128,18 @@
 					"variable": [
 						{
 							"key": "id",
+<<<<<<< HEAD
 							"value": "CP1234567"
+=======
+							"value": "CP7654321"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 						}
 					]
 				}
 			},
 			"response": [
 				{
+<<<<<<< HEAD
 					"name": "get-business - missing id",
 					"originalRequest": {
 						"method": "GET",
@@ -261,6 +277,9 @@
 				},
 				{
 					"name": "get-business - CP6543210",
+=======
+					"name": "get-business - CP0001188",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -282,7 +301,11 @@
 							"variable": [
 								{
 									"key": "id",
+<<<<<<< HEAD
 									"value": "CP6543210"
+=======
+									"value": "CP0001188"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 								}
 							]
 						}
@@ -290,9 +313,15 @@
 					"status": "OK",
 					"code": 200,
 					"_postman_previewlanguage": "json",
+<<<<<<< HEAD
 					"header": [],
 					"cookie": [],
 					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP7654321\",\n        \"legal_name\": \"legal name - CP6543210\"\n    }\n}"
+=======
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP0001188\",\n        \"legal_name\": \"legal name - CP0001188\"\n    }\n}"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 				},
 				{
 					"name": "get-business - CP0001187",
@@ -325,11 +354,16 @@
 					"status": "OK",
 					"code": 200,
 					"_postman_previewlanguage": "json",
+<<<<<<< HEAD
 					"header": [],
+=======
+					"header": null,
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"cookie": [],
 					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP0001187\",\n        \"legal_name\": \"legal name - CP0001187\"\n    }\n}"
 				},
 				{
+<<<<<<< HEAD
 					"name": "get-business - CP0001188",
 					"originalRequest": {
 						"method": "GET",
@@ -433,6 +467,8 @@
 					"body": "{\n    \"message\": \"CP9999999 not found\"\n}"
 				},
 				{
+=======
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"name": "get-business - CP0001193",
 					"originalRequest": {
 						"method": "GET",
@@ -461,12 +497,20 @@
 						}
 					},
 					"_postman_previewlanguage": "json",
+<<<<<<< HEAD
 					"header": [],
+=======
+					"header": null,
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"cookie": [],
 					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP0001193\",\n        \"legal_name\": \"legal name - CP0001193\"\n    }\n}"
 				},
 				{
+<<<<<<< HEAD
 					"name": "get-business - invalid id",
+=======
+					"name": "get-business - CP6543210",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -488,6 +532,7 @@
 							"variable": [
 								{
 									"key": "id",
+<<<<<<< HEAD
 									"value": "CP999"
 								}
 							]
@@ -694,6 +739,9 @@
 								{
 									"key": "type",
 									"value": "annual_report"
+=======
+									"value": "CP6543210"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 								}
 							]
 						}
@@ -701,12 +749,21 @@
 					"status": "OK",
 					"code": 200,
 					"_postman_previewlanguage": "json",
+<<<<<<< HEAD
 					"header": [],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001191\",\n            \"legal_name\": \"legal name - CP0001191\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 				},
 				{
 					"name": "get-business - missing type",
+=======
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP7654321\",\n        \"legal_name\": \"legal name - CP6543210\"\n    }\n}"
+				},
+				{
+					"name": "get-business - CP0001191",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -715,7 +772,11 @@
 							"raw": ""
 						},
 						"url": {
+<<<<<<< HEAD
 							"raw": "{{url}}/api/v1/businesses/:id/filings/:type?year=2017",
+=======
+							"raw": "{{url}}/api/v1/businesses/:id",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 							"host": [
 								"{{url}}"
 							],
@@ -723,6 +784,7 @@
 								"api",
 								"v1",
 								"businesses",
+<<<<<<< HEAD
 								":id",
 								"filings",
 								":type"
@@ -732,19 +794,27 @@
 									"key": "year",
 									"value": "2017"
 								}
+=======
+								":id"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 							],
 							"variable": [
 								{
 									"key": "id",
+<<<<<<< HEAD
 									"value": "CP1234567"
 								},
 								{
 									"key": "type",
 									"value": ""
+=======
+									"value": "CP0001191"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 								}
 							]
 						}
 					},
+<<<<<<< HEAD
 					"status": "NOT FOUND",
 					"code": 404,
 					"_postman_previewlanguage": "json",
@@ -779,6 +849,15 @@
 				},
 				{
 					"name": "get-business - missing type",
+=======
+					"_postman_previewlanguage": "json",
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP0001191\",\n        \"legal_name\": \"legal name - CP0001191\"\n    }\n}"
+				},
+				{
+					"name": "get-business - CP7654321",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -787,7 +866,11 @@
 							"raw": ""
 						},
 						"url": {
+<<<<<<< HEAD
 							"raw": "{{url}}/api/v1/businesses/:id/filings/:type?year=2017",
+=======
+							"raw": "{{url}}/api/v1/businesses/:id",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 							"host": [
 								"{{url}}"
 							],
@@ -795,6 +878,7 @@
 								"api",
 								"v1",
 								"businesses",
+<<<<<<< HEAD
 								":id",
 								"filings",
 								":type"
@@ -804,19 +888,27 @@
 									"key": "year",
 									"value": "2017"
 								}
+=======
+								":id"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 							],
 							"variable": [
 								{
 									"key": "id",
+<<<<<<< HEAD
 									"value": "CP1234567"
 								},
 								{
 									"key": "type",
 									"value": ""
+=======
+									"value": "CP7654321"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 								}
 							]
 						}
 					},
+<<<<<<< HEAD
 					"status": "Bad Request",
 					"code": 400,
 					"_postman_previewlanguage": "json",
@@ -845,6 +937,58 @@
 					"cookie": [],
 					"body": "{\n    \"message\": \"Missing required parameter 'type'. Cannot get a filing without 'id' and 'type'\"\n}"
 				},
+=======
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP7654321\",\n        \"legal_name\": \"legal name - CP7654321\"\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "get-business - annual report CP7654321:2017",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{url}}/api/v1/businesses/:id/filings/:type?year=2017",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"businesses",
+						":id",
+						"filings",
+						":type"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2017"
+						}
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "CP7654321"
+						},
+						{
+							"key": "type",
+							"value": "annual_report"
+						}
+					]
+				}
+			},
+			"response": [
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 				{
 					"name": "get-business - annual report CP6543210:2016",
 					"originalRequest": {
@@ -888,12 +1032,20 @@
 					"status": "OK",
 					"code": 200,
 					"_postman_previewlanguage": "json",
+<<<<<<< HEAD
 					"header": [],
+=======
+					"header": null,
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP6543210\",\n            \"legal_name\": \"legal name\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 				},
 				{
+<<<<<<< HEAD
 					"name": "get-business - annual report CP0001188:2017",
+=======
+					"name": "get-business - annual report CP0001191:2017",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -923,7 +1075,11 @@
 							"variable": [
 								{
 									"key": "id",
+<<<<<<< HEAD
 									"value": "CP0001188"
+=======
+									"value": "CP0001191"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 								},
 								{
 									"key": "type",
@@ -935,9 +1091,15 @@
 					"status": "OK",
 					"code": 200,
 					"_postman_previewlanguage": "json",
+<<<<<<< HEAD
 					"header": [],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001188\",\n            \"legal_name\": \"legal name - CP0001188\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+=======
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001191\",\n            \"legal_name\": \"legal name - CP0001191\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 				},
 				{
 					"name": "get-business - annual report CP7654321:2017",
@@ -982,12 +1144,20 @@
 					"status": "OK",
 					"code": 200,
 					"_postman_previewlanguage": "json",
+<<<<<<< HEAD
 					"header": [],
+=======
+					"header": null,
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP1234567\",\n            \"legal_name\": \"legal name\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 				},
 				{
+<<<<<<< HEAD
 					"name": "get-business - missing id",
+=======
+					"name": "get-business - annual report CP0001187:2017",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -1017,7 +1187,11 @@
 							"variable": [
 								{
 									"key": "id",
+<<<<<<< HEAD
 									"value": ""
+=======
+									"value": "CP0001187"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 								},
 								{
 									"key": "type",
@@ -1026,6 +1200,7 @@
 							]
 						}
 					},
+<<<<<<< HEAD
 					"status": "Bad Request",
 					"code": 400,
 					"_postman_previewlanguage": "json",
@@ -1053,6 +1228,14 @@
 					],
 					"cookie": [],
 					"body": "{\n    \"message\": \"Missing required parameter 'id'. Cannot get a filing without 'id' and 'type'\"\n}"
+=======
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001187\",\n            \"legal_name\": \"legal name - CP0001187\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 				},
 				{
 					"name": "get-business - annual report CP0001193:2017",
@@ -1097,12 +1280,20 @@
 					"status": "OK",
 					"code": 200,
 					"_postman_previewlanguage": "json",
+<<<<<<< HEAD
 					"header": [],
+=======
+					"header": null,
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001193\",\n            \"legal_name\": \"legal name - CP0001193\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 				},
 				{
+<<<<<<< HEAD
 					"name": "get-business - annual report CP0001187:2017",
+=======
+					"name": "get-business - annual report CP0001188:2017",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -1132,7 +1323,11 @@
 							"variable": [
 								{
 									"key": "id",
+<<<<<<< HEAD
 									"value": "CP0001187"
+=======
+									"value": "CP0001188"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 								},
 								{
 									"key": "type",
@@ -1144,9 +1339,15 @@
 					"status": "OK",
 					"code": 200,
 					"_postman_previewlanguage": "json",
+<<<<<<< HEAD
 					"header": [],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001187\",\n            \"legal_name\": \"legal name - CP0001187\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+=======
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2017-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001188\",\n            \"legal_name\": \"legal name - CP0001188\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2017-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 				}
 			]
 		},
@@ -1193,6 +1394,7 @@
 			},
 			"response": [
 				{
+<<<<<<< HEAD
 					"name": "post - missing type and id",
 					"originalRequest": {
 						"method": "POST",
@@ -1242,6 +1444,9 @@
 				},
 				{
 					"name": "post - annual report CP0001188",
+=======
+					"name": "post - annual report CP0001191",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"originalRequest": {
 						"method": "POST",
 						"header": [
@@ -1272,7 +1477,11 @@
 							"variable": [
 								{
 									"key": "id",
+<<<<<<< HEAD
 									"value": "CP0001188"
+=======
+									"value": "CP0001191"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 								},
 								{
 									"key": "type",
@@ -1284,6 +1493,7 @@
 					"status": "Created",
 					"code": 201,
 					"_postman_previewlanguage": "json",
+<<<<<<< HEAD
 					"header": [],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001187\",\n            \"legal_name\": \"legal name - CP0001188\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
@@ -1338,6 +1548,14 @@
 				},
 				{
 					"name": "post - annual report CP0001187",
+=======
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001191\",\n            \"legal_name\": \"legal name - CP0001191\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+				},
+				{
+					"name": "post - annual report CP0001188",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"originalRequest": {
 						"method": "POST",
 						"header": [
@@ -1368,7 +1586,11 @@
 							"variable": [
 								{
 									"key": "id",
+<<<<<<< HEAD
 									"value": "CP0001187"
+=======
+									"value": "CP0001188"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 								},
 								{
 									"key": "type",
@@ -1380,9 +1602,15 @@
 					"status": "Created",
 					"code": 201,
 					"_postman_previewlanguage": "json",
+<<<<<<< HEAD
 					"header": [],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001187\",\n            \"legal_name\": \"legal name - CP0001187\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+=======
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001187\",\n            \"legal_name\": \"legal name - CP0001188\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 				},
 				{
 					"name": "post - annual report CP0001193",
@@ -1428,12 +1656,20 @@
 					"status": "Created",
 					"code": 201,
 					"_postman_previewlanguage": "json",
+<<<<<<< HEAD
 					"header": [],
+=======
+					"header": null,
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001193\",\n            \"legal_name\": \"legal name - CP0001193\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 				},
 				{
+<<<<<<< HEAD
 					"name": "post - annual report CP7654321",
+=======
+					"name": "post - annual report CP0001187",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"originalRequest": {
 						"method": "POST",
 						"header": [
@@ -1464,7 +1700,11 @@
 							"variable": [
 								{
 									"key": "id",
+<<<<<<< HEAD
 									"value": "CP7654321"
+=======
+									"value": "CP0001187"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 								},
 								{
 									"key": "type",
@@ -1476,12 +1716,21 @@
 					"status": "Created",
 					"code": 201,
 					"_postman_previewlanguage": "json",
+<<<<<<< HEAD
 					"header": [],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP1234567\",\n            \"legal_name\": \"legal name\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 				},
 				{
 					"name": "post - annual report CP0001191",
+=======
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001187\",\n            \"legal_name\": \"legal name - CP0001187\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+				},
+				{
+					"name": "post - annual report CP7654321",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 					"originalRequest": {
 						"method": "POST",
 						"header": [
@@ -1512,7 +1761,11 @@
 							"variable": [
 								{
 									"key": "id",
+<<<<<<< HEAD
 									"value": "CP0001191"
+=======
+									"value": "CP7654321"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 								},
 								{
 									"key": "type",
@@ -1524,6 +1777,7 @@
 					"status": "Created",
 					"code": 201,
 					"_postman_previewlanguage": "json",
+<<<<<<< HEAD
 					"header": [],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP0001191\",\n            \"legal_name\": \"legal name - CP0001191\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
@@ -1575,6 +1829,11 @@
 					"header": null,
 					"cookie": [],
 					"body": "{\n    \"message\": \"Missing required parameter 'id'. Cannot post a filing without 'id' and 'type'\"\n}"
+=======
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business_info\": {\n            \"founding_date\": \"2001-08-05\",\n            \"identifier\": \"CP1234567\",\n            \"legal_name\": \"legal name\"\n        },\n        \"annual_report\": {\n            \"annual_general_meeting_date\": \"2019-04-08\",\n            \"certified_by\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 				}
 			]
 		}
