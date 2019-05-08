@@ -80,7 +80,6 @@ router.afterEach((to, from) => {
       } else {
         console.log('AUTH FAILED')
         sessionStorage.setItem('REDIRECTED', 'true')
-        console.log('here')
         window.location.href = authURL
       }
     }
