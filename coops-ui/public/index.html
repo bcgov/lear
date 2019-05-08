@@ -18,6 +18,7 @@
 <!--  <script src="https://sso-dev.pathfinder.gov.bc.ca/auth/js/keycloak.js"></script>-->
   </body>
 <!-- get proper url-->
+<<<<<<< HEAD
   <script>
     sessionStorage.setItem('REDIRECTED', 'false')
     // var token
@@ -35,5 +36,27 @@
     // }).error(function () {
     //   alert('failed to initialize')
     // })
+=======
+  <script src="https://sso-dev.pathfinder.gov.bc.ca/auth/js/keycloak.js"></script>
+  <script>
+    var keycloak = Keycloak('keycloak.json')
+    var token
+    keycloak.init({ token: token, onLoad: 'login-required' }).success(function (authenticated) {
+      if (authenticated) {
+        sessionStorage.setItem('KEYCLOAK_TOKEN', keycloak.token)
+        keycloak.loadUserProfile().success(function (userProfile) {
+                var userName = userProfile.username
+                sessionStorage.setItem('USERNAME', userName)
+                console.log(userProfile)
+                console.log(userName)
+
+              });
+      } else {
+        alert('not authenticated')
+      }
+    }).error(function () {
+      alert('failed to initialize')
+    })
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
   </script>
 </html>

@@ -5,6 +5,7 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
+<<<<<<< HEAD
     corpNum: null,
     currentDate: '',
 
@@ -17,6 +18,13 @@ export default new Vuex.Store({
     filedDate: null,
     agmDate: null,
     noAGM: false,
+=======
+    userToken: null,
+    paymentToken: null,
+    corpNum: null,
+    ARFilingYear: null,
+
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
     validated: false
   },
   mutations: {

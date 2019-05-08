@@ -35,6 +35,7 @@
 
 <script>
 export default {
+<<<<<<< HEAD
   name: 'EntityInfo.vue',
   computed: {
     entityName () {
@@ -52,6 +53,15 @@ export default {
     entityIncNo () {
       if (this.$store.state.entityIncNo == null) return 'Not Available'
       return this.$store.state.entityIncNo
+=======
+  name: 'entity-info',
+  computed: {
+    userToken () {
+      return this.$store.state.userToken
+    },
+    corpNum () {
+      return this.$store.state.corpNum
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
     }
   },
 

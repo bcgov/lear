@@ -2,7 +2,11 @@
 	"info": {
 		"_postman_id": "71f9a60f-f0d0-43be-8d14-bf0d500d1ecd",
 		"name": "colin-api",
+<<<<<<< HEAD
 		"description": "version=0.92 - This is a colin API description",
+=======
+		"description": "version=0.9 - This is a colin API description",
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
 	"item": [
@@ -68,7 +72,11 @@
 					"_postman_previewlanguage": "json",
 					"header": null,
 					"cookie": [],
+<<<<<<< HEAD
 					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP7654321\",\n        \"current_as_of\": \"2019-04-15T20:05:49.068272+00:00\",\n        \"legal_name\": \"legal name - CP7654321\"\n    }\n}"
+=======
+					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP7654321\",\n        \"legal_name\": \"legal name - CP7654321\"\n    }\n}"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 				},
 				{
 					"name": "get-business - CP6543210",
@@ -103,7 +111,11 @@
 					"_postman_previewlanguage": "json",
 					"header": null,
 					"cookie": [],
+<<<<<<< HEAD
 					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP7654321\",\n        \"current_as_of\": \"2019-04-15T20:05:49.068272+00:00\",\n        \"legal_name\": \"legal name - CP6543210\"\n    }\n}"
+=======
+					"body": "{\n    \"business_info\": {\n        \"founding_date\": \"2019-04-08\",\n        \"identifier\": \"CP7654321\",\n        \"legal_name\": \"legal name - CP6543210\"\n    }\n}"
+>>>>>>> Merge branch '237-annual-report-ui' of https://github.com/kialj876/lear into CORS_TEST
 				}
 			]
 		},
