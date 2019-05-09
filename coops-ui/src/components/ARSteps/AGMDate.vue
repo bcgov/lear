@@ -1,18 +1,19 @@
 <template>
   <div id="agm-date">
     <v-container>
+      <v-card>
         <v-flex xs10 sm4>
           <v-menu
             ref="agmDatePicker"
             v-model="agmDatePicker"
             :close-on-content-click="false"
-            :nudge-right="25"
+            :nudge-right="100"
             lazy
             transition="scale-transition"
             offset-y
             full-width
-            max-width="290px"
-            min-width="290px">
+            max-width="22rem"
+            min-width="22rem">
             <template v-slot:activator="{ on }">
               <div :class="{'validationError': $v.dateFormatted.$error}">
                 <v-text-field
@@ -34,7 +35,6 @@
                            :min=minDate
                            :max=maxDate
                            color="blue"
-                           show-current="false"
                            no-title
                            @input="agmDatePicker = true">
               <v-btn flat color="blue" @click="$refs.agmDatePicker.save(date)">OK</v-btn>
@@ -54,11 +54,12 @@
             </span>
           </div>
         </v-flex>
-      <v-checkbox v-if="this.year != this.currentDate.substring(0,4)"
-                  id="agm-checkbox"
-                  v-model="didNotHoldAGM"
-                  :label=checkBoxLabel>
-      </v-checkbox>
+        <v-checkbox v-if="this.year != this.currentDate.substring(0,4)"
+                    id="agm-checkbox"
+                    v-model="didNotHoldAGM"
+                    :label=checkBoxLabel>
+        </v-checkbox>
+      </v-card>
     </v-container>
   </div>
 </template>
@@ -110,7 +111,6 @@ export default {
     return validations
   },
   mounted () {
-    this.date = ''
   },
   methods: {
     formatDate (date) {
@@ -201,4 +201,8 @@ export default {
 
   .validationErrorInfo
     color red
+
+  .v-card
+    padding 1rem
+
 </style>

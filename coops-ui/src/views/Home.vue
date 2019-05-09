@@ -4,6 +4,9 @@
       <EntityInfo/>
       <AnnualReport/>
       <v-container>
+        <article>
+          <sbc-fee-summary  v-bind:filingData="[...filingData]" />
+        </article>
         <v-btn v-if="filedDate == null" id='ar-pay-btn' color="blue" :disabled="!validated" @click="submit">Pay</v-btn>
         <v-btn v-else color="blue" id='ar-next-btn' :disabled="currentYear == ARFilingYear" @click="nextAR">Next</v-btn>
       </v-container>
@@ -16,17 +19,25 @@ import { Component, Vue } from 'vue-property-decorator'
 import axios from '@/axios-auth.ts'
 import EntityInfo from '@/components/EntityInfo.vue'
 import AnnualReport from '@/components/AnnualReport.vue'
+import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 
 export default {
   name: 'Home.vue',
   components: {
     EntityInfo,
-    AnnualReport
+    AnnualReport,
+    SbcFeeSummary
+
   },
   data () {
     return {
       lastARJson: null,
-      entityInfoJson: null
+      entityInfoJson: null,
+      filingData: {
+        filingTypeCode: 'OTADD',
+        entityType: 'CP',
+        filingDescription: 'Change of Registered office Address'
+      }
     }
   },
   computed: {
