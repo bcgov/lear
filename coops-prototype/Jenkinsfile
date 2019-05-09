@@ -109,15 +109,17 @@ if( run_pipeline ) {
 
 
   node {
+    
+    waitUntil {
+      stage("Build ${BUILD_CONFIG}") {
+        script {
+          openshift.withCluster() {
+            openshift.withProject() {
 
-    stage("Build ${BUILD_CONFIG}") {
-      script {
-        openshift.withCluster() {
-          openshift.withProject() {
-
-            echo "Building the application artifacts ..."
-            def build = openshift.selector("bc", "${BUILD_CONFIG}")
-            build.startBuild().logs("-f")
+              echo "Building the application artifacts ..."
+              def build = openshift.selector("bc", "${BUILD_CONFIG}")
+              build.startBuild().logs("-f")
+            }    
           }
         }
       }
