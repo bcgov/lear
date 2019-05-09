@@ -11,7 +11,7 @@ def BUILD_CONFIG = "${APP_NAME}-inter"
 def IMAGESTREAM_NAME = 'proto-ui'
 
 // you'll need to change this to point to your application component's folder within your repository
-def CONTEXT_DIRECTORY = 'coops-prototypei'
+def CONTEXT_DIRECTORY = 'coops-prototype'
 
 // EDIT LINE BELOW (Add a reference to the CHAINED_BUILD_CONFIG)
 def CHAINED_BUILD_CONFIG = 'proto-ui'
