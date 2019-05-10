@@ -15,7 +15,7 @@
 
 TODO: This should be pulled out to a common library.
 """
-from .utils import get_schema, validate_schema
+from .utils import get_schema, validate_schema, validate
 
 
-__all__ = ['get_schema', 'validate_schema']
+# __all__ = ['get_schema', 'validate_schema']

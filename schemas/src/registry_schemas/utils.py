@@ -17,10 +17,12 @@
 Test helper functions to load and assert that a JSON payload validates against a defined schema.
 """
 import json
-from os.path import dirname, join
+from os import listdir, path
 from typing import Tuple
 
-from jsonschema import Draft7Validator, draft7_format_checker
+from jsonschema import Draft7Validator, draft7_format_checker, RefResolver, SchemaError, ValidationError
+
+BASE_URI = 'https://bcrs.gov.bc.ca'
 
 
 def validate_schema(data: dict, schema_file: dict) -> Tuple[bool, iter]:
@@ -43,8 +45,40 @@ def get_schema(filename: str) -> dict:
 
 def _load_json_schema(filename: str):
     """Return the given schema file identified by filename."""
-    relative_path = join('schemas', filename)
-    absolute_path = join(dirname(__file__), relative_path)
+    relative_path = path.join('schemas', filename)
+    absolute_path = path.join(path.dirname(__file__), relative_path)
 
-    with open(absolute_path) as schema_file:
-        return json.loads(schema_file.read())
+    with open(absolute_path, 'r') as schema_file:
+        schema = json.loads(schema_file.read())
+
+        return schema
+
+
+def validate(json_data, schema_id, schema_search_path=path.join(path.dirname(__file__), 'schemas')):
+    """
+    load the json file and validate against loaded schema
+    """
+    try:
+        schemastore = {}
+        schema = None
+        fnames = listdir(schema_search_path)
+        for fname in fnames:
+            fpath = path.join(schema_search_path, fname)
+            if fpath[-5:] == ".json":
+                with open(fpath, "r") as schema_fd:
+                    schema = json.load(schema_fd)
+                    if "$id" in schema:
+                        schemastore[schema["$id"]] = schema
+
+        schema = schemastore.get(f'{BASE_URI}/{schema_id}')
+        Draft7Validator.check_schema(schema)
+        resolver = RefResolver("file://%s.json" % path.join(schema_search_path, schema_id), schema, schemastore)
+        Draft7Validator(schema, resolver=resolver).validate(json_data)
+        return True
+    except ValidationError as error:
+        # handle validation error
+        pass
+    except SchemaError as error:
+        # handle schema error
+        pass
+    return False
