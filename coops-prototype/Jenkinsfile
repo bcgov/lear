@@ -130,7 +130,7 @@ if( run_pipeline ) {
 
             echo "Building the ${IMAGESTREAM_NAME} image ..."
             def build = openshift.selector("bc", "${CHAINED_BUILD_CONFIG}")
-            build.startBuild().logs("-f")
+            build.startBuild("--wait=true").logs("-f")
 
             def IMAGE_HASH_DEBUG = getImageTagHash("${IMAGESTREAM_NAME}")
             echo "Completed build, image is: ${IMAGE_HASH_DEBUG}"
