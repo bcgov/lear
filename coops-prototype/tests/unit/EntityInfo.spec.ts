@@ -1,4 +1,5 @@
 import Vue from 'vue'
+
 import Vuetify from 'vuetify'
 
 import EntityInfo from '@/components/EntityInfo.vue'
