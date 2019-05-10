@@ -108,9 +108,8 @@ if( run_pipeline ) {
     }
 
 
-  node {
-    
-    waitUntil {
+  node {   
+   
       stage("Build ${BUILD_CONFIG}") {
         script {
           openshift.withCluster() {
@@ -121,8 +120,7 @@ if( run_pipeline ) {
               build.startBuild().logs("-f")
             }    
           }
-        }
-      }
+        }      
     }
 
     stage("Build ${IMAGESTREAM_NAME}") {
