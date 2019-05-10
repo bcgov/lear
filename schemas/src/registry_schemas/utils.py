@@ -11,29 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Utilities to load and validate against JSONSchemas.
 
 Test helper functions to load and assert that a JSON payload validates against a defined schema.
 """
 import json
-from os.path import dirname, join
+from os import listdir, path
 from typing import Tuple
 
-from jsonschema import Draft7Validator, draft7_format_checker
+from jsonschema import Draft7Validator, RefResolver, SchemaError, draft7_format_checker
 
 
-def validate_schema(data: dict, schema_file: dict) -> Tuple[bool, iter]:
-    """Do assertion that data validates against the JSONSchema in schema_file."""
-    schema = _load_json_schema(schema_file)
-
-    if Draft7Validator(schema, format_checker=draft7_format_checker).is_valid(data):
-        return True, None
-
-    errors = Draft7Validator(schema,
-                             format_checker=draft7_format_checker
-                             ).iter_errors(data)
-    return False, errors
+BASE_URI = 'https://bcrs.gov.bc.ca/.well_known/schemas'
 
 
 def get_schema(filename: str) -> dict:
@@ -43,32 +32,78 @@ def get_schema(filename: str) -> dict:
 
 def _load_json_schema(filename: str):
     """Return the given schema file identified by filename."""
-    relative_path = join('schemas', filename)
-    absolute_path = join(dirname(__file__), relative_path)
+    relative_path = path.join('schemas', filename)
+    absolute_path = path.join(path.dirname(__file__), relative_path)
 
-    with open(absolute_path) as schema_file:
-        return json.loads(schema_file.read())
+    with open(absolute_path, 'r') as schema_file:
+        schema = json.loads(schema_file.read())
 
-def convert_to_json_date(thedate):
-    """ Convert datetime to string formatted as YYYY-MM-DD, per JSON Schema specs.
+        return schema
 
-    :param thedate: datetime object
-    :return: string
+
+def get_schema_store(validate_schema: bool = False, schema_search_path: str = None) -> dict:
+    """Return a schema_store as a dict.
+
+    The default returns schema_store of the default schemas found in this package.
     """
-
     try:
-        return thedate.strftime('%Y-%m-%d')
-    except:
-        return None
+        if not schema_search_path:
+            schema_search_path = path.join(path.dirname(__file__), 'schemas')
+        schemastore = {}
+        fnames = listdir(schema_search_path)
+        for fname in fnames:
+            fpath = path.join(schema_search_path, fname)
+            if fpath[-5:] == '.json':
+                with open(fpath, 'r') as schema_fd:
+                    schema = json.load(schema_fd)
+                    if '$id' in schema:
+                        schemastore[schema['$id']] = schema
 
-def convert_to_json_datetime(thedate):
-    """ Convert datetime to string formatted as YYYY-MM-SSTHH:MM:SS+00:00, per JSON Schema specs.
+        if validate_schema:
+            for _, schema in schemastore.items():
+                Draft7Validator.check_schema(schema)
 
-    :param thedate: datetime object
-    :return: string
-    """
+        return schemastore
+    except (SchemaError, json.JSONDecodeError) as error:
+        # handle schema error
+        raise error
 
+
+def validate(json_data: json,
+             schema_id: str,
+             schema_store: dict = None,
+             validate_schema: bool = False,
+             schema_search_path: str = None
+             ) -> Tuple[bool, iter]:
+    """Load the json file and validate against loaded schema."""
     try:
-        return thedate.strftime('%Y-%m-%dT%H:%M:%S-00:00')
-    except:
-        return None
+        if not schema_search_path:
+            schema_search_path = path.join(path.dirname(__file__), 'schemas')
+
+        if not schema_store:
+            schema_store = get_schema_store(validate_schema, schema_search_path)
+
+        schema = schema_store.get(f'{BASE_URI}/{schema_id}')
+        if validate_schema:
+            Draft7Validator.check_schema(schema)
+
+        schema_file_path = path.join(schema_search_path, schema_id)
+        resolver = RefResolver(f'file://{schema_file_path}.json', schema, schema_store)
+
+        if Draft7Validator(schema,
+                           format_checker=draft7_format_checker,
+                           resolver=resolver
+                           ) \
+                .is_valid(json_data):
+            return True, None
+
+        errors = Draft7Validator(schema,
+                                 format_checker=draft7_format_checker,
+                                 resolver=resolver
+                                 ) \
+            .iter_errors(json_data)
+        return False, errors
+
+    except SchemaError as error:
+        # handle schema error
+        return False, error

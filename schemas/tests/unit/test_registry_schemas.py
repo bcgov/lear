@@ -15,7 +15,7 @@
 
 Every schema should have at least 1 example to validate against and use as an exemplar.
 """
-from registry_schemas import validate_schema
+from registry_schemas import validate_schema, validate
 
 
 def test_validate_business_schema():
@@ -49,3 +49,17 @@ def test_validate_business_schema_on_empty_schema():
         print(err.message)
 
     assert not is_valid
+
+
+def test_validate_schema():
+    """Assert that the schema is performing as expected."""
+    data = {
+        'business': {
+            'founding_date': '2007-04-08',
+            'identifier': 'CP1234567'
+        },
+    }
+
+    is_valid = validate(data, 'business.json')
+
+    assert False
