@@ -48,3 +48,27 @@ def _load_json_schema(filename: str):
 
     with open(absolute_path) as schema_file:
         return json.loads(schema_file.read())
+
+def convert_to_json_date(thedate):
+    """ Convert datetime to string formatted as YYYY-MM-DD, per JSON Schema specs.
+
+    :param thedate: datetime object
+    :return: string
+    """
+
+    try:
+        return thedate.strftime('%Y-%m-%d')
+    except:
+        return None
+
+def convert_to_json_datetime(thedate):
+    """ Convert datetime to string formatted as YYYY-MM-SSTHH:MM:SS+00:00, per JSON Schema specs.
+
+    :param thedate: datetime object
+    :return: string
+    """
+
+    try:
+        return thedate.strftime('%Y-%m-%dT%H:%M:%S-00:00')
+    except:
+        return None

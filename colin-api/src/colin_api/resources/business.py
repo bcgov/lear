@@ -23,6 +23,7 @@ from colin_api.exceptions import GenericException
 from colin_api.models import Business
 from colin_api.utils.util import cors_preflight
 
+
 API = Namespace('businesses', description='Colin API Services - Businesses')
 
 
@@ -45,9 +46,7 @@ class BusinessInfo(Resource):
             if not business:
                 return jsonify({'message': f'{identifier} not found'}), 404
 
-            return jsonify({
-                'business': business
-            })
+            return jsonify(business.as_dict())
 
         except GenericException as err:
 
@@ -58,4 +57,4 @@ class BusinessInfo(Resource):
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
-                {'message': 'Error when trying to retrieve business  record from COLIN'}), 500
+                {'message': 'Error when trying to retrieve business record from COLIN'}), 500

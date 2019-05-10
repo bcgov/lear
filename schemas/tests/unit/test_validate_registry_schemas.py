@@ -23,7 +23,7 @@ from registry_schemas import get_schema
 
 # testdata pattern is ({str: environment}, {expected return value})
 TEST_SCHEMAS_DATA = [
-    ('business.json'),
+    ('business.json'), ('legal_filings.json'),
 ]
 
 
