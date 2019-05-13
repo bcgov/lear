@@ -17,7 +17,23 @@ export default new Vuex.Store({
     filedDate: null,
     agmDate: null,
     noAGM: false,
-    validated: false
+    regOffAddrChange: false,
+    validated: false,
+
+    DeliveryAddressStreet: null,
+    DeliveryAddressCity: null,
+    DeliveryAddressRegion: null,
+    DeliveryAddressPostalCode: null,
+    DeliveryAddressCountry: null,
+    DeliveryAddressInstructions: null,
+
+    MailingAddressStreet: null,
+    MailingAddressCity: null,
+    MailingAddressRegion: null,
+    MailingAddressPostalCode: null,
+    MailingAddressCountry: null,
+    MailingAddressInstructions: null
+
   },
   mutations: {
   },
