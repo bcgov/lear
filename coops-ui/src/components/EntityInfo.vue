@@ -1,35 +1,31 @@
 <template>
   <div id="entity-info">
-    <v-container>
-        <div class="title-container">
-          <div class="entity-name">{{ entityName }}</div>
+    <div class="entity-name">{{ entityName }}</div>
 
-          <!-- TODO: Discuss/decide how we are handling entity statuses (e.g. 'GOODSTANDING' etc.) -->
-          <v-chip class="entity-status"
-            label
-            small
-            text-color="white"
-            v-bind:class="{
-              'blue' : entityStatus === 'GOODSTANDING',
-              'red' : entityStatus === 'PENDINGDISSOLUTION' | 'NOTINCOMPLIANCE',
-            }"
-          >
-            <!-- TODO: These strings should be pulled out into a globally accessible file -->
-            <span v-if="entityStatus === 'GOODSTANDING'">In Good Standing</span>
-            <span v-if="entityStatus === 'PENDINGDISSOLUTION'">Pending Dissolution</span>
-            <span v-if="entityStatus === 'NOTINCOMPLIANCE'">Not in Compliance</span>
+    <!-- TODO: Discuss/decide how we are handling entity statuses (e.g. 'GOODSTANDING' etc.) -->
+    <v-chip class="entity-status"
+      label
+      small
+      text-color="white"
+      v-bind:class="{
+        'blue' : entityStatus === 'GOODSTANDING',
+        'red' : entityStatus === 'PENDINGDISSOLUTION' | 'NOTINCOMPLIANCE',
+      }"
+    >
+      <!-- TODO: These strings should be pulled out into a globally accessible file -->
+      <span v-if="entityStatus === 'GOODSTANDING'">In Good Standing</span>
+      <span v-if="entityStatus === 'PENDINGDISSOLUTION'">Pending Dissolution</span>
+      <span v-if="entityStatus === 'NOTINCOMPLIANCE'">Not in Compliance</span>
 
-          </v-chip>
-        </div>
+    </v-chip>
 
-        <dl class="meta-container">
-          <dt>Business No:</dt>
-          <!-- TODO: Strings should be pulled out into a globally accessible file (e.g. 'Not Available') -->
-          <dd class="business-number">{{ entityBusinessNo ? entityBusinessNo : 'Not Available' }}</dd>
-          <dt>Incorporation No:</dt>
-          <dd class="incorp-number">{{ entityIncNo ? entityIncNo : 'Not Available' }}</dd>
-        </dl>
-    </v-container>
+    <dl class="meta-container">
+      <dt>Business No:</dt>
+      <!-- TODO: Strings should be pulled out into a globally accessible file (e.g. 'Not Available') -->
+      <dd class="business-number">{{ entityBusinessNo ? entityBusinessNo : 'Not Available' }}</dd>
+      <dt>Incorporation No:</dt>
+      <dd class="incorp-number">{{ entityIncNo ? entityIncNo : 'Not Available' }}</dd>
+    </dl>
   </div>
 </template>
 
@@ -74,7 +70,7 @@ export default {
   @import "../assets/styles/theme.styl";
 
   #entity-info
-    background #fff
+    padding-left 2rem
 
   .title-container
     margin-bottom 0.5rem

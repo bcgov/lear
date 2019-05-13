@@ -1,12 +1,13 @@
 <template>
   <div class="home">
     <v-app>
-      <EntityInfo/>
-      <AnnualReport/>
-      <v-container>
-        <article>
-          <sbc-fee-summary  v-bind:filingData="[...filingData]" />
-        </article>
+      <v-container id="entity-info-container" class="view-container">
+        <EntityInfo/>
+      </v-container>
+      <v-container id="annual-report-container" class="view-container">
+        <AnnualReport/>
+      </v-container>
+      <v-container id="submit-container" class="view-container">
         <v-btn v-if="filedDate == null" id='ar-pay-btn' color="blue" :disabled="!validated" @click="submit">Pay</v-btn>
         <v-btn v-else color="blue" id='ar-next-btn' :disabled="currentYear == ARFilingYear" @click="nextAR">Next</v-btn>
       </v-container>
@@ -15,29 +16,20 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator'
-import axios from '@/axios-auth.ts'
+import axios from '../axios-auth'
 import EntityInfo from '@/components/EntityInfo.vue'
 import AnnualReport from '@/components/AnnualReport.vue'
-import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
-
 export default {
   name: 'Home.vue',
   components: {
     EntityInfo,
-    AnnualReport,
-    SbcFeeSummary
-
+    AnnualReport
   },
   data () {
     return {
       lastARJson: null,
       entityInfoJson: null,
-      filingData: {
-        filingTypeCode: 'OTADD',
-        entityType: 'CP',
-        filingDescription: 'Change of Registered office Address'
-      }
+      regOffAddrJson: null
     }
   },
   computed: {
@@ -55,6 +47,9 @@ export default {
     },
     ARFilingYear () {
       return this.$store.state.ARFilingYear
+    },
+    regOffAddrChange () {
+      return this.$store.state.regOffAddrChange
     }
   },
   mounted () {
@@ -65,6 +60,7 @@ export default {
     if (this.ARFilingYear == null && this.corpNum != null) {
       this.getARInfo(this.corpNum)
       this.getEntityInfo(this.corpNum)
+      this.getRegOffAddr(this.corpNum)
     }
   },
   methods: {
@@ -77,15 +73,9 @@ export default {
         this.setARInfo()
       }).catch(error => console.log('getARInfo ERROR: ' + error + ' ' + axios.get))
     },
-    setARInfo () {
-      var lastARYear = this.lastARJson.filing.annual_report.annual_general_meeting_date.substring(0, 4)
-      var currentYear = (new Date()).getFullYear() + ''
-      if (lastARYear === currentYear) this.$store.state.ARFilingYear = null
-      else this.$store.state.ARFilingYear = +lastARYear + 1 + ''
-    },
     getEntityInfo (corpNum) {
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
-      // when calling the api make sure this url is for most recent AR - stub specifies 2017 + add token in header
+      // todo:delete hardcoded corpnum when we stop pointing at mock
       corpNum = 'CP0001187'
       var url = corpNum
       axios.get(url).then(response => {
@@ -93,13 +83,62 @@ export default {
         this.setEntityInfo()
       }).catch(error => console.log('getEntityInfo ERROR: ' + error + ' ' + axios.get))
     },
+    getRegOffAddr (corpNum) {
+      console.log(2)
+      var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
+      // todo:change endpoint to real one
+      var url = corpNum + '/filings/registered_office'
+      // todo:delete hardcoded json and make axios call
+      // axios.get(url).then(response => {
+      //   this.regOffAddrJson = response.data
+      //   this.setRegOffAddr()
+      // }).catch(error => console.log('getRegOffAddr ERROR: ' + error + ' ' + axios.get))
+      this.regOffAddrJson = {
+        DeliveryAddressStreet: '1234 Main Street',
+        DeliveryAddressCity: 'Victoria',
+        DeliveryAddressRegion: 'BC',
+        DeliveryAddressPostalCode: 'V9A 2G8',
+        DeliveryAddressCountry: 'Canada',
+        DeliveryAddressInstructions: ' ',
+        MailingAddressStreet: '1234 Main Street',
+        MailingAddressCity: 'Victoria',
+        MailingAddressRegion: 'BC',
+        MailingAddressPostalCode: 'V9A 2G8',
+        MailingAddressCountry: 'Canada',
+        MailingAddressInstructions: ' '
+      }
+      this.setRegOffAddr()
+    },
+    setARInfo () {
+      var lastARYear = this.lastARJson.filing.annual_report.annual_general_meeting_date.substring(0, 4)
+      var currentYear = (new Date()).getFullYear() + ''
+      if (lastARYear === currentYear) this.$store.state.ARFilingYear = null
+      else this.$store.state.ARFilingYear = +lastARYear + 1 + ''
+    },
     setEntityInfo () {
+      // todo:take out hardcoded values after api returns proper values
       this.$store.state.entityName = this.entityInfoJson.business_info.legal_name
       this.$store.state.entityStatus = 'GOODSTANDING'
       this.$store.state.entityBusinessNo = '123456789'
       this.$store.state.entityIncNo = this.entityInfoJson.business_info.identifier
     },
+    setRegOffAddr () {
+      this.$store.state.DeliveryAddressStreet = this.regOffAddrJson.DeliveryAddressStreet
+      this.$store.state.DeliveryAddressCity = this.regOffAddrJson.DeliveryAddressCity
+      this.$store.state.DeliveryAddressRegion = this.regOffAddrJson.DeliveryAddressRegion
+      this.$store.state.DeliveryAddressPostalCode = this.regOffAddrJson.DeliveryAddressPostalCode
+      this.$store.state.DeliveryAddressCountry = this.regOffAddrJson.DeliveryAddressCountry
+      this.$store.state.DeliveryAddressInstructions = this.regOffAddrJson.DeliveryAddressInstructions
+
+      this.$store.state.MailingAddressStreet = this.regOffAddrJson.MailingAddressStreet
+      this.$store.state.MailingAddressCity = this.regOffAddrJson.MailingAddressCity
+      this.$store.state.MailingAddressRegion = this.regOffAddrJson.MailingAddressRegion
+      this.$store.state.MailingAddressPostalCode = this.regOffAddrJson.MailingAddressPostalCode
+      this.$store.state.MailingAddressCountry = this.regOffAddrJson.MailingAddressCountry
+      this.$store.state.MailingAddressInstructions = this.regOffAddrJson.MailingAddressInstructions
+    },
     submit () {
+      // todo: redirect to payment - will need to save state of page
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
       // probably need to parametrize date=this.$store.state.currentDate + add token in header for api
       var url = this.payURL
@@ -118,10 +157,27 @@ export default {
       this.$store.state.filedDate = null
       this.$store.state.validated = false
       this.$store.state.noAGM = false
+      this.$store.state.regOffAddrChange = false
+      this.setRegOffAddrNull()
+      this.$router.go()
     },
     nextAR () {
       this.resetARInfo()
-      this.getARInfo(this.$store.state.corpNum)
+      this.getARInfo(this.corpNum)
+    },
+    setRegOffAddrNull () {
+      this.$store.state.DeliveryAddressStreet = null
+      this.$store.state.DeliveryAddressCity = null
+      this.$store.state.DeliveryAddressRegion = null
+      this.$store.state.DeliveryAddressPostalCode = null
+      this.$store.state.DeliveryAddressCountry = null
+      this.$store.state.DeliveryAddressInstructions = null
+      this.$store.state.MailingAddressStreet = null
+      this.$store.state.MailingAddressCity = null
+      this.$store.state.MailingAddressRegion = null
+      this.$store.state.MailingAddressPostalCode = null
+      this.$store.state.MailingAddressCountry = null
+      this.$store.state.MailingAddressInstructions = null
     }
   },
   watch: {
@@ -130,8 +186,28 @@ export default {
       if (val != null) {
         this.getARInfo(val)
         this.getEntityInfo(val)
+        this.getRegOffAddr(val)
       }
+    },
+    regOffAddrChange: function (val) {
+      console.log('Home.vue regOffAddrChange watcher fired: ', val)
+      // if (val && this.$store.state.agmDate == null) this.$store.state.validated = true
     }
   }
 }
 </script>
+
+<style lang="stylus">
+@import "../assets/styles/theme.styl"
+
+  #annual-report-container, #entity-info-container, #submit-container
+    margin 0
+    padding 1rem
+  #entity-info-container
+    margin-top .01rem
+    max-width none
+    max-height 6rem
+    background-color white
+  #submit-container
+    margin-left 1rem
+</style>

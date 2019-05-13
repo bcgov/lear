@@ -2,7 +2,7 @@
   <div id="agm-date">
     <v-container>
       <v-card>
-        <v-flex xs10 sm4>
+        <v-flex id="agm-date-flex" xs10 sm4>
           <v-menu
             ref="agmDatePicker"
             v-model="agmDatePicker"
@@ -186,6 +186,9 @@ export default {
 
 <style lang="stylus" scoped>
   @import "../../assets/styles/theme.styl";
+  #agm-date-flex
+    margin 0
+    max-width 30rem
 
   #agm-datepicker
     margin-bottom 0

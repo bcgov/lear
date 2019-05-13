@@ -1,6 +1,6 @@
 <template>
   <div id="registered-office-address">
-    <v-container class="view-container">
+    <v-container>
       <v-card>
         <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
           <li class="container">
@@ -22,6 +22,8 @@
                     </div>
                     <div class="address-block__actions">
                       <v-btn small outline color="blue" @click="editAddress">Change</v-btn>
+                      <br/>
+                      <v-btn v-if="regOffAddrChange" class="reset-btn" small outline color="red" @click="resetAddress">Reset</v-btn>
                     </div>
                   </div>
                 </v-expand-transition>
@@ -36,6 +38,7 @@
                     <div class="form__row">
                       <v-text-field
                         box
+                        id="street-address"
                         label="Street Address"
                         v-model="DeliveryAddressStreet"
                         :rules="DeliveryAddressStreetRules"
@@ -45,26 +48,37 @@
                     <div class="form__row three-column">
                       <v-text-field class="item"
                                     box
+                                    id="city"
                                     label="City"
                                     v-model="DeliveryAddressCity"
                                     :rules="DeliveryAddressCityRules"
                                     required>
                       </v-text-field>
-                      <v-select class="item"
+                      <v-text-field class="item"
                                 box
+                                id="state"
                                 label="Province"
-                                :items="Regions"
                                 v-model="DeliveryAddressRegion"
-                                disabled>
-                      </v-select>
-                      <v-text-field box class="item" label="Postal Code"
-                        v-model="DeliveryAddressPostalCode"
-                        :rules="DeliveryAddressPostalCodeRules"
-                        required>
+                                :rules="DeliveryAddressRegionRules"
+                                required>
+                      </v-text-field>
+                      <v-text-field box
+                                    class="item"
+                                    id="postcode"
+                                    label="Postal Code"
+                                    v-model="DeliveryAddressPostalCode"
+                                    :rules="DeliveryAddressPostalCodeRules"
+                                    required>
                       </v-text-field>
                     </div>
                     <div class="form__row">
-                      <v-text-field box label="Country" v-model="DeliveryAddressCountry" disabled></v-text-field>
+                      <v-text-field box
+                                    id="country"
+                                    label="Country"
+                                    v-model="DeliveryAddressCountry"
+                                    :rules="DeliveryAddressCountryRules"
+                                    required>
+                      </v-text-field>
                     </div>
                     <div class="form__row">
                       <v-textarea
@@ -191,7 +205,7 @@ export default {
   data () {
     return {
       Regions: [
-        'BC'
+        'BC', 'AB', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT'
       ],
 
       isEditing: false,
@@ -202,49 +216,151 @@ export default {
       // Validation
       deliveryAddressFormValid: true,
       mailingAddressFormValid: true,
-      DeliveryAddressStreet: '1234 Main Street',
+
+      DeliveryAddressStreet: '',
+      tmpDeliveryAddressStreet: '',
       DeliveryAddressStreetRules: [
         v => !!v || 'A street address is required'
       ],
-      DeliveryAddressCity: 'Victoria',
+      DeliveryAddressCity: '',
+      tmpDeliveryAddressCity: '',
       DeliveryAddressCityRules: [
         v => !!v || 'A city is required'
       ],
-      DeliveryAddressRegion: 'BC',
-      DeliveryAddressPostalCode: 'V9A 2G8',
+      DeliveryAddressRegion: '',
+      tmpDeliveryAddressRegion: '',
+      DeliveryAddressRegionRules: [
+        v => !!v || 'A province/state is required'
+      ],
+      DeliveryAddressPostalCode: '',
+      tmpDeliveryAddressPostalCode: '',
       DeliveryAddressPostalCodeRules: [
         v => !!v || 'A postal code is required'
       ],
-      DeliveryAddressCountry: 'Canada',
+      DeliveryAddressCountry: '',
+      tmpDeliveryAddressCountry: '',
+      DeliveryAddressCountryRules: [
+        v => !!v || 'A country is required'
+      ],
       DeliveryAddressInstructions: ' ',
-      MailingAddressStreet: '4321 Main Street',
+      tmpDeliveryAddressInstructions: ' ',
+      MailingAddressStreet: '',
+      tmpMailingAddressStreet: '',
       MailingAddressStreetRules: [
         v => !!v || 'A street address is required'
       ],
-      MailingAddressCity: 'Victoria',
+      MailingAddressCity: '',
+      tmpMailingAddressCity: '',
       MailingAddressCityRules: [
         v => !!v || 'A city is required'
       ],
-      MailingAddressRegion: 'BC',
-      MailingAddressPostalCode: 'V9A 2G8',
+      MailingAddressRegion: '',
+      tmpMailingAddressRegion: '',
+      MailingAddressPostalCode: '',
+      tmpMailingAddressPostalCode: '',
       MailingAddressPostalCodeRules: [
         v => !!v || 'A postal code is required'
       ],
-      MailingAddressCountry: 'Canada',
+      MailingAddressCountry: '',
+      tmpMailingAddressCountry: '',
       MailingAddressInstructions: ' ',
+      tmpMailingAddressInstructions: ' ',
 
       activeIndex: undefined
     }
   },
 
+  computed: {
+    regOffAddrChange () {
+      return this.$store.state.regOffAddrChange
+    },
+    storeDeliveryAddressStreet () {
+      if (this.$store.state.DeliveryAddressStreet == null) return ''
+      return this.$store.state.DeliveryAddressStreet
+    },
+    storeDeliveryAddressCity () {
+      if (this.$store.state.DeliveryAddressCity == null) return ''
+      return this.$store.state.DeliveryAddressCity
+    },
+    storeDeliveryAddressRegion () {
+      if (this.$store.state.DeliveryAddressRegion == null) return 'Not Available'
+      return this.$store.state.DeliveryAddressRegion
+    },
+    storeDeliveryAddressPostalCode () {
+      if (this.$store.state.DeliveryAddressPostalCode == null) return 'Not Available'
+      return this.$store.state.DeliveryAddressPostalCode
+    },
+    storeDeliveryAddressCountry () {
+      if (this.$store.state.DeliveryAddressCountry == null) return ''
+      return this.$store.state.DeliveryAddressCountry
+    },
+    storeDeliveryAddressInstructions () {
+      if (this.$store.state.DeliveryAddressInstructions == null) return ''
+      return this.$store.state.DeliveryAddressInstructions
+    },
+    storeMailingAddressStreet () {
+      if (this.$store.state.MailingAddressStreet == null) return 'Not Available'
+      return this.$store.state.MailingAddressStreet
+    },
+    storeMailingAddressCity () {
+      if (this.$store.state.MailingAddressCity == null) return 'Not Available'
+      return this.$store.state.MailingAddressCity
+    },
+    storeMailingAddressRegion () {
+      if (this.$store.state.MailingAddressRegion == null) return 'Not Available'
+      return this.$store.state.MailingAddressRegion
+    },
+    storeMailingAddressPostalCode () {
+      if (this.$store.state.MailingAddressPostalCode == null) return 'Not Available'
+      return this.$store.state.MailingAddressPostalCode
+    },
+    storeMailingAddressCountry () {
+      if (this.$store.state.MailingAddressCountry == null) return ''
+      return this.$store.state.MailingAddressCountry
+    },
+    storeMailingAddressInstructions () {
+      if (this.$store.state.MailingAddressInstructions == null) return ''
+      return this.$store.state.MailingAddressInstructions
+    }
+  },
+  mounted () {
+  },
   methods: {
     editAddress () {
+      this.tmpDeliveryAddressStreet = this.DeliveryAddressStreet
+      this.tmpDeliveryAddressCity = this.DeliveryAddressCity
+      this.tmpDeliveryAddressRegion = this.DeliveryAddressRegion
+      this.tmpDeliveryAddressCountry = this.DeliveryAddressCountry
+      this.tmpDeliveryAddressPostalCode = this.DeliveryAddressPostalCode
+      this.tmpDeliveryAddressInstructions = this.DeliveryAddressInstructions
+
+      this.tmpMailingAddressStreet = this.MailingAddressStreet
+      this.tmpMailingAddressCity = this.MailingAddressCity
+      this.tmpMailingAddressRegion = this.MailingAddressRegion
+      this.tmpMailingAddressCountry = this.MailingAddressCountry
+      this.tmpMailingAddressPostalCode = this.MailingAddressPostalCode
+      this.tmpMailingAddressInstructions = this.MailingAddressInstructions
+
       this.showAddressForm = true
     },
     editMailingAddress () {
       this.showMailingAddressForm = true
     },
     cancelEditAddress () {
+      this.DeliveryAddressStreet = this.tmpDeliveryAddressStreet
+      this.DeliveryAddressCity = this.tmpDeliveryAddressCity
+      this.DeliveryAddressRegion = this.tmpDeliveryAddressRegion
+      this.DeliveryAddressCountry = this.tmpDeliveryAddressCountry
+      this.DeliveryAddressPostalCode = this.tmpDeliveryAddressPostalCode
+      this.DeliveryAddressInstructions = this.tmpDeliveryAddressInstructions
+
+      this.MailingAddressStreet = this.tmpMailingAddressStreet
+      this.MailingAddressCity = this.tmpMailingAddressCity
+      this.MailingAddressRegion = this.tmpMailingAddressRegion
+      this.MailingAddressCountry = this.tmpMailingAddressCountry
+      this.MailingAddressPostalCode = this.tmpMailingAddressPostalCode
+      this.MailingAddressInstructions = this.tmpMailingAddressInstructions
+
       this.showAddressForm = false
     },
     updateAddress () {
@@ -257,6 +373,82 @@ export default {
         this.MailingAddressInstructions = this.DeliveryAddressInstructions
       }
       this.showAddressForm = false
+      this.checkAddrChange()
+      this.$store.state.regOffAddrChange = true
+    },
+    checkAddrChange () {
+      if (this.DeliveryAddressStreet !== this.storeDeliveryAddressStreet ||
+        this.DeliveryAddressCity !== this.storeDeliveryAddressCity ||
+        this.DeliveryAddressRegion !== this.storeDeliveryAddressRegion ||
+        this.DeliveryAddressCountry !== this.storeDeliveryAddressCountry ||
+        this.DeliveryAddressPostalCode !== this.storeDeliveryAddressPostalCode ||
+        this.DeliveryAddressInstructions !== this.storeDeliveryAddressInstructions ||
+        this.MailingAddressStreet !== this.storeMailingAddressStreet ||
+        this.MailingAddressCity !== this.storeMailingAddressCity ||
+        this.MailingAddressRegion !== this.storeMailingAddressRegion ||
+        this.MailingAddressCountry !== this.storeMailingAddressCountry ||
+        this.MailingAddressPostalCode !== this.storeMailingAddressPostalCode ||
+        this.MailingAddressInstructions !== this.storeMailingAddressInstructions) {
+        this.$store.state.regOffAddrChange = true
+      } else {
+        this.$store.state.regOffAddrChange = false
+      }
+    },
+    resetAddress () {
+      this.$store.state.regOffAddrChange = false
+
+      this.DeliveryAddressStreet = this.storeDeliveryAddressStreet
+      this.DeliveryAddressCity = this.storeDeliveryAddressCity
+      this.DeliveryAddressRegion = this.storeDeliveryAddressRegion
+      this.DeliveryAddressCountry = this.storeDeliveryAddressCountry
+      this.DeliveryAddressPostalCode = this.storeDeliveryAddressPostalCode
+      this.DeliveryAddressInstructions = this.storeDeliveryAddressInstructions
+
+      this.MailingAddressStreet = this.storeMailingAddressStreet
+      this.MailingAddressCity = this.storeMailingAddressCity
+      this.MailingAddressRegion = this.storeMailingAddressRegion
+      this.MailingAddressCountry = this.storeMailingAddressCountry
+      this.MailingAddressPostalCode = this.storeMailingAddressPostalCode
+      this.MailingAddressInstructions = this.storeMailingAddressInstructions
+    }
+  },
+  watch: {
+    storeDeliveryAddressStreet: function (val) {
+      console.log('watcher: ', val)
+      this.DeliveryAddressStreet = val
+    },
+    storeDeliveryAddressCity: function (val) {
+      this.DeliveryAddressCity = val
+    },
+    storeDeliveryAddressRegion: function (val) {
+      this.DeliveryAddressRegion = val
+    },
+    storeDeliveryAddressPostalCode: function (val) {
+      this.DeliveryAddressPostalCode = val
+    },
+    storeDeliveryAddressCountry: function (val) {
+      this.DeliveryAddressCountry = val
+    },
+    storeDeliveryAddressInstructions: function (val) {
+      this.DeliveryAddressInstructions = val
+    },
+    storeMailingAddressStreet: function (val) {
+      this.MailingAddressStreet = val
+    },
+    storeMailingAddressCity: function (val) {
+      this.DeliveryAddressCity = val
+    },
+    storeMailingAddressRegion: function (val) {
+      this.MailingAddressCity = val
+    },
+    storeMailingAddressPostalCode: function (val) {
+      this.MailingAddressPostalCode = val
+    },
+    storeMailingAddressCountry: function (val) {
+      this.MailingAddressCountry = val
+    },
+    storeMailingAddressInstructions: function (val) {
+      this.MailingAddressInstructions = val
     }
   }
 }
@@ -271,8 +463,11 @@ export default {
 
   .v-btn
     margin 0
-    min-width 4rem
+    min-width 6rem
     text-transform none
+
+  .reset-btn
+    margin-top .5rem
 
   .meta-container
     display flex
