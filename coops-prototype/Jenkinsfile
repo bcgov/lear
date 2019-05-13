@@ -82,7 +82,6 @@ if( !triggerBuild(CONTEXT_DIRECTORY) ) {
 
 if( run_pipeline ) {
 
-
     // create NodeJS pod to run verification steps
     def nodejs_label = "jenkins-nodejs-${UUID.randomUUID().toString()}"
     podTemplate(label: nodejs_label, name: nodejs_label, serviceAccount: 'jenkins', cloud: 'openshift', containers: [
