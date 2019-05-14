@@ -23,12 +23,12 @@ from registry_schemas import get_schema
 
 # testdata pattern is ({str: environment}, {expected return value})
 TEST_SCHEMAS_DATA = [
-    ('business.json'),
+    ('business.json'), ('legal_filings.json'),
 ]
 
 
 @pytest.mark.parametrize('schema_filename', TEST_SCHEMAS_DATA)
-def test_is_business_schema_valid(schema_filename):
+def test_is_schema_valid(schema_filename):
     """Assert that the Schema is a valid Draft7 JSONSchema."""
     schema = get_schema(schema_filename)
     Draft7Validator.check_schema(schema)

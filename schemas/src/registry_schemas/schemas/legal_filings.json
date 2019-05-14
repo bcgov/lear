@@ -211,7 +211,10 @@
     },
     "type": "object",
     "title": "Registry Filings",
-    "properties": {
+    "required": [
+        "filing"
+    ],
+   "properties": {
         "filing": {
             "allOf": [
                 {

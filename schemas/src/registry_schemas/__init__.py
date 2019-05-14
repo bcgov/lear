@@ -15,7 +15,7 @@
 
 TODO: This should be pulled out to a common library.
 """
-from .utils import get_schema, validate_schema
+from .utils import get_schema, validate_schema, convert_to_json_date, convert_to_json_datetime
 
 
-__all__ = ['get_schema', 'validate_schema']
+__all__ = ['get_schema', 'validate_schema', 'convert_to_json_date', 'convert_to_json_datetime']
