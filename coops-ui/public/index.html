@@ -8,36 +8,22 @@
     <title>Coops</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons">
-<!--    <link rel="stylesheet" type="text/css" href="http://ws1.postescanada-canadapost.ca/css/addresscomplete-2.00.min.css?key=RZ86-BB54-CM96-EE26" />-->
-<!--    <script type="text/javascript" src="http://ws1.postescanada-canadapost.ca/js/addresscomplete-2.00.min.js?key=RZ86-BB54-CM96-EE26"></script>-->
-<!--    <script type="text/javascript">-->
-<!--      var fields = [-->
-<!--              // { element: 'street-address', field: "Line1", mode: pca.fieldMode.DEFAULT},-->
-<!--              // // { element: "search", field: ""},-->
-<!--              // { element: "city", field: "City", mode: pca.fieldMode.POPULATE},-->
-<!--              // { element: "state", field: "ProvinceName", mode: pca.fieldMode.POPULATE},-->
-<!--              // { element: "postcode", field: "PostalCode", mode: pca.fieldMode.POPULATE},-->
-<!--              // { element: "country", field: "CountryName", mode: pca.fieldMode.COUNTRY }-->
-<!--              { element: 'street-address', field: "Line1", mode: pca.fieldMode.DEFAULT},-->
-<!--              // { element: "search", field: ""},-->
-<!--              { element: "city", field: "City", mode: pca.fieldMode.POPULATE},-->
-<!--              { element: "state", field: "ProvinceName", mode: pca.fieldMode.POPULATE},-->
-<!--              { element: "postcode", field: "PostalCode", mode: pca.fieldMode.POPULATE},-->
-<!--              { element: "country", field: "CountryName", mode: pca.fieldMode.COUNTRY }-->
-<!--      ],-->
-<!--      options = {-->
-<!--        key: 'RZ86-BB54-CM96-EE26',-->
-<!--        populate: true,-->
-<!--        suppressAutocomplete: true-->
-<!--      },-->
-<!--      control = new pca.Address(fields, options);-->
-
-<!--      addressComplete.listen('load', function(control) {-->
-<!--        control.listen("populate", function (address) {-->
-<!--            console.log('HERE ', address)-->
-<!--        });-->
-<!--      });-->
-<!--    </script>-->
+    <link rel="stylesheet" type="text/css" href="http://ws1.postescanada-canadapost.ca/css/addresscomplete-2.00.min.css?key=RZ86-BB54-CM96-EE26" />
+    <script type="text/javascript" src="http://ws1.postescanada-canadapost.ca/js/addresscomplete-2.00.min.js?key=RZ86-BB54-CM96-EE26"></script>
+    <script type="text/javascript">
+      var fields = [
+              { element: 'street-address', field: "Line1", mode: pca.fieldMode.SEARCH },
+              { element: "city", field: "City", mode: pca.fieldMode.SEARCH },
+              { element: "postcode", field: "PostalCode", mode: pca.fieldMode.SEARCH },
+              { element: "country", field: "CountryName", mode: pca.fieldMode.COUNTRY }
+      ],
+      options = {
+        key: 'RZ86-BB54-CM96-EE26',
+        populate: true,
+        suppressAutocomplete: true
+      },
+      canadaPostObject = new pca.Address(fields, options)
+    </script>
   </head>
   <body>
     <noscript>

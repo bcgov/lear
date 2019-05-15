@@ -54,14 +54,13 @@
                                     :rules="DeliveryAddressCityRules"
                                     required>
                       </v-text-field>
-                      <v-text-field class="item"
+                      <v-select class="item"
                                 box
                                 id="state"
                                 label="Province"
-                                v-model="DeliveryAddressRegion"
-                                :rules="DeliveryAddressRegionRules"
-                                required>
-                      </v-text-field>
+                                :items="Regions"
+                                v-model="DeliveryAddressRegion">
+                      </v-select>
                       <v-text-field box
                                     class="item"
                                     id="postcode"
@@ -324,6 +323,25 @@ export default {
     }
   },
   mounted () {
+    var vue = this
+
+    canadaPostObject.listen('populate', function (autoCompleteResponse) {
+      console.log('HERE2 ', autoCompleteResponse)
+      vue.DeliveryAddressStreet = autoCompleteResponse.Line1
+      vue.DeliveryAddressCity = autoCompleteResponse.City
+      vue.DeliveryAddressRegion = autoCompleteResponse.ProvinceCode
+      vue.DeliveryAddressPostalCode = autoCompleteResponse.PostalCode
+      vue.DeliveryAddressCountry = autoCompleteResponse.CountryName
+    })
+    canadaPostObject.listen('country', function (autoCompleteResponse) {
+      console.log('HERE3 ', autoCompleteResponse)
+      console.log('HERE4 ', this)
+      console.log('HERE5 ', app)
+      console.log('HERE6 ', vue)
+      // console.log('HERE5 ', Vue)
+      vue.DeliveryAddressCountry = autoCompleteResponse.name
+      console.log('here ', vue.DeliveryAddressCountry)
+    })
   },
   methods: {
     editAddress () {
@@ -410,11 +428,59 @@ export default {
       this.MailingAddressCountry = this.storeMailingAddressCountry
       this.MailingAddressPostalCode = this.storeMailingAddressPostalCode
       this.MailingAddressInstructions = this.storeMailingAddressInstructions
+    },
+    autoCompleteCountry (val) {
+      this.DeliveryAddressCountry = val.name
     }
+    // canadaPostSearch (type, searchString) {
+    //   var autoCompleteUrl = 'http://ws1.postescanada-canadapost.ca/AddressComplete/Interactive/AutoComplete/v1.00/json3.ws'
+    //   var autoCompleteFindUrl = 'http://ws1.postescanada-canadapost.ca/AddressComplete/Interactive/AutoCompleteFind/v1.00/wsdlnew.ws'
+    //   var retrieveByIdUrl = 'http://ws1.postescanada-canadapost.ca/AddressComplete/Interactive/RetrieveById/v1.00/wsdlnew.ws'
+    //   var url
+    //   var params = ''
+    //   if (type === 'autoComplete') {
+    //     params += '&SearchTerm=' + encodeURIComponent(searchString)
+    //     params += '&LocationAccuracy=' + encodeURIComponent('124')
+    //     params += '&Country=' + encodeURIComponent('CAN')
+    //     params += '&LanguagePreference=' + encodeURIComponent('en')
+    //     url = autoCompleteUrl
+    //   } else if (type === 'autoCompleteFind') {
+    //     params += '&Id=' + encodeURIComponent(searchString)
+    //     url = autoCompleteFindUrl
+    //   } else {
+    //
+    //   }
+    //   params += '&Key=' + encodeURIComponent('RZ86-BB54-CM96-EE26')
+    //   var http = new XMLHttpRequest()
+    //   http.open('POST', url, true)
+    //   http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded')
+    //   http.onreadystatechange = function () {
+    //     if (http.readyState === 4 && http.status === 200) {
+    //       var response = JSON.parse(http.responseText)
+    //       // Test for an error
+    //       if (response.Items.length === 1 && typeof (response.Items[0].Error) !== 'undefined') {
+    //         // Show the error message
+    //         alert(response.Items[0].Description)
+    //       } else {
+    //         // Check if there were any items found
+    //         if (response.Items.length === 0) alert('Sorry, there were no results')
+    //         else {
+    //           // PUT YOUR CODE HERE
+    //           console.log(response)
+    //         }
+    //       }
+    //     }
+    //   }
+    //   http.send(params)
+    // }
   },
   watch: {
+    // DeliveryAddressStreet: function (val) {
+    //   if (val !== '' && val !== null) {
+    //     this.canadaPostSearch('autoComplete', val)
+    //   }
+    // },
     storeDeliveryAddressStreet: function (val) {
-      console.log('watcher: ', val)
       this.DeliveryAddressStreet = val
     },
     storeDeliveryAddressCity: function (val) {

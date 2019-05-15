@@ -20,7 +20,7 @@ import axios from '../axios-auth'
 import EntityInfo from '@/components/EntityInfo.vue'
 import AnnualReport from '@/components/AnnualReport.vue'
 export default {
-  name: 'Home.vue',
+  name: 'Home',
   components: {
     EntityInfo,
     AnnualReport
