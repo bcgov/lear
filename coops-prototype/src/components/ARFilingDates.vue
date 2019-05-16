@@ -1,59 +1,75 @@
 <template>
   <ul class="director-list">
-    <li class="container">
-
-      <label>
-        <span>Annual General Meeting Date</span>
-      </label>
-
-      <div class="value">
-        <v-menu
-          ref="menu1"
-          v-model="menu1"
-          :close-on-content-click="false"
-          :nudge-right="40"
-          lazy
-          transition="scale-transition"
-          offset-y
-          full-width
-          max-width="290px"
-          min-width="290px"
-        >
-          <template v-slot:activator="{ on }">
-            <v-text-field
-              solo
-              flat
-              v-model="dateFormatted"
-              label="Annual General Meeting Date"
-              hint="Example: MM/DD/YYYY"
-              persistent-hint
-              append-icon="event"
-              @blur="date = parseDate(dateFormatted)"
-              v-on="on"
-            ></v-text-field>
-          </template>
-          <v-date-picker v-model="date" no-title @input="menu1 = false"></v-date-picker>
-        </v-menu>
+    <li class="container pb-2">
+      <div class="meta-container">
+        <label>
+          <span>Annual General<br> Meeting Date</span>
+        </label>
+        <div class="value">
+          <v-form v-model="agmDateValid">
+            <v-expand-transition>
+              <div class="form__row" v-show="!noAgmDate">
+                  <v-menu
+                    ref="menu1"
+                    v-model="menu1"
+                    :close-on-content-click="false"
+                    :nudge-right="40"
+                    lazy
+                    transition="scale-transition"
+                    offset-y
+                    full-width
+                    max-width="290px"
+                    min-width="290px"
+                  >
+                    <template v-slot:activator="{ on }">
+                      <v-text-field
+                        v-model="computedDateFormatted"
+                        box
+                        label="Select a Annual General Meeting Date"
+                        readonly
+                        @blur="date = parseDate(dateFormatted)"
+                        v-on="on"
+                        :rules="agmDateRules"
+                      ></v-text-field>
+                    </template>
+                    <v-date-picker v-model="date" no-title @input="menu1 = false"></v-date-picker>
+                  </v-menu>
+              </div>
+            </v-expand-transition>
+            <div class="form__row">
+              <v-checkbox class="noAgm-checkbox" label="No Annual General Meeting was held this year" v-model="noAgmDate" @click="removeAgmDate"></v-checkbox>
+            </div>
+          </v-form>
+        </div>
       </div>
     </li>
   </ul>
 </template>
 
 <script>
+import moment from 'moment'
+
 export default {
   name: 'ARFilingDates',
 
+
   data: vm => ({
-    date: new Date().toISOString().substr(0, 10),
-    dateFormatted: vm.formatDate(new Date().toISOString().substr(0, 10)),
+    noAgmDate: false,
+    date: null,
+    dateFormatted: null,
     menu1: false,
-    menu2: false
+    menu2: false,
+
+    agmDateValue: true,
+    agmDateRules: [
+      v => !!v || 'An Annual General Meeting date is required',
+    ]
   }),
 
   computed: {
     computedDateFormatted () {
-      return this.formatDate(this.date)
-    }
+      return this.date ? moment(this.date).format('dddd, MMMM Do YYYY') : ''
+    },
   },
 
   watch: {
@@ -74,6 +90,9 @@ export default {
 
       const [month, day, year] = date.split('/')
       return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    },
+    removeAgmDate () {
+      //this.date = null
     }
   }
 }
@@ -81,4 +100,10 @@ export default {
 
 <style lang="stylus" scoped>
   @import "../assets/styles/theme.styl"
+
+  .noAgm-checkbox
+    margin-top 8px
+    margin-left -3px
+    padding 0
+
 </style>

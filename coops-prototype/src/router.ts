@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import Home from './views/Home.vue'
 import AnnualReport from './views/AnnualReport.vue'
+import Payment from './views/Payment.vue'
 
 Vue.use(Router)
 
@@ -26,6 +27,12 @@ export default new Router({
       path: '/AnnualReport',
       name: 'annual report prototype',
       component: AnnualReport
+    },
+    {
+      path: '/Payment',
+      name: 'Payment Screen',
+      component: Payment,
+      props: true
     }
   ]
 })
