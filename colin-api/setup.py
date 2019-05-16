@@ -1,22 +1,28 @@
-# Copyright © 2019 Province of British Columbia.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""Installer and setup for this module
-"""
-from glob import glob
-from os.path import basename, splitext
+from setuptools import setup
 
-from setuptools import setup, find_packages
+import os
+
+
+def is_package(path):
+    return (
+        os.path.isdir(path) and
+        os.path.isfile(os.path.join(path, '__init__.py'))
+        )
+
+
+def find_packages(path, base="" ):
+    """ Find all packages in path """
+    packages = {}
+    for item in os.listdir(path):
+        dir = os.path.join(path, item)
+        if is_package( dir ):
+            if base:
+                module_name = "%(base)s.%(item)s" % vars()
+            else:
+                module_name = item
+            packages[module_name] = dir
+            packages.update(find_packages(dir, module_name))
+    return packages
 
 
 def read_requirements(filename):
@@ -39,23 +45,27 @@ def read(filepath):
     :return: file contents
     :rtype: str
     """
-    with open(filepath, 'r') as file_handle:
-        content = file_handle.read()
+    with open(filepath, 'r') as f:
+        content = f.read()
     return content
 
 
-REQUIREMENTS = read_requirements('requirements.txt')
+packages = find_packages(".")
+requirements = read_requirements('requirements/prod.txt')
+
 
 setup(
-    name="colin_api",
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
-    py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
+    name='colin_api',
+    packages=packages.keys(),
+    package_dir=packages,
     include_package_data=True,
     license=read('LICENSE'),
-    long_description=read('README.md'),
-    zip_safe=False,
-    install_requires=REQUIREMENTS,
-    setup_requires=["pytest-runner", ],
-    tests_require=["pytest", ],
+    long_description =read('README.md'),
+    install_requires=requirements,
+    setup_requires=[
+        'pytest-runner',
+    ],
+    tests_require=[
+        'pytest',
+    ],
 )
