@@ -8,6 +8,16 @@
           <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
         </header>
 
+        <section>
+          <header>
+            <h2>1. Filing Dates</h2>
+            <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium</p>
+            <v-card flat>
+              <ARFilingDates/>
+            </v-card>
+          </header>
+        </section>
+
         <!-- Addresses -->
         <section>
           <header>
@@ -357,6 +367,12 @@
         </affix>
       </aside>
     </v-container>
+    <v-container class="pt-0">
+      <div class="ar-filing-buttons">
+        <v-btn color="primary" large to="/Payment"> File & Pay</v-btn>
+        <v-btn large>Cancel</v-btn>
+      </div>
+    </v-container>
   </div>
 </template>
 
@@ -364,6 +380,7 @@
 import { Component, Vue } from 'vue-property-decorator'
 import Vue2Filters from 'vue2-filters'
 import { Affix } from 'vue-affix'
+import ARFilingDates from '@/components/ARFilingDates.vue'
 import EntityInfo from '@/components/EntityInfo.vue'
 import FeeSummary from '@/components/FeeSummary.vue'
 
@@ -374,6 +391,7 @@ export default {
   mixins: [Vue2Filters.mixin],
   components: {
     Affix,
+    ARFilingDates,
     EntityInfo,
     FeeSummary
   },
@@ -773,6 +791,14 @@ ul
 
 .director-initial
   max-width 6rem
+
+// Filing Buttons
+.ar-filing-buttons
+  padding-top 2rem
+  border-top: 1px solid $gray5
+  text-align right
+  .v-btn + .v-btn
+    margin-left 0.5rem
 
 // V-chip customization
 .v-chip--small
