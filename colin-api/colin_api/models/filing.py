@@ -73,73 +73,13 @@ class Filing():
             # set filing type code from filing_type (string)
             if filing_type == 'annual_report':
                 filing_type_code = 'OTANN'
+                filing_obj = cls.find_ar(business, identifier, year)
+
+            elif filing_type == 'registered_office_address':
+                filing_obj = cls.find_reg_off_addr(business, identifier, year)
             else:
                 # default value
                 filing_type_code = 'FILE'
-
-            # build base querystring
-            querystring = (
-                "select event.EVENT_TIMESTMP, EFFECTIVE_DT, AGM_DATE, PERIOD_END_DT, NOTATION, "
-                "FIRST_NME, LAST_NME, MIDDLE_NME, EMAIL_ADDR "
-                "from EVENT "
-                "join FILING on EVENT.EVENT_ID = FILING.EVENT_ID "
-                "left join FILING_USER on EVENT.EVENT_ID = FILING_USER.EVENT_ID "
-                "left join LEDGER_TEXT on EVENT.EVENT_ID = LEDGER_TEXT.EVENT_ID "
-                "where CORP_NUM='{}' and FILING_TYP_CD='{}' ".format(identifier, filing_type_code)
-            )
-
-            # condition by year on period end date - for coops, this is same as AGM date; for corps, this is financial
-            # year end date.
-            if year:
-                querystring += ' AND extract(year from PERIOD_END_DT) = {}'.format(year)
-
-            querystring += ' order by EVENT_TIMESTMP desc'
-
-            # get record
-            cursor = db.connection.cursor()
-            cursor.execute(querystring)
-            filing = cursor.fetchone()
-
-            if not filing:
-                raise FilingNotFoundException(identifier=identifier, filing_type=filing_type)
-
-            # add column names to resultset to build out correct json structure and make manipulation below more robust
-            # (better than column numbers)
-            filing = dict(zip([x[0].lower() for x in cursor.description], filing))
-
-            # if there is no AGM date in period_end_dt, check agm_date and effective date
-            try:
-                agm_date = next(item for item in [
-                    filing['period_end_dt'], filing['agm_date'], filing['effective_dt']
-                ] if item is not None)
-            except StopIteration:
-                agm_date = None
-
-            # build filing user name from first, middle, last name
-            filing_user_name = ' '.join(filter(None, [filing['first_nme'], filing['middle_nme'], filing['last_nme']]))
-            if not filing_user_name:
-                filing_user_name = 'Unavailable'
-
-            # if email is blank, set as empty tring
-            if not filing['email_addr']:
-                filing['email_addr'] = 'missing@missing.com'
-
-            # convert dates and date-times to correct json format
-            filing['event_timestmp'] = convert_to_json_date(filing['event_timestmp'])
-            agm_date = convert_to_json_date(agm_date)
-
-            filing_obj = Filing()
-            filing_obj.business = business
-            filing_obj.header = {
-                    'date': filing['event_timestmp'],
-                    'name': filing_type
-                }
-            filing_obj.body = {
-                    'annual_general_meeting_date': agm_date,
-                    'certified_by': filing_user_name,
-                    'email': filing['email_addr']
-                }
-            filing_obj.filing_type = filing_type
 
             return filing_obj
 
@@ -309,3 +249,110 @@ class Filing():
                        corp_num=filing.get_corp_num(),
                        state=state
                        )
+
+    @classmethod
+    def find_ar(cls, business: Business = None, identifier: str = None, year: int = None):
+
+        # build base querystring
+        querystring = (
+            "select event.EVENT_TIMESTMP, EFFECTIVE_DT, AGM_DATE, PERIOD_END_DT, NOTATION, "
+            "FIRST_NME, LAST_NME, MIDDLE_NME, EMAIL_ADDR "
+            "from EVENT "
+            "join FILING on EVENT.EVENT_ID = FILING.EVENT_ID "
+            "left join FILING_USER on EVENT.EVENT_ID = FILING_USER.EVENT_ID "
+            "left join LEDGER_TEXT on EVENT.EVENT_ID = LEDGER_TEXT.EVENT_ID "
+            "where CORP_NUM='{}' and FILING_TYP_CD='{}' ".format(identifier, 'OTANN')
+        )
+
+        # condition by year on period end date - for coops, this is same as AGM date; for corps, this is financial
+        # year end date.
+        if year:
+            querystring += ' AND extract(year from PERIOD_END_DT) = {}'.format(year)
+
+        querystring += ' order by EVENT_TIMESTMP desc'
+
+        # get record
+        cursor = db.connection.cursor()
+        cursor.execute(querystring)
+        filing = cursor.fetchone()
+
+        if not filing:
+            raise FilingNotFoundException(identifier=identifier, filing_type='annual_report')
+
+        # add column names to resultset to build out correct json structure and make manipulation below more robust
+        # (better than column numbers)
+        filing = dict(zip([x[0].lower() for x in cursor.description], filing))
+
+        # if there is no AGM date in period_end_dt, check agm_date and effective date
+        try:
+            agm_date = next(item for item in [
+                filing['period_end_dt'], filing['agm_date'], filing['effective_dt']
+            ] if item is not None)
+        except StopIteration:
+            agm_date = None
+
+        # build filing user name from first, middle, last name
+        filing_user_name = ' '.join(filter(None, [filing['first_nme'], filing['middle_nme'], filing['last_nme']]))
+        if not filing_user_name:
+            filing_user_name = 'Unavailable'
+
+        # if email is blank, set as empty tring
+        if not filing['email_addr']:
+            filing['email_addr'] = 'missing@missing.com'
+
+        # convert dates and date-times to correct json format
+        filing['event_timestmp'] = convert_to_json_date(filing['event_timestmp'])
+        agm_date = convert_to_json_date(agm_date)
+
+        filing_obj = Filing()
+        filing_obj.business = business
+        filing_obj.header = {
+            'date': filing['event_timestmp'],
+            'name': 'annual_report'
+        }
+        filing_obj.body = {
+            'annual_general_meeting_date': agm_date,
+            'certified_by': filing_user_name,
+            'email': filing['email_addr']
+        }
+        filing_obj.filing_type = 'annual_report'
+
+        return filing_obj
+
+    @classmethod
+    def find_reg_off_addr(cls, business: Business = None, identifier: str = None, year: int = None):
+        # build base querystring
+        querystring = (
+            "select ADDR_LINE_1, ADDR_LINE_2, CITY, PROVINCE, COUNTRY_TYP_CD, POSTAL_CD, DELIVERY_INSTRUCTIONS, "
+            "ADDRESS_DESC_SHORT "
+            "from ADDRESS "
+            "join OFFICE on ADDRESS.ADDR_ID = OFFICE.{} "
+            "where OFFICE.END_EVENT_ID IS NULL and OFFICE.CORP_NUM='{}' and OFFICE.OFFICE_TYP_CD='{}' "
+        )
+        querystring_delivery = (
+            querystring.format('DELIVERY_ADDR_ID', identifier, 'RG')
+        )
+        querystring_mailing = (
+            querystring.format('MAILING_ADDR_ID', identifier, 'RG')
+        )
+
+        # get record
+        cursor = db.connection.cursor()
+        cursor.execute(querystring_delivery)
+        delivery_address = cursor.fetchone()
+        test = cursor.fetchone()
+        if test:
+            current_app.logger.error('More than 1 delivery address returned - update oracle sql in find_reg_off_addr')
+        cursor.execute(querystring_mailing)
+        mailing_address = cursor.fetchone()
+        test = cursor.fetchone()
+        if test:
+            current_app.logger.error('More than 1 mailing address returned - update oracle sql in find_reg_off_addr')
+
+        if not delivery_address:
+            raise FilingNotFoundException(identifier=identifier, filing_type='registered_office_address')
+
+        print(delivery_address)
+        print(mailing_address)
+
+        return 1
