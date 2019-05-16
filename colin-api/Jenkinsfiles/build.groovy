@@ -22,7 +22,6 @@
 def COMPONENT_NAME = 'colin-api'
 def COMPONENT_NAME_INTER = 'colin-api-base'
 def TAG_NAME = 'dev'
-def NAMESPACE = 'gl2uos'
 
 // define groovy functions
 import groovy.json.JsonOutput
