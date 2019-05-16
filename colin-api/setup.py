@@ -34,7 +34,6 @@ def read_requirements(filename):
     """
     with open(filename, 'r') as req:
         requirements = req.readlines()
-    print(requirements)
     install_requires = [r.strip() for r in requirements if r.find('git+') != 0]
     return install_requires
 
