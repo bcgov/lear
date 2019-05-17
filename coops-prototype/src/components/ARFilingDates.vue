@@ -25,19 +25,19 @@
                       <v-text-field
                         v-model="computedDateFormatted"
                         box
-                        label="Select a Annual General Meeting Date"
+                        label="Select an Annual General Meeting Date"
                         readonly
                         @blur="date = parseDate(dateFormatted)"
                         v-on="on"
                         :rules="agmDateRules"
                       ></v-text-field>
                     </template>
-                    <v-date-picker v-model="date" no-title @input="menu1 = false"></v-date-picker>
+                    <v-date-picker v-model="date" no-title @input="menu1 = false" @click="$emit(this.date)"></v-date-picker>
                   </v-menu>
               </div>
             </v-expand-transition>
             <div class="form__row">
-              <v-checkbox class="noAgm-checkbox" label="No Annual General Meeting was held this year" v-model="noAgmDate" @click="removeAgmDate"></v-checkbox>
+              <v-checkbox class="noAgm-checkbox" color="primary" label="No Annual General Meeting was held this year" v-model="noAgmDate"></v-checkbox>
             </div>
           </v-form>
         </div>
@@ -52,6 +52,11 @@ import moment from 'moment'
 export default {
   name: 'ARFilingDates',
 
+  props: {
+    parentData: Object,
+    stringProp: "Blah Blah blah",
+    title: String
+  },
 
   data: vm => ({
     noAgmDate: false,
@@ -60,7 +65,7 @@ export default {
     menu1: false,
     menu2: false,
 
-    agmDateValue: true,
+    agmDateValid: true,
     agmDateRules: [
       v => !!v || 'An Annual General Meeting date is required',
     ]
@@ -69,6 +74,7 @@ export default {
   computed: {
     computedDateFormatted () {
       return this.date ? moment(this.date).format('dddd, MMMM Do YYYY') : ''
+      alert(computedDateFormatted)
     },
   },
 
@@ -79,6 +85,11 @@ export default {
   },
 
   methods: {
+    showAgmDate: function (date) {
+      this.$emit('get-date', this.date)
+      alert(this.date)
+    },
+
     formatDate (date) {
       if (!date) return null
 
@@ -90,9 +101,6 @@ export default {
 
       const [month, day, year] = date.split('/')
       return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
-    },
-    removeAgmDate () {
-      //this.date = null
     }
   }
 }
@@ -102,7 +110,7 @@ export default {
   @import "../assets/styles/theme.styl"
 
   .noAgm-checkbox
-    margin-top 8px
+    margin-top 0
     margin-left -3px
     padding 0
 

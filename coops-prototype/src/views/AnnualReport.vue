@@ -10,10 +10,10 @@
 
         <section>
           <header>
-            <h2>1. Filing Dates</h2>
+            <h2>1. Annual General Meeting (AGM) Information</h2>
             <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium</p>
             <v-card flat>
-              <ARFilingDates/>
+              <ARFilingDates @get-date="onClickChild"/>
             </v-card>
           </header>
         </section>
@@ -21,10 +21,10 @@
         <!-- Addresses -->
         <section>
           <header>
-            <h2>1. Registered Office Addresses</h2>
+            <h2>2. Registered Office Addresses</h2>
             <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium</p>
           </header>
-          <v-card>
+          <v-card flat>
             <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
               <li class="container">
                 <div class="meta-container">
@@ -58,7 +58,7 @@
                             v-model="DeliveryAddressStreet"
                             :rules="DeliveryAddressStreetRules"
                             required>
-                            </v-text-field>
+                          </v-text-field>
                         </div>
                         <div class="form__row three-column">
                           <v-text-field box class="item" label="City"
@@ -118,7 +118,7 @@
                     <v-expand-transition>
                       <v-form class="form" v-show="showAddressForm" v-model="mailingAddressFormValid" lazy-validation>
                         <div class="form__row">
-                          <v-checkbox class="inherit-checkbox" label="Same as Delivery Address" v-model="inheritDeliveryAddress"></v-checkbox>
+                          <v-checkbox class="inherit-checkbox" color="primary" label="Same as Delivery Address" v-model="inheritDeliveryAddress"></v-checkbox>
                         </div>
                         <v-expand-transition>
                           <div v-show="!inheritDeliveryAddress">
@@ -174,7 +174,7 @@
 
         <section>
           <header>
-            <h2>2. Director Information (as of April 1, 2019)</h2>
+            <h2>3. Director Information (as of April 1, 2019)</h2>
             <p>Tell us who was elected or appointed and who ceased to be a director at your 2018 AGM.</p>
             <v-expand-transition>
               <div v-show="!showNewDirectorForm">
@@ -182,7 +182,7 @@
               </div>
             </v-expand-transition>
           </header>
-          <v-card>
+          <v-card flat>
             <v-expand-transition>
               <ul class="list director-list" v-show="showNewDirectorForm">
                 <li class="container">
@@ -370,7 +370,7 @@
     <v-container class="pt-0">
       <div class="ar-filing-buttons">
         <v-btn color="primary" large to="/Payment"> File & Pay</v-btn>
-        <v-btn large>Cancel</v-btn>
+        <v-btn large to="/Dashboard">Cancel</v-btn>
       </div>
     </v-container>
   </div>
@@ -398,6 +398,8 @@ export default {
 
   data () {
     return {
+      agmDate: '',
+
       countryList: [
         'Canada'
       ],
@@ -483,6 +485,10 @@ export default {
   },
 
   methods: {
+    onClickChild (value) {
+      console.log(value) // someValue
+    },
+
     editAddress: function () {
       this.showAddressForm = true
       this.cancelEditDirector()
@@ -616,8 +622,8 @@ export default {
 
   section
     header p
-      color $gray6
-      font-size 1rem
+      color $gray8
+      font-size 0.875rem
 
 @media (max-width 768px)
   .view-container
@@ -660,8 +666,8 @@ h1
 
 h2
   margin-bottom 0.25rem
-  font-size 1.125rem
-  font-weight 500
+  font-size 1rem
+  font-weight 700
 
 h4
   margin-top 0.5rem
@@ -670,8 +676,7 @@ h4
   font-weight 500
 
 p
-  margin-bottom 1rem
-  color $gray7
+  margin-bottom 1.5rem
 
 ul
   margin 0

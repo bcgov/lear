@@ -6,10 +6,7 @@
           alt="Province of British Columbia Logo"
           title="Province of British Columbia"/>
       </router-link>
-      <!--
-      <span>{{this.$route.name}}</span>
-      -->
-
+      <span class="paybc-logo" v-show="this.$route.name === 'PayBC'">Pay<strong>BC</strong></span>
     </div>
   </header>
 </template>
@@ -36,5 +33,19 @@ export default {
 
   .brand-img
     margin-top 0.3rem
+
+  .paybc-logo {
+    margin-top 0.45rem
+    margin-left 2rem
+    display: inline-block
+    font-size 2.25rem
+    font-weight 600
+    vertical-align top
+
+    strong {
+      color $BCgovGold5
+      font-weight 600
+    }
+  }
 
 </style>

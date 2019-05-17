@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import Home from './views/Home.vue'
 import AnnualReport from './views/AnnualReport.vue'
+import Dashboard from './views/Dashboard.vue'
 import Payment from './views/Payment.vue'
 
 Vue.use(Router)
@@ -16,6 +17,11 @@ export default new Router({
       component: Home
     },
     {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: Dashboard
+    },
+    {
       path: '/about',
       name: 'about',
       // route level code-splitting
@@ -24,13 +30,13 @@ export default new Router({
       component: () => import(/* webpackChunkName: "about" */ './views/About.vue')
     },
     {
-      path: '/AnnualReport',
+      path: '/annualReport',
       name: 'annual report prototype',
       component: AnnualReport
     },
     {
       path: '/Payment',
-      name: 'Payment Screen',
+      name: 'PayBC',
       component: Payment,
       props: true
     }

@@ -1,19 +1,19 @@
 <template>
   <v-card>
     <header>Fee Summary</header>
-    <v-slide-y-transition group tag="ul" class="fee-list">
+    <v-scale-transition group tag="ul" class="fee-list">
       <li class="container fee-list__item" v-show="fee.name" v-for="fee in fees" :key="fee.id">
         <div class="fee-list__item-name">{{fee.name}}</div>
         <div class="fee-list__item-value">{{fee.value | currency}}</div>
       </li>
-    </v-slide-y-transition>
+    </v-scale-transition>
     <div class="container fee-total">
       <div class="fee-total__name">Total Fees</div>
       <div class="fee-total__currency">{{currencyName}}</div>
       <div class="fee-total__value">
-        <v-slide-y-reverse-transition name="slide" mode="out-in">
+        <v-scale-transition name="slide" mode="out-in">
           <div :key="totalFees">{{totalFees | currency}}</div>
-        </v-slide-y-reverse-transition>
+        </v-scale-transition>
       </div>
     </div>
   </v-card>
@@ -48,7 +48,7 @@ export default {
     },
     addChangeDirectorFee (index) {
       if (this.canAddDirectorFee == true) {
-        this.fees.push({ id: 2, name: "Change Director's Information", value: 20.00 });
+        this.fees.push({ id: 2, name: "Change Directors", value: 20.00 });
         this.canAddDirectorFee = !this.canAddDirectorFee;
       }
       else {

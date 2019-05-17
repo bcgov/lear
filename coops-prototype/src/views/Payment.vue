@@ -1,7 +1,8 @@
 <template>
   <div>
-    Payment
+    <v-btn color="primary" large to="/Dashboard">Dashboard</v-btn>
   </div>
+
 </template>
 
 <script lang='ts'>
