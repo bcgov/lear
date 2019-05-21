@@ -599,53 +599,6 @@ export default {
 <style lang="stylus">
 @import "../assets/styles/theme.styl"
 
-// Page Layout
-.view-container
-  display flex
-  flex-flow column nowrap
-  padding-top 3rem
-  padding-bottom 3rem
-
-  article
-    flex 1 1 auto
-
-    section
-      margin-top 3rem
-
-  aside
-    flex 0 0 auto
-    width 20rem
-    margin-top 3rem
-
-    .affix
-      width 20rem
-
-  section
-    header p
-      color $gray8
-      font-size 0.875rem
-
-@media (max-width 768px)
-  .view-container
-    aside
-      width 100%
-
-      .affix
-        position relative
-        top 0 !important
-        width 100%
-
-@media (min-width 960px)
-  .view-container
-    flex-flow row nowrap
-
-    article
-      margin-right 2rem
-
-    aside
-      margin-top 0
-      width 20rem
-
 article
   .v-card
     line-height 1.2rem
@@ -723,20 +676,6 @@ ul
 @media (min-width 768px)
   .address-list .form
     margin-top 0
-
-
-// Form Row Elements
-.form__row + .form__row
-  margin-top 0.25rem
-
-.form__btns
-  text-align right
-
-  .v-btn
-    margin 0
-
-    + .v-btn
-      margin-left 0.5rem
 
 .form__row.three-column
   display flex
