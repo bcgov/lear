@@ -47,3 +47,50 @@ p
 
 .app-container.theme--light
   background $gray1
+
+.form-input
+  display flex
+  border 1px solid $gray5
+  width 10rem
+
+  .prefix
+    flex 0 0 auto
+    width 2.5rem
+    padding 0.5rem
+    background-color $gray3
+    text-align center
+
+  input
+    flex 0 0 auto
+    width 7.5rem
+    margin 0
+    text-align right
+
+  select
+    flex 1 1 auto
+    height 32px
+    padding-left 0.5rem
+    -webkit-appearance menulist
+
+// Payment Table
+.payment-table
+  width 100%
+  border 1px solid $gray3
+  border-collapse collapse
+  line-height 1rem
+  font-size 0.8rem
+
+  thead
+    background #ffffff
+    font-weight 400
+
+  tfoot
+    background $gray1
+
+  th, td
+    padding 0.75rem
+    border 1px solid $gray3
+    text-align left
+
+.no-wrap
+  white-space nowrap

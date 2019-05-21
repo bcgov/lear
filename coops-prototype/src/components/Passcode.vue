@@ -1,39 +1,39 @@
 <template>
   <div>
-  <v-form class="passcode-form">
-    <h2>Sign in</h2>
-    <div class="form__row">
-      <v-text-field
-        box
-        label="Enter your Incorporation Number"
-        append-icon="info"
-        hint="Example: 123456789"
-        persistent-hint
-        v-model="entityNum"
-        :rules="entityNumRules"
-      ></v-text-field>
-    </div>
-    <div class="form__row">
-      <v-text-field
-        box
-        label="Enter your Passcode"
-        append-icon="lock"
-        hint="Example: 123456789"
-        persistent-hint
-        v-model="entityPasscode"
-        :rules="entityPasscodeRules"
-      ></v-text-field>
-    </div>
-    <div class="form__row form__btns">
-      <v-btn class="recovery-btn" color="primary" flat large @click.stop="noPasscodeDialog = true">
-        Don't have a Passcode?
-      </v-btn>
-      <v-btn class="sign-in-btn" color="primary" large to="/Dashboard">
-        Sign in
-        <v-icon right>arrow_forward</v-icon>
-      </v-btn>
-    </div>
-  </v-form>
+    <v-form class="passcode-form" ref="signInForm" v-model="signInFormValid">
+      <h2>Sign in</h2>
+      <div class="form__row">
+        <v-text-field
+          box
+          label="Enter your Incorporation Number"
+          append-icon="info"
+          hint="Example: 123456789"
+          persistent-hint
+          v-model="entityNum"
+          :rules="entityNumRules"
+        ></v-text-field>
+      </div>
+      <div class="form__row">
+        <v-text-field
+          box
+          label="Enter your Passcode"
+          append-icon="lock"
+          hint="Example: 123456789"
+          persistent-hint
+          v-model="entityPasscode"
+          :rules="entityPasscodeRules"
+        ></v-text-field>
+      </div>
+      <div class="form__row form__btns">
+        <v-btn class="recovery-btn" color="primary" flat large @click.stop="noPasscodeDialog = true">
+          Don't have a Passcode?
+        </v-btn>
+        <v-btn class="sign-in-btn" color="primary" large to="/Dashboard" :disabled="!signInFormValid">
+          Sign in
+          <v-icon right>arrow_forward</v-icon>
+        </v-btn>
+      </div>
+    </v-form>
     <v-dialog width="50rem" v-model="noPasscodeDialog">
       <v-card>
         <v-card-title>Don't have a Passcode?</v-card-title>
@@ -69,7 +69,7 @@ export default {
   data: () => ({
     entityPasscode: '',
     noPasscodeDialog: false,
-    valid: false,
+    signInFormValid: false,
     entityNum: '',
     entityNumRules: [
       v => !!v || 'Incorporation Number is required'
