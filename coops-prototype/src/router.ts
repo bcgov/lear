@@ -4,6 +4,7 @@ import Home from './views/Home.vue'
 import AnnualReport from './views/AnnualReport.vue'
 import Dashboard from './views/Dashboard.vue'
 import Payment from './views/Payment.vue'
+import PaymentCart from './views/PaymentCart.vue'
 
 Vue.use(Router)
 
@@ -38,6 +39,12 @@ export default new Router({
       path: '/Payment',
       name: 'PayBC',
       component: Payment,
+      props: true
+    },
+    {
+      path: '/PaymentCart',
+      name: 'PayBCCart',
+      component: PaymentCart,
       props: true
     }
   ]

@@ -2,40 +2,48 @@
   <v-container class="view-container">
       <article id="example-content">
         <header>
-          <h1>Annual Report Filing Payment</h1>
-          <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+          <h1>Your Cart: <small>Review the items in your Cart before proceeding to payment.</small></h1>
         </header>
+        <v-alert color="success" :value="true">
+          You have added 1 items to your Cart. Review these items before proceeding to payment.
+        </v-alert>
         <section>
           <header>
-            <h2><v-icon>check_circle</v-icon>Your Invoice</h2>
+            <h2>Credit Card Cart</h2>
           </header>
         </section>
         <div>
           <table class="payment-table">
             <thead>
               <tr>
-                <th class="checkbox-column"></th>
-                <th>Invoice Number</th>
-                <th>Business Name</th>
-                <th>Business Number</th>
-                <th>Invoice Date</th>
+                <th>Ref.No.</th>
+                <th class="no-wrap">CL #</th>
+                <th>Customer Name</th>
+                <th class="no-wrap">Customer #</th>
+                <th>Invoice #</th>
+                <th>Invoice Type</th>
+                <th>Invoice Due Date</th>
+                <th>Original Amount</th>
+                <th>Outstanding Amount</th>
                 <th class="payment-amount-column">Payment Amount</th>
-                <th class="payment-type-column">Payment Type</th>
+                <th>Payment Type</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td class="checkbox-column">
-                  <input type="checkbox" checked disabled/>
-                </td>
                 <td>#11</td>
+                <td>n/a</td>
                 <td>My Business Name</td>
                 <td>123456789</td>
+                <td>11728</td>
+                <td>BC Registries Co-op Filings</td>
+                <td>{{ date | moment }}</td>
                 <td>
                   <div>
-                     {{ date | moment }}
+                     $70.00
                   </div>
                 </td>
+                <td>$70.00</td>
                 <td>
                   <div class="form-input">
                     <div class="prefix">$</div>
@@ -43,21 +51,17 @@
                   </div>
                 </td>
                 <td>
-                  <div class="form-input">
-                    <select>
-                      <option selected="selected">Credit Card</option>
-                    </select>
-                  </div>
+                  Credit
                 </td>
-              </tr>
-              <tr class="info-row">
-                <td colspan="7" class="align-right"><v-icon small>info</v-icon>Payment Types are not supported by an invoice will not be available in the Payment Type list.</td>
               </tr>
             </tbody>
             <tfoot>
               <tr>
-                <td colspan="7" class="payment-buttons-row align-right">
-                  <v-btn color="primary" to="/PaymentCart">Add Invoice(s) to your Cart</v-btn>
+                <td colspan="11" class="payment-buttons-row">
+                  <div class="flex-row">
+                    <v-btn color="info" to="/Payment">Add more Quick Pay Items</v-btn>
+                    <v-btn class="last-btn" color="success" to="/Dashboard">Proceed to Credit Cart Payment</v-btn>
+                  </div>
                 </td>
               </tr>
             </tfoot>
@@ -75,7 +79,7 @@
   Vue.prototype.moment = moment
 
   export default {
-    name: "Payment",
+    name: "PaymentCart",
 
     data () {
       return {
@@ -104,6 +108,12 @@
     padding-left 2rem
     background #ffffff
 
+  h1 small
+    vertical-align middle
+    color $gray7
+    font-size 1rem
+    font-weight 400
+
   section header
     margin-bottom 1rem
     padding 0.5rem 1rem
@@ -121,13 +131,6 @@
       margin-right 0.5rem
       color $BCgovGold5
 
-  .checkbox-column
-    width 3rem
-    text-align center
-
-    input
-      margin-top 4px
-
   .payment-buttons-row
     padding-top 1rem
     padding-bottom 1rem
@@ -139,10 +142,22 @@
     .v-icon
       margin-right 0.25rem
 
+  .v-alert
+    margin-top 2.5rem
+    padding-top 2rem
+    padding-bottom 2rem
+    border none
+    text-align center
+
+  .flex-row
+    display flex
+
+  .last-btn
+    margin-left auto
+
   .payment-amount-column
     width 10rem
 
   .payment-type-column
     width 10rem
-
 </style>
