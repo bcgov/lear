@@ -37,7 +37,7 @@ export default {
   @import "../assets/styles/theme.styl";
 
   #entity-info
-    background #fff
+    background #ffffff
 
   .title-container
     margin-top -0.2rem
@@ -52,7 +52,9 @@ export default {
 
   .meta-container
     overflow hidden
+    color $gray6
     font-size 0.8375rem
+    font-weight 500
 
   dd, dt
     float left

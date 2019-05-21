@@ -30,3 +30,65 @@ $app-header-height = 70px // 70px
 
 .container
   max-width 1200px // Using PX dimensions here to jive with vuetify (RE: breakpoints)
+
+
+// Page Layout
+.view-container
+  display flex
+  flex-flow column nowrap
+  padding-top 3rem
+  padding-bottom 3rem
+
+  article
+    flex 1 1 auto
+
+    section
+      margin-top 3rem
+
+  aside
+    flex 0 0 auto
+    width 20rem
+    margin-top 3rem
+
+    .affix
+      width 20rem
+
+  section
+    header p
+      color $gray8
+      font-size 0.875rem
+
+@media (max-width 768px)
+  .view-container
+    aside
+      width 100%
+
+      .affix
+        position relative
+        top 0 !important
+        width 100%
+
+@media (min-width 960px)
+  .view-container
+    flex-flow row nowrap
+
+    article
+      margin-right 2rem
+
+    aside
+      margin-top 0
+      width 20rem
+
+// Form Layout
+.form__row + .form__row
+  margin-top 0.25rem
+
+.form__btns
+  display flex
+  text-align right
+
+  .v-btn
+    margin 0
+
+    + .v-btn
+      margin-left 0.5rem
