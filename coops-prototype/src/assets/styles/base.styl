@@ -57,31 +57,42 @@ p
     flex 0 0 auto
     width 2.5rem
     padding 0.5rem
-    background-color $gray3
+    background-color $gray1
+    border-right 1px solid $gray5
     text-align center
 
+  input, select
+    padding-left 0.5rem
+    height 36px
+
   input
-    flex 0 0 auto
-    width 7.5rem
-    margin 0
-    text-align right
+    flex 1 1 auto
+    width 100%
 
   select
     flex 1 1 auto
-    height 32px
-    padding-left 0.5rem
     -webkit-appearance menulist
 
 // Payment Table
+.payment-section
+  border 1px solid $gray5
+
+.payment-table-container
+  padding 1rem
+
 .payment-table
-  width 100%
-  border 1px solid $gray3
+  margin 0
   border-collapse collapse
   line-height 1rem
   font-size 0.8rem
+  width 100%
 
   thead
     background #ffffff
+    font-weight 400
+
+  th
+    vertical-align bottom
     font-weight 400
 
   tfoot
@@ -92,5 +103,23 @@ p
     border 1px solid $gray3
     text-align left
 
+  td
+    vertical-align: top
+
+  tbody tr:nth-child(odd)
+    background-color $gray0
+
+.payment-input
+  text-align right
+
+.payment-amount-column
+  width 10rem
+
+.payment-type-column
+  width 10rem
+
 .no-wrap
   white-space nowrap
+
+.align-right
+  text-align right !important

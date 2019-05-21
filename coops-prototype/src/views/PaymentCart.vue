@@ -1,23 +1,27 @@
 <template>
   <v-container class="view-container">
-      <article id="example-content">
+    <article id="example-content">
+      <header>
+        <h1>Your Cart: <small>Review the items in your Cart before proceeding to payment.</small></h1>
+      </header>
+      <v-alert color="success" :value="true">
+        You have added 1 items to your Cart. Review these items before proceeding to payment.
+      </v-alert>
+      <section class="payment-section">
         <header>
-          <h1>Your Cart: <small>Review the items in your Cart before proceeding to payment.</small></h1>
+          <h2>Credit Card Cart</h2>
+          <span class="header-total">
+            <label>Total:</label>
+            <strong>$ 70.00</strong>
+            <small>(1 items)</small>
+          </span>
         </header>
-        <v-alert color="success" :value="true">
-          You have added 1 items to your Cart. Review these items before proceeding to payment.
-        </v-alert>
-        <section>
-          <header>
-            <h2>Credit Card Cart</h2>
-          </header>
-        </section>
-        <div>
+        <div class="payment-table-container">
           <table class="payment-table">
             <thead>
               <tr>
                 <th>Ref.No.</th>
-                <th class="no-wrap">CL #</th>
+                <th class="no-wrap">C.I. #</th>
                 <th>Customer Name</th>
                 <th class="no-wrap">Customer #</th>
                 <th>Invoice #</th>
@@ -31,7 +35,7 @@
             </thead>
             <tbody>
               <tr>
-                <td>#11</td>
+                <td></td>
                 <td>n/a</td>
                 <td>My Business Name</td>
                 <td>123456789</td>
@@ -40,12 +44,12 @@
                 <td>{{ date | moment }}</td>
                 <td>
                   <div>
-                     $70.00
+                    $70.00
                   </div>
                 </td>
                 <td>$70.00</td>
                 <td>
-                  <div class="form-input">
+                  <div class="form-input ">
                     <div class="prefix">$</div>
                     <input type="number" class="payment-input" value="70.00" disabled/>
                   </div>
@@ -55,21 +59,22 @@
                 </td>
               </tr>
             </tbody>
-            <tfoot>
-              <tr>
-                <td colspan="11" class="payment-buttons-row">
-                  <div class="flex-row">
-                    <v-btn color="info" to="/Payment">Add more Quick Pay Items</v-btn>
-                    <v-btn class="last-btn" color="success" to="/Dashboard">Proceed to Credit Cart Payment</v-btn>
-                  </div>
-                </td>
-              </tr>
-            </tfoot>
           </table>
         </div>
-      </article>
+        <footer>
+          <v-btn class="add-more-btn" color="info" depressed to="/Payment"><v-icon small>search</v-icon>Add more Quick Pay Items</v-btn>
+          <div class="checkout-info">
+            <label>Total:</label>
+            <div class="form-input">
+              <div class="prefix">$</div>
+              <input type="number" class="payment-input" value="70.00" disabled/>
+            </div>
+            <v-btn class="checkout-btn" color="success" depressed to="/PaymentInfo">Proceed to Credit Cart Payment</v-btn>
+          </div>
+        </footer>
+      </section>
+    </article>
   </v-container>
-
 </template>
 
 <script lang='ts'>
@@ -108,14 +113,8 @@
     padding-left 2rem
     background #ffffff
 
-  h1 small
-    vertical-align middle
-    color $gray7
-    font-size 1rem
-    font-weight 400
-
   section header
-    margin-bottom 1rem
+    display flex
     padding 0.5rem 1rem
     color #ffffff
     background $BCgovBlue4
@@ -123,7 +122,21 @@
     h2
       margin 0
       font-size 1.25rem
-      font-weight 400
+      font-weight 500
+
+  .header-total
+    display flex
+    align-items center
+    margin-left auto
+
+    label
+      font-size 0.85rem
+
+    strong
+      margin-right 0.5rem
+      margin-left 0.5rem
+      font-size 1.25rem
+      font-weight 500
 
     .v-icon
       vertical-align middle
@@ -131,16 +144,17 @@
       margin-right 0.5rem
       color $BCgovGold5
 
-  .payment-buttons-row
-    padding-top 1rem
-    padding-bottom 1rem
+  section footer
+    display flex
+    padding 1rem
+    background $gray1
+    font-size 0.8rem
 
-  .align-right
-    text-align right
-
-  .info-row
-    .v-icon
-      margin-right 0.25rem
+  h1 small
+    vertical-align middle
+    color $gray7
+    font-size 1rem
+    font-weight 400
 
   .v-alert
     margin-top 2.5rem
@@ -149,15 +163,23 @@
     border none
     text-align center
 
-  .flex-row
-    display flex
+  .add-more-btn
+    .v-icon
+      margin-right 0.5rem
 
-  .last-btn
+  .checkout-info
+    display flex
+    align-items center
     margin-left auto
 
-  .payment-amount-column
-    width 10rem
+    label
+      margin-right 0.5rem
+      font-weight 400
 
-  .payment-type-column
-    width 10rem
+    .form-input
+      height 36px
+
+  .checkout-btn
+    border-top-left-radius 0
+    border-bottom-left-radius 0
 </style>
