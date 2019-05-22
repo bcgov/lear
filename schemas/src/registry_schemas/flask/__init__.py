@@ -10,12 +10,14 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.
-"""The schemas and utilities to use them are maintained in this module.
+# limitations under the License
+"""Flask Extension to hold the JSONSchemas in cache.
 
-TODO: This should be pulled out to a common library.
+Follows the standard pattern for initializing and teardown within the Flask managed lifecycle.
+
+Although it can work with other schemas and setups, it defaults to loading the Registry schemas in the package.
 """
-from .utils import get_schema, get_schema_store, validate
+from .schema_services import SchemaServices
 
 
-__all__ = ['get_schema', 'get_schema_store', 'validate']
+__all__ = ('SchemaServices')

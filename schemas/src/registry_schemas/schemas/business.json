@@ -1,7 +1,7 @@
 {
     "definitions": {},
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "http://example.com/root.json",
+    "$id": "https://bcrs.gov.bc.ca/.well_known/schemas/business",
     "type": "object",
     "title": "The Businesses Schema",
     "required": [
@@ -13,14 +13,21 @@
             "type": "object",
             "title": "The Business Schema",
             "required": [
-                "last_ledger_timestamp",
-                "founding_date",
+                "cacheId",
+                "foundingDate",
                 "identifier",
-                "legal_name"
+                "legalName"
             ],
             "properties": {
-                "last_ledger_timestamp": {
-                    "$id": "#/properties/business/properties/last_ledger_timestamp",
+                "cacheId": {
+                    "type": "integer",
+                    "title": "The cache_id of the most current ledger record.",
+                    "default": 0,
+                    "examples": [
+                        "1200"
+                    ]
+                },
+                "lastLedgerTimestamp": {
                     "type": "string",
                     "format": "date-time",
                     "title": "The timestamp of the most current ledger record.",
@@ -29,8 +36,7 @@
                         "1970-01-01T00:00:00+00:00"
                     ]
                 },
-                "dissolution_date": {
-                    "$id": "#/properties/business/properties/dissolution_date",
+                "dissolutionDate": {
                     "type": "string",
                     "format": "date",
                     "title": "The Dissolution_date Schema",
@@ -39,8 +45,7 @@
                         "1970-01-01"
                     ]
                 },
-                "fiscal_year_end_date": {
-                    "$id": "#/properties/business/properties/fiscal_year_end_date",
+                "fiscalYearEndDate": {
                     "type": "string",
                     "format": "date",
                     "title": "The Fiscal_year_end_date Schema",
@@ -49,8 +54,7 @@
                         "1970-01-01"
                     ]
                 },
-                "founding_date": {
-                    "$id": "#/properties/business/properties/founding_date",
+                "foundingDate": {
                     "type": "string",
                     "format": "date-time",
                     "title": "The Founding_date Schema",
@@ -60,7 +64,6 @@
                     ]
                 },
                 "identifier": {
-                    "$id": "#/properties/business/properties/identifier",
                     "type": "string",
                     "title": "The Identifier Schema",
                     "default": "",
@@ -69,8 +72,7 @@
                     ],
                     "pattern": "^(CP)[0-9]{7}$"
                 },
-                "legal_name": {
-                    "$id": "#/properties/business/properties/legal_name",
+                "legalName": {
                     "type": "string",
                     "title": "The Legal_name Schema",
                     "default": "",
@@ -79,8 +81,7 @@
                     ],
                     "pattern": "^(.*)$"
                 },
-                "tax_id": {
-                    "$id": "#/properties/business/properties/tax_id",
+                "taxId": {
                     "type": "string",
                     "title": "The Tax_id Schema",
                     "default": "",
