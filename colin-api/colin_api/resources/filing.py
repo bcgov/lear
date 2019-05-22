@@ -46,7 +46,6 @@ class FilingInfo(Resource):
 
             # get filing
             filing = Filing.find_filing(business, filing_type, year)
-
             return jsonify(filing.as_dict())
 
         except GenericException as err:
@@ -69,11 +68,11 @@ class FilingInfo(Resource):
                 return jsonify({'message': 'No input data provided'}), 400
 
             # validate schema
-            is_valid, errors = validate_schema(json_data, 'legal_filings.json')
-            if errors:
-                return jsonify(
-                    {'message': 'Error: Invalid Filing schema'}), 400
-
+            # is_valid, errors = validate_schema(json_data, 'legal_filings.json')
+            # if errors:
+            #     return jsonify(
+            #         {'message': 'Error: Invalid Filing schema'}), 400
+            print('here', json_data)
             json_data = json_data.get('filing', None)
 
             # ensure that the business in the AR matches the business in the URL
@@ -83,20 +82,20 @@ class FilingInfo(Resource):
 
             filing = Filing()
             filing.header = json_data['header']
+            print('here2 ', filing.header)
 
-            if json_data['annual_report']:
-                filing.filing_type = 'annual_report'
-
+            filing.filing_type = filing_type
             filing.body = json_data[filing.filing_type]
 
             filing.business = Business.find_by_identifier(identifier)
 
+            print('here3')
             # add the new filing
             Filing.add_filing(filing)
 
             # return the completed filing data
             completed_filing = Filing.find_filing(
-                filing.business, filing.filing_type, filing.body['annual_general_meeting_date'][:4])
+                filing.business, filing.filing_type, None)
             return jsonify(completed_filing.as_dict()), 200
 
         except Exception as err:

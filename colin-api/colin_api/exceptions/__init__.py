@@ -52,3 +52,16 @@ class FilingNotFoundException(GenericException):
         else:
             self.error = 'Filing not found'
         self.status_code = 404
+
+
+class InvalidFilingTypeException(GenericException):
+    """Exception with defined error code and messaging."""
+
+    def __init__(self, identifier=None, filing_type=None, *args, **kwargs):
+        """Return a valid FilingNotFoundException."""
+        super(GenericException, self).__init__(*args, **kwargs)
+        if identifier and filing_type:
+            self.error = f'{filing_type} invalid for {identifier}'
+        else:
+            self.error = 'Filing type invalid'
+        self.status_code = 400

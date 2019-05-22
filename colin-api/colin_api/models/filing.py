@@ -21,7 +21,7 @@ import datetime
 from flask import current_app
 from registry_schemas import convert_to_json_date
 
-from colin_api.exceptions import FilingNotFoundException
+from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
 from colin_api.models import Business
 from colin_api.resources.db import db
 
@@ -67,7 +67,7 @@ class Filing():
             return None
 
         try:
-
+            print(business)
             identifier = business.get_corp_num()
 
             # set filing type code from filing_type (string)
@@ -77,6 +77,7 @@ class Filing():
 
             elif filing_type == 'registered_office_address':
                 filing_obj = cls.find_reg_off_addr(business, identifier, year)
+                print(filing_obj)
             else:
                 # default value
                 filing_type_code = 'FILE'
@@ -102,6 +103,7 @@ class Filing():
         :returns (int): the filing ID of the new filing.
         """
         try:
+            corp_num = filing.get_corp_num()
 
             # get db connection and start a session, in case we need to roll back
             con = db.connection
@@ -109,26 +111,45 @@ class Filing():
 
             cursor = con.cursor()
 
+            print('1 ', filing)
             # create new event record, return event ID
-            event_id = cls._get_event_id(cursor, filing, 'FILE')
-
-            # create new filing
-            cls._add_filing(cursor, event_id, filing, 'OTANN')
-
+            event_id = cls._get_event_id(cursor, corp_num, 'FILE')
+            print('4 ', event_id)
             # create new filing user
             cls._add_filing_user(cursor, event_id, filing)
 
+            if filing.filing_type == 'annual_report':
+                date = filing.body['annual_general_meeting_date']
+                filing_type_cd = 'OTANN'
+
+            elif filing.filing_type == 'registered_office_address':
+                date = filing.business.business['last_agm_date']
+                filing_type_cd = 'OTADD'
+                print('date ', date)
+                cls._add_ledger_text(cursor, event_id, 'Change to the Registered Office, effective on {} as filed with'
+                                                       ' {} Annual Report'.format(date, date[:4]))
+                delivery_addr_id = cls._get_address_id(cursor, event_id, corp_num, 'RG', filing.body['business_office']['legal_address']['delivery_address'])
+                mailing_addr_id = cls._get_address_id(cursor, event_id, corp_num, 'RG', filing.body['business_office']['legal_address']['mailing_address'])
+                cls._update_office(cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, 'RG')
+
+            else:
+                raise InvalidFilingTypeException(identifier=filing.business.business['identifier'],
+                                                 filing_type=filing.filing_type)
+
+            # create new filing
+            cls._add_filing(cursor, event_id, filing, date, filing_type_cd)
+
             # update corporation record
-            cls._update_corporation(cursor, filing)
+            cls._update_corporation(cursor, corp_num, filing.body['annual_general_meeting_date'])
 
             # update corp_state TO ACT (active) if it is in good standing. From CRUD:
             # - the current corp_state != 'ACT' and,
             # - they just filed the last outstanding ARs
             if filing.business.business['corp_state'] != 'ACT':
-                agm_year = int(filing.body['annual_general_meeting_date'][:4])
+                agm_year = int(date[:4])
                 last_year = datetime.datetime.now().year - 1
                 if agm_year >= last_year:
-                    cls._update_corp_state(cursor, event_id, filing, state='ACT')
+                    cls._update_corp_state(cursor, event_id, corp_num, state='ACT')
 
             # success! commit the db changes
             con.commit()
@@ -142,7 +163,7 @@ class Filing():
             raise err
 
     @classmethod
-    def _get_event_id(cls, cursor, filing, event_type='FILE'):
+    def _get_event_id(cls, cursor, corp_num, event_type='FILE'):
         """Get next event ID for filing.
 
         :param cursor: oracle cursor
@@ -150,22 +171,24 @@ class Filing():
         """
         cursor.execute("""select noncorp_event_seq.NEXTVAL from dual""")
         row = cursor.fetchone()
-
         event_id = int(row[0])
-
-        cursor.execute("""
-        INSERT INTO event (event_id, corp_num, event_typ_cd, event_timestmp, trigger_dts)
-          VALUES (:event_id, :corp_num, :event_type, sysdate, NULL)
-        """,
-                       event_id=event_id,
-                       corp_num=filing.get_corp_num(),
-                       event_type=event_type
-                       )
+        try:
+            cursor.execute("""
+            INSERT INTO event (event_id, corp_num, event_typ_cd, event_timestmp, trigger_dts)
+              VALUES (:event_id, :corp_num, :event_type, sysdate, NULL)
+            """,
+                           event_id=event_id,
+                           corp_num=corp_num,
+                           event_type=event_type
+                           )
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
 
         return event_id
 
     @classmethod
-    def _add_filing(cls, cursor, event_id, filing, filing_type_code='OTANN'):
+    def _add_filing(cls, cursor, event_id, filing, date, filing_type_code='FILE'):
         """Add record to FILING.
 
         Note: Period End Date and AGM Date are both the AGM Date value for Co-ops.
@@ -173,17 +196,37 @@ class Filing():
         :param cursor: oracle cursor
         :param event_id: (int) event_id for all events for this transaction
         :param filing: (obj) Filing data object
-        :param filing_type_code: (str) filing type code, defaults to Other Annual Report ("OTANN")
+        :param date: (str) period_end_date
+        :param filing_type_code: (str) filing type code
         """
-        cursor.execute("""
-        INSERT INTO filing (event_id, filing_typ_cd, effective_dt, period_end_dt, agm_date)
-          VALUES (:event_id, :filing_type_code, sysdate, TO_DATE(:agm_date, 'YYYY-mm-dd'),
-          TO_DATE(:agm_date, 'YYYY-mm-dd'))
-        """,
-                       event_id=event_id,
-                       filing_type_code=filing_type_code,
-                       agm_date=filing.body['annual_general_meeting_date']
-                       )
+        if not filing_type_code:
+            raise FilingNotFoundException(filing.business.business['identifier'], filing.filing_type)
+        try:
+            print('8 ', filing_type_code)
+            if filing_type_code is 'OTANN':
+                cursor.execute("""
+                INSERT INTO filing (event_id, filing_typ_cd, effective_dt, period_end_dt, agm_date)
+                  VALUES (:event_id, :filing_type_code, sysdate, TO_DATE(:period_end_date, 'YYYY-mm-dd'),
+                  TO_DATE(:agm_date, 'YYYY-mm-dd'))
+                """,
+                               event_id=event_id,
+                               filing_type_code=filing_type_code,
+                               period_end_date=date,
+                               agm_date=date
+                               )
+            elif filing_type_code is 'OTADD':
+                cursor.execute("""
+                INSERT INTO filing (event_id, filing_typ_cd, effective_dt, period_end_dt)
+                  VALUES (:event_id, :filing_type_code, sysdate, TO_DATE(:period_end_date, 'YYYY-mm-dd'))
+                """,
+                               event_id=event_id,
+                               filing_type_code=filing_type_code,
+                               period_end_date=date,
+                               )
+        except Exception as err:
+            print('filing')
+            current_app.logger.error(err.with_traceback(None))
+            raise err
 
     @classmethod
     def _add_filing_user(cls, cursor, event_id, filing):
@@ -193,37 +236,48 @@ class Filing():
         :param event_id: (int) event_id for all events for this transaction
         :param filing: (obj) Filing data object
         """
-        cursor.execute("""
-        INSERT INTO filing_user (event_id, user_id, last_nme, first_nme, middle_nme, email_addr, party_typ_cd,
-        role_typ_cd)
-          VALUES (:event_id, NULL, :last_name, NULL, NULL, :email_address, NULL, NULL)
-        """,
-                       event_id=event_id,
-                       last_name=filing.get_last_name(),
-                       email_address=filing.get_email()
-                       )
+        try:
+            cursor.execute("""
+            INSERT INTO filing_user (event_id, user_id, last_nme, first_nme, middle_nme, email_addr, party_typ_cd,
+            role_typ_cd)
+              VALUES (:event_id, NULL, :last_name, NULL, NULL, :email_address, NULL, NULL)
+            """,
+                           event_id=event_id,
+                           last_name=filing.get_last_name(),
+                           email_address=filing.get_email()
+                           )
+        except Exception as err:
+            print('filing_user')
+            current_app.logger.error(err.with_traceback(None))
+            raise err
 
     @classmethod
-    def _update_corporation(cls, cursor, filing):
+    def _update_corporation(cls, cursor, corp_num, date):
         """Update corporation record.
 
         :param cursor: oracle cursor
-        :param filing: (obj) Filing data object
+        :param corp_num: (str) corporation number
         """
-        cursor.execute("""
-        UPDATE corporation
-        SET
-            LAST_AR_FILED_DT = sysdate,
-            LAST_AGM_DATE = TO_DATE(:agm_date, 'YYYY-mm-dd'),
-            LAST_LEDGER_DT = sysdate
-        WHERE corp_num = :corp_num
-        """,
-                       agm_date=filing.body['annual_general_meeting_date'],
-                       corp_num=filing.get_corp_num()
-                       )
+        try:
+            cursor.execute("""
+            UPDATE corporation
+            SET
+                LAST_AR_FILED_DT = sysdate,
+                LAST_AGM_DATE = TO_DATE(:agm_date, 'YYYY-mm-dd'),
+                LAST_LEDGER_DT = sysdate
+            WHERE corp_num = :corp_num
+            """,
+                           agm_date=date,
+                           corp_num=corp_num
+                           )
+
+        except Exception as err:
+            print('corporation')
+            current_app.logger.error(err.with_traceback(None))
+            raise err
 
     @classmethod
-    def _update_corp_state(cls, cursor, event_id, filing, state='ACT'):
+    def _update_corp_state(cls, cursor, event_id, corp_num, state='ACT'):
         """Update corporation state.
 
         End previous corp_state record (end event id) and and create new corp_state record.
@@ -231,24 +285,126 @@ class Filing():
         :param cursor: oracle cursor
         :param filing: (obj) Filing data object
         """
-        cursor.execute("""
-        UPDATE corp_state
-        SET end_event_id = :event_id
-        WHERE corp_num = :corp_num and end_event_id is NULL
-        """,
-                       event_id=event_id,
-                       corp_num=filing.get_corp_num()
-                       )
+        try:
+            cursor.execute("""
+            UPDATE corp_state
+            SET end_event_id = :event_id
+            WHERE corp_num = :corp_num and end_event_id is NULL
+            """,
+                           event_id=event_id,
+                           corp_num=corp_num
+                           )
 
-        cursor.execute("""
-        INSERT INTO corp_state (corp_num, start_event_id, state_typ_cd)
-          VALUES (:corp_num, :event_id, :state
-          )
-        """,
-                       event_id=event_id,
-                       corp_num=filing.get_corp_num(),
-                       state=state
-                       )
+        except Exception as err:
+            print('corp_state1')
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+        try:
+            cursor.execute("""
+            INSERT INTO corp_state (corp_num, start_event_id, state_typ_cd)
+              VALUES (:corp_num, :event_id, :state
+              )
+            """,
+                           event_id=event_id,
+                           corp_num=corp_num,
+                           state=state
+                           )
+
+        except Exception as err:
+            print('corp_state2')
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+
+    @classmethod
+    def _add_ledger_text(cls, cursor, event_id, text):
+        try:
+            cursor.execute("""
+            INSERT INTO ledger_text (event_id, ledger_text_dts, notation)
+              VALUES (:event_id, sysdate, :notation)
+            """,
+                           event_id=event_id,
+                           notation=text
+                           )
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+
+    @classmethod
+    def _get_address_id(cls, cursor, event_id, corp_num, office_typ_cd, address_info):
+
+        cursor.execute("""select noncorp_address_seq.NEXTVAL from dual""")
+        row = cursor.fetchone()
+        addr_id = int(row[0])
+        try:
+            cursor.execute("""
+                    select country_typ_cd from country_type where full_desc=:country
+                  """,
+                           country=address_info['country'].upper()
+                           )
+            country_typ_cd = cursor.fetchone()
+            print('country_typ_cd: ', country_typ_cd)
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+
+        try:
+            cursor.execute("""
+                    INSERT INTO address (addr_id, province, country_typ_cd, postal_cd, addr_line_1, addr_line_2, city,
+                     corp_num, office_typ_cd, start_event_id, end_event_id, mailing_addr_id, delivery_addr_id)
+                     VALUES (:addr_id, :province, :country_typ_cd, :postal_cd, :addr_line_1, :addr_line_2, :city,
+                      :corp_num, :office_typ_cd, :start_event_id, null, )
+                    """,
+                           addr_id=addr_id,
+                           province=address_info['province'].upper(),
+                           country_typ_cd=country_typ_cd[0],
+                           postal_cd=address_info['postal_code'].upper(),
+                           addr_line_1=address_info['street_address_line1'].upper(),
+                           addr_line_2=address_info['street_address_line2'].upper(),
+                           city=address_info['city'].upper(),
+                           corp_num=corp_num,
+                           office_typ_cd=office_typ_cd,
+                           start_event_id=event_id
+                           )
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+
+        return addr_id
+
+    @classmethod
+    def _update_office(cls, cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, office_typ_cd):
+
+        try:
+            cursor.execute("""
+                    UPDATE office
+                    SET end_event_id = :event_id
+                    WHERE corp_num = :corp_num and office_typ_cd = :office_typ_cd and end_event_id is null
+                    """,
+                           event_id=event_id,
+                           corp_num=corp_num,
+                           office_typ_cd=office_typ_cd
+                           )
+
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+
+        try:
+            cursor.execute("""
+                    INSERT INTO office (corp_num, office_typ_cd, start_event_id, end_event_id, mailing_addr_id,
+                     delivery_addr_id)
+                    VALUES (:corp_num, :office_typ_cd, :start_event_id, null, :mailing_addr_id, :delivery_addr_id)
+                    """,
+                           corp_num=corp_num,
+                           office_typ_cd=office_typ_cd,
+                           start_event_id=event_id,
+                           mailing_addr_id=mailing_addr_id,
+                           delivery_addr_id=delivery_addr_id
+                           )
+
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
 
     @classmethod
     def find_ar(cls, business: Business = None, identifier: str = None, year: int = None):
@@ -322,11 +478,14 @@ class Filing():
     @classmethod
     def find_reg_off_addr(cls, business: Business = None, identifier: str = None, year: int = None):
         # build base querystring
+        # todo: check full_desc in country_type table matches with canada post api for foreign countries
         querystring = (
-            "select ADDR_LINE_1, ADDR_LINE_2, CITY, PROVINCE, COUNTRY_TYP_CD, POSTAL_CD, DELIVERY_INSTRUCTIONS, "
-            "ADDRESS_DESC_SHORT "
+            "select ADDR_LINE_1, ADDR_LINE_2, ADDR_LINE_3, CITY, PROVINCE, COUNTRY_TYPE.FULL_DESC, POSTAL_CD, "
+            "DELIVERY_INSTRUCTIONS, EVENT.EVENT_TIMESTMP "
             "from ADDRESS "
             "join OFFICE on ADDRESS.ADDR_ID = OFFICE.{} "
+            "join COUNTRY_TYPE on ADDRESS.COUNTRY_TYP_CD = COUNTRY_TYPE.COUNTRY_TYP_CD "
+            "join EVENT on OFFICE.START_EVENT_ID = EVENT.EVENT_ID "
             "where OFFICE.END_EVENT_ID IS NULL and OFFICE.CORP_NUM='{}' and OFFICE.OFFICE_TYP_CD='{}' "
         )
         querystring_delivery = (
@@ -355,4 +514,76 @@ class Filing():
         print(delivery_address)
         print(mailing_address)
 
-        return 1
+        # add column names to result set to build out correct json structure and make manipulation below more robust
+        # (better than column numbers)
+        delivery_address = dict(zip([x[0].lower() for x in cursor.description], delivery_address))
+        mailing_address = dict(zip([x[0].lower() for x in cursor.description], mailing_address))
+
+        print(delivery_address)
+        print(mailing_address)
+
+        # todo: check all fields for data - may be different for data outside of coops
+        # expecting data-fix for all bad data in address table for coops: this will catch if anything was missed
+        if delivery_address['addr_line_1'] and delivery_address['addr_line_2'] and delivery_address['addr_line_3']:
+            current_app.logger.error('Expected 2, but got 3 delivery address lines for: {}'.format(identifier))
+        if not delivery_address['addr_line_1'] and not delivery_address['addr_line_2'] and not delivery_address['addr_line_3']:
+            current_app.logger.error('Expected at least 1 delivery addr_line, but got 0 for: {}'.format(identifier))
+        if not delivery_address['city'] or not delivery_address['province'] or not delivery_address['full_desc'] \
+                or not delivery_address['postal_cd']:
+            current_app.logger.error('Missing field in delivery address for: {}'.format(identifier))
+
+        if mailing_address['addr_line_1'] and mailing_address['addr_line_2'] and mailing_address['addr_line_3']:
+            current_app.logger.error('Expected 2, but 3 mailing address lines returned for: {}'.format(identifier))
+        if not mailing_address['city'] or not mailing_address['province'] or not mailing_address['full_desc'] \
+                or not delivery_address['postal_cd']:
+            current_app.logger.error('Missing field in mailing address for: {}'.format(identifier))
+
+        # for cases where delivery addresses were input out of order - shift them to lines 1 and 2
+        if not delivery_address['addr_line_1']:
+            if delivery_address['addr_line_2']:
+                delivery_address['addr_line_1'] = delivery_address['addr_line_2']
+                delivery_address['addr_line_2'] = None
+        if not delivery_address['addr_line_2']:
+            if delivery_address['addr_line_3']:
+                delivery_address['addr_line_2'] = delivery_address['addr_line_3']
+                delivery_address['addr_line_3'] = None
+
+        delivery_address['country'] = delivery_address['full_desc']
+        mailing_address['country'] = mailing_address['full_desc']
+
+        filing_obj = Filing()
+        filing_obj.business = business
+        filing_obj.header = {
+            'date': delivery_address['event_timestmp'],
+            'name': 'registered_office_address'
+        }
+        filing_obj.body = {
+            "business_office": {
+                "legal_address": {
+                    "shipping_address": [
+                        {
+                            "street_address_line1": delivery_address['addr_line_1'],
+                            "street_address_line2": delivery_address['addr_line_2'],
+                            "city": delivery_address['city'],
+                            "province": delivery_address['province'],
+                            "country": delivery_address['country'],
+                            "postal_code": delivery_address['postal_cd']
+                        },
+                        {
+                            "type": 'registered_office'
+                        }
+                    ]
+                },
+                "mailing_address": {
+                    "street_address_line1": mailing_address['addr_line_1'],
+                    "street_address_line2": mailing_address['addr_line_2'],
+                    "city": mailing_address['city'],
+                    "province": mailing_address['province'],
+                    "country": mailing_address['country'],
+                    "postal_code": mailing_address['postal_cd']
+                }
+            }
+        },
+        filing_obj.filing_type = 'registered_office_address'
+
+        return filing_obj
