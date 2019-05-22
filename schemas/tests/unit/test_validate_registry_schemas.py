@@ -16,19 +16,37 @@
 Every schema should be listed in the TEST_SCHEMAS_DATA to be validated.
 """
 import pytest
-from jsonschema import Draft7Validator
+from jsonschema import Draft7Validator, SchemaError
 
-from registry_schemas import get_schema
+from registry_schemas import get_schema, get_schema_store
 
-
-# testdata pattern is ({str: environment}, {expected return value})
-TEST_SCHEMAS_DATA = [
-    ('business.json'),
-]
+from .schema_data import TEST_SCHEMAS_DATA
 
 
 @pytest.mark.parametrize('schema_filename', TEST_SCHEMAS_DATA)
 def test_is_business_schema_valid(schema_filename):
     """Assert that the Schema is a valid Draft7 JSONSchema."""
     schema = get_schema(schema_filename)
-    Draft7Validator.check_schema(schema)
+    try:
+        Draft7Validator.check_schema(schema)
+        assert True
+    except SchemaError as error:
+        print(error)
+        assert False
+
+
+def test_get_schema_store():
+    """Assert the schema store is setup correctly."""
+    schema_store = get_schema_store()
+
+    assert len(schema_store) == len(TEST_SCHEMAS_DATA)
+
+    # assuming  test_is_business_schema_valid passes, this should pass too
+    try:
+        for k, schema in schema_store.items():
+            print(f'checking schema:{k}')
+            Draft7Validator.check_schema(schema)
+    except SchemaError as error:
+        print(error)
+        assert False
+    assert True

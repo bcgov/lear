@@ -1,0 +1,115 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://bcrs.gov.bc.ca/.well_known/schemas/filing",
+    "definitions": {
+        "office": {
+            "properties": {
+                "shipping_address": {
+                    "allOf": [
+                        {
+                            "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
+                        },
+                        {
+                            "properties": {
+                                "type": {
+                                    "enum": [
+                                        "registered_office",
+                                        "legal_office"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "type"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "person": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "director": {
+            "type": "object",
+            "properties": {
+                "officer": {
+                    "$ref": "#/definitions/person"
+                },
+                "mailing_address": {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
+                },
+                "title": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "officer",
+                "mailing_address",
+                "title"
+            ]
+        },
+        "business_office": {
+            "type": "object",
+            "properties": {
+                "mailing_address": {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
+                },
+                "legal_address": {
+                    "$ref": "#/definitions/office"
+                }
+            }
+        },
+        "filing_header": {
+            "$id": "#filing_header",
+            "type": "object",
+            "required": [
+                "header"
+            ],
+            "properties": {
+                "header": {
+                    "type": "object",
+                    "required": [
+                        "name",
+                        "date"
+                    ],
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        },
+                        "date": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "type": "object",
+    "title": "Registry Filings",
+    "properties": {
+        "filing": {
+            "allOf": [
+                {
+                    "$ref": "#/definitions/filing_header"
+                },
+                {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/business"
+                }
+            ],
+            "anyOf": [
+                {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/annual_report"
+                },
+                {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/change_of_address"
+                }
+            ]
+        }
+    }
+}
