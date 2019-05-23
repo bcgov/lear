@@ -8,13 +8,22 @@
     "type": "object",
     "title": "Change of Address Filing",
     "properties": {
-        "change_of_address": {
+        "changeOfAddress": {
             "type": "object",
             "required": [
+                "certifiedBy",
+                "email",
                 "deliveryAddress",
                 "mailingAddress"
             ],
             "properties": {
+                "certifiedBy": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "format": "email"
+                },
                 "deliveryAddress": {
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
                 },

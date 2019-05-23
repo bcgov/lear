@@ -95,6 +95,8 @@ def test_valid_coa_filing():
                 'legalName': 'legal name - CP1234567'
             },
             'changeOfAddress': {
+                'certifiedBy': 'Joe Smith',
+                'email': 'nobody@nothing.com',
                 'deliveryAddress': {
                     'streetAddress': 'delivery_address - address line one',
                     'addressCity': 'delivery_address city',
