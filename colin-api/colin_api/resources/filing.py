@@ -17,7 +17,7 @@ Currently this only provides API versioning information
 """
 from flask import current_app, jsonify, request
 from flask_restplus import Resource, cors
-from registry_schemas import validate_schema
+from registry_schemas import validate
 
 from colin_api.exceptions import GenericException
 from colin_api.models import Business, Filing
@@ -68,8 +68,10 @@ class FilingInfo(Resource):
                 return jsonify({'message': 'No input data provided'}), 400
 
             # validate schema
-            is_valid, errors = validate_schema(json_data, 'filing.json')
+            is_valid, errors = validate(json_data, 'filing', validate_schema=True)
             if errors:
+                for err in errors:
+                    print(err.message)
                 return jsonify(
                     {'message': 'Error: Invalid Filing schema'}), 400
             json_data = json_data.get('filing', None)

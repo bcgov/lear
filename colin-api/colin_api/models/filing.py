@@ -19,7 +19,7 @@ Currently this only provides API versioning information
 import datetime
 
 from flask import current_app
-from registry_schemas import convert_to_json_date
+from colin_api.utils import convert_to_json_date
 
 from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
 from colin_api.models import Business
@@ -74,7 +74,7 @@ class Filing():
                 filing_type_code = 'OTANN'
                 filing_obj = cls.find_ar(business, identifier, year)
 
-            elif filing_type == 'change_of_address':
+            elif filing_type == 'changeOfAddress':
                 filing_obj = cls.find_change_of_addr(business, identifier, year)
             else:
                 # default value
@@ -134,7 +134,7 @@ class Filing():
                     if agm_year >= last_year:
                         cls._update_corp_state(cursor, event_id, corp_num, state='ACT')
 
-            elif filing.filing_type == 'change_of_address':
+            elif filing.filing_type == 'changeOfAddress':
 
                 # set date to last agm date + 1
                 last_agm_date = filing.business.business['lastAgmDate']
@@ -156,8 +156,8 @@ class Filing():
                 cls._add_filing(cursor, event_id, filing, date, filing_type_cd)
 
                 # create new addresses for delivery + mailing, return address ids
-                delivery_addr_id = cls._get_address_id(cursor, filing.body['delivery_address'])
-                mailing_addr_id = cls._get_address_id(cursor, filing.body['mailing_address'])
+                delivery_addr_id = cls._get_address_id(cursor, filing.body['deliveryAddress'])
+                mailing_addr_id = cls._get_address_id(cursor, filing.body['mailingAddress'])
 
                 # update office table to include new addresses
                 cls._update_office(cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, 'RG')
@@ -593,12 +593,12 @@ class Filing():
         filing_obj.business = business
         filing_obj.header = {
             'date': delivery_address['event_timestmp'],
-            'name': 'change_of_address'
+            'name': 'changeOfAddress'
         }
         filing_obj.body = {
             "certifiedBy": filing_user_name,
             "email": delivery_address['email_addr'],
-            "delivery_address": {
+            "deliveryAddress": {
                 "streetAddress": delivery_address['addr_line_1'],
                 "streetAddressAdditional": delivery_address['addr_line_2'],
                 "addressCity": delivery_address['city'],
@@ -607,7 +607,7 @@ class Filing():
                 "postalCode": delivery_address['postal_cd'],
                 "deliveryInstructions": delivery_address['delivery_instructions']
             },
-            "mailing_address": {
+            "mailingAddress": {
                 "streetAddress": mailing_address['addr_line_1'],
                 "streetAddressAdditional": mailing_address['addr_line_2'],
                 "addressCity": mailing_address['city'],
@@ -617,6 +617,6 @@ class Filing():
                 "deliveryInstructions": mailing_address['delivery_instructions']
             }
         }
-        filing_obj.filing_type = 'change_of_address'
+        filing_obj.filing_type = 'changeOfAddress'
 
         return filing_obj
