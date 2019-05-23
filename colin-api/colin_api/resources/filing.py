@@ -68,28 +68,25 @@ class FilingInfo(Resource):
                 return jsonify({'message': 'No input data provided'}), 400
 
             # validate schema
-            # is_valid, errors = validate_schema(json_data, 'legal_filings.json')
-            # if errors:
-            #     return jsonify(
-            #         {'message': 'Error: Invalid Filing schema'}), 400
-            print('here', json_data)
+            is_valid, errors = validate_schema(json_data, 'filing.json')
+            if errors:
+                return jsonify(
+                    {'message': 'Error: Invalid Filing schema'}), 400
             json_data = json_data.get('filing', None)
 
             # ensure that the business in the AR matches the business in the URL
-            if identifier != json_data['business_info']['identifier']:
+            if identifier != json_data['business']['identifier']:
                 return jsonify(
                     {'message': 'Error: Identifier in URL does not match identifier in filing data'}), 400
 
             filing = Filing()
             filing.header = json_data['header']
-            print('here2 ', filing.header)
 
             filing.filing_type = filing_type
             filing.body = json_data[filing.filing_type]
 
             filing.business = Business.find_by_identifier(identifier)
 
-            print('here3')
             # add the new filing
             Filing.add_filing(filing)
 
