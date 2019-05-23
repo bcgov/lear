@@ -4,7 +4,7 @@
     "definitions": {
         "office": {
             "properties": {
-                "shipping_address": {
+                "shippingAddress": {
                     "allOf": [
                         {
                             "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
@@ -40,7 +40,7 @@
                 "officer": {
                     "$ref": "#/definitions/person"
                 },
-                "mailing_address": {
+                "mailingAddress": {
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
                 },
                 "title": {
@@ -53,13 +53,13 @@
                 "title"
             ]
         },
-        "business_office": {
+        "businessOffice": {
             "type": "object",
             "properties": {
-                "mailing_address": {
+                "mailingAddress": {
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
                 },
-                "legal_address": {
+                "legalAddress": {
                     "$ref": "#/definitions/office"
                 }
             }
