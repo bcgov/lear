@@ -19,6 +19,7 @@ Test-Suite to ensure that the /ops endpoint is working as expected.
 
 from tests import oracle_integration
 
+
 @oracle_integration
 def test_ops_healthz_success(client):
     """Assert that the service is healthy if it can successfully access the database."""

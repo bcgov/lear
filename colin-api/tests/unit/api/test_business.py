@@ -27,7 +27,7 @@ def test_get_business(client):
     rv = client.get('/api/v1/businesses/CP0001965')
 
     assert 200 == rv.status_code
-    is_valid, errors = validate(rv.json, 'business.json')
+    is_valid, errors = validate(rv.json, 'business', validate_schema=True)
     if errors:
         for err in errors:
             print('\nERROR MESSAGE:')

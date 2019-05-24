@@ -386,11 +386,11 @@ class Filing():
                            country_typ_cd=country_typ_cd,
                            postal_cd=address_info['postalCode'].upper(),
                            addr_line_1=address_info['streetAddress'].upper(),
-                           addr_line_2='' if not address_info['streetAddressAdditional'] else
-                           address_info['streetAddressAdditional'].upper(),
+                           addr_line_2=address_info['streetAddressAdditional'].upper()
+                           if 'streetAddressAdditional' in address_info.keys() else '',
                            city=address_info['addressCity'].upper(),
-                           delivery_instructions='' if not address_info['deliveryInstructions'] else
-                           address_info['deliveryInstructions'].upper()
+                           delivery_instructions=address_info['deliveryInstructions'].upper()
+                           if 'deliveryInstructions' in address_info.keys() else ''
                            )
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))
@@ -589,6 +589,9 @@ class Filing():
         delivery_address['country'] = delivery_address['full_desc']
         mailing_address['country'] = mailing_address['full_desc']
 
+        delivery_address['event_timestmp'] = convert_to_json_date(delivery_address['event_timestmp'])
+        mailing_address['event_timestmp'] = convert_to_json_date(mailing_address['event_timestmp'])
+
         filing_obj = Filing()
         filing_obj.business = business
         filing_obj.header = {
@@ -600,21 +603,23 @@ class Filing():
             "email": delivery_address['email_addr'],
             "deliveryAddress": {
                 "streetAddress": delivery_address['addr_line_1'],
-                "streetAddressAdditional": delivery_address['addr_line_2'],
+                "streetAddressAdditional": delivery_address['addr_line_2'] if delivery_address['addr_line_2'] else '',
                 "addressCity": delivery_address['city'],
-                "province": delivery_address['province'],
+                "addressRegion": delivery_address['province'],
                 "addressCountry": delivery_address['country'],
                 "postalCode": delivery_address['postal_cd'],
                 "deliveryInstructions": delivery_address['delivery_instructions']
+                if delivery_address['delivery_instructions'] else ''
             },
             "mailingAddress": {
                 "streetAddress": mailing_address['addr_line_1'],
-                "streetAddressAdditional": mailing_address['addr_line_2'],
+                "streetAddressAdditional": mailing_address['addr_line_2'] if mailing_address['addr_line_2'] else '',
                 "addressCity": mailing_address['city'],
-                "province": mailing_address['province'],
+                "addressRegion": mailing_address['province'],
                 "addressCountry": mailing_address['country'],
-                "postal_code": mailing_address['postal_cd'],
+                "postalCode": mailing_address['postal_cd'],
                 "deliveryInstructions": mailing_address['delivery_instructions']
+                if mailing_address['delivery_instructions'] else ''
             }
         }
         filing_obj.filing_type = 'changeOfAddress'
