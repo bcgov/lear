@@ -19,7 +19,7 @@ Currently this only provides API versioning information
 from datetime import datetime
 
 from flask import current_app
-from registry_schemas import convert_to_json_date, convert_to_json_datetime
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
 from colin_api.exceptions import BusinessNotFoundException
 from colin_api.resources.db import db
@@ -65,7 +65,7 @@ class Business():
                 "join CORP_OP_STATE on CORP_OP_STATE.state_typ_cd = CORP_STATE.state_typ_cd "
                 "left join JURISDICTION on JURISDICTION.corp_num = corp.corp_num "
                 "where corp_typ_cd = 'CP'"  # only include coops (not xpro coops) for now
-                "and corp.CORP_NUM='{}'".format(identifier))
+                "and corp.CORP_NUM=:corp_num", corp_num=identifier)
             business = cursor.fetchone()
 
             if not business:
@@ -109,22 +109,36 @@ class Business():
             else:
                 business['status'] = business['state']
 
-            # remove unnecessary fields
+            # convert dates and date-times to correct json format and convert to camel case for schema names
+            business['foundingDate'] = convert_to_json_date(business['founding_date'])
+            business['lastAgmDate'] = convert_to_json_date(business['last_agm_date'])
+            business['lastArFiledDate'] = convert_to_json_date(business['last_ar_filed_date'])
+            business['lastLedgerTimestamp'] = convert_to_json_datetime(business['last_ledger_timestamp'])
+
+            business['businessNumber'] = business['business_number']
+            business['corpState'] = business['corp_state']
+            business['legalName'] = business['legal_name']
+
+            # remove unnecessary fields (
             del business['can_jur_typ_cd']
             del business['othr_juris_desc']
             del business['assumed_name']
             del business['state']
+            del business['business_number']
+            del business['corp_frozen_typ_cd']
+            del business['corp_state']
+            del business['founding_date']
+            del business['last_agm_date']
+            del business['last_ar_filed_date']
+            del business['last_ledger_timestamp']
+            del business['legal_name']
 
-            # convert dates and date-times to correct json format
-            business['founding_date'] = convert_to_json_date(business['founding_date'])
-            business['last_agm_date'] = convert_to_json_date(business['last_agm_date'])
-            business['last_ar_filed_date'] = convert_to_json_date(business['last_ar_filed_date'])
-            business['last_ledger_timestamp'] = convert_to_json_datetime(business['last_ledger_timestamp'])
+            # add cache_id todo: set to real value
+            business['cacheId'] = 0
 
             # convert to Business object
             business_obj = Business()
             business_obj.business = business
-
             return business_obj
 
         except Exception as err:

@@ -17,7 +17,7 @@
 Test-Suite to ensure that the /ops endpoint is working as expected.
 """
 
-from registry_schemas import validate_schema
+from registry_schemas import validate
 from tests import oracle_integration
 
 
@@ -27,7 +27,7 @@ def test_get_business(client):
     rv = client.get('/api/v1/businesses/CP0001965')
 
     assert 200 == rv.status_code
-    is_valid, errors = validate_schema(rv.json, 'business.json')
+    is_valid, errors = validate(rv.json, 'business', validate_schema=True)
     if errors:
         for err in errors:
             print('\nERROR MESSAGE:')
@@ -42,7 +42,7 @@ def test_get_business_missing_data(client):
     rv = client.get('/api/v1/businesses/CP0000440')
 
     assert 200 == rv.status_code
-    is_valid, errors = validate_schema(rv.json, 'business.json')
+    is_valid, errors = validate(rv.json, 'business', validate_schema=True)
     if errors:
         for err in errors:
             print('\nERROR MESSAGE:')

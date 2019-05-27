@@ -1,0 +1,652 @@
+{
+	"info": {
+		"_postman_id": "49d4ffda-5611-48d0-8045-f64bdf8bb59d",
+		"name": "LEAR Colin API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "ops",
+			"item": [
+				{
+					"name": "GET readyz",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/ops/readyz",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"ops",
+								"readyz"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET healthz",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "fbc99a97-7e72-4571-aeda-7633358a4b39",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"api is healthy\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql('api is healthy');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/ops/healthz",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"ops",
+								"healthz"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "business",
+			"item": [
+				{
+					"name": "GET business CP0000440 CP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "80bcd476-62db-4fd7-9a7d-8352dac09754",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for business\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.business).to.exist",
+									"    pm.expect(jsonData.business.cacheId).to.exist",
+									"    pm.expect(jsonData.business.foundingDate).to.exist",
+									"    pm.expect(jsonData.business.identifier).to.eql('CP0000440')",
+									"    pm.expect(jsonData.business.legalName).to.exist",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0000440",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0000440"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET business CP0001965 CP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8ec7ccb3-aac6-498d-96c9-829e81b2d9b0",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for business\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.business).to.exist",
+									"    pm.expect(jsonData.business.cacheId).to.exist",
+									"    pm.expect(jsonData.business.foundingDate).to.exist",
+									"    pm.expect(jsonData.business.identifier).to.eql('CP0001965')",
+									"    pm.expect(jsonData.business.legalName).to.exist",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0001965",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0001965"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET business XCP0001987 XCP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c33b7bb8-291d-4f13-9623-750a86e71b9b",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/XCP0001987",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"XCP0001987"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "AR",
+			"item": [
+				{
+					"name": "GET AR CP0001965",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c1067abe-1b2f-44f7-9896-87e432779d29",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for AR filing\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing).to.exist",
+									"    pm.expect(jsonData.filing.annualReport).to.exist",
+									"    pm.expect(jsonData.filing.business).to.exist",
+									"    pm.expect(jsonData.filing.header).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for annualReport\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.annualReport.annualGeneralMeetingDate).to.exist",
+									"    pm.expect(jsonData.filing.annualReport.certifiedBy).to.exist",
+									"    pm.expect(jsonData.filing.annualReport.email).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for business\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.exist",
+									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0001965')",
+									"    pm.expect(jsonData.filing.business.legalName).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for header\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.header.date).to.exist",
+									"    pm.expect(jsonData.filing.header.name).to.eql('annualReport')",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0001965/filings/annualReport",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0001965",
+								"filings",
+								"annualReport"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET AR CP0001965 ?year=2017",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ac9c18f2-b09e-4d31-964b-915e2a36bfad",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0001965/filings/annualReport?year=2017",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0001965",
+								"filings",
+								"annualReport"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2017"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST AR CP0001965",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "05e3b38e-2145-48a8-9929-397fa5facec9",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for AR filing\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing).to.exist",
+									"    pm.expect(jsonData.filing.annualReport).to.exist",
+									"    pm.expect(jsonData.filing.business).to.exist",
+									"    pm.expect(jsonData.filing.header).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for annualReport\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.annualReport.annualGeneralMeetingDate).to.exist",
+									"    pm.expect(jsonData.filing.annualReport.certifiedBy).to.exist",
+									"    pm.expect(jsonData.filing.annualReport.email).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for business\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.exist",
+									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0001965')",
+									"    pm.expect(jsonData.filing.business.legalName).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for header\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.header.date).to.exist",
+									"    pm.expect(jsonData.filing.header.name).to.eql('annualReport')",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"filing\": {\r\n        \"annualReport\": {\r\n            \"annualGeneralMeetingDate\": \"2017-12-31\",\r\n            \"certifiedBy\": \"Joe Smith\",\r\n            \"email\": \"nobody@nothing.com\"\r\n        },\r\n        \"business\": {\r\n        \t\"cacheId\": 0,\r\n            \"lastLedgerTimestamp\": \"2019-05-08T21:21:01-00:00\",\r\n            \"foundingDate\": \"2004-04-28\",\r\n            \"identifier\": \"CP0001965\",\r\n            \"legalName\": \"CENTRAL INTERIOR COMMUNITY SERVICES CO-OP\",\r\n            \"businessNumber\": null,\r\n            \"jurisdiction\": \"BC\",\r\n            \"lastAgmDate\": \"2017-11-07\",\r\n            \"lastArFiledDate\": \"2017-04-28\",\r\n            \"status\": \"Active\",\r\n            \"type\": \"CP\"\r\n        },\r\n        \"header\": {\r\n            \"date\": \"2017-11-23\",\r\n            \"name\": \"annualReport\"\r\n        }\r\n    }\r\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0001965/filings/annualReport",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0001965",
+								"filings",
+								"annualReport"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "COA",
+			"item": [
+				{
+					"name": "GET COA CP0001965",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "540ee156-24e1-495c-85dd-c4987a9d5aec",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for COA filing\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress).to.exist",
+									"    pm.expect(jsonData.filing.business).to.exist",
+									"    pm.expect(jsonData.filing.header).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for changeOfAddress\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.changeOfAddress.deliveryAddress).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress.mailingAddress).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress.certifiedBy).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress.email).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for business\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.exist",
+									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0001965')",
+									"    pm.expect(jsonData.filing.business.legalName).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for header\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.header.date).to.exist",
+									"    pm.expect(jsonData.filing.header.name).to.eql('changeOfAddress')",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0001965/filings/changeOfAddress",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0001965",
+								"filings",
+								"changeOfAddress"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST COA CP0001965",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c96f6673-69fd-4fd0-89e4-fcb9dbc9cff3",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for COA filing\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress).to.exist",
+									"    pm.expect(jsonData.filing.business).to.exist",
+									"    pm.expect(jsonData.filing.header).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for changeOfAddress\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.changeOfAddress.deliveryAddress).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress.mailingAddress).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress.certifiedBy).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress.email).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for business\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.exist",
+									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0001965')",
+									"    pm.expect(jsonData.filing.business.legalName).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for header\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.header.date).to.exist",
+									"    pm.expect(jsonData.filing.header.name).to.eql('changeOfAddress')",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n        \"changeOfAddress\": {\n        \t\"certifiedBy\": \"Joe Smith\",\n            \"email\": \"nobody@nothing.com\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"postalCode\": \"V2G 1J6\",\n                \"addressRegion\": \"BC\",\n                \"streetAddress\": \"51 4TH AVENUE SOUTH\"\n        \t},\n        \t\"mailingAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"postalCode\": \"V2G 1J6\",\n                \"addressRegion\": \"BC\",\n                \"streetAddress\": \"51 4TH AVENUE SOUTH\"\n            }\n        },\n        \"business\": {\n            \"cacheId\": 0,\n            \"foundingDate\": \"2004-04-28\",\n            \"identifier\": \"CP0001965\",\n            \"lastLedgerTimestamp\": \"2017-11-23T00:00:00-00:00\",\n            \"legalName\": \"CENTRAL INTERIOR COMMUNITY SERVICES CO-OP\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2017-11-07\",\n            \"lastArFiledDate\": \"2017-04-28\",\n            \"status\": \"Active\",\n            \"type\": \"CP\"\n        },\n        \"header\": {\n            \"date\": \"2019-05-23\",\n            \"name\": \"changeOfAddress\"\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0001965/filings/changeOfAddress",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0001965",
+								"filings",
+								"changeOfAddress"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
