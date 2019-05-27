@@ -74,7 +74,6 @@ export default {
   computed: {
     computedDateFormatted () {
       return this.date ? moment(this.date).format('MM/DD/YYYY') : ''
-      alert(computedDateFormatted)
     },
   },
 

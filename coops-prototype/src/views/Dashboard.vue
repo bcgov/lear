@@ -8,7 +8,6 @@
         </div>
       </div>
     </v-fade-transition>
-
     <EntityInfo/>
     <v-container class="view-container">
       <article>
@@ -16,15 +15,15 @@
           <h1>Annual Reports</h1>
         </header>
         <section>
-          <h2>To Do</h2>
-          <v-card flat>
+          <h2>To Do <span class="text-muted">(2)</span></h2>
+          <v-card>
             <ul class="dashboard-list">
               <li class="dashboard-list-item"
                 v-for="(item, index) in orderBy(todoItems, 'name', 1)"
                 v-bind:key="index">
                 <div class="name">{{item.name}}</div>
                 <div class="actions">
-                  <v-btn color="primary" depressed @click="fileAnnualReport" :disabled="!item.enabled">File Now</v-btn>
+                  <v-btn color="primary" @click="fileAnnualReport" :disabled="!item.enabled">File Now</v-btn>
                 </div>
               </li>
             </ul>
@@ -32,11 +31,11 @@
         </section>
         <section>
           <h2>Filing History</h2>
-            <v-card flat>
-              <ul>
-                <li class="dashboard-list-item">You have no previous filings</li>
-              </ul>
-            </v-card>
+          <v-card>
+            <ul>
+              <li class="dashboard-list-item"><span class="text-muted">You have no previous filings</span></li>
+            </ul>
+          </v-card>
         </section>
       </article>
     </v-container>
@@ -107,4 +106,8 @@
 
   .dashboard-list-item + .dashboard-list-item
     border-top 1px solid $gray3
+
+  .text-muted
+    color $gray6
+    font-weight 400
 </style>
