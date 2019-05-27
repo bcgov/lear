@@ -4,7 +4,7 @@
     <div class="loading-container fade-out">
       <div class="loading__content">
         <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-        <div class="loading-msg">Preparing your 2018 Annual Report Filing</div>
+        <div class="loading-msg">Preparing Your 2018 Annual Report Filing</div>
       </div>
     </div>
 
@@ -60,7 +60,9 @@
                           <div class="address__row">{{DeliveryAddressCountry}}</div>
                         </div>
                         <div class="actions">
-                          <v-btn small outline color="blue" @click="editAddress">Change</v-btn>
+                          <v-btn icon flat color="primary" @click="editAddress">
+                            <v-icon>edit</v-icon>
+                          </v-btn>
                         </div>
                       </div>
                     </v-expand-transition>
@@ -194,8 +196,8 @@
             <p>Tell us who was elected or appointed and who ceased to be a director at your 2018 AGM.</p>
             <v-expand-transition>
               <div v-show="!showNewDirectorForm">
-                <v-btn @click="addNewDirector" outline color="blue" style="margin-bottom: 1.5rem">
-                  <v-icon small>add</v-icon>
+                <v-btn @click="addNewDirector" outline color="primary" style="margin-bottom: 1.5rem">
+                  <v-icon>add</v-icon>
                   <span>Appoint New Director</span>
                 </v-btn>
               </div>
@@ -297,20 +299,29 @@
                           <div class="address__row">{{director.country}}</div>
                         </div>
                         <div class="actions">
-                          <v-btn small outline color="blue"
+                          <v-btn icon flat color="primary"
                             v-show="director.isNew"
                             @click="editDirector(index)">
-                            Edit
+                            <v-icon>edit</v-icon>
+                            <!--
+                            <span>Edit</span>
+                            -->
                           </v-btn>
-                          <v-btn small outline color="blue"
+                          <!--
+                          <v-btn round small
                             v-show="director.isNew"
                             @click="deleteDirector(index)">
-                            Remove
+                            <v-icon small>delete</v-icon>
+                            <span>Remove</span>
                           </v-btn>
-                          <v-btn small outline color="blue"
+                          -->
+                          <v-btn icon flat color="primary"
                             v-show="!director.isNew"
                             @click="removeDirector(director)" >
-                            {{director.isDirectorActive ? 'Cease':'Undo'}}
+                            <v-icon>{{director.isDirectorActive ? 'remove_circle':'undo'}}</v-icon>
+                            <!--
+                            <span>{{director.isDirectorActive ? 'Cease':'Undo'}}</span>
+                            -->
                           </v-btn>
                         </div>
                       </div>
@@ -477,7 +488,7 @@ export default {
         { id: 1, isNew: false, isDirectorActive: true, firstName: "Alli", lastName: "Myers", initial: "", street: "1111 First Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
         { id: 2, isNew: false, isDirectorActive: true, firstName: "Nora", lastName: "Patton", initial: "", street: "2222 Second Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
         { id: 3, isNew: false, isDirectorActive: true, firstName: "Phoebe", lastName: "Jones", initial: "", street: "3333 Third Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
-        { id: 4, isNew: false, isDirectorActive: true, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
+        { id: 4, isNew: true, isDirectorActive: true, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
       ],
 
       //Director Form Validation
@@ -612,6 +623,7 @@ export default {
     // Add Fees
     addAddressFee: function () {
       this.$refs.feeSummary.addChangeAddressFee()
+      this.showAddressForm = false
     },
 
     addDirectorFee: function () {

@@ -23,34 +23,38 @@
           <h1>Annual Reports</h1>
         </header>
         <section>
-          <h2>To Do</h2>
-          <v-card flat>
-            <ul class="dashboard-list">
+          <h2>To Do <span class="text-muted">(1)</span></h2>
+          <v-card>
+            <ul class="todo-list">
               <li class="dashboard-list-item"
                 v-for="(item, index) in orderBy(todoItems, 'name', -1)"
                 v-bind:key="index">
                 <div class="name">{{item.name}}</div>
                 <div class="actions">
-                  <v-btn color="primary" depressed @click="fileAnnualReport" :disabled="!item.enabled">File Now</v-btn>
+                  <v-btn color="primary" @click="fileAnnualReport" :disabled="!item.enabled">File Now</v-btn>
                 </div>
               </li>
             </ul>
           </v-card>
         </section>
         <section>
-          <h2>Filing History</h2>
-            <v-alert v-model="filingAlert" type="success" class="mb-4" transition="slide-y-transition">
-              2018 Annual Report was filed successfully. You can download your transaction below.
-            </v-alert>
-            <v-card flat>
-              <ul>
+          <h2>Filing History <span class="text-muted">(1)</span></h2>
+            <v-card>
+              <!--
+              <v-alert v-model="filingAlert" type="success" transition="slide-y-transition">
+                2018 Annual Report was filed successfully. You can download your transaction below.
+              </v-alert>
+              -->
+              <ul class="filing-history">
                 <li class="dashboard-list-item"
                   v-for="(item, index) in orderBy(filedItems, 'name', -1)"
                   v-bind:key="index">
                   <div class="name">{{item.name}}</div>
+                  <div class="date"><span class="text-muted">{{ moment(item).format('MM/DD/YYYY') }}</span></div>
+                  <div class="status"><span class="text-muted">{{ item.status }}</span></div>
                   <div class="price">{{item.price}}</div>
                   <div class="actions">
-                    <v-btn depressed :disabled="item.enabled">Download</v-btn>
+                    <a class="v-btn" v-bind:href="'/downloads/receipt.pdf'" download>Download Receipt</a>
                   </div>
                 </li>
               </ul>
@@ -65,6 +69,7 @@
   import { Component, Vue } from 'vue-property-decorator'
   import EntityInfo from '@/components/EntityInfo.vue'
   import Vue2Filters from 'vue2-filters'
+  import moment from 'moment'
 
   Vue.use(Vue2Filters)
 
@@ -77,16 +82,19 @@
 
     data () {
       return {
+        publicPath: process.env.BASE_URL,
+
         todoItems: [
           { name: 'Annual Report (2019)', enabled: true }
         ],
 
         filedItems: [
-          { name: 'Annual Report (2018)', price: '$70.00', enabled: false }
+          { name: 'Annual Report (2018)', status: 'Completed', price: '$70.00', enabled: false }
         ],
 
         showLoading: false,
         filingAlert: true,
+        someDate: '',
         loadingMsg: 'Preparing your Annual Report'
       }
     },
@@ -99,6 +107,20 @@
       fileAnnualReport: function () {
         this.showLoading = true
         setTimeout(() => { this.gotoAnnualReport() })
+      },
+
+      moment: function (date) {
+        return moment(date);
+      },
+
+      date: function (date) {
+        return moment(date).format('MMMM Do YYYY');
+      },
+
+      filters: {
+        moment: function (date) {
+          return moment(date).format('MMMM Do YYYY');
+        }
       }
     }
   }
@@ -115,20 +137,36 @@
     font-size 0.875rem
 
     .name
-      margin-right auto
       font-weight 700
 
     .price
-      margin-right 3rem
+      flex 1 1 auto
       font-weight 700
+      text-align center
+
+    .date
+      flex 1 1 auto
+      margin-left 5rem
+      text-align center
+
+    .status
+      flex 1 1 auto
+      text-align center
 
     .v-btn
       min-width 8rem
       font-weight 500
+
+  .todo-list .name
+    margin-right auto
 
   .dashboard-list-item + .dashboard-list-item
     border-top 1px solid $gray3
 
   .v-alert
     border-width 0
+
+  .text-muted
+    color $gray6
+    font-weight 400
 </style>
