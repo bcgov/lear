@@ -73,7 +73,7 @@ export default {
 
   computed: {
     computedDateFormatted () {
-      return this.date ? moment(this.date).format('dddd, MMMM Do YYYY') : ''
+      return this.date ? moment(this.date).format('MM/DD/YYYY') : ''
       alert(computedDateFormatted)
     },
   },
@@ -81,24 +81,23 @@ export default {
   watch: {
     date (val) {
       this.dateFormatted = this.formatDate(this.date)
+      this.$emit('childToParent', this.computedDateFormatted)
     }
   },
 
   methods: {
-    showAgmDate: function (date) {
-      this.$emit('get-date', this.date)
-      alert(this.date)
+    emitToParent (event) {
+      this.$emit('childToParent', this.dateFormatted)
     },
 
     formatDate (date) {
       if (!date) return null
-
       const [year, month, day] = date.split('-')
       return `${month}/${day}/${year}`
     },
+
     parseDate (date) {
       if (!date) return null
-
       const [month, day, year] = date.split('/')
       return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
     }

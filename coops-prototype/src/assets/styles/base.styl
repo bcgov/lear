@@ -18,19 +18,23 @@ h1
   margin-bottom 1.25rem
   line-height 2rem
   letter-spacing -0.01rem
-  font-size 2rem
+  font-size 1.875rem
   font-weight 500
 
 h2
-  margin-bottom 0.25rem
-  font-size 1rem
-  font-weight 700
-
-h4
-  margin-top 0.5rem
-  margin-bottom 1.5rem
+  margin-bottom 0.5rem
+  letter-spacing -0.01rem
   font-size 1.125rem
   font-weight 500
+
+h3
+  letter-spacing -0.01rem
+  font-size 1rem
+  font-weight 500
+
+p
+  margin-bottom 1.5rem
+  font-size 1rem
 
 hr
   margin-top 2rem
@@ -38,12 +42,8 @@ hr
   border-color $gray4
   border-style solid
 
-p
-  margin-bottom 1.5rem
-
 .container
   padding 1.25rem
-
 
 .app-container.theme--light
   background $gray1
@@ -123,3 +123,40 @@ p
 
 .align-right
   text-align right !important
+
+// Loading Indicator
+.loading-container
+  display flex
+  align-items center
+  position fixed
+  top 0
+  right 0
+  bottom 0
+  left 0
+  z-index 999
+  background rgba(255, 255, 255, 1)
+
+.loading__content
+  flex 1 1 auto
+  text-align center
+
+.loading-msg
+  margin-top 1rem
+
+.fade-out
+  animation fadeOut 3s forwards
+
+@keyframes fadeOut {
+  0% {
+    opacity 1
+  }
+  80% {
+    opacity 1
+    display: block;
+  }
+  100% {
+    opacity 0
+    display none
+    z-index -5
+  }
+}

@@ -1,17 +1,17 @@
 <template>
   <div id="entity-info">
     <v-container>
-        <div class="title-container">
-          <div class="entity-name">{{ entityName }}</div>
-        </div>
+      <div class="title-container">
+        <div class="entity-name">{{ entityName }}</div>
+      </div>
 
-        <dl class="meta-container">
-          <dt>Business No:</dt>
-          <!-- TODO: Strings should be pulled out into a globally accessible file (e.g. 'Not Available') -->
-          <dd class="business-number">{{ entityBusinessNo ? entityBusinessNo : 'Not Available' }}</dd>
-          <dt>Incorporation No:</dt>
-          <dd class="incorp-number">{{ entityIncNo ? entityIncNo : 'Not Available' }}</dd>
-        </dl>
+      <dl class="meta-container">
+        <dt>Business No:</dt>
+        <!-- TODO: Strings should be pulled out into a globally accessible file (e.g. 'Not Available') -->
+        <dd class="business-number">{{ entityBusinessNo ? entityBusinessNo : 'Not Available' }}</dd>
+        <dt>Incorporation No:</dt>
+        <dd class="incorp-number">{{ entityIncNo ? entityIncNo : 'Not Available' }}</dd>
+      </dl>
     </v-container>
   </div>
 </template>
@@ -23,10 +23,10 @@ export default {
   // Placeholder Data
   data () {
     return {
-      entityName: 'My Business Name',
+      entityName: 'Pathfinder Housing Cooperative',
       entityStatus: 'GOODSTANDING',
-      entityBusinessNo: '123456789',
-      entityIncNo: '123456789'
+      entityBusinessNo: '105023337BC0157',
+      entityIncNo: 'CP0015683'
     }
   }
 }
@@ -39,12 +39,17 @@ export default {
   #entity-info
     background #ffffff
 
+  .container
+    padding-top 2rem
+    padding-bottom 2rem
+
   .title-container
     margin-top -0.2rem
 
   .entity-name
+    margin-bottom 0.25rem
     display inline-block
-    font-size 1.25rem
+    font-size 1.125rem
     font-weight 600
 
   .entity-status
@@ -54,7 +59,6 @@ export default {
     overflow hidden
     color $gray6
     font-size 0.8375rem
-    font-weight 500
 
   dd, dt
     float left

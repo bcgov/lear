@@ -36,14 +36,14 @@ $app-header-height = 70px // 70px
 .view-container
   display flex
   flex-flow column nowrap
-  padding-top 3rem
-  padding-bottom 3rem
+  padding-top 2.5rem
+  padding-bottom 2.5rem
 
   article
     flex 1 1 auto
 
     section
-      margin-top 3rem
+      margin-top 2.5rem
 
   aside
     flex 0 0 auto
@@ -52,11 +52,6 @@ $app-header-height = 70px // 70px
 
     .affix
       width 20rem
-
-  section
-    header p
-      color $gray8
-      font-size 0.875rem
 
 @media (max-width 768px)
   .view-container
@@ -85,10 +80,12 @@ $app-header-height = 70px // 70px
 
 .form__btns
   display flex
-  text-align right
 
   .v-btn
     margin 0
 
     + .v-btn
       margin-left 0.5rem
+
+    &.form-primary-btn
+      margin-left auto

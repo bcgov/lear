@@ -53,7 +53,7 @@
         </div>
         <div class="cc-form__row cc-form__btns">
           <v-btn color="warning" depressed to="/PaymentCart">Cancel & return to PayBC</v-btn>
-          <v-btn outline depressed to="/Dashboard">Submit Payment</v-btn>
+          <v-btn outline depressed to="/DashboardSuccess">Submit Payment</v-btn>
         </div>
       </v-card-text>
     </v-card>

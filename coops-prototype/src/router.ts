@@ -3,6 +3,7 @@ import Router from 'vue-router'
 import Home from './views/Home.vue'
 import AnnualReport from './views/AnnualReport.vue'
 import Dashboard from './views/Dashboard.vue'
+import DashboardSuccess from './views/DashboardSuccess.vue'
 import Payment from './views/Payment.vue'
 import PaymentCart from './views/PaymentCart.vue'
 import PaymentInfo from './views/PaymentInfo.vue'
@@ -22,6 +23,11 @@ export default new Router({
       path: '/dashboard',
       name: 'dashboard',
       component: Dashboard
+    },
+    {
+      path: '/dashboardsuccess',
+      name: 'dashboard',
+      component: DashboardSuccess
     },
     {
       path: '/about',
