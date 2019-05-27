@@ -37,11 +37,11 @@
               <tr>
                 <td></td>
                 <td>n/a</td>
-                <td>My Business Name</td>
-                <td>123456789</td>
-                <td>11728</td>
+                <td>Pathfinder Housing Cooperative</td>
+                <td>105023337BC0157</td>
+                <td>11780</td>
                 <td>BC Registries Co-op Filings</td>
-                <td>{{ date | moment }}</td>
+                <td>{{moment(date).format('YYYY/MM/DD')}}</td>
                 <td>
                   <div>
                     $70.00
@@ -88,18 +88,6 @@
 
     data () {
       return {
-      }
-    },
-
-    methods: {
-      moment: function () {
-        return moment();
-      }
-    },
-
-    filters: {
-      moment: function (date) {
-        return moment(date).format('YYYY/DD/MM');
       }
     }
   }

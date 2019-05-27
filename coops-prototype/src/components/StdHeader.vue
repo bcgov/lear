@@ -6,6 +6,7 @@
           alt="Province of British Columbia Logo"
           title="Province of British Columbia"/>
       </router-link>
+      <span class="bcros" v-show="this.$route.name != 'PayBC'">BC Registries & Online Services</span>
       <span class="paybc-logo" v-show="this.$route.name === 'PayBC'">Pay<strong>BC</strong></span>
     </div>
   </header>
@@ -28,15 +29,23 @@ export default {
     background-color $BCgovBlue5
 
     .container
+      display flex
+      align-items center
       padding-top 0
       padding-bottom 0
 
   .brand-img
     margin-top 0.3rem
+    margin-right 1.5rem
+    margin-left -0.1rem
+
+  .bcros
+    margin-top 0.2rem
+    font-size 1.125rem
+    font-weight 300
 
   .paybc-logo {
     margin-top 0.45rem
-    margin-left 2rem
     display: inline-block
     font-size 2.25rem
     font-weight 600

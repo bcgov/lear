@@ -1,10 +1,26 @@
 <template>
   <div>
+
+    <div class="loading-container fade-out">
+      <div class="loading__content">
+        <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
+        <div class="loading-msg">Preparing your 2018 Annual Report Filing</div>
+      </div>
+    </div>
+
+    <v-fade-transition>
+      <div class="loading-container" v-show="showLoading">
+        <div class="loading__content">
+          <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
+          <div class="loading-msg">{{this.loadingMsg}}</div>
+        </div>
+      </div>
+    </v-fade-transition>
     <EntityInfo/>
     <v-container class="view-container">
-      <article id="example-content">
+      <article id="example-content" :class="this.agmDate ? 'agm-date-selected':'no-agm-date-selected'">
         <header>
-          <h1>File Annual Report</h1>
+          <h1>File Annual Report (2018)</h1>
           <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
         </header>
 
@@ -13,7 +29,7 @@
             <h2>1. Annual General Meeting (AGM) Information</h2>
             <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium</p>
             <v-card flat>
-              <ARFilingDates @get-date="onClickChild"/>
+              <ARFilingDates ref="ARFilingDate" v-on:childToParent="onChildClick"/>
             </v-card>
           </header>
         </section>
@@ -21,7 +37,7 @@
         <!-- Addresses -->
         <section>
           <header>
-            <h2>2. Registered Office Addresses</h2>
+            <h2>2. Registered Office Addresses <!-- <span class="agm-date" v-show="this.agmDate">({{this.agmDate}})</span> --></h2>
             <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium</p>
           </header>
           <v-card flat>
@@ -156,9 +172,9 @@
                           </div>
                         </v-expand-transition>
                         <div class="form__row form__btns">
-                          <v-btn class="update-btn" color="primary"
+                          <v-btn class="form-primary-btn" color="primary"
                             @click="addAddressFee">
-                            Update Addresses</v-btn>
+                            Change Addresses</v-btn>
                           <v-btn @click="cancelEditAddress">Cancel</v-btn>
                         </div>
                       </v-form>
@@ -174,11 +190,14 @@
 
         <section>
           <header>
-            <h2>3. Director Information (as of April 1, 2019)</h2>
+            <h2>3. Director Information <!-- <span class="agm-date">({{this.agmDate}})</span> --></h2>
             <p>Tell us who was elected or appointed and who ceased to be a director at your 2018 AGM.</p>
             <v-expand-transition>
               <div v-show="!showNewDirectorForm">
-                <v-btn @click="addNewDirector" outline color="blue" style="margin-bottom: 1.5rem">Add New Director</v-btn>
+                <v-btn @click="addNewDirector" outline color="blue" style="margin-bottom: 1.5rem">
+                  <v-icon small>add</v-icon>
+                  <span>Appoint New Director</span>
+                </v-btn>
               </div>
             </v-expand-transition>
           </header>
@@ -235,7 +254,7 @@
                           </v-select>
                         </div>
                         <div class="form__row form__btns">
-                          <v-btn @click="validateNewDirectorForm" color="primary">Add New Director</v-btn>
+                          <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Appoint Director</v-btn>
                           <v-btn @click="cancelNewDirector">Cancel</v-btn>
                         </div>
                       </v-form>
@@ -279,7 +298,7 @@
                         </div>
                         <div class="actions">
                           <v-btn small outline color="blue"
-                            v-show="director.isDirectorActive"
+                            v-show="director.isNew"
                             @click="editDirector(index)">
                             Edit
                           </v-btn>
@@ -346,7 +365,7 @@
                           </v-select>
                         </div>
                         <div class="form__row form__btns">
-                          <v-btn class="update-btn" color="primary"
+                          <v-btn class="form-primary-btn" color="primary"
                             @click="cancelEditDirector(index)">
                             Update Director</v-btn>
                           <v-btn @click="cancelEditDirector(index)">Cancel</v-btn>
@@ -369,7 +388,7 @@
     </v-container>
     <v-container class="pt-0">
       <div class="ar-filing-buttons">
-        <v-btn color="primary" large to="/Payment"> File & Pay</v-btn>
+        <v-btn color="primary" large @click="fileAndPay"> File & Pay</v-btn>
         <v-btn large to="/Dashboard">Cancel</v-btn>
       </div>
     </v-container>
@@ -383,8 +402,10 @@ import { Affix } from 'vue-affix'
 import ARFilingDates from '@/components/ARFilingDates.vue'
 import EntityInfo from '@/components/EntityInfo.vue'
 import FeeSummary from '@/components/FeeSummary.vue'
+import moment from 'moment'
 
 Vue.use(Vue2Filters)
+Vue.prototype.moment = moment
 
 export default {
   name: 'AnnualReport',
@@ -399,6 +420,7 @@ export default {
   data () {
     return {
       agmDate: '',
+      isAgmStepComplete: false,
 
       countryList: [
         'Canada'
@@ -480,13 +502,16 @@ export default {
       ],
       directorCountryRules: [
         v => !!v || 'A country is required',
-      ]
+      ],
+
+      showLoading: false,
+      loadingMsg: 'Redirecting you to PayBC for payment processing'
     }
   },
 
   methods: {
-    onClickChild (value) {
-      console.log(value) // someValue
+    onChildClick (value) {
+      this.agmDate = value
     },
 
     editAddress: function () {
@@ -592,6 +617,15 @@ export default {
     addDirectorFee: function () {
       this.$refs.feeSummary.addChangeDirectorFee()
     },
+
+    gotoPayment: function () {
+      this.$router.push({ path: '/Payment' })
+    },
+
+    fileAndPay: function () {
+      this.showLoading = true
+      setTimeout(() => { this.gotoPayment() }, 2000)
+    }
   }
 }
 </script>
@@ -606,30 +640,8 @@ article
 
   .v-btn
     margin 0
-    min-width 4rem
+    //min-width 4rem
     text-transform none
-
-// Page Contents
-h1
-  margin-bottom 1.25rem
-  line-height 2rem
-  letter-spacing -0.01rem
-  font-size 2rem
-  font-weight 500
-
-h2
-  margin-bottom 0.25rem
-  font-size 1rem
-  font-weight 700
-
-h4
-  margin-top 0.5rem
-  margin-bottom 1.5rem
-  font-size 1.125rem
-  font-weight 500
-
-p
-  margin-bottom 1.5rem
 
 ul
   margin 0
@@ -663,7 +675,6 @@ ul
       flex 0 0 auto
       padding-right: 2rem
       width 12rem
-
 
 // List Layout
 .list
@@ -703,11 +714,6 @@ ul
 
 .address__row
   flex 1 1 auto
-
-.actions
-  position absolute
-  top 0
-  right 0
 
 // Registered Office Address
 .registered-address-info
@@ -761,5 +767,9 @@ ul
 
 .remove
   color $gray5 !important
+
+.agm-date
+  margin-left 0.25rem
+  font-weight 300
 
 </style>
