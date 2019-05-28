@@ -101,7 +101,7 @@
       margin-left auto
 
     .v-btn
-      min-width 8rem
+      min-width 10rem
       font-weight 500
 
   .dashboard-list-item + .dashboard-list-item

@@ -1,13 +1,15 @@
 <template>
   <div>
 
+    <!-- Initial Page Load Transition -->
     <div class="loading-container fade-out">
       <div class="loading__content">
         <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-        <div class="loading-msg">Preparing Your 2018 Annual Report Filing</div>
+        <div class="loading-msg">Preparing Your 2018 Annual Report</div>
       </div>
     </div>
 
+    <!-- Transition to Payment -->
     <v-fade-transition>
       <div class="loading-container" v-show="showLoading">
         <div class="loading__content">
@@ -16,7 +18,9 @@
         </div>
       </div>
     </v-fade-transition>
+
     <EntityInfo/>
+
     <v-container class="view-container">
       <article id="example-content" :class="this.agmDate ? 'agm-date-selected':'no-agm-date-selected'">
         <header>
@@ -24,6 +28,7 @@
           <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
         </header>
 
+        <!-- Annual General Meeting Dates -->
         <section>
           <header>
             <h2>1. Annual General Meeting (AGM) Information</h2>
@@ -60,8 +65,8 @@
                           <div class="address__row">{{DeliveryAddressCountry}}</div>
                         </div>
                         <div class="actions">
-                          <v-btn icon flat color="primary" @click="editAddress">
-                            <v-icon>edit</v-icon>
+                          <v-btn small outline color="primary" @click="editAddress">
+                            Change
                           </v-btn>
                         </div>
                       </div>
@@ -190,6 +195,7 @@
           </v-card>
         </section>
 
+        <!-- Director Information -->
         <section>
           <header>
             <h2>3. Director Information <!-- <span class="agm-date">({{this.agmDate}})</span> --></h2>
@@ -299,29 +305,22 @@
                           <div class="address__row">{{director.country}}</div>
                         </div>
                         <div class="actions">
-                          <v-btn icon flat color="primary"
+                          <v-btn small outline color="primary"
                             v-show="director.isNew"
                             @click="editDirector(index)">
-                            <v-icon>edit</v-icon>
-                            <!--
                             <span>Edit</span>
-                            -->
                           </v-btn>
-                          <!--
-                          <v-btn round small
+
+                          <v-btn small outline color="primary"
                             v-show="director.isNew"
                             @click="deleteDirector(index)">
-                            <v-icon small>delete</v-icon>
                             <span>Remove</span>
                           </v-btn>
-                          -->
-                          <v-btn icon flat color="primary"
+
+                          <v-btn small outline color="primary"
                             v-show="!director.isNew"
-                            @click="removeDirector(director)" >
-                            <v-icon>{{director.isDirectorActive ? 'remove_circle':'undo'}}</v-icon>
-                            <!--
+                            @click="removeDirector(director)">
                             <span>{{director.isDirectorActive ? 'Cease':'Undo'}}</span>
-                            -->
                           </v-btn>
                         </div>
                       </div>
@@ -488,7 +487,7 @@ export default {
         { id: 1, isNew: false, isDirectorActive: true, firstName: "Alli", lastName: "Myers", initial: "", street: "1111 First Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
         { id: 2, isNew: false, isDirectorActive: true, firstName: "Nora", lastName: "Patton", initial: "", street: "2222 Second Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
         { id: 3, isNew: false, isDirectorActive: true, firstName: "Phoebe", lastName: "Jones", initial: "", street: "3333 Third Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
-        { id: 4, isNew: true, isDirectorActive: true, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
+        { id: 4, isNew: false, isDirectorActive: true, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
       ],
 
       //Director Form Validation
@@ -652,7 +651,6 @@ article
 
   .v-btn
     margin 0
-    //min-width 4rem
     text-transform none
 
 ul
@@ -675,6 +673,9 @@ ul
     position absolute
     top 0
     right 0
+
+    .v-btn
+      min-width 4rem
 
     .v-btn + .v-btn
       margin-left 0.5rem
