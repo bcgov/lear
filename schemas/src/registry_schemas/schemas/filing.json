@@ -84,6 +84,9 @@
                         "date": {
                             "type": "string",
                             "format": "date"
+                        },
+                        "paymentToken": {
+                            "type": "string"
                         }
                     }
                 }
