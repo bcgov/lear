@@ -54,7 +54,7 @@
                   <div class="status"><span class="text-muted">{{ item.status }}</span></div>
                   <div class="price">{{item.price}}</div>
                   <div class="actions">
-                    <a class="v-btn" v-bind:href="'/downloads/receipt.pdf'" download>Download Receipt</a>
+                    <a class="v-btn download-btn" v-bind:href="'/downloads/receipt.pdf'" target="_blank">Download Receipt</a>
                   </div>
                 </li>
               </ul>
@@ -154,7 +154,7 @@
       text-align center
 
     .v-btn
-      min-width 8rem
+      min-width 10rem
       font-weight 500
 
   .todo-list .name
@@ -169,4 +169,7 @@
   .text-muted
     color $gray6
     font-weight 400
+
+  .download-btn
+    color #000
 </style>
