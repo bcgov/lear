@@ -65,7 +65,8 @@
                           <div class="address__row">{{DeliveryAddressCountry}}</div>
                         </div>
                         <div class="actions">
-                          <v-btn small outline color="primary" @click="editAddress">
+                          <v-btn small outline color="primary"
+                            @click="editAddress">
                             Change
                           </v-btn>
                         </div>
@@ -202,7 +203,8 @@
             <p>Tell us who was elected or appointed and who ceased to be a director at your 2018 AGM.</p>
             <v-expand-transition>
               <div v-show="!showNewDirectorForm">
-                <v-btn @click="addNewDirector" outline color="primary" style="margin-bottom: 1.5rem">
+                <v-btn class="new-director-btn" outline color="primary"
+                  @click="addNewDirector">
                   <v-icon>add</v-icon>
                   <span>Appoint New Director</span>
                 </v-btn>
@@ -754,6 +756,12 @@ ul
 
 .director-initial
   max-width 6rem
+
+.new-director-btn
+  margin-bottom 1.5rem !important
+
+  .v-icon
+    margin-left -0.5rem
 
 // Filing Buttons
 .ar-filing-buttons
