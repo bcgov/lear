@@ -107,6 +107,37 @@ export default {
 <style lang="stylus" scoped>
   @import "../assets/styles/theme.styl"
 
+  .meta-container
+    display flex
+    flex-flow column nowrap
+    position relative
+
+    > label:first-child
+      font-weight 500
+
+    &__inner
+      flex 1 1 auto
+
+    .actions
+      position absolute
+      top 0
+      right 0
+
+      .v-btn
+        min-width 4rem
+
+      .v-btn + .v-btn
+        margin-left 0.5rem
+
+  @media (min-width 768px)
+    .meta-container
+      flex-flow row nowrap
+
+      > label:first-child
+        flex 0 0 auto
+        padding-right: 2rem
+        width 12rem
+
   .noAgm-checkbox
     margin-top 0
     margin-left -3px

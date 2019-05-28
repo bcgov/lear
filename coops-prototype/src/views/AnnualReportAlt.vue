@@ -224,26 +224,55 @@
                     <label>Appoint New Director</label>
                     <div class="meta-container__inner">
                       <v-form ref="newDirectorForm" v-on:submit.prevent="addNewDirector" v-model="directorFormValid" lazy-validation>
-                        <div class="form__row three-column">
-                          <v-text-field box class="item" label="First Name"
-                            v-model="director.firstName"
-                            :rules="directorFirstNameRules"
-                            required></v-text-field>
-                          <v-text-field box label="Initial" class="item director-initial"
-                            v-model="director.initial"
-                          ></v-text-field>
-                          <v-text-field box class="item" label="Last Name"
-                            v-model="director.lastName"
-                            :rules="directorLastNameRules"
-                            required></v-text-field>
-                        </div>
-                        <div class="form__row">
-                          <v-text-field box label="Street Address"
-                            v-model="director.street"
-                            :rules="directorStreetRules"
-                            required>
+                        <div class="form__row alt-form">
+                          <section class="column">
+                            <h3>Director Name</h3>
+                            <v-text-field box class="item" label="First Name"
+                              v-model="director.firstName"
+                              :rules="directorFirstNameRules"
+                              required></v-text-field>
+                            <v-text-field box label="Initial" class="item director-initial"
+                              v-model="director.initial"
+                            ></v-text-field>
+                            <v-text-field box class="item" label="Last Name"
+                              v-model="director.lastName"
+                              :rules="directorLastNameRules"
+                              required></v-text-field>
+                          </section>
+                          <section class="column">
+                            <h3>Home Address</h3>
+                            <v-text-field box label="Street Address"
+                              v-model="director.street"
+                              :rules="directorStreetRules"
+                              required>
                             </v-text-field>
+                            <v-text-field class="item" box label="City"
+                            v-model="director.city"
+                              :rules="directorCityRules"
+                              required>
+                            </v-text-field>
+                            <v-select class="item" box label="Province"
+                              :items="regionList"
+                              :rules="directorRegionRules"
+                              v-model="director.region">
+                            </v-select>
+                            <v-select class="item" box label="Province"
+                              :items="regionList"
+                              :rules="directorRegionRules"
+                              v-model="director.region">
+                            </v-select>
+                            <v-text-field class="item" box label="Postal Code"
+                              v-model="director.postalCode"
+                              :rules="directorPostalCodeRules"
+                              required>
+                            </v-text-field>
+                          </section>
+                          <section class="column">
+                            <h3>Appointed</h3>
+                            2018 Annual General Meeting<br> {{this.agmDate}}
+                          </section>
                         </div>
+                        <!--
                         <div class="form__row three-column">
                           <v-text-field class="item" box label="City"
                             v-model="director.city"
@@ -268,8 +297,9 @@
                             :rules="directorCountryRules">
                           </v-select>
                         </div>
+                        -->
                         <div class="form__row form__btns">
-                          <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Appoint Director</v-btn>
+                          <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
                           <v-btn @click="cancelNewDirector">Cancel</v-btn>
                         </div>
                       </v-form>
@@ -314,21 +344,25 @@
                           <div class="address__row">{{director.country}}</div>
                         </div>
                         <div class="actions">
-                          <v-btn small outline color="primary"
+                          <v-btn small flat color="primary"
                             v-show="director.isNew"
                             @click="editDirector(index)">
+                            <v-icon small>edit</v-icon>
                             <span>Edit</span>
                           </v-btn>
 
-                          <v-btn small outline color="primary"
+                          <!--
+                          <v-btn small flat color="primary"
                             v-show="director.isNew"
                             @click="deleteDirector(index)">
                             <span>Remove</span>
                           </v-btn>
+                          -->
 
-                          <v-btn small outline color="primary"
+                          <v-btn small flat color="primary"
                             v-show="!director.isNew"
                             @click="removeDirector(director)">
+                            <v-icon small>{{director.isDirectorActive ? 'close':'undo'}}</v-icon>
                             <span>{{director.isDirectorActive ? 'Cease':'Undo'}}</span>
                           </v-btn>
                         </div>
@@ -428,7 +462,7 @@ Vue.use(Vue2Filters)
 Vue.prototype.moment = moment
 
 export default {
-  name: 'AnnualReport',
+  name: 'AnnualReportAlt',
   mixins: [Vue2Filters.mixin],
   components: {
     Affix,
@@ -497,7 +531,7 @@ export default {
         { id: 1, isNew: false, isDirectorActive: true, firstName: "Alli", lastName: "Myers", initial: "", street: "1111 First Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
         { id: 2, isNew: false, isDirectorActive: true, firstName: "Nora", lastName: "Patton", initial: "", street: "2222 Second Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
         { id: 3, isNew: false, isDirectorActive: true, firstName: "Phoebe", lastName: "Jones", initial: "", street: "3333 Third Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
-        { id: 4, isNew: false, isDirectorActive: true, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
+        { id: 4, isNew: true, isDirectorActive: true, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
       ],
 
       //Director Form Validation
@@ -695,7 +729,7 @@ ul
     right 0
 
     .v-btn
-      min-width 4rem
+      min-width 5rem
 
     .v-btn + .v-btn
       margin-left 0.5rem
@@ -763,10 +797,6 @@ ul
     padding-bottom 0
 
 // Director Display
-.new-director
-  .meta-container
-    flex-flow column nowrap
-
 .director-info
   display flex
 
@@ -814,5 +844,29 @@ ul
 .agm-date
   margin-left 0.25rem
   font-weight 300
+
+.new-director .meta-container
+  flex-flow column nowrap
+
+  > label:first-child
+    margin-bottom 1.5rem
+
+  .alt-form
+    display flex
+    margin -0.25rem
+    margin-bottom 1rem
+
+    section
+      flex 1 1 auto
+      margin 0
+      width: 33.3333%
+      margin 0.25rem
+      padding 1rem
+      background $gray1
+
+      h3
+        margin-bottom 1rem
+        font-size 0.875rem
+        color $gray6
 
 </style>

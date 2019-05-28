@@ -129,6 +129,10 @@
 <style lang="stylus" scoped>
   @import "../assets/styles/theme.styl"
 
+  ul
+    margin 0
+    padding 0
+
   .dashboard-list-item
     display flex
     align-items center
