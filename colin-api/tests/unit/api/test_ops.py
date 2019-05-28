@@ -25,8 +25,8 @@ def test_ops_healthz_success(client):
     """Assert that the service is healthy if it can successfully access the database."""
     rv = client.get('/ops/healthz')
 
-    assert rv.status_code == 200
-    assert rv.json == {'message': 'api is healthy'}
+    assert 200 == rv.status_code
+    assert {'message': 'api is healthy'} == rv.json
 
 
 def test_ops_healthz_fail(app_request):
@@ -35,13 +35,13 @@ def test_ops_healthz_fail(app_request):
     with app_request.test_client() as client:
         rv = client.get('/ops/healthz')
 
-        assert rv.status_code == 500
-        assert rv.json == {'message': 'api is down'}
+        assert 500 == rv.status_code
+        assert 'api is down' in rv.json.values()
 
 
 def test_ops_readyz(client):
     """Asserts that the service is ready to serve."""
     rv = client.get('/ops/readyz')
 
-    assert rv.status_code == 200
-    assert rv.json == {'message': 'api is ready'}
+    assert 200 == rv.status_code
+    assert {'message': 'api is ready'} == rv.json

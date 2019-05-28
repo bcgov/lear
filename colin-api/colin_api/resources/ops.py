@@ -34,8 +34,11 @@ class Healthz(Resource):
             cursor = db.connection.cursor()
             cursor.execute('select 1 from dual')
 
-        except cx_Oracle.DatabaseError:
-            return {'message': 'api is down'}, 500
+        except cx_Oracle.DatabaseError as err:
+            try:
+                return {'message': 'api is down', 'details': str(err)}, 500
+            except:
+                return {'message': 'api is down'}, 500
 
         # made it here, so all checks passed
         return {'message': 'api is healthy'}, 200
