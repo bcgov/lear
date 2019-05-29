@@ -68,6 +68,10 @@ export default {
 <style lang="stylus" scoped>
 @import "../assets/styles/theme.styl"
 
+ul
+  margin 0
+  padding 0
+
 header
   padding 1rem 1.25rem
   color #fff

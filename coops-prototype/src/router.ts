@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import Home from './views/Home.vue'
 import AnnualReport from './views/AnnualReport.vue'
+import AnnualReportAlt from './views/AnnualReportAlt.vue'
 import Dashboard from './views/Dashboard.vue'
 import DashboardSuccess from './views/DashboardSuccess.vue'
 import Payment from './views/Payment.vue'
@@ -38,9 +39,14 @@ export default new Router({
       component: () => import(/* webpackChunkName: "about" */ './views/About.vue')
     },
     {
-      path: '/annualReport',
+      path: '/AnnualReport',
       name: 'annual report prototype',
       component: AnnualReport
+    },
+    {
+      path: '/AnnualReportAlt',
+      name: 'annual report prototype alt',
+      component: AnnualReportAlt
     },
     {
       path: '/Payment',
