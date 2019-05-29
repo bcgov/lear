@@ -25,7 +25,7 @@
       <article id="example-content" :class="this.agmDate ? 'agm-date-selected':'no-agm-date-selected'">
         <header>
           <h1>File Annual Report (2018)</h1>
-          <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+          <p>Select your Annual General Meeting (AGM) date, and verify or change your Registered office address and List of Directors as of your AGM.</p>
         </header>
 
         <!-- Annual General Meeting Dates -->
