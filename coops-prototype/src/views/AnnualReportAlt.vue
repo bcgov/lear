@@ -31,8 +31,7 @@
         <!-- Annual General Meeting Dates -->
         <section>
           <header>
-            <h2>1. Annual General Meeting Date</h2>
-            <p>Enter the date your Annual General Meeting was held for this year.</p>
+            <h2 class="mb-3">1. Annual General Meeting Date</h2>
             <v-card flat>
               <ARFilingDates ref="ARFilingDate" v-on:childToParent="onChildClick"/>
             </v-card>
@@ -43,7 +42,7 @@
         <section>
           <header>
             <h2>2. Registered Office Addresses <!-- <span class="agm-date" v-show="this.agmDate">({{this.agmDate}})</span> --></h2>
-            <p>Registered Office Address that will be submitted as part of your 2018 Annual Report.</p>
+            <p>Verify, and change if necessary, your Registered Office Addresses.</p>
           </header>
           <v-card flat>
             <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
@@ -221,7 +220,8 @@
               <ul class="list new-director" v-show="showNewDirectorForm">
                 <li class="container">
                   <div class="meta-container">
-                    <label>Appoint New Director</label>
+                    <label class="mb-3">Appoint New Director</label>
+                    <p class="section-description">List the full name and residential address of all directors as of the adjournment of the Annual General Meeting. The residential address of a director must be a complete physical address.</p>
                     <div class="meta-container__inner">
                       <v-form ref="newDirectorForm" v-on:submit.prevent="addNewDirector" v-model="directorFormValid" lazy-validation>
                         <div class="form__row alt-form">
@@ -531,7 +531,7 @@ export default {
         { id: 1, isNew: false, isDirectorActive: true, firstName: "Alli", lastName: "Myers", initial: "", street: "1111 First Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
         { id: 2, isNew: false, isDirectorActive: true, firstName: "Nora", lastName: "Patton", initial: "", street: "2222 Second Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
         { id: 3, isNew: false, isDirectorActive: true, firstName: "Phoebe", lastName: "Jones", initial: "", street: "3333 Third Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
-        { id: 4, isNew: true, isDirectorActive: true, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
+        { id: 4, isNew: false, isDirectorActive: true, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
       ],
 
       //Director Form Validation
@@ -868,5 +868,9 @@ ul
         margin-bottom 1rem
         font-size 0.875rem
         color $gray6
+
+.section-description
+  font-size 0.875rem
+  line-height 1.125rem
 
 </style>
