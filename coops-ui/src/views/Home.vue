@@ -84,7 +84,6 @@ export default {
       }).catch(error => console.log('getEntityInfo ERROR: ' + error + ' ' + axios.get))
     },
     getRegOffAddr (corpNum) {
-      console.log(2)
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
       // todo:change endpoint to real one
       var url = corpNum + '/filings/registered_office'
@@ -94,18 +93,30 @@ export default {
       //   this.setRegOffAddr()
       // }).catch(error => console.log('getRegOffAddr ERROR: ' + error + ' ' + axios.get))
       this.regOffAddrJson = {
-        DeliveryAddressStreet: '1234 Main Street',
-        DeliveryAddressCity: 'Victoria',
-        DeliveryAddressRegion: 'BC',
-        DeliveryAddressPostalCode: 'V9A 2G8',
-        DeliveryAddressCountry: 'Canada',
-        DeliveryAddressInstructions: ' ',
-        MailingAddressStreet: '1234 Main Street',
-        MailingAddressCity: 'Victoria',
-        MailingAddressRegion: 'BC',
-        MailingAddressPostalCode: 'V9A 2G8',
-        MailingAddressCountry: 'Canada',
-        MailingAddressInstructions: ' '
+        header: {},
+        business_info: {},
+        filing: {
+          certifiedBy: 'tester',
+          email: 'tester@testing.com',
+          deliveryAddress: {
+            streetAddress: '1234 Main Street',
+            streetAddressAdditional: '',
+            addressCity: 'Victoria',
+            addressRegion: 'BC',
+            addressCountry: 'Canada',
+            postalCode: 'V9A 2G8',
+            deliveryInstructions: ''
+          },
+          mailingAddress: {
+            streetAddress: '1234 Main Street',
+            streetAddressAdditional: '',
+            addressCity: 'Victoria',
+            addressRegion: 'BC',
+            addressCountry: 'Canada',
+            postalCode: 'V9A 2G8',
+            deliveryInstructions: ''
+          }
+        }
       }
       this.setRegOffAddr()
     },
@@ -123,19 +134,23 @@ export default {
       this.$store.state.entityIncNo = this.entityInfoJson.business_info.identifier
     },
     setRegOffAddr () {
-      this.$store.state.DeliveryAddressStreet = this.regOffAddrJson.DeliveryAddressStreet
-      this.$store.state.DeliveryAddressCity = this.regOffAddrJson.DeliveryAddressCity
-      this.$store.state.DeliveryAddressRegion = this.regOffAddrJson.DeliveryAddressRegion
-      this.$store.state.DeliveryAddressPostalCode = this.regOffAddrJson.DeliveryAddressPostalCode
-      this.$store.state.DeliveryAddressCountry = this.regOffAddrJson.DeliveryAddressCountry
-      this.$store.state.DeliveryAddressInstructions = this.regOffAddrJson.DeliveryAddressInstructions
+      this.$store.state.DeliveryAddressStreet = this.regOffAddrJson.filing.deliveryAddress.streetAddress
+      this.$store.state.DeliveryAddressStreetAdditional =
+        this.regOffAddrJson.filing.deliveryAddress.streetAddressAdditional
+      this.$store.state.DeliveryAddressCity = this.regOffAddrJson.filing.deliveryAddress.addressCity
+      this.$store.state.DeliveryAddressRegion = this.regOffAddrJson.filing.deliveryAddress.addressRegion
+      this.$store.state.DeliveryAddressPostalCode = this.regOffAddrJson.filing.deliveryAddress.postalCode
+      this.$store.state.DeliveryAddressCountry = this.regOffAddrJson.filing.deliveryAddress.addressCountry
+      this.$store.state.DeliveryAddressInstructions = this.regOffAddrJson.filing.deliveryAddress.deliveryInstructions
 
-      this.$store.state.MailingAddressStreet = this.regOffAddrJson.MailingAddressStreet
-      this.$store.state.MailingAddressCity = this.regOffAddrJson.MailingAddressCity
-      this.$store.state.MailingAddressRegion = this.regOffAddrJson.MailingAddressRegion
-      this.$store.state.MailingAddressPostalCode = this.regOffAddrJson.MailingAddressPostalCode
-      this.$store.state.MailingAddressCountry = this.regOffAddrJson.MailingAddressCountry
-      this.$store.state.MailingAddressInstructions = this.regOffAddrJson.MailingAddressInstructions
+      this.$store.state.MailingAddressStreet = this.regOffAddrJson.filing.mailingAddress.streetAddress
+      this.$store.state.MailingAddressStreetAdditional =
+        this.regOffAddrJson.filing.mailingAddress.streetAddressAdditional
+      this.$store.state.MailingAddressCity = this.regOffAddrJson.filing.mailingAddress.addressCity
+      this.$store.state.MailingAddressRegion = this.regOffAddrJson.filing.mailingAddress.addressRegion
+      this.$store.state.MailingAddressPostalCode = this.regOffAddrJson.filing.mailingAddress.postalCode
+      this.$store.state.MailingAddressCountry = this.regOffAddrJson.filing.mailingAddress.addressCountry
+      this.$store.state.MailingAddressInstructions = this.regOffAddrJson.filing.mailingAddress.deliveryInstructions
     },
     submit () {
       // todo: redirect to payment - will need to save state of page
@@ -167,12 +182,14 @@ export default {
     },
     setRegOffAddrNull () {
       this.$store.state.DeliveryAddressStreet = null
+      this.$store.state.DeliveryAddressStreetAdditional = null
       this.$store.state.DeliveryAddressCity = null
       this.$store.state.DeliveryAddressRegion = null
       this.$store.state.DeliveryAddressPostalCode = null
       this.$store.state.DeliveryAddressCountry = null
       this.$store.state.DeliveryAddressInstructions = null
       this.$store.state.MailingAddressStreet = null
+      this.$store.state.MailingAddressStreetAdditional = null
       this.$store.state.MailingAddressCity = null
       this.$store.state.MailingAddressRegion = null
       this.$store.state.MailingAddressPostalCode = null

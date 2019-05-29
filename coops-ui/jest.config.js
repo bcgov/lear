@@ -14,7 +14,7 @@ module.exports = {
     '^.+\\.(js|jsx)?$': 'babel-jest'
   },
   transformIgnorePatterns: [
-    '/node_modules/'
+    '/node_modules/(?!sbc-common-components/.*)'
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'

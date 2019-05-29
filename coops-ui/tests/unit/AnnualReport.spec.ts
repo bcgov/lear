@@ -69,6 +69,18 @@ describe('App.vue', () => {
             }
           }
       })))
+    // business info stub
+    sinon.getStub.withArgs('CP0001187')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            business_info: {
+              founding_date: '2001-08-05',
+              identifier: 'CP0001191',
+              legal_name: 'legal name - CP0001191'
+            }
+          }
+      })))
     // pay stub
     sinon.getStub.withArgs(
       'https://mock-lear-tools.pathfinder.gov.bc.ca/rest/pay/0.1/api/v1/payments/fees/AR/CP?date=2019-04-15')
@@ -83,6 +95,20 @@ describe('App.vue', () => {
               service: 1.5,
               processing: 0.75
             }
+          }
+      })))
+    // pay-api-otann stub
+    sinon.getStub.withArgs(
+      'https://pay-api-dev.pathfinder.gov.bc.ca/api/v1/fees/CP/OTANN')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            filing_fees: 30,
+            filing_type: 'ANNUAL REPORT',
+            processing_fees: 0,
+            service_fees: 0,
+            tax: { gst: 0, pst: 0 },
+            total: 30
           }
       })))
 
