@@ -31,8 +31,7 @@
         <!-- Annual General Meeting Dates -->
         <section>
           <header>
-            <h2>1. Annual General Meeting Date</h2>
-            <p>Enter the date your Annual General Meeting was held for this year.</p>
+            <h2 class="mb-3">1. Annual General Meeting Date</h2>
             <v-card flat>
               <ARFilingDates ref="ARFilingDate" v-on:childToParent="onChildClick"/>
             </v-card>
@@ -43,7 +42,7 @@
         <section>
           <header>
             <h2>2. Registered Office Addresses <!-- <span class="agm-date" v-show="this.agmDate">({{this.agmDate}})</span> --></h2>
-            <p>Registered Office Address that will be submitted as part of your 2018 Annual Report.</p>
+            <p>Verify, and change if necessary, your Registered Office Addresses.</p>
           </header>
           <v-card flat>
             <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
@@ -201,7 +200,6 @@
           <header>
             <h2>3. Director Information <!-- <span class="agm-date">({{this.agmDate}})</span> --></h2>
             <p>Tell us who was elected or appointed and who ceased to be a director at your 2018 AGM.</p>
-
             <v-expand-transition>
               <div v-show="!showNewDirectorForm">
                 <v-btn class="new-director-btn" outline color="primary"
@@ -763,10 +761,6 @@ ul
     padding-bottom 0
 
 // Director Display
-.new-director
-  .meta-container
-    flex-flow column nowrap
-
 .director-info
   display flex
 
