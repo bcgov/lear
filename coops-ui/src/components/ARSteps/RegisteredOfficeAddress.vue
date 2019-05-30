@@ -10,9 +10,12 @@
 
                 <!-- START: Static Details (Delivery Address) -->
                 <v-expand-transition>
-                  <div class="address-block" v-show="!showAddressForm">
+                  <div id="delivery-address-display" class="address-block" v-show="!showAddressForm">
                     <div class="address-block__info">
                       <div class="address-block__info-row">{{DeliveryAddressStreet}}</div>
+                      <div class="address-block__info-row" v-if="DeliveryAddressStreetAdditional">
+                        {{DeliveryAddressStreetAdditional}}
+                      </div>
                       <div class="address-block__info-row">
                         <span>{{DeliveryAddressCity}}</span>
                         <span>&nbsp;{{DeliveryAddressRegion}}</span>
@@ -21,9 +24,15 @@
                       <div class="address-block__info-row">{{DeliveryAddressCountry}}</div>
                     </div>
                     <div class="address-block__actions">
-                      <v-btn small outline color="blue" @click="editAddress">Change</v-btn>
+                      <v-btn id="reg-off-addr-change-btn"
+                             small outline color="blue" :disabled="agmEntered" @click="editAddress">
+                        Change
+                      </v-btn>
                       <br/>
-                      <v-btn v-if="regOffAddrChange" class="reset-btn" small outline color="red" @click="resetAddress">Reset</v-btn>
+                      <v-btn id="reg-off-addr-reset-btn"
+                             v-if="regOffAddrChange" class="reset-btn" small outline color="red" @click="resetAddress">
+                        Reset
+                      </v-btn>
                     </div>
                   </div>
                 </v-expand-transition>
@@ -31,52 +40,66 @@
 
                 <!-- START: Form / Editable Fields (Delivery Address) -->
                 <v-expand-transition>
-                  <v-form ref="deliveryAddressForm"
+                  <v-form id="delivery-address-form"
+                          ref="deliveryAddressForm"
                           v-show="showAddressForm"
                           v-model="deliveryAddressFormValid"
                           lazy-validation>
                     <div class="form__row">
                       <v-text-field
                         box
-                        id="street-address"
-                        label="Street Address"
+                        id="delivery-street-address"
+                        label="Street Address Line 1"
                         v-model="DeliveryAddressStreet"
                         :rules="DeliveryAddressStreetRules"
+                        maxlength="50"
                         required>
+                      </v-text-field>
+                    </div>
+                    <div class="form__row">
+                      <v-text-field
+                        box
+                        id="delivery-street-address-additional"
+                        label="Street Address Line 2"
+                        v-model="DeliveryAddressStreetAdditional"
+                        maxlength="50">
                       </v-text-field>
                     </div>
                     <div class="form__row three-column">
                       <v-text-field class="item"
                                     box
-                                    id="city"
+                                    id="delivery-city"
                                     label="City"
                                     v-model="DeliveryAddressCity"
                                     :rules="DeliveryAddressCityRules"
+                                    maxlength="15"
                                     required>
                       </v-text-field>
-                      <v-text-field class="item"
+                      <v-select class="item"
                                 box
-                                id="state"
+                                id="delivery-state"
                                 label="Province"
+                                :items="Regions"
                                 v-model="DeliveryAddressRegion"
-                                :rules="DeliveryAddressRegionRules"
                                 required>
-                      </v-text-field>
+                      </v-select>
                       <v-text-field box
                                     class="item"
-                                    id="postcode"
+                                    id="delivery-postcode"
                                     label="Postal Code"
                                     v-model="DeliveryAddressPostalCode"
                                     :rules="DeliveryAddressPostalCodeRules"
+                                    maxlength="10"
                                     required>
                       </v-text-field>
                     </div>
                     <div class="form__row">
                       <v-text-field box
-                                    id="country"
+                                    id="delivery-country"
                                     label="Country"
                                     v-model="DeliveryAddressCountry"
                                     :rules="DeliveryAddressCountryRules"
+                                    maxlength="15"
                                     required>
                       </v-text-field>
                     </div>
@@ -86,7 +109,8 @@
                         rows="2"
                         auto-grow
                         label="Delivery Instructions (Optional)"
-                        v-model="DeliveryAddressInstructions">
+                        v-model="DeliveryAddressInstructions"
+                        maxlength="80">
                       </v-textarea>
                     </div>
                   </v-form>
@@ -103,10 +127,13 @@
 
                 <!-- START: Static Details (Mailing Address) -->
                 <v-expand-transition>
-                  <div class="meta-container__inner" v-show="!showAddressForm">
+                  <div id="mailing-address-display" class="meta-container__inner" v-show="!showAddressForm">
                     <div class="address-block">
                       <div class="address-block__info">
                         <div class="address-block__info-row">{{MailingAddressStreet}}</div>
+                        <div class="address-block__info-row" v-if="MailingAddressStreetAdditional">
+                          {{MailingAddressStreetAdditional}}
+                        </div>
                         <div class="address-block__info-row">
                           <span>{{MailingAddressCity}}</span>
                           <span>&nbsp;{{MailingAddressRegion}}</span>
@@ -121,7 +148,11 @@
 
                 <!-- START: Form / Editable Fields (Mailing Address) -->
                 <v-expand-transition>
-                  <v-form class="form" v-show="showAddressForm" v-model="mailingAddressFormValid" lazy-validation>
+                  <v-form id="mailing-address-form"
+                          class="form"
+                          v-show="showAddressForm"
+                          v-model="mailingAddressFormValid"
+                          lazy-validation>
                     <div class="form__row">
                       <v-checkbox class="inherit-checkbox"
                                   label="Same as Delivery Address"
@@ -129,60 +160,86 @@
                       </v-checkbox>
                     </div>
                     <v-expand-transition>
-                      <div v-show="!inheritDeliveryAddress">
+                      <div id="mailing-address-expanded" v-show="!inheritDeliveryAddress">
                         <div class="form__row">
-                          <v-text-field box label="Street Address"
+                          <v-text-field
+                            box
+                            label="Street Address Line 1"
+                            id="mailing-street-address"
                             v-model="MailingAddressStreet"
                             :rules="MailingAddressStreetRules"
+                            maxlength="50"
                             required>
                             </v-text-field>
                         </div>
+                        <div class="form__row">
+                          <v-text-field
+                            box
+                            label="Street Address Line 2"
+                            id="mailing-street-address-additional"
+                            v-model="MailingAddressStreetAdditional"
+                            maxlength="50">
+                            </v-text-field>
+                        </div>
                         <div class="form__row three-column">
-                          <v-text-field class="item" box label="City"
+                          <v-text-field
+                            class="item"
+                            box
+                            id="mailing-city"
+                            label="City"
                             v-model="MailingAddressCity"
                             :rules="MailingAddressCityRules"
+                            maxlength="15"
                             required>
                           </v-text-field>
                           <v-select class="item"
                                     box
+                                    id="mailing-state"
                                     label="Province"
                                     :items="Regions"
                                     v-model="MailingAddressRegion"
-                                    disabled>
+                                    required>
                           </v-select>
                           <v-text-field class="item"
                                         box
+                                        id="mailing-postcode"
                                         label="Postal Code"
                                         v-model="MailingAddressPostalCode"
                                         :rules="MailingAddressPostalCodeRules"
+                                        maxlength="10"
                                         required>
                           </v-text-field>
                         </div>
                         <div class="form__row">
                           <v-text-field
-                            box label="Country"
+                            box
+                            id="mailing-country"
+                            label="Country"
                             v-model="MailingAddressCountry"
-                            disabled>
+                            maxlength="15"
+                            required>
                           </v-text-field>
                         </div>
                         <div class="form__row">
                           <v-textarea
                             box rows="2"
                             label="Delivery Instructions (Optional)"
-                            v-model="MailingAddressInstructions">
+                            v-model="MailingAddressInstructions"
+                            maxlength="80">
                           </v-textarea>
                         </div>
                       </div>
                     </v-expand-transition>
                     <div class="form__row form__btns">
-                      <v-btn class="update-btn"
+                      <v-btn id="reg-off-update-addr-btn"
+                             class="update-btn"
                              color="primary"
                              :disabled="!deliveryAddressFormValid ||
                               (!mailingAddressFormValid && !inheritDeliveryAddress)"
                              @click="updateAddress">
                         Update Addresses
                       </v-btn>
-                      <v-btn @click="cancelEditAddress">
+                      <v-btn id="reg-off-cancel-addr-btn" @click="cancelEditAddress">
                         Cancel
                       </v-btn>
                     </div>
@@ -208,9 +265,7 @@ export default {
         'BC', 'AB', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT'
       ],
 
-      isEditing: false,
       showAddressForm: false,
-      showNewDirectorForm: false,
       inheritDeliveryAddress: true,
 
       // Validation
@@ -220,63 +275,75 @@ export default {
       DeliveryAddressStreet: '',
       tmpDeliveryAddressStreet: '',
       DeliveryAddressStreetRules: [
-        v => !!v || 'A street address is required'
+        v => (v && !!v.trim()) || 'A street address is required'
       ],
+      DeliveryAddressStreetAdditional: '',
+      tmpDeliveryAddressStreetAdditional: '',
       DeliveryAddressCity: '',
       tmpDeliveryAddressCity: '',
       DeliveryAddressCityRules: [
-        v => !!v || 'A city is required'
+        v => (v && !!v.trim()) || 'A city is required'
       ],
       DeliveryAddressRegion: '',
       tmpDeliveryAddressRegion: '',
       DeliveryAddressRegionRules: [
-        v => !!v || 'A province/state is required'
+        v => (v && !!v.trim()) || 'A province/state is required'
       ],
       DeliveryAddressPostalCode: '',
       tmpDeliveryAddressPostalCode: '',
       DeliveryAddressPostalCodeRules: [
-        v => !!v || 'A postal code is required'
+        v => (v && !!v.trim()) || 'A postal code is required'
       ],
       DeliveryAddressCountry: '',
       tmpDeliveryAddressCountry: '',
       DeliveryAddressCountryRules: [
-        v => !!v || 'A country is required'
+        v => (v && !!v.trim()) || 'A country is required'
       ],
-      DeliveryAddressInstructions: ' ',
-      tmpDeliveryAddressInstructions: ' ',
+      DeliveryAddressInstructions: '',
+      tmpDeliveryAddressInstructions: '',
       MailingAddressStreet: '',
       tmpMailingAddressStreet: '',
       MailingAddressStreetRules: [
-        v => !!v || 'A street address is required'
+        v => (v && !!v.trim()) || 'A street address is required'
       ],
+      MailingAddressStreetAdditional: '',
+      tmpMailingAddressStreetAdditional: '',
       MailingAddressCity: '',
       tmpMailingAddressCity: '',
       MailingAddressCityRules: [
-        v => !!v || 'A city is required'
+        v => (v && !!v.trim()) || 'A city is required'
       ],
       MailingAddressRegion: '',
       tmpMailingAddressRegion: '',
       MailingAddressPostalCode: '',
       tmpMailingAddressPostalCode: '',
       MailingAddressPostalCodeRules: [
-        v => !!v || 'A postal code is required'
+        v => (v && !!v.trim()) || 'A postal code is required'
       ],
       MailingAddressCountry: '',
       tmpMailingAddressCountry: '',
-      MailingAddressInstructions: ' ',
-      tmpMailingAddressInstructions: ' ',
+      MailingAddressInstructions: '',
+      tmpMailingAddressInstructions: '',
 
       activeIndex: undefined
     }
   },
 
   computed: {
+    agmEntered () {
+      if (this.$store.state.agmDate) return false
+      else return !this.$store.state.noAGM
+    },
     regOffAddrChange () {
       return this.$store.state.regOffAddrChange
     },
     storeDeliveryAddressStreet () {
       if (this.$store.state.DeliveryAddressStreet == null) return ''
       return this.$store.state.DeliveryAddressStreet
+    },
+    storeDeliveryAddressStreetAdditional () {
+      if (this.$store.state.DeliveryAddressStreetAdditional == null) return ''
+      return this.$store.state.DeliveryAddressStreetAdditional
     },
     storeDeliveryAddressCity () {
       if (this.$store.state.DeliveryAddressCity == null) return ''
@@ -299,11 +366,15 @@ export default {
       return this.$store.state.DeliveryAddressInstructions
     },
     storeMailingAddressStreet () {
-      if (this.$store.state.MailingAddressStreet == null) return 'Not Available'
+      if (this.$store.state.MailingAddressStreet == null) return ''
       return this.$store.state.MailingAddressStreet
     },
+    storeMailingAddressStreetAdditional () {
+      if (this.$store.state.MailingAddressStreetAdditional == null) return ''
+      return this.$store.state.MailingAddressStreetAdditional
+    },
     storeMailingAddressCity () {
-      if (this.$store.state.MailingAddressCity == null) return 'Not Available'
+      if (this.$store.state.MailingAddressCity == null) return ''
       return this.$store.state.MailingAddressCity
     },
     storeMailingAddressRegion () {
@@ -324,10 +395,42 @@ export default {
     }
   },
   mounted () {
+    var vue = this
+
+    if (deliveryCanadaPostObject) {
+      deliveryCanadaPostObject.listen('populate', function (autoCompleteResponse) {
+        vue.DeliveryAddressStreet = autoCompleteResponse.Line1
+        vue.DeliveryAddressStreetAdditional = autoCompleteResponse.Line2
+        vue.DeliveryAddressCity = autoCompleteResponse.City
+        vue.DeliveryAddressRegion = autoCompleteResponse.ProvinceCode
+        vue.DeliveryAddressPostalCode = autoCompleteResponse.PostalCode
+        vue.DeliveryAddressCountry = autoCompleteResponse.CountryName
+      })
+      deliveryCanadaPostObject.listen('country', function (autoCompleteResponse) {
+        vue.DeliveryAddressCountry = autoCompleteResponse.name
+      })
+    }
+    if (mailingCanadaPostObject) {
+      mailingCanadaPostObject.listen('populate', function (autoCompleteResponse) {
+        vue.MailingAddressStreet = autoCompleteResponse.Line1
+        vue.MailingAddressStreetAdditional = autoCompleteResponse.Line2
+        vue.MailingAddressCity = autoCompleteResponse.City
+        vue.MailingAddressRegion = autoCompleteResponse.ProvinceCode
+        vue.MailingAddressPostalCode = autoCompleteResponse.PostalCode
+        vue.MailingAddressCountry = autoCompleteResponse.CountryName
+      })
+      mailingCanadaPostObject.listen('country', function (autoCompleteResponse) {
+        vue.MailingAddressCountry = autoCompleteResponse.name
+      })
+    }
   },
   methods: {
     editAddress () {
+      if (this.checkSameAddresses()) this.inheritDeliveryAddress = true
+      else this.inheritDeliveryAddress = false
+
       this.tmpDeliveryAddressStreet = this.DeliveryAddressStreet
+      this.tmpDeliveryAddressStreetAdditional = this.DeliveryAddressStreetAdditional
       this.tmpDeliveryAddressCity = this.DeliveryAddressCity
       this.tmpDeliveryAddressRegion = this.DeliveryAddressRegion
       this.tmpDeliveryAddressCountry = this.DeliveryAddressCountry
@@ -335,6 +438,7 @@ export default {
       this.tmpDeliveryAddressInstructions = this.DeliveryAddressInstructions
 
       this.tmpMailingAddressStreet = this.MailingAddressStreet
+      this.tmpMailingAddressStreetAdditional = this.MailingAddressStreetAdditional
       this.tmpMailingAddressCity = this.MailingAddressCity
       this.tmpMailingAddressRegion = this.MailingAddressRegion
       this.tmpMailingAddressCountry = this.MailingAddressCountry
@@ -348,6 +452,7 @@ export default {
     },
     cancelEditAddress () {
       this.DeliveryAddressStreet = this.tmpDeliveryAddressStreet
+      this.DeliveryAddressStreetAdditional = this.tmpDeliveryAddressStreetAdditional
       this.DeliveryAddressCity = this.tmpDeliveryAddressCity
       this.DeliveryAddressRegion = this.tmpDeliveryAddressRegion
       this.DeliveryAddressCountry = this.tmpDeliveryAddressCountry
@@ -355,6 +460,7 @@ export default {
       this.DeliveryAddressInstructions = this.tmpDeliveryAddressInstructions
 
       this.MailingAddressStreet = this.tmpMailingAddressStreet
+      this.MailingAddressStreetAdditional = this.tmpMailingAddressStreetAdditional
       this.MailingAddressCity = this.tmpMailingAddressCity
       this.MailingAddressRegion = this.tmpMailingAddressRegion
       this.MailingAddressCountry = this.tmpMailingAddressCountry
@@ -366,6 +472,7 @@ export default {
     updateAddress () {
       if (this.inheritDeliveryAddress) {
         this.MailingAddressStreet = this.DeliveryAddressStreet
+        this.MailingAddressStreetAdditional = this.DeliveryAddressStreetAdditional
         this.MailingAddressCity = this.DeliveryAddressCity
         this.MailingAddressRegion = this.DeliveryAddressRegion
         this.MailingAddressCountry = this.DeliveryAddressCountry
@@ -374,16 +481,29 @@ export default {
       }
       this.showAddressForm = false
       this.checkAddrChange()
-      this.$store.state.regOffAddrChange = true
+    },
+    checkSameAddresses () {
+      if (this.MailingAddressStreet === this.DeliveryAddressStreet &&
+        this.MailingAddressStreetAdditional === this.DeliveryAddressStreetAdditional &&
+        this.MailingAddressCity === this.DeliveryAddressCity &&
+        this.MailingAddressRegion === this.DeliveryAddressRegion &&
+        this.MailingAddressCountry === this.DeliveryAddressCountry &&
+        this.MailingAddressPostalCode === this.DeliveryAddressPostalCode &&
+        this.MailingAddressInstructions === this.DeliveryAddressInstructions) {
+        return true
+      }
+      return false
     },
     checkAddrChange () {
       if (this.DeliveryAddressStreet !== this.storeDeliveryAddressStreet ||
+        this.DeliveryAddressStreetAdditional !== this.storeDeliveryAddressStreetAdditional ||
         this.DeliveryAddressCity !== this.storeDeliveryAddressCity ||
         this.DeliveryAddressRegion !== this.storeDeliveryAddressRegion ||
         this.DeliveryAddressCountry !== this.storeDeliveryAddressCountry ||
         this.DeliveryAddressPostalCode !== this.storeDeliveryAddressPostalCode ||
         this.DeliveryAddressInstructions !== this.storeDeliveryAddressInstructions ||
         this.MailingAddressStreet !== this.storeMailingAddressStreet ||
+        this.MailingAddressStreetAdditional !== this.storeMailingAddressStreetAdditional ||
         this.MailingAddressCity !== this.storeMailingAddressCity ||
         this.MailingAddressRegion !== this.storeMailingAddressRegion ||
         this.MailingAddressCountry !== this.storeMailingAddressCountry ||
@@ -398,6 +518,7 @@ export default {
       this.$store.state.regOffAddrChange = false
 
       this.DeliveryAddressStreet = this.storeDeliveryAddressStreet
+      this.DeliveryAddressStreetAdditional = this.storeDeliveryAddressStreetAdditional
       this.DeliveryAddressCity = this.storeDeliveryAddressCity
       this.DeliveryAddressRegion = this.storeDeliveryAddressRegion
       this.DeliveryAddressCountry = this.storeDeliveryAddressCountry
@@ -405,6 +526,7 @@ export default {
       this.DeliveryAddressInstructions = this.storeDeliveryAddressInstructions
 
       this.MailingAddressStreet = this.storeMailingAddressStreet
+      this.MailingAddressStreetAdditional = this.storeMailingAddressStreetAdditional
       this.MailingAddressCity = this.storeMailingAddressCity
       this.MailingAddressRegion = this.storeMailingAddressRegion
       this.MailingAddressCountry = this.storeMailingAddressCountry
@@ -414,8 +536,10 @@ export default {
   },
   watch: {
     storeDeliveryAddressStreet: function (val) {
-      console.log('watcher: ', val)
       this.DeliveryAddressStreet = val
+    },
+    storeDeliveryAddressStreetAdditional: function (val) {
+      this.DeliveryAddressStreetAdditional = val
     },
     storeDeliveryAddressCity: function (val) {
       this.DeliveryAddressCity = val
@@ -435,11 +559,14 @@ export default {
     storeMailingAddressStreet: function (val) {
       this.MailingAddressStreet = val
     },
+    storeMailingAddressStreetAdditional: function (val) {
+      this.MailingAddressStreetAdditional = val
+    },
     storeMailingAddressCity: function (val) {
-      this.DeliveryAddressCity = val
+      this.MailingAddressCity = val
     },
     storeMailingAddressRegion: function (val) {
-      this.MailingAddressCity = val
+      this.MailingAddressRegion = val
     },
     storeMailingAddressPostalCode: function (val) {
       this.MailingAddressPostalCode = val

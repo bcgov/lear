@@ -8,36 +8,54 @@
     <title>Coops</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons">
-<!--    <link rel="stylesheet" type="text/css" href="http://ws1.postescanada-canadapost.ca/css/addresscomplete-2.00.min.css?key=RZ86-BB54-CM96-EE26" />-->
-<!--    <script type="text/javascript" src="http://ws1.postescanada-canadapost.ca/js/addresscomplete-2.00.min.js?key=RZ86-BB54-CM96-EE26"></script>-->
-<!--    <script type="text/javascript">-->
-<!--      var fields = [-->
-<!--              // { element: 'street-address', field: "Line1", mode: pca.fieldMode.DEFAULT},-->
-<!--              // // { element: "search", field: ""},-->
-<!--              // { element: "city", field: "City", mode: pca.fieldMode.POPULATE},-->
-<!--              // { element: "state", field: "ProvinceName", mode: pca.fieldMode.POPULATE},-->
-<!--              // { element: "postcode", field: "PostalCode", mode: pca.fieldMode.POPULATE},-->
-<!--              // { element: "country", field: "CountryName", mode: pca.fieldMode.COUNTRY }-->
-<!--              { element: 'street-address', field: "Line1", mode: pca.fieldMode.DEFAULT},-->
-<!--              // { element: "search", field: ""},-->
-<!--              { element: "city", field: "City", mode: pca.fieldMode.POPULATE},-->
-<!--              { element: "state", field: "ProvinceName", mode: pca.fieldMode.POPULATE},-->
-<!--              { element: "postcode", field: "PostalCode", mode: pca.fieldMode.POPULATE},-->
-<!--              { element: "country", field: "CountryName", mode: pca.fieldMode.COUNTRY }-->
-<!--      ],-->
-<!--      options = {-->
-<!--        key: 'RZ86-BB54-CM96-EE26',-->
-<!--        populate: true,-->
-<!--        suppressAutocomplete: true-->
-<!--      },-->
-<!--      control = new pca.Address(fields, options);-->
-
-<!--      addressComplete.listen('load', function(control) {-->
-<!--        control.listen("populate", function (address) {-->
-<!--            console.log('HERE ', address)-->
-<!--        });-->
-<!--      });-->
-<!--    </script>-->
+    <script type="text/javascript">
+      // get canada post urls + key from configuration.json
+      var canadaPostCssUrl
+      var canadaPostJs
+      var canadaPostKey
+      var req = new XMLHttpRequest()
+      req.open('GET', '/config/configuration.json', false)
+      req.setRequestHeader('Accept', 'application/json')
+      req.setRequestHeader('ResponseType', 'application/json')
+      req.onreadystatechange = function (response) {
+        if (req.readyState === 4) {
+          if (req.status === 200) {
+            canadaPostCssUrl = JSON.parse(req.responseText)['CP_CSS_URL']
+            canadaPostJs = JSON.parse(req.responseText)['CP_JS_URL']
+            canadaPostKey = JSON.parse(req.responseText)['CP_KEY']
+            document.write("<link rel=\"stylesheet\" type=\"text/css\" href=" + canadaPostCssUrl + canadaPostKey + "/>")
+            document.write("<script type=\"text/javascript\" src=" + canadaPostJs + canadaPostKey + "></s" + "cript>")
+          } else {
+            // nothing
+            console.log('could not load canada post api configurations')
+          }
+        }
+      }
+      req.send()
+    </script>
+    <script type="text/javascript">
+      var deliveryFields = [
+              { element: 'delivery-street-address', field: "Line1", mode: pca.fieldMode.SEARCH },
+              { element: 'delivery-street-address-additional', field: "Line2", mode: pca.fieldMode.SEARCH },
+              { element: "delivery-city", field: "City", mode: pca.fieldMode.SEARCH },
+              { element: "delivery-postcode", field: "PostalCode", mode: pca.fieldMode.SEARCH },
+              { element: "delivery-country", field: "CountryName", mode: pca.fieldMode.COUNTRY }
+      ],
+      mailingFields = [
+              { element: 'mailing-street-address', field: "Line1", mode: pca.fieldMode.SEARCH },
+              { element: 'mailing-street-address-additional', field: "Line2", mode: pca.fieldMode.SEARCH },
+              { element: "mailing-city", field: "City", mode: pca.fieldMode.SEARCH },
+              { element: "mailing-postcode", field: "PostalCode", mode: pca.fieldMode.SEARCH },
+              { element: "mailing-country", field: "CountryName", mode: pca.fieldMode.COUNTRY }
+      ],
+      options = {
+        key: canadaPostKey,
+        populate: true,
+        suppressAutocomplete: true
+      },
+      deliveryCanadaPostObject = new pca.Address(deliveryFields, options),
+      mailingCanadaPostObject = new pca.Address(mailingFields, options)
+    </script>
   </head>
   <body>
     <noscript>
@@ -45,25 +63,8 @@
     </noscript>
     <div id="app"></div>
     <!-- built files will be auto injected -->
-<!--  <script src="https://sso-dev.pathfinder.gov.bc.ca/auth/js/keycloak.js"></script>-->
   </body>
-<!-- get proper url-->
   <script>
     sessionStorage.setItem('REDIRECTED', 'false')
-    // var token
-    // var keycloak = Keycloak('keycloak/keycloak.json')
-    // keycloak.init({ token: token, onLoad: 'login-required' }).success(function (authenticated) {
-    //   if (authenticated) {
-    //     sessionStorage.setItem('KEYCLOAK_TOKEN', keycloak.token)
-    //     keycloak.loadUserProfile().success(function (userProfile) {
-    //             var userName = userProfile.username
-    //             sessionStorage.setItem('USERNAME', userName)
-    //           });
-    //   } else {
-    //     alert('not authenticated')
-    //   }
-    // }).error(function () {
-    //   alert('failed to initialize')
-    // })
   </script>
 </html>

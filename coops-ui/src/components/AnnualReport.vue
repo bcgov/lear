@@ -78,18 +78,13 @@ export default {
   methods: {
     toggleFiling (setting, filing) {
       var added = false
-      console.log('here0: ', this.filingData)
-      console.log('here0: ', this.filingData.length)
       for (var i = 0; i < this.filingData.length; i++) {
-        console.log('here1: ', this.filingData[i].filingTypeCode)
         if (this.filingData[i].filingTypeCode === filing) {
-          console.log('here2: ', setting)
           if (setting === 'add') {
             added = true
             break
           } else {
             this.filingData.splice(i, 1)
-            console.log('filing data ', this.filingData)
             break
           }
         }
@@ -97,7 +92,6 @@ export default {
       if (setting === 'add' && !added) {
         this.filingData.push({ filingTypeCode: filing, entityType: 'CP' })
       }
-      console.log('here3: ', this.filingData)
     }
   },
   watch: {

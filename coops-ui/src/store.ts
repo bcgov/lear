@@ -21,6 +21,7 @@ export default new Vuex.Store({
     validated: false,
 
     DeliveryAddressStreet: null,
+    DeliveryAddressStreetAdditional: null,
     DeliveryAddressCity: null,
     DeliveryAddressRegion: null,
     DeliveryAddressPostalCode: null,
@@ -28,6 +29,7 @@ export default new Vuex.Store({
     DeliveryAddressInstructions: null,
 
     MailingAddressStreet: null,
+    MailingAddressStreetAdditional: null,
     MailingAddressCity: null,
     MailingAddressRegion: null,
     MailingAddressPostalCode: null,

@@ -7,7 +7,7 @@
 <script>
 import StdHeader from '@/components/StdHeader.vue'
 export default {
-  name: 'App.vue',
+  name: 'App',
   components: {
     StdHeader
   },
