@@ -239,6 +239,7 @@
                               :rules="directorLastNameRules"
                               required></v-text-field>
                           </section>
+                          <div class="spacer"></div>
                           <section class="column">
                             <h3>Home Address</h3>
                             <v-text-field box label="Street Address"
@@ -267,6 +268,7 @@
                               required>
                             </v-text-field>
                           </section>
+                          <div class="spacer"></div>
                           <section class="column">
                             <h3>Appointed</h3>
                             2018 Annual General Meeting<br> {{this.agmDate}}
@@ -853,24 +855,24 @@ ul
 
   .alt-form
     display flex
-    margin -0.25rem
     margin-bottom 1rem
 
     section
       flex 1 1 auto
       margin 0
       width: 33.3333%
-      margin 0.25rem
-      padding 1rem
-      background $gray1
 
       h3
         margin-bottom 1rem
         font-size 0.875rem
-        color $gray6
 
 .section-description
   font-size 0.875rem
-  line-height 1.125rem
+  line-height 1.25rem
+
+.spacer
+  margin-right 0.75rem
+  margin-left 0.75rem
+  border-left 1px solid $gray4
 
 </style>
