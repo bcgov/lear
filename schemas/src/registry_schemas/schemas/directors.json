@@ -19,7 +19,11 @@
                     "type": "string",
                     "maxLength": 30
                 }
-            }
+            },
+            "required": [
+                "firstName",
+                "lastName"
+            ]
         },
         "director": {
             "type": "object",
@@ -36,7 +40,7 @@
             },
             "required": [
                 "officer",
-                "mailing_address"
+                "mailingAddress"
             ]
         }
     },
