@@ -26,33 +26,6 @@
                 }
             }
         },
-        "person": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "director": {
-            "type": "object",
-            "properties": {
-                "officer": {
-                    "$ref": "#/definitions/person"
-                },
-                "mailingAddress": {
-                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
-                },
-                "title": {
-                    "type": "string"
-                }
-            },
-            "required": [
-                "officer",
-                "mailing_address",
-                "title"
-            ]
-        },
         "businessOffice": {
             "type": "object",
             "properties": {

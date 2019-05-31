@@ -22,6 +22,8 @@ TEST_SCHEMAS_DATA = [
     ('business.json'),
     ('change_of_address.json'),
     ('filing.json'),
+    ('directors.json'),
+    ('change_of_directors.json'),
 ]
 
 TEST_AR = {
