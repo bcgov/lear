@@ -39,6 +39,63 @@ AR = {
     }
 }
 
+CHANGE_OF_DIRECTORS = {
+    'certifiedBy': 'Joe Smith',
+    'email': 'nobody@nothing.com',
+    'directors': [
+        {
+            'officer': {
+                'firstName': 'Peter',
+                'lastName': 'Griffin'
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line one',
+                'addressCity': 'mailing_address city',
+                'addressCountry': 'mailing_address country',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            }
+        },
+        {
+            'officer': {
+                'firstName': 'Joe',
+                'middleInitial': 'P',
+                'lastName': 'Swanson'
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line #1',
+                'additionalStreetAddress': 'Kirkintiloch',
+                'addressCity': 'Glasgow',
+                'addressCountry': 'UK',
+                'postalCode': 'H0H 0H0',
+                'addressRegion': 'Scotland'
+            },
+            'title': 'Treasurer'
+        }
+    ]
+}
+
+CHANGE_OF_ADDRESS = {
+    'certifiedBy': 'Joe Smith',
+    'email': 'nobody@nothing.com',
+    'deliveryAddress': {
+        'streetAddress': 'delivery_address - address line one',
+        'addressCity': 'delivery_address city',
+        'addressCountry': 'delivery_address country',
+        'postalCode': 'H0H0H0',
+        'addressRegion': 'BC'
+    },
+    'mailingAddress': {
+        'streetAddress': 'mailing_address - address line one',
+        'addressCity': 'mailing_address city',
+        'addressCountry': 'mailing_address country',
+        'postalCode': 'H0H0H0',
+        'addressRegion': 'BC'
+    }
+}
+
+
+
 
 def test_valid_ar_filing():
     """Assert that the schema is performing as expected."""
@@ -80,7 +137,7 @@ def test_invalid_ar_filing():
 
 
 def test_valid_coa_filing():
-    """Assert that the schema is performing as expected."""
+    """Assert that the Change of Address filing schema is performing as expected."""
     iar = {
         'filing': {
             'header': {
@@ -94,27 +151,119 @@ def test_valid_coa_filing():
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
             },
-            'changeOfAddress': {
-                'certifiedBy': 'Joe Smith',
-                'email': 'nobody@nothing.com',
-                'deliveryAddress': {
-                    'streetAddress': 'delivery_address - address line one',
-                    'addressCity': 'delivery_address city',
-                    'addressCountry': 'delivery_address country',
-                    'postalCode': 'H0H0H0',
-                    'addressRegion': 'BC'
-                },
-                'mailingAddress': {
-                    'streetAddress': 'mailing_address - address line one',
-                    'addressCity': 'mailing_address city',
-                    'addressCountry': 'mailing_address country',
-                    'postalCode': 'H0H0H0',
-                    'addressRegion': 'BC'
-                }
-            }
+            'changeOfAddress': CHANGE_OF_ADDRESS
         }
     }
     is_valid, errors = validate(iar, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert is_valid
+
+def test_valid_cod_filing():
+    """Assert that the Change of Directors filing schema is performing as expected."""
+
+    filing = {
+        'filing': {
+            'header': {
+                'name': 'something doesn\'t matter',
+                'date': '2019-04-08'
+            },
+            'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP1234567',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'legal name - CP1234567'
+            },
+            'changeOfDirectors': CHANGE_OF_DIRECTORS
+        }
+    }
+
+
+    is_valid, errors = validate(filing, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert is_valid
+
+def test_invalid_cod_filing():
+    """Assert that the Change of Directors filing schema is catching invalid data."""
+
+    filing = {
+        'filing': {
+            'header': {
+                'name': 'something doesn\'t matter',
+                'date': '2019-04-08'
+            },
+            'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP1234567',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'legal name - CP1234567'
+            },
+            'changeOfDirectors': {
+                'certifiedBy': 'Joe Smith',
+                'email': 'nobody@nothing.com',
+                'directors': [
+                    {
+                        'officer': {
+                            'firstName': False, # should be string
+                            'lastName': 'Griffin'
+                        },
+                        'mailingAddress': {
+                            'streetAddress': 'mailing_address - address line one',
+                            'addressCity': 'mailing_address city',
+                            'addressCountry': 'mailing_address country',
+                            'postalCode': 'H0H0H0',
+                            'addressRegion': 'BC'
+                        },
+                        'title': 2 # should be string
+                    }
+                ]
+            }
+        }
+    }
+
+
+    is_valid, errors = validate(filing, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert not is_valid
+
+def test_valid_multi_filing():
+    """Assert that the filing schema is performing as expected with multiple filings included."""
+
+    filing = {
+        'filing': {
+            'header': {
+                'name': 'something doesn\'t matter',
+                'date': '2019-04-08'
+            },
+            'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP1234567',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'legal name - CP1234567'
+            },
+            'changeOfDirectors': CHANGE_OF_DIRECTORS,
+            'changeOfAddress': CHANGE_OF_ADDRESS
+        }
+    }
+
+    is_valid, errors = validate(filing, 'filing')
 
     if errors:
         for err in errors:

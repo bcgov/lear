@@ -84,6 +84,9 @@
                 },
                 {
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/change_of_address"
+                },
+                {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/change_of_directors"
                 }
             ]
         }
