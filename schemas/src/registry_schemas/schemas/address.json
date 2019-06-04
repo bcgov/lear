@@ -6,25 +6,31 @@
     "title": "The Address Schema",
     "properties": {
         "streetAddress": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
         },
         "streetAddressAdditional": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 50
         },
         "addressCity": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 40
         },
         "addressCountry": {
             "type": "string"
         },
         "addressRegion": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 2
         },
         "postalCode": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 15
         },
         "deliveryInstructions": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 80
         }
     },
     "required": [
