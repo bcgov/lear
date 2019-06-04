@@ -31,7 +31,7 @@
                 "officer": {
                     "$ref": "#/definitions/person"
                 },
-                "mailingAddress": {
+                "deliveryAddress": {
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
                 },
                 "title": {
@@ -40,7 +40,7 @@
             },
             "required": [
                 "officer",
-                "mailingAddress"
+                "deliveryAddress"
             ]
         }
     },
