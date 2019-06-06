@@ -26,6 +26,7 @@ from .db import db, ma
 class User(db.Model):
     """Used to hold the audit information for a User of this service."""
 
+    __versioned__ = {}
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)

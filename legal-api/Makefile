@@ -80,7 +80,7 @@ mac-cov:	install-dev coverage-report
 pylint:
 	pylint --rcfile=setup.cfg \
 	 --load-plugins=pylint_flask \
-	 --disable=C0301,W0511 \
+	 --disable=C0301,W0511,R0801 \
 	 src/legal_api
 
 ## run flake8 on the package and tests

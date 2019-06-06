@@ -58,6 +58,8 @@ class _Config(object):  # pylint: disable=too-few-public-methods
 
     COLIN_URL = os.getenv('COLIN_URL', '')
 
+    SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+
     SECRET_KEY = 'a secret'
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False

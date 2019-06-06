@@ -17,9 +17,13 @@ These will get initialized by the application using the models
 """
 from flask_marshmallow import Marshmallow
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy_continuum import make_versioned
 
 
 # by convention in the Flask community these are lower case,
 # whereas pylint wants them upper case
 ma = Marshmallow()  # pylint: disable=invalid-name
 db = SQLAlchemy()  # pylint: disable=invalid-name
+
+# make_versioned(user_cls=None, plugins=[FlaskPlugin()])
+make_versioned(user_cls=None)

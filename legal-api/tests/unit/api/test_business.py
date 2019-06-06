@@ -17,14 +17,15 @@
 Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 from datetime import datetime
+from http import HTTPStatus
 
-from tests.utilities.schema_assertions import assert_valid_schema
+import registry_schemas
 
 
 def factory_business_model(legal_name,
                            identifier,
                            founding_date,
-                           last_remote_ledger_timestamp,
+                           last_modified,
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None):
@@ -33,7 +34,7 @@ def factory_business_model(legal_name,
     b = BusinessModel(legal_name=legal_name,
                       identifier=identifier,
                       founding_date=founding_date,
-                      last_remote_ledger_timestamp=last_remote_ledger_timestamp,
+                      last_modified=last_modified,
                       fiscal_year_end_date=fiscal_year_end_date,
                       dissolution_date=dissolution_date,
                       tax_id=tax_id
@@ -47,7 +48,7 @@ def test_get_business_info(session, client):
     factory_business_model(legal_name='legal_name',
                            identifier='CP7654321',
                            founding_date=datetime.utcfromtimestamp(0),
-                           last_remote_ledger_timestamp=datetime.utcfromtimestamp(0),
+                           last_modified=datetime.utcfromtimestamp(0),
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None)
@@ -57,21 +58,40 @@ def test_get_business_info(session, client):
 
     assert rv.json['business']['identifier'] == 'CP7654321'
 
-    print('valid schema?', assert_valid_schema(rv.json, 'business.json'))
+    print('valid schema?', registry_schemas.validate(rv.json, 'business'))
 
-    assert assert_valid_schema(rv.json, 'business.json')
+    assert registry_schemas.validate(rv.json, 'business')
 
 
 def test_get_business_info_dissolution(session, client):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
+    identifier = 'CP1234567'
     factory_business_model(legal_name='legal_name',
-                           identifier='CP1234567',
+                           identifier=identifier,
                            founding_date=datetime.utcfromtimestamp(0),
-                           last_remote_ledger_timestamp=datetime.utcfromtimestamp(0),
+                           last_modified=datetime.utcfromtimestamp(0),
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=datetime.utcfromtimestamp(0))
-    rv = client.get('/api/v1/businesses/CP1234567')
+    rv = client.get(f'/api/v1/businesses/{identifier}')
 
     # dissolved company cannot be found.
-    assert rv.status_code == 404
+    assert rv.status_code == 200
+    assert rv.json.get('business').get('dissolutionDate')
+    assert rv.json.get('business').get('identifier') == identifier
+
+
+def test_get_business_info_missing_business(session, client):
+    """Assert that the business info can be received in a valid JSONSchema format."""
+    factory_business_model(legal_name='legal_name',
+                           identifier='CP7654321',
+                           founding_date=datetime.utcfromtimestamp(0),
+                           last_modified=datetime.utcfromtimestamp(0),
+                           fiscal_year_end_date=None,
+                           tax_id=None,
+                           dissolution_date=None)
+    identifier = 'CP0000001'
+    rv = client.get(f'/api/v1/businesses/{identifier}')
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.json == {'message': f'{identifier} not found'}

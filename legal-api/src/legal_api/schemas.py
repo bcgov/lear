@@ -11,11 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The schemas and utilities to use them are maintained in this module.
 
-TODO: This should be pulled out to a common library.
-"""
-from .utils import validate_schema
+"""Create the schema manager to be initialized inThe flask create_app."""
+from registry_schemas.flask import SchemaServices
 
 
-__all__ = ('validate_schema')
+rsbc_schemas = SchemaServices()  # pylint: disable=invalid-name
+
+__all__ = ('rsbc_schemas')
