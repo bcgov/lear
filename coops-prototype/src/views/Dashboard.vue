@@ -15,7 +15,7 @@
           <h1>Annual Reports</h1>
         </header>
         <section>
-          <h2>To Do <span class="text-muted">(2)</span></h2>
+          <h2>To Do <span class="text-muted">({{todoItems.length}})</span></h2>
           <v-card>
             <ul class="dashboard-list">
               <li class="dashboard-list-item"
@@ -59,8 +59,8 @@
     data () {
       return {
         todoItems: [
-          { name: 'Annual Report (2018)', enabled: true },
-          { name: 'Annual Report (2019)', enabled: false }
+          // { name: 'Annual Report (2018)', enabled: true },
+          { name: 'File 2019 Annual Report', enabled: true }
         ],
 
         filedItems: [

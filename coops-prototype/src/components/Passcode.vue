@@ -7,7 +7,7 @@
           box
           label="Enter your Incorporation Number"
           append-icon="info"
-          hint="Example: 123456789"
+          hint="Example: CP1234567"
           persistent-hint
           v-model="entityNum"
           :rules="entityNumRules"

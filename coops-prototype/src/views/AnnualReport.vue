@@ -24,8 +24,8 @@
     <v-container class="view-container">
       <article id="example-content" :class="this.agmDate ? 'agm-date-selected':'no-agm-date-selected'">
         <header>
-          <h1>File Annual Report (2018)</h1>
-          <p>Select your Annual General Meeting (AGM) date, and verify or change your Registered office address and List of Directors as of your AGM.</p>
+          <h1>File 2019 Annual Report</h1>
+          <p>Select your Annual General Meeting (AGM) date, and verify or change your Registered Office Address and List of Directors as of your Annual General Meeting.</p>
         </header>
 
         <!-- Annual General Meeting Dates -->
@@ -41,8 +41,8 @@
         <!-- Addresses -->
         <section>
           <header>
-            <h2>2. Registered Office Addresses <!-- <span class="agm-date" v-show="this.agmDate">({{this.agmDate}})</span> --></h2>
-            <p>Verify, and change if necessary, your Registered Office Addresses.</p>
+            <h2>2. Registered Office Addresses <span class="agm-date">(as of 2019 Annual General Meeting)</span></h2>
+            <p>Verify or change your Registered Office Addresses.</p>
           </header>
           <v-card flat>
             <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
@@ -181,7 +181,7 @@
                         <div class="form__row form__btns">
                           <v-btn class="form-primary-btn" color="primary"
                             @click="addAddressFee">
-                            Change Addresses</v-btn>
+                            Done</v-btn>
                           <v-btn @click="cancelEditAddress">Cancel</v-btn>
                         </div>
                       </v-form>
@@ -198,7 +198,7 @@
         <!-- Director Information -->
         <section>
           <header>
-            <h2>3. Director Information <!-- <span class="agm-date">({{this.agmDate}})</span> --></h2>
+            <h2>3. Directors <!-- <span class="agm-date">({{this.agmDate}})</span> --></h2>
             <p>Tell us who was elected or appointed and who ceased to be a director at your 2018 AGM.</p>
             <v-expand-transition>
               <div v-show="!showNewDirectorForm">
@@ -267,7 +267,7 @@
                           </v-select>
                         </div>
                         <div class="form__row form__btns">
-                          <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Appoint Director</v-btn>
+                          <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
                           <v-btn @click="cancelNewDirector">Cancel</v-btn>
                         </div>
                       </v-form>
@@ -315,13 +315,7 @@
                           <v-btn small outline color="primary"
                             v-show="director.isNew"
                             @click="editDirector(index)">
-                            <span>Edit</span>
-                          </v-btn>
-
-                          <v-btn small outline color="primary"
-                            v-show="director.isNew"
-                            @click="deleteDirector(index)">
-                            <span>Remove</span>
+                            <span>Change</span>
                           </v-btn>
 
                           <v-btn small outline color="primary"
@@ -382,9 +376,14 @@
                           </v-select>
                         </div>
                         <div class="form__row form__btns">
+                          <v-btn color="error"
+                            v-show="director.isNew"
+                            @click="deleteDirector(index)">
+                            <span>Remove</span>
+                          </v-btn>
                           <v-btn class="form-primary-btn" color="primary"
                             @click="cancelEditDirector(index)">
-                            Update Director</v-btn>
+                            Done</v-btn>
                           <v-btn @click="cancelEditDirector(index)">Cancel</v-btn>
                         </div>
                       </v-form>
@@ -492,10 +491,11 @@ export default {
       isDirectorActive: true,
       director: { id:"", firstName: "", lastName: "", street: "", city: "", region: "", postalCode: "", country: "" },
       directors: [
-        { id: 1, isNew: false, isDirectorActive: true, firstName: "Alli", lastName: "Myers", initial: "", street: "1111 First Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
-        { id: 2, isNew: false, isDirectorActive: true, firstName: "Nora", lastName: "Patton", initial: "", street: "2222 Second Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
-        { id: 3, isNew: false, isDirectorActive: true, firstName: "Phoebe", lastName: "Jones", initial: "", street: "3333 Third Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
-        { id: 4, isNew: false, isDirectorActive: true, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
+        { id: 1, isNew: false, isDirectorActive: true, firstName: "Jon", lastName: "Lee", initial: "", street: "14 Maple Street", city: "Vancouver", region: "BC", postalCode: "V7L 2W9", country: "Canada"},
+        { id: 2, isNew: false, isDirectorActive: true, firstName: "Alli", lastName: "Myers", initial: "", street: "1111 First Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
+        { id: 3, isNew: false, isDirectorActive: true, firstName: "Nora", lastName: "Patton", initial: "", street: "2222 Second Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
+        { id: 4, isNew: false, isDirectorActive: true, firstName: "Phoebe", lastName: "Jones", initial: "", street: "3333 Third Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
+        { id: 5, isNew: false, isDirectorActive: true, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
       ],
 
       //Director Form Validation
@@ -559,9 +559,11 @@ export default {
     deleteDirector: function (director, index) {
       if(this.directors[index] === director) {
         this.directors.splice(index, 1)
+        this.activeIndex = null
       } else {
         let found = this.directors.indexOf(director)
         this.directors.splice(found, 1)
+        this.activeIndex = null
       }
     },
 

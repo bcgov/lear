@@ -37,7 +37,7 @@
               <tr>
                 <td></td>
                 <td>n/a</td>
-                <td>Pathfinder Housing Cooperative</td>
+                <td>Pathfinder Cooperative</td>
                 <td>105023337BC0157</td>
                 <td>11780</td>
                 <td>BC Registries Co-op Filings</td>
