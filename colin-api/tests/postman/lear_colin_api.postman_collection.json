@@ -478,7 +478,7 @@
 			]
 		},
 		{
-			"name": "COA",
+			"name": "Registered Office",
 			"item": [
 				{
 					"name": "GET COA CP0001965",
@@ -562,6 +562,83 @@
 					"response": []
 				},
 				{
+					"name": "GET Current RO CP0001965",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "540ee156-24e1-495c-85dd-c4987a9d5aec",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for registered office\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.deliveryAddress).to.exist",
+									"    pm.expect(jsonData.mailingAddress).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for each address\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.deliveryAddress.addressCity).to.exist",
+									"    pm.expect(jsonData.deliveryAddress.addressCountry).to.exist",
+									"    pm.expect(jsonData.deliveryAddress.addressId).to.exist",
+									"    pm.expect(jsonData.deliveryAddress.addressRegion).to.exist",
+									"    pm.expect(jsonData.deliveryAddress.deliveryInstructions).to.exist",
+									"    pm.expect(jsonData.deliveryAddress.postalCode).to.exist",
+									"    pm.expect(jsonData.deliveryAddress.streetAddress).to.exist",
+									"    pm.expect(jsonData.deliveryAddress.streetAddressAdditional).to.exist",
+									"    pm.expect(jsonData.mailingAddress.addressCity).to.exist",
+									"    pm.expect(jsonData.mailingAddress.addressCountry).to.exist",
+									"    pm.expect(jsonData.mailingAddress.addressId).to.exist",
+									"    pm.expect(jsonData.mailingAddress.addressRegion).to.exist",
+									"    pm.expect(jsonData.mailingAddress.deliveryInstructions).to.exist",
+									"    pm.expect(jsonData.mailingAddress.postalCode).to.exist",
+									"    pm.expect(jsonData.mailingAddress.streetAddress).to.exist",
+									"    pm.expect(jsonData.mailingAddress.streetAddressAdditional).to.exist",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0001965/office",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0001965",
+								"office"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "POST COA CP0001965",
 					"event": [
 						{
@@ -629,6 +706,169 @@
 							"mode": "raw",
 							"raw": "{\n    \"filing\": {\n        \"changeOfAddress\": {\n        \t\"certifiedBy\": \"Joe Smith\",\n            \"email\": \"nobody@nothing.com\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"postalCode\": \"V2G 1J6\",\n                \"addressRegion\": \"BC\",\n                \"streetAddress\": \"51 4TH AVENUE SOUTH\"\n        \t},\n        \t\"mailingAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"postalCode\": \"V2G 1J6\",\n                \"addressRegion\": \"BC\",\n                \"streetAddress\": \"51 4TH AVENUE SOUTH\"\n            }\n        },\n        \"business\": {\n            \"cacheId\": 0,\n            \"foundingDate\": \"2004-04-28\",\n            \"identifier\": \"CP0001965\",\n            \"lastLedgerTimestamp\": \"2017-11-23T00:00:00-00:00\",\n            \"legalName\": \"CENTRAL INTERIOR COMMUNITY SERVICES CO-OP\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2017-11-07\",\n            \"lastArFiledDate\": \"2017-04-28\",\n            \"status\": \"Active\",\n            \"type\": \"CP\"\n        },\n        \"header\": {\n            \"date\": \"2019-05-23\",\n            \"name\": \"changeOfAddress\"\n        }\n    }\n}"
 						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0001965/filings/changeOfAddress",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0001965",
+								"filings",
+								"changeOfAddress"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Directors",
+			"item": [
+				{
+					"name": "GET COD CP0001965",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "540ee156-24e1-495c-85dd-c4987a9d5aec",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"// pm.test(\"Status code is 200\", function () {",
+									"//     pm.response.to.have.status(200);",
+									"// });",
+									"// until data is fixed on event_id's",
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"// pm.test(\"Returns the required fields for COD filing\", () => {",
+									"//     var jsonData = pm.response.json()",
+									"//     pm.expect(jsonData.filing).to.exist",
+									"//     pm.expect(jsonData.filing.changeOfDirectors).to.exist",
+									"//     pm.expect(jsonData.filing.business).to.exist",
+									"//     pm.expect(jsonData.filing.header).to.exist",
+									"// });",
+									"",
+									"// pm.test(\"Returns the required fields for business\", () => {",
+									"//     var jsonData = pm.response.json()",
+									"//     pm.expect(jsonData.filing.business.cacheId).to.exist",
+									"//     pm.expect(jsonData.filing.business.foundingDate).to.exist",
+									"//     pm.expect(jsonData.filing.business.identifier).to.eql('CP0001965')",
+									"//     pm.expect(jsonData.filing.business.legalName).to.exist",
+									"// });",
+									"",
+									"// pm.test(\"Returns the required fields for header\", () => {",
+									"//     var jsonData = pm.response.json()",
+									"//     pm.expect(jsonData.filing.header.date).to.exist",
+									"//     pm.expect(jsonData.filing.header.name).to.eql('changeOfAddress')",
+									"// });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0001965/filings/changeOfDirectors",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0001965",
+								"filings",
+								"changeOfDirectors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Current directors CP0001965",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "540ee156-24e1-495c-85dd-c4987a9d5aec",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for COA filing\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress).to.exist",
+									"    pm.expect(jsonData.filing.business).to.exist",
+									"    pm.expect(jsonData.filing.header).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for changeOfAddress\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.changeOfAddress.deliveryAddress).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress.mailingAddress).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress.certifiedBy).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress.email).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for business\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.exist",
+									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0001965')",
+									"    pm.expect(jsonData.filing.business.legalName).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for header\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.header.date).to.exist",
+									"    pm.expect(jsonData.filing.header.name).to.eql('changeOfAddress')",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/CP0001965/filings/changeOfAddress",
 							"host": [
