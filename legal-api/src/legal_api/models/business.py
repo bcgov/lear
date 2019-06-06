@@ -15,12 +15,19 @@
 
 The Business class and Schema are held in this module
 """
-
 from datetime import datetime
 
 from sqlalchemy.exc import OperationalError, ResourceClosedError
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import backref
+
+from legal_api.exceptions import BusinessException
 
 from .db import db, ma
+
+
+from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
 class Business(db.Model):  # pylint: disable=too-many-instance-attributes
@@ -31,20 +38,38 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     Businesses can be sole-proprietors, corporations, societies, etc.
     """
 
-    __tablename__ = 'business'
+    __versioned__ = {}
+    __tablename__ = 'businesses'
 
     id = db.Column(db.Integer, primary_key=True)
-    last_ledger_timestamp = db.Column('last_ledger_timestamp', db.DateTime(timezone=True), default=None)
-    last_remote_ledger_timestamp = db.Column('last_remote_ledger_timestamp', db.DateTime(timezone=True), default=None)
+    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
+    last_ledger_id = db.Column('last_ledger_id', db.Integer)
+    last_remote_ledger_id = db.Column('last_remote_ledger_id', db.Integer, default=0)
+    last_ar_date = db.Column('last_ar_date', db.DateTime(timezone=True), default=datetime.utcnow)
     legal_name = db.Column('legal_name', db.String(1000), index=True)
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
-    identifier = db.Column('identifier', db.String(10), index=True)
+    _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
 
-    # Status(Not in compliance / In good standing / Pending Dissolution)
-    # Type of Cooperative
+    submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
+    submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
+
+    filings = db.relationship('Filing', lazy='dynamic')
+
+    @hybrid_property
+    def identifier(self):
+        """Return the unique business identifier."""
+        return self._identifier
+
+    @identifier.setter
+    def identifier(self, value: str):
+        """Set the business identifier."""
+        if Business.validate_identifier(value):
+            self._identifier = value
+        else:
+            raise BusinessException('invalid-identifier-format', 406)
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):
@@ -65,8 +90,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return a Business by the id assigned by the Registrar."""
         business = None
         if identifier:
-            business = cls.query.filter_by(identifier=identifier).\
-                filter_by(dissolution_date=None).one_or_none()
+            business = cls.query.filter_by(identifier=identifier).one_or_none()
         return business
 
     def save(self):
@@ -82,6 +106,54 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         if self.dissolution_date:
             self.save()
         return self
+
+    def json(self):
+        """Return the Business as a json object.
+
+        None fields are not included.
+        """
+        d = {
+            'foundingDate': self.founding_date.isoformat(),
+            'identifier': self.identifier,
+            'lastModified': self.last_modified.isoformat(),
+            'legalName': self.legal_name,
+        }
+        # if self.last_remote_ledger_timestamp:
+        #     # this is not a typo, we want the external facing view object ledger timestamp to be the remote one
+        #     d['last_ledger_timestamp'] = self.last_remote_ledger_timestamp.isoformat()
+        # else:
+        #     d['last_ledger_timestamp'] = None
+
+        if self.dissolution_date:
+            d['dissolutionDate'] = datetime.date(self.dissolution_date).isoformat()
+        if self.fiscal_year_end_date:
+            d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
+        if self.tax_id:
+            d['taxId'] = self.tax_id
+        return d
+
+    @staticmethod
+    def validate_identifier(identifier: str) -> bool:
+        """Validate the identifier meets the Registry naming standards.
+
+        CP = BC COOPS or XCP = Expro COOP + 7 digits.
+        ie: CP1234567 or XCP1234567
+        All legal entities with BC Reg are PREFIX + 7 digits
+        """
+        if len(identifier) < 9:
+            return False
+
+        try:
+            d = int(identifier[-7:])
+            if d == 0:
+                return False
+        except ValueError:
+            return False
+
+        if identifier[:-7] not in ('CP', 'XCP'):
+            return False
+
+        return True
 
 
 class BusinessSchema(ma.ModelSchema):

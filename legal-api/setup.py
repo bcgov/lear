@@ -13,10 +13,18 @@
 # limitations under the License.
 """Installer and setup for this module
 """
+import ast
 from glob import glob
 from os.path import basename, splitext
+import re
 
 from setuptools import setup, find_packages
+
+_version_re = re.compile(r'__version__\s+=\s+(.*)')  # pylint: disable=invalid-name
+
+with open('src/legal_api/version.py', 'rb') as f:
+    version = str(ast.literal_eval(_version_re.search(  # pylint: disable=invalid-name
+        f.read().decode('utf-8')).group(1)))
 
 
 def read_requirements(filename):
@@ -24,7 +32,6 @@ def read_requirements(filename):
     Get application requirements from
     the requirements.txt file.
     :return: Python requirements
-    :rtype: list
     """
     with open(filename, 'r') as req:
         requirements = req.readlines()
@@ -37,7 +44,6 @@ def read(filepath):
     Read the contents from a file.
     :param str filepath: path to the file to be read
     :return: file contents
-    :rtype: str
     """
     with open(filepath, 'r') as file_handle:
         content = file_handle.read()
@@ -48,6 +54,8 @@ REQUIREMENTS = read_requirements('requirements.txt')
 
 setup(
     name="legal_api",
+    version=version,
+    author_email='thor@wolpert.ca',
     packages=find_packages('src'),
     package_dir={'': 'src'},
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],

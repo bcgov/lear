@@ -12,23 +12,52 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests to assure the Business Class.
+"""Tests to assure the Business Model.
 
-Test-Suite to ensure that the Business Class is working as expected.
+Test-Suite to ensure that the Business Model is working as expected.
 """
-import datetime
+from datetime import datetime
 
+import pytest
+
+from legal_api.exceptions import BusinessException
 from legal_api.models import Business
 
 
 def factory_business(designation: str = '001'):
     """Return a valid Business object stamped with the supplied designation."""
     return Business(legal_name=f'legal_name-{designation}',
-                    founding_date=datetime.datetime.utcfromtimestamp(0),
+                    founding_date=datetime.utcfromtimestamp(0),
                     dissolution_date=None,
-                    identifier=f'CP1234567',
+                    identifier='CP1234567',
                     tax_id=f'BN0000{designation}',
-                    fiscal_year_end_date=datetime.datetime(2001, 8, 5, 7, 7, 58, 272362))
+                    fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
+
+
+def test_business_identifier(session):
+    """Assert that setting the business identifier must be in a valid format."""
+    from tests.conftest import not_raises
+    valid_identifier = 'CP1234567'
+    invalid_identifier = '1234567'
+    b = Business()
+
+    with not_raises(BusinessException):
+        b.identifier = valid_identifier
+
+    with pytest.raises(BusinessException):
+        b.identifier = invalid_identifier
+
+
+TEST_IDENTIFIER_DATA = [
+    ('CP1234567', True),
+    ('CP0000000', False),
+    ('CP000000A', False),
+    ('AB0000001', False),
+]
+@pytest.mark.parametrize('identifier,expected', TEST_IDENTIFIER_DATA)
+def test_business_validate_identifier(identifier, expected):
+    """Assert that the identifier is validated correctly."""
+    assert Business.validate_identifier(identifier) is expected
 
 
 def test_business(session):
@@ -46,11 +75,11 @@ def test_business_find_by_legal_name_pass(session):
     """Assert that the business can be found by name."""
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
-                        founding_date=datetime.datetime.utcfromtimestamp(0),
+                        founding_date=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
-                        identifier=f'BC COOP{designation}',
+                        identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
-                        fiscal_year_end_date=datetime.datetime(2001, 8, 5, 7, 7, 58, 272362))
+                        fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
     session.add(business)
     session.commit()
 
@@ -62,15 +91,15 @@ def test_business_find_by_legal_name_fail(session):
     """Assert that the business can not be found, once it is disolved."""
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
-                        founding_date=datetime.datetime.utcfromtimestamp(0),
-                        dissolution_date=datetime.datetime.utcfromtimestamp(0),
-                        identifier=f'BC COOP{designation}',
+                        founding_date=datetime.utcfromtimestamp(0),
+                        dissolution_date=datetime.utcfromtimestamp(0),
+                        identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
-                        fiscal_year_end_date=datetime.datetime(2001, 8, 5, 7, 7, 58, 272362))
+                        fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
     session.add(business)
     session.commit()
 
-    # business is disolved, it should not be found by name search
+    # business is dissolved, it should not be found by name search
     b = Business.find_by_legal_name('legal_name-001')
     assert b is None
 
@@ -79,11 +108,11 @@ def test_business_find_by_legal_name_missing(session):
     """Assert that the business can be found by name."""
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
-                        founding_date=datetime.datetime.utcfromtimestamp(0),
+                        founding_date=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
-                        identifier=f'BC COOP{designation}',
+                        identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
-                        fiscal_year_end_date=datetime.datetime(2001, 8, 5, 7, 7, 58, 272362))
+                        fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
     session.add(business)
     session.commit()
 
@@ -103,11 +132,11 @@ def test_delete_business_with_dissolution(session):
     """Assert that the business can be found by name."""
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
-                        founding_date=datetime.datetime.utcfromtimestamp(0),
-                        dissolution_date=datetime.datetime.utcfromtimestamp(0),
-                        identifier=f'BC COOP{designation}',
+                        founding_date=datetime.utcfromtimestamp(0),
+                        dissolution_date=datetime.utcfromtimestamp(0),
+                        identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
-                        fiscal_year_end_date=datetime.datetime(2001, 8, 5, 7, 7, 58, 272362))
+                        fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
     business.save()
 
     b = business.delete()
@@ -119,11 +148,11 @@ def test_delete_business_active(session):
     """Assert that the business can be found by name."""
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
-                        founding_date=datetime.datetime.utcfromtimestamp(0),
+                        founding_date=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier='CP1234567',
                         tax_id=f'XX',
-                        fiscal_year_end_date=datetime.datetime(2001, 8, 5, 7, 7, 58, 272362))
+                        fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
     business.save()
 
     b = business.delete()
@@ -135,11 +164,11 @@ def test_business_find_by_identifier(session):
     """Assert that the business can be found by name."""
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
-                        founding_date=datetime.datetime.utcfromtimestamp(0),
+                        founding_date=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier='CP1234567',
                         tax_id=f'BN0000{designation}',
-                        fiscal_year_end_date=datetime.datetime(2001, 8, 5, 7, 7, 58, 272362))
+                        fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
     business.save()
 
     b = Business.find_by_identifier('CP1234567')
@@ -151,13 +180,47 @@ def test_business_find_by_identifier_no_identifier(session):
     """Assert that the business can be found by name."""
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
-                        founding_date=datetime.datetime.utcfromtimestamp(0),
+                        founding_date=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
-                        identifier=f'BC COOP{designation}',
+                        identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
-                        fiscal_year_end_date=datetime.datetime(2001, 8, 5, 7, 7, 58, 272362))
+                        fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
     business.save()
 
     b = Business.find_by_identifier()
 
     assert b is None
+
+
+def test_business_json():
+    """Assert that the business model is saved correctly."""
+    epoch_date = datetime.utcfromtimestamp(0)
+    business = Business(legal_name='legal_name',
+                        founding_date=epoch_date,
+                        identifier='CP1234567',
+                        last_modified=epoch_date)
+
+    d = {'legalName': 'legal_name',
+         'identifier': 'CP1234567',
+         'foundingDate': epoch_date.isoformat(),
+         'lastModified': epoch_date.isoformat(),
+         }
+    assert business.json() == d
+
+    business.dissolution_date = epoch_date
+    d['dissolutionDate'] = datetime.date(business.dissolution_date).isoformat()
+    assert business.json() == d
+    business.dissolution_date = None
+    d.pop('dissolutionDate')
+
+    business.fiscal_year_end_date = epoch_date
+    d['fiscalYearEndDate'] = datetime.date(business.fiscal_year_end_date).isoformat()
+    assert business.json() == d
+    business.fiscal_year_end_date = None
+    d.pop('fiscalYearEndDate')
+
+    business.tax_id = '123456789'
+    d['taxId'] = business.tax_id
+    assert business.json() == d
+    business.tax_id = None
+    d.pop('taxId')

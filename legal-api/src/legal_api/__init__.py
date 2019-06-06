@@ -15,24 +15,29 @@
 
 This module is the API for the Legal Entity system.
 """
+import logging
+import logging.config
 import os
 
+# pylint: disable=ungrouped-imports; conflicts with Flake8
+import sentry_sdk  # noqa: I001
+from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 from flask import Flask
 from flask_jwt_oidc import JwtManager
+from registry_schemas.flask import SchemaServices
 
 import config
-from legal_api import models
+from legal_api import errorhandlers, models
 from legal_api.models import db, ma
 from legal_api.resources import API_BLUEPRINT, OPS_BLUEPRINT
-# from legal_api.resources import API, ops_blueprint  # , api_blueprint
+from legal_api.schemas import rsbc_schemas
 from legal_api.utils.logging import setup_logging
 from legal_api.utils.run_version import get_run_version
 
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
-# lower case name as used by convention in most Flask apps
-jwt = JwtManager()  # pylint: disable=invalid-name
+jwt = JwtManager()  # pylint: disable=invalid-name; lower case name as used by convention in most Flask apps
 
 
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
@@ -40,8 +45,17 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     app = Flask(__name__)
     app.config.from_object(config.CONFIGURATION[run_mode])
 
+    # Configure Sentry
+    if app.config.get('SENTRY_DSN', None):
+        sentry_sdk.init(
+            dsn=app.config.get('SENTRY_DSN'),
+            integrations=[FlaskIntegration()]
+        )
+
+    errorhandlers.init_app(app)
     db.init_app(app)
     ma.init_app(app)
+    rsbc_schemas.init_app(app)
 
     app.register_blueprint(API_BLUEPRINT)
     app.register_blueprint(OPS_BLUEPRINT)

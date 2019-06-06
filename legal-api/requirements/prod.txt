@@ -6,9 +6,12 @@ Flask-Moment
 Flask-SQLAlchemy
 Flask-RESTplus
 Flask-Marshmallow<3
+SQLAlchemy-Continuum
 flask-jwt-oidc>=0.1.5
-python-dotenv
-psycopg2-binary
+jsonschema
 marshmallow
 marshmallow-sqlalchemy
-jsonschema
+git+https://github.com/bcgov/lear.git#egg=registry_schemas&subdirectory=schemas
+python-dotenv
+psycopg2-binary
+sentry-sdk[flask]

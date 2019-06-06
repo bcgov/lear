@@ -12,3 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Test Suites to ensure that the service is built and operating correctly."""
+import datetime
+
+
+EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0)
+FROZEN_DATETIME = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362)
+
+
+def add_years(d, years):
+    """Return a date that's `years` years after the date (or datetime).
+
+    Return the same calendar date (month and day) in the destination year,
+    if it exists, otherwise use the following day
+    (thus changing February 29 to February 28).
+    """
+    try:
+        return d.replace(year=d.year + years)
+    except ValueError:
+        return d + (datetime.date(d.year + years, 3, 1) - datetime.date(d.year, 3, 1))

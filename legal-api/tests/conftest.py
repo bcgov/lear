@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common setup and fixtures for the pytest suite used by this service."""
+import datetime
+from contextlib import contextmanager
+
 import pytest
 from flask_migrate import Migrate, upgrade
 from sqlalchemy import event, text
@@ -20,6 +23,31 @@ from sqlalchemy.schema import DropConstraint, MetaData
 from legal_api import create_app
 from legal_api import jwt as _jwt
 from legal_api.models import db as _db
+
+from . import FROZEN_DATETIME
+
+
+@contextmanager
+def not_raises(exception):
+    """Corallary to the pytest raises builtin.
+
+    Assures that an exception is NOT thrown.
+    """
+    try:
+        yield
+    except exception:
+        raise pytest.fail(f'DID RAISE {exception}')
+
+# fixture to freeze utcnow to a fixed date-time
+@pytest.fixture
+def freeze_datetime_utcnow(monkeypatch):
+    """Fixture to return a static time for utcnow()."""
+    class _Datetime:
+        @classmethod
+        def utcnow(cls):
+            return FROZEN_DATETIME
+
+    monkeypatch.setattr(datetime, 'datetime', _Datetime)
 
 
 @pytest.fixture(scope='session')
