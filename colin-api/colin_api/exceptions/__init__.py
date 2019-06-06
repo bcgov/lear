@@ -54,14 +54,40 @@ class FilingNotFoundException(GenericException):
         self.status_code = 404
 
 
+class AddressNotFoundException(GenericException):
+    """Exception with defined error code and messaging."""
+
+    def __init__(self, identifier=None, address_type=None, *args, **kwargs):
+        """Return a valid AddressNotFoundException."""
+        super(GenericException, self).__init__(*args, **kwargs)
+        if identifier and address_type:
+            self.error = f'{address_type} not found with id: {identifier}'
+        else:
+            self.error = 'Address not found'
+        self.status_code = 404
+
+
+class DirectorsNotFoundException(GenericException):
+    """Exception with defined error code and messaging."""
+
+    def __init__(self, identifier=None, *args, **kwargs):
+        """Return a valid DirectorsNotFoundException."""
+        super(GenericException, self).__init__(*args, **kwargs)
+        if identifier:
+            self.error = f'Directors not found for: {identifier}'
+        else:
+            self.error = 'Directors not found'
+        self.status_code = 404
+
+
 class InvalidFilingTypeException(GenericException):
     """Exception with defined error code and messaging."""
 
-    def __init__(self, identifier=None, filing_type=None, *args, **kwargs):
-        """Return a valid FilingNotFoundException."""
+    def __init__(self, filing_type=None, *args, **kwargs):
+        """Return a valid InvalidFilingTypeException."""
         super(GenericException, self).__init__(*args, **kwargs)
-        if identifier and filing_type:
-            self.error = f'{filing_type} invalid for {identifier}'
+        if filing_type:
+            self.error = f'{filing_type} is an invalid filing type'
         else:
             self.error = 'Filing type invalid'
         self.status_code = 400
