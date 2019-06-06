@@ -114,7 +114,7 @@ node {
 
             echo "Building ${COMPONENT_NAME} ..."
             def build = openshift.selector("bc", "${COMPONENT_NAME}")
-            build.startBuild().logs("-f")
+            build.startBuild("--wait=true").logs("-f")
           }
         }
       }
