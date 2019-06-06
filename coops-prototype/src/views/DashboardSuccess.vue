@@ -23,17 +23,10 @@
           <h1>Annual Reports</h1>
         </header>
         <section>
-          <h2>To Do <span class="text-muted">(1)</span></h2>
+          <h2>To Do</h2>
           <v-card>
             <ul class="todo-list">
-              <li class="dashboard-list-item"
-                v-for="(item, index) in orderBy(todoItems, 'name', -1)"
-                v-bind:key="index">
-                <div class="name">{{item.name}}</div>
-                <div class="actions">
-                  <v-btn color="primary" @click="fileAnnualReport" :disabled="!item.enabled">File Now</v-btn>
-                </div>
-              </li>
+              <li class="dashboard-list-item"><span class="text-muted">You have no Annual Reports to File</span></li>
             </ul>
           </v-card>
         </section>
@@ -54,7 +47,7 @@
                   <div class="status"><span class="text-muted">{{ item.status }}</span></div>
                   <div class="price">{{item.price}}</div>
                   <div class="actions">
-                    <a class="v-btn download-btn" v-bind:href="'/downloads/receipt.pdf'" target="_blank">Download Receipt</a>
+                    <a class="v-btn download-btn" v-bind:href="'/downloads/receipt.pdf'" target="_blank">Download</a>
                   </div>
                 </li>
               </ul>
@@ -85,11 +78,11 @@
         publicPath: process.env.BASE_URL,
 
         todoItems: [
-          { name: 'Annual Report (2019)', enabled: true }
+          { }
         ],
 
         filedItems: [
-          { name: 'Annual Report (2018)', status: 'Completed', price: '$70.00', enabled: false }
+          { name: 'Annual Report (2019)', status: 'Completed', price: '$70.00', enabled: false }
         ],
 
         showLoading: false,

@@ -3,7 +3,9 @@
     <article id="example-content">
       <header>
         <h1>Annual Report Filing Payment</h1>
+        <!--
         <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+        -->
       </header>
       <section class="payment-section">
         <header>
@@ -28,7 +30,7 @@
                   <input type="checkbox" checked disabled/>
                 </td>
                 <td>11780</td>
-                <td>Pathfinder Housing Cooperative</td>
+                <td>Pathfinder Cooperative</td>
                 <td>105023337BC0157</td>
                 <td>
                   <div>
@@ -50,7 +52,7 @@
                 </td>
               </tr>
               <tr class="info-row">
-                <td colspan="7" class="align-right"><v-icon small>info</v-icon>Payment Types are not supported by an invoice will not be available in the Payment Type list.</td>
+                <td colspan="7" class="align-right"><v-icon small>info</v-icon>Payment Types that are not supported by an invoice will not be available in the Payment Type list.</td>
               </tr>
             </tbody>
           </table>
@@ -65,19 +67,14 @@
 </template>
 
 <script lang='ts'>
-  import { Component, Vue } from 'vue-property-decorator'
-  import moment from 'moment'
+import { Component, Vue } from 'vue-property-decorator'
+import moment from 'moment'
 
-  Vue.prototype.moment = moment
+Vue.prototype.moment = moment
 
-  export default {
-    name: "Payment",
-
-    data () {
-      return {
-      }
-    }
-  }
+export default {
+  name: "Payment"
+}
 </script>
 
 <style lang="stylus" scoped>

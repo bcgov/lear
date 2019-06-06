@@ -22,7 +22,7 @@ export default {
   // Placeholder Data
   data () {
     return {
-      entityName: 'Pathfinder Housing Cooperative',
+      entityName: 'Pathfinder Cooperative',
       entityStatus: 'GOODSTANDING',
       entityBusinessNo: '105023337BC0157',
       entityIncNo: 'CP0015683'

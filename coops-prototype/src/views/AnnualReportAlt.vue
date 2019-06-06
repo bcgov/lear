@@ -24,8 +24,8 @@
     <v-container class="view-container">
       <article id="example-content" :class="this.agmDate ? 'agm-date-selected':'no-agm-date-selected'">
         <header>
-          <h1>File Annual Report (2018)</h1>
-          <p>Select your Annual General Meeting (AGM) date, and verify or change your Registered office address and List of Directors as of your AGM.</p>
+          <h1>File 2019 Annual Report</h1>
+          <p>Select your Annual General Meeting (AGM) date, and verify or change your Registered Office Address and List of Directors as of your Annual General Meeting.</p>
         </header>
 
         <!-- Annual General Meeting Dates -->
@@ -41,8 +41,8 @@
         <!-- Addresses -->
         <section>
           <header>
-            <h2>2. Registered Office Addresses <!-- <span class="agm-date" v-show="this.agmDate">({{this.agmDate}})</span> --></h2>
-            <p>Verify, and change if necessary, your Registered Office Addresses.</p>
+            <h2>2. Registered Office Addresses <span class="agm-date">(as of 2019 Annual General Meeting)</span></h2>
+            <p>Verify or change your Registered Office Addresses.</p>
           </header>
           <v-card flat>
             <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
@@ -64,9 +64,10 @@
                           <div class="address__row">{{DeliveryAddressCountry}}</div>
                         </div>
                         <div class="actions">
-                          <v-btn small outline color="primary"
+                          <v-btn small flat color="primary"
                             @click="editAddress">
-                            Change
+                            <v-icon small>edit</v-icon>
+                            <span>Change</span>
                           </v-btn>
                         </div>
                       </div>
@@ -181,7 +182,7 @@
                         <div class="form__row form__btns">
                           <v-btn class="form-primary-btn" color="primary"
                             @click="addAddressFee">
-                            Change Addresses</v-btn>
+                            Done</v-btn>
                           <v-btn @click="cancelEditAddress">Cancel</v-btn>
                         </div>
                       </v-form>
@@ -198,7 +199,7 @@
         <!-- Director Information -->
         <section>
           <header>
-            <h2>3. Director Information <!-- <span class="agm-date">({{this.agmDate}})</span> --></h2>
+            <h2>3. Directors <!-- <span class="agm-date">({{this.agmDate}})</span> --></h2>
             <p>Tell us who was elected or appointed and who ceased to be a director at your 2018 AGM.</p>
 
             <v-expand-transition>
@@ -257,16 +258,16 @@
                               :rules="directorRegionRules"
                               v-model="director.region">
                             </v-select>
-                            <v-select class="item" box label="Province"
-                              :items="regionList"
-                              :rules="directorRegionRules"
-                              v-model="director.region">
-                            </v-select>
                             <v-text-field class="item" box label="Postal Code"
                               v-model="director.postalCode"
                               :rules="directorPostalCodeRules"
                               required>
                             </v-text-field>
+                            <v-select box label="Country"
+                              :items="countryList"
+                              :rules="directorCountryRules"
+                              v-model="director.country" >
+                            </v-select>
                           </section>
                           <div class="spacer"></div>
                           <section class="column">
@@ -274,32 +275,6 @@
                             2018 Annual General Meeting<br> {{this.agmDate}}
                           </section>
                         </div>
-                        <!--
-                        <div class="form__row three-column">
-                          <v-text-field class="item" box label="City"
-                            v-model="director.city"
-                            :rules="directorCityRules"
-                            required>
-                          </v-text-field>
-                          <v-select class="item" box label="Province"
-                            :items="regionList"
-                            :rules="directorRegionRules"
-                            v-model="director.region">
-                          </v-select>
-                          <v-text-field class="item" box label="Postal Code"
-                            v-model="director.postalCode"
-                            :rules="directorPostalCodeRules"
-                            required>
-                          </v-text-field>
-                        </div>
-                        <div class="form__row">
-                          <v-select box label="Country"
-                            :items="countryList"
-                            v-model="director.country"
-                            :rules="directorCountryRules">
-                          </v-select>
-                        </div>
-                        -->
                         <div class="form__row form__btns">
                           <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
                           <v-btn @click="cancelNewDirector">Cancel</v-btn>
@@ -317,25 +292,11 @@
                 v-bind:class="{ 'remove' : !director.isDirectorActive }"
                 v-for="(director, index) in orderBy(directors, 'id', -1)"
                 v-bind:key="index">
-                <div class="meta-container">
-                  <label>
-                    <span>{{director.firstName}}</span><span>&nbsp;{{director.lastName}}</span>
-                    <div class="director-status">
-                      <v-scale-transition>
-                        <v-chip small label disabled color="blue" text-color="white" v-show="director.isNew">
-                          New
-                        </v-chip>
-                      </v-scale-transition>
-                      <v-scale-transition>
-                        <v-chip small label disabled v-show="!director.isDirectorActive">
-                          Ceased
-                        </v-chip>
-                      </v-scale-transition>
-                    </div>
-                  </label>
-                  <div class="meta-container__inner">
-                    <v-expand-transition>
-                      <div class="director-info" v-show="activeIndex !== index">
+                <v-expand-transition>
+                  <div class="meta-container" v-show="activeIndex !== index">
+                    <label class="mb-3">{{director.firstName}} {{director.lastName}}</label>
+                    <div class="meta-container__inner">
+                      <div class="director-info">
                         <div class="address">
                           <div class="address__row">{{director.street}}</div>
                           <div class="address__row">
@@ -350,17 +311,8 @@
                             v-show="director.isNew"
                             @click="editDirector(index)">
                             <v-icon small>edit</v-icon>
-                            <span>Edit</span>
+                            <span>Change</span>
                           </v-btn>
-
-                          <!--
-                          <v-btn small flat color="primary"
-                            v-show="director.isNew"
-                            @click="deleteDirector(index)">
-                            <span>Remove</span>
-                          </v-btn>
-                          -->
-
                           <v-btn small flat color="primary"
                             v-show="!director.isNew"
                             @click="removeDirector(director)">
@@ -369,66 +321,74 @@
                           </v-btn>
                         </div>
                       </div>
-                    </v-expand-transition>
-                    <v-expand-transition>
-                      <v-form ref="editDirectorForm"
-                        v-show="activeIndex === index"
-                        v-model="directorFormValid" lazy-validation>
-                        <div class="form__row three-column">
-                          <v-text-field box label="First Name" class="item"
-                            v-model="director.firstName"
-                            :rules="directorFirstNameRules"
-                            required
-                          ></v-text-field>
-                          <v-text-field box label="Initial" class="item director-initial"
-                            v-model="director.initial"
-                          ></v-text-field>
-                          <v-text-field box label="Last Name" class="item"
-                            v-model="director.lastName"
-                            :rules="directorLastNameRules"
-                          ></v-text-field>
-                        </div>
-                        <div class="form__row">
-                          <v-text-field box label="Street Address"
-                            v-model="director.street"
-                            :rules="directorStreetRules"
-                            required>
+                    </div>
+                  </div>
+                </v-expand-transition>
+                <v-expand-transition>
+                  <div class="meta-container new-director" v-show="activeIndex === index">
+                    <label class="mb-3">{{director.firstName}} {{director.lastName}}</label>
+                    <div class="meta-container__inner">
+                      <v-form ref="newDirectorForm" v-on:submit.prevent="addNewDirector" v-model="directorFormValid" lazy-validation>
+                        <div class="form__row alt-form">
+                          <section class="column">
+                            <h3>Director Name</h3>
+                            <v-text-field box class="item" label="First Name"
+                              v-model="director.firstName"
+                              :rules="directorFirstNameRules"
+                              required></v-text-field>
+                            <v-text-field box label="Initial" class="item director-initial"
+                              v-model="director.initial"
+                            ></v-text-field>
+                            <v-text-field box class="item" label="Last Name"
+                              v-model="director.lastName"
+                              :rules="directorLastNameRules"
+                              required></v-text-field>
+                          </section>
+                          <div class="spacer"></div>
+                          <section class="column">
+                            <h3>Home Address</h3>
+                            <v-text-field box label="Street Address"
+                              v-model="director.street"
+                              :rules="directorStreetRules"
+                              required>
                             </v-text-field>
-                        </div>
-                        <div class="form__row three-column">
-                          <v-text-field class="item" box label="City"
+                            <v-text-field class="item" box label="City"
                             v-model="director.city"
-                            :rules="directorCityRules"
-                            required>
-                          </v-text-field>
-                          <v-select class="item" box label="Province"
-                            :items="regionList"
-                            :rules="directorRegionRules"
-                            v-model="director.region">
-                          </v-select>
-                          <v-text-field class="item" box label="Postal Code"
-                            v-model="director.postalCode"
-                            :rules="directorPostalCodeRules"
-                            required>
-                          </v-text-field>
-                        </div>
-                        <div class="form__row">
-                          <v-select box label="Country"
-                            :items="countryList"
-                            :rules="directorCountryRules"
-                            v-model="director.country" >
-                          </v-select>
+                              :rules="directorCityRules"
+                              required>
+                            </v-text-field>
+                            <v-select class="item" box label="Province"
+                              :items="regionList"
+                              :rules="directorRegionRules"
+                              v-model="director.region">
+                            </v-select>
+                            <v-text-field class="item" box label="Postal Code"
+                              v-model="director.postalCode"
+                              :rules="directorPostalCodeRules"
+                              required>
+                            </v-text-field>
+                            <v-select box label="Country"
+                              :items="countryList"
+                              :rules="directorCountryRules"
+                              v-model="director.country" >
+                            </v-select>
+                          </section>
+                          <div class="spacer"></div>
+                          <section class="column">
+                            <h3>Appointed</h3>
+                            2018 Annual General Meeting
+                          </section>
                         </div>
                         <div class="form__row form__btns">
                           <v-btn class="form-primary-btn" color="primary"
                             @click="cancelEditDirector(index)">
-                            Update Director</v-btn>
+                            Done</v-btn>
                           <v-btn @click="cancelEditDirector(index)">Cancel</v-btn>
                         </div>
                       </v-form>
-                    </v-expand-transition>
+                    </div>
                   </div>
-                </div>
+                </v-expand-transition>
               </li>
             </ul>
 
@@ -530,10 +490,11 @@ export default {
       isDirectorActive: true,
       director: { id:"", firstName: "", lastName: "", street: "", city: "", region: "", postalCode: "", country: "" },
       directors: [
-        { id: 1, isNew: false, isDirectorActive: true, firstName: "Alli", lastName: "Myers", initial: "", street: "1111 First Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
-        { id: 2, isNew: false, isDirectorActive: true, firstName: "Nora", lastName: "Patton", initial: "", street: "2222 Second Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
-        { id: 3, isNew: false, isDirectorActive: true, firstName: "Phoebe", lastName: "Jones", initial: "", street: "3333 Third Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
-        { id: 4, isNew: false, isDirectorActive: true, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
+        { id: 1, isNew: false, isDirectorActive: true, firstName: "Jon", lastName: "Lee", initial: "", street: "14 Maple Street", city: "Vancouver", region: "BC", postalCode: "V7L 2W9", country: "Canada"},
+        { id: 2, isNew: false, isDirectorActive: true, firstName: "Alli", lastName: "Myers", initial: "", street: "1111 First Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
+        { id: 3, isNew: false, isDirectorActive: true, firstName: "Nora", lastName: "Patton", initial: "", street: "2222 Second Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
+        { id: 4, isNew: false, isDirectorActive: true, firstName: "Phoebe", lastName: "Jones", initial: "", street: "3333 Third Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"},
+        { id: 5, isNew: false, isDirectorActive: true, firstName: "Cole", lastName: "Bryan", initial: "", street: "4444 Fourth Street", city: "Victoria", region: "BC", postalCode: "V8A 2G8", country: "Canada"}
       ],
 
       //Director Form Validation
@@ -597,9 +558,11 @@ export default {
     deleteDirector: function (director, index) {
       if(this.directors[index] === director) {
         this.directors.splice(index, 1)
+        this.activeIndex = null
       } else {
         let found = this.directors.indexOf(director)
         this.directors.splice(found, 1)
+        this.activeIndex = null
       }
     },
 
@@ -847,7 +810,8 @@ ul
   margin-left 0.25rem
   font-weight 300
 
-.new-director .meta-container
+.new-director .meta-container,
+.meta-container.new-director
   flex-flow column nowrap
 
   > label:first-child
