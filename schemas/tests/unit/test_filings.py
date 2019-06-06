@@ -48,7 +48,7 @@ CHANGE_OF_DIRECTORS = {
                 'firstName': 'Peter',
                 'lastName': 'Griffin'
             },
-            'mailingAddress': {
+            'deliveryAddress': {
                 'streetAddress': 'mailing_address - address line one',
                 'addressCity': 'mailing_address city',
                 'addressCountry': 'mailing_address country',
@@ -62,13 +62,13 @@ CHANGE_OF_DIRECTORS = {
                 'middleInitial': 'P',
                 'lastName': 'Swanson'
             },
-            'mailingAddress': {
+            'deliveryAddress': {
                 'streetAddress': 'mailing_address - address line #1',
                 'additionalStreetAddress': 'Kirkintiloch',
                 'addressCity': 'Glasgow',
                 'addressCountry': 'UK',
                 'postalCode': 'H0H 0H0',
-                'addressRegion': 'Scotland'
+                'addressRegion': 'SC'
             },
             'title': 'Treasurer'
         }
@@ -218,7 +218,7 @@ def test_invalid_cod_filing():
                             'firstName': False, # should be string
                             'lastName': 'Griffin'
                         },
-                        'mailingAddress': {
+                        'deliveryAddress': {
                             'streetAddress': 'mailing_address - address line one',
                             'addressCity': 'mailing_address city',
                             'addressCountry': 'mailing_address country',
