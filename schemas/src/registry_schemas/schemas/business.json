@@ -13,8 +13,6 @@
             "type": "object",
             "title": "The Business Schema",
             "required": [
-                "cacheId",
-                "foundingDate",
                 "identifier",
                 "legalName"
             ],

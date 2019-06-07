@@ -52,14 +52,30 @@
                     ],
                     "properties": {
                         "name": {
-                            "type": "string"
+                            "type": "string",
+                            "title": "The name of the main filing.",
+                            "examples": [
+                                "annual_report",
+                                "change_of_directors",
+                                "change_of_address"
+                            ]
                         },
                         "date": {
                             "type": "string",
-                            "format": "date"
+                            "format": "date",
+                            "title": "The submission date of the final version of the filing."
+                        },
+                        "filingId": {
+                            "type": "integer",
+                            "title": "The id of the filing.",
+                            "default": 0,
+                            "examples": [
+                                "1200"
+                            ]
                         },
                         "paymentToken": {
-                            "type": "string"
+                            "type": "string",
+                            "title": "A valid payment token for this filing against this business."
                         }
                     }
                 }
