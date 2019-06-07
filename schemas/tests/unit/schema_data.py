@@ -30,7 +30,8 @@ TEST_AR = {
     'filing': {
         'header': {
             'name': 'annual report',
-            'date': '2019-04-08'
+            'date': '2019-04-08',
+            'filingId': 1
         },
         'business': {
             'cacheId': 1,
