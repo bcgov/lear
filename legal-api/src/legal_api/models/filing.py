@@ -98,6 +98,7 @@ class Filing(db.Model):
     def json(self):
         """Return a json representation of this object."""
         d = {'filingDate': self.filing_date.isoformat(),
+             'filingId': self.id,
              'filingType': self.filing_type,
              'jsonSubmission': self.filing_json}
         if self.payment_token:
