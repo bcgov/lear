@@ -18,11 +18,12 @@ This module is the API for the Legal Entity system.
 import logging
 import logging.config
 import os
+from http import HTTPStatus
 
 # pylint: disable=ungrouped-imports; conflicts with Flake8
 import sentry_sdk  # noqa: I001
 from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
-from flask import Flask
+from flask import Flask, redirect
 from flask_jwt_oidc import JwtManager
 from registry_schemas.flask import SchemaServices
 
@@ -60,6 +61,10 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     app.register_blueprint(API_BLUEPRINT)
     app.register_blueprint(OPS_BLUEPRINT)
     setup_jwt_manager(app, jwt)
+
+    @app.route('/')
+    def be_nice_swagger_redirect():  # pylint: disable=unused-variable
+        return redirect('/api/v1', code=HTTPStatus.MOVED_PERMANENTLY)
 
     @app.after_request
     def add_version(response):  # pylint: disable=unused-variable

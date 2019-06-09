@@ -24,9 +24,13 @@ from tests.unit.models.test_filing import AR_FILING, factory_business, factory_f
 
 def test_get_all_business_filings_only_one_in_ledger(session, client):
     """Assert that the business info can be received in a valid JSONSchema format."""
+    import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)
     filings = factory_filing(b, AR_FILING)
+
+    ar = copy.deepcopy(AR_FILING)
+    ar['filing']['header']['filingId'] = filings.id
 
     print('test_get_all_business_filings - filing:', filings)
 
@@ -34,7 +38,7 @@ def test_get_all_business_filings_only_one_in_ledger(session, client):
 
     assert rv.status_code == 200
     assert len(rv.json.get('filings')) == 1
-    assert rv.json.get('filings')[0].get('jsonSubmission') == AR_FILING
+    assert rv.json.get('filings')[0] == ar
 
 
 def test_get_all_business_filings_multi_in_ledger(session, client):
@@ -62,18 +66,17 @@ def test_get_all_business_filings_multi_in_ledger(session, client):
 
 def test_get_one_business_filing_by_id(session, client):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
+    import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)
     filings = factory_filing(b, AR_FILING)
-
-    print('test_get_one_business_filing - filing:', filings)
-
-    print(f'/api/v1/businesses/{identifier}/filings/{filings.id}')
+    ar = copy.deepcopy(AR_FILING)
+    ar['filing']['header']['filingId'] = filings.id
 
     rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings.id}')
 
     assert rv.status_code == 200
-    assert rv.json == AR_FILING
+    assert rv.json == ar
 
 
 def test_get_one_business_filing_by_id_missing_id(session, client):
@@ -141,28 +144,36 @@ def test_post_empty_ar_filing_to_a_business(session, client):
     assert rv.json == {'message': f'No filing json data in body of post for {identifier}.'}
 
 
-def test_post_ar_not_paid_filing_to_a_business(session, client):
+def test_post_ar_not_paid_filing_to_a_business(session, client, freeze_datetime_utcnow):
     """Assert that a unpaid filing can be posted."""
+    import copy
     identifier = 'CP7654321'
     factory_business(identifier)
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=AR_FILING)
 
+    ar = copy.deepcopy(AR_FILING)
+    ar['filing']['header']['filingId'] = rv.json['filing']['header']['filingId']
+
     assert rv.status_code == HTTPStatus.CREATED
-    assert rv.json == AR_FILING
+    assert rv.json['filing']['header']['filingId'] == ar['filing']['header']['filingId']
+    assert rv.json == ar
 
 
 def test_post_ar_paid_filing_to_a_business(session, client):
     """Assert that a paid filing can be posted."""
     import copy
     identifier = 'CP7654321'
-    factory_business(identifier)
+    b = factory_business(identifier)
     ar = copy.deepcopy(AR_FILING)
     ar['filing']['header']['paymentToken'] = 'token'
 
-    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+    rv = client.post(f'/api/v1/businesses/{b.identifier}/filings',
                      json=ar)
+
+    ar['filing']['header']['filingId'] = rv.json['filing']['header']['filingId']
+    ar['filing']['header']['date'] = rv.json['filing']['header']['date']
 
     assert rv.status_code == HTTPStatus.CREATED
     assert rv.json == ar
