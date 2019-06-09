@@ -76,6 +76,10 @@
                         "paymentToken": {
                             "type": "string",
                             "title": "A valid payment token for this filing against this business."
+                        },
+                        "submitter": {
+                            "type": "string",
+                            "title": "Account name of the person submitting this filing."
                         }
                     }
                 }
