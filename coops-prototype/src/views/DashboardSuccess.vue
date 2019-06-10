@@ -108,12 +108,6 @@
 
       date: function (date) {
         return moment(date).format('MMMM Do YYYY');
-      },
-
-      filters: {
-        moment: function (date) {
-          return moment(date).format('MMMM Do YYYY');
-        }
       }
     }
   }
