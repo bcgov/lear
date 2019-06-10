@@ -70,7 +70,7 @@ class ListFilingResource(Resource):
             if not rv:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
 
-            return jsonify(rv[1].filing_json)
+            return jsonify(rv[1].json())
 
         rv = []
         filings = business.filings.all()
@@ -107,7 +107,8 @@ class ListFilingResource(Resource):
         except BusinessException as err:
             return jsonify({'message': err.error}), err.status_code
 
-        return jsonify(filing.filing_json), HTTPStatus.CREATED
+        return jsonify(filing.json()), HTTPStatus.CREATED
+        # return jsonify(filing.filing_json), HTTPStatus.ACCEPTED
 
     @staticmethod
     @cors.crossdomain(origin='*')
@@ -140,3 +141,4 @@ class ListFilingResource(Resource):
             return jsonify({'message': err.error}), err.status_code
 
         return jsonify(filing.filing_json), HTTPStatus.ACCEPTED
+        # return jsonify(filing.json()), HTTPStatus.ACCEPTED

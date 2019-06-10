@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 """Filings are legal documents that alter the state of a business."""
+import copy
 from datetime import datetime
 from http import HTTPStatus
 
 from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
 from legal_api.schemas import rsbc_schemas
@@ -44,8 +46,12 @@ class Filing(db.Model):
                                db.ForeignKey('transaction.id'))
     business_id = db.Column('business_id', db.Integer,
                             db.ForeignKey('businesses.id'))
-    submitter = db.Column('submitter_id', db.Integer,
-                          db.ForeignKey('users.id'))
+    submitter_id = db.Column('submitter_id', db.Integer,
+                             db.ForeignKey('users.id'))
+
+    filing_submitter = db.relationship('User',
+                                       backref=backref('filing_submitter', uselist=False),
+                                       foreign_keys=[submitter_id])
 
     # properties
     @hybrid_property
@@ -97,14 +103,19 @@ class Filing(db.Model):
     # json serializer
     def json(self):
         """Return a json representation of this object."""
-        d = {'filingDate': self.filing_date.isoformat(),
-             'filingType': self.filing_type,
-             'jsonSubmission': self.filing_json}
-        if self.payment_token:
-            d['paymentToken'] = self.payment_token
-        if self.submitter:
-            d['submitter'] = self.submitter
-        return d
+        try:
+            json_submission = copy.deepcopy(self.filing_json)
+            json_submission['filing']['header']['date'] = datetime.date(self.filing_date).isoformat()
+            json_submission['filing']['header']['filingId'] = self.id
+            json_submission['filing']['header']['name'] = self.filing_type
+
+            if self.payment_token:
+                json_submission['filing']['header']['paymentToken'] = self.payment_token
+            if self.submitter_id:
+                json_submission['filing']['header']['submitter'] = self.filing_submitter.username
+            return json_submission
+        except Exception:  # noqa: B901, E722
+            raise KeyError
 
     def save(self):
         """Save and commit immediately."""

@@ -23,7 +23,7 @@ from http import HTTPStatus
 import pytest
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, User
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
 
@@ -80,13 +80,12 @@ AR_FILING = {
     'filing': {
         'header': {
             'name': 'annual_report',
-            'date': '2019-04-08'
+            'date': '2001-08-05'
         },
         'business': {
             'cacheId': 1,
             'foundingDate': '2007-04-08',
             'identifier': 'CP1234567',
-            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
             'legalName': 'legal name - CP1234567'
         },
         'annualReport': {
@@ -110,13 +109,15 @@ def factory_filing(business, data_dict):
 
 def test_filing_json(session):
     """Assert that an AR filing can be saved."""
+    import copy
     b = factory_business('CP1234567')
     filing = factory_filing(b, AR_FILING)
 
+    ar = copy.deepcopy(AR_FILING)
+    ar['filing']['header']['filingId'] = filing.id
+
     assert filing.id
-    assert filing.json() == {'filingDate': filing.filing_date.isoformat(),
-                             'filingType': 'annual_report',
-                             'jsonSubmission': AR_FILING}
+    assert filing.json() == ar
 
 
 def test_filing_delete_is_blocked(session):
@@ -169,35 +170,38 @@ def test_filing_dump_json(session):
     b = factory_business(identifier)
 
     # Check base JSON
+    filings = factory_filing(b, AR_FILING)
     ar = copy.deepcopy(AR_FILING)
-    filings = factory_filing(b, ar)
-    ab = {'filingDate': '2001-08-05T07:07:58.272362+00:00',
-          'filingType': 'annual_report'
-          }
-    ab['jsonSubmission'] = ar
-    assert filings.json() == ab
+    ar['filing']['header']['filingId'] = filings.id
+
+    assert filings.json() == ar
 
     # Check payment token
     ar = copy.deepcopy(AR_FILING)
     ar['filing']['header']['paymentToken'] = 'token'
     filings = factory_filing(b, ar)
-    ab = {'filingDate': '2001-08-05T07:07:58.272362+00:00',
-          'filingType': 'annual_report',
-          'paymentToken': 'token'
-          }
-    ab['jsonSubmission'] = ar
-    assert filings.json() == ab
+    ar['filing']['header']['filingId'] = filings.id
+    assert filings.json() == ar
 
     # check submitter
+    u = User()
+    u.username = 'submitter'
+    u.save()
     ar = copy.deepcopy(AR_FILING)
     filings = factory_filing(b, ar)
-    ab = {'filingDate': '2001-08-05T07:07:58.272362+00:00',
-          'filingType': 'annual_report',
-          'submitter': 'submitter id'
-          }
-    ab['jsonSubmission'] = ar
-    filings.submitter = 'submitter id'
-    assert filings.json() == ab
+    filings.submitter_id = u.id
+    filings.save()
+    ar['filing']['header']['filingId'] = filings.id
+    ar['filing']['header']['submitter'] = 'submitter'
+    assert filings.json() == ar
+
+    # check Exception
+    ar = copy.deepcopy(AR_FILING)
+    filings = factory_filing(b, ar)
+    filings.save()
+    filings.submitter_id = -1  # some bogus id to throw an error
+    with pytest.raises(KeyError):
+        filings.json()
 
 
 def test_filing_save_to_session(session):
