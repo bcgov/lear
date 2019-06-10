@@ -5,7 +5,7 @@
     <div class="loading-container fade-out">
       <div class="loading__content">
         <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-        <div class="loading-msg">Preparing Your 2018 Annual Report</div>
+        <div class="loading-msg">Preparing Your 2019 Annual Report</div>
       </div>
     </div>
 
