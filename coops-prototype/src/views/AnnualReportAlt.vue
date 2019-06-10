@@ -294,7 +294,21 @@
                 v-bind:key="index">
                 <v-expand-transition>
                   <div class="meta-container" v-show="activeIndex !== index">
-                    <label class="mb-3">{{director.firstName}} {{director.lastName}}</label>
+                    <label>
+                      <span>{{director.firstName}}</span><span>&nbsp;{{director.lastName}}</span>
+                      <div class="director-status">
+                        <v-scale-transition>
+                          <v-chip small label disabled color="blue" text-color="white" v-show="director.isNew">
+                            New
+                          </v-chip>
+                        </v-scale-transition>
+                        <v-scale-transition>
+                          <v-chip small label disabled v-show="!director.isDirectorActive">
+                            Ceased
+                          </v-chip>
+                        </v-scale-transition>
+                      </div>
+                    </label>
                     <div class="meta-container__inner">
                       <div class="director-info">
                         <div class="address">
@@ -328,7 +342,9 @@
                   <div class="meta-container new-director" v-show="activeIndex === index">
                     <label class="mb-3">{{director.firstName}} {{director.lastName}}</label>
                     <div class="meta-container__inner">
-                      <v-form ref="newDirectorForm" v-on:submit.prevent="addNewDirector" v-model="directorFormValid" lazy-validation>
+                      <v-form ref="editDirectorForm"
+                        v-show="activeIndex === index"
+                        v-model="directorFormValid" lazy-validation>
                         <div class="form__row alt-form">
                           <section class="column">
                             <h3>Director Name</h3>
