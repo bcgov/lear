@@ -8,6 +8,9 @@
       </router-link>
       <span class="bcros" v-show="this.$route.name != 'PayBC'">BC Registries & Online Services</span>
       <span class="paybc-logo" v-show="this.$route.name === 'PayBC'">Pay<strong>BC</strong></span>
+      <div class="app-header__actions">
+        <v-btn outline color="#ffffff"><span>Sign out</span></v-btn>
+      </div>
     </div>
   </header>
 </template>
@@ -33,6 +36,12 @@ export default {
       align-items center
       padding-top 0
       padding-bottom 0
+
+  .app-header__actions
+    margin-left auto
+
+    .v-btn
+      margin-right 0
 
   .brand-img
     margin-top 0.3rem
