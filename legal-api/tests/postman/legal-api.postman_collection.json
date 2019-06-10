@@ -2,12 +2,285 @@
 	"info": {
 		"_postman_id": "c75dc154-2ecb-4590-852b-a2872c53a988",
 		"name": "legal-api",
-		"description": "version=0.66 - This is a Legal API description",
+		"description": "version=0.67 - This is a Legal API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
 	"item": [
 		{
+			"name": "setup",
+			"item": [
+				{
+					"name": "Install Postman BDD Copy",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// If the \"postman_bdd_path\" environment variable is set, then we'll use it.",
+									"// Otherwise, we'll default to the published version",
+									"if (!environment.postman_bdd_path) {",
+									"    postman.setGlobalVariable('postman_bdd_path', 'http://bigstickcarpet.com/postman-bdd/dist/postman-bdd.min.js');",
+									"}",
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// \"install\" Postman BDD",
+									"postman.setGlobalVariable('postmanBDD', responseBody);",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cache-Control",
+								"value": "no-cache"
+							}
+						],
+						"url": "{{postman_bdd_path}}",
+						"description": "This request downloads [Postman BDD](https://github.com/BigstickCarpet/postman-bdd) and then \"installs\" it by setting a global variable\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Install auth_token_script",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "d682c68b-25da-42f8-a3c0-b524eaebdbac",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "968eeea1-e843-4f57-94c5-3fa1db5e7a50",
+								"type": "text/javascript",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"auth_token_script\", jsonData.data);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "authurl = pm.environment.get(\"authurl\");\nrealm = pm.environment.get(\"realm\");\nclientid = pm.environment.get(\"clientid\");\nuserid = pm.environment.get(\"userid\");\npassword = pm.environment.get(\"password\");\nclient_secret = pm.environment.get(\"client_secret\");\n\nconst echoPostRequest = {\n  url: authurl +'/auth/realms/' +realm + '/protocol/openid-connect/token',\n  method: 'POST',\n  header: 'Content-Type:application/x-www-form-urlencoded',\n  body: {\n    mode: 'raw',\n    raw: 'grant_type=password&client_id=' \n         +clientid \n         +'&username=' \n         +userid \n         +'&password='\n         +password\n         +'&client_secret='\n         +client_secret\n  }\n};\npm.sendRequest(echoPostRequest, function (err, res) {\n    if (err) { console.log(err); }\n    else{\n      var jsonData = res.json();\n      pm.environment.set(\"token\", jsonData.access_token);\n      pm.environment.set(\"refresh_token\", jsonData.refresh_token);\n      pm.environment.set(\"token_expires\", Date.now()+(jsonData.expires_in * 1000));\n      pm.environment.set(\"refresh_token_expires\", Date.now()+(jsonData.refresh_expires_in * 1000));\n    }\n    //console.log(err ? err : res.json());\n});"
+						},
+						"url": "https://postman-echo.com/post"
+					},
+					"response": []
+				},
+				{
+					"name": "Install auth_refresh_script",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "d682c68b-25da-42f8-a3c0-b524eaebdbac",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "e746bda3-1345-4ecc-956c-ec47cab5c4eb",
+								"type": "text/javascript",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"auth_refresh_script\", jsonData.data);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "authurl = pm.environment.get(\"authurl\");\nrealm = pm.environment.get(\"realm\");\nclientid = pm.environment.get(\"clientid\");\nrefresh_token = pm.environment.get(\"refresh_token\");\nclient_secret = pm.environment.get(\"client_secret\");\n\nconst echoPostRequest = {\n  url: authurl +'/auth/realms/' +realm + '/protocol/openid-connect/token',\n  method: 'POST',\n  header: 'Content-Type:application/x-www-form-urlencoded',\n  body: {\n    mode: 'raw',\n    raw: 'grant_type=refresh_token&client_id=' \n         +clientid \n         +'&refresh_token=' \n         +refresh_token \n         +'&client_secret='\n         +client_secret\n  }\n};\npm.sendRequest(echoPostRequest, function (err, res) {\n    var jsonData = res.json();\n    pm.environment.set(\"token\", jsonData.access_token);\n    pm.environment.set(\"refresh_token\", jsonData.refresh_token);\n    pm.environment.set(\"token_expires\", Date.now()+(jsonData.expires_in * 1000));\n    pm.environment.set(\"refresh_token_expires\", Date.now()+(jsonData.refresh_expires_in * 1000));\n\n    console.log(err ? err : res.json());\n});"
+						},
+						"url": "https://postman-echo.com/post"
+					},
+					"response": []
+				},
+				{
+					"name": "authenticate",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "8dc7d45a-d0cf-46c4-9619-8e9d9e88de38",
+								"type": "text/javascript",
+								"exec": [
+									"authurl = pm.environment.get(\"authurl\");",
+									"realm = pm.environment.get(\"realm\");",
+									"clientid = pm.environment.get(\"clientid\");",
+									"userid = pm.environment.get(\"userid\");",
+									"password = pm.environment.get(\"password\");",
+									"client_secret = pm.environment.get(\"client_secret\");",
+									"",
+									"var timeNow;",
+									"",
+									"pm.sendRequest('https://postman-echo.com/time/now', function (err, res) {",
+									"    if (err) { console.log(err); }",
+									"    else {",
+									"        var currentTime = res.stream.toString();",
+									"        console.log(currentTime);",
+									"        pm.environment.set(\"currentTime\", currentTime);",
+									"        timeNow = Date(currentTime)",
+									"    }",
+									"});",
+									"",
+									"const echoPostRequest = {",
+									"  url: authurl +'/auth/realms/' +realm + '/protocol/openid-connect/token',",
+									"  method: 'POST',",
+									"  header: 'Content-Type:application/x-www-form-urlencoded',",
+									"  body: {",
+									"    mode: 'raw',",
+									"    raw: 'grant_type=password&client_id=' ",
+									"         +clientid ",
+									"         +'&username=' ",
+									"         +userid ",
+									"         +'&password='",
+									"         +password",
+									"         +'&client_secret='",
+									"         +client_secret",
+									"  }",
+									"};",
+									"pm.sendRequest(echoPostRequest, function (err, res) {",
+									"    var jsonData = res.json();",
+									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"    pm.environment.set(\"refresh_token\", jsonData.refresh_token);",
+									"    console.log(err ? err : res.json());",
+									"});",
+									"",
+									"console.log('time to run '+ (Date.now()-Date.parse(environment.currentTime)))"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "d165a3e6-e32a-498e-b653-a4d959e5dda1",
+								"type": "text/javascript",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"auth_script\", jsonData.data);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "authurl = pm.environment.get(\"authurl\");\nrealm = pm.environment.get(\"realm\");\nclientid = pm.environment.get(\"clientid\");\nuserid = pm.environment.get(\"userid\");\npassword = pm.environment.get(\"password\");\nclient_secret = pm.environment.get(\"client_secret\");\n\nconst echoPostRequest = {\n  url: authurl +'/auth/realms/' +realm + '/protocol/openid-connect/token',\n  method: 'POST',\n  header: 'Content-Type:application/x-www-form-urlencoded',\n  body: {\n    mode: 'raw',\n    raw: 'grant_type=password&client_id=' \n         +clientid \n         +'&username=' \n         +userid \n         +'&password='\n         +password\n         +'&client_secret='\n         +client_secret\n  }\n};\npm.sendRequest(echoPostRequest, function (err, res) {\n    var jsonData = res.json();\n    pm.environment.set(\"token\", jsonData.access_token);\n    pm.environment.set(\"refresh_token\", jsonData.refresh_token);\n    console.log(err ? err : res.json());\n});"
+						},
+						"url": "https://postman-echo.com/post"
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "48417368-defd-4fd6-9714-ff94f80560af",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "ec642727-8afe-408f-b5e0-7b21da1caf2d",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
 			"name": "post - annual report",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "9178a795-5b99-4f0d-87c4-012aeeaef580",
+						"exec": [
+							"pm.test(\"Response time is less than 200ms\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(200);",
+							"});",
+							"",
+							"eval(globals.postmanBDD);",
+							"",
+							"it('should be an success response', () => {",
+							"    response.ok.should.be.true;            // 2XX",
+							"    response.error.should.be.false;          // 4XX or 5XX",
+							"    response.clientError.should.be.false;    // 4XX",
+							"    response.serverError.should.be.false;   // 5XX",
+							"    response.should.have.status(201);",
+							"    response.statusType.should.equal(2);",
+							"});",
+							"",
+							"it('should return JSON', () => {",
+							"    response.should.be.json;",
+							"    response.should.have.header('Content-Type', 'application/json');",
+							"    response.type.should.equal('application/json');",
+							"});",
+							"",
+							"it('should contain the un-parsed JSON text', () => {",
+							"    response.text.should.be.a('string').with.length.above(10);",
+							"});",
+							"",
+							"it('should contain the parsed JSON keys', () => {",
+							"    response.body.should.be.an('object').with.keys(['filing']);",
+							"});",
+							"",
+							"",
+							"pm.test('should return the correct business', () => {",
+							"  let jsonData = pm.response.json();",
+							"  pm.expect(jsonData.filing.business.identifier).to.eql('CP1234567');",
+							"});",
+							"",
+							"// it('should match against a JSON Schema', () => {",
+							"//     // For more information about JSON Schema, see https://spacetelescope.github.io/understanding-json-schema/basics.html",
+							"//     response.body.should.have.schema({",
+							"//         type: 'object',",
+							"//         required: ['annualReport', 'business', 'header']",
+							"//     });",
+							"// });",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [
