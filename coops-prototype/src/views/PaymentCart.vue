@@ -69,7 +69,7 @@
               <div class="prefix">$</div>
               <input type="number" class="payment-input" value="70.00" disabled/>
             </div>
-            <v-btn class="checkout-btn" color="success" depressed to="/PaymentInfo">Proceed to Credit Cart Payment</v-btn>
+            <v-btn class="checkout-btn" color="success" depressed to="/PaymentInfo">Proceed to Credit Card Payment</v-btn>
           </div>
         </footer>
       </section>
