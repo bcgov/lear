@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "c75dc154-2ecb-4590-852b-a2872c53a988",
 		"name": "legal-api",
-		"description": "version=0.67 - This is a Legal API description",
+		"description": "version=0.68 - This is a Legal API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
 	"item": [
@@ -361,10 +361,6 @@
 							"value": "application/json"
 						},
 						{
-							"key": "Content-Length",
-							"value": "363"
-						},
-						{
 							"key": "Access-Control-Allow-Origin",
 							"value": "*"
 						},
@@ -435,10 +431,6 @@
 						{
 							"key": "Content-Type",
 							"value": "application/json"
-						},
-						{
-							"key": "Content-Length",
-							"value": "386"
 						},
 						{
 							"key": "Access-Control-Allow-Origin",
@@ -562,10 +554,6 @@
 							"value": "application/json"
 						},
 						{
-							"key": "Content-Length",
-							"value": "349"
-						},
-						{
 							"key": "Access-Control-Allow-Origin",
 							"value": "*"
 						},
@@ -641,10 +629,6 @@
 						{
 							"key": "Content-Type",
 							"value": "application/json"
-						},
-						{
-							"key": "Content-Length",
-							"value": "372"
 						},
 						{
 							"key": "Access-Control-Allow-Origin",
@@ -732,10 +716,6 @@
 						{
 							"key": "Content-Type",
 							"value": "application/json"
-						},
-						{
-							"key": "Content-Length",
-							"value": "188"
 						},
 						{
 							"key": "Access-Control-Allow-Origin",
@@ -837,10 +817,6 @@
 							"value": "application/json"
 						},
 						{
-							"key": "Content-Length",
-							"value": "385"
-						},
-						{
 							"key": "Access-Control-Allow-Origin",
 							"value": "*"
 						},
@@ -928,10 +904,6 @@
 						{
 							"key": "Content-Type",
 							"value": "application/json"
-						},
-						{
-							"key": "Content-Length",
-							"value": "1146"
 						},
 						{
 							"key": "Access-Control-Allow-Origin",
