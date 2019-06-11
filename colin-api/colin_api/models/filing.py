@@ -426,9 +426,9 @@ class Filing():
             if not filing_user_name:
                 filing_user_name = 'N/A'
 
-                # if email is blank, set as empty tring
+            # if email is blank, set as empty tring
             if not filing_email:
-                filing_email = 'N/A'
+                filing_email = 'xxxx@xxxx.xxx'
 
             event_info['certifiedBy'] = filing_user_name
             event_info['email'] = filing_email

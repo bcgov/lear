@@ -118,12 +118,15 @@ class Address:
 
         if not delivery_addresses:
             raise AddressNotFoundException(identifier=identifier, address_type='deliveryAddress')
-        # if not mailing_addresses:
-        #     raise AddressNotFoundException(identifier=identifier, address_type='mailingAddress')
+        if not mailing_addresses:
+            raise AddressNotFoundException(identifier=identifier, address_type='mailingAddress')
 
         if len(delivery_addresses) != len(mailing_addresses):
             current_app.logger.error('Should have the same number of delivery + mailing addresses: {corp_num}, {type}'
                                      .format(corp_num=identifier, type=address_grp))
+            raise AddressNotFoundException(
+                identifier=identifier, address_type=
+                'mailingAddress' if len(mailing_addresses) < len(delivery_addresses) else 'deliveryAddress')
 
         addresses = []
         for delivery, mailing in zip(delivery_addresses, mailing_addresses):
