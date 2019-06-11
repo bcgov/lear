@@ -19,7 +19,7 @@ from importlib import reload
 
 import pytest
 
-import config
+from legal_api import config
 
 
 # testdata pattern is ({str: environment}, {expected return value})
