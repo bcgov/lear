@@ -93,8 +93,7 @@ class FilingInfo(Resource):
             Filing.add_filing(filing)
 
             # return the completed filing data
-            completed_filing = Filing.find_filing(
-                filing.business, filing.filing_type, None)
+            completed_filing = Filing.find_filing(filing.business, filing.filing_type, None)
             return jsonify(completed_filing.as_dict()), 200
 
         except Exception as err:

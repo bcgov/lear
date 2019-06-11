@@ -22,7 +22,7 @@ from flask import current_app
 from colin_api.utils import convert_to_json_date
 
 from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
-from colin_api.models import Business
+from colin_api.models import Business, Director, Office, Address
 from colin_api.resources.db import db
 
 
@@ -69,17 +69,19 @@ class Filing():
         try:
             identifier = business.get_corp_num()
 
-            # set filing type code from filing_type (string)
             if filing_type == 'annualReport':
-                filing_type_code = 'OTANN'
-                filing_obj = cls.find_ar(business, identifier, year)
+                filing_obj = cls.find_ar(identifier, year)
 
             elif filing_type == 'changeOfAddress':
-                filing_obj = cls.find_change_of_addr(business, identifier, year)
+                filing_obj = cls.find_change_of_addr(identifier, year)
+
+            elif filing_type == 'changeOfDirectors':
+                filing_obj = cls.find_change_of_dir(identifier, year)
+
             else:
-                # default value
-                filing_type_code = 'FILE'
-                raise InvalidFilingTypeException
+                raise InvalidFilingTypeException(filing_type=filing_type)
+
+            filing_obj.business = business
 
             return filing_obj
 
@@ -156,8 +158,8 @@ class Filing():
                 cls._add_filing(cursor, event_id, filing, date, filing_type_cd)
 
                 # create new addresses for delivery + mailing, return address ids
-                delivery_addr_id = cls._get_address_id(cursor, filing.body['deliveryAddress'])
-                mailing_addr_id = cls._get_address_id(cursor, filing.body['mailingAddress'])
+                delivery_addr_id = Address.create_new_address(cursor, filing.body['deliveryAddress'])
+                mailing_addr_id = Address.create_new_address(cursor, filing.body['mailingAddress'])
 
                 # update office table to include new addresses
                 cls._update_office(cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, 'RG')
@@ -170,8 +172,7 @@ class Filing():
                                                        ' {} Annual Report'.format(date, date[:4]))
 
             else:
-                raise InvalidFilingTypeException(identifier=filing.business.business['identifier'],
-                                                 filing_type=filing.filing_type)
+                raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
             # success! commit the db changes
             con.commit()
@@ -358,47 +359,6 @@ class Filing():
             raise err
 
     @classmethod
-    def _get_address_id(cls, cursor, address_info):
-
-        cursor.execute("""select noncorp_address_seq.NEXTVAL from dual""")
-        row = cursor.fetchone()
-        addr_id = int(row[0])
-        try:
-            cursor.execute("""
-                    select country_typ_cd from country_type where full_desc=:country
-                  """,
-                           country=address_info['addressCountry'].upper()
-                           )
-            country_typ_cd = (cursor.fetchone())[0]
-        except Exception as err:
-            current_app.logger.error(err.with_traceback(None))
-            raise err
-
-        try:
-            cursor.execute("""
-                    INSERT INTO address (addr_id, province, country_typ_cd, postal_cd, addr_line_1, addr_line_2, city,
-                        delivery_instructions)
-                    VALUES (:addr_id, :province, :country_typ_cd, :postal_cd, :addr_line_1, :addr_line_2, :city,
-                        :delivery_instructions)
-                    """,
-                           addr_id=addr_id,
-                           province=address_info['addressRegion'].upper(),
-                           country_typ_cd=country_typ_cd,
-                           postal_cd=address_info['postalCode'].upper(),
-                           addr_line_1=address_info['streetAddress'].upper(),
-                           addr_line_2=address_info['streetAddressAdditional'].upper()
-                           if 'streetAddressAdditional' in address_info.keys() else '',
-                           city=address_info['addressCity'].upper(),
-                           delivery_instructions=address_info['deliveryInstructions'].upper()
-                           if 'deliveryInstructions' in address_info.keys() else ''
-                           )
-        except Exception as err:
-            current_app.logger.error(err.with_traceback(None))
-            raise err
-
-        return addr_id
-
-    @classmethod
     def _update_office(cls, cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, office_typ_cd):
 
         try:
@@ -434,7 +394,53 @@ class Filing():
             raise err
 
     @classmethod
-    def find_ar(cls, business: Business = None, identifier: str = None, year: int = None):
+    def _find_filing_event_info(cls, identifier, filing_type_cd):
+
+        # build base querystring
+        querystring = (
+            """
+            select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr
+            from event
+            join filing on filing.event_id = event.event_id
+            left join filing_user on event.event_id = filing_user.event_id
+            where filing_typ_cd=:filing_type_cd and corp_num=:identifier 
+            ORDER BY event_timestmp desc 
+            """
+        )
+
+        try:
+            cursor = db.connection.cursor()
+            cursor.execute(querystring, identifier=identifier, filing_type_cd=filing_type_cd)
+            event_info = cursor.fetchone()
+
+            if not event_info:
+                raise FilingNotFoundException(identifier=identifier, filing_type=filing_type_cd)
+
+            event_info = dict(zip([x[0].lower() for x in cursor.description], event_info))
+
+            # build filing user name from first, middle, last name
+            filing_user_name = ' '.join(
+                filter(None, [event_info['first_nme'], event_info['middle_nme'], event_info['last_nme']]))
+            filing_email = event_info['email_addr']
+
+            if not filing_user_name:
+                filing_user_name = 'N/A'
+
+            # if email is blank, set as empty tring
+            if not filing_email:
+                filing_email = 'xxxx@xxxx.xxx'
+
+            event_info['certifiedBy'] = filing_user_name
+            event_info['email'] = filing_email
+
+            return event_info
+
+        except Exception as err:
+            current_app.logger.error('error getting filing event id for {}'.format(identifier))
+            raise err
+
+    @classmethod
+    def find_ar(cls, identifier: str = None, year: int = None):
 
         # build base querystring
         querystring = (
@@ -476,21 +482,13 @@ class Filing():
         except StopIteration:
             agm_date = None
 
-        # build filing user name from first, middle, last name
         filing_user_name = ' '.join(filter(None, [filing['first_nme'], filing['middle_nme'], filing['last_nme']]))
-        if not filing_user_name:
-            filing_user_name = 'Unavailable'
-
-        # if email is blank, set as empty tring
-        if not filing['email_addr']:
-            filing['email_addr'] = 'missing@missing.com'
 
         # convert dates and date-times to correct json format
         filing['event_timestmp'] = convert_to_json_date(filing['event_timestmp'])
         agm_date = convert_to_json_date(agm_date)
 
         filing_obj = Filing()
-        filing_obj.business = business
         filing_obj.header = {
             'date': filing['event_timestmp'],
             'name': 'annualReport'
@@ -505,123 +503,50 @@ class Filing():
         return filing_obj
 
     @classmethod
-    def find_change_of_addr(cls, business: Business = None, identifier: str = None, year: int = None):
-        # build base querystring
-        # todo: check full_desc in country_type table matches with canada post api for foreign countries
-        querystring = (
-            """
-            select ADDR_LINE_1, ADDR_LINE_2, ADDR_LINE_3, CITY, PROVINCE, COUNTRY_TYPE.FULL_DESC, POSTAL_CD,
-            DELIVERY_INSTRUCTIONS, EVENT.EVENT_TIMESTMP, FILING_USER.FIRST_NME, FILING_USER.LAST_NME,
-            FILING_USER.MIDDLE_NME, FILING_USER.EMAIL_ADDR
-            from ADDRESS
-            join OFFICE on ADDRESS.ADDR_ID = OFFICE.{addr_id_typ}
-            join COUNTRY_TYPE on ADDRESS.COUNTRY_TYP_CD = COUNTRY_TYPE.COUNTRY_TYP_CD
-            join EVENT on OFFICE.START_EVENT_ID = EVENT.EVENT_ID
-            left join FILING_USER on EVENT.EVENT_ID = FILING_USER.EVENT_ID
-            where OFFICE.END_EVENT_ID IS NULL and OFFICE.CORP_NUM=:corp_num and OFFICE.OFFICE_TYP_CD=:office_typ_cd
-            """
-        )
-        querystring_delivery = (
-            querystring.format(addr_id_typ='DELIVERY_ADDR_ID')
-        )
-        querystring_mailing = (
-            querystring.format(addr_id_typ='MAILING_ADDR_ID')
-        )
+    def find_change_of_addr(cls, identifier: str = None, year: int = None):
 
-        # get record
-        cursor = db.connection.cursor()
-        cursor.execute(querystring_delivery, corp_num=identifier, office_typ_cd='RG')
-        delivery_address = cursor.fetchone()
-        test = cursor.fetchone()
-        if test:
-            current_app.logger.error('More than 1 delivery address returned - update oracle sql in find_reg_off_addr')
+        filing_event_info = cls._find_filing_event_info(identifier, 'OTADD')
 
-        cursor.execute(querystring_mailing, corp_num=identifier, office_typ_cd='RG')
-        mailing_address = cursor.fetchone()
-        test = cursor.fetchone()
-        if test:
-            current_app.logger.error('More than 1 mailing address returned - update oracle sql in find_reg_off_addr')
+        registered_office_obj = Office.get_by_event(filing_event_info['event_id'])
 
-        if not delivery_address:
+        if not registered_office_obj:
             raise FilingNotFoundException(identifier=identifier, filing_type='change_of_address')
 
-        # add column names to result set to build out correct json structure and make manipulation below more robust
-        # (better than column numbers)
-        delivery_address = dict(zip([x[0].lower() for x in cursor.description], delivery_address))
-        mailing_address = dict(zip([x[0].lower() for x in cursor.description], mailing_address))
-
-        # build filing user name from first, middle, last name
-        filing_user_name = ' '.join(filter(None, [delivery_address['first_nme'], delivery_address['middle_nme'],
-                                                  delivery_address['last_nme']]))
-        if not filing_user_name:
-            filing_user_name = 'N/A'
-
-        # if email is blank, set as N/A
-        if not delivery_address['email_addr']:
-            delivery_address['email_addr'] = 'N/A'
-
-        # todo: check all fields for data - may be different for data outside of coops
-        # expecting data-fix for all bad data in address table for coops: this will catch if anything was missed
-        if delivery_address['addr_line_1'] and delivery_address['addr_line_2'] and delivery_address['addr_line_3']:
-            current_app.logger.error('Expected 2, but got 3 delivery address lines for: {}'.format(identifier))
-        if not delivery_address['addr_line_1'] and not delivery_address['addr_line_2'] and not delivery_address['addr_line_3']:
-            current_app.logger.error('Expected at least 1 delivery addr_line, but got 0 for: {}'.format(identifier))
-        if not delivery_address['city'] or not delivery_address['province'] or not delivery_address['full_desc'] \
-                or not delivery_address['postal_cd']:
-            current_app.logger.error('Missing field in delivery address for: {}'.format(identifier))
-
-        if mailing_address['addr_line_1'] and mailing_address['addr_line_2'] and mailing_address['addr_line_3']:
-            current_app.logger.error('Expected 2, but 3 mailing address lines returned for: {}'.format(identifier))
-        if not mailing_address['city'] or not mailing_address['province'] or not mailing_address['full_desc'] \
-                or not delivery_address['postal_cd']:
-            current_app.logger.error('Missing field in mailing address for: {}'.format(identifier))
-
-        # for cases where delivery addresses were input out of order - shift them to lines 1 and 2
-        if not delivery_address['addr_line_1']:
-            if delivery_address['addr_line_2']:
-                delivery_address['addr_line_1'] = delivery_address['addr_line_2']
-                delivery_address['addr_line_2'] = None
-        if not delivery_address['addr_line_2']:
-            if delivery_address['addr_line_3']:
-                delivery_address['addr_line_2'] = delivery_address['addr_line_3']
-                delivery_address['addr_line_3'] = None
-
-        delivery_address['country'] = delivery_address['full_desc']
-        mailing_address['country'] = mailing_address['full_desc']
-
-        delivery_address['event_timestmp'] = convert_to_json_date(delivery_address['event_timestmp'])
-        mailing_address['event_timestmp'] = convert_to_json_date(mailing_address['event_timestmp'])
-
         filing_obj = Filing()
-        filing_obj.business = business
         filing_obj.header = {
-            'date': delivery_address['event_timestmp'],
+            'date': convert_to_json_date(filing_event_info['event_timestmp']),
             'name': 'changeOfAddress'
         }
         filing_obj.body = {
-            "certifiedBy": filing_user_name,
-            "email": delivery_address['email_addr'],
-            "deliveryAddress": {
-                "streetAddress": delivery_address['addr_line_1'],
-                "streetAddressAdditional": delivery_address['addr_line_2'] if delivery_address['addr_line_2'] else '',
-                "addressCity": delivery_address['city'],
-                "addressRegion": delivery_address['province'],
-                "addressCountry": delivery_address['country'],
-                "postalCode": delivery_address['postal_cd'],
-                "deliveryInstructions": delivery_address['delivery_instructions']
-                if delivery_address['delivery_instructions'] else ''
-            },
-            "mailingAddress": {
-                "streetAddress": mailing_address['addr_line_1'],
-                "streetAddressAdditional": mailing_address['addr_line_2'] if mailing_address['addr_line_2'] else '',
-                "addressCity": mailing_address['city'],
-                "addressRegion": mailing_address['province'],
-                "addressCountry": mailing_address['country'],
-                "postalCode": mailing_address['postal_cd'],
-                "deliveryInstructions": mailing_address['delivery_instructions']
-                if mailing_address['delivery_instructions'] else ''
-            }
+            'certifiedBy': filing_event_info['certifiedBy'],
+            'email': filing_event_info['email'],
+            **registered_office_obj.as_dict()
         }
         filing_obj.filing_type = 'changeOfAddress'
+
+        return filing_obj
+
+    @classmethod
+    def find_change_of_dir(cls, identifier: str = None, year: int = None):
+        """returns the most current directors in filing format"""
+        filing_obj = Filing()
+
+        filing_event_info = cls._find_filing_event_info(identifier, 'OTCDR')
+
+        director_objs = Director.get_by_event(filing_event_info['event_id'])
+        if len(director_objs) < 3:
+            current_app.logger.error('Less than 3 directors for {}'.format(identifier))
+
+        filing_obj.header = {
+            'date': convert_to_json_date(filing_event_info['event_timestmp']),
+            'name': 'changeOfDirectors'
+        }
+
+        filing_obj.body = {
+            'certifiedBy': filing_event_info['certifiedBy'],
+            'email': filing_event_info['email'],
+            'directors': [x.as_dict() for x in director_objs]
+        }
+        filing_obj.filing_type = 'changeOfDirector'
 
         return filing_obj
