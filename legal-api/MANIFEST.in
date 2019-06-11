@@ -1,5 +1,6 @@
-include requirements/prod.txt
+include requirements.txt
 include config.py
+include gunicorn_config.py
 include logging.conf
 include LICENSE
 include README.md

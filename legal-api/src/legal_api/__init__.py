@@ -27,7 +27,7 @@ from flask import Flask, redirect
 from flask_jwt_oidc import JwtManager
 from registry_schemas.flask import SchemaServices
 
-import config
+from legal_api import config
 from legal_api import errorhandlers, models
 from legal_api.models import db, ma
 from legal_api.resources import API_BLUEPRINT, OPS_BLUEPRINT
