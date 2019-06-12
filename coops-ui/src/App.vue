@@ -1,9 +1,14 @@
 <template>
-  <div id="app">
+  <v-app class="app-container" id="app">
     <std-header></std-header>
-    <router-view/>
-  </div>
+    <div class="app-body">
+      <main>
+        <router-view/>
+      </main>
+    </div>
+  </v-app>
 </template>
+
 <script>
 import StdHeader from '@/components/StdHeader.vue'
 export default {
@@ -42,6 +47,5 @@ export default {
 <style lang="stylus">
   @import "./assets/styles/base.styl";
   @import "./assets/styles/layout.styl";
-  .view-container, .container
-    width 100%
+  @import "./assets/styles/overrides.styl";
 </style>

@@ -1,9 +1,9 @@
 <template>
   <div class="home">
+
+    <EntityInfo/>
+
     <v-app>
-      <v-container id="entity-info-container" class="view-container">
-        <EntityInfo/>
-      </v-container>
       <v-container id="annual-report-container" class="view-container">
         <AnnualReport/>
       </v-container>
@@ -214,17 +214,20 @@ export default {
 }
 </script>
 
-<style lang="stylus">
-@import "../assets/styles/theme.styl"
+<style scoped lang="stylus">
+  @import "../assets/styles/theme.styl"
 
-  #annual-report-container, #entity-info-container, #submit-container
-    margin 0
-    padding 1rem
-  #entity-info-container
-    margin-top .01rem
-    max-width none
-    max-height 6rem
-    background-color white
-  #submit-container
-    margin-left 1rem
+  header h1
+    margin-bottom 2rem
+
+  header p
+    font-size 1.125rem
+    font-weight 300
+
+  strong
+    font-weight 600
+
+  .passcode-container
+    padding 2rem
+
 </style>

@@ -1,10 +1,29 @@
 <template>
   <div id="annual-report">
+
+    <!-- Initial Page Load Transition -->
+    <div class="loading-container fade-out">
+      <div class="loading__content">
+        <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
+        <div class="loading-msg">Preparing Your Annual Report</div>
+      </div>
+    </div>
+
+    <!-- Transition to Payment -->
+    <v-fade-transition>
+      <div class="loading-container" v-show="showLoading">
+        <div class="loading__content">
+          <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
+          <div class="loading-msg">{{this.loadingMsg}}</div>
+        </div>
+      </div>
+    </v-fade-transition>
+
     <v-container class="view-container">
       <article id="annual-report-article">
         <h1 id="AR-header">{{year}} Annual Report - <span style="font-style: italic">{{ reportState }}</span></h1>
+        <p>Select your Annual General Meeting (AGM) date, and verify or change your Registered office address and List of Directors as of your AGM.</p>
         <div v-if="filedDate == null">
-          <p>Review and certify your {{year}} Annual Report information.</p>
           <section>
             <h3 id="AR-step-1-header">1. Enter your Annual General Meeting Date</h3>
             <div id="AR-step-1-container">
