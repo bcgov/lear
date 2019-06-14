@@ -5,7 +5,7 @@
 isort isort-save stop docker-clean logs
 .PHONY: mac-cov pylint flake8
 
-project_name := legal_api
+project_name := YOUR_PROJECT_NAME_HERE
 
 SHELL:=/bin/bash
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
