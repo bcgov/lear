@@ -204,11 +204,13 @@ describe('App.vue', () => {
     expect(vm.$el.querySelector('#reg-off-addr-change-btn').getAttribute('disabled')).toBeTruthy()
     vm.$store.state.noAGM = true
     setTimeout(() => {
-      expect(vm.$el.querySelector('#reg-off-addr-change-btn').getAttribute('disabled')).toBeFalsy()
+      expect(vm.$el.querySelector('#reg-off-addr-change-btn').getAttribute('disabled'))
+        .toBeFalsy()
       vm.$store.state.noAGM = false
       vm.$store.state.agmDate = '2018-01-01'
       setTimeout(() => {
-        expect(vm.$el.querySelector('#reg-off-addr-change-btn').getAttribute('disabled')).toBeFalsy()
+        expect(vm.$el.querySelector('#reg-off-addr-change-btn').getAttribute('disabled'))
+          .toBeFalsy()
         console.log('Passed Test 2')
       }, 10)
     }, 10)
@@ -217,13 +219,17 @@ describe('App.vue', () => {
   it('displays the non-editable version of the registered office address', () => {
     expect(childvm.$data.showAddressForm).toBeFalsy()
     if (childvm.$el.querySelector('#delivery-address-display').style.length > 0) {
-      expect(childvm.$el.querySelector('#delivery-address-display').getAttribute('style')).not.toContain('display: none;')
+      expect(childvm.$el.querySelector('#delivery-address-display').getAttribute('style'))
+        .not.toContain('display: none;')
     }
     if (childvm.$el.querySelector('#mailing-address-display').style.length > 0) {
-      expect(childvm.$el.querySelector('#mailing-address-display').getAttribute('style')).not.toContain('display: none;')
+      expect(childvm.$el.querySelector('#mailing-address-display').getAttribute('style'))
+        .not.toContain('display: none;')
     }
-    expect(childvm.$el.querySelector('#delivery-address-form').getAttribute('style')).toContain('display: none;')
-    expect(childvm.$el.querySelector('#mailing-address-form').getAttribute('style')).toContain('display: none;')
+    expect(childvm.$el.querySelector('#delivery-address-form').getAttribute('style'))
+      .toContain('display: none;')
+    expect(childvm.$el.querySelector('#mailing-address-form').getAttribute('style'))
+      .toContain('display: none;')
     console.log('Passed Test 3')
   })
 
@@ -254,19 +260,25 @@ describe('App.vue', () => {
         // editable address form shown
         expect(childvm.$data.showAddressForm).toBeTruthy()
         if (childvm.$el.querySelector('#delivery-address-form').style.length > 0) {
-          expect(childvm.$el.querySelector('#delivery-address-form').getAttribute('style')).not.toContain('display: none;')
+          expect(childvm.$el.querySelector('#delivery-address-form').getAttribute('style'))
+            .not.toContain('display: none;')
         }
         if (childvm.$el.querySelector('#mailing-address-form').style.length > 0) {
-          expect(childvm.$el.querySelector('#mailing-address-form').getAttribute('style')).not.toContain('display: none;')
+          expect(childvm.$el.querySelector('#mailing-address-form').getAttribute('style'))
+            .not.toContain('display: none;')
         }
-        expect(childvm.$el.querySelector('#delivery-address-display').getAttribute('style')).toContain('display: none;')
-        expect(childvm.$el.querySelector('#mailing-address-display').getAttribute('style')).toContain('display: none;')
+        expect(childvm.$el.querySelector('#delivery-address-display').getAttribute('style'))
+          .toContain('display: none;')
+        expect(childvm.$el.querySelector('#mailing-address-display').getAttribute('style'))
+          .toContain('display: none;')
         expect(childvm.$data.inheritDeliveryAddress).toBeTruthy()
-        expect(childvm.$el.querySelector('#mailing-address-expanded').getAttribute('style')).toContain('display: none;')
+        expect(childvm.$el.querySelector('#mailing-address-expanded').getAttribute('style'))
+          .toContain('display: none;')
         childvm.$data.inheritDeliveryAddress = false
         setTimeout(() => {
           if (vm.$el.querySelector('#mailing-address-expanded').style.length > 0) {
-            expect(childvm.$el.querySelector('#mailing-address-expanded').getAttribute('style')).not.toContain('display: none;')
+            expect(childvm.$el.querySelector('#mailing-address-expanded').getAttribute('style'))
+              .not.toContain('display: none;')
           }
           expect(childvm.$el.querySelector('#reg-off-update-addr-btn').disabled).toBeFalsy()
           expect(childvm.$el.querySelector('#reg-off-cancel-addr-btn').disabled).toBeFalsy()
@@ -278,13 +290,17 @@ describe('App.vue', () => {
             setTimeout(() => {
               expect(childvm.$data.showAddressForm).toBeFalsy()
               if (childvm.$el.querySelector('#delivery-address-display').style.length > 0) {
-                expect(childvm.$el.querySelector('#delivery-address-display').getAttribute('style')).not.toContain('display: none;')
+                expect(childvm.$el.querySelector('#delivery-address-display')
+                  .getAttribute('style')).not.toContain('display: none;')
               }
               if (childvm.$el.querySelector('#mailing-address-display').style.length > 0) {
-                expect(childvm.$el.querySelector('#mailing-address-display').getAttribute('style')).not.toContain('display: none;')
+                expect(childvm.$el.querySelector('#mailing-address-display')
+                  .getAttribute('style')).not.toContain('display: none;')
               }
-              expect(childvm.$el.querySelector('#delivery-address-form').getAttribute('style')).toContain('display: none;')
-              expect(childvm.$el.querySelector('#mailing-address-form').getAttribute('style')).toContain('display: none;')
+              expect(childvm.$el.querySelector('#delivery-address-form').getAttribute('style'))
+                .toContain('display: none;')
+              expect(childvm.$el.querySelector('#mailing-address-form').getAttribute('style'))
+                .toContain('display: none;')
               expect(vm.$store.state.regOffAddrChange).toBeTruthy()
               expect(childvm.$data.DeliveryAddressStreet).toEqual('1234')
               expect(childvm.$data.MailingAddressStreet).toEqual('1234 Main Street')
@@ -308,7 +324,7 @@ describe('App.vue', () => {
                   }, 10)
                 }, 10)
               }, 10)
-            }, 200)
+            }, 500)
           }, 10)
         }, 10)
       }, 100)
