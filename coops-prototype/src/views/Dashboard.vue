@@ -73,7 +73,7 @@
 
     methods: {
       gotoAnnualReport: function () {
-        this.$router.push({ path: '/AnnualReportAlt' })
+        this.$router.push({ path: '/AnnualReport' })
       },
 
       fileAnnualReport: function () {

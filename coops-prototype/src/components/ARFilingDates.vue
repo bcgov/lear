@@ -56,7 +56,6 @@ export default {
 
   props: {
     parentData: Object,
-    stringProp: "Blah Blah blah",
     title: String
   },
 
@@ -69,14 +68,14 @@ export default {
 
     agmDateValid: true,
     agmDateRules: [
-      v => !!v || 'An Annual General Meeting date is required',
+      v => !!v || 'An Annual General Meeting date is required'
     ]
   }),
 
   computed: {
     computedDateFormatted () {
       return this.date ? moment(this.date).format('MM/DD/YYYY') : ''
-    },
+    }
   },
 
   watch: {
@@ -147,5 +146,4 @@ export default {
     margin-top 0
     margin-left -3px
     padding 0
-
 </style>
