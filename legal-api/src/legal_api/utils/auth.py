@@ -11,4 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Centralized setup of logging for the service."""
+"""Bring in the common JWT Manager."""
+from flask_jwt_oidc import JwtManager
+
+
+jwt = JwtManager()  # pylint: disable=invalid-name; lower case name as used by convention in most Flask apps

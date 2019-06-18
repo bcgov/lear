@@ -1,0 +1,37 @@
+# Copyright © 2019 Province of British Columbia
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""This manages all of the authentication and authorization service."""
+from flask import g
+from flask_jwt_oidc import JwtManager
+
+
+STAFF_ROLE = 'staff'
+
+BASIC_USER = 'basic'
+
+
+def authorized(identifier: str, jwt: JwtManager) -> bool:
+    """Assert that the user is authorized to create filings against the business identifier."""
+    # if they are registry staff, they are always authorized
+    if jwt.validate_roles([STAFF_ROLE]):
+        return True
+
+    token = g.jwt_oidc_token_info
+    username = token.get('username', None)
+
+    if jwt.validate_roles([BASIC_USER]) and identifier == username:
+        return True
+
+    return False
