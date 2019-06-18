@@ -1,5 +1,5 @@
 <template>
-  <v-app class="app-container" id="app">
+  <v-app class="app-container theme--light" id="app">
     <std-header></std-header>
     <div class="app-body">
       <main>

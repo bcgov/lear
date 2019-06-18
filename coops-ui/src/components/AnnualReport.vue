@@ -9,20 +9,11 @@
       </div>
     </div>
 
-    <!-- Transition to Payment -->
-    <v-fade-transition>
-      <div class="loading-container" v-show="showLoading">
-        <div class="loading__content">
-          <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-          <div class="loading-msg">{{this.loadingMsg}}</div>
-        </div>
-      </div>
-    </v-fade-transition>
-
     <v-container class="view-container">
       <article id="annual-report-article">
         <h1 id="AR-header">{{year}} Annual Report - <span style="font-style: italic">{{ reportState }}</span></h1>
-        <p>Select your Annual General Meeting (AGM) date, and verify or change your Registered office address and List of Directors as of your AGM.</p>
+        <p>Select your Annual General Meeting (AGM) date, and verify or change your Registered office address and List
+          of Directors as of your AGM.</p>
         <div v-if="filedDate == null">
           <section>
             <h3 id="AR-step-1-header">1. Enter your Annual General Meeting Date</h3>
@@ -36,6 +27,10 @@
               <RegisteredOfficeAddress/>
             </div>
           </section>
+
+          <!-- Director Information -->
+          <Directors ref="directors" @directorsChange="directorsChangeEventHandler" />
+
         </div>
         <div v-else>
           <ARComplete/>
@@ -53,6 +48,7 @@
 <script>
 import AGMDate from '@/components/ARSteps/AGMDate.vue'
 import RegisteredOfficeAddress from '@/components/ARSteps/RegisteredOfficeAddress.vue'
+import Directors from '@/components/ARSteps/Directors.vue'
 import ARComplete from '@/components/ARSteps/ARComplete.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
@@ -62,12 +58,14 @@ export default {
   components: {
     AGMDate,
     RegisteredOfficeAddress,
+    Directors,
     ARComplete,
     SbcFeeSummary,
     Affix
   },
   data () {
     return {
+      directorsChange: false,
       filingData: []
     }
   },
@@ -95,6 +93,12 @@ export default {
   mounted () {
   },
   methods: {
+    directorsChangeEventHandler (val) {
+      this.directorsChange = val
+    },
+    getDirectors () {
+      this.$refs.directors.getDirectors()
+    },
     toggleFiling (setting, filing) {
       var added = false
       for (var i = 0; i < this.filingData.length; i++) {
@@ -131,6 +135,10 @@ export default {
       console.log('AnnualReport regOffAddrChange watcher fired: ', val)
       if (val) this.toggleFiling('add', 'OTADD')
       else this.toggleFiling('remove', 'OTADD')
+    },
+    directorsChange: function (val) {
+      if (val) this.toggleFiling('add', 'OTCDR')
+      else this.toggleFiling('remove', 'OTCDR')
     },
     filingData: function (val) {
       console.log('AnnualReport filingData watcher fired: ', val)

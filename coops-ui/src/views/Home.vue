@@ -1,11 +1,21 @@
 <template>
   <div class="home">
 
+    <!-- Transition to Payment -->
+    <v-fade-transition>
+      <div class="loading-container" v-show="showLoading">
+        <div class="loading__content">
+          <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
+          <div class="loading-msg">{{this.loadingMsg}}</div>
+        </div>
+      </div>
+    </v-fade-transition>
+
     <EntityInfo/>
 
     <v-app>
       <v-container id="annual-report-container" class="view-container">
-        <AnnualReport/>
+        <AnnualReport ref="annualReport"/>
       </v-container>
       <v-container id="submit-container" class="view-container">
         <v-btn v-if="filedDate == null" id='ar-pay-btn' color="blue" :disabled="!validated" @click="submit">Pay</v-btn>
@@ -29,7 +39,9 @@ export default {
     return {
       lastARJson: null,
       entityInfoJson: null,
-      regOffAddrJson: null
+      regOffAddrJson: null,
+      showLoading: false,
+      loadingMsg: null
     }
   },
   computed: {
@@ -61,6 +73,7 @@ export default {
       this.getARInfo(this.corpNum)
       this.getEntityInfo(this.corpNum)
       this.getRegOffAddr(this.corpNum)
+      this.$refs.annualReport.getDirectors()
     }
   },
   methods: {
@@ -204,6 +217,7 @@ export default {
         this.getARInfo(val)
         this.getEntityInfo(val)
         this.getRegOffAddr(val)
+        this.$refs.annualReport.getDirectors()
       }
     },
     regOffAddrChange: function (val) {

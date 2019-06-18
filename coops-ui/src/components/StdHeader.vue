@@ -6,8 +6,7 @@
           alt="Province of British Columbia Logo"
           title="Province of British Columbia"/>
       </router-link>
-      <span class="bcros" v-show="this.$route.name != 'PayBC'">BC Registries & Online Services</span>
-      <span class="paybc-logo" v-show="this.$route.name === 'PayBC'">Pay<strong>BC</strong></span>
+      <span class="bcros">BC Registries & Online Services</span>
       <div class="app-header__actions">
         <v-btn outline color="#ffffff"><span>Sign out</span></v-btn>
       </div>
