@@ -20,6 +20,8 @@ from datetime import datetime
 
 from flask import current_app
 
+from legal_api.exceptions import BusinessException
+
 from .db import db, ma
 
 
@@ -66,6 +68,25 @@ class User(db.Model):
             db.session.commit()
             return user
         return None
+
+    @classmethod
+    def get_or_create_user_by_jwt(cls, jwt_oidc_token):
+        """Return a valid user for audit tracking purposes."""
+        # GET existing or CREATE new user based on the JWT info
+        try:
+            user = User.find_by_jwt_token(jwt_oidc_token)
+            current_app.logger.debug(f'finding user: {jwt_oidc_token}')
+            if not user:
+                current_app.logger.debug(f'didnt find user, attempting to create new user:{jwt_oidc_token}')
+                user = User.create_from_jwt_token(jwt_oidc_token)
+
+            return user
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise BusinessException('unable_to_get_or_create_user',
+                                    '{"code": "unable_to_get_or_create_user",'
+                                    '"description": "Unable to get or create user from the JWT, ABORT"}'
+                                    )
 
     @classmethod
     def find_by_username(cls, username):

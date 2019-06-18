@@ -11,4 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Centralized setup of logging for the service."""
+"""Business Entity End-Points.
+
+Provides all business entity externalized services.
+"""
+from .api_namespace import API
+from .business import BusinessResource
+from .business_filings import ListFilingResource
+
+
+__all__ = ('API')

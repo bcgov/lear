@@ -11,39 +11,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Meta information about the service.
+"""Searching on a business entity.
 
-Currently this only provides API versioning information
+Provides all the search and retrieval from the business entity datastore.
 """
 import datetime
 from http import HTTPStatus
+from typing import Tuple
 
-from flask import jsonify, request
-from flask_restplus import Namespace, Resource, cors
+from flask import g, jsonify, request
+from flask_restplus import Resource, cors
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Filing, db
+from legal_api.models import Business, Filing, User, db
+from legal_api.services.authz import authorized
+from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
-
-API = Namespace('businesses', description='Legal API Services - Businesses')
-
-
-@cors_preflight('GET')
-@API.route('/<string:identifier>')
-class BusinessResource(Resource):
-    """Meta information about the overall service."""
-
-    @staticmethod
-    @cors.crossdomain(origin='*')
-    def get(identifier):
-        """Return a JSON object with meta information about the Service."""
-        business = Business.find_by_identifier(identifier)
-
-        if not business:
-            return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
-
-        return jsonify(business=business.json())
+from .api_namespace import API
 
 
 @cors_preflight('GET, POST, PUT, DELETE')
@@ -81,64 +66,67 @@ class ListFilingResource(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @jwt.requires_auth
     def post(identifier, filing_id=None):
         """Create a new filing for the business."""
-        json_input = request.get_json()
-        if not json_input:
-            return jsonify({'message':
-                            f'No filing json data in body of post for {identifier}.'}), \
-                HTTPStatus.BAD_REQUEST
-
-        business = Business.find_by_identifier(identifier)
-        if not business:
-            return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
-
-        if filing_id:  # checked since we're overlaying routes
-            return jsonify({'message':
-                            f'Illegal to attempt to create a new filing over an existing filing for {identifier}.'}), \
-                HTTPStatus.FORBIDDEN
-
-        try:
-            filing = Filing()
-            filing.business_id = business.id
-            filing.filing_date = datetime.datetime.utcnow()
-            filing.filing_json = json_input
-            filing.save()
-        except BusinessException as err:
-            return jsonify({'message': err.error}), err.status_code
-
-        return jsonify(filing.json()), HTTPStatus.CREATED
-        # return jsonify(filing.filing_json), HTTPStatus.ACCEPTED
+        return ListFilingResource.put(identifier, filing_id)
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @jwt.requires_auth
     def put(identifier, filing_id):
         """Create a new filing for the business."""
+        error = ListFilingResource._basic_checks(identifier, filing_id, request)
+        if error:
+            return jsonify(error[0]), error[1]
+
         json_input = request.get_json()
-        if not json_input:
+
+        if not authorized(identifier, jwt):
             return jsonify({'message':
-                            f'No filing json data in body of post for {identifier}.'}), \
-                HTTPStatus.BAD_REQUEST
+                            f'You are not authorized to submit a filing for {identifier}.'}), \
+                HTTPStatus.UNAUTHORIZED
+        user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
 
         business = Business.find_by_identifier(identifier)
         if not business:
             return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
 
-        rv = db.session.query(Business, Filing). \
-            filter(Business.id == Filing.business_id).\
-            filter(Business.identifier == identifier).\
-            filter(Filing.id == filing_id).\
-            one_or_none()
-        if not rv:
-            return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
+        if request.method == 'PUT':
+            rv = db.session.query(Business, Filing). \
+                filter(Business.id == Filing.business_id).\
+                filter(Business.identifier == identifier).\
+                filter(Filing.id == filing_id).\
+                one_or_none()
+            if not rv:
+                return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
+            filing = rv[1]
+        else:
+            filing = Filing()
+            filing.business_id = business.id
 
         try:
-            filing = rv[1]
+            filing.submitter_id = user.id
             filing.filing_date = datetime.datetime.utcnow()
             filing.filing_json = json_input
             filing.save()
         except BusinessException as err:
             return jsonify({'message': err.error}), err.status_code
 
-        return jsonify(filing.filing_json), HTTPStatus.ACCEPTED
-        # return jsonify(filing.json()), HTTPStatus.ACCEPTED
+        return jsonify(filing.json()), \
+            (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
+
+    @staticmethod
+    def _basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
+        json_input = client_request.get_json()
+        if not json_input:
+            return ({'message':
+                     f'No filing json data in body of post for {identifier}.'},
+                    HTTPStatus.BAD_REQUEST)
+
+        if filing_id and client_request.method != 'PUT':  # checked since we're overlaying routes
+            return ({'message':
+                     f'Illegal to attempt to create a new filing over an existing filing for {identifier}.'},
+                    HTTPStatus.FORBIDDEN)
+
+        return None
