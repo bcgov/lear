@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="96f9e7c0-62b6-4c81-b8c2-06ccd93c46ee" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../legal-api/config.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../legal-api/src/legal_api/resources/business.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../legal-api/tests/unit/api/test_business_filings.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../legal-api/tests/unit/api/test_business_filings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../legal-api/tests/unit/conftest.py" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -256,7 +253,6 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="946" y="-1038" width="1766" height="967" extended-state="0" />
-    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" sideWeight="0.48381603" visible="true" weight="0.28190255" />
       <window_info id="Structure" order="1" sideWeight="0.516184" side_tool="true" visible="true" weight="0.28190255" />
