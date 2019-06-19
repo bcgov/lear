@@ -2,21 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="96f9e7c0-62b6-4c81-b8c2-06ccd93c46ee" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../../colin-api/colin_api/models/address.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../colin-api/colin_api/models/address.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../colin-api/colin_api/models/director.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../colin-api/colin_api/models/director.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../colin-api/colin_api/models/filing.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../colin-api/colin_api/models/filing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../colin-api/colin_api/models/office.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../colin-api/colin_api/models/office.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../colin-api/colin_api/resources/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../colin-api/colin_api/resources/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../colin-api/colin_api/resources/filing.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../colin-api/colin_api/resources/filing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../colin-api/tests/postman/lear_colin_api.postman_collection.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../colin-api/tests/postman/lear_colin_api.postman_collection.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../colin-api/tests/unit/api/test_ar.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../colin-api/tests/unit/api/test_ar.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../colin-api/tests/unit/api/test_directors.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../colin-api/tests/unit/api/test_directors.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../colin-api/tests/unit/api/test_registered_office.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../colin-api/tests/unit/api/test_registered_office.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../legal-api/src/legal_api/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../legal-api/src/legal_api/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../legal-api/src/legal_api/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../legal-api/src/legal_api/models/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../legal-api/src/legal_api/models/filing.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../legal-api/src/legal_api/models/filing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../legal-api/tests/postman/legal-api.postman_collection.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../legal-api/tests/postman/legal-api.postman_collection.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../legal-api/tests/unit/models/test_filing.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../legal-api/tests/unit/models/test_filing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../legal-api/config.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../legal-api/src/legal_api/resources/business.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../legal-api/tests/unit/api/test_business_filings.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../legal-api/tests/unit/api/test_business_filings.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />

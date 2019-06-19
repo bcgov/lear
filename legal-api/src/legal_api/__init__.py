@@ -24,21 +24,20 @@ from http import HTTPStatus
 import sentry_sdk  # noqa: I001
 from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 from flask import Flask, redirect
-from flask_jwt_oidc import JwtManager
+#from flask_jwt_oidc import JwtManager
 from registry_schemas.flask import SchemaServices
-
-from legal_api import config
-from legal_api import errorhandlers, models
+from legal_api import config, errorhandlers, models
 from legal_api.models import db, ma
 from legal_api.resources import API_BLUEPRINT, OPS_BLUEPRINT
 from legal_api.schemas import rsbc_schemas
+from legal_api.utils.auth import jwt
 from legal_api.utils.logging import setup_logging
 from legal_api.utils.run_version import get_run_version
 
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
-jwt = JwtManager()  # pylint: disable=invalid-name; lower case name as used by convention in most Flask apps
+#jwt = JwtManager()  # pylint: disable=invalid-name; lower case name as used by convention in most Flask apps
 
 
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
