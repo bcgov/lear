@@ -102,3 +102,38 @@ class Office:
         except Exception as err:
             current_app.logger.error('error getting office from event : {}'.format(event_id))
             raise err
+
+    @classmethod
+    def update_office(cls, cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, office_typ_cd):
+
+        try:
+            cursor.execute("""
+                        UPDATE office
+                        SET end_event_id = :event_id
+                        WHERE corp_num = :corp_num and office_typ_cd = :office_typ_cd and end_event_id is null
+                        """,
+                           event_id=event_id,
+                           corp_num=corp_num,
+                           office_typ_cd=office_typ_cd
+                           )
+
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+
+        try:
+            cursor.execute("""
+                        INSERT INTO office (corp_num, office_typ_cd, start_event_id, end_event_id, mailing_addr_id,
+                         delivery_addr_id)
+                        VALUES (:corp_num, :office_typ_cd, :start_event_id, null, :mailing_addr_id, :delivery_addr_id)
+                        """,
+                           corp_num=corp_num,
+                           office_typ_cd=office_typ_cd,
+                           start_event_id=event_id,
+                           mailing_addr_id=mailing_addr_id,
+                           delivery_addr_id=delivery_addr_id
+                           )
+
+        except Exception as err:
+            current_app.logger.error('Error updating office table')
+            raise err

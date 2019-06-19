@@ -37,6 +37,21 @@ def test_get_cod(client):
     #
     # assert is_valid
 
+@oracle_integration
+def test_get_by_id(client):
+    """Assert that the business info for regular (not xpro) business is correct to spec."""
+    rv = client.get('/api/v1/businesses/CP0001965/filings/changeOfDirectors?eventId=111359103')
+    assert 404 == rv.status_code
+
+    # todo: once event_id is fixed for directors uncomment below
+    # assert 200 == rv.status_code
+    # is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
+    # if errors:
+    #     for err in errors:
+    #         print('\nERROR MESSAGE:')
+    #         print(err.message)
+    #
+    # assert is_valid
 
 @oracle_integration
 def test_get_current(client):

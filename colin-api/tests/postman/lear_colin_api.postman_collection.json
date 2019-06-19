@@ -2,6 +2,7 @@
 	"info": {
 		"_postman_id": "49d4ffda-5611-48d0-8045-f64bdf8bb59d",
 		"name": "LEAR Colin API",
+		"description": "version=0.101 - This is a Colin API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -10,6 +11,29 @@
 			"item": [
 				{
 					"name": "GET readyz",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2871f35e-f5a0-4516-bcc6-b509a55f6682",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"api is ready\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql('api is ready');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [
@@ -200,7 +224,73 @@
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "GET business CP0001965 CP",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/CP0001965",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"CP0001965"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "435"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "GET, HEAD, OPTIONS"
+								},
+								{
+									"key": "Access-Control-Max-Age",
+									"value": "21600"
+								},
+								{
+									"key": "API",
+									"value": "colin_api/0.1.0a0.dev"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/0.15.2 Python/3.6.5"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 18 Jun 2019 17:26:31 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"business\": {\n        \"businessNumber\": null,\n        \"cacheId\": 0,\n        \"corpState\": \"ACT\",\n        \"foundingDate\": \"2004-04-28\",\n        \"identifier\": \"CP0001965\",\n        \"jurisdiction\": \"BC\",\n        \"lastAgmDate\": \"2017-12-31\",\n        \"lastArFiledDate\": \"2019-06-17\",\n        \"lastLedgerTimestamp\": \"2019-06-17T23:36:00-00:00\",\n        \"legalName\": \"CENTRAL INTERIOR COMMUNITY SERVICES CO-OP\",\n        \"status\": \"In Good Standing\",\n        \"type\": \"CP\"\n    }\n}"
+						}
+					]
 				},
 				{
 					"name": "GET business XCP0001987 XCP",
@@ -332,10 +422,240 @@
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "GET AR CP0001965",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/CP0001965/filings/annualReport",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"CP0001965",
+										"filings",
+										"annualReport"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "740"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "GET, POST, HEAD, OPTIONS"
+								},
+								{
+									"key": "Access-Control-Max-Age",
+									"value": "21600"
+								},
+								{
+									"key": "API",
+									"value": "colin_api/0.1.0a0.dev"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/0.15.2 Python/3.6.5"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 18 Jun 2019 20:00:01 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2017-12-31\",\n            \"certifiedBy\": \"Joe Smith\",\n            \"email\": \"nobody@nothing.com\"\n        },\n        \"business\": {\n            \"businessNumber\": null,\n            \"cacheId\": 0,\n            \"corpState\": \"ACT\",\n            \"foundingDate\": \"2004-04-28\",\n            \"identifier\": \"CP0001965\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2017-12-31\",\n            \"lastArFiledDate\": \"2019-06-17\",\n            \"lastLedgerTimestamp\": \"2019-06-17T23:36:00-00:00\",\n            \"legalName\": \"CENTRAL INTERIOR COMMUNITY SERVICES CO-OP\",\n            \"status\": \"In Good Standing\",\n            \"type\": \"CP\"\n        },\n        \"eventId\": 111362574,\n        \"header\": {\n            \"date\": \"2019-06-17\",\n            \"name\": \"annualReport\"\n        }\n    }\n}"
+						}
+					]
 				},
 				{
-					"name": "GET AR CP0001965 ?year=2017",
+					"name": "GET AR by id CP0001965",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c1067abe-1b2f-44f7-9896-87e432779d29",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for AR filing\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing).to.exist",
+									"    pm.expect(jsonData.filing.annualReport).to.exist",
+									"    pm.expect(jsonData.filing.business).to.exist",
+									"    pm.expect(jsonData.filing.header).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for annualReport\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.annualReport.annualGeneralMeetingDate).to.exist",
+									"    pm.expect(jsonData.filing.annualReport.certifiedBy).to.exist",
+									"    pm.expect(jsonData.filing.annualReport.email).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for business\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.exist",
+									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0001965')",
+									"    pm.expect(jsonData.filing.business.legalName).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for header\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.header.date).to.exist",
+									"    pm.expect(jsonData.filing.header.name).to.eql('annualReport')",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0001965/filings/annualReport?eventId=111362555",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0001965",
+								"filings",
+								"annualReport"
+							],
+							"query": [
+								{
+									"key": "eventId",
+									"value": "111362555"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "GET AR by id CP0001965",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/CP0001965/filings/annualReport?eventId=111362555",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"CP0001965",
+										"filings",
+										"annualReport"
+									],
+									"query": [
+										{
+											"key": "eventId",
+											"value": "111362555"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "740"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "GET, POST, HEAD, OPTIONS"
+								},
+								{
+									"key": "Access-Control-Max-Age",
+									"value": "21600"
+								},
+								{
+									"key": "API",
+									"value": "colin_api/0.1.0a0.dev"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/0.15.2 Python/3.6.5"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 18 Jun 2019 20:09:04 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2017-11-23\",\n            \"certifiedBy\": \"Joe Smith\",\n            \"email\": \"nobody@nothing.com\"\n        },\n        \"business\": {\n            \"businessNumber\": null,\n            \"cacheId\": 0,\n            \"corpState\": \"ACT\",\n            \"foundingDate\": \"2004-04-28\",\n            \"identifier\": \"CP0001965\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2017-12-31\",\n            \"lastArFiledDate\": \"2019-06-17\",\n            \"lastLedgerTimestamp\": \"2019-06-17T23:36:00-00:00\",\n            \"legalName\": \"CENTRAL INTERIOR COMMUNITY SERVICES CO-OP\",\n            \"status\": \"In Good Standing\",\n            \"type\": \"CP\"\n        },\n        \"eventId\": 111362555,\n        \"header\": {\n            \"date\": \"2019-06-06\",\n            \"name\": \"annualReport\"\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "GET AR CP0001965?year=2017",
 					"event": [
 						{
 							"listen": "test",
@@ -486,7 +806,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "540ee156-24e1-495c-85dd-c4987a9d5aec",
+								"id": "2e2f3180-df59-4df4-81a4-cdc8f07190a8",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -559,7 +879,236 @@
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "GET COA CP0001965",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/CP0001965/filings/changeOfAddress",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"CP0001965",
+										"filings",
+										"changeOfAddress"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1383"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "GET, POST, HEAD, OPTIONS"
+								},
+								{
+									"key": "Access-Control-Max-Age",
+									"value": "21600"
+								},
+								{
+									"key": "API",
+									"value": "colin_api/0.1.0a0.dev"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/0.15.2 Python/3.6.5"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 18 Jun 2019 20:10:08 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"filing\": {\n        \"business\": {\n            \"businessNumber\": null,\n            \"cacheId\": 0,\n            \"corpState\": \"ACT\",\n            \"foundingDate\": \"2004-04-28\",\n            \"identifier\": \"CP0001965\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2017-12-31\",\n            \"lastArFiledDate\": \"2019-06-17\",\n            \"lastLedgerTimestamp\": \"2019-06-17T23:36:00-00:00\",\n            \"legalName\": \"CENTRAL INTERIOR COMMUNITY SERVICES CO-OP\",\n            \"status\": \"In Good Standing\",\n            \"type\": \"CP\"\n        },\n        \"changeOfAddress\": {\n            \"certifiedBy\": \"Joe Smith\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAM LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 105039887,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"V2G 1J6\",\n                \"streetAddress\": \"51 4TH AVENUE SOUTH TEST5\",\n                \"streetAddressAdditional\": \"\"\n            },\n            \"email\": \"nobody@nothing.com\",\n            \"mailingAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 105039888,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"V2G 1J6\",\n                \"streetAddress\": \"51 4TH AVENUE SOUTH TEST5\",\n                \"streetAddressAdditional\": \"\"\n            }\n        },\n        \"eventId\": 111362575,\n        \"header\": {\n            \"date\": \"2019-06-17\",\n            \"name\": \"changeOfAddress\"\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "GET COA by id CP0001965",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "540ee156-24e1-495c-85dd-c4987a9d5aec",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for COA filing\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress).to.exist",
+									"    pm.expect(jsonData.filing.business).to.exist",
+									"    pm.expect(jsonData.filing.header).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for changeOfAddress\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.changeOfAddress.deliveryAddress).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress.mailingAddress).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress.certifiedBy).to.exist",
+									"    pm.expect(jsonData.filing.changeOfAddress.email).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for business\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.exist",
+									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0001965')",
+									"    pm.expect(jsonData.filing.business.legalName).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for header\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    pm.expect(jsonData.filing.header.date).to.exist",
+									"    pm.expect(jsonData.filing.header.name).to.eql('changeOfAddress')",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0001965/filings/changeOfAddress?eventId=111362565",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0001965",
+								"filings",
+								"changeOfAddress"
+							],
+							"query": [
+								{
+									"key": "eventId",
+									"value": "111362565"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "GET COA by id CP0001965",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/CP0001965/filings/changeOfAddress?eventId=111362565",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"CP0001965",
+										"filings",
+										"changeOfAddress"
+									],
+									"query": [
+										{
+											"key": "eventId",
+											"value": "111362565"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1387"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "GET, POST, HEAD, OPTIONS"
+								},
+								{
+									"key": "Access-Control-Max-Age",
+									"value": "21600"
+								},
+								{
+									"key": "API",
+									"value": "colin_api/0.1.0a0.dev"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/0.15.2 Python/3.6.5"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 18 Jun 2019 20:10:39 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"filing\": {\n        \"business\": {\n            \"businessNumber\": null,\n            \"cacheId\": 0,\n            \"corpState\": \"ACT\",\n            \"foundingDate\": \"2004-04-28\",\n            \"identifier\": \"CP0001965\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2017-12-31\",\n            \"lastArFiledDate\": \"2019-06-17\",\n            \"lastLedgerTimestamp\": \"2019-06-17T23:36:00-00:00\",\n            \"legalName\": \"CENTRAL INTERIOR COMMUNITY SERVICES CO-OP\",\n            \"status\": \"In Good Standing\",\n            \"type\": \"CP\"\n        },\n        \"changeOfAddress\": {\n            \"certifiedBy\": \"Joe Smith\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAM LAKE TESTING\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 105039871,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"V2G 1J6\",\n                \"streetAddress\": \"51 4TH AVENUE SOUTH\",\n                \"streetAddressAdditional\": \"\"\n            },\n            \"email\": \"nobody@nothing.com\",\n            \"mailingAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE TESTING\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 105039872,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"V2G 1J6\",\n                \"streetAddress\": \"51 4TH AVENUE SOUTH\",\n                \"streetAddressAdditional\": \"\"\n            }\n        },\n        \"eventId\": 111362565,\n        \"header\": {\n            \"date\": \"2019-06-14\",\n            \"name\": \"changeOfAddress\"\n        }\n    }\n}"
+						}
+					]
 				},
 				{
 					"name": "GET Current RO CP0001965",
@@ -636,7 +1185,74 @@
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "GET Current RO CP0001965",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/CP0001965/office",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"CP0001965",
+										"office"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "608"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "GET, HEAD, OPTIONS"
+								},
+								{
+									"key": "Access-Control-Max-Age",
+									"value": "21600"
+								},
+								{
+									"key": "API",
+									"value": "colin_api/0.1.0a0.dev"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/0.15.2 Python/3.6.5"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 18 Jun 2019 20:11:06 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"deliveryAddress\": {\n        \"addressCity\": \"WILLIAM LAKE\",\n        \"addressCountry\": \"CANADA\",\n        \"addressId\": 105039887,\n        \"addressRegion\": \"BC\",\n        \"deliveryInstructions\": \"\",\n        \"postalCode\": \"V2G 1J6\",\n        \"streetAddress\": \"51 4TH AVENUE SOUTH TEST5\",\n        \"streetAddressAdditional\": \"\"\n    },\n    \"mailingAddress\": {\n        \"addressCity\": \"WILLIAMS LAKE\",\n        \"addressCountry\": \"CANADA\",\n        \"addressId\": 105039888,\n        \"addressRegion\": \"BC\",\n        \"deliveryInstructions\": \"\",\n        \"postalCode\": \"V2G 1J6\",\n        \"streetAddress\": \"51 4TH AVENUE SOUTH TEST5\",\n        \"streetAddressAdditional\": \"\"\n    }\n}"
+						}
+					]
 				},
 				{
 					"name": "POST COA CP0001965",
@@ -704,7 +1320,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n        \"changeOfAddress\": {\n        \t\"certifiedBy\": \"Joe Smith\",\n            \"email\": \"nobody@nothing.com\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"postalCode\": \"V2G 1J6\",\n                \"addressRegion\": \"BC\",\n                \"streetAddress\": \"51 4TH AVENUE SOUTH\"\n        \t},\n        \t\"mailingAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"postalCode\": \"V2G 1J6\",\n                \"addressRegion\": \"BC\",\n                \"streetAddress\": \"51 4TH AVENUE SOUTH\"\n            }\n        },\n        \"business\": {\n            \"cacheId\": 0,\n            \"foundingDate\": \"2004-04-28\",\n            \"identifier\": \"CP0001965\",\n            \"lastLedgerTimestamp\": \"2017-11-23T00:00:00-00:00\",\n            \"legalName\": \"CENTRAL INTERIOR COMMUNITY SERVICES CO-OP\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2017-11-07\",\n            \"lastArFiledDate\": \"2017-04-28\",\n            \"status\": \"Active\",\n            \"type\": \"CP\"\n        },\n        \"header\": {\n            \"date\": \"2019-05-23\",\n            \"name\": \"changeOfAddress\"\n        }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n        \"changeOfAddress\": {\n        \t\"certifiedBy\": \"Joe Smith\",\n            \"email\": \"nobody@nothing.com\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAM LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"postalCode\": \"V2G 1J6\",\n                \"addressRegion\": \"BC\",\n                \"streetAddress\": \"51 4TH AVENUE SOUTH test5\"\n        \t},\n        \t\"mailingAddress\": {\n                \"addressCity\": \"WILLIAMS LAKe\",\n                \"addressCountry\": \"CANADA\",\n                \"postalCode\": \"V2G 1J6\",\n                \"addressRegion\": \"BC\",\n                \"streetAddress\": \"51 4TH AVENUE SOUTH test5\"\n            }\n        },\n        \"business\": {\n            \"cacheId\": 0,\n            \"foundingDate\": \"2004-04-28\",\n            \"identifier\": \"CP0001965\",\n            \"lastLedgerTimestamp\": \"2017-11-23T00:00:00-00:00\",\n            \"legalName\": \"CENTRAL INTERIOR COMMUNITY SERVICES CO-OP\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2017-11-07\",\n            \"lastArFiledDate\": \"2017-04-28\",\n            \"status\": \"Active\",\n            \"type\": \"CP\"\n        },\n        \"header\": {\n            \"date\": \"2019-06-14\",\n            \"name\": \"changeOfAddress\"\n        }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/CP0001965/filings/changeOfAddress",
@@ -806,12 +1422,95 @@
 					"response": []
 				},
 				{
-					"name": "GET Current directors CP0001965",
+					"name": "GET COD by id CP0001965",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"id": "540ee156-24e1-495c-85dd-c4987a9d5aec",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"// pm.test(\"Status code is 200\", function () {",
+									"//     pm.response.to.have.status(200);",
+									"// });",
+									"// until data is fixed on event_id's",
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"// pm.test(\"Returns the required fields for COD filing\", () => {",
+									"//     var jsonData = pm.response.json()",
+									"//     pm.expect(jsonData.filing).to.exist",
+									"//     pm.expect(jsonData.filing.changeOfDirectors).to.exist",
+									"//     pm.expect(jsonData.filing.business).to.exist",
+									"//     pm.expect(jsonData.filing.header).to.exist",
+									"// });",
+									"",
+									"// pm.test(\"Returns the required fields for business\", () => {",
+									"//     var jsonData = pm.response.json()",
+									"//     pm.expect(jsonData.filing.business.cacheId).to.exist",
+									"//     pm.expect(jsonData.filing.business.foundingDate).to.exist",
+									"//     pm.expect(jsonData.filing.business.identifier).to.eql('CP0001965')",
+									"//     pm.expect(jsonData.filing.business.legalName).to.exist",
+									"// });",
+									"",
+									"// pm.test(\"Returns the required fields for header\", () => {",
+									"//     var jsonData = pm.response.json()",
+									"//     pm.expect(jsonData.filing.header.date).to.exist",
+									"//     pm.expect(jsonData.filing.header.name).to.eql('changeOfAddress')",
+									"// });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0001965/filings/changeOfDirectors?eventId=111359103",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0001965",
+								"filings",
+								"changeOfDirectors"
+							],
+							"query": [
+								{
+									"key": "eventId",
+									"value": "111359103"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Current directors CP0001965",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "7c650d1c-6de3-4a36-b69b-4bdde06680d9",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -827,32 +1526,145 @@
 									"",
 									"pm.test(\"Returns the required fields for COA filing\", () => {",
 									"    var jsonData = pm.response.json()",
-									"    pm.expect(jsonData.filing).to.exist",
-									"    pm.expect(jsonData.filing.changeOfAddress).to.exist",
-									"    pm.expect(jsonData.filing.business).to.exist",
-									"    pm.expect(jsonData.filing.header).to.exist",
+									"    pm.expect(jsonData.directors).to.exist",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0001965/directors",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0001965",
+								"directors"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "GET Current directors CP0001965",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/CP0001965/directors",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"CP0001965",
+										"directors"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "6345"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "GET, HEAD, OPTIONS"
+								},
+								{
+									"key": "Access-Control-Max-Age",
+									"value": "21600"
+								},
+								{
+									"key": "API",
+									"value": "colin_api/0.1.0a0.dev"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/0.15.2 Python/3.6.5"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 18 Jun 2019 20:11:57 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"directors\": [\n        {\n            \"appointmentDate\": \"Thu, 23 Nov 2017 00:00:00 GMT\",\n            \"cessationDate\": \"\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 105037274,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"V2G2A1\",\n                \"streetAddress\": \"345 2ND AVE\",\n                \"streetAddressAdditional\": \"\"\n            },\n            \"endEventId\": \"\",\n            \"officer\": {\n                \"firstName\": \"ANGELA\",\n                \"lastName\": \"AMMAN\",\n                \"middleInitial\": \"\"\n            },\n            \"startEventId\": 111304045,\n            \"title\": \"\"\n        },\n        {\n            \"appointmentDate\": \"Thu, 23 Nov 2017 00:00:00 GMT\",\n            \"cessationDate\": \"\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 105037275,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"V2G3A1\",\n                \"streetAddress\": \"1-1008 HUBBLE RD\",\n                \"streetAddressAdditional\": \"\"\n            },\n            \"endEventId\": \"\",\n            \"officer\": {\n                \"firstName\": \"LINDA\",\n                \"lastName\": \"BERG\",\n                \"middleInitial\": \"\"\n            },\n            \"startEventId\": 111304045,\n            \"title\": \"\"\n        },\n        {\n            \"appointmentDate\": \"Thu, 23 Nov 2017 00:00:00 GMT\",\n            \"cessationDate\": \"\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 105037276,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"V2G3V4\",\n                \"streetAddress\": \"1403 GUN-A-NOOT TRAIL\",\n                \"streetAddressAdditional\": \"\"\n            },\n            \"endEventId\": \"\",\n            \"officer\": {\n                \"firstName\": \"JANICE\",\n                \"lastName\": \"BRECK\",\n                \"middleInitial\": \"\"\n            },\n            \"startEventId\": 111304045,\n            \"title\": \"\"\n        },\n        {\n            \"appointmentDate\": \"Mon, 21 Sep 2009 00:00:00 GMT\",\n            \"cessationDate\": \"\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 105037277,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"V2G2W2\",\n                \"streetAddress\": \"1038 DAIRY RD\",\n                \"streetAddressAdditional\": \"\"\n            },\n            \"endEventId\": \"\",\n            \"officer\": {\n                \"firstName\": \"NANCY\",\n                \"lastName\": \"GALE\",\n                \"middleInitial\": \"\"\n            },\n            \"startEventId\": 111304045,\n            \"title\": \"\"\n        },\n        {\n            \"appointmentDate\": \"Fri, 06 Oct 2017 00:00:00 GMT\",\n            \"cessationDate\": \"\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 105037278,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"V2G3H5\",\n                \"streetAddress\": \"1757 DOG CREEK RD\",\n                \"streetAddressAdditional\": \"\"\n            },\n            \"endEventId\": \"\",\n            \"officer\": {\n                \"firstName\": \"AL\",\n                \"lastName\": \"GIDDENS\",\n                \"middleInitial\": \"\"\n            },\n            \"startEventId\": 111304045,\n            \"title\": \"\"\n        },\n        {\n            \"appointmentDate\": \"Mon, 21 Sep 2009 00:00:00 GMT\",\n            \"cessationDate\": \"\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 105037279,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"V2G5G5\",\n                \"streetAddress\": \"1913 KOZUKI ST\",\n                \"streetAddressAdditional\": \"\"\n            },\n            \"endEventId\": \"\",\n            \"officer\": {\n                \"firstName\": \"EDWARD\",\n                \"lastName\": \"KOZUKI\",\n                \"middleInitial\": \"\"\n            },\n            \"startEventId\": 111304045,\n            \"title\": \"\"\n        },\n        {\n            \"appointmentDate\": \"Thu, 23 Nov 2017 00:00:00 GMT\",\n            \"cessationDate\": \"\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 105037280,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"V2G1V1\",\n                \"streetAddress\": \"751 JOHNSON ST\",\n                \"streetAddressAdditional\": \"\"\n            },\n            \"endEventId\": \"\",\n            \"officer\": {\n                \"firstName\": \"CHAD\",\n                \"lastName\": \"MATTHIES\",\n                \"middleInitial\": \"\"\n            },\n            \"startEventId\": 111304045,\n            \"title\": \"\"\n        },\n        {\n            \"appointmentDate\": \"Mon, 21 Sep 2009 00:00:00 GMT\",\n            \"cessationDate\": \"\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 105037281,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"V2G4V7\",\n                \"streetAddress\": \"2046 MCPHERSON WYND\",\n                \"streetAddressAdditional\": \"\"\n            },\n            \"endEventId\": \"\",\n            \"officer\": {\n                \"firstName\": \"ROBERT IAN\",\n                \"lastName\": \"MCLAUGHLIN\",\n                \"middleInitial\": \"\"\n            },\n            \"startEventId\": 111304045,\n            \"title\": \"\"\n        },\n        {\n            \"appointmentDate\": \"Thu, 23 Nov 2017 00:00:00 GMT\",\n            \"cessationDate\": \"\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAMS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 105037281,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"V2G4V7\",\n                \"streetAddress\": \"2046 MCPHERSON WYND\",\n                \"streetAddressAdditional\": \"\"\n            },\n            \"endEventId\": \"\",\n            \"officer\": {\n                \"firstName\": \"KIRSTEN\",\n                \"lastName\": \"STARK\",\n                \"middleInitial\": \"\"\n            },\n            \"startEventId\": 111304045,\n            \"title\": \"\"\n        },\n        {\n            \"appointmentDate\": \"Mon, 21 Sep 2009 00:00:00 GMT\",\n            \"cessationDate\": \"\",\n            \"deliveryAddress\": {\n                \"addressCity\": \"WILLIAM LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 105037282,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"V2G2W5\",\n                \"streetAddress\": \"69 1700 BROADWAY SOUTH\",\n                \"streetAddressAdditional\": \"\"\n            },\n            \"endEventId\": \"\",\n            \"officer\": {\n                \"firstName\": \"IRENE\",\n                \"lastName\": \"WILLSIE\",\n                \"middleInitial\": \"\"\n            },\n            \"startEventId\": 111304045,\n            \"title\": \"\"\n        }\n    ]\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Event",
+			"item": [
+				{
+					"name": "GET last updated event",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2e2f3180-df59-4df4-81a4-cdc8f07190a8",
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
 									"});",
 									"",
-									"pm.test(\"Returns the required fields for changeOfAddress\", () => {",
-									"    var jsonData = pm.response.json()",
-									"    pm.expect(jsonData.filing.changeOfAddress.deliveryAddress).to.exist",
-									"    pm.expect(jsonData.filing.changeOfAddress.mailingAddress).to.exist",
-									"    pm.expect(jsonData.filing.changeOfAddress.certifiedBy).to.exist",
-									"    pm.expect(jsonData.filing.changeOfAddress.email).to.exist",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Returns the required fields for business\", () => {",
-									"    var jsonData = pm.response.json()",
-									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.exist",
-									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0001965')",
-									"    pm.expect(jsonData.filing.business.legalName).to.exist",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
 									"});",
 									"",
-									"pm.test(\"Returns the required fields for header\", () => {",
+									"pm.test(\"Returns the required fields for event\", () => {",
 									"    var jsonData = pm.response.json()",
-									"    pm.expect(jsonData.filing.header.date).to.exist",
-									"    pm.expect(jsonData.filing.header.name).to.eql('changeOfAddress')",
+									"    pm.expect(jsonData.events).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for events\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    for (var i=0; i<jsonData.events.length; i++) {",
+									"        pm.expect(jsonData.events[i].corp_num).to.exist",
+									"        pm.expect(jsonData.events[i].event_id).to.exist",
+									"        pm.expect(jsonData.events[i].filing_typ_cd).to.exist",
+									"          ",
+									"    }",
 									"});"
 								],
 								"type": "text/javascript"
@@ -870,7 +1682,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{url}}/api/v1/businesses/CP0001965/filings/changeOfAddress",
+							"raw": "{{url}}/api/v1/businesses/event/CP/:id",
 							"host": [
 								"{{url}}"
 							],
@@ -878,15 +1690,117 @@
 								"api",
 								"v1",
 								"businesses",
-								"CP0001965",
-								"filings",
-								"changeOfAddress"
+								"event",
+								"CP",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "111362554"
+								}
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "GET last updated event",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/event/CP/:id",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"event",
+										"CP",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "111362554"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "2160"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "GET, HEAD, OPTIONS"
+								},
+								{
+									"key": "Access-Control-Max-Age",
+									"value": "21600"
+								},
+								{
+									"key": "API",
+									"value": "colin_api/0.1.0a0.dev"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/0.15.2 Python/3.6.5"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 18 Jun 2019 20:39:18 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"events\": [\n        {\n            \"corp_num\": \"CP0001965\",\n            \"event_id\": 111362555,\n            \"filing_typ_cd\": \"OTANN\"\n        }\n    ]\n}"
+						}
+					]
 				}
 			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "841eddf0-1820-4667-9c97-cb5dd6fdc9a3",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "d28a833e-8ce6-487f-9e0d-9d28f2d5f21f",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
 		}
 	]
 }

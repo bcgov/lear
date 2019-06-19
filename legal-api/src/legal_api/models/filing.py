@@ -40,6 +40,7 @@ class Filing(db.Model):
     _filing_type = db.Column('filing_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
     _payment_token = db.Column('payment_id', db.String(4096))
+    colin_event_id = db.Column('colin_event_id', db.Integer)
 
     # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
@@ -99,6 +100,12 @@ class Filing(db.Model):
                     status_code=HTTPStatus.UNPROCESSABLE_ENTITY
                 )
         self._filing_json = json_data
+        try:
+            self.colin_event_id = int(json_data.get('filing').get('eventId'))
+        except TypeError as err:
+            # eventId is from colin_api (will not be set until added in colin db)
+            # todo: could make the post call for filing with json_data to colin api here and then set the colin_event_Id
+            pass
 
     # json serializer
     def json(self):
@@ -108,6 +115,7 @@ class Filing(db.Model):
             json_submission['filing']['header']['date'] = datetime.date(self.filing_date).isoformat()
             json_submission['filing']['header']['filingId'] = self.id
             json_submission['filing']['header']['name'] = self.filing_type
+            json_submission['filing']['header']['colinId'] = self.colin_event_id
 
             if self.payment_token:
                 json_submission['filing']['header']['paymentToken'] = self.payment_token

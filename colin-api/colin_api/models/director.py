@@ -31,13 +31,18 @@ class Director:
     appointment_date = None
     cessation_date = None
     start_event_id = None
+    end_event_id = None
 
     def as_dict(self):
         return {
             'officer': self.officer,
             'deliveryAddress': self.delivery_address,
             # 'mailingAddress': self.mailing_address,
-            'title': self.title
+            'title': self.title,
+            'appointmentDate': self.appointment_date,
+            'cessationDate': self.cessation_date,
+            'startEventId': self.start_event_id,
+            'endEventId': self.end_event_id
         }
 
     @classmethod
@@ -50,7 +55,8 @@ class Director:
             cursor = db.connection.cursor()
             cursor.execute(
                 """
-                select first_nme, middle_nme, last_nme, delivery_addr_id, appointment_dt, cessation_dt, start_event_id
+                select first_nme, middle_nme, last_nme, delivery_addr_id, appointment_dt, cessation_dt, start_event_id,
+                end_event_id
                 from corp_party
                 where end_event_id is NULL and corp_party.corp_num=:identifier and corp_party.party_typ_cd='DIR'
                 """,
@@ -59,7 +65,7 @@ class Director:
             directors_list = cls._build_directors_list(cursor)
 
         except Exception as err:
-            current_app.logger.error('error getting directors info for {}'.format(identifier))
+            current_app.logger.error('error getting current directors info for {}'.format(identifier))
             raise err
 
         if not directors_list:
@@ -77,7 +83,8 @@ class Director:
             cursor = db.connection.cursor()
             cursor.execute(
                 """
-                select first_nme, middle_nme, last_nme, delivery_addr_id, appointment_dt, cessation_dt, start_event_id
+                select first_nme, middle_nme, last_nme, delivery_addr_id, appointment_dt, cessation_dt, start_event_id, 
+                end_event_id
                 from corp_party
                 where (start_event_id=:event_id or end_event_id=:event_id) and party_typ_cd='DIR'
                 """,
@@ -106,15 +113,15 @@ class Director:
             director = Director()
             director.title = ''
             row = dict(zip([x[0].lower() for x in cursor.description], row))
-
             director.officer = {'firstName': row['first_nme'].strip() if row['first_nme'] else '',
                                 'lastName': row['last_nme'].strip() if row['last_nme'] else '',
                                 'middleInitial': row['middle_nme'] if row['middle_nme'] else ''}
 
             director.delivery_address = Address.get_by_address_id(row['delivery_addr_id']).as_dict()
-            director.appointment_date = row['appointment_dt']
-            director.cessation_date = row['cessation_dt']
-            director.start_event_id = row['start_event_id']
+            director.appointment_date = row['appointment_dt'] if row['appointment_dt'] else ''
+            director.cessation_date = row['cessation_dt'] if row['cessation_dt'] else ''
+            director.start_event_id = row['start_event_id'] if row['start_event_id'] else ''
+            director.end_event_id = row['end_event_id'] if row['end_event_id'] else ''
 
             directors_list.append(director)
 

@@ -11,14 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""This exports all of the models and schemas used by the application."""
-from .db import db, ma  # noqa: I001
-from .business import Business, BusinessSchema  # noqa: I001
-from .colin_update import ColinLastUpdate
-from .comment import Comment
-from .filing import Filing
-from .user import User, UserSchema
+"""Centralized setup of logging for the service."""
+import logging.config
+import sys
+from os import path
 
 
-__all__ = ('db', 'ma', 'Business', 'BusinessSchema', 'ColinLastUpdate', 'Comment', 'Filing', 'User', 'UserSchema')
+def setup_logging(conf):
+    """Create the services logger."""
+    # log_file_path = path.join(path.abspath(path.dirname(__file__)), conf)
+
+    if conf and path.isfile(conf):
+        logging.config.fileConfig(conf)
+        print('Configure logging, from conf:{}'.format(conf), file=sys.stdout)
+    else:
+        print('Unable to configure logging, attempted conf:{}'.format(conf), file=sys.stderr)

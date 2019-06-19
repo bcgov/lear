@@ -12,13 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""This exports all of the models and schemas used by the application."""
-from .db import db, ma  # noqa: I001
-from .business import Business, BusinessSchema  # noqa: I001
-from .colin_update import ColinLastUpdate
-from .comment import Comment
-from .filing import Filing
-from .user import User, UserSchema
+
+def convert_to_json_date(thedate):
+    """ Convert datetime to string formatted as YYYY-MM-DD, per JSON Schema specs.
+
+    :param thedate: datetime object
+    :return: string
+    """
+
+    try:
+        return thedate.strftime('%Y-%m-%d')
+    except:
+        return None
 
 
-__all__ = ('db', 'ma', 'Business', 'BusinessSchema', 'ColinLastUpdate', 'Comment', 'Filing', 'User', 'UserSchema')
+def convert_to_json_datetime(thedate):
+    """ Convert datetime to string formatted as YYYY-MM-SSTHH:MM:SS+00:00, per JSON Schema specs.
+
+    :param thedate: datetime object
+    :return: string
+    """
+
+    try:
+        return thedate.strftime('%Y-%m-%dT%H:%M:%S-00:00')
+    except:
+        return None

@@ -12,13 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""This exports all of the models and schemas used by the application."""
-from .db import db, ma  # noqa: I001
-from .business import Business, BusinessSchema  # noqa: I001
-from .colin_update import ColinLastUpdate
-from .comment import Comment
-from .filing import Filing
-from .user import User, UserSchema
+"""Tests to assure the ColinLastUpdate Class.
+
+Test-Suite to ensure that the ColinLastUpdate Class is working as expected.
+"""
+from legal_api.models import ColinLastUpdate
 
 
-__all__ = ('db', 'ma', 'Business', 'BusinessSchema', 'ColinLastUpdate', 'Comment', 'Filing', 'User', 'UserSchema')
+def test_last_update(session):
+    """Assert that a User can be stored in the service.
+
+    Start with a blank database.
+    """
+    entry = ColinLastUpdate(last_update='2019-01-01', last_event_id=1234)
+
+    session.add(entry)
+    session.commit()
+
+    assert entry.id is not None

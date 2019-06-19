@@ -36,7 +36,8 @@ class FilingInfo(Resource):
         """Return the complete filing info."""
         try:
 
-            # get optional YEAR parameter
+            # get optional parameters (event_id / year)
+            event_id = request.args.get('eventId', None)
             year = request.args.get('year', None)
             if year:
                 year = int(year)
@@ -45,7 +46,7 @@ class FilingInfo(Resource):
             business = Business.find_by_identifier(identifier)
 
             # get filing
-            filing = Filing.find_filing(business, filing_type, year)
+            filing = Filing.find_filing(business=business, event_id=event_id, filing_type=filing_type, year=year)
             return jsonify(filing.as_dict())
 
         except GenericException as err:
@@ -90,10 +91,11 @@ class FilingInfo(Resource):
             filing.business = Business.find_by_identifier(identifier)
 
             # add the new filing
-            Filing.add_filing(filing)
+            event_id = Filing.add_filing(filing)
 
             # return the completed filing data
-            completed_filing = Filing.find_filing(filing.business, filing.filing_type, None)
+            completed_filing = Filing.find_filing(business=filing.business, event_id=event_id,
+                                                  filing_type=filing.filing_type)
             return jsonify(completed_filing.as_dict()), 200
 
         except Exception as err:

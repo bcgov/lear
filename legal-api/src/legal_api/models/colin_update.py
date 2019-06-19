@@ -11,14 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""This model manages the data store for the highest event id that was updated by colin.
 
-"""This exports all of the models and schemas used by the application."""
-from .db import db, ma  # noqa: I001
-from .business import Business, BusinessSchema  # noqa: I001
-from .colin_update import ColinLastUpdate
-from .comment import Comment
-from .filing import Filing
-from .user import User, UserSchema
+The ColinLastUpdate class and Schema are held in this module.
+"""
+from datetime import datetime
+from .db import db, ma
 
 
-__all__ = ('db', 'ma', 'Business', 'BusinessSchema', 'ColinLastUpdate', 'Comment', 'Filing', 'User', 'UserSchema')
+class ColinLastUpdate(db.Model):
+
+    __tablename__ = 'colin_last_update'
+
+    id = db.Column(db.Integer, primary_key=True)
+    last_update = db.Column('last_update', db.DateTime(timezone=True), default=datetime.utcnow)
+    last_event_id = db.Column('last_event_id', db.Integer, unique=True, nullable=False)

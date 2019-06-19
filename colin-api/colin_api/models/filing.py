@@ -34,6 +34,7 @@ class Filing():
     header = None
     body = None
     filing_type = None
+    event_id = None
 
     def __init__(self):
         pass
@@ -56,12 +57,13 @@ class Filing():
             "filing": {
                 "header": self.header,
                 self.filing_type: self.body,
-                "business": self.business.business
+                "business": self.business.business,
+                "eventId": self.event_id
             }
         }
 
     @classmethod
-    def find_filing(cls, business: Business = None, filing_type: str = None, year: int = None):
+    def find_filing(cls, business: Business = None, event_id: str = None, filing_type: str = None, year: int = None):
         """Return a Filing."""
         if not business or not filing_type:
             return None
@@ -70,13 +72,13 @@ class Filing():
             identifier = business.get_corp_num()
 
             if filing_type == 'annualReport':
-                filing_obj = cls.find_ar(identifier, year)
+                filing_obj = cls.find_ar(identifier=identifier, event_id=event_id, year=year)
 
             elif filing_type == 'changeOfAddress':
-                filing_obj = cls.find_change_of_addr(identifier, year)
+                filing_obj = cls.find_change_of_addr(identifier=identifier, event_id=event_id, year=year)
 
             elif filing_type == 'changeOfDirectors':
-                filing_obj = cls.find_change_of_dir(identifier, year)
+                filing_obj = cls.find_change_of_dir(identifier=identifier, event_id=event_id, year=year)
 
             else:
                 raise InvalidFilingTypeException(filing_type=filing_type)
@@ -162,7 +164,7 @@ class Filing():
                 mailing_addr_id = Address.create_new_address(cursor, filing.body['mailingAddress'])
 
                 # update office table to include new addresses
-                cls._update_office(cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, 'RG')
+                Office.update_office(cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, 'RG')
 
                 # update corporation record
                 cls._update_corporation(cursor, corp_num, None)
@@ -176,6 +178,7 @@ class Filing():
 
             # success! commit the db changes
             con.commit()
+            return event_id
 
         except Exception as err:
             # something went wrong, roll it all back
@@ -359,62 +362,54 @@ class Filing():
             raise err
 
     @classmethod
-    def _update_office(cls, cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, office_typ_cd):
-
-        try:
-            cursor.execute("""
-                    UPDATE office
-                    SET end_event_id = :event_id
-                    WHERE corp_num = :corp_num and office_typ_cd = :office_typ_cd and end_event_id is null
-                    """,
-                           event_id=event_id,
-                           corp_num=corp_num,
-                           office_typ_cd=office_typ_cd
-                           )
-
-        except Exception as err:
-            current_app.logger.error(err.with_traceback(None))
-            raise err
-
-        try:
-            cursor.execute("""
-                    INSERT INTO office (corp_num, office_typ_cd, start_event_id, end_event_id, mailing_addr_id,
-                     delivery_addr_id)
-                    VALUES (:corp_num, :office_typ_cd, :start_event_id, null, :mailing_addr_id, :delivery_addr_id)
-                    """,
-                           corp_num=corp_num,
-                           office_typ_cd=office_typ_cd,
-                           start_event_id=event_id,
-                           mailing_addr_id=mailing_addr_id,
-                           delivery_addr_id=delivery_addr_id
-                           )
-
-        except Exception as err:
-            current_app.logger.error(err.with_traceback(None))
-            raise err
-
-    @classmethod
-    def _find_filing_event_info(cls, identifier, filing_type_cd):
+    def _find_filing_event_info(cls, identifier: str = None, event_id: str = None, filing_type_cd1: str = None,
+                                filing_type_cd2: str = 'empty', year: int = None):
 
         # build base querystring
         querystring = (
             """
-            select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr
+            select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt, agm_date, 
+            effective_dt
             from event
             join filing on filing.event_id = event.event_id
             left join filing_user on event.event_id = filing_user.event_id
-            where filing_typ_cd=:filing_type_cd and corp_num=:identifier 
-            ORDER BY event_timestmp desc 
+            where (filing_typ_cd=:filing_type_cd1 or filing_typ_cd=:filing_type_cd2)
             """
         )
 
+        if identifier:
+            querystring += ' AND event.corp_num=:identifier'
+
+        if event_id:
+            querystring += ' AND event.event_id=:event_id'
+
+        if year:
+            querystring += ' AND extract(year from PERIOD_END_DT)=:year'
+
+        querystring += ' order by EVENT_TIMESTMP desc'
+
         try:
             cursor = db.connection.cursor()
-            cursor.execute(querystring, identifier=identifier, filing_type_cd=filing_type_cd)
+            if event_id:
+                if year:
+                    cursor.execute(querystring, event_id=event_id, filing_type_cd1=filing_type_cd1,
+                                   filing_type_cd2=filing_type_cd2, year=year)
+                else:
+                    cursor.execute(querystring, event_id=event_id, filing_type_cd1=filing_type_cd1,
+                                   filing_type_cd2=filing_type_cd2)
+            else:
+                if year:
+                    cursor.execute(querystring, identifier=identifier, filing_type_cd1=filing_type_cd1,
+                                   filing_type_cd2=filing_type_cd2, year=year)
+                else:
+                    cursor.execute(querystring, identifier=identifier, filing_type_cd1=filing_type_cd1,
+                                   filing_type_cd2=filing_type_cd2)
+
             event_info = cursor.fetchone()
 
             if not event_info:
-                raise FilingNotFoundException(identifier=identifier, filing_type=filing_type_cd)
+                raise FilingNotFoundException(identifier=identifier, filing_type='1: {} 2: {}'.format(
+                    filing_type_cd1, filing_type_cd2))
 
             event_info = dict(zip([x[0].lower() for x in cursor.description], event_info))
 
@@ -440,72 +435,53 @@ class Filing():
             raise err
 
     @classmethod
-    def find_ar(cls, identifier: str = None, year: int = None):
+    def find_ar(cls, identifier: str = None, event_id: str = None, year: int = None):
 
-        # build base querystring
-        querystring = (
-            """
-            select event.EVENT_TIMESTMP, EFFECTIVE_DT, AGM_DATE, PERIOD_END_DT, NOTATION,
-            FIRST_NME, LAST_NME, MIDDLE_NME, EMAIL_ADDR
-            from EVENT
-            join FILING on EVENT.EVENT_ID = FILING.EVENT_ID 
-            left join FILING_USER on EVENT.EVENT_ID = FILING_USER.EVENT_ID 
-            left join LEDGER_TEXT on EVENT.EVENT_ID = LEDGER_TEXT.EVENT_ID 
-            where CORP_NUM=:identifier and FILING_TYP_CD=:filing_typ_cd  
-            """
-        )
+        if event_id:
+            filing_event_info = cls._find_filing_event_info(event_id=event_id, filing_type_cd1='OTANN', year=year)
+        else:
+            filing_event_info = cls._find_filing_event_info(identifier=identifier, filing_type_cd1='OTANN', year=year)
 
-        # condition by year on period end date - for coops, this is same as AGM date; for corps, this is financial
-        # year end date.
-        if year:
-            querystring += ' AND extract(year from PERIOD_END_DT) = {}'.format(year)
-
-        querystring += ' order by EVENT_TIMESTMP desc '
-
-        # get record
-        cursor = db.connection.cursor()
-        cursor.execute(querystring, identifier=identifier, filing_typ_cd='OTANN')
-        filing = cursor.fetchone()
-
-        if not filing:
+        if not filing_event_info:
             raise FilingNotFoundException(identifier=identifier, filing_type='annualReport')
-
-        # add column names to resultset to build out correct json structure and make manipulation below more robust
-        # (better than column numbers)
-        filing = dict(zip([x[0].lower() for x in cursor.description], filing))
 
         # if there is no AGM date in period_end_dt, check agm_date and effective date
         try:
             agm_date = next(item for item in [
-                filing['period_end_dt'], filing['agm_date'], filing['effective_dt']
+                filing_event_info['period_end_dt'], filing_event_info['agm_date'], filing_event_info['effective_dt']
             ] if item is not None)
         except StopIteration:
             agm_date = None
 
-        filing_user_name = ' '.join(filter(None, [filing['first_nme'], filing['middle_nme'], filing['last_nme']]))
-
         # convert dates and date-times to correct json format
-        filing['event_timestmp'] = convert_to_json_date(filing['event_timestmp'])
+        filing_event_info['event_timestmp'] = convert_to_json_date(filing_event_info['event_timestmp'])
         agm_date = convert_to_json_date(agm_date)
 
         filing_obj = Filing()
+
         filing_obj.header = {
-            'date': filing['event_timestmp'],
+            'date': filing_event_info['event_timestmp'],
             'name': 'annualReport'
         }
         filing_obj.body = {
             'annualGeneralMeetingDate': agm_date,
-            'certifiedBy': filing_user_name,
-            'email': filing['email_addr']
+            'certifiedBy': filing_event_info['certifiedBy'],
+            'email': filing_event_info['email']
         }
         filing_obj.filing_type = 'annualReport'
+        filing_obj.event_id = filing_event_info['event_id']
 
         return filing_obj
 
     @classmethod
-    def find_change_of_addr(cls, identifier: str = None, year: int = None):
+    def find_change_of_addr(cls, identifier: str = None, event_id: str = None, year: int = None):
 
-        filing_event_info = cls._find_filing_event_info(identifier, 'OTADD')
+        if event_id:
+            filing_event_info = cls._find_filing_event_info(event_id=event_id, filing_type_cd1='OTADD',
+                                                            filing_type_cd2='OTARG')
+        else:
+            filing_event_info = cls._find_filing_event_info(identifier=identifier, filing_type_cd1='OTADD',
+                                                            filing_type_cd2='OTARG')
 
         registered_office_obj = Office.get_by_event(filing_event_info['event_id'])
 
@@ -523,15 +499,21 @@ class Filing():
             **registered_office_obj.as_dict()
         }
         filing_obj.filing_type = 'changeOfAddress'
+        filing_obj.event_id = filing_event_info['event_id']
 
         return filing_obj
 
     @classmethod
-    def find_change_of_dir(cls, identifier: str = None, year: int = None):
+    def find_change_of_dir(cls, identifier: str = None, event_id: str = None, year: int = None):
         """returns the most current directors in filing format"""
         filing_obj = Filing()
 
-        filing_event_info = cls._find_filing_event_info(identifier, 'OTCDR')
+        if event_id:
+            filing_event_info = cls._find_filing_event_info(event_id=event_id, filing_type_cd1='OTCDR',
+                                                            filing_type_cd2='OTADR')
+        else:
+            filing_event_info = cls._find_filing_event_info(identifier=identifier, filing_type_cd1='OTCDR',
+                                                            filing_type_cd2='OTADR')
 
         director_objs = Director.get_by_event(filing_event_info['event_id'])
         if len(director_objs) < 3:
@@ -548,5 +530,6 @@ class Filing():
             'directors': [x.as_dict() for x in director_objs]
         }
         filing_obj.filing_type = 'changeOfDirector'
+        filing_obj.event_id = filing_event_info['event_id']
 
         return filing_obj

@@ -65,9 +65,7 @@ class Address:
 
             address = cursor.fetchone()
             address = dict(zip([x[0].lower() for x in cursor.description], address))
-
             address_obj = cls._build_address_obj(address)
-
             return address_obj
 
         except Exception as err:
