@@ -25,7 +25,7 @@
                     </div>
                     <div class="address-block__actions">
                       <v-btn id="reg-off-addr-change-btn"
-                             small outline color="blue" :disabled="agmEntered" @click="editAddress">
+                             small outline color="blue" :disabled="!agmEntered" @click="editAddress">
                         Change
                       </v-btn>
                       <br/>
@@ -331,8 +331,9 @@ export default {
 
   computed: {
     agmEntered () {
-      if (this.$store.state.agmDate) return false
-      else return !this.$store.state.noAGM
+      if (this.$store.state.agmDate) return true
+      else if (this.$store.state.noAGM) return true
+      else return false
     },
     regOffAddrChange () {
       return this.$store.state.regOffAddrChange
