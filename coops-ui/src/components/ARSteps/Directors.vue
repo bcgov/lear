@@ -92,8 +92,8 @@
           v-bind:key="index">
           <div class="meta-container">
             <label>
-              <span>{{director.officer.firstName}}</span>
-              <span>{{director.officer.middleInitial}}</span>
+              <span>{{director.officer.firstName}} </span>
+              <span>{{director.officer.middleInitial}} </span>
               <span>{{director.officer.lastName}}</span>
               <div class="director-status">
                 <v-scale-transition>
