@@ -80,6 +80,7 @@ export default {
     margin-top -0.2rem
 
   .entity-name
+    margin-top 0.125rem
     margin-bottom 0.25rem
     display inline-block
     font-size 1.125rem
