@@ -46,7 +46,6 @@ class EventInfo(Resource):
             event_list = []
             for event in event_info:
                 event = dict(zip([x[0].lower() for x in cursor.description], event))
-                print(event)
                 event_list.append(event)
             return jsonify({'events': event_list})
 
