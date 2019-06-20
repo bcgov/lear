@@ -84,7 +84,9 @@ export default {
       axios.get(url).then(response => {
         this.lastARJson = response.data
         this.setARInfo()
-      }).catch(error => console.log('getARInfo ERROR: ' + error + ' ' + axios.get))
+      }).catch(error => {
+        console.log('getARInfo ERROR: ' + error + ' ' + axios.get)
+      })
     },
     getEntityInfo (corpNum) {
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
@@ -94,7 +96,14 @@ export default {
       axios.get(url).then(response => {
         this.entityInfoJson = response.data
         this.setEntityInfo()
-      }).catch(error => console.log('getEntityInfo ERROR: ' + error + ' ' + axios.get))
+      }).catch(error => {
+        console.log('getEntityInfo ERROR: ' + error + ' ' + axios.get)
+        // TODO - remove this stub data
+        this.$store.state.entityName = 'Pathfinder Cooperative'
+        this.$store.state.entityStatus = 'GOODSTANDING'
+        this.$store.state.entityBusinessNo = '105023337BC0157'
+        this.$store.state.entityIncNo = 'CP0015683'
+      })
     },
     getRegOffAddr (corpNum) {
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
