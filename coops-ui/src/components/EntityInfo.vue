@@ -110,6 +110,6 @@ export default {
         margin-left 0.75rem
 
   .v-chip
-    margin-top: 0
+    margin-top: 0.25rem
     vertical-align top
 </style>
