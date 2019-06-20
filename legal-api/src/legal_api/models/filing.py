@@ -94,8 +94,11 @@ class Filing(db.Model):
             if not valid:
                 self._filing_type = None
                 self._payment_token = None
+                errors = []
+                for error in err:
+                    errors.append({'path': '/'.join(error.path), 'error': error.message})
                 raise BusinessException(
-                    error=f'Invalid filing: {err}',
+                    error=f'{errors}',
                     status_code=HTTPStatus.UNPROCESSABLE_ENTITY
                 )
         self._filing_json = json_data
