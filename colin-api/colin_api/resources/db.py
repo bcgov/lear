@@ -20,11 +20,11 @@ import cx_Oracle
 from flask import current_app, _app_ctx_stack
 
 
-class OracleDB(object):
+class OracleDB:
     """Oracle database connection object for re-use in application."""
 
     def __init__(self, app=None):
-        """initializer, supports setting the app context on instantiation"""
+        """initializer, supports setting the app context on instantiation."""
         if app is not None:
             self.init_app(app)
 
@@ -37,13 +37,15 @@ class OracleDB(object):
         self.app = app
         app.teardown_appcontext(self.teardown)
 
-    def teardown(self, exception):
+    @staticmethod
+    def teardown():
         """Oracle session pool cleans up after itself."""
         ctx = _app_ctx_stack.top
         if hasattr(ctx, 'oracle_pool'):
             ctx.oracle_pool.close()
 
-    def _create_pool(self):
+    @staticmethod
+    def _create_pool():
         """Create the cx_oracle connection pool from the Flask Config Environment.
 
         :return: an instance of the OCI Session Pool
@@ -53,7 +55,7 @@ class OracleDB(object):
         # setting threaded =True wraps the underlying calls in a Mutex
         # so we don't have to that here
 
-        def InitSession(conn, requestedTag):
+        def init_session(conn, empty):
             cursor = conn.cursor()
             cursor.execute("alter session set TIME_ZONE = 'America/Vancouver'")
 
@@ -70,7 +72,7 @@ class OracleDB(object):
                                      getmode=cx_Oracle.SPOOL_ATTRVAL_NOWAIT,
                                      waitTimeout=1500,
                                      timeout=3600,
-                                     sessionCallback=InitSession)
+                                     sessionCallback=init_session)
 
     @property
     def connection(self):
@@ -84,9 +86,9 @@ class OracleDB(object):
         ctx = _app_ctx_stack.top
         if ctx is not None:
             if not hasattr(ctx, 'oracle_pool'):
-                ctx._oracle_pool = self._create_pool()
-            return ctx._oracle_pool.acquire()
+                ctx._oracle_pool = self._create_pool()  # pylint: disable = protected-access; need this method
+            return ctx._oracle_pool.acquire()  # pylint: disable = protected-access; need this method
 
 
 # export instance of this class
-db = OracleDB()
+DB = OracleDB()

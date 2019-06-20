@@ -16,14 +16,13 @@
 Currently this only provides API versioning information
 """
 from flask import current_app
-from colin_api.utils import convert_to_json_date
 from colin_api.exceptions import DirectorsNotFoundException
 from colin_api.models import Address
-from colin_api.resources.db import db
+from colin_api.resources.db import DB
 
 
 class Director:
-
+    """director object"""
     officer = None
     delivery_address = None
     # mailing_address = None
@@ -32,6 +31,9 @@ class Director:
     cessation_date = None
     start_event_id = None
     end_event_id = None
+
+    def __init__(self):
+        pass
 
     def as_dict(self):
         return {
@@ -47,12 +49,12 @@ class Director:
 
     @classmethod
     def get_current(cls, identifier: str = None):
-
+        """returns current directors for given identifier"""
         if not identifier:
             return None
 
         try:
-            cursor = db.connection.cursor()
+            cursor = DB.connection.cursor()
             cursor.execute(
                 """
                 select first_nme, middle_nme, last_nme, delivery_addr_id, appointment_dt, cessation_dt, start_event_id,
@@ -64,7 +66,7 @@ class Director:
             )
             directors_list = cls._build_directors_list(cursor)
 
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error('error getting current directors info for {}'.format(identifier))
             raise err
 
@@ -80,19 +82,17 @@ class Director:
             return None
 
         try:
-            cursor = db.connection.cursor()
-            cursor.execute(
-                """
-                select first_nme, middle_nme, last_nme, delivery_addr_id, appointment_dt, cessation_dt, start_event_id, 
+            cursor = DB.connection.cursor()
+            cursor.execute("""
+                select first_nme, middle_nme, last_nme, delivery_addr_id, appointment_dt, cessation_dt, start_event_id,
                 end_event_id
                 from corp_party
                 where (start_event_id=:event_id or end_event_id=:event_id) and party_typ_cd='DIR'
-                """,
-                event_id=event_id
-            )
+                """, event_id=event_id)
+
             directors_list = cls._build_directors_list(cursor)
 
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error('error getting directors info for event {}'.format(event_id))
             raise err
 

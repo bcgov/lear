@@ -94,7 +94,6 @@ def check_for_manual_filings(cursor, application: Flask = None):
 
         # for each event_id: if not in legal db table then add event_id to list
         for info in colin_events['events']:
-            print(info)
             # check legal table
             try:
                 cursor.execute(

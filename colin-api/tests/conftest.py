@@ -55,17 +55,6 @@ def client_ctx(app):  # pylint: disable=redefined-outer-name
         yield _client
 
 
-@pytest.fixture(scope='session')
-def db(app):  # pylint: disable=redefined-outer-name, invalid-name
-    """Return a session-wide initialised database.
-
-    """
-    with app.app_context():
-        # Clear out any existing tables
-
-        return _db
-
-
 @pytest.fixture(scope='function')
 def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a function-scoped session."""

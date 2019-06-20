@@ -17,10 +17,11 @@ Currently this only provides API versioning information
 """
 from flask import current_app
 from colin_api.models import Address
-from colin_api.resources.db import db
+from colin_api.resources.db import DB
 
 
 class Office:
+    """registered office object """
 
     delivery_address = None
     mailing_address = None
@@ -41,16 +42,14 @@ class Office:
         if not identifier:
             return None
 
-        querystring = (
-            """
+        querystring = ("""
             select start_event_id, mailing_addr_id, delivery_addr_id
             from office
             where corp_num=:identifier and end_event_id is null and office_typ_cd='RG'
-            """
-        )
+            """)
 
         try:
-            cursor = db.connection.cursor()
+            cursor = DB.connection.cursor()
             cursor.execute(querystring, identifier=identifier)
 
             office_info = cursor.fetchone()
@@ -77,16 +76,14 @@ class Office:
         if not event_id:
             return None
 
-        querystring = (
-            """
+        querystring = ("""
             select start_event_id, mailing_addr_id, delivery_addr_id
             from office
             where start_event_id=:event_id and office_typ_cd='RG'
-            """
-        )
+            """)
 
         try:
-            cursor = db.connection.cursor()
+            cursor = DB.connection.cursor()
             cursor.execute(querystring, event_id=event_id)
 
             office_info = cursor.fetchone()
@@ -99,12 +96,13 @@ class Office:
 
             return office_obj
 
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errs
             current_app.logger.error('error getting office from event : {}'.format(event_id))
             raise err
 
     @classmethod
-    def update_office(cls, cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, office_typ_cd):
+    def update_office(cls, cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, office_typ_cd):  # pylint: disable=too-many-arguments; need all args
+        """update old office end event id and insert new row into office table """
 
         try:
             cursor.execute("""
@@ -117,7 +115,7 @@ class Office:
                            office_typ_cd=office_typ_cd
                            )
 
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errs
             current_app.logger.error(err.with_traceback(None))
             raise err
 
@@ -134,6 +132,6 @@ class Office:
                            delivery_addr_id=delivery_addr_id
                            )
 
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errs
             current_app.logger.error('Error updating office table')
             raise err

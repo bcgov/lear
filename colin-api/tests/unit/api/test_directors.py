@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests to assure the change of address filing end-point.
-"""
-
-import json
+"""Tests to assure the change of directors filing end-point."""
 
 from registry_schemas import validate
 from tests import oracle_integration
@@ -37,6 +34,7 @@ def test_get_cod(client):
     #
     # assert is_valid
 
+
 @oracle_integration
 def test_get_by_id(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
@@ -52,6 +50,7 @@ def test_get_by_id(client):
     #         print(err.message)
     #
     # assert is_valid
+
 
 @oracle_integration
 def test_get_current(client):

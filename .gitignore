@@ -111,4 +111,4 @@ venv.bak/
 # IDE
 /**/.vscode
 */.idea/*
-
+.idea/*

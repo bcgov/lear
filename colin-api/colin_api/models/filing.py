@@ -19,14 +19,17 @@ Currently this only provides API versioning information
 import datetime
 
 from flask import current_app
+
 from colin_api.utils import convert_to_json_date
 
 from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
+
 from colin_api.models import Business, Director, Office, Address
-from colin_api.resources.db import db
+
+from colin_api.resources.db import DB
 
 
-class Filing():
+class Filing:
     """Class to contain all model-like functions such as getting and setting from database."""
 
     # dicts containing data
@@ -54,11 +57,11 @@ class Filing():
     def as_dict(self):
         """Return dict of object that can be json serialized and fits schema requirements."""
         return {
-            "filing": {
-                "header": self.header,
+            'filing': {
+                'header': self.header,
                 self.filing_type: self.body,
-                "business": self.business.business,
-                "eventId": self.event_id
+                'business': self.business.business,
+                'eventId': self.event_id
             }
         }
 
@@ -99,7 +102,7 @@ class Filing():
             raise err
 
     @classmethod
-    def add_filing(cls, filing):
+    def add_filing(cls, filing):  # pylint: disable=too-many-locals; filing needs a lot of vars to build
         """Add new filing to COLIN tables.
 
         :param filing: Filing dict.
@@ -109,7 +112,7 @@ class Filing():
             corp_num = filing.get_corp_num()
 
             # get db connection and start a session, in case we need to roll back
-            con = db.connection
+            con = DB.connection
             con.begin()
             cursor = con.cursor()
 
@@ -142,14 +145,16 @@ class Filing():
 
                 # set date to last agm date + 1
                 last_agm_date = filing.business.business['lastAgmDate']
-                dd = int(last_agm_date[-2:]) + 1
+                day = int(last_agm_date[-2:]) + 1
                 try:
-                    date = str(datetime.datetime.strptime(last_agm_date[:-2] + ('0' + str(dd))[1:], "%Y-%m-%d"))[:10]
+                    date = str(datetime.datetime.strptime(last_agm_date[:-2] + ('0' + str(day))[1:], "%Y-%m-%d"))[:10]
                 except ValueError as err:
                     try:
-                        dd = '-01'
-                        mm = int(last_agm_date[5:7]) + 1
-                        date = str(datetime.datetime.strptime(last_agm_date[:5] + ('0' + str(mm))[1:] + dd, "%Y-%m-%d"))[:10]
+                        day = '-01'
+                        month = int(last_agm_date[5:7]) + 1
+                        date = str(datetime.datetime.strptime(last_agm_date[:5] + ('0' + str(month))[1:] + day,
+                                                              "%Y-%m-%d")
+                                   )[:10]
                     except ValueError as err:
                         mm_dd = '-01-01'
                         yyyy = int(last_agm_date[:4]) + 1
@@ -214,7 +219,7 @@ class Filing():
         return event_id
 
     @classmethod
-    def _add_filing(cls, cursor, event_id, filing, date, filing_type_code='FILE'):
+    def _add_filing(cls, cursor, event_id, filing, date, filing_type_code='FILE'):  # pylint: disable=too-many-arguments; need all these args
         """Add record to FILING.
 
         Note: Period End Date and AGM Date are both the AGM Date value for Co-ops.
@@ -228,7 +233,7 @@ class Filing():
         if not filing_type_code:
             raise FilingNotFoundException(filing.business.business['identifier'], filing.filing_type)
         try:
-            if filing_type_code is 'OTANN':
+            if filing_type_code == 'OTANN':
                 cursor.execute("""
                 INSERT INTO filing (event_id, filing_typ_cd, effective_dt, period_end_dt, agm_date)
                   VALUES (:event_id, :filing_type_code, sysdate, TO_DATE(:period_end_date, 'YYYY-mm-dd'),
@@ -239,7 +244,7 @@ class Filing():
                                period_end_date=date,
                                agm_date=date
                                )
-            elif filing_type_code is 'OTADD':
+            elif filing_type_code == 'OTADD':
                 cursor.execute("""
                 INSERT INTO filing (event_id, filing_typ_cd, effective_dt, period_end_dt)
                   VALUES (:event_id, :filing_type_code, sysdate, TO_DATE(:period_end_date, 'YYYY-mm-dd'))
@@ -362,20 +367,18 @@ class Filing():
             raise err
 
     @classmethod
-    def _find_filing_event_info(cls, identifier: str = None, event_id: str = None, filing_type_cd1: str = None,
+    def _find_filing_event_info(cls, identifier: str = None, event_id: str = None, filing_type_cd1: str = None,  # pylint: disable=too-many-arguments; need these args in order to make it work for all types
                                 filing_type_cd2: str = 'empty', year: int = None):
 
         # build base querystring
-        querystring = (
-            """
-            select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt, agm_date, 
+        querystring = ("""
+            select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt, agm_date,
             effective_dt
             from event
             join filing on filing.event_id = event.event_id
             left join filing_user on event.event_id = filing_user.event_id
             where (filing_typ_cd=:filing_type_cd1 or filing_typ_cd=:filing_type_cd2)
-            """
-        )
+            """)
 
         if identifier:
             querystring += ' AND event.corp_num=:identifier'
@@ -389,7 +392,7 @@ class Filing():
         querystring += ' order by EVENT_TIMESTMP desc'
 
         try:
-            cursor = db.connection.cursor()
+            cursor = DB.connection.cursor()
             if event_id:
                 if year:
                     cursor.execute(querystring, event_id=event_id, filing_type_cd1=filing_type_cd1,
@@ -436,6 +439,7 @@ class Filing():
 
     @classmethod
     def find_ar(cls, identifier: str = None, event_id: str = None, year: int = None):
+        """return annual report filing"""
 
         if event_id:
             filing_event_info = cls._find_filing_event_info(event_id=event_id, filing_type_cd1='OTANN', year=year)
@@ -474,8 +478,8 @@ class Filing():
         return filing_obj
 
     @classmethod
-    def find_change_of_addr(cls, identifier: str = None, event_id: str = None, year: int = None):
-
+    def find_change_of_addr(cls, identifier: str = None, event_id: str = None, year: int = None):  # pylint: disable=unused-argument; will use year later
+        """return change of address filing """
         if event_id:
             filing_event_info = cls._find_filing_event_info(event_id=event_id, filing_type_cd1='OTADD',
                                                             filing_type_cd2='OTARG')
@@ -504,7 +508,7 @@ class Filing():
         return filing_obj
 
     @classmethod
-    def find_change_of_dir(cls, identifier: str = None, event_id: str = None, year: int = None):
+    def find_change_of_dir(cls, identifier: str = None, event_id: str = None, year: int = None):  # pylint: disable=unused-argument; will use year later
         """returns the most current directors in filing format"""
         filing_obj = Filing()
 

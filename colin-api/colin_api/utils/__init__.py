@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" time conversion methods
+"""
 
 
 def convert_to_json_date(thedate):
@@ -22,7 +24,7 @@ def convert_to_json_date(thedate):
 
     try:
         return thedate.strftime('%Y-%m-%d')
-    except:
+    except:  # pylint: disable=bare-except; want to return None in all cases where convert failed
         return None
 
 
@@ -35,5 +37,5 @@ def convert_to_json_datetime(thedate):
 
     try:
         return thedate.strftime('%Y-%m-%dT%H:%M:%S-00:00')
-    except:
+    except:  # pylint: disable=bare-except; want to return None in all cases where convert failed
         return None

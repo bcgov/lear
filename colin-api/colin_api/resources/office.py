@@ -21,8 +21,8 @@ from flask_restplus import Resource, cors
 
 from colin_api.exceptions import GenericException
 from colin_api.models import Office
-from colin_api.utils.util import cors_preflight
 from colin_api.resources.business import API
+from colin_api.utils.util import cors_preflight
 
 
 @cors_preflight('GET')
@@ -50,7 +50,7 @@ class OfficeInfo(Resource):
             return jsonify(
                 {'message': err.error}), err.status_code
 
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except; want to catch any exception here
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(

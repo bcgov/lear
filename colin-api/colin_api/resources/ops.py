@@ -14,7 +14,7 @@
 """Endpoints to check and manage the health of the service."""
 from flask_restplus import Namespace, Resource
 import cx_Oracle
-from colin_api.resources.db import db
+from colin_api.resources.db import DB
 
 API = Namespace('OPS', description='Service - OPS checks')
 
@@ -31,13 +31,13 @@ class Healthz(Resource):
         """Return a JSON object stating the health of the Service and dependencies."""
         try:
             # check db connection working
-            cursor = db.connection.cursor()
+            cursor = DB.connection.cursor()
             cursor.execute('select 1 from dual')
 
         except cx_Oracle.DatabaseError as err:
             try:
                 return {'message': 'api is down', 'details': str(err)}, 500
-            except:
+            except:  # pylint: disable=bare-except; want to catch any outstanding errors
                 return {'message': 'api is down'}, 500
 
         # made it here, so all checks passed

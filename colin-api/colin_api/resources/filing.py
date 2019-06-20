@@ -53,7 +53,7 @@ class FilingInfo(Resource):
             return jsonify(
                 {'message': err.error}), err.status_code
 
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
@@ -70,11 +70,12 @@ class FilingInfo(Resource):
 
             # validate schema
             is_valid, errors = validate(json_data, 'filing', validate_schema=True)
-            if errors:
+            if not is_valid:
                 for err in errors:
                     print(err.message)
                 return jsonify(
                     {'message': 'Error: Invalid Filing schema'}), 400
+
             json_data = json_data.get('filing', None)
 
             # ensure that the business in the AR matches the business in the URL
@@ -98,7 +99,7 @@ class FilingInfo(Resource):
                                                   filing_type=filing.filing_type)
             return jsonify(completed_filing.as_dict()), 200
 
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
