@@ -161,7 +161,7 @@ def test_ar_payment_invalid_filing(session):
         factory_filing(b, ar)
 
     assert excinfo.value.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-    assert excinfo.value.error.startswith('Invalid filing')
+    assert 'is a required property' in excinfo.value.error
 
 
 def test_filing_dump_json(session):
