@@ -2,18 +2,18 @@
   <section :disabled="!agmEntered">
     <header>
       <h2>3. Directors</h2>
-      <p>Tell us who was elected or appointed and who ceased to be a director at your 2018 AGM.</p>
-      <v-expand-transition>
-        <div v-show="!showNewDirectorForm">
-          <v-btn class="new-director-btn" outline color="primary" :disabled="!agmEntered"
-            @click="addNewDirector">
-            <v-icon>add</v-icon>
-            <span>Appoint New Director</span>
-          </v-btn>
-        </div>
-      </v-expand-transition>
-
+      <p>Tell us who was elected or appointed and who ceased to be a director at your XXXX AGM.</p>
     </header>
+
+    <v-expand-transition>
+      <div v-show="!showNewDirectorForm">
+        <v-btn class="new-director-btn" outline color="primary" :disabled="!agmEntered"
+          @click="addNewDirector">
+          <v-icon>add</v-icon>
+          <span>Appoint New Director</span>
+        </v-btn>
+      </div>
+    </v-expand-transition>
 
     <v-card flat>
 
@@ -471,9 +471,6 @@ export default {
     //font-size 0.875rem
     color $gray6
 
-  section + section
-    margin-top 3rem
-
   h2
     margin-bottom 0.25rem
 
@@ -583,14 +580,6 @@ export default {
 
     .v-icon
       margin-left -0.5rem
-
-  // Filing Buttons
-  .ar-filing-buttons
-    padding-top 2rem
-    border-top: 1px solid $gray5
-    text-align right
-    .v-btn + .v-btn
-      margin-left 0.5rem
 
   // V-chip customization
   .v-chip--small
