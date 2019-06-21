@@ -9,6 +9,7 @@
       </div>
     </div>
 
+    <!-- NOTE - this is in Home.vue instead -->
     <!-- Transition to Payment -->
     <v-fade-transition>
       <div class="loading-container" v-show="showLoading">
@@ -18,6 +19,7 @@
         </div>
       </div>
     </v-fade-transition>
+    <!-- NOTE -->
 
     <EntityInfo/>
 
@@ -45,6 +47,7 @@
             <p>Verify or change your Registered Office Addresses.</p>
           </header>
           <v-card flat>
+            <!-- TODO - should be separate address component -->
             <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
               <li class="container">
                 <div class="meta-container">
@@ -193,6 +196,7 @@
                 </div>
               </li>
             </ul>
+            <!-- /TODO -->
           </v-card>
         </section>
 
@@ -216,6 +220,7 @@
 
           <v-card flat>
 
+            <!-- TODO - should be separate Director component -->
             <!-- New Director Form -->
             <v-expand-transition>
               <ul class="list new-director" v-show="showNewDirectorForm">
@@ -407,6 +412,7 @@
                 </v-expand-transition>
               </li>
             </ul>
+            <!-- /TODO -->
 
           </v-card>
         </section>

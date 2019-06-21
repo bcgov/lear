@@ -1,6 +1,6 @@
 <template>
-  <ul class="director-list">
-    <li class="container pb-2">
+  <div class="pa-0 ma-0">
+    <div class="container pb-2">
       <div class="meta-container">
         <label>
           <span>Annual General<br> Meeting Date</span>
@@ -44,8 +44,8 @@
           </v-form>
         </div>
       </div>
-    </li>
-  </ul>
+    </div>
+  </div>
 </template>
 
 <script>
