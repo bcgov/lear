@@ -24,8 +24,9 @@
                 </div>
                 <div class="address-block__actions">
                   <v-btn id="reg-off-addr-change-btn"
-                          small outline color="blue" :disabled="!agmEntered" @click="editAddress">
-                    Change
+                          small flat color="primary" :disabled="!agmEntered" @click="editAddress">
+                    <v-icon small>edit</v-icon>
+                    <span>Change</span>
                   </v-btn>
                   <br/>
                   <v-btn id="reg-off-addr-reset-btn"
@@ -639,6 +640,12 @@ export default {
     position absolute
     top 0
     right 0
+
+    .v-btn
+      min-width 4rem
+
+    .v-btn + .v-btn
+      margin-left 0.5rem
 
   // Form Row Elements
   .form__row + .form__row
