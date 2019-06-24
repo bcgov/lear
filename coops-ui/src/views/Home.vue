@@ -175,17 +175,4 @@ export default {
 <style scoped lang="stylus">
   @import "../assets/styles/theme.styl"
 
-  header h1
-    margin-bottom 2rem
-
-  header p
-    font-size 1.125rem
-    font-weight 300
-
-  strong
-    font-weight 600
-
-  .passcode-container
-    padding 2rem
-
 </style>
