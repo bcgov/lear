@@ -44,8 +44,15 @@
           </section>
 
           <!-- Director Information -->
-          <!-- TODO - should be in section as above -->
-          <Directors ref="directors" @directorsChange="directorsChangeEventHandler" />
+          <section>
+            <header>
+              <h2 id="AR-step-3-header">3. Directors</h2>
+              <p>Tell us who was elected or appointed and who ceased to be a director at your {{ year }} AGM.</p>
+            </header>
+            <!-- <v-card flat id="AR-step-3-container"> -->
+              <Directors ref="directors" @directorsChange="directorsChangeEventHandler" />
+            <!-- </v-card> -->
+          </section>
 
         </div>
         <div v-else>
@@ -66,7 +73,7 @@
           @click="submit">File & Pay</v-btn>
         <v-btn v-else id="ar-next-btn" color="primary" large :disabled="currentYear == ARFilingYear"
           @click="nextAR">Next</v-btn>
-        <v-btn large to="/">Cancel</v-btn>
+        <v-btn id="ar-cancel-btn" large to="/Dashboard">Cancel</v-btn>
       </div>
     </v-container>
 
@@ -258,13 +265,13 @@ export default {
     font-size 2rem
     font-weight 500
 
-  #AR-step-1-header, #AR-step-2-header
+  #AR-step-1-header, #AR-step-2-header, #AR-step-3-header
     margin-bottom 0.25rem
     margin-top 3rem
     font-size 1.125rem
     font-weight 500
 
-  #AR-step-1-container, #AR-step-2-container
+  #AR-step-1-container, #AR-step-2-container, #AR-step-3-container
     margin-left 1.5rem
     margin-top 2rem
 
