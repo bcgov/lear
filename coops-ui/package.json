@@ -14,7 +14,6 @@
   "dependencies": {
     "@babel/polyfill": "^7.0.0-rc.1",
     "axios": "^0.18.0",
-    "moment": "^2.24.0",
     "register-service-worker": "^1.6.2",
     "sbc-common-components": "^0.0.16",
     "sinon": "^7.3.2",
