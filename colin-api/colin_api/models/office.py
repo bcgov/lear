@@ -16,21 +16,23 @@
 Currently this only provides API versioning information
 """
 from flask import current_app
+
 from colin_api.models import Address
 from colin_api.resources.db import DB
 
 
 class Office:
-    """registered office object """
+    """Registered office object."""
 
     delivery_address = None
     mailing_address = None
     event_id = None
 
     def __init__(self):
-        pass
+        """Initialize with all values None."""
 
     def as_dict(self):
+        """Return dict camel case version of self."""
         return {
             'deliveryAddress': self.delivery_address,
             'mailingAddress': self.mailing_address
@@ -38,7 +40,7 @@ class Office:
 
     @classmethod
     def get_current(cls, identifier: str = None):
-        """return current registered office address"""
+        """Return current registered office address."""
         if not identifier:
             return None
 
@@ -72,7 +74,7 @@ class Office:
 
     @classmethod
     def get_by_event(cls, event_id: str = None):
-        """return current registered office address"""
+        """Return current registered office address."""
         if not event_id:
             return None
 
@@ -101,9 +103,9 @@ class Office:
             raise err
 
     @classmethod
-    def update_office(cls, cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, office_typ_cd):  # pylint: disable=too-many-arguments; need all args
-        """update old office end event id and insert new row into office table """
-
+    def update_office(cls, cursor, event_id, corp_num,  # pylint: disable=too-many-arguments; need all args
+                      delivery_addr_id, mailing_addr_id, office_typ_cd):
+        """Update old office end event id and insert new row into office table."""
         try:
             cursor.execute("""
                         UPDATE office

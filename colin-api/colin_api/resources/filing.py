@@ -49,7 +49,7 @@ class FilingInfo(Resource):
             filing = Filing.find_filing(business=business, event_id=event_id, filing_type=filing_type, year=year)
             return jsonify(filing.as_dict())
 
-        except GenericException as err:
+        except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify(
                 {'message': err.error}), err.status_code
 

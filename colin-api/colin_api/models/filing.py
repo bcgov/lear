@@ -15,18 +15,14 @@
 
 Currently this only provides API versioning information
 """
-
 import datetime
 
 from flask import current_app
 
-from colin_api.utils import convert_to_json_date
-
 from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
-
-from colin_api.models import Business, Director, Office, Address
-
+from colin_api.models import Address, Business, Director, Office
 from colin_api.resources.db import DB
+from colin_api.utils import convert_to_json_date
 
 
 class Filing:
@@ -40,7 +36,7 @@ class Filing:
     event_id = None
 
     def __init__(self):
-        pass
+        """Initialize with all values None."""
 
     def get_corp_num(self):
         """Get corporation num, aka identifier."""
@@ -147,18 +143,18 @@ class Filing:
                 last_agm_date = filing.business.business['lastAgmDate']
                 day = int(last_agm_date[-2:]) + 1
                 try:
-                    date = str(datetime.datetime.strptime(last_agm_date[:-2] + ('0' + str(day))[1:], "%Y-%m-%d"))[:10]
-                except ValueError as err:
+                    date = str(datetime.datetime.strptime(last_agm_date[:-2] + ('0' + str(day))[1:], '%Y-%m-%d'))[:10]
+                except ValueError:
                     try:
                         day = '-01'
                         month = int(last_agm_date[5:7]) + 1
                         date = str(datetime.datetime.strptime(last_agm_date[:5] + ('0' + str(month))[1:] + day,
-                                                              "%Y-%m-%d")
+                                                              '%Y-%m-%d')
                                    )[:10]
-                    except ValueError as err:
+                    except ValueError:
                         mm_dd = '-01-01'
                         yyyy = int(last_agm_date[:4]) + 1
-                        date = str(datetime.datetime.strptime(str(yyyy) + mm_dd, "%Y-%m-%d"))[:10]
+                        date = str(datetime.datetime.strptime(str(yyyy) + mm_dd, '%Y-%m-%d'))[:10]
                 filing_type_cd = 'OTADD'
 
                 # create new filing
@@ -219,7 +215,8 @@ class Filing:
         return event_id
 
     @classmethod
-    def _add_filing(cls, cursor, event_id, filing, date, filing_type_code='FILE'):  # pylint: disable=too-many-arguments; need all these args
+    def _add_filing(cls, cursor, event_id, filing, date,  # pylint: disable=too-many-arguments; need all these args
+                    filing_type_code='FILE'):
         """Add record to FILING.
 
         Note: Period End Date and AGM Date are both the AGM Date value for Co-ops.
@@ -367,7 +364,8 @@ class Filing:
             raise err
 
     @classmethod
-    def _find_filing_event_info(cls, identifier: str = None, event_id: str = None, filing_type_cd1: str = None,  # pylint: disable=too-many-arguments; need these args in order to make it work for all types
+    def _find_filing_event_info(cls,  # pylint: disable=too-many-arguments; needed to work for all filing types
+                                identifier: str = None, event_id: str = None, filing_type_cd1: str = None,
                                 filing_type_cd2: str = 'empty', year: int = None):
 
         # build base querystring
@@ -439,8 +437,7 @@ class Filing:
 
     @classmethod
     def find_ar(cls, identifier: str = None, event_id: str = None, year: int = None):
-        """return annual report filing"""
-
+        """Return annual report filing."""
         if event_id:
             filing_event_info = cls._find_filing_event_info(event_id=event_id, filing_type_cd1='OTANN', year=year)
         else:
@@ -478,8 +475,9 @@ class Filing:
         return filing_obj
 
     @classmethod
-    def find_change_of_addr(cls, identifier: str = None, event_id: str = None, year: int = None):  # pylint: disable=unused-argument; will use year later
-        """return change of address filing """
+    def find_change_of_addr(cls, identifier: str = None, event_id: str = None,
+                            year: int = None):  # pylint: disable=unused-argument; will use year later
+        """Return change of address filing."""
         if event_id:
             filing_event_info = cls._find_filing_event_info(event_id=event_id, filing_type_cd1='OTADD',
                                                             filing_type_cd2='OTARG')
@@ -508,8 +506,9 @@ class Filing:
         return filing_obj
 
     @classmethod
-    def find_change_of_dir(cls, identifier: str = None, event_id: str = None, year: int = None):  # pylint: disable=unused-argument; will use year later
-        """returns the most current directors in filing format"""
+    def find_change_of_dir(cls, identifier: str = None, event_id: str = None,
+                           year: int = None):  # pylint: disable=unused-argument; will use year later
+        """Return most current directors in filing format."""
         filing_obj = Filing()
 
         if event_id:

@@ -17,6 +17,7 @@
 import json
 
 from registry_schemas import validate
+
 from tests import oracle_integration
 
 

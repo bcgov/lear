@@ -45,7 +45,7 @@ class BusinessInfo(Resource):
                 return jsonify({'message': f'{identifier} not found'}), 404
             return jsonify(business.as_dict())
 
-        except GenericException as err:
+        except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify(
                 {'message': err.error}), err.status_code
 

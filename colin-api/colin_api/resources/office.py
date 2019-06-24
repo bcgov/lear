@@ -39,14 +39,11 @@ class OfficeInfo(Resource):
 
         try:
             registered_office = Office.get_current(identifier)
-
             if not registered_office:
                 return jsonify({'message': f'registered office for {identifier} not found'}), 404
-
             return jsonify(registered_office.as_dict())
 
-        except GenericException as err:
-
+        except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify(
                 {'message': err.error}), err.status_code
 

@@ -15,14 +15,13 @@
 
 Currently this only provides API versioning information
 """
-
 from flask import current_app, jsonify
 from flask_restplus import Resource, cors
 
 from colin_api.exceptions import GenericException
 from colin_api.models import Director
-from colin_api.utils.util import cors_preflight
 from colin_api.resources.business import API
+from colin_api.utils.util import cors_preflight
 
 
 @cors_preflight('GET')
@@ -45,7 +44,7 @@ class DirectorsInfo(Resource):
                 current_app.logger.error('Less than 3 directors for {}'.format(identifier))
             return jsonify({'directors': [x.as_dict() for x in directors]})
 
-        except GenericException as err:
+        except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify(
                 {'message': err.error}), err.status_code
 

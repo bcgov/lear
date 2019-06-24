@@ -16,13 +16,15 @@
 Currently this only provides API versioning information
 """
 from flask import current_app
+
 from colin_api.exceptions import DirectorsNotFoundException
 from colin_api.models import Address
 from colin_api.resources.db import DB
 
 
 class Director:
-    """director object"""
+    """Director object."""
+
     officer = None
     delivery_address = None
     # mailing_address = None
@@ -33,9 +35,10 @@ class Director:
     end_event_id = None
 
     def __init__(self):
-        pass
+        """Initialize with all values None."""
 
     def as_dict(self):
+        """Return dict camel case version of self."""
         return {
             'officer': self.officer,
             'deliveryAddress': self.delivery_address,
@@ -49,7 +52,7 @@ class Director:
 
     @classmethod
     def get_current(cls, identifier: str = None):
-        """returns current directors for given identifier"""
+        """Return current directors for given identifier."""
         if not identifier:
             return None
 
@@ -77,7 +80,7 @@ class Director:
 
     @classmethod
     def get_by_event(cls, event_id: str = None):
-        """gets all directors added/deleted during this event"""
+        """Get all directors added/deleted during this event."""
         if not event_id:
             return None
 

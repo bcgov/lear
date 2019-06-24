@@ -15,6 +15,7 @@
 """Tests to assure the change of directors filing end-point."""
 
 from registry_schemas import validate
+
 from tests import oracle_integration
 
 

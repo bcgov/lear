@@ -15,14 +15,13 @@
 
 Currently this only provides API versioning information
 """
-
 from datetime import datetime
 
 from flask import current_app
-from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
 from colin_api.exceptions import BusinessNotFoundException
 from colin_api.resources.db import DB
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
 
 class Business:
@@ -31,19 +30,20 @@ class Business:
     business = None
 
     def __init__(self):
-        pass
+        """Initialize with all values None."""
 
     def get_corp_num(self):
         """Get corporation number, aka identifier."""
         return self.business['identifier']
 
     def as_dict(self):
+        """Return dict version of self."""
         return {
             'business': self.business
         }
 
     @classmethod
-    def find_by_identifier(cls, identifier: str = None):  # pylint: disable=too-many-statements; simple method just barely over limit
+    def find_by_identifier(cls, identifier: str = None):  # pylint: disable=too-many-statements;
         """Return a Business by identifier."""
         business = None
         if not identifier:

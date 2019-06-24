@@ -15,9 +15,8 @@
 
 These will get initialized by the application.
 """
-
 import cx_Oracle
-from flask import current_app, _app_ctx_stack
+from flask import _app_ctx_stack, current_app
 
 
 class OracleDB:
@@ -29,7 +28,7 @@ class OracleDB:
             self.init_app(app)
 
     def init_app(self, app):
-        """Setup for the extension.
+        """Create setup for the extension.
 
         :param app: Flask app
         :return: naked
@@ -55,11 +54,10 @@ class OracleDB:
         # setting threaded =True wraps the underlying calls in a Mutex
         # so we don't have to that here
 
-        def init_session(conn, empty):
+        def init_session(conn, *args):  # pylint: disable=unused-argument; Extra var being passed with call
             cursor = conn.cursor()
             cursor.execute("alter session set TIME_ZONE = 'America/Vancouver'")
-
-        return cx_Oracle.SessionPool(user=current_app.config.get('ORACLE_USER'),
+        return cx_Oracle.SessionPool(user=current_app.config.get('ORACLE_USER'),  # pylint:disable=c-extension-no-member
                                      password=current_app.config.get('ORACLE_PASSWORD'),
                                      dsn='{0}:{1}/{2}'.format(current_app.config.get('ORACLE_HOST'),
                                                               current_app.config.get('ORACLE_PORT'),
@@ -67,16 +65,16 @@ class OracleDB:
                                      min=1,
                                      max=10,
                                      increment=1,
-                                     connectiontype=cx_Oracle.Connection,
+                                     connectiontype=cx_Oracle.Connection,  # pylint:disable=c-extension-no-member
                                      threaded=True,
-                                     getmode=cx_Oracle.SPOOL_ATTRVAL_NOWAIT,
+                                     getmode=cx_Oracle.SPOOL_ATTRVAL_NOWAIT,  # pylint:disable=c-extension-no-member
                                      waitTimeout=1500,
                                      timeout=3600,
                                      sessionCallback=init_session)
 
     @property
-    def connection(self):
-        """Connection property of the NROService.
+    def connection(self):  # pylint: disable=inconsistent-return-statements
+        """Create connection property for the NROService.
 
         If this is running in a Flask context,
         then either get the existing connection pool or create a new one

@@ -16,6 +16,7 @@
 Currently this only provides API versioning information
 """
 from flask import current_app
+
 from colin_api.exceptions import AddressNotFoundException
 from colin_api.resources.db import DB
 
@@ -33,9 +34,10 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
     address_id = None
 
     def __init__(self):
-        pass
+        """Initialize with all values None."""
 
     def as_dict(self):
+        """Return dict version of self."""
         return {
             'streetAddress': self.street_address,
             'streetAddress_additional': self.street_address_additional,
@@ -49,17 +51,17 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
 
     @classmethod
     def get_by_address_id(cls, address_id: str = None):
-        """return single address associated with given addr_id"""
+        """Return single address associated with given addr_id."""
         if not address_id:
             return None
 
         try:
             cursor = DB.connection.cursor()
             cursor.execute("""
-                select ADDR_ID, ADDR_LINE_1, ADDR_LINE_2, ADDR_LINE_3, CITY, PROVINCE, COUNTRY_TYPE.FULL_DESC, POSTAL_CD,
-                DELIVERY_INSTRUCTIONS
+                select ADDR_ID, ADDR_LINE_1, ADDR_LINE_2, ADDR_LINE_3, CITY, PROVINCE, COUNTRY_TYPE.FULL_DESC,
+                POSTAL_CD, DELIVERY_INSTRUCTIONS
                 from ADDRESS
-                join COUNTRY_TYPE on ADDRESS.COUNTRY_TYP_CD = COUNTRY_TYPE.COUNTRY_TYP_CD 
+                join COUNTRY_TYPE on ADDRESS.COUNTRY_TYP_CD = COUNTRY_TYPE.COUNTRY_TYP_CD
                 where ADDR_ID=:address_id
                 """, address_id=address_id)
 
@@ -73,9 +75,9 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
             raise err
 
     @classmethod
-    def find_current_by_identifier(cls, identifier: str = None, address_grp: str = None, typ_cd: str = None):  # pylint: disable=too-many-locals; need all these vars
+    def find_current_by_identifier(cls, identifier: str = None,  # pylint: disable=too-many-locals; need all these vars
+                                   address_grp: str = None, typ_cd: str = None):
         """Return most current addresses by corpnum and address group (office, corp_party, etc.)."""
-
         # build base querystring
         # todo: check full_desc in country_type table matches with canada post api for foreign countries
         querystring = ("""
@@ -91,11 +93,12 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
             """)
 
         if typ_cd == 'RG':
-            querystring += 'and {address_grp}.OFFICE_TYP_CD=\'{typ_cd}\''.format(address_grp=address_grp, typ_cd=typ_cd)
+            querystring += "and {address_grp}.OFFICE_TYP_CD='{typ_cd}'".format(address_grp=address_grp, typ_cd=typ_cd)
 
         elif typ_cd == 'DIR':
             if typ_cd == 'RG':
-                querystring += 'and {address_grp}.PARTY_TYP_CD=\'{typ_cd}\''.format(address_grp=address_grp, typ_cd=typ_cd)
+                querystring += "and {address_grp}.PARTY_TYP_CD='{typ_cd}'".format(address_grp=address_grp,
+                                                                                  typ_cd=typ_cd)
 
         querystring_delivery = querystring.format(address_grp=address_grp, addr_id_typ='DELIVERY_ADDR_ID')
         querystring_mailing = querystring.format(address_grp=address_grp, addr_id_typ='MAILING_ADDR_ID')
@@ -121,8 +124,9 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
             current_app.logger.error('Should have the same number of delivery + mailing addresses: {corp_num}, {type}'
                                      .format(corp_num=identifier, type=address_grp))
             raise AddressNotFoundException(
-                identifier=identifier, address_type=
-                'mailingAddress' if len(mailing_addresses) < len(delivery_addresses) else 'deliveryAddress')
+                identifier=identifier,
+                address_type='mailingAddress'
+                if len(mailing_addresses) < len(delivery_addresses) else 'deliveryAddress')
 
         addresses = []
         for delivery, mailing in zip(delivery_addresses, mailing_addresses):
@@ -141,7 +145,7 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
 
     @classmethod
     def create_new_address(cls, cursor, address_info):
-        """ get new address id and insert address into address table"""
+        """Get new address id and insert address into address table."""
         try:
             cursor.execute("""select noncorp_address_seq.NEXTVAL from dual""")
             row = cursor.fetchone()
@@ -156,8 +160,8 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
 
         try:
             cursor.execute("""
-                            INSERT INTO address (addr_id, province, country_typ_cd, postal_cd, addr_line_1, addr_line_2, city,
-                                delivery_instructions)
+                            INSERT INTO address (addr_id, province, country_typ_cd, postal_cd, addr_line_1, addr_line_2,
+                             city, delivery_instructions)
                             VALUES (:addr_id, :province, :country_typ_cd, :postal_cd, :addr_line_1, :addr_line_2, :city,
                                 :delivery_instructions)
                             """,

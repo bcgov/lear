@@ -16,7 +16,6 @@
 
 Test-Suite to ensure that the /ops endpoint is working as expected.
 """
-
 from tests import oracle_integration
 
 

@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Endpoints to check and manage the health of the service."""
-from flask_restplus import Namespace, Resource
 import cx_Oracle
+from flask import current_app
+from flask_restplus import Namespace, Resource
+
 from colin_api.resources.db import DB
+
 
 API = Namespace('OPS', description='Service - OPS checks')
 
@@ -34,10 +37,11 @@ class Healthz(Resource):
             cursor = DB.connection.cursor()
             cursor.execute('select 1 from dual')
 
-        except cx_Oracle.DatabaseError as err:
+        except cx_Oracle.DatabaseError as err:  # pylint:disable=c-extension-no-member
             try:
                 return {'message': 'api is down', 'details': str(err)}, 500
-            except:  # pylint: disable=bare-except; want to catch any outstanding errors
+            except Exception as err:  # pylint: disable=broad-except; want to catch any outstanding errors
+                current_app.logger.error(err.with_traceback(None))
                 return {'message': 'api is down'}, 500
 
         # made it here, so all checks passed

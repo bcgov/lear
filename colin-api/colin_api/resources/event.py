@@ -11,13 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Event info endpoint for colin db
-"""
-
+"""Event info endpoint for colin db."""
 from flask import current_app, jsonify
 from flask_restplus import Resource, cors
-from colin_api.resources.db import DB
+
 from colin_api.resources.business import API
+from colin_api.resources.db import DB
 from colin_api.utils.util import cors_preflight
 
 
@@ -29,7 +28,7 @@ class EventInfo(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     def get(corp_type, event_id):
-        """ returns all event_ids of the given corp_type above the given event_id """
+        """Return all event_ids of the given corp_type above the given event_id."""
         try:
             cursor = DB.connection.cursor()
             cursor.execute(

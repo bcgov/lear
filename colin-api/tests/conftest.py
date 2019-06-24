@@ -14,7 +14,6 @@
 """Common setup and fixtures for the pytest suite used by this service."""
 import pytest
 from sqlalchemy import event, text
-from sqlalchemy.schema import DropConstraint, MetaData
 
 from colin_api import create_app
 from colin_api import jwt as _jwt
