@@ -272,8 +272,7 @@ export default {
     font-weight 500
 
   #AR-step-1-container, #AR-step-2-container, #AR-step-3-container
-    margin-left 1.5rem
-    margin-top 2rem
+    margin-top 1rem
 
   .title-container
     margin-bottom 0.5rem
