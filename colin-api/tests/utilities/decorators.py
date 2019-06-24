@@ -11,18 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+"""decorators used to skip/run pytests based on local setup."""
 import os
 
 import pytest
-from dotenv import load_dotenv, find_dotenv
+from dotenv import find_dotenv, load_dotenv
 
-#this will load all the envars from a .env file located in the project root (api)
+
+# this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
 
 
 oracle_integration = pytest.mark.skipif((os.getenv('ORACLE_INTEGRATION_TESTING', False) is False),
-                                                reason="requires access to a test version of Oracle CTST")
+                                        reason='requires access to a test version of Oracle CTST')
 
-skip_in_pod = pytest.mark.skipif((os.getenv('POD_TESTING', False) is False),
-                                                reason="Skip test when running in pod")
+skip_in_pod = pytest.mark.skipif((os.getenv('POD_TESTING', False) is False), reason='Skip test when running in pod')

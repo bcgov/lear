@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "c75dc154-2ecb-4590-852b-a2872c53a988",
+		"_postman_id": "597fb5c8-f386-42db-9c06-2f78aba700e1",
 		"name": "legal-api",
-		"description": "version=0.68 - This is a Legal API description",
-		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+		"description": "version=0.69 - This is a Legal API description",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
@@ -46,7 +46,12 @@
 								"value": "no-cache"
 							}
 						],
-						"url": "{{postman_bdd_path}}",
+						"url": {
+							"raw": "{{postman_bdd_path}}",
+							"host": [
+								"{{postman_bdd_path}}"
+							]
+						},
 						"description": "This request downloads [Postman BDD](https://github.com/BigstickCarpet/postman-bdd) and then \"installs\" it by setting a global variable\n"
 					},
 					"response": []
@@ -83,7 +88,17 @@
 							"mode": "raw",
 							"raw": "authurl = pm.environment.get(\"authurl\");\nrealm = pm.environment.get(\"realm\");\nclientid = pm.environment.get(\"clientid\");\nuserid = pm.environment.get(\"userid\");\npassword = pm.environment.get(\"password\");\nclient_secret = pm.environment.get(\"client_secret\");\n\nconst echoPostRequest = {\n  url: authurl +'/auth/realms/' +realm + '/protocol/openid-connect/token',\n  method: 'POST',\n  header: 'Content-Type:application/x-www-form-urlencoded',\n  body: {\n    mode: 'raw',\n    raw: 'grant_type=password&client_id=' \n         +clientid \n         +'&username=' \n         +userid \n         +'&password='\n         +password\n         +'&client_secret='\n         +client_secret\n  }\n};\npm.sendRequest(echoPostRequest, function (err, res) {\n    if (err) { console.log(err); }\n    else{\n      var jsonData = res.json();\n      pm.environment.set(\"token\", jsonData.access_token);\n      pm.environment.set(\"refresh_token\", jsonData.refresh_token);\n      pm.environment.set(\"token_expires\", Date.now()+(jsonData.expires_in * 1000));\n      pm.environment.set(\"refresh_token_expires\", Date.now()+(jsonData.refresh_expires_in * 1000));\n    }\n    //console.log(err ? err : res.json());\n});"
 						},
-						"url": "https://postman-echo.com/post"
+						"url": {
+							"raw": "https://postman-echo.com/post",
+							"protocol": "https",
+							"host": [
+								"postman-echo",
+								"com"
+							],
+							"path": [
+								"post"
+							]
+						}
 					},
 					"response": []
 				},
@@ -119,7 +134,17 @@
 							"mode": "raw",
 							"raw": "authurl = pm.environment.get(\"authurl\");\nrealm = pm.environment.get(\"realm\");\nclientid = pm.environment.get(\"clientid\");\nrefresh_token = pm.environment.get(\"refresh_token\");\nclient_secret = pm.environment.get(\"client_secret\");\n\nconst echoPostRequest = {\n  url: authurl +'/auth/realms/' +realm + '/protocol/openid-connect/token',\n  method: 'POST',\n  header: 'Content-Type:application/x-www-form-urlencoded',\n  body: {\n    mode: 'raw',\n    raw: 'grant_type=refresh_token&client_id=' \n         +clientid \n         +'&refresh_token=' \n         +refresh_token \n         +'&client_secret='\n         +client_secret\n  }\n};\npm.sendRequest(echoPostRequest, function (err, res) {\n    var jsonData = res.json();\n    pm.environment.set(\"token\", jsonData.access_token);\n    pm.environment.set(\"refresh_token\", jsonData.refresh_token);\n    pm.environment.set(\"token_expires\", Date.now()+(jsonData.expires_in * 1000));\n    pm.environment.set(\"refresh_token_expires\", Date.now()+(jsonData.refresh_expires_in * 1000));\n\n    console.log(err ? err : res.json());\n});"
 						},
-						"url": "https://postman-echo.com/post"
+						"url": {
+							"raw": "https://postman-echo.com/post",
+							"protocol": "https",
+							"host": [
+								"postman-echo",
+								"com"
+							],
+							"path": [
+								"post"
+							]
+						}
 					},
 					"response": []
 				},
@@ -197,7 +222,17 @@
 							"mode": "raw",
 							"raw": "authurl = pm.environment.get(\"authurl\");\nrealm = pm.environment.get(\"realm\");\nclientid = pm.environment.get(\"clientid\");\nuserid = pm.environment.get(\"userid\");\npassword = pm.environment.get(\"password\");\nclient_secret = pm.environment.get(\"client_secret\");\n\nconst echoPostRequest = {\n  url: authurl +'/auth/realms/' +realm + '/protocol/openid-connect/token',\n  method: 'POST',\n  header: 'Content-Type:application/x-www-form-urlencoded',\n  body: {\n    mode: 'raw',\n    raw: 'grant_type=password&client_id=' \n         +clientid \n         +'&username=' \n         +userid \n         +'&password='\n         +password\n         +'&client_secret='\n         +client_secret\n  }\n};\npm.sendRequest(echoPostRequest, function (err, res) {\n    var jsonData = res.json();\n    pm.environment.set(\"token\", jsonData.access_token);\n    pm.environment.set(\"refresh_token\", jsonData.refresh_token);\n    console.log(err ? err : res.json());\n});"
 						},
-						"url": "https://postman-echo.com/post"
+						"url": {
+							"raw": "https://postman-echo.com/post",
+							"protocol": "https",
+							"host": [
+								"postman-echo",
+								"com"
+							],
+							"path": [
+								"post"
+							]
+						}
 					},
 					"response": []
 				}
@@ -387,6 +422,82 @@
 					],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP1234567\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\"\n        },\n        \"header\": {\n            \"date\": \"2019-06-09\",\n            \"filingId\": 10,\n            \"name\": \"annual_report\"\n        }\n    }\n}"
+				},
+				{
+					"name": "post - annual report - CP0001965",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual_report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0001965\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"CENTRAL INTERIOR COMMUNITY SERVICES CO-OP\"\n        },\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0001965"
+								}
+							]
+						}
+					},
+					"status": "CREATED",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "397"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "DELETE, GET, PUT, HEAD, OPTIONS, POST"
+						},
+						{
+							"key": "Access-Control-Max-Age",
+							"value": "21600"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev"
+						},
+						{
+							"key": "Server",
+							"value": "Werkzeug/0.15.4 Python/3.6.5"
+						},
+						{
+							"key": "Date",
+							"value": "Tue, 18 Jun 2019 20:04:37 GMT"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0001965\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"CENTRAL INTERIOR COMMUNITY SERVICES CO-OP\"\n        },\n        \"header\": {\n            \"colinId\": null,\n            \"date\": \"2019-06-18\",\n            \"filingId\": 26,\n            \"name\": \"annual_report\"\n        }\n    }\n}"
 				},
 				{
 					"name": "post - PAID annual report - CP1234567",

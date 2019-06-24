@@ -40,20 +40,16 @@ class BusinessInfo(Resource):
             return jsonify({'message': 'Identifier required'}), 404
 
         try:
-
             business = Business.find_by_identifier(identifier)
-
             if not business:
                 return jsonify({'message': f'{identifier} not found'}), 404
-
             return jsonify(business.as_dict())
 
-        except GenericException as err:
-
+        except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify(
                 {'message': err.error}), err.status_code
 
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(

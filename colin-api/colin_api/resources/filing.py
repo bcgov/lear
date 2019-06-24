@@ -36,7 +36,8 @@ class FilingInfo(Resource):
         """Return the complete filing info."""
         try:
 
-            # get optional YEAR parameter
+            # get optional parameters (event_id / year)
+            event_id = request.args.get('eventId', None)
             year = request.args.get('year', None)
             if year:
                 year = int(year)
@@ -45,14 +46,14 @@ class FilingInfo(Resource):
             business = Business.find_by_identifier(identifier)
 
             # get filing
-            filing = Filing.find_filing(business, filing_type, year)
+            filing = Filing.find_filing(business=business, event_id=event_id, filing_type=filing_type, year=year)
             return jsonify(filing.as_dict())
 
-        except GenericException as err:
+        except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify(
                 {'message': err.error}), err.status_code
 
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
@@ -69,11 +70,12 @@ class FilingInfo(Resource):
 
             # validate schema
             is_valid, errors = validate(json_data, 'filing', validate_schema=True)
-            if errors:
+            if not is_valid:
                 for err in errors:
                     print(err.message)
                 return jsonify(
                     {'message': 'Error: Invalid Filing schema'}), 400
+
             json_data = json_data.get('filing', None)
 
             # ensure that the business in the AR matches the business in the URL
@@ -90,13 +92,14 @@ class FilingInfo(Resource):
             filing.business = Business.find_by_identifier(identifier)
 
             # add the new filing
-            Filing.add_filing(filing)
+            event_id = Filing.add_filing(filing)
 
             # return the completed filing data
-            completed_filing = Filing.find_filing(filing.business, filing.filing_type, None)
+            completed_filing = Filing.find_filing(business=filing.business, event_id=event_id,
+                                                  filing_type=filing.filing_type)
             return jsonify(completed_filing.as_dict()), 200
 
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(

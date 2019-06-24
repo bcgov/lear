@@ -14,7 +14,6 @@
 """Common setup and fixtures for the pytest suite used by this service."""
 import pytest
 from sqlalchemy import event, text
-from sqlalchemy.schema import DropConstraint, MetaData
 
 from colin_api import create_app
 from colin_api import jwt as _jwt
@@ -53,17 +52,6 @@ def client_ctx(app):  # pylint: disable=redefined-outer-name
     """Return session-wide Flask test client."""
     with app.test_client() as _client:
         yield _client
-
-
-@pytest.fixture(scope='session')
-def db(app):  # pylint: disable=redefined-outer-name, invalid-name
-    """Return a session-wide initialised database.
-
-    """
-    with app.app_context():
-        # Clear out any existing tables
-
-        return _db
 
 
 @pytest.fixture(scope='function')

@@ -12,17 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests to assure the version utilities.
 
-Test-Suite to ensure that the version utilities are working as expected.
-"""
-from colin_api import utils
-from colin_api.version import __version__
-from tests import skip_in_pod
+def convert_to_json_date(thedate):
+    """ Convert datetime to string formatted as YYYY-MM-DD, per JSON Schema specs.
+
+    :param thedate: datetime object
+    :return: string
+    """
+
+    try:
+        return thedate.strftime('%Y-%m-%d')
+    except:
+        return None
 
 
-@skip_in_pod
-def test_get_version():
-    """Assert thatThe version is returned correctly."""
-    rv = utils.run_version.get_run_version()
-    assert rv == __version__
+def convert_to_json_datetime(thedate):
+    """ Convert datetime to string formatted as YYYY-MM-SSTHH:MM:SS+00:00, per JSON Schema specs.
+
+    :param thedate: datetime object
+    :return: string
+    """
+
+    try:
+        return thedate.strftime('%Y-%m-%dT%H:%M:%S-00:00')
+    except:
+        return None

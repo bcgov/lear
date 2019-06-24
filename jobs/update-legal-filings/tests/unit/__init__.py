@@ -11,18 +11,4 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""Tests to assure the version utilities.
-
-Test-Suite to ensure that the version utilities are working as expected.
-"""
-from colin_api import utils
-from colin_api.version import __version__
-from tests import skip_in_pod
-
-
-@skip_in_pod
-def test_get_version():
-    """Assert thatThe version is returned correctly."""
-    rv = utils.run_version.get_run_version()
-    assert rv == __version__
+"""Test Suite for the Utils package."""

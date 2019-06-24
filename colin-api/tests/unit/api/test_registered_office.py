@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests to assure the change of address filing end-point.
-"""
+"""Tests to assure the change of address filing end-point."""
 
 import json
 
 from registry_schemas import validate
+
 from tests import oracle_integration
 
 
@@ -34,6 +34,22 @@ def test_get_coa(client):
             print(err.message)
 
     assert is_valid
+
+
+@oracle_integration
+def test_get_by_id(client):
+    """Assert that the business info for regular (not xpro) business is correct to spec."""
+    rv = client.get('/api/v1/businesses/CP0001965/filings/changeOfAddress?eventId=111362565')
+
+    assert 200 == rv.status_code
+    is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
+    if errors:
+        for err in errors:
+            print('\nERROR MESSAGE:')
+            print(err.message)
+
+    assert is_valid
+
 
 @oracle_integration
 def test_get_current(client):
@@ -86,7 +102,7 @@ def test_post_coa(client):
                     "addressCountry": "CANADA",
                     "addressRegion": "BC",
                     "postalCode": "V2G 1J6",
-                    "streetAddress": "51 4TH AVENUE SOUTH",
+                    "streetAddress": "51 4TH AVENUE SOUTH test",
                 },
                 "email": "nobody@nothing.com",
                 "mailingAddress": {
@@ -94,7 +110,7 @@ def test_post_coa(client):
                     "addressCountry": "CANADA",
                     "addressRegion": "BC",
                     "postalCode": "V2G 1J6",
-                    "streetAddress": "51 4TH AVENUE SOUTH",
+                    "streetAddress": "51 4TH AVENUE SOUTH test",
                 }
             },
             "header": {

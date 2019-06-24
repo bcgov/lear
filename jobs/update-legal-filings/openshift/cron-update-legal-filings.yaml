@@ -1,0 +1,75 @@
+---
+kind: "Template"
+apiVersion: "v1"
+metadata:
+  name: "update-legal-filings"
+  annotations:
+    description: "Scheduled Task to send legal-api the paper filings that were entered into colin db"
+    tags: "cronjob"
+objects:
+- kind: "CronJob"
+  apiVersion: "batch/v1beta1"
+  metadata:
+    name: "update-legal-filings"
+  spec:
+    schedule: "0 0 * * *"
+    suspend: false
+    jobTemplate:
+      spec:
+        template:
+          spec:
+            containers:
+            - name: "update-legal-filings"
+              image: "docker-registry.default.svc:5000/gl2uos-tools/update-legal-filings:${ENV_TAG}"
+              imagePullPolicy: Always
+              args:
+              - /bin/sh
+              - -c
+              - cd /opt/app-root/src; ./run.sh
+              env:
+                  - name: DATABASE_USERNAME
+                    valueFrom:
+                      secretKeyRef:
+                        key: database-user
+                        name: postgresql-${ENV_TAG}
+                  - name: DATABASE_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        key: database-password
+                        name: postgresql-${ENV_TAG}
+                  - name: DATABASE_NAME
+                    valueFrom:
+                      configMapKeyRef:
+                        key: DATABASE_NAME
+                        name: legal-api-dev-config
+                  - name: DATABASE_HOST
+                    valueFrom:
+                      configMapKeyRef:
+                        key: DATABASE_HOST
+                        name: legal-api-dev-config
+                  - name: DATABASE_PORT
+                    valueFrom:
+                      configMapKeyRef:
+                        key: DB_PORT
+                        name: legal-api-dev-config
+                  - name: COLIN_URL
+                    valueFrom:
+                      configMapKeyRef:
+                        key: ROUTE
+                        name: colin-api-dev-config
+                  - name: LEGAL_URL
+                      valueFrom:
+                        configMapKeyRef:
+                          key: ROUTE
+                          name: legal-api-dev-config
+            restartPolicy: "Never"
+            concurrencyPolicy: "Forbid"
+parameters: [
+        {
+          "name": "ENV_TAG",
+          "displayName": "ENV_TAG",
+          "description": "the tag for the environment that the job image runs from.",
+          "required": true,
+          "value": "dev"
+        },
+]

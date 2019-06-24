@@ -16,8 +16,8 @@
 
 Test-Suite to ensure that the /ops endpoint is working as expected.
 """
-
 from registry_schemas import validate
+
 from tests import oracle_integration
 
 

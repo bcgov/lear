@@ -11,18 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""Tests to assure the version utilities.
-
-Test-Suite to ensure that the version utilities are working as expected.
-"""
-from colin_api import utils
-from colin_api.version import __version__
-from tests import skip_in_pod
+"""Centralized setup of logging for the service."""
+import logging.config
+import sys
+from os import path
 
 
-@skip_in_pod
-def test_get_version():
-    """Assert thatThe version is returned correctly."""
-    rv = utils.run_version.get_run_version()
-    assert rv == __version__
+def setup_logging(conf):
+    """Create the services logger."""
+    # log_file_path = path.join(path.abspath(path.dirname(__file__)), conf)
+
+    if conf and path.isfile(conf):
+        logging.config.fileConfig(conf)
+        print('Configure logging, from conf:{}'.format(conf), file=sys.stdout)
+    else:
+        print('Unable to configure logging, attempted conf:{}'.format(conf), file=sys.stderr)

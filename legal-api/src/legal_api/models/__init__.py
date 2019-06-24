@@ -15,9 +15,10 @@
 """This exports all of the models and schemas used by the application."""
 from .db import db, ma  # noqa: I001
 from .business import Business, BusinessSchema  # noqa: I001
+from .colin_update import ColinLastUpdate
 from .comment import Comment
 from .filing import Filing
 from .user import User, UserSchema
 
 
-__all__ = ('db', 'ma', 'Business', 'BusinessSchema', 'Comment', 'Filing', 'User', 'UserSchema')
+__all__ = ('db', 'ma', 'Business', 'BusinessSchema', 'ColinLastUpdate', 'Comment', 'Filing', 'User', 'UserSchema')

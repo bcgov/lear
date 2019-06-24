@@ -54,7 +54,7 @@ install-dev: venv/bin/activate
 
 .PHONY: activate
 activate: venv/bin/activate
-	. venv/bin/activate 
+	. venv/bin/activate
 
 .PHONY: local-test
 local-test: venv/bin/activate
@@ -70,10 +70,10 @@ local-coverage: venv/bin/activate
 coverage-report: local-coverage
 	. venv/bin/activate ; \
 	coverage report ; \
-	coverage html 
+	coverage html
 
 ## Run the coverage report and display in a browser window
-mac-cov:	install-dev coverage-report 
+mac-cov:	install-dev coverage-report
 	open -a "Google Chrome" htmlcov/index.html
 
 ## run pylint on the package and tests
@@ -81,15 +81,15 @@ pylint:
 	pylint --rcfile=setup.cfg \
 	 --load-plugins=pylint_flask \
 	 --disable=C0301,W0511 \
-	 src/colin_api
+	 colin_api
 
 ## run flake8 on the package and tests
 flake8:
-	flake8 src/colin_api tests
+	flake8 colin_api tests
 
 ## Verify source code license headers.
 license:
-	./scripts/verify_license_headers.sh src/colin_api tests
+	./scripts/verify_license_headers.sh colin_api tests
 
 #################################################################################
 # Self Documenting Commands                                                     #

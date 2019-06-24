@@ -16,58 +16,58 @@
 Currently this only provides API versioning information
 """
 from flask import current_app
+
 from colin_api.exceptions import AddressNotFoundException
-from colin_api.resources.db import db
+from colin_api.resources.db import DB
 
 
-class Address:
+class Address:  # pylint: disable=too-many-instance-attributes; need all these fields
     """Class to contain all model-like functions such as getting and setting from database."""
 
-    streetAddress = None
-    streetAddressAdditional = None
-    addressCity = None
-    addressRegion = None
-    addressCountry = None
-    postalCode = None
-    deliveryInstructions = None
-    addressId = None
+    street_address = None
+    street_address_additional = None
+    address_city = None
+    address_region = None
+    address_country = None
+    postal_code = None
+    delivery_instructions = None
+    address_id = None
+
+    def __init__(self):
+        """Initialize with all values None."""
 
     def as_dict(self):
+        """Return dict version of self."""
         return {
-            'streetAddress': self.streetAddress,
-            'streetAddressAdditional': self.streetAddressAdditional,
-            'addressCity': self.addressCity,
-            'addressRegion': self.addressRegion,
-            'addressCountry': self.addressCountry,
-            'postalCode': self.postalCode,
-            'deliveryInstructions': self.deliveryInstructions,
-            'addressId': self.addressId
+            'streetAddress': self.street_address,
+            'streetAddress_additional': self.street_address_additional,
+            'addressCity': self.address_city,
+            'addressRegion': self.address_region,
+            'addressCountry': self.address_country,
+            'postalCode': self.postal_code,
+            'deliveryInstructions': self.delivery_instructions,
+            'addressId': self.address_id
         }
 
     @classmethod
     def get_by_address_id(cls, address_id: str = None):
-        """return single address associated with given addr_id"""
+        """Return single address associated with given addr_id."""
         if not address_id:
             return None
 
         try:
-            cursor = db.connection.cursor()
-            cursor.execute(
-                """
-                select ADDR_ID, ADDR_LINE_1, ADDR_LINE_2, ADDR_LINE_3, CITY, PROVINCE, COUNTRY_TYPE.FULL_DESC, POSTAL_CD, 
-                DELIVERY_INSTRUCTIONS
-                from ADDRESS 
-                join COUNTRY_TYPE on ADDRESS.COUNTRY_TYP_CD = COUNTRY_TYPE.COUNTRY_TYP_CD 
+            cursor = DB.connection.cursor()
+            cursor.execute("""
+                select ADDR_ID, ADDR_LINE_1, ADDR_LINE_2, ADDR_LINE_3, CITY, PROVINCE, COUNTRY_TYPE.FULL_DESC,
+                POSTAL_CD, DELIVERY_INSTRUCTIONS
+                from ADDRESS
+                join COUNTRY_TYPE on ADDRESS.COUNTRY_TYP_CD = COUNTRY_TYPE.COUNTRY_TYP_CD
                 where ADDR_ID=:address_id
-                """,
-                address_id=address_id
-            )
+                """, address_id=address_id)
 
             address = cursor.fetchone()
             address = dict(zip([x[0].lower() for x in cursor.description], address))
-
             address_obj = cls._build_address_obj(address)
-
             return address_obj
 
         except Exception as err:
@@ -75,13 +75,12 @@ class Address:
             raise err
 
     @classmethod
-    def find_current_by_identifier(cls, identifier: str = None, address_grp: str = None, typ_cd: str = None):
+    def find_current_by_identifier(cls, identifier: str = None,  # pylint: disable=too-many-locals; need all these vars
+                                   address_grp: str = None, typ_cd: str = None):
         """Return most current addresses by corpnum and address group (office, corp_party, etc.)."""
-
         # build base querystring
         # todo: check full_desc in country_type table matches with canada post api for foreign countries
-        querystring = (
-            """
+        querystring = ("""
             select ADDR_ID, ADDR_LINE_1, ADDR_LINE_2, ADDR_LINE_3, CITY, PROVINCE, COUNTRY_TYPE.FULL_DESC, POSTAL_CD,
             DELIVERY_INSTRUCTIONS, EVENT.EVENT_TIMESTMP, FILING_USER.FIRST_NME, FILING_USER.LAST_NME,
             FILING_USER.MIDDLE_NME, FILING_USER.EMAIL_ADDR
@@ -91,21 +90,21 @@ class Address:
             join EVENT on {address_grp}.START_EVENT_ID = EVENT.EVENT_ID
             left join FILING_USER on EVENT.EVENT_ID = FILING_USER.EVENT_ID
             where {address_grp}.END_EVENT_ID IS NULL and {address_grp}.CORP_NUM=:corp_num
-            """
-        )
+            """)
 
         if typ_cd == 'RG':
-            querystring += 'and {address_grp}.OFFICE_TYP_CD=\'{typ_cd}\''.format(address_grp=address_grp, typ_cd=typ_cd)
+            querystring += "and {address_grp}.OFFICE_TYP_CD='{typ_cd}'".format(address_grp=address_grp, typ_cd=typ_cd)
 
         elif typ_cd == 'DIR':
             if typ_cd == 'RG':
-                querystring += 'and {address_grp}.PARTY_TYP_CD=\'{typ_cd}\''.format(address_grp=address_grp, typ_cd=typ_cd)
+                querystring += "and {address_grp}.PARTY_TYP_CD='{typ_cd}'".format(address_grp=address_grp,
+                                                                                  typ_cd=typ_cd)
 
         querystring_delivery = querystring.format(address_grp=address_grp, addr_id_typ='DELIVERY_ADDR_ID')
         querystring_mailing = querystring.format(address_grp=address_grp, addr_id_typ='MAILING_ADDR_ID')
         try:
             # get record
-            cursor = db.connection.cursor()
+            cursor = DB.connection.cursor()
             cursor.execute(querystring_delivery, corp_num=identifier)
             delivery_addresses = cursor.fetchall()
 
@@ -125,8 +124,9 @@ class Address:
             current_app.logger.error('Should have the same number of delivery + mailing addresses: {corp_num}, {type}'
                                      .format(corp_num=identifier, type=address_grp))
             raise AddressNotFoundException(
-                identifier=identifier, address_type=
-                'mailingAddress' if len(mailing_addresses) < len(delivery_addresses) else 'deliveryAddress')
+                identifier=identifier,
+                address_type='mailingAddress'
+                if len(mailing_addresses) < len(delivery_addresses) else 'deliveryAddress')
 
         addresses = []
         for delivery, mailing in zip(delivery_addresses, mailing_addresses):
@@ -145,16 +145,14 @@ class Address:
 
     @classmethod
     def create_new_address(cls, cursor, address_info):
-
+        """Get new address id and insert address into address table."""
         try:
             cursor.execute("""select noncorp_address_seq.NEXTVAL from dual""")
             row = cursor.fetchone()
             addr_id = int(row[0])
             cursor.execute("""
                             select country_typ_cd from country_type where full_desc=:country
-                          """,
-                           country=address_info['addressCountry'].upper()
-                           )
+                          """, country=address_info['addressCountry'].upper())
             country_typ_cd = (cursor.fetchone())[0]
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))
@@ -162,8 +160,8 @@ class Address:
 
         try:
             cursor.execute("""
-                            INSERT INTO address (addr_id, province, country_typ_cd, postal_cd, addr_line_1, addr_line_2, city,
-                                delivery_instructions)
+                            INSERT INTO address (addr_id, province, country_typ_cd, postal_cd, addr_line_1, addr_line_2,
+                             city, delivery_instructions)
                             VALUES (:addr_id, :province, :country_typ_cd, :postal_cd, :addr_line_1, :addr_line_2, :city,
                                 :delivery_instructions)
                             """,
@@ -207,14 +205,13 @@ class Address:
                 address['addr_line_3'] = None
 
         address_obj = Address()
-        address_obj.streetAddress = address['addr_line_1'].strip() if address['addr_line_1'] else ''
-        address_obj.streetAddressAdditional = address['addr_line_2'].strip() if address['addr_line_2'] else ''
-        address_obj.addressCity = address['city'].strip() if address['city'].strip() else ''
-        address_obj.addressRegion = address['province'].strip() if address['province'] else ''
-        address_obj.postalCode = address['postal_cd'].strip() if address['postal_cd'] else ''
-        address_obj.addressCountry = address['full_desc'].strip() if address['full_desc'] else ''
-        address_obj.deliveryInstructions = address['delivery_instructions'] if address['delivery_instructions'] else ''
-        address_obj.addressId = address['addr_id'] if address['addr_id'] else ''
+        address_obj.street_address = address['addr_line_1'].strip() if address['addr_line_1'] else ''
+        address_obj.street_address_additional = address['addr_line_2'].strip() if address['addr_line_2'] else ''
+        address_obj.address_city = address['city'].strip() if address['city'].strip() else ''
+        address_obj.address_region = address['province'].strip() if address['province'] else ''
+        address_obj.postal_code = address['postal_cd'].strip() if address['postal_cd'] else ''
+        address_obj.address_country = address['full_desc'].strip() if address['full_desc'] else ''
+        address_obj.delivery_instructions = address['delivery_instructions'] if address['delivery_instructions'] else ''
+        address_obj.address_id = address['addr_id'] if address['addr_id'] else ''
 
         return address_obj
-

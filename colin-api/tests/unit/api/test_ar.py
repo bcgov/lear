@@ -20,6 +20,7 @@ Test-Suite to ensure that the /ops endpoint is working as expected.
 import json
 
 from registry_schemas import validate
+
 from tests import oracle_integration
 
 
@@ -50,6 +51,21 @@ def test_get_ar_no_results(client):
 def test_get_ar_by_year(client):
     """Test getting an AR by year."""
     rv = client.get('/api/v1/businesses/CP0001965/filings/annualReport?year=2017')
+
+    assert 200 == rv.status_code
+    is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
+    if errors:
+        for err in errors:
+            print('\nERROR MESSAGE:')
+            print(err.message)
+
+    assert is_valid
+
+
+@oracle_integration
+def test_get_ar_by_id(client):
+    """Test getting an AR by year."""
+    rv = client.get('/api/v1/businesses/CP0001965/filings/annualReport?eventId=111362555')
 
     assert 200 == rv.status_code
     is_valid, errors = validate(rv.json, 'filing', validate_schema=True)

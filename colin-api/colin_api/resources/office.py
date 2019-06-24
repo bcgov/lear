@@ -21,8 +21,8 @@ from flask_restplus import Resource, cors
 
 from colin_api.exceptions import GenericException
 from colin_api.models import Office
-from colin_api.utils.util import cors_preflight
 from colin_api.resources.business import API
+from colin_api.utils.util import cors_preflight
 
 
 @cors_preflight('GET')
@@ -39,18 +39,15 @@ class OfficeInfo(Resource):
 
         try:
             registered_office = Office.get_current(identifier)
-
             if not registered_office:
                 return jsonify({'message': f'registered office for {identifier} not found'}), 404
-
             return jsonify(registered_office.as_dict())
 
-        except GenericException as err:
-
+        except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify(
                 {'message': err.error}), err.status_code
 
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except; want to catch any exception here
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(

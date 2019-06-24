@@ -12,17 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests to assure the version utilities.
+"""Tests to assure the ColinLastUpdate Class.
 
-Test-Suite to ensure that the version utilities are working as expected.
+Test-Suite to ensure that the ColinLastUpdate Class is working as expected.
 """
-from colin_api import utils
-from colin_api.version import __version__
-from tests import skip_in_pod
+from legal_api.models import ColinLastUpdate
 
 
-@skip_in_pod
-def test_get_version():
-    """Assert thatThe version is returned correctly."""
-    rv = utils.run_version.get_run_version()
-    assert rv == __version__
+def test_last_update(session):
+    """Assert that a User can be stored in the service.
+
+    Start with a blank database.
+    """
+    entry = ColinLastUpdate(last_update='2019-01-01', last_event_id=1234)
+
+    session.add(entry)
+    session.commit()
+
+    assert entry.id is not None

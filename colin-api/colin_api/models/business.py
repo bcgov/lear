@@ -15,32 +15,35 @@
 
 Currently this only provides API versioning information
 """
-
 from datetime import datetime
 
 from flask import current_app
-from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
 from colin_api.exceptions import BusinessNotFoundException
-from colin_api.resources.db import db
+from colin_api.resources.db import DB
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
 
-class Business():
+class Business:
     """Class to contain all model-like functions such as getting and setting from database."""
 
     business = None
+
+    def __init__(self):
+        """Initialize with all values None."""
 
     def get_corp_num(self):
         """Get corporation number, aka identifier."""
         return self.business['identifier']
 
     def as_dict(self):
+        """Return dict version of self."""
         return {
             'business': self.business
         }
 
     @classmethod
-    def find_by_identifier(cls, identifier: str = None):
+    def find_by_identifier(cls, identifier: str = None):  # pylint: disable=too-many-statements;
         """Return a Business by identifier."""
         business = None
         if not identifier:
@@ -48,24 +51,24 @@ class Business():
 
         try:
             # get record
-            cursor = db.connection.cursor()
-            cursor.execute(
-                "select corp.CORP_NUM as identifier, CORP_FROZEN_TYP_CD, corp_typ_cd type, "
-                "LAST_AR_FILED_DT last_ar_filed_date, LAST_AGM_DATE, "
-                "corp_op_state.full_desc as state, corp_state.state_typ_cd as corp_state, "
-                "t_name.corp_nme as legal_name, "
-                "t_assumed_name.CORP_NME as assumed_name, RECOGNITION_DTS as founding_date,"
-                "BN_15 as business_number, CAN_JUR_TYP_CD, OTHR_JURIS_DESC "
-                "from CORPORATION corp "
-                "left join CORP_NAME t_name on t_name.corp_num = corp.corp_num and t_name.CORP_NAME_TYP_CD='CO' "
-                "AND t_name.END_EVENT_ID is null "
-                "left join CORP_NAME t_assumed_name on t_assumed_name.corp_num = corp.corp_num "
-                "and t_assumed_name.CORP_NAME_TYP_CD='AS' AND t_assumed_name.END_EVENT_ID is null "
-                "join CORP_STATE on CORP_STATE.corp_num = corp.corp_num and CORP_STATE.end_event_id is null "
-                "join CORP_OP_STATE on CORP_OP_STATE.state_typ_cd = CORP_STATE.state_typ_cd "
-                "left join JURISDICTION on JURISDICTION.corp_num = corp.corp_num "
-                "where corp_typ_cd = 'CP'"  # only include coops (not xpro coops) for now
-                "and corp.CORP_NUM=:corp_num", corp_num=identifier)
+            cursor = DB.connection.cursor()
+            cursor.execute("""
+                select corp.CORP_NUM as identifier, CORP_FROZEN_TYP_CD, corp_typ_cd type,
+                LAST_AR_FILED_DT last_ar_filed_date, LAST_AGM_DATE,
+                corp_op_state.full_desc as state, corp_state.state_typ_cd as corp_state,
+                t_name.corp_nme as legal_name,
+                t_assumed_name.CORP_NME as assumed_name, RECOGNITION_DTS as founding_date,
+                BN_15 as business_number, CAN_JUR_TYP_CD, OTHR_JURIS_DESC
+                from CORPORATION corp
+                left join CORP_NAME t_name on t_name.corp_num = corp.corp_num and t_name.CORP_NAME_TYP_CD='CO'
+                AND t_name.END_EVENT_ID is null
+                left join CORP_NAME t_assumed_name on t_assumed_name.corp_num = corp.corp_num
+                and t_assumed_name.CORP_NAME_TYP_CD='AS' AND t_assumed_name.END_EVENT_ID is null
+                join CORP_STATE on CORP_STATE.corp_num = corp.corp_num and CORP_STATE.end_event_id is null
+                join CORP_OP_STATE on CORP_OP_STATE.state_typ_cd = CORP_STATE.state_typ_cd
+                left join JURISDICTION on JURISDICTION.corp_num = corp.corp_num
+                where corp_typ_cd = 'CP'
+                and corp.CORP_NUM=:corp_num""", corp_num=identifier)
             business = cursor.fetchone()
 
             if not business:
@@ -78,8 +81,9 @@ class Business():
             # get last ledger date from EVENT table and add to business record
             # note - FILE event type is correct for new filings; CONVOTHER is for events/filings pulled over from COBRS
             # during initial data import for Coops.
-            cursor.execute("select max(EVENT_TIMESTMP) as last_ledger_timestamp from EVENT "
-                           "where EVENT_TYP_CD in('FILE', 'CONVOTHER') and CORP_NUM = '{}'".format(identifier))
+            cursor.execute("""
+            select max(EVENT_TIMESTMP) as last_ledger_timestamp from EVENT
+            where EVENT_TYP_CD in('FILE', 'CONVOTHER') and CORP_NUM = '{}'""".format(identifier))
             last_ledger_timestamp = cursor.fetchone()[0]
             business['last_ledger_timestamp'] = last_ledger_timestamp
 
@@ -99,8 +103,8 @@ class Business():
             # set status - In Good Standing if certain criteria met, otherwise use original value
             if business['state'] == 'Active' and \
                     business['last_ar_filed_date'] is not None and \
-                    type(business['last_ar_filed_date']) is datetime and \
-                    business['last_agm_date'] is not None and type(business['last_agm_date']) is datetime:
+                    isinstance(business['last_ar_filed_date'], datetime) and \
+                    business['last_agm_date'] is not None and isinstance(business['last_agm_date'], datetime):
 
                 if business['last_ar_filed_date'] > business['last_agm_date']:
                     business['status'] = 'In Good Standing'

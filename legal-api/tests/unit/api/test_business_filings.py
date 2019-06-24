@@ -322,3 +322,22 @@ def test_update_ar_with_missing_json_body_fails(session, client, jwt):
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
     assert rv.json == {'message': f'No filing json data in body of post for {identifier}.'}
+
+
+def test_update_ar_with_colin_id_set(session, client, jwt):
+    """Assert that when a filing with colinId set (as when colin updates legal api) that colin_event_id is set"""
+    import copy
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    test_filing = copy.deepcopy(AR_FILING)
+    test_filing['filing']['header']['colinId'] = 1234
+    filings = factory_filing(b, AR_FILING)
+    ar = copy.deepcopy(test_filing)
+
+    rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
+                    json=ar,
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+
+    assert rv.status_code == HTTPStatus.ACCEPTED
+    assert rv.json == ar

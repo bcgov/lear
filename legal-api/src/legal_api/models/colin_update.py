@@ -11,18 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""This model manages the data store for the highest event id that was updated by colin.
 
-"""Tests to assure the version utilities.
-
-Test-Suite to ensure that the version utilities are working as expected.
+The ColinLastUpdate class and Schema are held in this module.
 """
-from colin_api import utils
-from colin_api.version import __version__
-from tests import skip_in_pod
+from datetime import datetime
+from .db import db, ma
 
 
-@skip_in_pod
-def test_get_version():
-    """Assert thatThe version is returned correctly."""
-    rv = utils.run_version.get_run_version()
-    assert rv == __version__
+class ColinLastUpdate(db.Model):
+
+    __tablename__ = 'colin_last_update'
+
+    id = db.Column(db.Integer, primary_key=True)
+    last_update = db.Column('last_update', db.DateTime(timezone=True), default=datetime.utcnow)
+    last_event_id = db.Column('last_event_id', db.Integer, unique=True, nullable=False)
