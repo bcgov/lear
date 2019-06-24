@@ -26,10 +26,12 @@ import AnnualReport from '@/components/AnnualReport.vue'
 
 export default {
   name: 'Home',
+
   components: {
     EntityInfo,
     AnnualReport
   },
+
   data () {
     return {
       lastARJson: null,
@@ -39,26 +41,27 @@ export default {
       loadingMsg: 'Redirecting to PayBC to Process Your Payment'
     }
   },
+
   computed: {
     corpNum () {
       return this.$store.state.corpNum
     },
-    ARFilingYear () {
+    ARFilingYear () /* string */ {
       return this.$store.state.ARFilingYear
     }
   },
-  mounted () {
-    var today = new Date()
-    this.$store.state.currentDate = today.getFullYear() + '-' + ('0' + (+today.getMonth() + 1)).slice(-2) + '-' +
-      ('0' + today.getDate()).slice(-2)
 
-    if (this.ARFilingYear == null && this.corpNum != null) {
+  mounted () {
+    this.$store.state.currentDate = new Date()
+
+    if (this.ARFilingYear === null && this.corpNum !== null) {
       this.getARInfo(this.corpNum)
       this.getEntityInfo(this.corpNum)
       this.getRegOffAddr(this.corpNum)
       this.$refs.annualReport.getDirectors()
     }
   },
+
   methods: {
     getARInfo (corpNum) {
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
@@ -68,7 +71,9 @@ export default {
         this.lastARJson = response.data
         this.setARInfo()
       }).catch(error => {
-        console.log('getARInfo ERROR: ' + error + ' ' + axios.get)
+        console.log('getARInfo ERROR:', error)
+        this.$store.state.lastAgmDate = new Date('2017/09/25')
+        this.$store.state.ARFilingYear = '2018'
       })
     },
     getEntityInfo (corpNum) {
@@ -80,7 +85,7 @@ export default {
         this.entityInfoJson = response.data
         this.setEntityInfo()
       }).catch(error => {
-        console.log('getEntityInfo ERROR: ' + error + ' ' + axios.get)
+        console.log('getEntityInfo ERROR:', error)
         // TODO - remove this stub data
         this.$store.state.entityName = 'Pathfinder Cooperative'
         this.$store.state.entityStatus = 'GOODSTANDING'
@@ -96,7 +101,7 @@ export default {
       // axios.get(url).then(response => {
       //   this.regOffAddrJson = response.data
       //   this.setRegOffAddr()
-      // }).catch(error => console.log('getRegOffAddr ERROR: ' + error + ' ' + axios.get))
+      // }).catch(error => console.log('getRegOffAddr ERROR:', error))
       this.regOffAddrJson = {
         header: {},
         business_info: {},
@@ -126,10 +131,15 @@ export default {
       this.setRegOffAddr()
     },
     setARInfo () {
-      var lastARYear = this.lastARJson.filing.annual_report.annual_general_meeting_date.substring(0, 4)
-      var currentYear = (new Date()).getFullYear() + ''
-      if (lastARYear === currentYear) this.$store.state.ARFilingYear = null
-      else this.$store.state.ARFilingYear = +lastARYear + 1 + ''
+      this.$store.state.lastAgmDate = new Date(this.lastARJson.filing.annual_report.annual_general_meeting_date)
+      var lastAgmYear = this.$store.state.lastAgmDate.getFullYear()
+      var currentYear = this.$store.state.currentDate ? this.$store.state.currentDate.getFullYear() : null
+
+      if (lastAgmYear === currentYear) {
+        this.$store.state.ARFilingYear = null // should never happen?
+      } else {
+        this.$store.state.ARFilingYear = (lastAgmYear + 1).toString()
+      }
     },
     setEntityInfo () {
       // todo:take out hardcoded values after api returns proper values
@@ -158,9 +168,10 @@ export default {
       this.$store.state.MailingAddressInstructions = this.regOffAddrJson.filing.mailingAddress.deliveryInstructions
     }
   },
+
   watch: {
     corpNum: function (val) {
-      console.log('Home.vue corpNum watcher fired: ', val)
+      // console.log('Home.vue corpNum watcher fired: ', val)
       if (val != null) {
         this.getARInfo(val)
         this.getEntityInfo(val)

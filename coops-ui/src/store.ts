@@ -6,16 +6,17 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     corpNum: null,
-    currentDate: '',
+    currentDate: null, // Date
 
     entityName: null,
     entityStatus: null,
     entityBusinessNo: null,
     entityIncNo: null,
 
-    ARFilingYear: null,
-    filedDate: null,
-    agmDate: null,
+    lastAgmDate: null, // Date
+    ARFilingYear: null, // string
+    filedDate: null, // Date
+    agmDate: null, // Date?
     noAGM: false,
     regOffAddrChange: false,
     validated: false,
@@ -35,7 +36,6 @@ export default new Vuex.Store({
     MailingAddressPostalCode: null,
     MailingAddressCountry: null,
     MailingAddressInstructions: null
-
   },
   mutations: {
   },

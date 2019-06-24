@@ -12,6 +12,7 @@
             'blue' : entityStatus === 'GOODSTANDING',
             'red' : entityStatus === 'PENDINGDISSOLUTION' | 'NOTINCOMPLIANCE',
           }"
+          tabindex="-1"
         >
           <!-- TODO: These strings should be pulled out into a globally accessible file -->
           <span v-if="entityStatus === 'GOODSTANDING'">In Good Standing</span>
