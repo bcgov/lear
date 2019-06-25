@@ -62,6 +62,8 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     COLIN_URL = os.getenv('COLIN_URL', '')
 
+    PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', '')
+
     SENTRY_DSN = os.getenv('SENTRY_DSN', None)
 
     SECRET_KEY = 'a secret'

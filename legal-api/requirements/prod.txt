@@ -13,4 +13,5 @@ marshmallow
 marshmallow-sqlalchemy
 python-dotenv
 psycopg2-binary
+requests
 sentry-sdk[flask]

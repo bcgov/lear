@@ -26,7 +26,7 @@ from legal_api.models import Business, Comment
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
 
-def factory_business(identifier):
+def factory_business(session, identifier):
     """Create a business entity."""
     business = Business(legal_name=f'legal_name-{identifier}',
                         founding_date=EPOCH_DATETIME,
@@ -57,7 +57,7 @@ def test_comment_block_orm_delete(session):
     """Assert that attempting to delete a filing will raise a BusinessException."""
     from legal_api.exceptions import BusinessException
 
-    b = factory_business('CP1234567')
+    b = factory_business(session, 'CP1234567')
     c = Comment()
     c.business_id = b.id
     c.timestamp = EPOCH_DATETIME
@@ -86,7 +86,7 @@ def test_comment_delete_is_blocked(session):
 def test_comment_dump_json(session):
     """Assert the comment json serialization works correctly."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_business(session, identifier)
     c = Comment()
     c.business_id = b.id
     c.timestamp = EPOCH_DATETIME
@@ -119,7 +119,7 @@ def test_comment_save_to_session(session):
 def test_comment_save(session):
     """Assert that the comment was saved."""
     from sqlalchemy.orm.session import Session
-    b = factory_business('CP1234567')
+    b = factory_business(session, 'CP1234567')
 
     comment = Comment()
     comment.business_id = b.id

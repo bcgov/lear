@@ -14,6 +14,7 @@
 
 """This exports all of the models and schemas used by the application."""
 from .db import db, ma  # noqa: I001
+from .address import Address
 from .business import Business, BusinessSchema  # noqa: I001
 from .colin_update import ColinLastUpdate
 from .comment import Comment

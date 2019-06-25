@@ -19,7 +19,7 @@ from http import HTTPStatus
 from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref
+from sqlalchemy.orm import attributes, backref
 
 from legal_api.exceptions import BusinessException
 from legal_api.schemas import rsbc_schemas
@@ -27,11 +27,15 @@ from legal_api.schemas import rsbc_schemas
 from .db import db
 
 
-class Filing(db.Model):
+class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowing the model to be deep.
     """Immutable filing record.
 
     Manages the filing ledger for the associated business.
     """
+
+    FILINGS = {'annualReport': {'name': 'annualReport', 'title': 'Annual Report Filing', 'code': 'OTANN'},
+               'changeOfAddress': {'name': 'changeOfAddress', 'title': 'Change of Address Filing', 'code': 'OTADD'},
+               }
 
     __tablename__ = 'filings'
 
@@ -65,6 +69,17 @@ class Filing(db.Model):
         """Property containing the payment token, as extracted from the filing."""
         return self._payment_token
 
+    @payment_token.setter
+    def payment_token(self, token: int):
+        old_payment_token = attributes.get_history(self, '_payment_token')
+        if self._payment_token \
+                and (old_payment_token.deleted or old_payment_token.unchanged):
+            raise BusinessException(
+                error='Filings cannot be changed after they are paid for and stored.',
+                status_code=HTTPStatus.FORBIDDEN
+            )
+        self._payment_token = token
+
     @hybrid_property
     def filing_json(self):
         """Property containing the filings data."""
@@ -73,7 +88,9 @@ class Filing(db.Model):
     @filing_json.setter
     def filing_json(self, json_data: dict):
         """Property containing the filings data."""
-        if self.payment_token:
+        old_payment_token = attributes.get_history(self, '_payment_token')
+        if self._payment_token \
+                and (old_payment_token.deleted or old_payment_token.unchanged):
             raise BusinessException(
                 error='Filings cannot be changed after they are paid for and stored.',
                 status_code=HTTPStatus.FORBIDDEN
@@ -88,26 +105,29 @@ class Filing(db.Model):
                 error='No filings found.',
                 status_code=HTTPStatus.UNPROCESSABLE_ENTITY
             )
-        self._payment_token = json_data.get('filing').get('header').get('paymentToken')
 
         if self.payment_token:
             valid, err = rsbc_schemas.validate(json_data, 'filing')
             if not valid:
                 self._filing_type = None
                 self._payment_token = None
+                errors = []
+                for error in err:
+                    errors.append({'path': '/'.join(error.path), 'error': error.message})
                 raise BusinessException(
-                    error=f'Invalid filing: {err}',
+                    error=f'{errors}',
                     status_code=HTTPStatus.UNPROCESSABLE_ENTITY
                 )
         self._filing_json = json_data
         try:
             self.colin_event_id = int(json_data.get('filing').get('eventId'))
-        except TypeError as err:
+        except (AttributeError, TypeError):
             # eventId is from colin_api (will not be set until added in colin db)
             # todo: could make the post call for filing with json_data to colin api here and then set the colin_event_Id
             pass
 
     # json serializer
+    @property
     def json(self):
         """Return a json representation of this object."""
         try:
