@@ -65,7 +65,7 @@ def test_address_save(session):
 def test_address_save_to_business(session):
     """Assert that the address saves correctly."""
     identifier = 'CP1234567'
-    business = factory_business(session, identifier)
+    business = factory_business(identifier)
 
     address = Address(
         city='Test City',

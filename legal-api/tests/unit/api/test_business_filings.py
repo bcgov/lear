@@ -18,11 +18,9 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 from datetime import datetime
 from http import HTTPStatus
-from importlib import reload
 
 from flask import current_app
 
-from legal_api import config
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from tests.unit.models import AR_FILING, factory_business, factory_business_mailing_address, factory_filing
 from tests.unit.services.utils import create_header
@@ -32,11 +30,12 @@ def test_get_all_business_filings_only_one_in_ledger(session, client):
     """Assert that the business info can be received in a valid JSONSchema format."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(session, identifier)
+    b = factory_business(identifier)
     filings = factory_filing(b, AR_FILING)
 
     ar = copy.deepcopy(AR_FILING)
     ar['filing']['header']['filingId'] = filings.id
+    ar['filing']['header']['colinId'] = None
 
     print('test_get_all_business_filings - filing:', filings)
 
@@ -56,7 +55,7 @@ def test_get_all_business_filings_multi_in_ledger(session, client):
     identifier = 'CP7654321'
 
     # create business
-    b = factory_business(session, identifier)
+    b = factory_business(identifier)
 
     # add 3 filings, add a year onto the AGM date
     for i in range(0, 3):
@@ -74,10 +73,11 @@ def test_get_one_business_filing_by_id(session, client):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(session, identifier)
+    b = factory_business(identifier)
     filings = factory_filing(b, AR_FILING)
     ar = copy.deepcopy(AR_FILING)
     ar['filing']['header']['filingId'] = filings.id
+    ar['filing']['header']['colinId'] = None
 
     rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings.id}')
 
@@ -88,7 +88,7 @@ def test_get_one_business_filing_by_id(session, client):
 def test_get_404_when_business_invalid_filing_id(session, client):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     identifier = 'CP7654321'
-    b = factory_business(session, identifier)
+    b = factory_business(identifier)
     filings = factory_filing(b, AR_FILING)
 
     print('test_get_one_business_filing - filing:', filings)
@@ -115,7 +115,7 @@ def test_get_404_filing_with_invalid_business(session, client):
 def test_post_fail_if_given_filing_id(session, client, jwt):
     """Assert that a filing cannot be created against a given filing_id."""
     identifier = 'CP7654321'
-    b = factory_business(session, identifier)
+    b = factory_business(identifier)
     filings = factory_filing(b, AR_FILING)
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
@@ -144,7 +144,7 @@ def test_post_filing_no_business(session, client, jwt):
 def test_post_empty_ar_filing_to_a_business(session, client, jwt):
     """Assert that an empty filing cannot be posted."""
     identifier = 'CP7654321'
-    factory_business(session, identifier)
+    factory_business(identifier)
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=None,
@@ -158,7 +158,7 @@ def test_post_empty_ar_filing_to_a_business(session, client, jwt):
 def test_post_authorized_draft_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    factory_business(session, identifier)
+    factory_business(identifier)
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings?draft=true',
                      json=AR_FILING,
@@ -171,7 +171,7 @@ def test_post_authorized_draft_ar(session, client, jwt):
 def test_post_not_authorized_draft_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    factory_business(session, identifier)
+    factory_business(identifier)
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings?draft=true',
                      json=AR_FILING,
@@ -184,7 +184,7 @@ def test_post_not_authorized_draft_ar(session, client, jwt):
 def test_post_draft_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    factory_business(session, identifier)
+    factory_business(identifier)
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings?draft=true',
                      json=AR_FILING,
@@ -199,7 +199,7 @@ def test_post_draft_ar(session, client, jwt):
 def test_post_only_validate_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    factory_business(session, identifier)
+    factory_business(identifier)
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings?only_validate=true',
                      json=AR_FILING,
@@ -214,7 +214,7 @@ def test_post_only_validate_error_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     import copy
     identifier = 'CP7654321'
-    factory_business(session, identifier)
+    factory_business(identifier)
 
     ar = copy.deepcopy(AR_FILING)
     ar['filing']['header'].pop('name')
@@ -233,7 +233,7 @@ def test_post_only_validate_error_ar(session, client, jwt):
 def test_post_valid_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    business = factory_business(session, identifier)
+    business = factory_business(identifier)
     factory_business_mailing_address(business)
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
@@ -251,7 +251,7 @@ def test_post_valid_ar(session, client, jwt):
 def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    business = factory_business(session, identifier)
+    business = factory_business(identifier)
     factory_business_mailing_address(business)
 
     old_svc = current_app.config.get('PAYMENT_SVC_URL')
@@ -271,7 +271,7 @@ def test_update_ar_filing_to_a_business(session, client, jwt):
     """Assert that a filing can be updated if not paid."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(session, identifier)
+    b = factory_business(identifier)
     factory_business_mailing_address(b)
     filings = factory_filing(b, AR_FILING)
     ar = copy.deepcopy(AR_FILING)
@@ -296,7 +296,7 @@ def test_update_draft_ar(session, client, jwt):
     """Assert that a valid filing can be updated to a paid filing."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(session, identifier)
+    b = factory_business(identifier)
     filings = factory_filing(b, AR_FILING)
     ar = copy.deepcopy(AR_FILING)
 
@@ -316,7 +316,7 @@ def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
     """Assert that a valid filing can NOT be updated once it has been paid."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(session, identifier)
+    b = factory_business(identifier)
     ar = copy.deepcopy(AR_FILING)
     filings = factory_filing(b, ar)
 
@@ -336,7 +336,7 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
     """Assert that updating a missing filing fails."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(session, identifier)
+    b = factory_business(identifier)
     filings = factory_filing(b, AR_FILING)
     ar = copy.deepcopy(AR_FILING)
     ar['filing']['header']['paymentToken'] = 'token'
@@ -354,7 +354,7 @@ def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
     """Assert that updating to a non-existant business fails."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(session, identifier)
+    b = factory_business(identifier)
     filings = factory_filing(b, AR_FILING)
     ar = copy.deepcopy(AR_FILING)
     ar['filing']['header']['paymentToken'] = 'token'
@@ -373,7 +373,7 @@ def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
 def test_update_ar_with_missing_json_body_fails(session, client, jwt):
     """Assert that updating a filing with no JSON body fails."""
     identifier = 'CP7654321'
-    b = factory_business(session, identifier)
+    b = factory_business(identifier)
     filings = factory_filing(b, AR_FILING)
 
     rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id+1}',
@@ -386,14 +386,16 @@ def test_update_ar_with_missing_json_body_fails(session, client, jwt):
 
 
 def test_update_ar_with_colin_id_set(session, client, jwt):
-    """Assert that when a filing with colinId set (as when colin updates legal api) that colin_event_id is set"""
+    """Assert that when a filing with colinId set (as when colin updates legal api) that colin_event_id is set."""
     import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)
-    test_filing = copy.deepcopy(AR_FILING)
-    test_filing['filing']['header']['colinId'] = 1234
+    factory_business_mailing_address(b)
+
     filings = factory_filing(b, AR_FILING)
-    ar = copy.deepcopy(test_filing)
+
+    ar = copy.deepcopy(AR_FILING)
+    ar['filing']['header']['colinId'] = 1234
 
     rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
                     json=ar,
@@ -401,4 +403,7 @@ def test_update_ar_with_colin_id_set(session, client, jwt):
                     )
 
     assert rv.status_code == HTTPStatus.ACCEPTED
-    assert rv.json == ar
+    assert rv.json['filing']['business'] == ar['filing']['business']
+    assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
+    assert not rv.json['filing']['header'].get('colinId')
+    assert rv.json['filing']['header']['filingId'] == filings.id

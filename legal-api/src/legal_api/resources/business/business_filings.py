@@ -20,9 +20,9 @@ from http import HTTPStatus
 from typing import Tuple
 
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
+from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
 from flask import current_app, g, jsonify, request
 from flask_restplus import Resource, cors
-from requests.exceptions import ConnectionError
 from werkzeug.local import LocalProxy
 
 from legal_api.exceptions import BusinessException
@@ -60,12 +60,12 @@ class ListFilingResource(Resource):
             if not rv:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
 
-            return jsonify(rv[1].json())
+            return jsonify(rv[1].json)
 
         rv = []
         filings = business.filings.all()
         for filing in filings:
-            rv.append(filing.json())
+            rv.append(filing.json)
 
         return jsonify(filings=rv)
 
@@ -114,7 +114,7 @@ class ListFilingResource(Resource):
                 return jsonify(err_msg), err_code
 
         # all done
-        return jsonify(filing.json()), \
+        return jsonify(filing.json),\
             (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
 
     @staticmethod
@@ -246,8 +246,8 @@ class ListFilingResource(Resource):
 
         try:
             rv = requests.post(payment_svc_url, json=payload)
-        except ConnectionError as err:
-            current_app.logger.error(f'Payment connection failure for {business.identifier}: filing:{filing.id}')
+        except exceptions.ConnectionError as err:
+            current_app.logger.error(f'Payment connection failure for {business.identifier}: filing:{filing.id}', err)
             return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
         pid = rv.json().get('id')

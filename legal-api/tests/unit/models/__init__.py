@@ -38,7 +38,7 @@ AR_FILING = {
 }
 
 
-def factory_business(session, identifier):
+def factory_business(identifier):
     """Create a business entity."""
     business = Business(legal_name=f'legal_name-{identifier}',
                         founding_date=EPOCH_DATETIME,
@@ -47,8 +47,7 @@ def factory_business(session, identifier):
                         tax_id='BN123456789',
                         fiscal_year_end_date=FROZEN_DATETIME)
 
-    session.add(business)
-    session.commit()
+    business.save()
     return business
 
 

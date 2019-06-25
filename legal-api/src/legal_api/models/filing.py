@@ -27,7 +27,7 @@ from legal_api.schemas import rsbc_schemas
 from .db import db
 
 
-class Filing(db.Model):
+class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowing the model to be deep.
     """Immutable filing record.
 
     Manages the filing ledger for the associated business.
@@ -71,11 +71,13 @@ class Filing(db.Model):
 
     @payment_token.setter
     def payment_token(self, token: int):
-        # if self._payment_token:
-        #     raise BusinessException(
-        #         error='Filings cannot be changed after they are paid for and stored.',
-        #         status_code=HTTPStatus.FORBIDDEN
-        #     )
+        old_payment_token = attributes.get_history(self, '_payment_token')
+        if self._payment_token \
+                and (old_payment_token.deleted or old_payment_token.unchanged):
+            raise BusinessException(
+                error='Filings cannot be changed after they are paid for and stored.',
+                status_code=HTTPStatus.FORBIDDEN
+            )
         self._payment_token = token
 
     @hybrid_property
@@ -119,12 +121,13 @@ class Filing(db.Model):
         self._filing_json = json_data
         try:
             self.colin_event_id = int(json_data.get('filing').get('eventId'))
-        except TypeError as err:
+        except (AttributeError, TypeError):
             # eventId is from colin_api (will not be set until added in colin db)
             # todo: could make the post call for filing with json_data to colin api here and then set the colin_event_Id
             pass
 
     # json serializer
+    @property
     def json(self):
         """Return a json representation of this object."""
         try:
