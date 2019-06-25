@@ -83,3 +83,29 @@ def test_config_dsn_key():
     reload(config)
     app = create_app()
     assert app.config.get('SENTRY_DSN') is not None
+
+
+def test_prod_config_jwks_cache(monkeypatch):  # pylint: disable=missing-docstring
+    """Assert that the Config is correct.
+
+    The object either uses the JWT_OIDC_JWKS_CACHE_TIMEOUT from the environment,
+    or creates the JWT_OIDC_JWKS_CACHE_TIMEOUT defaults to 300
+    """
+    key = 'JWT_OIDC_JWKS_CACHE_TIMEOUT'
+
+    # Assert that secret key will default to some value
+    # even if missed in the environment setup
+    monkeypatch.delenv(key)  # , raising=False)
+    monkeypatch.setenv(key, None)
+    reload(config)
+    assert config.ProdConfig().JWT_OIDC_JWKS_CACHE_TIMEOUT is not None
+
+    # Assert that the secret_key is set to the assigned environment value
+    monkeypatch.setenv(key, 500)
+    reload(config)
+    assert config.ProdConfig().JWT_OIDC_JWKS_CACHE_TIMEOUT == 500
+
+    # Assert that the secret_key is set to the assigned environment value
+    monkeypatch.setenv(key, 'ack')
+    reload(config)
+    assert config.ProdConfig().JWT_OIDC_JWKS_CACHE_TIMEOUT == 300

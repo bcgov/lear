@@ -16,6 +16,9 @@
 
 Test-Suite to ensure that the User Class is working as expected.
 """
+import pytest
+
+from legal_api.exceptions import BusinessException
 from legal_api.models import User
 
 
@@ -59,11 +62,43 @@ def test_create_from_jwt_token(session):
     assert u.id is not None
 
 
+def test_get_or_create_user_by_jwt(session):
+    """Assert User is created from the JWT fields."""
+    token = {'username': 'username',
+             'given_name': 'given_name',
+             'family_name': 'family_name',
+             'iss': 'iss',
+             'sub': 'sub'
+             }
+    u = User.get_or_create_user_by_jwt(token)
+    assert u.id is not None
+
+
+def test_get_or_create_user_by_jwt_invlaid_jwt(session):
+    """Assert User is created from the JWT fields."""
+    token = b'invalidtoken'
+
+    with pytest.raises(BusinessException) as excinfo:
+        User.get_or_create_user_by_jwt(token)
+
+    assert excinfo.value.error == 'unable_to_get_or_create_user'
+
+
 def test_create_from_jwt_token_no_token(session):
     """Assert User is not created from an empty token."""
     token = None
     u = User.create_from_jwt_token(token)
     assert u is None
+
+
+def test_create_from_invalid_jwt_token_no_token(session):
+    """Assert User is not created from an empty token."""
+    token = b'invalidtoken'
+
+    with pytest.raises(AttributeError) as excinfo:
+        User.create_from_jwt_token(token)
+
+    assert excinfo.value.args[0] == "'bytes' object has no attribute 'get'"
 
 
 def test_find_by_username(session):

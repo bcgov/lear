@@ -26,6 +26,7 @@ from legal_api.exceptions import BusinessException
 from .db import db, ma
 
 
+from .address import Address  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
@@ -56,7 +57,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
 
+    # relationships
     filings = db.relationship('Filing', lazy='dynamic')
+    business_mailing_address = db.relationship('Address', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):
@@ -130,15 +133,24 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.tax_id:
             d['taxId'] = self.tax_id
+        mailing = self.business_mailing_address.one_or_none()
+        if mailing:
+            d['mailingAddress'] = mailing.json
+
         return d
 
     @staticmethod
     def validate_identifier(identifier: str) -> bool:
         """Validate the identifier meets the Registry naming standards.
 
-        CP = BC COOPS or XCP = Expro COOP + 7 digits.
-        ie: CP1234567 or XCP1234567
         All legal entities with BC Reg are PREFIX + 7 digits
+
+        CP = BC COOPS prefix;
+        XCP = Expro COOP prefix
+
+        Examples:
+            ie: CP1234567 or XCP1234567
+
         """
         if len(identifier) < 9:
             return False

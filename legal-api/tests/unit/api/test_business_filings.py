@@ -19,8 +19,10 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 from datetime import datetime
 from http import HTTPStatus
 
-from legal_api.services.authz import STAFF_ROLE
-from tests.unit.models.test_filing import AR_FILING, factory_business, factory_filing
+from flask import current_app
+
+from legal_api.services.authz import BASIC_USER, STAFF_ROLE
+from tests.unit.models import AR_FILING, factory_business, factory_business_mailing_address, factory_filing
 from tests.unit.services.utils import create_header
 
 
@@ -33,12 +35,13 @@ def test_get_all_business_filings_only_one_in_ledger(session, client):
 
     ar = copy.deepcopy(AR_FILING)
     ar['filing']['header']['filingId'] = filings.id
+    ar['filing']['header']['colinId'] = None
 
     print('test_get_all_business_filings - filing:', filings)
 
     rv = client.get(f'/api/v1/businesses/{identifier}/filings')
 
-    assert rv.status_code == 200
+    assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('filings')) == 1
     assert rv.json.get('filings')[0] == ar
 
@@ -62,7 +65,7 @@ def test_get_all_business_filings_multi_in_ledger(session, client):
 
     rv = client.get(f'/api/v1/businesses/{identifier}/filings')
 
-    assert rv.status_code == 200
+    assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('filings')) == 3
 
 
@@ -74,14 +77,15 @@ def test_get_one_business_filing_by_id(session, client):
     filings = factory_filing(b, AR_FILING)
     ar = copy.deepcopy(AR_FILING)
     ar['filing']['header']['filingId'] = filings.id
+    ar['filing']['header']['colinId'] = None
 
     rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings.id}')
 
-    assert rv.status_code == 200
+    assert rv.status_code == HTTPStatus.OK
     assert rv.json == ar
 
 
-def test_get_one_business_filing_by_id_missing_id(session, client):
+def test_get_404_when_business_invalid_filing_id(session, client):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     identifier = 'CP7654321'
     b = factory_business(identifier)
@@ -93,11 +97,11 @@ def test_get_one_business_filing_by_id_missing_id(session, client):
 
     rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings.id + 1}')
 
-    assert rv.status_code == 404
+    assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': f'{identifier} no filings found'}
 
 
-def test_get_filing_no_business(session, client):
+def test_get_404_filing_with_invalid_business(session, client):
     """Assert that a filing cannot be created against non-existent business."""
     identifier = 'CP7654321'
     filings_id = 1
@@ -108,7 +112,7 @@ def test_get_filing_no_business(session, client):
     assert rv.json == {'message': f'{identifier} not found'}
 
 
-def test_post_invalid_filing_id(session, client, jwt):
+def test_post_fail_if_given_filing_id(session, client, jwt):
     """Assert that a filing cannot be created against a given filing_id."""
     identifier = 'CP7654321'
     b = factory_business(identifier)
@@ -151,70 +155,124 @@ def test_post_empty_ar_filing_to_a_business(session, client, jwt):
     assert rv.json == {'message': f'No filing json data in body of post for {identifier}.'}
 
 
-def test_post_ar_not_paid_filing_to_a_business(session, client, freeze_datetime_utcnow, jwt):
+def test_post_authorized_draft_ar(session, client, jwt):
+    """Assert that a unpaid filing can be posted."""
+    identifier = 'CP7654321'
+    factory_business(identifier)
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings?draft=true',
+                     json=AR_FILING,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.CREATED
+
+
+def test_post_not_authorized_draft_ar(session, client, jwt):
+    """Assert that a unpaid filing can be posted."""
+    identifier = 'CP7654321'
+    factory_business(identifier)
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings?draft=true',
+                     json=AR_FILING,
+                     headers=create_header(jwt, [BASIC_USER], 'WRONGUSER')
+                     )
+
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_post_draft_ar(session, client, jwt):
+    """Assert that a unpaid filing can be posted."""
+    identifier = 'CP7654321'
+    factory_business(identifier)
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings?draft=true',
+                     json=AR_FILING,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    assert not rv.json['filing']['header'].get('paymentToken')
+    assert rv.json['filing']['header']['filingId']
+
+
+def test_post_only_validate_ar(session, client, jwt):
+    """Assert that a unpaid filing can be posted."""
+    identifier = 'CP7654321'
+    factory_business(identifier)
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings?only_validate=true',
+                     json=AR_FILING,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.OK
+    assert not rv.json.get('errors')
+
+
+def test_post_only_validate_error_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     import copy
     identifier = 'CP7654321'
     factory_business(identifier)
+
+    ar = copy.deepcopy(AR_FILING)
+    ar['filing']['header'].pop('name')
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings?only_validate=true',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json.get('errors')
+    assert rv.json['errors'][0]['path'] == 'filing/header'
+    assert rv.json['errors'][0]['error'] == "'name' is a required property"
+
+
+def test_post_valid_ar(session, client, jwt):
+    """Assert that a unpaid filing can be posted."""
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    factory_business_mailing_address(business)
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=AR_FILING,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
-    ar = copy.deepcopy(AR_FILING)
-    ar['filing']['header']['filingId'] = rv.json['filing']['header']['filingId']
-    ar['filing']['header']['submitter'] = identifier
-
     assert rv.status_code == HTTPStatus.CREATED
-    assert rv.json['filing']['header']['filingId'] == ar['filing']['header']['filingId']
-    assert rv.json == ar
+    assert not rv.json.get('errors')
+    assert rv.json['filing']['header']['filingId']
+    assert rv.json['filing']['header']['paymentToken']
+    assert rv.json['filing']['header']['paymentToken'] == '153'
 
 
-def test_post_ar_paid_filing_to_a_business(session, client, jwt):
-    """Assert that a paid filing can be posted."""
-    import copy
+def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
+    """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
-    ar = copy.deepcopy(AR_FILING)
-    ar['filing']['header']['paymentToken'] = 'token'
+    business = factory_business(identifier)
+    factory_business_mailing_address(business)
 
-    rv = client.post(f'/api/v1/businesses/{b.identifier}/filings',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
-
-    ar['filing']['header']['filingId'] = rv.json['filing']['header']['filingId']
-    ar['filing']['header']['date'] = rv.json['filing']['header']['date']
-    ar['filing']['header']['submitter'] = identifier
-
-    assert rv.status_code == HTTPStatus.CREATED
-    assert rv.json == ar
-
-
-def test_post_ar_paid_invalid_filing_to_a_business(session, client, jwt):
-    """Assert that a paid filing can be posted."""
-    import copy
-    identifier = 'CP7654321'
-    factory_business(identifier)
-    ar = copy.deepcopy(AR_FILING)
-    ar['filing']['header']['paymentToken'] = 'token'
-    ar['filing'].pop('business')
+    old_svc = current_app.config.get('PAYMENT_SVC_URL')
+    current_app.config['PAYMENT_SVC_URL'] = 'http://nowhere.localdomain'
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
-                     json=ar,
+                     json=AR_FILING,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
-    assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-    assert rv.json['message'].startswith('Invalid filing:')
+    current_app.config['PAYMENT_SVC_URL'] = old_svc
+    assert rv.status_code == HTTPStatus.PAYMENT_REQUIRED
+    assert not rv.json.get('errors')
 
 
-def test_update_ar_filing_to_a_business(session, client, freeze_datetime_utcnow, jwt):
+def test_update_ar_filing_to_a_business(session, client, jwt):
     """Assert that a filing can be updated if not paid."""
     import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)
+    factory_business_mailing_address(b)
     filings = factory_filing(b, AR_FILING)
     ar = copy.deepcopy(AR_FILING)
     ar['filing']['header']['date'] = '2001-08-05'
@@ -224,43 +282,46 @@ def test_update_ar_filing_to_a_business(session, client, freeze_datetime_utcnow,
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
                     )
 
-    ar['filing']['header']['filingId'] = filings.id
     ar['filing']['header']['submitter'] = identifier
+    ar['filing']['header']['date'] = rv.json['filing']['header']['date']
     assert rv.status_code == HTTPStatus.ACCEPTED
-    assert rv.json == ar
+    assert rv.json['filing']['business'] == ar['filing']['business']
+    assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
+    assert rv.json['filing']['header']['filingId']
+    assert rv.json['filing']['header']['submitter']
+    assert rv.json['filing']['header']['paymentToken']
 
 
-def test_update_ar_to_paid_filing_to_a_business(session, client, jwt):
+def test_update_draft_ar(session, client, jwt):
     """Assert that a valid filing can be updated to a paid filing."""
     import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)
     filings = factory_filing(b, AR_FILING)
     ar = copy.deepcopy(AR_FILING)
-    ar['filing']['header']['paymentToken'] = 'token'
 
-    rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
+    rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id}?draft=true',
                     json=ar,
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
                     )
 
-    ar['filing']['header']['filingId'] = filings.id
-    ar['filing']['header']['date'] = rv.json['filing']['header']['date']
-    ar['filing']['header']['submitter'] = identifier
     assert rv.status_code == HTTPStatus.ACCEPTED
-    assert rv.json == ar
+    assert rv.json['filing']['business'] == ar['filing']['business']
+    assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
+    assert not rv.json['filing']['header'].get('paymentToken')
+    assert rv.json['filing']['header']['filingId'] == filings.id
 
 
-def test_update_block_ar_update_to_a_paid_filing_to_a_business(session, client, jwt):
+def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
     """Assert that a valid filing can NOT be updated once it has been paid."""
     import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)
     ar = copy.deepcopy(AR_FILING)
-    ar['filing']['header']['paymentToken'] = 'token'
     filings = factory_filing(b, ar)
 
-    ar['filing']['header'].pop('paymentToken', None)
+    filings.payment_token = 'token'
+    filings.save()
 
     rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
                     json=ar,
@@ -325,14 +386,16 @@ def test_update_ar_with_missing_json_body_fails(session, client, jwt):
 
 
 def test_update_ar_with_colin_id_set(session, client, jwt):
-    """Assert that when a filing with colinId set (as when colin updates legal api) that colin_event_id is set"""
+    """Assert that when a filing with colinId set (as when colin updates legal api) that colin_event_id is set."""
     import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)
-    test_filing = copy.deepcopy(AR_FILING)
-    test_filing['filing']['header']['colinId'] = 1234
+    factory_business_mailing_address(b)
+
     filings = factory_filing(b, AR_FILING)
-    ar = copy.deepcopy(test_filing)
+
+    ar = copy.deepcopy(AR_FILING)
+    ar['filing']['header']['colinId'] = 1234
 
     rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
                     json=ar,
@@ -340,4 +403,7 @@ def test_update_ar_with_colin_id_set(session, client, jwt):
                     )
 
     assert rv.status_code == HTTPStatus.ACCEPTED
-    assert rv.json == ar
+    assert rv.json['filing']['business'] == ar['filing']['business']
+    assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
+    assert not rv.json['filing']['header'].get('colinId')
+    assert rv.json['filing']['header']['filingId'] == filings.id

@@ -16,10 +16,12 @@
 The ColinLastUpdate class and Schema are held in this module.
 """
 from datetime import datetime
-from .db import db, ma
+
+from .db import db
 
 
-class ColinLastUpdate(db.Model):
+class ColinLastUpdate(db.Model):  # pylint: disable=too-few-public-methods
+    """Creates a record of the last event loaded from colin."""
 
     __tablename__ = 'colin_last_update'
 
