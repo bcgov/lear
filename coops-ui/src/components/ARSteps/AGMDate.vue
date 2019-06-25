@@ -41,8 +41,10 @@
               <v-btn flat color="blue" @click="agmDatePicker = false">Cancel</v-btn>
             </v-date-picker>
           </v-menu>
-          <div class="validationErrorInfo" v-if="!$v.dateFormatted.isISOFormat">Date must be in format YYYY/MM/DD.</div>
           <div class="validationErrorInfo">
+            <span v-if="!$v.dateFormatted.isISOFormat">
+              Date must be in format YYYY/MM/DD.
+            </span>
             <span v-if="!$v.dateFormatted.isValidYear">
               Please enter a date within {{this.year}}.
             </span>
@@ -134,7 +136,7 @@ export default {
       //    the month is valid and in the past
       //    the day is valid and in the past
       var day = (new Date(date)).getUTCDate()
-      if (date != null && date !== '' && (
+      if (date !== null && date !== '' && (
         date.indexOf(separator) !== 4 ||
         date.indexOf(separator, 5) !== 7 ||
         date.indexOf(separator, 8) !== -1 ||

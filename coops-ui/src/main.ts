@@ -1,13 +1,12 @@
 import '@babel/polyfill'
 import Vue from 'vue'
+import './plugins/vuetify'
 import App from './App.vue'
-import axios from './axios-auth'
 import Vuelidate from 'vuelidate'
 import Vue2Filters from 'vue2-filters'
 import Affix from 'vue-affix'
 import router from './router'
 import store from './store'
-import './plugins/vuetify'
 import './registerServiceWorker'
 
 Vue.use(Vuelidate)

@@ -1,22 +1,17 @@
 <template>
-  <section :disabled="!agmEntered">
-    <header>
-      <h2>3. Directors</h2>
-      <p>Tell us who was elected or appointed and who ceased to be a director at your 2018 AGM.</p>
-      <v-expand-transition>
-        <div v-show="!showNewDirectorForm">
-          <v-btn class="new-director-btn" outline color="primary" :disabled="!agmEntered"
-            @click="addNewDirector">
-            <v-icon>add</v-icon>
-            <span>Appoint New Director</span>
-          </v-btn>
-        </div>
-      </v-expand-transition>
+  <div id="directors">
 
-    </header>
+    <v-expand-transition>
+      <div v-show="!showNewDirectorForm">
+        <v-btn class="new-director-btn" outline color="primary" :disabled="!agmEntered"
+          @click="addNewDirector">
+          <v-icon>add</v-icon>
+          <span>Appoint New Director</span>
+        </v-btn>
+      </div>
+    </v-expand-transition>
 
     <v-card flat>
-
       <!-- New Director Form -->
       <v-expand-transition>
         <ul class="list new-director" v-show="showNewDirectorForm">
@@ -208,9 +203,9 @@
           </div>
         </li>
       </ul>
-
     </v-card>
-  </section>
+
+  </div>
 </template>
 
 <script>
@@ -458,24 +453,13 @@ export default {
 <style lang="stylus" scoped>
   @import "../../assets/styles/theme.styl"
 
-  article
-    .v-card
-      line-height 1.2rem
-      font-size 0.875rem
+  .v-card
+    line-height 1.2rem
+    font-size 0.875rem
 
-    .v-btn
-      margin 0
-      text-transform none
-
-  section p
-    //font-size 0.875rem
-    color $gray6
-
-  section + section
-    margin-top 3rem
-
-  h2
-    margin-bottom 0.25rem
+  .v-btn
+    margin 0
+    text-transform none
 
   ul
     margin 0
@@ -518,30 +502,17 @@ export default {
     li
       border-bottom 1px solid $gray3
 
-  .address-list .form
-    margin-top 1rem
-
-  @media (min-width 768px)
-    .address-list .form
-      margin-top 0
-
   .form__row.three-column
     display flex
     flex-flow row nowrap
     align-items stretch
     margin-right -0.5rem
     margin-left -0.5rem
-
     .item
       flex 1 1 auto
       flex-basis 0
       margin-right 0.5rem
       margin-left 0.5rem
-
-  .inherit-checkbox
-    margin-top -3px
-    margin-left -3px
-    padding 0
 
   // Address Block Layout
   .address
@@ -550,20 +521,6 @@ export default {
 
   .address__row
     flex 1 1 auto
-
-  // Registered Office Address
-  .registered-address-info
-    display flex
-
-    .status
-      flex 1 1 auto
-
-    .actions
-      flex 0 0 auto
-
-  .show-address-form
-    li:first-child
-      padding-bottom 0
 
   // Director Display
   .director-info
@@ -584,14 +541,6 @@ export default {
     .v-icon
       margin-left -0.5rem
 
-  // Filing Buttons
-  .ar-filing-buttons
-    padding-top 2rem
-    border-top: 1px solid $gray5
-    text-align right
-    .v-btn + .v-btn
-      margin-left 0.5rem
-
   // V-chip customization
   .v-chip--small
     height 1.2rem !important
@@ -603,15 +552,12 @@ export default {
     font-weight 700
     vertical-align top
 
-    .v-chip__content
-      height 1.2rem !important
-      padding 0 0.5rem
-
   .remove
     color $gray5 !important
 
-  .agm-date
-    margin-left 0.25rem
-    font-weight 300
-
+  .new-director .meta-container,
+  .meta-container.new-director
+    flex-flow column nowrap
+    > label:first-child
+      margin-bottom 1.5rem
 </style>

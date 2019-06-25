@@ -1,258 +1,257 @@
 <template>
   <div id="registered-office-address">
-    <v-container>
-      <v-card>
-        <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
-          <li class="container">
-            <div class="meta-container">
-              <label>Delivery Address</label>
-              <div class="meta-container__inner">
 
-                <!-- START: Static Details (Delivery Address) -->
-                <v-expand-transition>
-                  <div id="delivery-address-display" class="address-block" v-show="!showAddressForm">
-                    <div class="address-block__info">
-                      <div class="address-block__info-row">{{DeliveryAddressStreet}}</div>
-                      <div class="address-block__info-row" v-if="DeliveryAddressStreetAdditional">
-                        {{DeliveryAddressStreetAdditional}}
-                      </div>
-                      <div class="address-block__info-row">
-                        <span>{{DeliveryAddressCity}}</span>
-                        <span>&nbsp;{{DeliveryAddressRegion}}</span>
-                        <span>&nbsp;{{DeliveryAddressPostalCode}}</span>
-                      </div>
-                      <div class="address-block__info-row">{{DeliveryAddressCountry}}</div>
-                    </div>
-                    <div class="address-block__actions">
-                      <v-btn id="reg-off-addr-change-btn"
-                             small outline color="blue" :disabled="!agmEntered" @click="editAddress">
-                        Change
-                      </v-btn>
-                      <br/>
-                      <v-btn id="reg-off-addr-reset-btn"
-                             v-if="regOffAddrChange" class="reset-btn" small outline color="red" @click="resetAddress">
-                        Reset
-                      </v-btn>
-                    </div>
+    <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
+      <li class="container">
+        <div class="meta-container">
+          <label>Delivery Address</label>
+          <div class="meta-container__inner">
+
+            <!-- START: Static Details (Delivery Address) -->
+            <v-expand-transition>
+              <div id="delivery-address-display" class="address-block" v-show="!showAddressForm">
+                <div class="address-block__info">
+                  <div class="address-block__info-row">{{DeliveryAddressStreet}}</div>
+                  <div class="address-block__info-row" v-if="DeliveryAddressStreetAdditional">
+                    {{DeliveryAddressStreetAdditional}}
                   </div>
-                </v-expand-transition>
-                <!-- END: Static Details (Delivery Address) -->
+                  <div class="address-block__info-row">
+                    <span>{{DeliveryAddressCity}}</span>
+                    <span>&nbsp;{{DeliveryAddressRegion}}</span>
+                    <span>&nbsp;{{DeliveryAddressPostalCode}}</span>
+                  </div>
+                  <div class="address-block__info-row">{{DeliveryAddressCountry}}</div>
+                </div>
+                <div class="address-block__actions">
+                  <v-btn id="reg-off-addr-change-btn"
+                          small flat color="primary" :disabled="!agmEntered" @click="editAddress">
+                    <v-icon small>edit</v-icon>
+                    <span>Change</span>
+                  </v-btn>
+                  <br/>
+                  <v-btn id="reg-off-addr-reset-btn"
+                          v-if="regOffAddrChange" class="reset-btn" small outline color="red" @click="resetAddress">
+                    Reset
+                  </v-btn>
+                </div>
+              </div>
+            </v-expand-transition>
+            <!-- END: Static Details (Delivery Address) -->
 
-                <!-- START: Form / Editable Fields (Delivery Address) -->
+            <!-- START: Form / Editable Fields (Delivery Address) -->
+            <v-expand-transition>
+              <v-form id="delivery-address-form"
+                      ref="deliveryAddressForm"
+                      v-show="showAddressForm"
+                      v-model="deliveryAddressFormValid"
+                      lazy-validation>
+                <div class="form__row">
+                  <v-text-field
+                    box
+                    id="delivery-street-address"
+                    label="Street Address Line 1"
+                    v-model="DeliveryAddressStreet"
+                    :rules="DeliveryAddressStreetRules"
+                    maxlength="50"
+                    required>
+                  </v-text-field>
+                </div>
+                <div class="form__row">
+                  <v-text-field
+                    box
+                    id="delivery-street-address-additional"
+                    label="Street Address Line 2"
+                    v-model="DeliveryAddressStreetAdditional"
+                    maxlength="50">
+                  </v-text-field>
+                </div>
+                <div class="form__row three-column">
+                  <v-text-field class="item"
+                                box
+                                id="delivery-city"
+                                label="City"
+                                v-model="DeliveryAddressCity"
+                                :rules="DeliveryAddressCityRules"
+                                maxlength="15"
+                                required>
+                  </v-text-field>
+                  <v-select class="item"
+                            box
+                            id="delivery-state"
+                            label="Province"
+                            :items="Regions"
+                            v-model="DeliveryAddressRegion"
+                            required>
+                  </v-select>
+                  <v-text-field box
+                                class="item"
+                                id="delivery-postcode"
+                                label="Postal Code"
+                                v-model="DeliveryAddressPostalCode"
+                                :rules="DeliveryAddressPostalCodeRules"
+                                maxlength="10"
+                                required>
+                  </v-text-field>
+                </div>
+                <div class="form__row">
+                  <v-text-field box
+                                id="delivery-country"
+                                label="Country"
+                                v-model="DeliveryAddressCountry"
+                                :rules="DeliveryAddressCountryRules"
+                                maxlength="15"
+                                required>
+                  </v-text-field>
+                </div>
+                <div class="form__row">
+                  <v-textarea
+                    box
+                    rows="2"
+                    auto-grow
+                    label="Delivery Instructions (Optional)"
+                    v-model="DeliveryAddressInstructions"
+                    maxlength="80">
+                  </v-textarea>
+                </div>
+              </v-form>
+            </v-expand-transition>
+            <!-- END: Form / Editable Fields (Delivery Address) -->
+
+          </div>
+        </div>
+      </li>
+      <li class="container">
+        <div class="meta-container">
+          <label>Mailing Address</label>
+          <div class="meta-container__inner">
+
+            <!-- START: Static Details (Mailing Address) -->
+            <v-expand-transition>
+              <div id="mailing-address-display" class="meta-container__inner" v-show="!showAddressForm">
+                <div class="address-block">
+                  <div class="address-block__info">
+                    <div class="address-block__info-row">{{MailingAddressStreet}}</div>
+                    <div class="address-block__info-row" v-if="MailingAddressStreetAdditional">
+                      {{MailingAddressStreetAdditional}}
+                    </div>
+                    <div class="address-block__info-row">
+                      <span>{{MailingAddressCity}}</span>
+                      <span>&nbsp;{{MailingAddressRegion}}</span>
+                      <span>&nbsp;{{MailingAddressPostalCode}}</span>
+                    </div>
+                    <div class="address-block__row">{{MailingAddressCountry}}</div>
+                  </div>
+                </div>
+              </div>
+            <!-- END: Static Details (Mailing Address) -->
+            </v-expand-transition>
+
+            <!-- START: Form / Editable Fields (Mailing Address) -->
+            <v-expand-transition>
+              <v-form id="mailing-address-form"
+                      class="form"
+                      v-show="showAddressForm"
+                      v-model="mailingAddressFormValid"
+                      lazy-validation>
+                <div class="form__row">
+                  <v-checkbox class="inherit-checkbox"
+                              label="Same as Delivery Address"
+                              v-model="inheritDeliveryAddress">
+                  </v-checkbox>
+                </div>
                 <v-expand-transition>
-                  <v-form id="delivery-address-form"
-                          ref="deliveryAddressForm"
-                          v-show="showAddressForm"
-                          v-model="deliveryAddressFormValid"
-                          lazy-validation>
+                  <div id="mailing-address-expanded" v-show="!inheritDeliveryAddress">
                     <div class="form__row">
                       <v-text-field
                         box
-                        id="delivery-street-address"
                         label="Street Address Line 1"
-                        v-model="DeliveryAddressStreet"
-                        :rules="DeliveryAddressStreetRules"
+                        id="mailing-street-address"
+                        v-model="MailingAddressStreet"
+                        :rules="MailingAddressStreetRules"
                         maxlength="50"
                         required>
-                      </v-text-field>
+                        </v-text-field>
                     </div>
                     <div class="form__row">
                       <v-text-field
                         box
-                        id="delivery-street-address-additional"
                         label="Street Address Line 2"
-                        v-model="DeliveryAddressStreetAdditional"
+                        id="mailing-street-address-additional"
+                        v-model="MailingAddressStreetAdditional"
                         maxlength="50">
-                      </v-text-field>
+                        </v-text-field>
                     </div>
                     <div class="form__row three-column">
-                      <v-text-field class="item"
-                                    box
-                                    id="delivery-city"
-                                    label="City"
-                                    v-model="DeliveryAddressCity"
-                                    :rules="DeliveryAddressCityRules"
-                                    maxlength="15"
-                                    required>
+                      <v-text-field
+                        class="item"
+                        box
+                        id="mailing-city"
+                        label="City"
+                        v-model="MailingAddressCity"
+                        :rules="MailingAddressCityRules"
+                        maxlength="15"
+                        required>
                       </v-text-field>
                       <v-select class="item"
                                 box
-                                id="delivery-state"
+                                id="mailing-state"
                                 label="Province"
                                 :items="Regions"
-                                v-model="DeliveryAddressRegion"
+                                v-model="MailingAddressRegion"
                                 required>
                       </v-select>
-                      <v-text-field box
-                                    class="item"
-                                    id="delivery-postcode"
+                      <v-text-field class="item"
+                                    box
+                                    id="mailing-postcode"
                                     label="Postal Code"
-                                    v-model="DeliveryAddressPostalCode"
-                                    :rules="DeliveryAddressPostalCodeRules"
+                                    v-model="MailingAddressPostalCode"
+                                    :rules="MailingAddressPostalCodeRules"
                                     maxlength="10"
                                     required>
                       </v-text-field>
                     </div>
                     <div class="form__row">
-                      <v-text-field box
-                                    id="delivery-country"
-                                    label="Country"
-                                    v-model="DeliveryAddressCountry"
-                                    :rules="DeliveryAddressCountryRules"
-                                    maxlength="15"
-                                    required>
+                      <v-text-field
+                        box
+                        id="mailing-country"
+                        label="Country"
+                        v-model="MailingAddressCountry"
+                        maxlength="15"
+                        required>
                       </v-text-field>
                     </div>
                     <div class="form__row">
                       <v-textarea
-                        box
-                        rows="2"
-                        auto-grow
+                        box rows="2"
                         label="Delivery Instructions (Optional)"
-                        v-model="DeliveryAddressInstructions"
+                        v-model="MailingAddressInstructions"
                         maxlength="80">
                       </v-textarea>
                     </div>
-                  </v-form>
-                </v-expand-transition>
-                <!-- END: Form / Editable Fields (Delivery Address) -->
-
-              </div>
-            </div>
-          </li>
-          <li class="container">
-            <div class="meta-container">
-              <label>Mailing Address</label>
-              <div class="meta-container__inner">
-
-                <!-- START: Static Details (Mailing Address) -->
-                <v-expand-transition>
-                  <div id="mailing-address-display" class="meta-container__inner" v-show="!showAddressForm">
-                    <div class="address-block">
-                      <div class="address-block__info">
-                        <div class="address-block__info-row">{{MailingAddressStreet}}</div>
-                        <div class="address-block__info-row" v-if="MailingAddressStreetAdditional">
-                          {{MailingAddressStreetAdditional}}
-                        </div>
-                        <div class="address-block__info-row">
-                          <span>{{MailingAddressCity}}</span>
-                          <span>&nbsp;{{MailingAddressRegion}}</span>
-                          <span>&nbsp;{{MailingAddressPostalCode}}</span>
-                        </div>
-                        <div class="address-block__row">{{MailingAddressCountry}}</div>
-                      </div>
-                    </div>
                   </div>
-                <!-- END: Static Details (Mailing Address) -->
                 </v-expand-transition>
+                <div class="form__row form__btns">
+                  <v-btn id="reg-off-update-addr-btn"
+                          class="update-btn"
+                          color="primary"
+                          :disabled="!deliveryAddressFormValid ||
+                          (!mailingAddressFormValid && !inheritDeliveryAddress)"
+                          @click="updateAddress">
+                    Update Addresses
+                  </v-btn>
+                  <v-btn id="reg-off-cancel-addr-btn" @click="cancelEditAddress">
+                    Cancel
+                  </v-btn>
+                </div>
+              </v-form>
+            </v-expand-transition>
+            <!-- END: Form / Editable Fields (Mailing Address) -->
 
-                <!-- START: Form / Editable Fields (Mailing Address) -->
-                <v-expand-transition>
-                  <v-form id="mailing-address-form"
-                          class="form"
-                          v-show="showAddressForm"
-                          v-model="mailingAddressFormValid"
-                          lazy-validation>
-                    <div class="form__row">
-                      <v-checkbox class="inherit-checkbox"
-                                  label="Same as Delivery Address"
-                                  v-model="inheritDeliveryAddress">
-                      </v-checkbox>
-                    </div>
-                    <v-expand-transition>
-                      <div id="mailing-address-expanded" v-show="!inheritDeliveryAddress">
-                        <div class="form__row">
-                          <v-text-field
-                            box
-                            label="Street Address Line 1"
-                            id="mailing-street-address"
-                            v-model="MailingAddressStreet"
-                            :rules="MailingAddressStreetRules"
-                            maxlength="50"
-                            required>
-                            </v-text-field>
-                        </div>
-                        <div class="form__row">
-                          <v-text-field
-                            box
-                            label="Street Address Line 2"
-                            id="mailing-street-address-additional"
-                            v-model="MailingAddressStreetAdditional"
-                            maxlength="50">
-                            </v-text-field>
-                        </div>
-                        <div class="form__row three-column">
-                          <v-text-field
-                            class="item"
-                            box
-                            id="mailing-city"
-                            label="City"
-                            v-model="MailingAddressCity"
-                            :rules="MailingAddressCityRules"
-                            maxlength="15"
-                            required>
-                          </v-text-field>
-                          <v-select class="item"
-                                    box
-                                    id="mailing-state"
-                                    label="Province"
-                                    :items="Regions"
-                                    v-model="MailingAddressRegion"
-                                    required>
-                          </v-select>
-                          <v-text-field class="item"
-                                        box
-                                        id="mailing-postcode"
-                                        label="Postal Code"
-                                        v-model="MailingAddressPostalCode"
-                                        :rules="MailingAddressPostalCodeRules"
-                                        maxlength="10"
-                                        required>
-                          </v-text-field>
-                        </div>
-                        <div class="form__row">
-                          <v-text-field
-                            box
-                            id="mailing-country"
-                            label="Country"
-                            v-model="MailingAddressCountry"
-                            maxlength="15"
-                            required>
-                          </v-text-field>
-                        </div>
-                        <div class="form__row">
-                          <v-textarea
-                            box rows="2"
-                            label="Delivery Instructions (Optional)"
-                            v-model="MailingAddressInstructions"
-                            maxlength="80">
-                          </v-textarea>
-                        </div>
-                      </div>
-                    </v-expand-transition>
-                    <div class="form__row form__btns">
-                      <v-btn id="reg-off-update-addr-btn"
-                             class="update-btn"
-                             color="primary"
-                             :disabled="!deliveryAddressFormValid ||
-                              (!mailingAddressFormValid && !inheritDeliveryAddress)"
-                             @click="updateAddress">
-                        Update Addresses
-                      </v-btn>
-                      <v-btn id="reg-off-cancel-addr-btn" @click="cancelEditAddress">
-                        Cancel
-                      </v-btn>
-                    </div>
-                  </v-form>
-                </v-expand-transition>
-                <!-- END: Form / Editable Fields (Mailing Address) -->
+          </div>
+        </div>
+      </li>
+    </ul>
 
-              </div>
-            </div>
-          </li>
-        </ul>
-      </v-card>
-    </v-container>
   </div>
 </template>
 
@@ -585,10 +584,6 @@ export default {
 <style scoped lang="stylus">
 @import "../../assets/styles/theme.styl"
 
-  .v-card
-    line-height 1.2rem
-    font-size 0.875rem
-
   .v-btn
     margin 0
     min-width 6rem
@@ -610,11 +605,6 @@ export default {
 
   &__inner
     flex 1 1 auto
-
-  .actions
-    position absolute
-    top 0
-    right 0
 
   @media (min-width 768px)
     .meta-container
@@ -650,6 +640,12 @@ export default {
     position absolute
     top 0
     right 0
+
+    .v-btn
+      min-width 4rem
+
+    .v-btn + .v-btn
+      margin-left 0.5rem
 
   // Form Row Elements
   .form__row + .form__row

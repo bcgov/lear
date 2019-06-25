@@ -2,6 +2,7 @@
   <div class="home">
 
     <!-- Transition to Payment -->
+    <!-- TODO - this should be on Payment page -->
     <v-fade-transition>
       <div class="loading-container" v-show="showLoading">
         <div class="loading__content">
@@ -13,15 +14,8 @@
 
     <EntityInfo/>
 
-    <v-app>
-      <v-container id="annual-report-container" class="view-container">
-        <AnnualReport ref="annualReport"/>
-      </v-container>
-      <v-container id="submit-container" class="view-container">
-        <v-btn v-if="filedDate == null" id='ar-pay-btn' color="blue" :disabled="!validated" @click="submit">Pay</v-btn>
-        <v-btn v-else color="blue" id='ar-next-btn' :disabled="currentYear == ARFilingYear" @click="nextAR">Next</v-btn>
-      </v-container>
-    </v-app>
+    <AnnualReport ref="annualReport"/>
+
   </div>
 </template>
 
@@ -29,6 +23,7 @@
 import axios from '../axios-auth'
 import EntityInfo from '@/components/EntityInfo.vue'
 import AnnualReport from '@/components/AnnualReport.vue'
+
 export default {
   name: 'Home',
   components: {
@@ -41,27 +36,15 @@ export default {
       entityInfoJson: null,
       regOffAddrJson: null,
       showLoading: false,
-      loadingMsg: null
+      loadingMsg: 'Redirecting to PayBC to Process Your Payment'
     }
   },
   computed: {
     corpNum () {
       return this.$store.state.corpNum
     },
-    filedDate () {
-      return this.$store.state.filedDate
-    },
-    validated () {
-      return this.$store.state.validated
-    },
-    currentYear () {
-      return this.$store.state.currentDate.substring(0, 4)
-    },
     ARFilingYear () {
       return this.$store.state.ARFilingYear
-    },
-    regOffAddrChange () {
-      return this.$store.state.regOffAddrChange
     }
   },
   mounted () {
@@ -84,7 +67,9 @@ export default {
       axios.get(url).then(response => {
         this.lastARJson = response.data
         this.setARInfo()
-      }).catch(error => console.log('getARInfo ERROR: ' + error + ' ' + axios.get))
+      }).catch(error => {
+        console.log('getARInfo ERROR: ' + error + ' ' + axios.get)
+      })
     },
     getEntityInfo (corpNum) {
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
@@ -94,7 +79,14 @@ export default {
       axios.get(url).then(response => {
         this.entityInfoJson = response.data
         this.setEntityInfo()
-      }).catch(error => console.log('getEntityInfo ERROR: ' + error + ' ' + axios.get))
+      }).catch(error => {
+        console.log('getEntityInfo ERROR: ' + error + ' ' + axios.get)
+        // TODO - remove this stub data
+        this.$store.state.entityName = 'Pathfinder Cooperative'
+        this.$store.state.entityStatus = 'GOODSTANDING'
+        this.$store.state.entityBusinessNo = '105023337BC0157'
+        this.$store.state.entityIncNo = 'CP0015683'
+      })
     },
     getRegOffAddr (corpNum) {
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
@@ -164,50 +156,6 @@ export default {
       this.$store.state.MailingAddressPostalCode = this.regOffAddrJson.filing.mailingAddress.postalCode
       this.$store.state.MailingAddressCountry = this.regOffAddrJson.filing.mailingAddress.addressCountry
       this.$store.state.MailingAddressInstructions = this.regOffAddrJson.filing.mailingAddress.deliveryInstructions
-    },
-    submit () {
-      // todo: redirect to payment - will need to save state of page
-      var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
-      // probably need to parametrize date=this.$store.state.currentDate + add token in header for api
-      var url = this.payURL
-      var paymentJson
-
-      // other team doing credit card entering/payment confirmation? - don't know what to check for in result
-      axios.get(url).then(response => {
-        paymentJson = response.data
-        console.log('payment response: ', paymentJson)
-        if (paymentJson) this.$store.state.filedDate = this.$store.state.currentDate
-      }).catch(error => console.log('payment ERROR: ' + error))
-      this.$store.state.filedDate = this.$store.state.currentDate
-    },
-    resetARInfo () {
-      this.$store.state.agmDate = null
-      this.$store.state.filedDate = null
-      this.$store.state.validated = false
-      this.$store.state.noAGM = false
-      this.$store.state.regOffAddrChange = false
-      this.setRegOffAddrNull()
-      this.$router.go()
-    },
-    nextAR () {
-      this.resetARInfo()
-      this.getARInfo(this.corpNum)
-    },
-    setRegOffAddrNull () {
-      this.$store.state.DeliveryAddressStreet = null
-      this.$store.state.DeliveryAddressStreetAdditional = null
-      this.$store.state.DeliveryAddressCity = null
-      this.$store.state.DeliveryAddressRegion = null
-      this.$store.state.DeliveryAddressPostalCode = null
-      this.$store.state.DeliveryAddressCountry = null
-      this.$store.state.DeliveryAddressInstructions = null
-      this.$store.state.MailingAddressStreet = null
-      this.$store.state.MailingAddressStreetAdditional = null
-      this.$store.state.MailingAddressCity = null
-      this.$store.state.MailingAddressRegion = null
-      this.$store.state.MailingAddressPostalCode = null
-      this.$store.state.MailingAddressCountry = null
-      this.$store.state.MailingAddressInstructions = null
     }
   },
   watch: {
@@ -219,10 +167,6 @@ export default {
         this.getRegOffAddr(val)
         this.$refs.annualReport.getDirectors()
       }
-    },
-    regOffAddrChange: function (val) {
-      console.log('Home.vue regOffAddrChange watcher fired: ', val)
-      // if (val && this.$store.state.agmDate == null) this.$store.state.validated = true
     }
   }
 }
@@ -230,18 +174,5 @@ export default {
 
 <style scoped lang="stylus">
   @import "../assets/styles/theme.styl"
-
-  header h1
-    margin-bottom 2rem
-
-  header p
-    font-size 1.125rem
-    font-weight 300
-
-  strong
-    font-weight 600
-
-  .passcode-container
-    padding 2rem
 
 </style>
