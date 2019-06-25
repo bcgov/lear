@@ -23,25 +23,13 @@ from http import HTTPStatus
 import pytest
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Filing, User
-from tests import EPOCH_DATETIME, FROZEN_DATETIME
-
-
-def factory_business(identifier):
-    """Create a business entity."""
-    business = Business(legal_name=f'legal_name-{identifier}',
-                        founding_date=EPOCH_DATETIME,
-                        dissolution_date=EPOCH_DATETIME,
-                        identifier=identifier,
-                        tax_id='BN123456789',
-                        fiscal_year_end_date=FROZEN_DATETIME)
-    business.save()
-    return business
+from legal_api.models import Filing, User
+from tests.unit.models import AR_FILING, factory_business, factory_filing
 
 
 def test_minimal_filing_json(session):
     """Assert that a minimal filing can be created."""
-    b = factory_business('CP1234567')
+    b = factory_business(session, 'CP1234567')
 
     data = {'filing': 'not a real filing, fail validation'}
 
@@ -58,7 +46,7 @@ def test_filing_block_orm_delete(session):
     """Assert that attempting to delete a filing will raise a BusinessException."""
     from legal_api.exceptions import BusinessException
 
-    b = factory_business('CP1234567')
+    b = factory_business(session, 'CP1234567')
 
     data = {'filing': 'not a real filing, fail validation'}
 
@@ -76,41 +64,10 @@ def test_filing_block_orm_delete(session):
     assert excinfo.value.error == 'Deletion not allowed.'
 
 
-AR_FILING = {
-    'filing': {
-        'header': {
-            'name': 'annual_report',
-            'date': '2001-08-05'
-        },
-        'business': {
-            'cacheId': 1,
-            'foundingDate': '2007-04-08',
-            'identifier': 'CP1234567',
-            'legalName': 'legal name - CP1234567'
-        },
-        'annualReport': {
-            'annualGeneralMeetingDate': '2019-04-08',
-            'certifiedBy': 'full name',
-            'email': 'no_one@never.get'
-        }
-    }
-}
-
-
-def factory_filing(business, data_dict):
-    """Create a filing."""
-    filing = Filing()
-    filing.business_id = business.id
-    filing.filing_date = FROZEN_DATETIME
-    filing.filing_json = data_dict
-    filing.save()
-    return filing
-
-
 def test_filing_json(session):
     """Assert that an AR filing can be saved."""
     import copy
-    b = factory_business('CP1234567')
+    b = factory_business(session, 'CP1234567')
     filing = factory_filing(b, AR_FILING)
 
     ar = copy.deepcopy(AR_FILING)
@@ -122,7 +79,7 @@ def test_filing_json(session):
 
 def test_filing_delete_is_blocked(session):
     """Assert that an AR filing can be saved."""
-    b = factory_business('CP1234567')
+    b = factory_business(session, 'CP1234567')
     filing = factory_filing(b, AR_FILING)
 
     with pytest.raises(BusinessException) as excinfo:
@@ -136,7 +93,7 @@ def test_filing_missing_name(session):
     """Assert that an AR filing can be saved."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_business(session, identifier)
     ar = copy.deepcopy(AR_FILING)
     ar['filing']['header'].pop('name', None)
 
@@ -147,27 +104,11 @@ def test_filing_missing_name(session):
     assert excinfo.value.error == 'No filings found.'
 
 
-def test_ar_payment_invalid_filing(session):
-    """Assert that an AR filing can be saved."""
-    import copy
-    identifier = 'CP7654321'
-    b = factory_business(identifier)
-    ar = copy.deepcopy(AR_FILING)
-    ar['filing'].pop('business', None)
-    ar['filing']['header']['paymentToken'] = 'token'
-
-    with pytest.raises(BusinessException) as excinfo:
-        factory_filing(b, ar)
-
-    assert excinfo.value.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-    assert 'is a required property' in excinfo.value.error
-
-
 def test_filing_dump_json(session):
     """Assert the filing json serialization works correctly."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_business(session, identifier)
 
     # Check base JSON
     filings = factory_filing(b, AR_FILING)
@@ -220,3 +161,27 @@ def test_filing_save_to_session(session):
     assert filing.id is None
     assert session.new
     assert Session.object_session(filing)
+
+
+def test_add_json_after_payment(session):
+    """Assert that the json can be added in the same session that a paymentToken was applied."""
+    filing = Filing()
+    filing.payment_token = 'payment token'
+    filing.filing_json = AR_FILING
+
+    assert filing.json
+
+
+def test_add_invalid_json_after_payment(session):
+    """Assert that a filing_json has to be valid if a payment token has been set."""
+    import copy
+    filing = Filing()
+    filing.payment_token = 'payment token'
+
+    ar = copy.deepcopy(AR_FILING)
+    ar['filing']['header'].pop('date', None)
+
+    with pytest.raises(BusinessException) as excinfo:
+        filing.filing_json = ar
+
+    assert excinfo.value.status_code == HTTPStatus.UNPROCESSABLE_ENTITY

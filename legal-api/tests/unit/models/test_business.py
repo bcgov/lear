@@ -22,6 +22,7 @@ import pytest
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business
+from tests import EPOCH_DATETIME
 
 
 def factory_business(designation: str = '001'):
@@ -194,33 +195,54 @@ def test_business_find_by_identifier_no_identifier(session):
 
 def test_business_json():
     """Assert that the business model is saved correctly."""
-    epoch_date = datetime.utcfromtimestamp(0)
     business = Business(legal_name='legal_name',
-                        founding_date=epoch_date,
+                        founding_date=EPOCH_DATETIME,
                         identifier='CP1234567',
-                        last_modified=epoch_date)
+                        last_modified=EPOCH_DATETIME)
 
-    d = {'legalName': 'legal_name',
-         'identifier': 'CP1234567',
-         'foundingDate': epoch_date.isoformat(),
-         'lastModified': epoch_date.isoformat(),
-         }
+    # basic json
+    d = {
+        'legalName': 'legal_name',
+        'identifier': 'CP1234567',
+        'foundingDate': EPOCH_DATETIME.isoformat(),
+        'lastModified': EPOCH_DATETIME.isoformat(),
+    }
     assert business.json() == d
 
-    business.dissolution_date = epoch_date
+    # include dissolutionDate
+    business.dissolution_date = EPOCH_DATETIME
     d['dissolutionDate'] = datetime.date(business.dissolution_date).isoformat()
     assert business.json() == d
     business.dissolution_date = None
     d.pop('dissolutionDate')
 
-    business.fiscal_year_end_date = epoch_date
+    # include fiscalYearEndDate
+    business.fiscal_year_end_date = EPOCH_DATETIME
     d['fiscalYearEndDate'] = datetime.date(business.fiscal_year_end_date).isoformat()
     assert business.json() == d
     business.fiscal_year_end_date = None
     d.pop('fiscalYearEndDate')
 
+    # include taxId
     business.tax_id = '123456789'
     d['taxId'] = business.tax_id
     assert business.json() == d
     business.tax_id = None
     d.pop('taxId')
+
+
+def test_business_relationships_json(session):
+    """Assert that the business model is saved correctly."""
+    from legal_api.models import Address
+
+    business = Business(legal_name='legal_name',
+                        founding_date=EPOCH_DATETIME,
+                        identifier='CP1234567',
+                        last_modified=EPOCH_DATETIME)
+
+    # include dissolutionDate
+    address = Address(city='Test City', address_type=Address.MAILING)
+    business.business_mailing_address.append(address)
+    business.save()
+
+    assert business.json().get('mailingAddress')
