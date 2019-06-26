@@ -5,7 +5,7 @@ import sys
 import sqlalchemy
 import sqlalchemy.exc
 
-from config import ProdConfig
+from legal_api.config import ProdConfig
 
 DB_ADMIN_PASSWORD = os.getenv('DB_ADMIN_PASSWORD', None)
 
