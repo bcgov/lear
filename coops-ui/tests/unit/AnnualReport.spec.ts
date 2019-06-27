@@ -179,8 +179,7 @@ describe('App.vue', () => {
   // select date and pay
   it('sets the store vars properly on \'selected date\' submit', () => {
     // select valid date
-    var validMMDD = vm.$store.state.currentDate.substring(4)
-    var myValidDate = vm.$store.state.ARFilingYear + validMMDD
+    var myValidDate = vm.$store.state.currentDate.setFullYear(+vm.$store.state.ARFilingYear)
     childvm.$data.date = myValidDate
 
     setTimeout(() => {
@@ -189,6 +188,8 @@ describe('App.vue', () => {
       click('#ar-pay-btn')
       setTimeout(() => {
         expect(vm.$store.state.ARFilingYear).toEqual('2017')
+        console.log('***** vm.$store.state.filedDate =', vm.$store.state.filedDate)
+        console.log('***** vm.$store.state.currentDate =', vm.$store.state.currentDate)
         expect(vm.$store.state.filedDate).toEqual(vm.$store.state.currentDate)
         expect(vm.$store.state.agmDate).toEqual(myValidDate)
         console.log('Passed Test 4')
@@ -209,7 +210,7 @@ describe('App.vue', () => {
         expect(vm.$el.querySelector('#ar-next-btn').getAttribute('disabled')).toBeFalsy()
         // test disable button
         var tempYear = vm.$store.state.ARFilingYear
-        vm.$store.state.ARFilingYear = vm.$store.state.currentDate.substring(0, 4)
+        vm.$store.state.ARFilingYear = vm.$store.state.currentDate.getFullYear().toString()
         setTimeout(() => {
           expect(vm.$el.querySelector('#ar-next-btn').getAttribute('disabled')).toBeTruthy()
           vm.$store.state.ARFilingYear = tempYear
