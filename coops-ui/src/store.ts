@@ -6,13 +6,14 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     corpNum: null,
-    currentDate: '',
+    currentDate: null,
 
     entityName: null,
     entityStatus: null,
     entityBusinessNo: null,
     entityIncNo: null,
 
+    lastAgmDate: null,
     ARFilingYear: null,
     filedDate: null,
     agmDate: null,
@@ -35,7 +36,6 @@ export default new Vuex.Store({
     MailingAddressPostalCode: null,
     MailingAddressCountry: null,
     MailingAddressInstructions: null
-
   },
   mutations: {
   },

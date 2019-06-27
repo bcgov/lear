@@ -46,7 +46,7 @@
               Date must be in format YYYY/MM/DD.
             </span>
             <span v-if="!$v.dateFormatted.isValidYear">
-              Please enter a date within {{this.year}}.
+              Please enter a date within {{this.ARFilingYear}}.
             </span>
             <span v-if="$v.dateFormatted.isValidYear && !$v.dateFormatted.isValidMonth">
               Please enter a valid month in the past.
@@ -56,7 +56,7 @@
             </span>
           </div>
         </v-flex>
-        <v-checkbox v-if="this.year != this.currentDate.substring(0,4)"
+        <v-checkbox v-if="this.ARFilingYear !== this.currentYear"
                     id="agm-checkbox"
                     v-model="didNotHoldAGM"
                     :label=checkBoxLabel>
@@ -67,29 +67,34 @@
 </template>
 
 <script>
-import { isValidYear, isValidMonth, isValidDay, isISOFormat, test } from '../../../validators'
+import { isNotNull, isValidYear, isValidMonth, isValidDay, isISOFormat } from '@/validators'
 
 export default {
   name: 'AGMDate.vue',
+
   components: {},
+
   computed: {
-    year () {
+    ARFilingYear () {
       return this.$store.state.ARFilingYear
     },
     checkBoxLabel () {
-      return 'We did not hold an Annual General Meeting in ' + this.year
+      return 'We did not hold an Annual General Meeting in ' + this.ARFilingYear
     },
     maxDate () {
-      if (this.year === this.currentDate.substring(0, 4)) return this.currentDate
-      return this.year + '-12-31'
+      return (this.ARFilingYear === this.currentYear) ? this.currentDate : (this.ARFilingYear + '-12-31')
     },
     minDate () {
-      return this.year + '-01-01'
+      return (this.ARFilingYear + '-01-01')
     },
     currentDate () {
       return this.$store.state.currentDate
+    },
+    currentYear () {
+      return this.currentDate ? this.currentDate.substring(0, 4) : null
     }
   },
+
   data () {
     return {
       date: '',
@@ -98,11 +103,9 @@ export default {
       didNotHoldAGM: false
     }
   },
+
   validations: function () {
     var validations = {
-      didNotHoldAGM: {
-        test
-      },
       dateFormatted: {
         isISOFormat,
         isValidYear,
@@ -112,36 +115,33 @@ export default {
     }
     return validations
   },
-  mounted () {
-  },
+
   methods: {
     formatDate (date) {
-      if (!date) return null
-      if (!this.isValidDateFormat(date, '-')) return date
-
+      if (!this.isValidDateFormat(date, '-')) return date // TODO: should this return null?
       const [year, month, day] = date.split('-')
       return `${year}/${month}/${day}`
     },
     parseDate (date) {
-      if (!date) return null
       if (!this.isValidDateFormat(date, '/')) return null
-
       const [year, month, day] = date.split('/')
       return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
     },
     isValidDateFormat (date, separator) {
       // validates that date is:
-      //    in isso format
+      //    not null
+      //    in iso format
       //    is within the year of the ar
       //    the month is valid and in the past
       //    the day is valid and in the past
+      if (!date) return false
       var day = (new Date(date)).getUTCDate()
       if (date !== null && date !== '' && (
         date.indexOf(separator) !== 4 ||
         date.indexOf(separator, 5) !== 7 ||
         date.indexOf(separator, 8) !== -1 ||
         date.length !== 10 ||
-        date.substring(0, 4) !== this.year ||
+        date.substring(0, 4) !== this.ARFilingYear ||
         !(+date.substring(5, 7) !== 0 && +date.substring(5, 7) <= +this.maxDate.substring(5, 7)) ||
         !(+date.substring(8, 10) === day &&
           +date.substring(8, 10) !== 0 && +date.substring(8, 10) <= +this.maxDate.substring(8, 10))
@@ -152,13 +152,14 @@ export default {
       }
     }
   },
+
   watch: {
     dateFormatted: function (val) {
-      console.log('AGMDate.vue dateFormatted watcher fired: ', val)
+      console.log('AGMDate, dateFormatted =', val)
       this.date = this.parseDate(val)
     },
     date: function (val) {
-      console.log('AGMDate.vue date watcher fired: ', val)
+      console.log('AGMDate, date =', val)
       // validate entered date
       if (!this.didNotHoldAGM && !val) {
         this.$store.state.validated = false
@@ -169,7 +170,7 @@ export default {
       this.$store.state.agmDate = val
     },
     didNotHoldAGM: function (val) {
-      console.log('AGMDate.vue didNotHoldAGM watcher fired: ', val)
+      console.log('AGMDate, didNotHoldAGM =', val)
       if (val) {
         this.$store.state.validated = true
         this.$store.state.noAGM = true
@@ -179,8 +180,8 @@ export default {
       }
       this.date = ''
     },
-    year: function (val) {
-      console.log('AGMDate year watcher fired: ', val)
+    ARFilingYear: function (val) {
+      console.log('AGMDate, ARFilingYear =', val)
     }
   }
 }
@@ -188,6 +189,7 @@ export default {
 
 <style lang="stylus" scoped>
   @import "../../assets/styles/theme.styl";
+
   #agm-date-flex
     margin 0
     max-width 30rem
@@ -209,5 +211,4 @@ export default {
 
   .v-card
     padding 1rem
-
 </style>

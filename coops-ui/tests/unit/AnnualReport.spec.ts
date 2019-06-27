@@ -6,7 +6,7 @@ import Home from '@/views/Home.vue'
 import AGMDate from '@/components/ARSteps/AGMDate.vue'
 import store from '@/store'
 import sinon from 'sinon'
-import axios from '@/axios-auth.ts'
+import axios from '@/axios-auth'
 import Vuelidate from 'vuelidate'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)

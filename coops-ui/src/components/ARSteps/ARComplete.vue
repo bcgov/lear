@@ -1,8 +1,9 @@
 <template>
   <v-container>
     <p>Filed {{filedDate}}</p>
+
     <div v-if="!noAGM">
-      <h3>{{year}} Annual General Meeting Date</h3>
+      <h3>{{ARFilingYear}} Annual General Meeting Date</h3>
       <p>{{agmDate}}</p>
     </div>
     <div v-else>
@@ -16,24 +17,25 @@ export default {
   name: 'ARComplete.vue',
   computed: {
     filedDate () {
-      console.log(this.$store.state.filedDate)
+      // console.log('ARComplete, filedDate =', this.$store.state.filedDate)
       var date = new Date(this.$store.state.filedDate + 'T12:00:00')
       return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
     },
-    year () {
+    ARFilingYear () {
       return this.$store.state.ARFilingYear
     },
     agmDate () {
+      // console.log('ARComplete, agmDate =', this.$store.state.agmDate)
       var date = new Date(this.$store.state.agmDate + 'T12:00:00')
       return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
     },
     noAGM () {
-      return this.$store.state.noAGM
+      return !!this.$store.state.noAGM
     }
   }
 }
 </script>
 
-<style scoped>
-
+<style lang="stylus" scoped>
+  @import "../../assets/styles/theme.styl"
 </style>

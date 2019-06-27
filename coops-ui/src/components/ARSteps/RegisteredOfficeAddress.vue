@@ -581,7 +581,7 @@ export default {
 }
 </script>
 
-<style scoped lang="stylus">
+<style lang="stylus" scoped>
 @import "../../assets/styles/theme.styl"
 
   .v-btn

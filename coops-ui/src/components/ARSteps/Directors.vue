@@ -210,7 +210,7 @@
 
 <script>
 import Vue2Filters from 'vue2-filters'
-import axios from '../../axios-auth'
+import axios from '@/axios-auth'
 
 export default {
   name: 'Directors.vue',
@@ -284,10 +284,10 @@ export default {
   methods: {
     getDirectors: function () {
       if (this.corpNum !== null) {
-        console.log('got here 2')
+        // console.log('got here 2')
         var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
         var url = this.corpNum + '/directors' // todo - deal with year or date
-        console.log(url)
+        // console.log(url)
         axios.get(url).then(response => {
           console.log(response.data)
           this.directors = response.data.directors
@@ -297,7 +297,7 @@ export default {
             this.directors[i].isDirectorActive = true
           }
         }).catch(error => {
-          console.log('getDirectors ERROR: ' + error + ' ' + axios.get)
+          console.log('getDirectors ERROR:', error)
           // TODO - remove this stub data
           this.directors = [
             {

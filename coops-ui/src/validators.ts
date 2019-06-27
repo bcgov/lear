@@ -1,18 +1,16 @@
-export function test (value) {
-  return value
+export function isNotNull (date: string): boolean {
+  return !!date
 }
 
 export function isValidYear (date: string): boolean {
-  console.log('validating year, date =', date)
-
+  // console.log('validating year, date =', date)
   if (!date || date === '') return true
   const year = date.substring(0, 4)
-  return (year === this.year)
+  return (year === this.ARFilingYear)
 }
 
 export function isValidMonth (date: string): boolean {
-  console.log('validating month, date =', date)
-
+  // console.log('validating month, date =', date)
   if (!date || date === '') return true
   const month = +date.substring(5, 7)
   const max = +this.maxDate.substring(5, 7)
@@ -20,8 +18,7 @@ export function isValidMonth (date: string): boolean {
 }
 
 export function isValidDay (date: string): boolean {
-  console.log('validating day, date =', date)
-
+  // console.log('validating day, date =', date)
   if (!date || date === '') return true
   const day = +date.substring(8, 10)
   const today = (new Date(date)).getUTCDate()
@@ -30,8 +27,7 @@ export function isValidDay (date: string): boolean {
 }
 
 export function isISOFormat (date: string): boolean {
-  console.log('validating ISO format, date =', date)
-
+  // console.log('validating ISO format, date =', date)
   if (!date || date === '') return true
   const validLen = (date.length === 10)
   const firstSlash = (date.indexOf('/') === 4)
