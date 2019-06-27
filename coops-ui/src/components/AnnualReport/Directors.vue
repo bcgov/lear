@@ -34,37 +34,13 @@
                       :rules="directorLastNameRules"
                       required></v-text-field>
                   </div>
-                  <div class="form__row">
-                    <v-text-field box label="Street Address"
-                      v-model="director.deliveryAddress.streetAddress"
-                      :rules="directorStreetRules"
-                      required>
-                      </v-text-field>
-                  </div>
-                  <div class="form__row three-column">
-                    <v-text-field class="item" box label="City"
-                      v-model="director.deliveryAddress.addressCity"
-                      :rules="directorCityRules"
-                      required>
-                    </v-text-field>
-                    <v-select class="item" box label="Province"
-                      :items="regionList"
-                      :rules="directorRegionRules"
-                      v-model="director.deliveryAddress.addressRegion">
-                    </v-select>
-                    <v-text-field class="item" box label="Postal Code"
-                      v-model="director.deliveryAddress.postalCode"
-                      :rules="directorPostalCodeRules"
-                      required>
-                    </v-text-field>
-                  </div>
-                  <div class="form__row">
-                    <v-select box label="Country"
-                      :items="countryList"
-                      v-model="director.deliveryAddress.addressCountry"
-                      :rules="directorCountryRules">
-                    </v-select>
-                  </div>
+
+                  <BaseAddress ref="baseAddressNew"
+                    v-bind:address="director.deliveryAddress"
+                    v-bind:editing="true"
+                    @update:address="baseAddressWatcher"
+                  />
+
                   <div class="form__row form__btns">
                     <v-btn color="error" disabled>
                       <span>Remove</span>
@@ -107,14 +83,7 @@
               <v-expand-transition>
                 <div class="director-info" v-show="activeIndex !== index">
                   <div class="address">
-                    <div class="address__row">{{director.deliveryAddress.streetAddress}}</div>
-                    <div class="address__row">{{director.deliveryAddress.streetAddressAdditional}}</div>
-                    <div class="address__row">
-                      <span>{{director.deliveryAddress.addressCity}}</span>
-                      <span>&nbsp;{{director.deliveryAddress.addressRegion}}</span>
-                      <span>&nbsp;{{director.deliveryAddress.postalCode}}</span>
-                    </div>
-                    <div class="address__row">{{director.deliveryAddress.addressCountry}}</div>
+                    <BaseAddress v-bind:address="director.deliveryAddress"  />
                   </div>
                     <div class="actions">
                       <v-btn small flat color="primary" :disabled="!agmEntered"
@@ -154,37 +123,13 @@
                       :rules="directorLastNameRules"
                     ></v-text-field>
                   </div>
-                  <div class="form__row">
-                    <v-text-field box label="Street Address"
-                      v-model="director.deliveryAddress.streetAddress"
-                      :rules="directorStreetRules"
-                      required>
-                      </v-text-field>
-                  </div>
-                  <div class="form__row three-column">
-                    <v-text-field class="item" box label="City"
-                      v-model="director.deliveryAddress.addressCity"
-                      :rules="directorCityRules"
-                      required>
-                    </v-text-field>
-                    <v-select class="item" box label="Province"
-                      :items="regionList"
-                      :rules="directorRegionRules"
-                      v-model="director.deliveryAddress.addressRegion">
-                    </v-select>
-                    <v-text-field class="item" box label="Postal Code"
-                      v-model="director.deliveryAddress.postalCode"
-                      :rules="directorPostalCodeRules"
-                      required>
-                    </v-text-field>
-                  </div>
-                  <div class="form__row">
-                    <v-select box label="Country"
-                      :items="countryList"
-                      :rules="directorCountryRules"
-                      v-model="director.deliveryAddress.addressCountry" >
-                    </v-select>
-                  </div>
+
+                  <BaseAddress ref="baseAddressEdit"
+                    v-bind:address="director.deliveryAddress"
+                    v-bind:editing="true"
+                    @update:address="baseAddressWatcher"
+                  />
+
                   <div class="form__row form__btns">
                     <v-btn color="error"
                       :disabled="!director.isNew"
@@ -192,7 +137,7 @@
                       <span>Remove</span>
                     </v-btn>
                     <v-btn class="form-primary-btn" color="primary"
-                      @click="cancelEditDirector(index)">
+                      @click="saveEditDirector(index)">
                       Done</v-btn>
                     <v-btn @click="cancelEditDirector(index)">Cancel</v-btn>
                   </div>
@@ -212,16 +157,18 @@
 import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
 import { mapState, mapActions } from 'vuex'
+import BaseAddress from 'sbc-common-components/src/components/BaseAddress'
 
 export default {
   name: 'Directors',
 
   mixins: [Vue2Filters.mixin],
-
+  components: {
+    BaseAddress
+  },
   data () {
     return {
       directors: [],
-      directorsChangeCount: 0, // counter for directors change, to know whether to add fee
       countryList: [
         'Canada'
       ],
@@ -244,6 +191,7 @@ export default {
           addressCountry: ''
         }
       },
+      inProgressAddress: null,
       directorFormValid: true,
       directorFirstNameRules: [
         v => !!v || 'A first name is required'
@@ -279,8 +227,9 @@ export default {
     },
 
     directorsChange () {
-      if (this.directorsChangeCount > 0) return true
-      else return false
+      // One or more actions taken on directors (add, cease) require a single fee, so check how many directors in the
+      // list are marked as requiring a fee.
+      return this.directors.filter(director => director.isFeeApplied).length > 0
     }
   },
 
@@ -300,6 +249,7 @@ export default {
                 this.directors[i].id = i + 1
                 this.directors[i].isNew = false
                 this.directors[i].isDirectorActive = true
+                this.directors[i].isFeeApplied = false
               }
             } else {
               console.log('getDirectors() error - invalid response data')
@@ -318,6 +268,7 @@ export default {
     cancelNewDirector: function () {
       this.showNewDirectorForm = false
       this.$refs.newDirectorForm.reset()
+      this.$refs.baseAddressNew.$refs.addressForm.reset()
     },
 
     deleteDirector: function (director, index) {
@@ -326,15 +277,15 @@ export default {
       } else {
         let found = this.directors.indexOf(director)
         this.directors.splice(found, 1)
-        this.directorsChangeCount--
       }
     },
 
     validateNewDirectorForm: function (index) {
-      if (this.$refs.newDirectorForm.validate()) {
+      var mainFormIsValid = this.$refs.newDirectorForm.validate()
+      var addressFormIsValid = this.$refs.baseAddressNew.$refs.addressForm.validate()
+      if (mainFormIsValid && addressFormIsValid) {
         this.pushNewDirectorData()
         this.cancelNewDirector()
-        this.directorsChangeCount++
       } else {
         // do nothing - validator handles validation messaging
       }
@@ -345,30 +296,34 @@ export default {
         id: this.directors.length + 1,
         isDirectorActive: true,
         isNew: true,
+        isFeeApplied: true,
         officer: {
-          firstName: this.director.firstName,
-          middleInitial: this.director.middleInitial,
-          lastName: this.director.lastName
+          firstName: this.director.officer.firstName,
+          middleInitial: this.director.officer.middleInitial,
+          lastName: this.director.officer.lastName
         },
         deliveryAddress: {
-          streetAddress: this.director.streetAddress,
-          streetAddressAdditional: this.director.streetAddressAdditional,
-          addressCity: this.director.addressCity,
-          addressRegion: this.director.addressRegion,
-          postalCode: this.director.postalCode,
-          addressCountry: this.director.addressCountry
+          streetAddress: this.inProgressAddress.streetAddress,
+          streetAddressAdditional: this.inProgressAddress.streetAddressAdditional,
+          addressCity: this.inProgressAddress.addressCity,
+          addressRegion: this.inProgressAddress.addressRegion,
+          postalCode: this.inProgressAddress.postalCode,
+          addressCountry: this.inProgressAddress.addressCountry
         }
       }
       this.directors.push(newDirector)
+
+      // clear in-progress director data from form in BaseAddress component
+      this.inProgressAddress = null
     },
 
     // Remove director
     removeDirector: function (director) {
       console.log('got to removeDirector()')
-      // if this is a Cease, add a fee count
-      // otherwise it's just undoing a cease or undoing a new director, so remove fee count
-      if (director.isDirectorActive) this.directorsChangeCount++
-      else this.directorsChangeCount--
+      // if this is a Cease, apply a fee
+      // otherwise it's just undoing a cease or undoing a new director, so remove fee
+      if (director.isDirectorActive) director.isFeeApplied = true
+      else director.isFeeApplied = false
 
       director.isDirectorActive = !director.isDirectorActive
     },
@@ -379,8 +334,36 @@ export default {
       this.cancelNewDirector()
     },
 
+    saveEditDirector: function (index) {
+      console.log(index)
+      console.log(this.$refs)
+
+      var mainFormIsValid = this.$refs.editDirectorForm[index].validate()
+      var addressFormIsValid = this.$refs.baseAddressEdit[index].$refs.addressForm.validate()
+      if (mainFormIsValid && addressFormIsValid) {
+        // save data from BaseAddress component
+        if (this.inProgressAddress != null) {
+          this.directors[index].deliveryAddress = this.inProgressAddress
+          this.directors[index].isFeeApplied = true
+        }
+
+        // clear in-progress director data from form in BaseAddress component
+        this.inProgressAddress = null
+
+        this.cancelEditDirector()
+      } else {
+        // do nothing - validator handles validation messaging
+      }
+    },
+
     cancelEditDirector: function (index) {
       this.activeIndex = undefined
+    },
+
+    baseAddressWatcher: function (val) {
+      // Watches changes to the address data in BaseAddress component, and updates our inProgressAddress holder, to be
+      // used when we want to save the data.
+      this.inProgressAddress = val
     }
   },
 
