@@ -21,6 +21,7 @@ export function isValidDay (date: string): boolean {
   // console.log('validating day, date =', date)
   if (!date || date === '') return true
   const day = +date.substring(8, 10)
+  // use getUTCDate() to ignore local time (we only care about date part)
   const today = (new Date(date)).getUTCDate()
   const max = +this.maxDate.substring(8, 10)
   return (day === today && day > 0 && day <= max)

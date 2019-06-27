@@ -125,8 +125,11 @@ export default {
     validated () {
       return this.$store.state.validated
     },
+    currentDate () {
+      return this.$store.state.currentDate
+    },
     currentYear () {
-      return this.$store.state.currentDate.substring(0, 4)
+      return this.currentDate ? this.currentDate.substring(0, 4) : null
     },
     ARFilingYear () {
       return this.$store.state.ARFilingYear
@@ -210,7 +213,7 @@ export default {
   },
 
   watch: {
-    agmDate: function (val) {
+    agmDate (val) {
       // when AGM Date changes, update filing data
       console.log('AnnualReport, agmDate =', val)
       if (val) {
@@ -218,8 +221,9 @@ export default {
       } else {
         if (!this.noAGM) this.toggleFiling('remove', 'OTANN')
       }
+      this.$store.state.validated = Boolean(this.noAGM || this.agmDate)
     },
-    noAGM: function (val) {
+    noAGM (val) {
       // when No AGM changes, update filing data
       console.log('AnnualReport, noAGM =', val)
       if (val) {
@@ -227,6 +231,7 @@ export default {
       } else {
         this.toggleFiling('remove', 'OTANN')
       }
+      this.$store.state.validated = Boolean(this.noAGM || this.agmDate)
     },
     regOffAddrChange: function (val) {
       // console.log('AnnualReport, regOffAddrChange =', val)
@@ -243,6 +248,9 @@ export default {
       } else {
         this.toggleFiling('remove', 'OTCDR')
       }
+    },
+    validated (val) {
+      console.log('AnnualReport, validated =', val)
     },
     filingData: function (val) {
       // console.log('AnnualReport, filingData =', val)

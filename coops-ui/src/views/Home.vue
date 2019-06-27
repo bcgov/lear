@@ -58,7 +58,7 @@ export default {
   },
 
   mounted () {
-    // TODO - test when local date/time > 4pm (which is tomorrow in UTC)
+    // this logic works because Date() returns local time (plus offset which we ignore)
     const today = new Date()
     const year = today.getFullYear().toString()
     const month = (today.getMonth() + 1).toString().padStart(2, '0')
@@ -86,6 +86,7 @@ export default {
         // TODO: remove this dummy data
         this.$store.state.lastAgmDate = '2017/05/10'
         this.$store.state.ARFilingYear = '2018'
+        this.$store.state.agmDate = `${this.ARFilingYear}-01-01`
       })
     },
     getEntityInfo (corpNum) {
@@ -153,6 +154,8 @@ export default {
           this.$store.state.ARFilingYear = null
         } else {
           this.$store.state.ARFilingYear = (lastAgmYear + 1).toString()
+          // initial AGM date
+          this.$store.state.agmDate = `${this.ARFilingYear}-01-01`
         }
       }
     },
