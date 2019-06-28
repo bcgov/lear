@@ -49,6 +49,76 @@
               and List of Directors as of your AGM.</p>
           </header>
 
+          <!-- proof of concept for JSON schema validation -->
+          <section>
+            <header>
+              <h2 id="AR-step-header">JSON Schema Validation Example</h2>
+            </header>
+            <div class="form__row three-column">
+              <div class="item" v-if="$schema && !$schema.then">
+                <v-text-field box
+                  ref="firstName"
+                  label="First Name"
+                  v-model.lazy="$v.schema.firstName.$model"
+                  hide-details
+                  @blur="$v.schema.firstName.$touch()"
+                  :class="{'red-border': $v.schema.firstName.$error}">
+                </v-text-field>
+                <!-- these errors could also be their own dynamic component (based on schema) -->
+                <!-- or use 'vuelidate-error-extractor' package to display error messages -->
+                <p class="validation-error mb-0"
+                  v-if="$v.schema.firstName.$dirty && !$v.schema.firstName.required">
+                  First Name is required</p>
+                <p class="validation-error mb-0"
+                  v-if="$v.schema.firstName.$dirty && !$v.schema.firstName.schemaRequired">
+                  First Name property must be present</p>
+                <p class="validation-error mb-0"
+                  v-if="$v.schema.firstName.$dirty && !$v.schema.firstName.schemaMaxLength">
+                  First Name must have at most {{$v.schema.firstName.$params.schemaMaxLength.max}}
+                  character(s).</p>
+              </div>
+
+              <div class="item director-initial" v-if="$schema && !$schema.then">
+                <v-text-field box
+                  ref="middleInitial"
+                  label="Initial"
+                  v-model="$v.schema.middleInitial.$model"
+                  hide-details
+                  @blur="$v.schema.middleInitial.$touch()"
+                  :class="{'red-border': $v.schema.middleInitial.$error}">
+                </v-text-field>
+                <p class="validation-error mb-0"
+                  v-if="$v.schema.middleInitial.$dirty && !$v.schema.middleInitial.schemaMaxLength">
+                  Middle Initial must have at most {{$v.schema.middleInitial.$params.schemaMaxLength.max}}
+                  character(s).</p>
+              </div>
+
+              <div class="item" v-if="$schema && !$schema.then">
+                <v-text-field box
+                  ref="lastName"
+                  label="Last Name"
+                  v-model="$v.schema.lastName.$model"
+                  hide-details
+                  @blur="$v.schema.lastName.$touch()"
+                  :class="{'red-border': $v.schema.lastName.$error}">
+                </v-text-field>
+                <p class="validation-error mb-0"
+                  v-if="$v.schema.lastName.$dirty && !$v.schema.lastName.required">
+                  Last Name is required</p>
+                <p class="validation-error mb-0"
+                  v-if="$v.schema.lastName.$dirty && !$v.schema.lastName.schemaRequired">
+                  Last Name property must be present</p>
+                <p class="validation-error mb-0"
+                  v-if="$v.schema.lastName.$dirty && !$v.schema.lastName.schemaMaxLength">
+                  Last Name must have at most {{$v.schema.lastName.$params.schemaMaxLength.max}}
+                  character(s).</p>
+              </div>
+            </div>
+
+            <v-btn @click="onValidateClick" color="primary">Validate</v-btn>
+            <v-btn @click="onResetClick" color="primary">Reset</v-btn>
+          </section>
+
           <div v-if="isAnnualReportEditable">
             <!-- Annual General Meeting Date -->
             <section>
@@ -129,6 +199,7 @@ import Directors from '@/components/AnnualReport/Directors.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapActions, mapGetters } from 'vuex'
+import { required } from 'vuelidate/lib/validators'
 
 export default {
   name: 'AnnualReport',
@@ -144,12 +215,21 @@ export default {
 
   data () {
     return {
+      // NB: 'schema' object is automatically added
+      schemaValidations: null,
+      baseUrl: process.env.BASE_URL,
       showLoading: false,
       loadingMsg: 'Redirecting to PayBC to Process Your Payment',
       directorsChange: false,
       filingData: [],
       dialog: false
     }
+  },
+
+  validations () {
+    // additional validation object to apply 'required' validator
+    // see creation below
+    return { schema: { ...this.schemaValidations } }
   },
 
   computed: {
@@ -159,6 +239,50 @@ export default {
 
     ...mapGetters(['isAnnualReportEditable', 'reportState'])
   },
+
+  // definition of schema
+  // functionally equal to 'data.schema' and 'validations' properties
+  // ref: https://github.com/mokkabonna/vue-vuelidate-jsonschema
+  schema: [
+    // load schema on module require (ie, synchronously)
+    // axios.get(this.appBaseURL + '/schemas/person.json')
+    // TODO: get appBaseURL before this runs
+    axios.get('http://localhost:8080/schemas/person.json')
+      .then(response => {
+        return response.data
+      })
+      .catch(error => {
+        console.log('error getting person schema: ', error)
+      })
+  ],
+
+  // hard-coded schema example
+  // we could also load the schema using import statement
+  // schema: {
+  //   'definitions': {},
+  //   '$schema': 'http://json-schema.org/draft-07/schema#',
+  //   '$id': 'https://bcrs.gov.bc.ca/.well_known/schemas/person',
+  //   'type': 'object',
+  //   'title': 'The Person Schema',
+  //   'properties': {
+  //     'firstName': {
+  //       'type': 'string',
+  //       'maxLength': 5
+  //     },
+  //     'middleInitial': {
+  //       'type': 'string',
+  //       'maxLength': 1
+  //     },
+  //     'lastName': {
+  //       'type': 'string',
+  //       'maxLength': 5
+  //     }
+  //   },
+  //   'required': [
+  //     'firstName',
+  //     'lastName'
+  //   ]
+  // },
 
   mounted () {
     console.log('Annual Report is mounted')
@@ -173,6 +297,18 @@ export default {
 
   methods: {
     ...mapActions(['setARFilingYear', 'setValidated']),
+
+    onValidateClick () {
+      // make all controls 'dirty'
+      // (or could call $touch() for parent model)
+      Object.keys(this.schema).forEach(key => this.$v.schema[key].$touch())
+    },
+
+    onResetClick () {
+      // make all controls 'untouched'
+      // (or could call $reset() for parent model)
+      Object.keys(this.schema).forEach(key => this.$v.schema[key].$reset())
+    },
 
     directorsChangeEventHandler (val) {
       this.directorsChange = val
@@ -287,6 +423,17 @@ export default {
     //   console.log('AnnualReport, corpNum =', val)
     // },
 
+    schema: function (val) {
+      // 'vue-vuelidate-jsonschema' does not apply the 'required' validator in vuelidate
+      // so, create additional schema validation object
+      // ie, convert schemaRequired -> required
+      const temp = {}
+      Object.keys(val)
+        .filter(key => this.$v.schema[key].schemaRequired)
+        .forEach(key => { temp[key] = { required } })
+      this.schemaValidations = temp
+    },
+
     agmDate (val) {
       // when AGM Date changes, update filing data
       console.log('AnnualReport, agmDate =', val)
@@ -365,6 +512,29 @@ h2
   font-size: 2rem;
   font-weight: 500;
 
+.form__row.three-column
+  display flex
+  flex-flow row nowrap
+  align-items stretch
+  margin-right -0.5rem
+  margin-left -0.5rem
+
+  .item
+    flex 1 1 auto
+    flex-basis 0
+    margin-right 0.5rem
+    margin-left 0.5rem
+
+.director-initial
+  max-width 6rem
+
+.red-border
+  border 1px solid red
+
+.validation-error
+  color red
+
+#AR-step-header,
 #AR-step-1-header, #AR-step-2-header, #AR-step-3-header
   margin-bottom: 0.25rem;
   margin-top: 3rem;

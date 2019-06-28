@@ -1,4 +1,5 @@
 {
+  "VUE_APP_BASE_URL": "http://localhost:8080",
   "API_URL": "https://mock-lear-tools.pathfinder.gov.bc.ca/rest/legal-api/0.74/api/v1/businesses/",
   "PAY_URL": "not used?",
   "AUTH_URL": "https://auth-ui-dev.pathfinder.gov.bc.ca/",

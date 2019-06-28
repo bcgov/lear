@@ -7,6 +7,8 @@ import axios from '@/axios-auth'
 Vue.use(Router)
 var payURL
 var authURL
+var appBaseURL
+
 /* load configurations from file */
 var req = new XMLHttpRequest()
 // TODO - change request to async:true once UI is more complete - currently too quick because we jump straight to AR
@@ -22,6 +24,8 @@ req.onreadystatechange = function (response) {
       console.log('Set payURL to: ' + payURL)
       authURL = JSON.parse(req.responseText)['AUTH_URL']
       console.log('Set authURL to: ' + authURL)
+      appBaseURL = JSON.parse(req.responseText)['VUE_APP_BASE_URL']
+      console.log('Set appBaseURL to: ' + appBaseURL)
     } else {
       // nothing
       console.log('could not load configurations')
@@ -32,12 +36,9 @@ req.send()
 Vue.mixin({
   data: function () {
     return {
-      get payURL () {
-        return payURL
-      },
-      get authURL () {
-        return authURL
-      }
+      payURL,
+      authURL,
+      appBaseURL
     }
   }
 })

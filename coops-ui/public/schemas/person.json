@@ -1,0 +1,25 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bcrs.gov.bc.ca/.well_known/schemas/person",
+  "type": "object",
+  "title": "The Person Schema",
+  "properties": {
+    "firstName": {
+      "type": "string",
+      "maxLength": 5
+    },
+    "lastName": {
+      "type": "string",
+      "maxLength": 5
+    },
+    "middleInitial": {
+      "type": "string",
+      "maxLength": 1
+    }
+  },
+  "required": [
+    "firstName",
+    "lastName"
+  ]
+}
