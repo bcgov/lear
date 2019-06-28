@@ -15,6 +15,7 @@
 import copy
 from datetime import datetime
 from http import HTTPStatus
+from typing import List
 
 from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB
@@ -161,6 +162,24 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             error='Deletion not allowed.',
             status_code=HTTPStatus.FORBIDDEN
         )
+
+    def legal_filings(self) -> List:
+        """Return a list of the filings extracted from this filing submission.
+
+        Returns: {
+            List: or None of the Legal Filing JSON segments.
+            }
+        """
+        if not self.filing_json:
+            return None
+
+        legal_filings = []
+        filing = self.filing_json
+        for k in filing['filing'].keys():
+            if Filing.FILINGS.get(k, None):
+                legal_filings.append({k: copy.deepcopy(filing['filing'].get(k))})
+
+        return legal_filings
 
 
 @event.listens_for(Filing, 'before_delete')
