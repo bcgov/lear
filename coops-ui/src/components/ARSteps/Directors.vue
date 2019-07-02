@@ -284,10 +284,8 @@ export default {
   methods: {
     getDirectors: function () {
       if (this.corpNum !== null) {
-        // console.log('got here 2')
         var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
         var url = this.corpNum + '/directors' // todo - deal with year or date
-        // console.log(url)
         axios.get(url).then(response => {
           console.log(response.data)
           this.directors = response.data.directors

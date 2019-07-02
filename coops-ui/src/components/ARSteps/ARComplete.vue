@@ -17,7 +17,6 @@ export default {
   name: 'ARComplete.vue',
   computed: {
     filedDate () {
-      // console.log('ARComplete, filedDate =', this.$store.state.filedDate)
       var date = new Date(this.$store.state.filedDate + 'T12:00:00')
       return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
     },
@@ -25,7 +24,6 @@ export default {
       return this.$store.state.ARFilingYear
     },
     agmDate () {
-      // console.log('ARComplete, agmDate =', this.$store.state.agmDate)
       var date = new Date(this.$store.state.agmDate + 'T12:00:00')
       return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
     },

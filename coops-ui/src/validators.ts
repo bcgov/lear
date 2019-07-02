@@ -3,14 +3,12 @@ export function isNotNull (date: string): boolean {
 }
 
 export function isValidYear (date: string): boolean {
-  // console.log('validating year, date =', date)
   if (!date || date === '') return true
   const year = date.substring(0, 4)
   return (year === this.ARFilingYear)
 }
 
 export function isValidMonth (date: string): boolean {
-  // console.log('validating month, date =', date)
   if (!date || date === '') return true
   const month = +date.substring(5, 7)
   const max = +this.maxDate.substring(5, 7)
@@ -18,7 +16,6 @@ export function isValidMonth (date: string): boolean {
 }
 
 export function isValidDay (date: string): boolean {
-  // console.log('validating day, date =', date)
   if (!date || date === '') return true
   const day = +date.substring(8, 10)
   // use getUTCDate() to ignore local time (we only care about date part)
@@ -28,7 +25,6 @@ export function isValidDay (date: string): boolean {
 }
 
 export function isISOFormat (date: string): boolean {
-  // console.log('validating ISO format, date =', date)
   if (!date || date === '') return true
   const validLen = (date.length === 10)
   const firstSlash = (date.indexOf('/') === 4)

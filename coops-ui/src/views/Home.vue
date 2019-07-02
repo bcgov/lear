@@ -189,7 +189,6 @@ export default {
 
   watch: {
     corpNum: function (val) {
-      // console.log('Home.vue corpNum watcher fired: ', val)
       if (val != null) {
         this.getARInfo(val)
         this.getEntityInfo(val)

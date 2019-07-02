@@ -234,7 +234,7 @@ export default {
       this.$store.state.validated = Boolean(this.noAGM || this.agmDate)
     },
     regOffAddrChange: function (val) {
-      // console.log('AnnualReport, regOffAddrChange =', val)
+      console.log('AnnualReport, regOffAddrChange =', val)
       if (val) {
         this.toggleFiling('add', 'OTADD')
       } else {
@@ -242,7 +242,7 @@ export default {
       }
     },
     directorsChange: function (val) {
-      // console.log('AnnualReport, directorsChange =', val)
+      console.log('AnnualReport, directorsChange =', val)
       if (val) {
         this.toggleFiling('add', 'OTCDR')
       } else {
@@ -253,7 +253,7 @@ export default {
       console.log('AnnualReport, validated =', val)
     },
     filingData: function (val) {
-      // console.log('AnnualReport, filingData =', val)
+      console.log('AnnualReport, filingData =', val)
     }
   }
 }
