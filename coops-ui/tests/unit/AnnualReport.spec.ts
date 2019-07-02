@@ -6,7 +6,7 @@ import Home from '@/views/Home.vue'
 import AGMDate from '@/components/ARSteps/AGMDate.vue'
 import store from '@/store'
 import sinon from 'sinon'
-import axios from '@/axios-auth.ts'
+import axios from '@/axios-auth'
 import Vuelidate from 'vuelidate'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -141,9 +141,10 @@ describe('App.vue', () => {
     expect(vm.$store.state.ARFilingYear).toEqual('2017')
     expect(vm.$store.state.currentDate).toBeDefined()
     expect(vm.$store.state.filedDate).toBeNull()
-    expect(vm.$store.state.agmDate).toBeNull()
+    // AGM Date is now initialized to 'minDate'
+    expect(vm.$store.state.agmDate).toEqual('2017-01-01')
     expect(vm.$store.state.noAGM).toBeFalsy()
-    expect(vm.$store.state.validated).toBeFalsy()
+    expect(vm.$store.state.validated).toBeTruthy()
     console.log('Passed Test 1')
   })
 
@@ -244,7 +245,8 @@ describe('App.vue', () => {
               expect(vm.$store.state.ARFilingYear).toEqual('2018')
               expect(vm.$store.state.currentDate).toBeDefined()
               expect(vm.$store.state.filedDate).toBeNull()
-              expect(vm.$store.state.agmDate).toBeNull()
+              // AGM Date is now initialized to 'minDate'
+              expect(vm.$store.state.agmDate).toEqual('2018-01-01')
               expect(vm.$store.state.noAGM).toBeFalsy()
               expect(vm.$store.state.validated).toBeFalsy()
               console.log('Passed Test 5')

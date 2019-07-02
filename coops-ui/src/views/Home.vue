@@ -20,16 +20,18 @@
 </template>
 
 <script lang="ts">
-import axios from '../axios-auth'
+import axios from '@/axios-auth'
 import EntityInfo from '@/components/EntityInfo.vue'
 import AnnualReport from '@/components/AnnualReport.vue'
 
 export default {
   name: 'Home',
+
   components: {
     EntityInfo,
     AnnualReport
   },
+
   data () {
     return {
       lastARJson: null,
@@ -39,26 +41,38 @@ export default {
       loadingMsg: 'Redirecting to PayBC to Process Your Payment'
     }
   },
+
   computed: {
     corpNum () {
       return this.$store.state.corpNum
+    },
+    currentDate () {
+      return this.$store.state.currentDate
+    },
+    lastAgmDate () {
+      return this.$store.state.lastAgmDate
     },
     ARFilingYear () {
       return this.$store.state.ARFilingYear
     }
   },
-  mounted () {
-    var today = new Date()
-    this.$store.state.currentDate = today.getFullYear() + '-' + ('0' + (+today.getMonth() + 1)).slice(-2) + '-' +
-      ('0' + today.getDate()).slice(-2)
 
-    if (this.ARFilingYear == null && this.corpNum != null) {
+  mounted () {
+    // this logic works because Date() returns local time (plus offset which we ignore)
+    const today = new Date()
+    const year = today.getFullYear().toString()
+    const month = (today.getMonth() + 1).toString().padStart(2, '0')
+    const date = today.getDate().toString().padStart(2, '0')
+    this.$store.state.currentDate = `${year}-${month}-${date}`
+
+    if (this.ARFilingYear === null && this.corpNum !== null) {
       this.getARInfo(this.corpNum)
       this.getEntityInfo(this.corpNum)
       this.getRegOffAddr(this.corpNum)
       this.$refs.annualReport.getDirectors()
     }
   },
+
   methods: {
     getARInfo (corpNum) {
       var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
@@ -68,7 +82,11 @@ export default {
         this.lastARJson = response.data
         this.setARInfo()
       }).catch(error => {
-        console.log('getARInfo ERROR: ' + error + ' ' + axios.get)
+        console.log('getARInfo ERROR:', error)
+        // TODO: remove this dummy data
+        this.$store.state.lastAgmDate = '2017/05/10'
+        this.$store.state.ARFilingYear = '2018'
+        this.$store.state.agmDate = `${this.ARFilingYear}-01-01`
       })
     },
     getEntityInfo (corpNum) {
@@ -80,8 +98,8 @@ export default {
         this.entityInfoJson = response.data
         this.setEntityInfo()
       }).catch(error => {
-        console.log('getEntityInfo ERROR: ' + error + ' ' + axios.get)
-        // TODO - remove this stub data
+        console.log('getEntityInfo ERROR:', error)
+        // TODO - remove this dummy data
         this.$store.state.entityName = 'Pathfinder Cooperative'
         this.$store.state.entityStatus = 'GOODSTANDING'
         this.$store.state.entityBusinessNo = '105023337BC0157'
@@ -96,7 +114,7 @@ export default {
       // axios.get(url).then(response => {
       //   this.regOffAddrJson = response.data
       //   this.setRegOffAddr()
-      // }).catch(error => console.log('getRegOffAddr ERROR: ' + error + ' ' + axios.get))
+      // }).catch(error => console.log('getRegOffAddr ERROR:', error))
       this.regOffAddrJson = {
         header: {},
         business_info: {},
@@ -126,10 +144,20 @@ export default {
       this.setRegOffAddr()
     },
     setARInfo () {
-      var lastARYear = this.lastARJson.filing.annual_report.annual_general_meeting_date.substring(0, 4)
-      var currentYear = (new Date()).getFullYear() + ''
-      if (lastARYear === currentYear) this.$store.state.ARFilingYear = null
-      else this.$store.state.ARFilingYear = +lastARYear + 1 + ''
+      // assume JSON date is YYYY-MM-DD
+      this.$store.state.lastAgmDate = this.lastARJson.filing.annual_report.annual_general_meeting_date
+
+      if (this.lastAgmDate && this.currentDate) {
+        const lastAgmYear = +this.lastAgmDate.substring(0, 4)
+        const currentYear = +this.currentDate.substring(0, 4)
+        if (lastAgmYear === currentYear) {
+          this.$store.state.ARFilingYear = null
+        } else {
+          this.$store.state.ARFilingYear = (lastAgmYear + 1).toString()
+          // initial AGM date
+          this.$store.state.agmDate = `${this.ARFilingYear}-01-01`
+        }
+      }
     },
     setEntityInfo () {
       // todo:take out hardcoded values after api returns proper values
@@ -158,9 +186,9 @@ export default {
       this.$store.state.MailingAddressInstructions = this.regOffAddrJson.filing.mailingAddress.deliveryInstructions
     }
   },
+
   watch: {
     corpNum: function (val) {
-      console.log('Home.vue corpNum watcher fired: ', val)
       if (val != null) {
         this.getARInfo(val)
         this.getEntityInfo(val)
@@ -172,7 +200,6 @@ export default {
 }
 </script>
 
-<style scoped lang="stylus">
+<style lang="stylus" scoped>
   @import "../assets/styles/theme.styl"
-
 </style>

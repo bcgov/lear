@@ -5,28 +5,28 @@
     <div class="loading-container fade-out">
       <div class="loading__content">
         <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-        <div class="loading-msg">Preparing Your {{ year }} Annual Report</div>
+        <div class="loading-msg">Preparing Your {{ ARFilingYear }} Annual Report</div>
       </div>
     </div>
 
     <v-container id="annual-report-container" class="view-container">
-      <article id="annual-report-article" :class="this.agmDate ? 'agm-date-selected':'no-agm-date-selected'">
+      <article id="annual-report-article" :class="this.agmDate ? 'agm-date-selected' : 'no-agm-date-selected'">
         <header>
-          <h1 id="AR-header">File {{ year }} Annual Report -
+          <h1 id="AR-header">File {{ ARFilingYear }} Annual Report -
             <span style="font-style: italic">{{ reportState }}</span>
           </h1>
           <p>Select your Annual General Meeting (AGM) date, and verify or change your Registered office address and List
             of Directors as of your AGM.</p>
         </header>
 
-        <div v-if="filedDate == null">
+        <div v-if="filedDate === null">
           <!-- Annual General Meeting Date -->
           <section>
             <header>
               <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
             </header>
             <v-card flat id="AR-step-1-container">
-              <AGMDate ref="ARFilingDate" v-on:childToParent="onChildClick"/>
+              <AGMDate/>
             </v-card>
           </section>
 
@@ -34,7 +34,7 @@
           <section>
             <header>
               <h2 id="AR-step-2-header">2. Registered Office Addresses
-                <span class="agm-date">(as of {{ year }} Annual General Meeting)</span>
+                <span class="agm-date">(as of {{ ARFilingYear }} Annual General Meeting)</span>
               </h2>
               <p>Verify or change your Registered Office Addresses.</p>
             </header>
@@ -47,7 +47,8 @@
           <section>
             <header>
               <h2 id="AR-step-3-header">3. Directors</h2>
-              <p>Tell us who was elected or appointed and who ceased to be a director at your {{ year }} AGM.</p>
+              <p>Tell us who was elected or appointed and who ceased to be a director at your
+                {{ ARFilingYear }} AGM.</p>
             </header>
             <!-- <v-card flat id="AR-step-3-container"> -->
               <Directors ref="directors" @directorsChange="directorsChangeEventHandler" />
@@ -69,9 +70,9 @@
 
      <v-container id="submit-container" class="pt-0">
       <div class="ar-filing-buttons">
-        <v-btn v-if="filedDate == null" id="ar-pay-btn" color="primary" large :disabled="!validated"
+        <v-btn v-if="filedDate === null" id="ar-pay-btn" color="primary" large :disabled="!validated"
           @click="submit">File & Pay</v-btn>
-        <v-btn v-else id="ar-next-btn" color="primary" large :disabled="currentYear == ARFilingYear"
+        <v-btn v-else id="ar-next-btn" color="primary" large :disabled="currentYear === ARFilingYear"
           @click="nextAR">Next</v-btn>
         <v-btn id="ar-cancel-btn" large to="/Dashboard">Cancel</v-btn>
       </div>
@@ -81,7 +82,7 @@
 </template>
 
 <script>
-import axios from '../axios-auth'
+import axios from '@/axios-auth'
 import AGMDate from '@/components/ARSteps/AGMDate.vue'
 import RegisteredOfficeAddress from '@/components/ARSteps/RegisteredOfficeAddress.vue'
 import Directors from '@/components/ARSteps/Directors.vue'
@@ -91,6 +92,7 @@ import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vu
 
 export default {
   name: 'AnnualReport.vue',
+
   components: {
     AGMDate,
     RegisteredOfficeAddress,
@@ -99,16 +101,17 @@ export default {
     SbcFeeSummary,
     Affix
   },
+
   data () {
     return {
-      agmDate: '',
       directorsChange: false,
       filingData: []
     }
   },
+
   computed: {
-    AGMDate () {
-      return this.$store.state.AGMDate
+    agmDate () {
+      return this.$store.state.agmDate
     },
     noAGM () {
       return this.$store.state.noAGM
@@ -122,26 +125,21 @@ export default {
     validated () {
       return this.$store.state.validated
     },
+    currentDate () {
+      return this.$store.state.currentDate
+    },
     currentYear () {
-      return this.$store.state.currentDate.substring(0, 4)
+      return this.currentDate ? this.currentDate.substring(0, 4) : null
     },
     ARFilingYear () {
       return this.$store.state.ARFilingYear
     },
-    year () {
-      return this.$store.state.ARFilingYear
-    },
     reportState () {
-      if (this.filedDate) return 'Filed'
-      else return 'Draft'
+      return this.filedDate ? 'Filed' : 'Draft'
     }
   },
-  mounted () {
-  },
+
   methods: {
-    onChildClick (value) {
-      this.agmDate = value
-    },
     directorsChangeEventHandler (val) {
       this.directorsChange = val
     },
@@ -154,12 +152,15 @@ export default {
       // probably need to parametrize date=this.$store.state.currentDate + add token in header for api
       var url = this.payURL
       var paymentJson
+
       // other team doing credit card entering/payment confirmation? - don't know what to check for in result
       axios.get(url).then(response => {
         paymentJson = response.data
         console.log('payment response: ', paymentJson)
         if (paymentJson) this.$store.state.filedDate = this.$store.state.currentDate
-      }).catch(error => console.log('payment ERROR: ' + error))
+      }).catch(error => console.log('payment ERROR:', error))
+
+      // TODO - is the following for debugging only?
       this.$store.state.filedDate = this.$store.state.currentDate
       console.log('submit: filedDate =', this.$store.state.filedDate)
     },
@@ -210,31 +211,49 @@ export default {
       }
     }
   },
+
   watch: {
-    AGMDate: function (val) {
-      console.log('AnnualReport AGMDate watcher fired: ', val)
-      if (val != null) {
+    agmDate (val) {
+      // when AGM Date changes, update filing data
+      console.log('AnnualReport, agmDate =', val)
+      if (val) {
         this.toggleFiling('add', 'OTANN')
       } else {
         if (!this.noAGM) this.toggleFiling('remove', 'OTANN')
       }
+      this.$store.state.validated = Boolean(this.noAGM || this.agmDate)
     },
-    noAGM: function (val) {
-      console.log('AnnualReport noAGM watcher fired: ', val)
-      if (val) this.toggleFiling('add', 'OTANN')
-      else this.toggleFiling('remove', 'OTANN')
+    noAGM (val) {
+      // when No AGM changes, update filing data
+      console.log('AnnualReport, noAGM =', val)
+      if (val) {
+        this.toggleFiling('add', 'OTANN')
+      } else {
+        this.toggleFiling('remove', 'OTANN')
+      }
+      this.$store.state.validated = Boolean(this.noAGM || this.agmDate)
     },
     regOffAddrChange: function (val) {
-      console.log('AnnualReport regOffAddrChange watcher fired: ', val)
-      if (val) this.toggleFiling('add', 'OTADD')
-      else this.toggleFiling('remove', 'OTADD')
+      console.log('AnnualReport, regOffAddrChange =', val)
+      if (val) {
+        this.toggleFiling('add', 'OTADD')
+      } else {
+        this.toggleFiling('remove', 'OTADD')
+      }
     },
     directorsChange: function (val) {
-      if (val) this.toggleFiling('add', 'OTCDR')
-      else this.toggleFiling('remove', 'OTCDR')
+      console.log('AnnualReport, directorsChange =', val)
+      if (val) {
+        this.toggleFiling('add', 'OTCDR')
+      } else {
+        this.toggleFiling('remove', 'OTCDR')
+      }
+    },
+    validated (val) {
+      console.log('AnnualReport, validated =', val)
     },
     filingData: function (val) {
-      console.log('AnnualReport filingData watcher fired: ', val)
+      console.log('AnnualReport, filingData =', val)
     }
   }
 }
