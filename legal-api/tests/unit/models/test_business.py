@@ -198,7 +198,10 @@ def test_business_json():
     business = Business(legal_name='legal_name',
                         founding_date=EPOCH_DATETIME,
                         identifier='CP1234567',
-                        last_modified=EPOCH_DATETIME)
+                        last_modified=EPOCH_DATETIME,
+                        last_ar_date=EPOCH_DATETIME,
+                        last_agm_date=EPOCH_DATETIME
+                        )
 
     # basic json
     d = {
@@ -206,6 +209,8 @@ def test_business_json():
         'identifier': 'CP1234567',
         'foundingDate': EPOCH_DATETIME.isoformat(),
         'lastModified': EPOCH_DATETIME.isoformat(),
+        'lastAnnualReport': datetime.date(EPOCH_DATETIME).isoformat(),
+        'lastAnnualGeneralMeetingDate': datetime.date(EPOCH_DATETIME).isoformat(),
     }
     assert business.json() == d
 
