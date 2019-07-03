@@ -68,7 +68,7 @@ export default {
 
 <style lang="stylus" scoped>
   // TODO: Explore how to expose this globally without having to include in each module
-  @import "../assets/styles/theme.styl";
+  @import "../assets/styles/theme.styl"
 
   .entity-info
     background #ffffff

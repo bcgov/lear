@@ -188,7 +188,7 @@ export default {
 </script>
 
 <style lang="stylus" scoped>
-  @import "../../assets/styles/theme.styl";
+  @import "../../assets/styles/theme.styl"
 
   .validationErrorInfo
     color red

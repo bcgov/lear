@@ -22,7 +22,7 @@
 <script lang="ts">
 import axios from '@/axios-auth'
 import EntityInfo from '@/components/EntityInfo.vue'
-import AnnualReport from '@/components/AnnualReport.vue'
+import AnnualReport from '@/views/AnnualReport.vue'
 
 export default {
   name: 'Home',
