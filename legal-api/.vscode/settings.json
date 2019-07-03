@@ -20,11 +20,11 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
-    "python.testing.pyTestEnabled": true,
+    "python.testing.pytestEnabled": true,
     "python.autoComplete.extraPaths": [
         "${workspaceFolder}/src"
     ],
-    "python.testing.pyTestArgs": [
+    "python.testing.pytestArgs": [
         "tests"
     ],
 }

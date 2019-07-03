@@ -47,6 +47,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     last_ledger_id = db.Column('last_ledger_id', db.Integer)
     last_remote_ledger_id = db.Column('last_remote_ledger_id', db.Integer, default=0)
     last_ar_date = db.Column('last_ar_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    last_agm_date = db.Column('last_agm_date', db.DateTime(timezone=True), default=datetime.utcnow)
     legal_name = db.Column('legal_name', db.String(1000), index=True)
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
@@ -119,6 +120,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'foundingDate': self.founding_date.isoformat(),
             'identifier': self.identifier,
             'lastModified': self.last_modified.isoformat(),
+            'lastAnnualReport': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
+            'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'legalName': self.legal_name,
         }
         # if self.last_remote_ledger_timestamp:
