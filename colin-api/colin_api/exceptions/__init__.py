@@ -33,7 +33,7 @@ class BusinessNotFoundException(GenericException):
 
     def __init__(self, *args, identifier=None, **kwargs):
         """Return a valid BusinessNotFoundException."""
-        super(BusinessNotFoundException, self).__init__(*args, **kwargs)
+        super(BusinessNotFoundException, self).__init__(None, None, *args, **kwargs)
         if identifier:
             self.error = f'{identifier} not found'
         else:
@@ -46,7 +46,7 @@ class FilingNotFoundException(GenericException):
 
     def __init__(self, *args, identifier=None, filing_type=None, **kwargs):
         """Return a valid FilingNotFoundException."""
-        super(FilingNotFoundException, self).__init__(*args, **kwargs)
+        super(FilingNotFoundException, self).__init__(None, None, *args, **kwargs)
         if identifier and filing_type:
             self.error = f'{filing_type} not found for {identifier}'
         else:
@@ -59,7 +59,7 @@ class AddressNotFoundException(GenericException):
 
     def __init__(self, *args, identifier=None, address_type=None, **kwargs):
         """Return a valid AddressNotFoundException."""
-        super(AddressNotFoundException, self).__init__(*args, **kwargs)
+        super(AddressNotFoundException, self).__init__(None, None, *args, **kwargs)
         if identifier and address_type:
             self.error = f'{address_type} not found with id: {identifier}'
         else:
@@ -72,7 +72,7 @@ class DirectorsNotFoundException(GenericException):
 
     def __init__(self, *args, identifier=None, **kwargs):
         """Return a valid DirectorsNotFoundException."""
-        super(DirectorsNotFoundException, self).__init__(*args, **kwargs)
+        super(DirectorsNotFoundException, self).__init__(None, None, *args, **kwargs)
         if identifier:
             self.error = f'Directors not found for: {identifier}'
         else:
@@ -85,7 +85,7 @@ class InvalidFilingTypeException(GenericException):
 
     def __init__(self, *args, filing_type=None, **kwargs):
         """Return a valid InvalidFilingTypeException."""
-        super(InvalidFilingTypeException, self).__init__(*args, **kwargs)
+        super(InvalidFilingTypeException, self).__init__(None, None, *args, **kwargs)
         if filing_type:
             self.error = f'{filing_type} is an invalid filing type'
         else:
