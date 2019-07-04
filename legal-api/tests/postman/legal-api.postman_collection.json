@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "c75dc154-2ecb-4590-852b-a2872c53a988",
 		"name": "legal-api",
-		"description": "version=0.71 - This is a Legal API description",
+		"description": "version=0.72 - This is a Legal API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
 	"item": [
@@ -1245,7 +1245,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002098\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"legalName\": \"legal name CP0002098\",\n        \"mailingAddress\": {\n            \"addressCity\": \"Test City\",\n            \"addressCountry\": \"TA\",\n            \"addressRegion\": \"BC\",\n            \"addressType\": \"mailing\",\n            \"deliveryInstructions\": null,\n            \"postalCode\": \"T3S3T3\",\n            \"streetAddress\": \"CP0002098-Test Street\",\n            \"streetAddressAdditional\": null\n        },\n        \"taxId\": \"123456789\"\n    }\n}"
+					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002098\",\n        \"lastAnnualGeneralMeetingDate\":\"2017-04-08\",\n        \"lastAnnualReport\": \"2017-04-08\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"legalName\": \"legal name CP0002098\",\n        \"mailingAddress\": {\n            \"addressCity\": \"Test City\",\n            \"addressCountry\": \"TA\",\n            \"addressRegion\": \"BC\",\n            \"addressType\": \"mailing\",\n            \"deliveryInstructions\": null,\n            \"postalCode\": \"T3S3T3\",\n            \"streetAddress\": \"CP0002098-mailingAddress-Test Street\",\n            \"streetAddressAdditional\": null\n        },\n        \"deliveryAddress\": {\n            \"addressCity\": \"Test City\",\n            \"addressCountry\": \"TA\",\n            \"addressRegion\": \"BC\",\n            \"addressType\": \"mailing\",\n            \"deliveryInstructions\": null,\n            \"postalCode\": \"T3S3T3\",\n            \"streetAddress\": \"CP0002098-deliveryAddress-Test Street\",\n            \"streetAddressAdditional\": null\n        },\n        \"taxId\": \"123456789\"\n    }\n}"
 				},
 				{
 					"name": "get-business - CP0002106",
@@ -1301,7 +1301,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002106\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"legalName\": \"legal name CP0002106\",\n        \"mailingAddress\": {\n            \"addressCity\": \"Test City\",\n            \"addressCountry\": \"TA\",\n            \"addressRegion\": \"BC\",\n            \"addressType\": \"mailing\",\n            \"deliveryInstructions\": null,\n            \"postalCode\": \"T3S3T3\",\n            \"streetAddress\": \"CP0002106-Test Street\",\n            \"streetAddressAdditional\": null\n        },\n        \"taxId\": \"123456789\"\n    }\n}"
+					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002106\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastAnnualGeneralMeetingDate\":\"2019-04-08\",\n        \"lastAnnualReport\": \"2019-04-08\",\n        \"legalName\": \"legal name CP0002106\",\n        \"mailingAddress\": {\n            \"addressCity\": \"Test City\",\n            \"addressCountry\": \"TA\",\n            \"addressRegion\": \"BC\",\n            \"addressType\": \"mailing\",\n            \"deliveryInstructions\": null,\n            \"postalCode\": \"T3S3T3\",\n            \"streetAddress\": \"CP0002106-mailingAddress-Test Street\",\n            \"streetAddressAdditional\": null\n        },\n        \"deliveryAddress\": {\n            \"addressCity\": \"Test City\",\n            \"addressCountry\": \"TA\",\n            \"addressRegion\": \"BC\",\n            \"addressType\": \"mailing\",\n            \"deliveryInstructions\": null,\n            \"postalCode\": \"T3S3T3\",\n            \"streetAddress\": \"CP0002106-deliveryAddress-Test Street\",\n            \"streetAddressAdditional\": null\n        },\n        \"taxId\": \"123456789\"\n    }\n}"
 				},
 				{
 					"name": "get-business - CP0002103",
@@ -1357,7 +1357,359 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002103\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"legalName\": \"legal name CP0002103\",\n        \"mailingAddress\": {\n            \"addressCity\": \"Test City\",\n            \"addressCountry\": \"TA\",\n            \"addressRegion\": \"BC\",\n            \"addressType\": \"mailing\",\n            \"deliveryInstructions\": null,\n            \"postalCode\": \"T3S3T3\",\n            \"streetAddress\": \"CP0002103-Test Street\",\n            \"streetAddressAdditional\": null\n        },\n        \"taxId\": \"123456789\"\n    }\n}"
+					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002103\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastAnnualGeneralMeetingDate\":\"2019-04-08\",\n        \"lastAnnualReport\": \"2019-04-08\",\n\n        \"legalName\": \"legal name CP0002103\",\n        \"mailingAddress\": {\n            \"addressCity\": \"Test City\",\n            \"addressCountry\": \"TA\",\n            \"addressRegion\": \"BC\",\n            \"addressType\": \"mailing\",\n            \"deliveryInstructions\": null,\n            \"postalCode\": \"T3S3T3\",\n            \"streetAddress\": \"CP0002103-mailingAddress-Test Street\",\n            \"streetAddressAdditional\": null\n        },\n        \"deliveryAddress\": {\n            \"addressCity\": \"Test City\",\n            \"addressCountry\": \"TA\",\n            \"addressRegion\": \"BC\",\n            \"addressType\": \"mailing\",\n            \"deliveryInstructions\": null,\n            \"postalCode\": \"T3S3T3\",\n            \"streetAddress\": \"CP0002103-deliveryAddress-Test Street\",\n            \"streetAddressAdditional\": null\n        },\n        \"taxId\": \"123456789\"\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "get-business/addresses - CP0002098",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/v1/businesses/:id/addresses",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"businesses",
+						":id",
+						"addresses"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "CP0002098"
+						}
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "get-business/addresses - CP0002106",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/addresses",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"addresses"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0002106"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Wed, 26 Jun 2019 20:26:08 GMT"
+						},
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET, HEAD, OPTIONS"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"mailingAddress\": {\n        \"addressCity\": \"Test City\",\n        \"addressCountry\": \"TA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": null,\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"CP0002106-mailingAddress-Test Street\",\n        \"streetAddressAdditional\": null\n    },\n    \"deliveryAddress\": {\n        \"addressCity\": \"Test City\",\n        \"addressCountry\": \"TA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": null,\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"CP0002106-deliveryAddress-Test Street\",\n        \"streetAddressAdditional\": null\n    }\n}"
+				},
+				{
+					"name": "get-business/addresses - CP0002103",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/addresses",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"addresses"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0002103"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "X-Application-Context",
+							"value": "application:prod"
+						},
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET, HEAD, OPTIONS"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"mailingAddress\": {\n        \"addressCity\": \"Test City\",\n        \"addressCountry\": \"TA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": null,\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"CP0002103-mailingAddress-Test Street\",\n        \"streetAddressAdditional\": null\n    },\n    \"deliveryAddress\": {\n        \"addressCity\": \"Test City\",\n        \"addressCountry\": \"TA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": null,\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"CP0002103-deliveryAddress-Test Street\",\n        \"streetAddressAdditional\": null\n    }\n}"
+				},
+				{
+					"name": "get-business/addresses - CP0002098",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/addresses",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"addresses"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0002098"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET, HEAD, OPTIONS"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"mailingAddress\": {\n        \"addressCity\": \"Test City\",\n        \"addressCountry\": \"TA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": null,\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"CP0002098-mailingAddress-Test Street\",\n        \"streetAddressAdditional\": null\n    },\n    \"deliveryAddress\": {\n        \"addressCity\": \"Test City\",\n        \"addressCountry\": \"TA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": null,\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"CP0002098-deliveryAddress-Test Street\",\n        \"streetAddressAdditional\": null\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "get-business/addresses - CP0002098 Copy",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/v1/businesses/:id/addresses/:address_type",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"businesses",
+						":id",
+						"addresses",
+						":address_type"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "CP0002098"
+						},
+						{
+							"key": "address_type",
+							"value": "deliveryAddress"
+						}
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "get-business/addresses - CP0002106",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/addresses/:address_type",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"addresses",
+								":address_type"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0002106"
+								},
+								{
+									"key": "address_type",
+									"value": "mailingAddress"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Wed, 26 Jun 2019 20:26:08 GMT"
+						},
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET, HEAD, OPTIONS"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"mailingAddress\": {\n        \"addressCity\": \"Test City\",\n        \"addressCountry\": \"TA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": null,\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"CP0002106-mailingAddress-Test Street\",\n        \"streetAddressAdditional\": null\n    }\n}"
+				},
+				{
+					"name": "get-business/addresses - CP0002103",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/addresses/:address_type",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"addresses",
+								":address_type"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0002103"
+								},
+								{
+									"key": "address_type",
+									"value": "deliveryAddress"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "X-Application-Context",
+							"value": "application:prod"
+						},
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET, HEAD, OPTIONS"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"deliveryAddress\": {\n        \"addressCity\": \"Test City\",\n        \"addressCountry\": \"TA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": null,\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"CP0002103-deliveryAddress-Test Street\",\n        \"streetAddressAdditional\": null\n    }\n}"
 				}
 			]
 		},
