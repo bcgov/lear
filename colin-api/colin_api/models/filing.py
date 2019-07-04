@@ -228,7 +228,8 @@ class Filing:
         :param filing_type_code: (str) filing type code
         """
         if not filing_type_code:
-            raise FilingNotFoundException(filing.business.business['identifier'], filing.filing_type)
+            raise FilingNotFoundException(identifier=filing.business.business['identifier'],
+                                          filing_type=filing.filing_type, event_id=event_id)
         try:
             if filing_type_code == 'OTANN':
                 cursor.execute("""
@@ -409,8 +410,7 @@ class Filing:
             event_info = cursor.fetchone()
 
             if not event_info:
-                raise FilingNotFoundException(identifier=identifier, filing_type='1: {} 2: {}'.format(
-                    filing_type_cd1, filing_type_cd2))
+                raise FilingNotFoundException(identifier=identifier, filing_type=filing_type_cd1, event_id=event_id)
 
             event_info = dict(zip([x[0].lower() for x in cursor.description], event_info))
 
@@ -432,7 +432,10 @@ class Filing:
             return event_info
 
         except Exception as err:
-            current_app.logger.error('error getting filing event id for {}'.format(identifier))
+            if identifier:
+                current_app.logger.error('error getting filing event info for corp {}'.format(identifier))
+            else:
+                current_app.logger.error('error getting filing event info for event {}'.format(event_id))
             raise err
 
     @classmethod
@@ -444,7 +447,7 @@ class Filing:
             filing_event_info = cls._find_filing_event_info(identifier=identifier, filing_type_cd1='OTANN', year=year)
 
         if not filing_event_info:
-            raise FilingNotFoundException(identifier=identifier, filing_type='annualReport')
+            raise FilingNotFoundException(identifier=identifier, filing_type='annualReport', event_id=event_id)
 
         # if there is no AGM date in period_end_dt, check agm_date and effective date
         try:
@@ -488,7 +491,7 @@ class Filing:
         registered_office_obj = Office.get_by_event(filing_event_info['event_id'])
 
         if not registered_office_obj:
-            raise FilingNotFoundException(identifier=identifier, filing_type='change_of_address')
+            raise FilingNotFoundException(identifier=identifier, filing_type='change_of_address', event_id=event_id)
 
         filing_obj = Filing()
         filing_obj.header = {

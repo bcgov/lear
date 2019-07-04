@@ -72,7 +72,6 @@ class Business:
             business = cursor.fetchone()
 
             if not business:
-                print('here')
                 raise BusinessNotFoundException(identifier=identifier)
 
             # add column names to resultset to build out correct json structure and make manipulation below more robust

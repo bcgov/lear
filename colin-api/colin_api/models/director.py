@@ -100,7 +100,7 @@ class Director:
             raise err
 
         if not directors_list:
-            raise DirectorsNotFoundException()
+            raise DirectorsNotFoundException(event_id=event_id)
 
         return directors_list
 
