@@ -115,8 +115,6 @@ export default {
 
   data () {
     return {
-      lastARJson: null,
-      regOffAddrJson: null,
       showLoading: false,
       loadingMsg: 'Redirecting to PayBC to Process Your Payment',
       directorsChange: false,
@@ -167,70 +165,56 @@ export default {
     const month = (today.getMonth() + 1).toString().padStart(2, '0')
     const date = today.getDate().toString().padStart(2, '0')
     this.$store.state.currentDate = `${year}-${month}-${date}`
-
-    if (this.ARFilingYear === null && this.corpNum !== null) {
-      this.getARInfo(this.corpNum)
-      this.getRegOffAddr(this.corpNum)
-      this.getDirectors()
-    }
   },
 
   methods: {
-    getARInfo (corpNum) {
-      var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
-      // when calling the api make sure this url is for most recent AR - stub specifies 2017 + add token in header
-      var url = corpNum + '/filings/annual_report?year=2017'
-      axios.get(url).then(response => {
-        this.lastARJson = response.data
-        this.setARInfo()
-      }).catch(error => {
-        console.log('getARInfo ERROR:', error)
-        // TODO: remove this dummy data
-        this.$store.state.lastAgmDate = '2017/05/10'
-        this.$store.state.ARFilingYear = '2018'
-        this.$store.state.agmDate = `${this.ARFilingYear}-01-01`
-      })
-    },
-    getRegOffAddr (corpNum) {
-      var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
-      // todo:change endpoint to real one
-      var url = corpNum + '/filings/registered_office'
-      // todo:delete hardcoded json and make axios call
-      // axios.get(url).then(response => {
-      //   this.regOffAddrJson = response.data
-      //   this.setRegOffAddr()
-      // }).catch(error => console.log('getRegOffAddr ERROR:', error))
-      this.regOffAddrJson = {
-        header: {},
-        business_info: {},
-        filing: {
-          certifiedBy: 'tester',
-          email: 'tester@testing.com',
-          deliveryAddress: {
-            streetAddress: '1234 Main Street',
-            streetAddressAdditional: '',
-            addressCity: 'Victoria',
-            addressRegion: 'BC',
-            addressCountry: 'Canada',
-            postalCode: 'V9A 2G8',
-            deliveryInstructions: ''
-          },
-          mailingAddress: {
-            streetAddress: '1234 Main Street',
-            streetAddressAdditional: '',
-            addressCity: 'Victoria',
-            addressRegion: 'BC',
-            addressCountry: 'Canada',
-            postalCode: 'V9A 2G8',
-            deliveryInstructions: ''
+    getLatestARInfo () {
+      if (!this.corpNum) {
+        console.log('getLatestARInfo() error - Corp Num is null')
+      } else {
+        // TODO - make proper axios call and delete hardcoded data below
+        // TODO - when calling the api make sure this url is for most recent AR - stub specifies 2017
+        var url = this.corpNum + '/filings?annual_report_year=2017'
+        axios.get(url).then(response => {
+          if (response && response.data) {
+            this.setARInfo(response.data)
+          } else {
+            console.log('getLatestARInfo() error - invalid response data')
           }
-        }
+        }).catch(error => {
+          console.error('getLatestARInfo() error =', error)
+
+          this.setARInfo({
+            filing: {
+              annual_report: {
+                annual_general_meeting_date: '2017/05/10'
+              }
+            }
+          })
+        })
       }
-      this.setRegOffAddr()
     },
-    setARInfo () {
+    getRegOffAddr () {
+      if (!this.corpNum) {
+        console.log('getRegOffAddr() error - Corp Num is null')
+      } else {
+        const url = this.corpNum
+        axios.get(url).then(response => {
+          if (response && response.data) {
+            this.setRegOffAddr(response.data)
+          } else {
+            console.log('getRegOffAddr() error - invalid response data')
+          }
+        }).catch(error => console.error('getRegOffAddr() error =', error))
+      }
+    },
+    setARInfo (lastARJson) {
       // assume JSON date is YYYY-MM-DD
-      this.$store.state.lastAgmDate = this.lastARJson.filing.annual_report.annual_general_meeting_date
+      if (lastARJson && lastARJson.filing && lastARJson.filing.annual_report) {
+        this.$store.state.lastAgmDate = lastARJson.filing.annual_report.annual_general_meeting_date
+      } else {
+        console.log('setARInfo() error - invalid Annual Report')
+      }
 
       if (this.lastAgmDate && this.currentDate) {
         const lastAgmYear = +this.lastAgmDate.substring(0, 4)
@@ -244,48 +228,50 @@ export default {
         }
       }
     },
-    setRegOffAddr () {
-      this.$store.state.DeliveryAddressStreet = this.regOffAddrJson.filing.deliveryAddress.streetAddress
-      this.$store.state.DeliveryAddressStreetAdditional =
-        this.regOffAddrJson.filing.deliveryAddress.streetAddressAdditional
-      this.$store.state.DeliveryAddressCity = this.regOffAddrJson.filing.deliveryAddress.addressCity
-      this.$store.state.DeliveryAddressRegion = this.regOffAddrJson.filing.deliveryAddress.addressRegion
-      this.$store.state.DeliveryAddressPostalCode = this.regOffAddrJson.filing.deliveryAddress.postalCode
-      this.$store.state.DeliveryAddressCountry = this.regOffAddrJson.filing.deliveryAddress.addressCountry
-      this.$store.state.DeliveryAddressInstructions = this.regOffAddrJson.filing.deliveryAddress.deliveryInstructions
+    setRegOffAddr (regOffAddrJson) {
+      if (regOffAddrJson && regOffAddrJson.business && regOffAddrJson.business.deliveryAddress) {
+        const deliveryAddress = regOffAddrJson.business.deliveryAddress
+        this.$store.state.DeliveryAddressStreet = deliveryAddress.streetAddress
+        this.$store.state.DeliveryAddressStreetAdditional = deliveryAddress.streetAddressAdditional
+        this.$store.state.DeliveryAddressCity = deliveryAddress.addressCity
+        this.$store.state.DeliveryAddressRegion = deliveryAddress.addressRegion
+        this.$store.state.DeliveryAddressPostalCode = deliveryAddress.postalCode
+        this.$store.state.DeliveryAddressCountry = deliveryAddress.addressCountry
+        this.$store.state.DeliveryAddressInstructions = deliveryAddress.deliveryInstructions
+      } else {
+        console.log('setRegOffAddr() error - invalid Delivery Address')
+      }
 
-      this.$store.state.MailingAddressStreet = this.regOffAddrJson.filing.mailingAddress.streetAddress
-      this.$store.state.MailingAddressStreetAdditional =
-        this.regOffAddrJson.filing.mailingAddress.streetAddressAdditional
-      this.$store.state.MailingAddressCity = this.regOffAddrJson.filing.mailingAddress.addressCity
-      this.$store.state.MailingAddressRegion = this.regOffAddrJson.filing.mailingAddress.addressRegion
-      this.$store.state.MailingAddressPostalCode = this.regOffAddrJson.filing.mailingAddress.postalCode
-      this.$store.state.MailingAddressCountry = this.regOffAddrJson.filing.mailingAddress.addressCountry
-      this.$store.state.MailingAddressInstructions = this.regOffAddrJson.filing.mailingAddress.deliveryInstructions
+      if (regOffAddrJson && regOffAddrJson.business && regOffAddrJson.business.mailingAddress) {
+        const mailingAddress = regOffAddrJson.business.mailingAddress
+        this.$store.state.MailingAddressStreet = mailingAddress.streetAddress
+        this.$store.state.MailingAddressStreetAdditional = mailingAddress.streetAddressAdditional
+        this.$store.state.MailingAddressCity = mailingAddress.addressCity
+        this.$store.state.MailingAddressRegion = mailingAddress.addressRegion
+        this.$store.state.MailingAddressPostalCode = mailingAddress.postalCode
+        this.$store.state.MailingAddressCountry = mailingAddress.addressCountry
+        this.$store.state.MailingAddressInstructions = mailingAddress.deliveryInstructions
+      } else {
+        console.log('setRegOffAddr() error - invalid Mailing Address')
+      }
     },
     directorsChangeEventHandler (val) {
       this.directorsChange = val
     },
-    getDirectors () {
-      this.$refs.directors.getDirectors()
-    },
     submit () {
-      // todo: redirect to payment - will need to save state of page
-      var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
-      // probably need to parametrize date=this.$store.state.currentDate + add token in header for api
-      var url = this.payURL
-      var paymentJson
+      // TODO - redirect to payment - will need to save state of page, etc
+      // TODO - make proper axios call and delete hardcoded data below
+      // TODO - other team doing credit card entering/payment confirmation? don't know what to check for in result
+      // const url = this.payURL
+      // axios.get(url).then(response => {
+      //   if (response && response.data) {
+      //     this.$store.state.filedDate = this.currentDate
+      //   } else {
+      //     console.log('submit() error - invalid response data')
+      //   }
+      // }).catch(error => console.error('submit() error =', error))
 
-      // other team doing credit card entering/payment confirmation? - don't know what to check for in result
-      axios.get(url).then(response => {
-        paymentJson = response.data
-        console.log('payment response: ', paymentJson)
-        if (paymentJson) this.$store.state.filedDate = this.$store.state.currentDate
-      }).catch(error => console.log('payment ERROR:', error))
-
-      // TODO - is the following for debugging only?
-      this.$store.state.filedDate = this.$store.state.currentDate
-      console.log('submit: filedDate =', this.$store.state.filedDate)
+      this.$store.state.filedDate = this.currentDate
     },
     resetARInfo () {
       this.$store.state.agmDate = null
@@ -294,11 +280,12 @@ export default {
       this.$store.state.noAGM = false
       this.$store.state.regOffAddrChange = false
       this.setRegOffAddrNull()
+      // refresh this page
       this.$router.go()
     },
     nextAR () {
       this.resetARInfo()
-      this.getARInfo(this.corpNum)
+      this.getLatestARInfo()
     },
     setRegOffAddrNull () {
       this.$store.state.DeliveryAddressStreet = null
@@ -337,11 +324,10 @@ export default {
 
   watch: {
     corpNum: function (val) {
-      if (val != null) {
-        this.getARInfo(val)
-        this.getRegOffAddr(val)
-        this.getDirectors()
-      }
+      this.getLatestARInfo()
+      this.getRegOffAddr()
+      // TODO - Directors component should watch Corp Num and reload itself
+      this.$refs.directors.getDirectors()
     },
     agmDate (val) {
       // when AGM Date changes, update filing data

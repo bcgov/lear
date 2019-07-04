@@ -47,7 +47,7 @@ export default {
     getUsername () {
       const token = sessionStorage.getItem('KEYCLOAK_TOKEN')
       if (!token) {
-        console.error('getUsername() error - Token is null')
+        console.log('getUsername() error - Token is null')
       } else {
         this.username = this.parseJwt(token).preferred_username
       }
@@ -61,33 +61,34 @@ export default {
     },
     getCorpNum () {
       if (!this.username) {
-        console.error('getCorpNum() error - Username is null')
+        console.log('getCorpNum() error - Username is null')
       } else {
-        // TODO - reinstate this when token is fixed
+        // TODO - reinstate this when token contains valid username
         // this.$store.state.corpNum = this.username.toUpperCase()
-        this.$store.state.corpNum = 'CP1234567'
+        this.$store.state.corpNum = 'CP0002106'
       }
     },
     getEntityInfo () {
       if (!this.corpNum) {
-        console.error('getEntityInfo() error - Corp Num is null')
+        console.log('getEntityInfo() error - Corp Num is null')
       } else {
-        axios.get(this.corpNum).then(response => {
-          const entityInfoJson = response.data
-          // TODO - remove fallback data when API returns proper values
-          this.$store.state.entityName = entityInfoJson.business.legalName
-          this.$store.state.entityStatus = entityInfoJson.business.status
-          this.$store.state.entityBusinessNo = entityInfoJson.business.taxId
-          this.$store.state.entityIncNo = entityInfoJson.business.identifier
-        }).catch(error => {
-          console.log('getEntityInfo ERROR:', error)
-        })
+        const url = this.corpNum
+        axios.get(url).then(response => {
+          if (response && response.data && response.data.business) {
+            this.$store.state.entityName = response.data.business.legalName
+            this.$store.state.entityStatus = response.data.business.status
+            this.$store.state.entityBusinessNo = response.data.business.taxId
+            this.$store.state.entityIncNo = response.data.business.identifier
+          } else {
+            console.log('getEntityInfo() error - invalid response data')
+          }
+        }).catch(error => console.error('getEntityInfo() error =', error))
       }
     }
   },
 
   watch: {
-    // TODO - remove this if Corp Num never changes
+    // TODO - reinstate this if Corp Num ever changes
     // corpNum (val) {
     //   console.log('corpNum =', val)
     //   if (val) {
