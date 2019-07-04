@@ -11,8 +11,6 @@
       </div>
     </v-fade-transition>
 
-    <EntityInfo/>
-
     <div id="annual-report" ref="annualReport">
       <!-- Initial Page Load Transition -->
       <div class="loading-container fade-out">
@@ -96,7 +94,6 @@
 
 <script lang="ts">
 import axios from '@/axios-auth'
-import EntityInfo from '@/components/EntityInfo.vue'
 import AGMDate from '@/components/ARSteps/AGMDate.vue'
 import RegisteredOfficeAddress from '@/components/ARSteps/RegisteredOfficeAddress.vue'
 import Directors from '@/components/ARSteps/Directors.vue'
@@ -108,7 +105,6 @@ export default {
   name: 'AnnualReport',
 
   components: {
-    EntityInfo,
     AGMDate,
     RegisteredOfficeAddress,
     Directors,
@@ -120,7 +116,6 @@ export default {
   data () {
     return {
       lastARJson: null,
-      entityInfoJson: null,
       regOffAddrJson: null,
       showLoading: false,
       loadingMsg: 'Redirecting to PayBC to Process Your Payment',
@@ -175,7 +170,6 @@ export default {
 
     if (this.ARFilingYear === null && this.corpNum !== null) {
       this.getARInfo(this.corpNum)
-      this.getEntityInfo(this.corpNum)
       this.getRegOffAddr(this.corpNum)
       this.getDirectors()
     }
@@ -195,23 +189,6 @@ export default {
         this.$store.state.lastAgmDate = '2017/05/10'
         this.$store.state.ARFilingYear = '2018'
         this.$store.state.agmDate = `${this.ARFilingYear}-01-01`
-      })
-    },
-    getEntityInfo (corpNum) {
-      var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
-      // todo:delete hardcoded corpnum when we stop pointing at mock
-      corpNum = 'CP0001187'
-      var url = corpNum
-      axios.get(url).then(response => {
-        this.entityInfoJson = response.data
-        this.setEntityInfo()
-      }).catch(error => {
-        console.log('getEntityInfo ERROR:', error)
-        // TODO - remove this dummy data
-        this.$store.state.entityName = 'Pathfinder Cooperative'
-        this.$store.state.entityStatus = 'GOODSTANDING'
-        this.$store.state.entityBusinessNo = '105023337BC0157'
-        this.$store.state.entityIncNo = 'CP0015683'
       })
     },
     getRegOffAddr (corpNum) {
@@ -266,13 +243,6 @@ export default {
           this.$store.state.agmDate = `${this.ARFilingYear}-01-01`
         }
       }
-    },
-    setEntityInfo () {
-      // todo:take out hardcoded values after api returns proper values
-      this.$store.state.entityName = this.entityInfoJson.business_info.legal_name
-      this.$store.state.entityStatus = 'GOODSTANDING'
-      this.$store.state.entityBusinessNo = '123456789'
-      this.$store.state.entityIncNo = this.entityInfoJson.business_info.identifier
     },
     setRegOffAddr () {
       this.$store.state.DeliveryAddressStreet = this.regOffAddrJson.filing.deliveryAddress.streetAddress
@@ -369,7 +339,6 @@ export default {
     corpNum: function (val) {
       if (val != null) {
         this.getARInfo(val)
-        this.getEntityInfo(val)
         this.getRegOffAddr(val)
         this.getDirectors()
       }
