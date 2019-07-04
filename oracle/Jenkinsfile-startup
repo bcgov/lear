@@ -20,44 +20,85 @@
 //   -> user.timezone : set the local timezone so logfiles report correxct time
 //   -> hudson.model.DirectoryBrowserSupport.CSP : removes restrictions on CSS file load, thus html pages of test reports are displayed pretty
 //   See: https://docs.openshift.com/container-platform/3.9/using_images/other_images/jenkins.html for a complete list of JENKINS env vars
-
-def DEPLOYMENT_NAME = 'oradb1'
+def NAMESPACE = namespace
+def COMPONENT_NAME = component
+def TAG_NAME = tag
+def OLD_POD
+def USERNAME
+def PASSWORD
 
 node {
-    stage('deploy fresh oracle') {
+    stage('reset oracle') {
+        script {
+            echo """
+            Pipeline called with constants:
+                - NAMESPACE: ${NAMESPACE}
+                - TAG_NAME: ${TAG_NAME}
+                - COMPONENT_NAME: ${COMPONENT_NAME}
+            """
+            openshift.withCluster() {
+                openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
+                    def podSelector = openshift.selector('pod', [ app:"${COMPONENT_NAME}-${TAG_NAME}" ])
+
+                    OLD_POD = podSelector.objects()[0].metadata.name
+                    echo "OLD_POD: ${OLD_POD}"
+                    def shutdownDb = openshift.exec(
+                        OLD_POD,
+                        '--',
+                        "bash -c ' \
+                        echo \"shutdown;\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba \
+                        '"
+                    ).actions[0].out
+                    echo shutdownDb
+                    def deleteORCL = openshift.exec(
+                        OLD_POD,
+                        '--',
+                        "bash -c '\
+                        rm -Rf /ORCL/*'"
+                    ).actions[0].out
+                    echo deleteORCL
+                    try {
+                        def resetORCL = openshift.exec(
+                            OLD_POD,
+                            '--',
+                            "bash -c '\
+                            cp -a /ORCL_base/. /ORCL/'"
+                        ).actions[0].out
+                        echo "3" + resetORCL
+                    } catch (Exception e) {
+                        echo e.getMessage()
+                    }
+                }
+            }
+        }
+    } // end stage
+    stage('deploy oracle') {
         script {
             openshift.withCluster() {
-                openshift.withProject("gl2uos-tools") {
-                  def deploy = openshift.selector("dc", "oradb1")
-                  def podSelector = openshift.selector('pod', [ app:'oradb1' ])
-                  def oldPod = podSelector.name()
-                  deploy.rollout().latest()
+                openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
+                    def deploy = openshift.selector("dc", "${COMPONENT_NAME}-${TAG_NAME}")
+                    def podSelector = openshift.selector('pod', [ app:"${COMPONENT_NAME}-${TAG_NAME}" ])
 
-                  podSelector.untilEach {
-                    echo "pod: ${it.name()}"
-                    echo "${it}"
-                    if (it.name() != oldPod && it.object().status.containerStatuses[0].ready) {
-                        sleep 80
-                        // todo: make this check if database is up (currently passes no matter what)
-                        try {
-                            echo "${it.name()}"
-                            def pod = it.name().substring(4)
-                            echo "${pod}"
-                            sh """
-                                oc rsh ${pod}
-                                /u01/app/oracle/product/12.2.0/dbhome_1/bin/sqlplus c##ctst/tiger
+                    deploy.rollout().latest()
+                    podSelector.untilEach {
+                        def pod = it.objects()[0].metadata.name
+                        echo "pod: ${pod}"
 
-                            """
-                            return true
-                        } catch (Exception e) {
-                            echo "${e}"
-                            //return false
-                            return true
+                        if (pod != OLD_POD && it.objects()[0].status.phase == 'Running' && it.objects()[0].status.containerStatuses[0].ready) {
+                            echo "New pod: ${pod}"
+                            sleep 80
+                            // todo: make this check if database is up (currently passes no matter what)
+                            try {
+                                echo "${pod}"
+                                return true
+                            } catch (Exception e) {
+                                echo "${e}"
+                                return false
+                            }
+                        } else {
+                            return false;
                         }
-                    } else {
-                        return false;
                     }
-                  }
 
                 }
             }

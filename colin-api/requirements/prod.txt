@@ -8,5 +8,3 @@ flask-jwt-oidc>=0.1.5
 python-dotenv
 psycopg2-binary
 jsonschema
-
-git+https://github.com/bcgov/lear.git#egg=registry_schemas&subdirectory=schemas
