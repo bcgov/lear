@@ -15,9 +15,6 @@
           <h1 id="dashboardHeader">Dashboard</h1>
         </header>
 
-        <v-btn id="go-to-ar-btn" large to="/annual-report" :disabled="!ARFilingYear">
-          File {{ARFilingYear}} Annual Report</v-btn>
-
         <section v-if="todoItems && todoItems.length">
           <header>
             <h2 id="dashboardTodoHeader">To Do
@@ -143,7 +140,7 @@ export default {
       if (this.corpNum) {
         this.todoItems = [
           { name: 'File 2018 Annual Report', enabled: true },
-          { name: 'File 2019 Annual Report', enabled: true }
+          { name: 'File 2019 Annual Report', enabled: false }
         ]
       }
     },
