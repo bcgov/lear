@@ -18,7 +18,7 @@
 <script>
 
 export default {
-  name: 'StdHeader.vue'
+  name: 'StdHeader'
 }
 </script>
 

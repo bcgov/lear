@@ -69,7 +69,7 @@
 import { isNotNull, isValidYear, isValidMonth, isValidDay, isISOFormat } from '@/validators'
 
 export default {
-  name: 'AGMDate.vue',
+  name: 'AGMDate',
 
   data () {
     return {
@@ -165,7 +165,7 @@ export default {
         }
       }
       // also update value in store
-      this.$store.state.agmDate = val
+      this.$store.state.agmDate = val || null
     },
     didNotHoldAGM (val) {
       // when checkbox changes, update properties accordingly
@@ -176,11 +176,13 @@ export default {
       } else {
         this.$store.state.noAGM = false
         // reset text field value
-        this.dateFormatted = ''
+        this.$store.state.agmDate = this.minDate
+        this.dateFormatted = this.formatDate(this.agmDate)
       }
     },
     ARFilingYear (val) {
       // when AR Filing Year changes (ie. on init), set initial text field value
+      this.$store.state.agmDate = this.minDate
       this.dateFormatted = this.formatDate(this.agmDate)
     }
   }
@@ -188,7 +190,7 @@ export default {
 </script>
 
 <style lang="stylus" scoped>
-  @import "../../assets/styles/theme.styl";
+  @import "../../assets/styles/theme.styl"
 
   .validationErrorInfo
     color red

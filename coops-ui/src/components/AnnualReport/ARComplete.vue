@@ -14,7 +14,7 @@
 
 <script>
 export default {
-  name: 'ARComplete.vue',
+  name: 'ARComplete',
   computed: {
     filedDate () {
       var date = new Date(this.$store.state.filedDate + 'T12:00:00')

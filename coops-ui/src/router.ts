@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Home from './views/Home.vue'
+import AnnualReport from '@/views/AnnualReport.vue'
+import Dashboard from '@/views/Dashboard.vue'
 import axios from '@/axios-auth'
 
 Vue.use(Router)
@@ -54,8 +55,20 @@ let router = new Router({
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: Home,
+      redirect: '/dashboard'
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: Dashboard,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/annual-report',
+      name: 'annual-report',
+      component: AnnualReport,
       meta: {
         requiresAuth: true
       }
@@ -67,6 +80,11 @@ let router = new Router({
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
       component: () => import(/* webpackChunkName: "about" */ './views/About.vue')
+    },
+    {
+      // default/fallback route
+      path: '*',
+      redirect: '/'
     }
   ]
 })
