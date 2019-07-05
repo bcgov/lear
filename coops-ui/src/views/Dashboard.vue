@@ -192,7 +192,7 @@ export default {
     },
     fileAnnualReport (item) {
       // console.log('fileAnnualReport(), item =', item)
-      this.setARFilingYear(item.year);
+      this.setARFilingYear(item.year)
       this.$router.push({ path: '/annual-report', query: { year: item.year } })
     },
     downloadAll (item) {
