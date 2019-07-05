@@ -6,7 +6,7 @@ import App from '@/App.vue'
 import AnnualReport from '@/views/AnnualReport.vue'
 import axios from '@/axios-auth'
 import sinon from 'sinon'
-import store from '@/store'
+import store from '@/store/store'
 import Vuelidate from 'vuelidate'
 
 Vue.use(Vuetify)

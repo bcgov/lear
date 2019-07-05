@@ -211,9 +211,10 @@
 <script>
 import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
+import { mapState, mapActions } from 'vuex'
 
 export default {
-  name: 'Directors',
+  name: 'Directors.vue',
   mixins: [Vue2Filters.mixin],
   components: {
   },
@@ -268,12 +269,11 @@ export default {
     }
   },
   computed: {
-    corpNum () {
-      return this.$store.state.corpNum
-    },
+    ...mapState(['corpNum', 'agmDate', 'noAGM']),
+
     agmEntered () {
-      if (this.$store.state.agmDate) return true
-      else if (this.$store.state.noAGM) return true
+      if (this.agmDate) return true
+      else if (this.noAGM) return true
       else return false
     },
     directorsChange () {
@@ -281,25 +281,24 @@ export default {
       else return false
     }
   },
+  mounted () {
+    this.getDirectors()
+  },
   methods: {
     getDirectors: function () {
       if (this.corpNum !== null) {
-        // TODO - make proper axios call and delete hardcoded data below
         var url = this.corpNum + '/directors' // todo - deal with year or date
         axios.get(url).then(response => {
-          if (response && response.data && response.data.directors) {
-            this.directors = response.data.directors
-            for (var i = 0; i < this.directors.length; i++) {
-              this.directors[i].id = i + 1
-              this.directors[i].isNew = false
-              this.directors[i].isDirectorActive = true
-            }
-          } else {
-            console.log('getDirectors() error - invalid response data')
+          console.log(response.data)
+          this.directors = response.data.directors
+          for (var i = 0; i < this.directors.length; i++) {
+            this.directors[i].id = i + 1
+            this.directors[i].isNew = false
+            this.directors[i].isDirectorActive = true
           }
         }).catch(error => {
-          console.error('getDirectors() error =', error)
-
+          console.log('getDirectors ERROR:', error)
+          // TODO - remove this stub data
           this.directors = [
             {
               id: 1,

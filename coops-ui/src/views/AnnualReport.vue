@@ -21,13 +21,21 @@
       </div>
 
       <v-container id="annual-report-container" class="view-container">
-        <article id="annual-report-article" :class="this.agmDate ? 'agm-date-selected' : 'no-agm-date-selected'">
+        <article
+          id="annual-report-article"
+          :class="this.agmDate ? 'agm-date-selected' : 'no-agm-date-selected'"
+        >
           <header>
-            <h1 id="AR-header">File {{ ARFilingYear }} Annual Report -
-              <span style="font-style: italic">{{ reportState }}</span>
+            <h1 id="AR-header">
+              File {{ ARFilingYear }} Annual Report -
+              <span
+                style="font-style: italic"
+              >{{ reportState }}</span>
             </h1>
-            <p>Select your Annual General Meeting (AGM) date, and verify or change your Registered office address
-              and List of Directors as of your AGM.</p>
+            <p>
+              Select your Annual General Meeting (AGM) date, and verify or change your Registered office address
+              and List of Directors as of your AGM.
+            </p>
           </header>
 
           <div v-if="filedDate === null">
@@ -37,20 +45,23 @@
                 <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
               </header>
               <v-card flat id="AR-step-1-container">
-                <AGMDate/>
+                <AGMDate />
               </v-card>
             </section>
 
             <!-- Addresses -->
             <section>
               <header>
-                <h2 id="AR-step-2-header">2. Registered Office Addresses
-                  <span class="agm-date">(as of {{ ARFilingYear }} Annual General Meeting)</span>
+                <h2 id="AR-step-2-header">
+                  2. Registered Office Addresses
+                  <span
+                    class="agm-date"
+                  >(as of {{ ARFilingYear }} Annual General Meeting)</span>
                 </h2>
                 <p>Verify or change your Registered Office Addresses.</p>
               </header>
               <v-card flat id="AR-step-2-container">
-                <RegisteredOfficeAddress/>
+                <RegisteredOfficeAddress ref="registeredAddress"/>
               </v-card>
             </section>
 
@@ -58,22 +69,26 @@
             <section>
               <header>
                 <h2 id="AR-step-3-header">3. Directors</h2>
-                <p>Tell us who was elected or appointed and who ceased to be a director at your
-                  {{ ARFilingYear }} AGM.</p>
+                <p>
+                  Tell us who was elected or appointed and who ceased to be a director at your
+                  {{ ARFilingYear }} AGM.
+                </p>
               </header>
               <!-- <v-card flat id="AR-step-3-container"> -->
-                <Directors ref="directors" @directorsChange="directorsChangeEventHandler" />
+              <Directors ref="directors" @directorsChange="directorsChangeEventHandler" />
               <!-- </v-card> -->
             </section>
-
           </div>
           <div v-else>
-            <ARComplete/>
+            <ARComplete />
           </div>
         </article>
 
         <aside>
-          <affix relative-element-selector="#annual-report-article" :offset="{ top: 120, bottom: 40 }">
+          <affix
+            relative-element-selector="#annual-report-article"
+            :offset="{ top: 120, bottom: 40 }"
+          >
             <sbc-fee-summary v-bind:filingData="[...filingData]" />
           </affix>
         </aside>
@@ -81,10 +96,22 @@
 
       <v-container id="submit-container" class="pt-0">
         <div class="ar-filing-buttons">
-          <v-btn v-if="filedDate === null" id="ar-pay-btn" color="primary" large :disabled="!validated"
-            @click="submit">File & Pay</v-btn>
-          <v-btn v-else id="ar-next-btn" color="primary" large :disabled="currentYear === ARFilingYear"
-            @click="nextAR">Next</v-btn>
+          <v-btn
+            v-if="filedDate === null"
+            id="ar-pay-btn"
+            color="primary"
+            large
+            :disabled="!validated"
+            @click="submit"
+          >File & Pay</v-btn>
+          <v-btn
+            v-else
+            id="ar-next-btn"
+            color="primary"
+            large
+            :disabled="currentYear === ARFilingYear"
+            @click="nextAR"
+          >Next</v-btn>
           <v-btn id="ar-cancel-btn" large to="/dashboard">Cancel</v-btn>
         </div>
       </v-container>
@@ -93,13 +120,13 @@
 </template>
 
 <script lang="ts">
-import axios from '@/axios-auth'
 import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import ARComplete from '@/components/AnnualReport/ARComplete.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
+import { mapState, mapActions } from 'vuex'
 
 export default {
   name: 'AnnualReport',
@@ -123,36 +150,13 @@ export default {
   },
 
   computed: {
-    corpNum () {
-      return this.$store.state.corpNum
-    },
-    currentDate () {
-      return this.$store.state.currentDate
-    },
-    lastAgmDate () {
-      return this.$store.state.lastAgmDate
-    },
-    ARFilingYear () {
-      return this.$store.state.ARFilingYear
-    },
-    agmDate () {
-      return this.$store.state.agmDate
-    },
-    noAGM () {
-      return this.$store.state.noAGM
-    },
-    regOffAddrChange () {
-      return this.$store.state.regOffAddrChange
-    },
-    filedDate () {
-      return this.$store.state.filedDate
-    },
-    validated () {
-      return this.$store.state.validated
-    },
+    ...mapState(['agmDate', 'noAGM', 'regOffAddrChange', 'filedDate',
+      'validated', 'currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate' ]),
+
     currentYear () {
       return this.currentDate ? this.currentDate.substring(0, 4) : null
     },
+
     reportState () {
       // TODO - look at filing.annual.status instead
       return this.filedDate ? 'Filed' : 'Draft'
@@ -161,8 +165,7 @@ export default {
 
   created () {
     // (re)initialize data -- to force (re)load later
-    this.$store.state.ARFilingYear = null
-    this.setRegOffAddr({ deliveryAddress: {}, mailingAddress: {} })
+    this.setARFilingYear(null)
   },
 
   mounted () {
@@ -173,86 +176,12 @@ export default {
       // load initial data
       // TODO - need to get id of current AR
       this.getARInfo(1)
-      this.getRegOffAddr()
-      // TODO - Directors component should watch Corp Num and reload itself
-      this.$refs.directors.getDirectors()
     }
   },
 
   methods: {
-    getARInfo (id) {
-      if (this.corpNum) {
-        // TODO - make proper axios call
-        var url = this.corpNum + '/filings/' + id
-        axios.get(url).then(response => {
-          if (response && response.data) {
-            this.setARInfo(response.data)
-          } else {
-            console.log('getARInfo() error - invalid response data')
-          }
-        }).catch(error => {
-          console.error('getARInfo() error =', error)
+    ...mapActions(['getARInfo','setARFilingYear']),
 
-          // TODO - delete this when API works
-          this.setARInfo({})
-        })
-      }
-    },
-    setARInfo (lastARJson) {
-      if (lastARJson && lastARJson.filing && lastARJson.filing.annualReport) {
-        // TODO - do something with JSON data
-        // TODO - enable filing for current year
-        if (this.currentDate && this.lastAgmDate) {
-          const currentYear = +this.currentDate.substring(0, 4)
-          const lastAgmYear = +this.lastAgmDate.substring(0, 4)
-          if (lastAgmYear < currentYear) {
-            this.$store.state.ARFilingYear = (lastAgmYear + 1).toString()
-          } else {
-            // already filed for this year
-            this.$store.state.ARFilingYear = null
-          }
-        }
-      } else {
-        console.log('setARInfo() error - invalid Annual Report')
-      }
-    },
-    getRegOffAddr () {
-      if (this.corpNum) {
-        const url = this.corpNum + '/addresses'
-        axios.get(url).then(response => {
-          if (response && response.data) {
-            this.setRegOffAddr(response.data)
-          } else {
-            console.log('getRegOffAddr() error - invalid response data')
-          }
-        }).catch(error => console.error('getRegOffAddr() error =', error))
-      }
-    },
-    setRegOffAddr (regOffAddrJson) {
-      if (regOffAddrJson && regOffAddrJson.deliveryAddress) {
-        this.$store.state.DeliveryAddressStreet = regOffAddrJson.deliveryAddress.streetAddress
-        this.$store.state.DeliveryAddressStreetAdditional = regOffAddrJson.deliveryAddress.streetAddressAdditional
-        this.$store.state.DeliveryAddressCity = regOffAddrJson.deliveryAddress.addressCity
-        this.$store.state.DeliveryAddressRegion = regOffAddrJson.deliveryAddress.addressRegion
-        this.$store.state.DeliveryAddressPostalCode = regOffAddrJson.deliveryAddress.postalCode
-        this.$store.state.DeliveryAddressCountry = regOffAddrJson.deliveryAddress.addressCountry
-        this.$store.state.DeliveryAddressInstructions = regOffAddrJson.deliveryAddress.deliveryInstructions
-      } else {
-        console.log('setRegOffAddr() error - invalid Delivery Address')
-      }
-
-      if (regOffAddrJson && regOffAddrJson.mailingAddress) {
-        this.$store.state.MailingAddressStreet = regOffAddrJson.mailingAddress.streetAddress
-        this.$store.state.MailingAddressStreetAdditional = regOffAddrJson.mailingAddress.streetAddressAdditional
-        this.$store.state.MailingAddressCity = regOffAddrJson.mailingAddress.addressCity
-        this.$store.state.MailingAddressRegion = regOffAddrJson.mailingAddress.addressRegion
-        this.$store.state.MailingAddressPostalCode = regOffAddrJson.mailingAddress.postalCode
-        this.$store.state.MailingAddressCountry = regOffAddrJson.mailingAddress.addressCountry
-        this.$store.state.MailingAddressInstructions = regOffAddrJson.mailingAddress.deliveryInstructions
-      } else {
-        console.log('setRegOffAddr() error - invalid Mailing Address')
-      }
-    },
     directorsChangeEventHandler (val) {
       this.directorsChange = val
     },
@@ -277,7 +206,7 @@ export default {
       this.$store.state.validated = false
       this.$store.state.noAGM = false
       this.$store.state.regOffAddrChange = false
-      this.setRegOffAddrNull()
+      this.$refs.registeredAddress.setRegOffAddrNull()
       // refresh this page
       this.$router.go()
     },
@@ -286,22 +215,7 @@ export default {
       // TODO - need to get id of next AR
       this.getARInfo(2)
     },
-    setRegOffAddrNull () {
-      this.$store.state.DeliveryAddressStreet = null
-      this.$store.state.DeliveryAddressStreetAdditional = null
-      this.$store.state.DeliveryAddressCity = null
-      this.$store.state.DeliveryAddressRegion = null
-      this.$store.state.DeliveryAddressPostalCode = null
-      this.$store.state.DeliveryAddressCountry = null
-      this.$store.state.DeliveryAddressInstructions = null
-      this.$store.state.MailingAddressStreet = null
-      this.$store.state.MailingAddressStreetAdditional = null
-      this.$store.state.MailingAddressCity = null
-      this.$store.state.MailingAddressRegion = null
-      this.$store.state.MailingAddressPostalCode = null
-      this.$store.state.MailingAddressCountry = null
-      this.$store.state.MailingAddressInstructions = null
-    },
+
     toggleFiling (setting, filing) {
       var added = false
       for (var i = 0; i < this.filingData.length; i++) {
@@ -373,51 +287,64 @@ export default {
 </script>
 
 <style lang="stylus" scoped>
-  @import "../assets/styles/theme.styl"
+@import '../assets/styles/theme.styl';
 
-  article
-    .v-card
-      line-height 1.2rem
-      font-size 0.875rem
+article {
+  .v-card {
+    line-height: 1.2rem;
+    font-size: 0.875rem;
+  }
+}
 
-  section p
-    //font-size 0.875rem
-    color $gray6
+section p {
+  // font-size 0.875rem
+  color: $gray6;
+}
 
-  section + section
-    margin-top 3rem
+section + section {
+  margin-top: 3rem;
+}
 
-  h2
-    margin-bottom 0.25rem
+h2 {
+  margin-bottom: 0.25rem;
+}
 
-  #AR-header
-    margin-bottom 1.25rem
-    line-height 2rem
-    letter-spacing -0.01rem
-    font-size 2rem
-    font-weight 500
+#AR-header {
+  margin-bottom: 1.25rem;
+  line-height: 2rem;
+  letter-spacing: -0.01rem;
+  font-size: 2rem;
+  font-weight: 500;
+}
 
-  #AR-step-1-header, #AR-step-2-header, #AR-step-3-header
-    margin-bottom 0.25rem
-    margin-top 3rem
-    font-size 1.125rem
-    font-weight 500
+#AR-step-1-header, #AR-step-2-header, #AR-step-3-header {
+  margin-bottom: 0.25rem;
+  margin-top: 3rem;
+  font-size: 1.125rem;
+  font-weight: 500;
+}
 
-  #AR-step-1-container, #AR-step-2-container, #AR-step-3-container
-    margin-top 1rem
+#AR-step-1-container, #AR-step-2-container, #AR-step-3-container {
+  margin-top: 1rem;
+}
 
-  .title-container
-    margin-bottom 0.5rem
+.title-container {
+  margin-bottom: 0.5rem;
+}
 
-  .agm-date
-    margin-left 0.25rem
-    font-weight 300
+.agm-date {
+  margin-left: 0.25rem;
+  font-weight: 300;
+}
 
-  // Filing Buttons
-  .ar-filing-buttons
-    padding-top 2rem
-    border-top: 1px solid $gray5
-    text-align right
-    .v-btn + .v-btn
-      margin-left 0.5rem
+// Filing Buttons
+.ar-filing-buttons {
+  padding-top: 2rem;
+  border-top: 1px solid $gray5;
+  text-align: right;
+
+  .v-btn + .v-btn {
+    margin-left: 0.5rem;
+  }
+}
 </style>
