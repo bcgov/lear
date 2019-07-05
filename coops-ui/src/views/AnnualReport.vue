@@ -209,7 +209,7 @@ export default {
     },
     setARInfo (lastARJson) {
       if (lastARJson && lastARJson.filing && lastARJson.filing.annualReport) {
-        console.log('annualReport = ', lastARJson.filing.annualReport)
+        // TODO - do something with this data
       } else {
         console.log('setARInfo() error - invalid Annual Report')
       }
