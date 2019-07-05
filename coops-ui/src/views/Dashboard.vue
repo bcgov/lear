@@ -25,7 +25,7 @@
           <v-card flat id="dashboardTodoContainer">
             <ul class="list todo-list">
               <li class="list-item"
-                v-for="(item, index) in orderBy(todoItems, 'name', 1)"
+                v-for="(item, index) in orderBy(todoItems, 'year', 1)"
                 v-bind:key="index">
                 <div class="list-item-title">{{item.name}}</div>
                 <div class="list-item-actions">
@@ -47,7 +47,7 @@
             <v-expansion-panel>
               <v-expansion-panel-content
                 class="filing-history-list"
-                v-for="(item, index) in orderBy(filedItems, 'name', 1)"
+                v-for="(item, index) in orderBy(filedItems, 'name', -1)"
                 v-bind:key="index">
                 <template v-slot:header>
                   <div class="list-item">
@@ -58,7 +58,7 @@
 
                 <ul class="list document-list">
                   <li class="list-item"
-                    v-for="(document, index) in orderBy(item.filingDocuments, 'name', 1)"
+                    v-for="(document, index) in orderBy(item.filingDocuments, 'name')"
                     v-bind:key="index">
                     <a href="#">
                       <img class="list-item-icon" src="@/assets/images/icons/file-pdf-outline.svg" />
@@ -139,61 +139,58 @@ export default {
       // only the earliest non-submitted AR can be filed
       if (this.corpNum) {
         this.todoItems = [
-          { name: 'File 2018 Annual Report', enabled: true },
-          { name: 'File 2019 Annual Report', enabled: false }
+          { name: 'File 2019 Annual Report', year: 2019, enabled: false },
+          { name: 'File 2018 Annual Report', year: 2018, enabled: true }
         ]
       }
     },
     getFiledItems () {
       if (this.corpNum) {
         // TODO - make proper axios call
-        var url = this.corpNum + '/filingsx'
+        var url = this.corpNum + '/filings'
         axios.get(url).then(response => {
           if (response && response.data) {
-            this.filedItems = response.data
+            // this.filedItems = response.data
+            // TODO - build actual data from response
+            this.filedItems = [
+              {
+                name: 'Annual Report (2015)',
+                filingAuthor: 'Jane Doe',
+                filingDate: 'Feb 07, 2016',
+                filingStatus: 'Complete',
+                filingDocuments: [
+                  { name: 'Change of Address' },
+                  { name: 'Change of Directors' },
+                  { name: 'Annual Report' }
+                ]
+              },
+              {
+                name: 'Annual Report (2016)',
+                filingAuthor: 'Jane Doe',
+                filingDate: 'Feb 05, 2017',
+                filingStatus: 'Complete',
+                filingDocuments: [
+                  { name: 'Change of Address' },
+                  { name: 'Change of Directors' },
+                  { name: 'Annual Report' }
+                ]
+              },
+              {
+                name: 'Annual Report (2017)',
+                filingAuthor: 'Jane Doe',
+                filingDate: 'Feb 01, 2018',
+                filingStatus: 'Complete',
+                filingDocuments: [
+                  { name: 'Change of Address' },
+                  { name: 'Change of Directors' },
+                  { name: 'Annual Report' }
+                ]
+              }
+            ]
           } else {
             console.log('getFiledItems() error - invalid response data')
           }
-        }).catch(error => {
-          console.error('getFiledItems() error =', error)
-
-          // TODO - delete this when API works
-          this.filedItems = [
-            {
-              name: 'Annual Report (2017)',
-              filingAuthor: 'Jane Doe',
-              filingDate: 'Feb 01, 2018',
-              filingStatus: 'Complete',
-              filingDocuments: [
-                { name: 'Change of Address' },
-                { name: 'Change of Directors' },
-                { name: 'Annual Report' }
-              ]
-            },
-            {
-              name: 'Annual Report (2016)',
-              filingAuthor: 'Jane Doe',
-              filingDate: 'Feb 05, 2017',
-              filingStatus: 'Complete',
-              filingDocuments: [
-                { name: 'Change of Address' },
-                { name: 'Change of Directors' },
-                { name: 'Annual Report' }
-              ]
-            },
-            {
-              name: 'Annual Report (2015)',
-              filingAuthor: 'Jane Doe',
-              filingDate: 'Feb 07, 2016',
-              filingStatus: 'Complete',
-              filingDocuments: [
-                { name: 'Change of Address' },
-                { name: 'Change of Directors' },
-                { name: 'Annual Report' }
-              ]
-            }
-          ]
-        })
+        }).catch(error => console.error('getFiledItems() error =', error))
       }
     },
     setARInfo () {
@@ -211,8 +208,7 @@ export default {
     },
     fileAnnualReport (item) {
       console.log('fileAnnualReport(), item =', item)
-      // setTimeout(() => { this.$router.push({ path: '/annual-report' }) })
-      this.$router.push({ path: '/annual-report' })
+      this.$router.push({ path: '/annual-report', query: { year: item.year } })
     },
     downloadAll (item) {
       console.log('downloadAll(), item =', item)
