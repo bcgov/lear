@@ -72,9 +72,10 @@ export default {
       if (!this.username) {
         console.log('getCorpNum() error - Username is null')
       } else {
-        // TODO - reinstate this when token contains valid username
-        // this.$store.state.corpNum = this.username.toUpperCase()
-        this.$store.state.corpNum = 'CP0002098'
+        // right now, Username is Corp Num
+        this.$store.state.corpNum = this.username.toUpperCase()
+        // TODO - overwrite Corp Num as follows for local testing
+        // this.$store.state.corpNum = 'CP0002098'
       }
     },
     getEntityInfo () {

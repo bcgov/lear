@@ -14,20 +14,21 @@ Vue.use(Vue2Filters)
 Vue.use(Affix)
 Vue.config.productionTip = false
 
-// just need a token that can get parsed properly (will be expired but doesn't matter for tests)
-sessionStorage.setItem('KEYCLOAK_TOKEN', 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUbWdtZUk0MnVsdUZ0N' +
-  '3FQbmUtcTEzdDUwa0JDbjF3bHF6dHN0UGdUM1dFIn0.eyJqdGkiOiIxYzQ2YjIzOS02ZWY0LTQxYTQtYThmMy05N2M5M2IyNmNlMjAiLCJle' +
-  'HAiOjE1NTcxNzMyNTYsIm5iZiI6MCwiaWF0IjoxNTU3MTY5NjU2LCJpc3MiOiJodHRwczovL3Nzby1kZXYucGF0aGZpbmRlci5nb3YuYmMuY2' +
-  'EvYXV0aC9yZWFsbXMvZmNmMGtwcXIiLCJhdWQiOiJzYmMtYXV0aC13ZWIiLCJzdWIiOiIwMzZlN2I4Ny0zZTQxLTQ2MTMtYjFiYy04NWU5OTA' +
-  'xNTgzNzAiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJzYmMtYXV0aC13ZWIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiJkOGZmYjk4' +
-  'OS0zNzRlLTRhYTktODc4OS03YTRkODA1ZjNkOTAiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly8xOTIuMTY4LjAuMTM6O' +
-  'DA4MC8iLCIxOTIuMTY4LjAuMTMiLCIqIiwiaHR0cDovLzE5Mi4xNjguMC4xMzo4MDgwIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJlZGl' +
-  '0IiwidW1hX2F1dGhvcml6YXRpb24iLCJiYXNpYyJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY' +
-  '291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInByZWZlcnJlZF91c2VybmFtZSI6ImNwMDAwMTE5MSJ9.Ou' +
-  'JLtzYCnkp5KXSiudGFJY6hTSvdE3KokhkEzqU-icxAzQwZSTYbzZQdGsIScy4-DIWHahIGp9L-e6mYlQSQta2rK2Kte85MxThubyw0096UOtAE' +
-  'wnS9VURHXPUm4ZUyI4ECkyLlFywOPxAftNdeSYeJx26GHBCvo6uR9Zv6A3yTlJy3B1HJxBWk_6xTAzGPPDCLoyKGeIxGidGujKCKCAfXRMrjhX' +
-  'yBv90XzDgZ-To-6_jMjSjBX6Dtq7icdZYLWWDdrhjCpJA5CKS0PlSgeH1Yq4rHd8Ztp5cvVdJFxt87gIopIOQvcy4ji0gtaovgUhiyg07gXGl8' +
-  'dGZwn1tpLA')
+// token for temporary development use (will be expired but doesn't matter for tests)
+sessionStorage.setItem('KEYCLOAK_TOKEN', 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUbW' +
+  'dtZUk0MnVsdUZ0N3FQbmUtcTEzdDUwa0JDbjF3bHF6dHN0UGdUM1dFIn0.eyJqdGkiOiI4MTQzZGZmNi04ZmRkLTQwOGQ' +
+  'tODJiZC02NDQ0ZDcyYTE1ZGIiLCJleHAiOjE1NjI0MzUwMDgsIm5iZiI6MCwiaWF0IjoxNTYyMzQ4NjA4LCJpc3MiOiJo' +
+  'dHRwczovL3Nzby1kZXYucGF0aGZpbmRlci5nb3YuYmMuY2EvYXV0aC9yZWFsbXMvZmNmMGtwcXIiLCJhdWQiOiJzYmMtY' +
+  'XV0aC13ZWIiLCJzdWIiOiJhMGQxNjhiNy01NTg2LTQwNjMtYjk4ZC1lYzRkZTgzYmNkYmQiLCJ0eXAiOiJCZWFyZXIiLC' +
+  'JhenAiOiJzYmMtYXV0aC13ZWIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiIwNTFiZTMwZi0zNmNlLTRmYzk' +
+  'tYmUzZi04MjZjYzdhZmRhNGQiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly8xOTIuMTY4LjAuMTM6' +
+  'ODA4MC8iLCIxOTIuMTY4LjAuMTMiLCIqIiwiaHR0cDovLzE5Mi4xNjguMC4xMzo4MDgwIl0sInJlYWxtX2FjY2VzcyI6e' +
+  'yJyb2xlcyI6WyJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOl' +
+  'sibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInByZWZlcnJlZF9' +
+  '1c2VybmFtZSI6ImNwMDAwMjA5OCJ9.PaTNq2GJ-Y9UB4G5euQLnGsWCBRNAq705GuRSWm2QSHZ2npphk-tAmySf5KfIMe' +
+  'M5I5riVBrh9lQR-3RVjB3hkNfi_WiwB1wdj7cY1Bd4E164lXUiZRrMw-PqbDTwoJf6o_QAK89xnXNQaW26apTGIUFH1ob' +
+  'nPdrezyaIzxj8d2OLUAVMJ1BbRRmeppJ2tkJi72mkXx6xl5x1NvDQtr3Hr4Zp62SBKzFYkbvnpUkE06CLYhI_NPBjV1VO' +
+  'eRvNjJLVhN7mvgIvISABpKeb3iBT2-J_paSAJZoHHheV5e1DkHi8SRZSp-tGFza-E_RrDrcrJUoHaCVO_2fzb-zM9zXow')
 
 new Vue({
   router,
