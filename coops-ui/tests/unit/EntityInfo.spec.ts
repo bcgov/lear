@@ -3,7 +3,7 @@ import Vuetify from 'vuetify'
 
 import EntityInfo from '@/components/EntityInfo.vue'
 import App from '@/App.vue'
-import Home from '@/views/Home.vue'
+import AnnualReport from '@/views/AnnualReport.vue'
 import axios from '@/axios-auth'
 import sinon from 'sinon'
 import store from '@/store'
@@ -74,7 +74,7 @@ describe('EntityInfo.vue', () => {
     let rootInstance = new RootConstructor({ store: store })
     rootvm = rootInstance.$mount()
 
-    const ParentConstructor = Vue.extend(Home)
+    const ParentConstructor = Vue.extend(AnnualReport)
     let parentInstance = new ParentConstructor({ store: store })
     parentvm = parentInstance.$mount()
 

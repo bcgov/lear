@@ -213,7 +213,7 @@ import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
 
 export default {
-  name: 'Directors.vue',
+  name: 'Directors',
   mixins: [Vue2Filters.mixin],
   components: {
   },
@@ -284,19 +284,22 @@ export default {
   methods: {
     getDirectors: function () {
       if (this.corpNum !== null) {
-        var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
+        // TODO - make proper axios call and delete hardcoded data below
         var url = this.corpNum + '/directors' // todo - deal with year or date
         axios.get(url).then(response => {
-          console.log(response.data)
-          this.directors = response.data.directors
-          for (var i = 0; i < this.directors.length; i++) {
-            this.directors[i].id = i + 1
-            this.directors[i].isNew = false
-            this.directors[i].isDirectorActive = true
+          if (response && response.data && response.data.directors) {
+            this.directors = response.data.directors
+            for (var i = 0; i < this.directors.length; i++) {
+              this.directors[i].id = i + 1
+              this.directors[i].isNew = false
+              this.directors[i].isDirectorActive = true
+            }
+          } else {
+            console.log('getDirectors() error - invalid response data')
           }
         }).catch(error => {
-          console.log('getDirectors ERROR:', error)
-          // TODO - remove this stub data
+          console.error('getDirectors() error =', error)
+
           this.directors = [
             {
               id: 1,

@@ -2,8 +2,8 @@ import Vue from 'vue'
 import Vuetify from 'vuetify'
 
 import App from '@/App.vue'
-import Home from '@/views/Home.vue'
-import AGMDate from '@/components/ARSteps/AGMDate.vue'
+import AnnualReport from '@/views/AnnualReport.vue'
+import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 import store from '@/store'
 import sinon from 'sinon'
 import axios from '@/axios-auth'
@@ -116,7 +116,7 @@ describe('App.vue', () => {
     let rootInstance = new RootConstructor({ store: store })
     rootvm = rootInstance.$mount()
 
-    const Constructor = Vue.extend(Home)
+    const Constructor = Vue.extend(AnnualReport)
     let instance = new Constructor({ store: store })
     vm = instance.$mount()
 
