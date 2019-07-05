@@ -85,7 +85,7 @@
             @click="submit">File & Pay</v-btn>
           <v-btn v-else id="ar-next-btn" color="primary" large :disabled="currentYear === ARFilingYear"
             @click="nextAR">Next</v-btn>
-          <v-btn id="ar-cancel-btn" large to="/Dashboard">Cancel</v-btn>
+          <v-btn id="ar-cancel-btn" large to="/dashboard">Cancel</v-btn>
         </div>
       </v-container>
     </div>
@@ -154,43 +154,46 @@ export default {
       return this.currentDate ? this.currentDate.substring(0, 4) : null
     },
     reportState () {
+      // TODO - look at filing.annual.status instead
       return this.filedDate ? 'Filed' : 'Draft'
     }
   },
 
   mounted () {
-    // this logic works because Date() returns local time (plus offset which we ignore)
-    const today = new Date()
-    const year = today.getFullYear().toString()
-    const month = (today.getMonth() + 1).toString().padStart(2, '0')
-    const date = today.getDate().toString().padStart(2, '0')
-    this.$store.state.currentDate = `${year}-${month}-${date}`
+    console.log('AnnualReport is mounted')
+    console.log('AnnualReport, corpNum =', this.corpNum)
+    console.log('AnnualReport, ARFilingYear =', this.ARFilingYear)
+    // if tombstone data isn't set, go back to home
+    if (!this.corpNum || !this.ARFilingYear) {
+      this.$router.push('/')
+    } else {
+      // load initial data
+      // TODO - need to get id of latest AR
+      this.getARInfo(1)
+      this.getRegOffAddr()
+      // TODO - Directors component should watch Corp Num and reload itself
+      this.$refs.directors.getDirectors()
+    }
   },
 
   methods: {
-    getLatestARInfo () {
+    getARInfo (id) {
       if (!this.corpNum) {
-        console.log('getLatestARInfo() error - Corp Num is null')
+        console.log('getARInfo() error - Corp Num is null')
       } else {
-        // TODO - make proper axios call and delete hardcoded data below
-        // TODO - when calling the api make sure this url is for most recent AR - stub specifies 2017
-        var url = this.corpNum + '/filings?annual_report_year=2017'
+        // TODO - make proper axios call
+        var url = this.corpNum + '/filings/' + id
         axios.get(url).then(response => {
           if (response && response.data) {
             this.setARInfo(response.data)
           } else {
-            console.log('getLatestARInfo() error - invalid response data')
+            console.log('getARInfo() error - invalid response data')
           }
         }).catch(error => {
-          console.error('getLatestARInfo() error =', error)
+          console.error('getARInfo() error =', error)
 
-          this.setARInfo({
-            filing: {
-              annual_report: {
-                annual_general_meeting_date: '2017/05/10'
-              }
-            }
-          })
+          // TODO - delete this when API works
+          this.setARInfo({})
         })
       }
     },
@@ -198,7 +201,7 @@ export default {
       if (!this.corpNum) {
         console.log('getRegOffAddr() error - Corp Num is null')
       } else {
-        const url = this.corpNum
+        const url = this.corpNum + '/addresses'
         axios.get(url).then(response => {
           if (response && response.data) {
             this.setRegOffAddr(response.data)
@@ -209,48 +212,51 @@ export default {
       }
     },
     setARInfo (lastARJson) {
-      // assume JSON date is YYYY-MM-DD
-      if (lastARJson && lastARJson.filing && lastARJson.filing.annual_report) {
-        this.$store.state.lastAgmDate = lastARJson.filing.annual_report.annual_general_meeting_date
+      if (lastARJson && lastARJson.filing && lastARJson.filing.annualReport) {
+        console.log('annualReport = ', lastARJson.filing.annualReport)
       } else {
         console.log('setARInfo() error - invalid Annual Report')
       }
-
-      if (this.lastAgmDate && this.currentDate) {
-        const lastAgmYear = +this.lastAgmDate.substring(0, 4)
-        const currentYear = +this.currentDate.substring(0, 4)
-        if (lastAgmYear === currentYear) {
-          this.$store.state.ARFilingYear = null
-        } else {
-          this.$store.state.ARFilingYear = (lastAgmYear + 1).toString()
-          // initial AGM date
-          this.$store.state.agmDate = `${this.ARFilingYear}-01-01`
-        }
-      }
+      // if (this.lastAgmDate && this.currentDate) {
+      //   const lastAgmYear = +this.lastAgmDate.substring(0, 4)
+      //   const currentYear = +this.currentDate.substring(0, 4)
+      //   if (lastAgmYear === currentYear) {
+      //     // entity has already filed
+      //     alert('Error: annual report for this year has already been filed.')
+      //     // go back to home
+      //     this.$router.push('/')
+      //   } else {
+      //     this.$store.state.ARFilingYear = (lastAgmYear + 1).toString()
+      //     // initial AGM date
+      //     this.$store.state.agmDate = `${this.ARFilingYear}-01-01`
+      //   }
+      // } else {
+      //   console.log('setARInfo() error - invalid Last AGM Date or Current Date')
+      //   // go back to home
+      //   this.$router.push('/')
+      // }
     },
     setRegOffAddr (regOffAddrJson) {
-      if (regOffAddrJson && regOffAddrJson.business && regOffAddrJson.business.deliveryAddress) {
-        const deliveryAddress = regOffAddrJson.business.deliveryAddress
-        this.$store.state.DeliveryAddressStreet = deliveryAddress.streetAddress
-        this.$store.state.DeliveryAddressStreetAdditional = deliveryAddress.streetAddressAdditional
-        this.$store.state.DeliveryAddressCity = deliveryAddress.addressCity
-        this.$store.state.DeliveryAddressRegion = deliveryAddress.addressRegion
-        this.$store.state.DeliveryAddressPostalCode = deliveryAddress.postalCode
-        this.$store.state.DeliveryAddressCountry = deliveryAddress.addressCountry
-        this.$store.state.DeliveryAddressInstructions = deliveryAddress.deliveryInstructions
+      if (regOffAddrJson && regOffAddrJson.deliveryAddress) {
+        this.$store.state.DeliveryAddressStreet = regOffAddrJson.deliveryAddress.streetAddress
+        this.$store.state.DeliveryAddressStreetAdditional = regOffAddrJson.deliveryAddress.streetAddressAdditional
+        this.$store.state.DeliveryAddressCity = regOffAddrJson.deliveryAddress.addressCity
+        this.$store.state.DeliveryAddressRegion = regOffAddrJson.deliveryAddress.addressRegion
+        this.$store.state.DeliveryAddressPostalCode = regOffAddrJson.deliveryAddress.postalCode
+        this.$store.state.DeliveryAddressCountry = regOffAddrJson.deliveryAddress.addressCountry
+        this.$store.state.DeliveryAddressInstructions = regOffAddrJson.deliveryAddress.deliveryInstructions
       } else {
         console.log('setRegOffAddr() error - invalid Delivery Address')
       }
 
-      if (regOffAddrJson && regOffAddrJson.business && regOffAddrJson.business.mailingAddress) {
-        const mailingAddress = regOffAddrJson.business.mailingAddress
-        this.$store.state.MailingAddressStreet = mailingAddress.streetAddress
-        this.$store.state.MailingAddressStreetAdditional = mailingAddress.streetAddressAdditional
-        this.$store.state.MailingAddressCity = mailingAddress.addressCity
-        this.$store.state.MailingAddressRegion = mailingAddress.addressRegion
-        this.$store.state.MailingAddressPostalCode = mailingAddress.postalCode
-        this.$store.state.MailingAddressCountry = mailingAddress.addressCountry
-        this.$store.state.MailingAddressInstructions = mailingAddress.deliveryInstructions
+      if (regOffAddrJson && regOffAddrJson.mailingAddress) {
+        this.$store.state.MailingAddressStreet = regOffAddrJson.mailingAddress.streetAddress
+        this.$store.state.MailingAddressStreetAdditional = regOffAddrJson.mailingAddress.streetAddressAdditional
+        this.$store.state.MailingAddressCity = regOffAddrJson.mailingAddress.addressCity
+        this.$store.state.MailingAddressRegion = regOffAddrJson.mailingAddress.addressRegion
+        this.$store.state.MailingAddressPostalCode = regOffAddrJson.mailingAddress.postalCode
+        this.$store.state.MailingAddressCountry = regOffAddrJson.mailingAddress.addressCountry
+        this.$store.state.MailingAddressInstructions = regOffAddrJson.mailingAddress.deliveryInstructions
       } else {
         console.log('setRegOffAddr() error - invalid Mailing Address')
       }
@@ -285,7 +291,8 @@ export default {
     },
     nextAR () {
       this.resetARInfo()
-      this.getLatestARInfo()
+      // TODO - need to get id of next AR
+      this.getARInfo()
     },
     setRegOffAddrNull () {
       this.$store.state.DeliveryAddressStreet = null
@@ -323,12 +330,10 @@ export default {
   },
 
   watch: {
-    corpNum: function (val) {
-      this.getLatestARInfo()
-      this.getRegOffAddr()
-      // TODO - Directors component should watch Corp Num and reload itself
-      this.$refs.directors.getDirectors()
-    },
+    // TODO - what to do if Corp Num ever changes?
+    // corpNum (val) {
+    //   console.log('AnnualReport - got corpNum =', val)
+    // },
     agmDate (val) {
       // when AGM Date changes, update filing data
       console.log('AnnualReport, agmDate =', val)

@@ -12,8 +12,8 @@ export default new Vuex.Store({
     entityStatus: null,
     entityBusinessNo: null,
     entityIncNo: null,
-
     lastAgmDate: null,
+
     ARFilingYear: null,
     filedDate: null,
     agmDate: null,

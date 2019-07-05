@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import AnnualReport from '@/views/AnnualReport.vue'
+import Dashboard from '@/views/Dashboard.vue'
 import axios from '@/axios-auth'
 
 Vue.use(Router)
@@ -54,7 +55,15 @@ let router = new Router({
   routes: [
     {
       path: '/',
-      redirect: '/annual-report'
+      redirect: '/dashboard'
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: Dashboard,
+      meta: {
+        requiresAuth: true
+      }
     },
     {
       path: '/annual-report',

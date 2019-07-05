@@ -38,9 +38,17 @@ export default {
   },
 
   mounted () {
+    console.log('App is mounted')
+    // this logic works because Date() returns local time (plus offset which we ignore)
+    const today = new Date()
+    const year = today.getFullYear().toString()
+    const month = (today.getMonth() + 1).toString().padStart(2, '0')
+    const date = today.getDate().toString().padStart(2, '0')
+    this.$store.state.currentDate = `${year}-${month}-${date}`
+
+    // get tombstone data
     this.getUsername()
     this.getCorpNum()
-    this.getEntityInfo()
   },
 
   methods: {
@@ -65,7 +73,7 @@ export default {
       } else {
         // TODO - reinstate this when token contains valid username
         // this.$store.state.corpNum = this.username.toUpperCase()
-        this.$store.state.corpNum = 'CP0002106'
+        this.$store.state.corpNum = 'CP0002098'
       }
     },
     getEntityInfo () {
@@ -79,22 +87,31 @@ export default {
             this.$store.state.entityStatus = response.data.business.status
             this.$store.state.entityBusinessNo = response.data.business.taxId
             this.$store.state.entityIncNo = response.data.business.identifier
+            this.$store.state.lastAgmDate =
+              this.isValidateDateFormat(response.data.business.lastAnnualGeneralMeetingDate)
+                ? response.data.business.lastAnnualGeneralMeetingDate
+                : null
           } else {
             console.log('getEntityInfo() error - invalid response data')
           }
         }).catch(error => console.error('getEntityInfo() error =', error))
       }
+    },
+    isValidateDateFormat (date) {
+      // validate ISO date format (YYYY-MM-DD)
+      return (date &&
+        date.length === 10 &&
+        date.indexOf('-') === 4 &&
+        date.indexOf('-', 5) === 7 &&
+        date.indexOf('-', 8) === -1)
     }
   },
 
   watch: {
-    // TODO - reinstate this if Corp Num ever changes
-    // corpNum (val) {
-    //   console.log('corpNum =', val)
-    //   if (val) {
-    //     this.getEntityInfo()
-    //   }
-    // }
+    corpNum (val) {
+      // when Corp Num is set or changes, get new entity info
+      this.getEntityInfo()
+    }
   }
 }
 </script>

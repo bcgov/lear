@@ -117,6 +117,10 @@ export default {
     }
   },
 
+  mounted () {
+    console.log('AGMDate is mounted')
+  },
+
   methods: {
     formatDate (date) {
       // changes date from YYYY-MM-DD to YYYY/MM/DD
@@ -154,10 +158,12 @@ export default {
 
   watch: {
     dateFormatted (val) {
+      console.log('AGMDate, dateFormatted =', val)
       // when text field changes, update date picker
       this.date = this.parseDate(val)
     },
     date (val) {
+      console.log('AGMDate, date =', val)
       // when date picker changes, update text field
       if (this.didNotHoldAGM || val) {
         if (this.isValidDateFormat(val, '-')) {
@@ -179,7 +185,11 @@ export default {
         this.dateFormatted = ''
       }
     },
+    agmDate (val) {
+      console.log('AGMDate, agmDate =', val)
+    },
     ARFilingYear (val) {
+      console.log('AGMDate, ARFilingYear =', val)
       // when AR Filing Year changes (ie. on init), set initial text field value
       this.dateFormatted = this.formatDate(this.agmDate)
     }
