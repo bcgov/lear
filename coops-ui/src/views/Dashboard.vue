@@ -260,10 +260,6 @@ export default {
       line-height 1.2rem
       font-size 0.875rem
 
-  section p
-    //font-size 0.875rem
-    color $gray6
-
   section + section
     margin-top 3rem
 
@@ -285,4 +281,75 @@ export default {
 
   #dashboardTodoContainer, #dashboardFilingContainer
     margin-top 1rem
+
+  // Common
+  .list
+    margin 0
+    padding 0
+    list-style-type none
+
+  .list-item
+    display flex
+    flex-direction row
+    align-items center
+    padding 1.25rem
+    background #fff
+    font-size 0.875rem
+
+  list-item + .list-item
+    border-top 1px solid $gray3
+
+  .list-item-icon
+    margin-top -1px
+    margin-right 0.5rem
+    opacity 0.4
+
+  .list-item-title
+    font-weight 700
+
+  .list-item-subtitle
+    color $gray5
+    font-weight 400
+
+  .list-item-actions
+    flex 0 0 auto
+    margin-left auto
+
+    .v-btn
+      margin 0
+      min-width 8rem
+      font-weight 500
+
+  // Filing History
+  .filing-history-list .list-item
+    flex-direction column
+    align-items flex-start
+    padding 0
+
+  // Document List
+  .document-list
+    border-top 1px solid $gray3
+
+    .list-item a
+      display flex
+      flex-direction row
+      align-items center
+      padding 0.5rem
+
+    .list-item-title
+      font-weight 400
+
+  // Documents Action Bar
+  .documents-actions-bar
+    padding-top 1rem
+    padding-bottom 1.25rem
+    display flex
+    border-top 1px solid $gray3
+
+    .v-btn
+      margin-right 0
+
+  .download-all-btn
+    margin-left auto
+    min-width 8rem
 </style>
