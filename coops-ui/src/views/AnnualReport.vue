@@ -165,7 +165,7 @@ export default {
 
   created () {
     // (re)initialize data -- to force (re)load later
-    this.setARFilingYear(null)
+    //this.setARFilingYear(null)
   },
 
   mounted () {
