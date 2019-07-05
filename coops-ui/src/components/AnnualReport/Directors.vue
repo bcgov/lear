@@ -213,7 +213,7 @@ import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
 
 export default {
-  name: 'Directors.vue',
+  name: 'Directors',
   mixins: [Vue2Filters.mixin],
   components: {
   },

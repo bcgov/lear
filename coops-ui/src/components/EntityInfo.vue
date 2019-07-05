@@ -34,7 +34,7 @@
 
 <script>
 export default {
-  name: 'EntityInfo.vue',
+  name: 'EntityInfo',
 
   computed: {
     entityName () {

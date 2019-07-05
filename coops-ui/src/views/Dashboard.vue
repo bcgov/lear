@@ -118,17 +118,11 @@ export default {
     },
     currentDate () {
       return this.$store.state.currentDate
-    },
-    lastAgmDate () {
-      return this.$store.state.lastAgmDate
-    },
-    ARFilingYear () {
-      return this.$store.state.ARFilingYear
     }
   },
 
   mounted () {
-    console.log('Dashboard is mounted')
+    // get data for this page
     this.getTodoItems()
     this.getFiledItems()
   },
@@ -193,25 +187,12 @@ export default {
         }).catch(error => console.error('getFiledItems() error =', error))
       }
     },
-    setARInfo () {
-      // console.log('setARInfo, lastAgmDate =', this.lastAgmDate)
-      if (this.currentDate && this.lastAgmDate) {
-        const currentYear = +this.currentDate.substring(0, 4)
-        const lastAgmYear = +this.lastAgmDate.substring(0, 4)
-        if (lastAgmYear < currentYear) {
-          this.$store.state.ARFilingYear = (lastAgmYear + 1).toString()
-        } else {
-          // already filed for this year
-          this.$store.state.ARFilingYear = null
-        }
-      }
-    },
     fileAnnualReport (item) {
-      console.log('fileAnnualReport(), item =', item)
+      // console.log('fileAnnualReport(), item =', item)
       this.$router.push({ path: '/annual-report', query: { year: item.year } })
     },
     downloadAll (item) {
-      console.log('downloadAll(), item =', item)
+      // console.log('downloadAll(), item =', item)
     }
   },
 
@@ -220,10 +201,6 @@ export default {
       // when Corp Num changes, get new items
       this.getTodoItems()
       this.getFiledItems()
-    },
-    lastAgmDate (val) {
-      // when Last AGM Date changes, set AR info
-      this.setARInfo()
     }
   }
 }

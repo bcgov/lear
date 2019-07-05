@@ -69,7 +69,7 @@
 import { isNotNull, isValidYear, isValidMonth, isValidDay, isISOFormat } from '@/validators'
 
 export default {
-  name: 'AGMDate.vue',
+  name: 'AGMDate',
 
   data () {
     return {
@@ -117,10 +117,6 @@ export default {
     }
   },
 
-  mounted () {
-    console.log('AGMDate is mounted')
-  },
-
   methods: {
     formatDate (date) {
       // changes date from YYYY-MM-DD to YYYY/MM/DD
@@ -158,12 +154,10 @@ export default {
 
   watch: {
     dateFormatted (val) {
-      console.log('AGMDate, dateFormatted =', val)
       // when text field changes, update date picker
       this.date = this.parseDate(val)
     },
     date (val) {
-      console.log('AGMDate, date =', val)
       // when date picker changes, update text field
       if (this.didNotHoldAGM || val) {
         if (this.isValidDateFormat(val, '-')) {
@@ -171,7 +165,7 @@ export default {
         }
       }
       // also update value in store
-      this.$store.state.agmDate = val
+      this.$store.state.agmDate = val || null
     },
     didNotHoldAGM (val) {
       // when checkbox changes, update properties accordingly
@@ -182,15 +176,13 @@ export default {
       } else {
         this.$store.state.noAGM = false
         // reset text field value
-        this.dateFormatted = ''
+        this.$store.state.agmDate = this.minDate
+        this.dateFormatted = this.formatDate(this.agmDate)
       }
     },
-    agmDate (val) {
-      console.log('AGMDate, agmDate =', val)
-    },
     ARFilingYear (val) {
-      console.log('AGMDate, ARFilingYear =', val)
       // when AR Filing Year changes (ie. on init), set initial text field value
+      this.$store.state.agmDate = this.minDate
       this.dateFormatted = this.formatDate(this.agmDate)
     }
   }

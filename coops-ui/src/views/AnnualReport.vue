@@ -159,16 +159,19 @@ export default {
     }
   },
 
+  created () {
+    // (re)initialize data -- to force (re)load later
+    this.$store.state.ARFilingYear = null
+    this.setRegOffAddr({ deliveryAddress: {}, mailingAddress: {} })
+  },
+
   mounted () {
-    console.log('AnnualReport is mounted')
-    console.log('AnnualReport, corpNum =', this.corpNum)
-    console.log('AnnualReport, ARFilingYear =', this.ARFilingYear)
-    // if tombstone data isn't set, go back to home
-    if (!this.corpNum || !this.ARFilingYear) {
+    // if tombstone data isn't set, redirect to home
+    if (!this.corpNum) {
       this.$router.push('/')
     } else {
       // load initial data
-      // TODO - need to get id of latest AR
+      // TODO - need to get id of current AR
       this.getARInfo(1)
       this.getRegOffAddr()
       // TODO - Directors component should watch Corp Num and reload itself
@@ -195,6 +198,24 @@ export default {
         })
       }
     },
+    setARInfo (lastARJson) {
+      if (lastARJson && lastARJson.filing && lastARJson.filing.annualReport) {
+        // TODO - do something with JSON data
+        // TODO - enable filing for current year
+        if (this.currentDate && this.lastAgmDate) {
+          const currentYear = +this.currentDate.substring(0, 4)
+          const lastAgmYear = +this.lastAgmDate.substring(0, 4)
+          if (lastAgmYear < currentYear) {
+            this.$store.state.ARFilingYear = (lastAgmYear + 1).toString()
+          } else {
+            // already filed for this year
+            this.$store.state.ARFilingYear = null
+          }
+        }
+      } else {
+        console.log('setARInfo() error - invalid Annual Report')
+      }
+    },
     getRegOffAddr () {
       if (this.corpNum) {
         const url = this.corpNum + '/addresses'
@@ -206,31 +227,6 @@ export default {
           }
         }).catch(error => console.error('getRegOffAddr() error =', error))
       }
-    },
-    setARInfo (lastARJson) {
-      if (lastARJson && lastARJson.filing && lastARJson.filing.annualReport) {
-        // TODO - do something with this data
-      } else {
-        console.log('setARInfo() error - invalid Annual Report')
-      }
-      // if (this.lastAgmDate && this.currentDate) {
-      //   const lastAgmYear = +this.lastAgmDate.substring(0, 4)
-      //   const currentYear = +this.currentDate.substring(0, 4)
-      //   if (lastAgmYear === currentYear) {
-      //     // entity has already filed
-      //     alert('Error: annual report for this year has already been filed.')
-      //     // go back to home
-      //     this.$router.push('/')
-      //   } else {
-      //     this.$store.state.ARFilingYear = (lastAgmYear + 1).toString()
-      //     // initial AGM date
-      //     this.$store.state.agmDate = `${this.ARFilingYear}-01-01`
-      //   }
-      // } else {
-      //   console.log('setARInfo() error - invalid Last AGM Date or Current Date')
-      //   // go back to home
-      //   this.$router.push('/')
-      // }
     },
     setRegOffAddr (regOffAddrJson) {
       if (regOffAddrJson && regOffAddrJson.deliveryAddress) {
@@ -288,7 +284,7 @@ export default {
     nextAR () {
       this.resetARInfo()
       // TODO - need to get id of next AR
-      this.getARInfo()
+      this.getARInfo(2)
     },
     setRegOffAddrNull () {
       this.$store.state.DeliveryAddressStreet = null

@@ -257,7 +257,7 @@
 
 <script>
 export default {
-  name: 'RegisteredOfficeAddress.vue',
+  name: 'RegisteredOfficeAddress',
   data () {
     return {
       Regions: [

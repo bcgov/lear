@@ -38,9 +38,9 @@ export default {
   },
 
   mounted () {
-    console.log('App is mounted')
-    // TODO: need some sort of event to update Current Date midnight
+    // get current date
     // this logic works because Date() returns local time (plus offset which we ignore)
+    // TODO: need some sort of event to update Current Date midnight
     const today = new Date()
     const year = today.getFullYear().toString()
     const month = (today.getMonth() + 1).toString().padStart(2, '0')
