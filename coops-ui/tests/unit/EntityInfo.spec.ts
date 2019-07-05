@@ -94,11 +94,12 @@ describe('EntityInfo.vue', () => {
   })
 
   it('shows all elements', () => {
-    // expect business name, business no, incorp no, and status to be on the screen
-    expect(vm.$el.querySelector('.entity-name').textContent).toEqual('test name - CP0001191')
-    expect(vm.$el.querySelector('.entity-status').textContent).toContain('In Good Standing')
-    expect(vm.$el.querySelector('.business-number').textContent).toEqual('123456789')
-    expect(vm.$el.querySelector('.incorp-number').textContent).toEqual('CP0001191')
+    Vue.nextTick(() => {
+      expect(vm.$el.querySelector('.entity-name').textContent).toEqual('test name - CP0001191')
+      expect(vm.$el.querySelector('.entity-status').textContent).toContain('In Good Standing')
+      expect(vm.$el.querySelector('.business-number').textContent).toEqual('123456789')
+      expect(vm.$el.querySelector('.incorp-number').textContent).toEqual('CP0001191')
+    })
   })
 
   it('handles empty data', () => {
