@@ -40,7 +40,7 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
         """Return dict version of self."""
         return {
             'streetAddress': self.street_address,
-            'streetAddress_additional': self.street_address_additional,
+            'streetAddressAdditional': self.street_address_additional,
             'addressCity': self.address_city,
             'addressRegion': self.address_region,
             'addressCountry': self.address_country,
