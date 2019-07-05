@@ -61,8 +61,8 @@ export default {
     background #ffffff
 
   .container
-    padding-top 2rem
-    padding-bottom 2rem
+    padding-top 1.5rem
+    padding-bottom 1.5rem
 
   .title-container
     margin-top -0.2rem
@@ -72,7 +72,7 @@ export default {
     margin-bottom 0.25rem
     display inline-block
     font-size 1.125rem
-    font-weight 500
+    font-weight 600
 
   .entity-status
     margin-left 0.5rem

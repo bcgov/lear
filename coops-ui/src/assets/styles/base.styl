@@ -25,7 +25,7 @@ h2
   margin-bottom 0.75rem
   letter-spacing -0.01rem
   font-size 1.125rem
-  font-weight 500
+  font-weight 600
 
 h3
   letter-spacing -0.01rem
@@ -162,3 +162,36 @@ hr
     z-index -5
   }
 }
+
+// Common
+.list
+  margin 0
+  padding 0
+  list-style-type none
+
+.list-item
+  display flex
+  flex-direction row
+  align-items center
+  padding 1.25rem
+  font-size 0.875rem
+
+.list-item + .list-item
+  border-top 1px solid $gray3
+
+.list-item-icon
+  margin-top -1px
+  margin-right 0.5rem
+
+.list-item-title
+  font-weight 700
+
+.list-item-actions
+  flex 0 0 auto
+  margin-left auto
+
+  .v-btn
+    margin 0
+    min-width 8rem
+    font-weight 500
+    

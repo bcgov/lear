@@ -18,10 +18,10 @@
         <v-btn id="go-to-ar-btn" large to="/annual-report" :disabled="!ARFilingYear">
           File {{ARFilingYear}} Annual Report</v-btn>
 
-        <section>
+        <section v-if="todoItems && todoItems.length">
           <header>
             <h2 id="dashboardTodoHeader">To Do
-              <span class="text-muted" v-if="todoItems">({{todoItems.length}})</span>
+              <span class="text-muted">({{todoItems.length}})</span>
             </h2>
           </header>
 
@@ -39,10 +39,10 @@
           </v-card>
         </section>
 
-        <section>
+        <section v-if="filedItems && filedItems.length">
           <header>
             <h2 id="dashboardFilingHeader">Recent Filing History
-              <span class="text-muted" v-if="filedItems">({{filedItems.length}})</span>
+              <span class="text-muted">({{filedItems.length}})</span>
             </h2>
           </header>
 
@@ -138,24 +138,13 @@ export default {
 
   methods: {
     getTodoItems () {
+      // TODO - this needs to be constructed based on last AR date (not retrieved)
+      // only the earliest non-submitted AR can be filed
       if (this.corpNum) {
-        // TODO - make proper axios call
-        var url = this.corpNum + '/todo'
-        axios.get(url).then(response => {
-          if (response && response.data) {
-            this.todoItems = response.data
-          } else {
-            console.log('getTodoItems() error - invalid response data')
-          }
-        }).catch(error => {
-          console.error('getTodoItems() error =', error)
-
-          // TODO - delete this when API works
-          this.todoItems = [
-            { name: 'File 2018 Annual Report', enabled: true },
-            { name: 'File 2019 Annual Report', enabled: true }
-          ]
-        })
+        this.todoItems = [
+          { name: 'File 2018 Annual Report', enabled: true },
+          { name: 'File 2019 Annual Report', enabled: true }
+        ]
       }
     },
     getFiledItems () {
@@ -243,7 +232,6 @@ export default {
       // when Last AGM Date changes, set AR info
       this.setARInfo()
     }
-    // TODO - need to watch "something" to update dashboard after new AR is submitted
   }
 }
 </script>
