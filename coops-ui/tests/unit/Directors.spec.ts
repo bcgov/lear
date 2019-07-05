@@ -3,7 +3,7 @@ import Vuetify from 'vuetify'
 
 import App from '@/App.vue'
 import AnnualReport from '@/views/AnnualReport.vue'
-import Directors from '@/components/ARSteps/Directors.vue'
+import Directors from '@/components/AnnualReport/Directors.vue'
 import store from '@/store'
 import sinon from 'sinon'
 import axios from '@/axios-auth'

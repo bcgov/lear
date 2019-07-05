@@ -3,7 +3,7 @@ import Vuetify from 'vuetify'
 
 import App from '@/App.vue'
 import AnnualReport from '@/views/AnnualReport.vue'
-import RegisteredOfficeAddress from '@/components/ARSteps/RegisteredOfficeAddress.vue'
+import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import store from '@/store'
 import sinon from 'sinon'
 import axios from '@/axios-auth'

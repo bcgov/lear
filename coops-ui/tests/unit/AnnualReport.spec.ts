@@ -3,7 +3,7 @@ import Vuetify from 'vuetify'
 
 import App from '@/App.vue'
 import AnnualReport from '@/views/AnnualReport.vue'
-import AGMDate from '@/components/ARSteps/AGMDate.vue'
+import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 import store from '@/store'
 import sinon from 'sinon'
 import axios from '@/axios-auth'

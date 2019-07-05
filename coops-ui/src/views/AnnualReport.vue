@@ -94,10 +94,10 @@
 
 <script lang="ts">
 import axios from '@/axios-auth'
-import AGMDate from '@/components/ARSteps/AGMDate.vue'
-import RegisteredOfficeAddress from '@/components/ARSteps/RegisteredOfficeAddress.vue'
-import Directors from '@/components/ARSteps/Directors.vue'
-import ARComplete from '@/components/ARSteps/ARComplete.vue'
+import AGMDate from '@/components/AnnualReport/AGMDate.vue'
+import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
+import Directors from '@/components/AnnualReport/Directors.vue'
+import ARComplete from '@/components/AnnualReport/ARComplete.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 
