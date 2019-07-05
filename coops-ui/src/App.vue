@@ -39,6 +39,7 @@ export default {
 
   mounted () {
     console.log('App is mounted')
+    // TODO: need some sort of event to update Current Date midnight
     // this logic works because Date() returns local time (plus offset which we ignore)
     const today = new Date()
     const year = today.getFullYear().toString()
@@ -77,9 +78,7 @@ export default {
       }
     },
     getEntityInfo () {
-      if (!this.corpNum) {
-        console.log('getEntityInfo() error - Corp Num is null')
-      } else {
+      if (this.corpNum) {
         const url = this.corpNum
         axios.get(url).then(response => {
           if (response && response.data && response.data.business) {
@@ -109,7 +108,7 @@ export default {
 
   watch: {
     corpNum (val) {
-      // when Corp Num is set or changes, get new entity info
+      // when Corp Num changes, get new entity info
       this.getEntityInfo()
     }
   }

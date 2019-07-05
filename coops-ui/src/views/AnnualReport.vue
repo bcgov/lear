@@ -178,9 +178,7 @@ export default {
 
   methods: {
     getARInfo (id) {
-      if (!this.corpNum) {
-        console.log('getARInfo() error - Corp Num is null')
-      } else {
+      if (this.corpNum) {
         // TODO - make proper axios call
         var url = this.corpNum + '/filings/' + id
         axios.get(url).then(response => {
@@ -198,9 +196,7 @@ export default {
       }
     },
     getRegOffAddr () {
-      if (!this.corpNum) {
-        console.log('getRegOffAddr() error - Corp Num is null')
-      } else {
+      if (this.corpNum) {
         const url = this.corpNum + '/addresses'
         axios.get(url).then(response => {
           if (response && response.data) {

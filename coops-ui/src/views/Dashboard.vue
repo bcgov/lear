@@ -16,25 +16,70 @@
         </header>
 
         <v-btn id="go-to-ar-btn" large to="/annual-report" :disabled="!ARFilingYear">
-        File Annual Report</v-btn>
+          File {{ARFilingYear}} Annual Report</v-btn>
 
         <section>
           <header>
             <h2 id="dashboardTodoHeader">To Do
-              <span class="text-muted" v-if="todoItems">({{todoItems.length}})</span></h2>
+              <span class="text-muted" v-if="todoItems">({{todoItems.length}})</span>
+            </h2>
           </header>
+
           <v-card flat id="dashboardTodoContainer">
-            <!-- TODO -->
+            <ul class="list todo-list">
+              <li class="list-item"
+                v-for="(item, index) in orderBy(todoItems, 'name', 1)"
+                v-bind:key="index">
+                <div class="list-item-title">{{item.name}}</div>
+                <div class="list-item-actions">
+                  <v-btn color="primary" @click="fileAnnualReport(item)" :disabled="!item.enabled">File Now</v-btn>
+                </div>
+              </li>
+            </ul>
           </v-card>
         </section>
 
         <section>
           <header>
             <h2 id="dashboardFilingHeader">Recent Filing History
-              <span class="text-muted" v-if="filedItems">({{filedItems.length}})</span></h2>
+              <span class="text-muted" v-if="filedItems">({{filedItems.length}})</span>
+            </h2>
           </header>
+
           <v-card flat id="dashboardFilingContainer">
-            <!-- TODO -->
+            <v-expansion-panel>
+              <v-expansion-panel-content
+                class="filing-history-list"
+                v-for="(item, index) in orderBy(filedItems, 'name', 1)"
+                v-bind:key="index">
+                <template v-slot:header>
+                  <div class="list-item">
+                    <div class="list-item-title">{{item.name}}</div>
+                    <div class="list-item-subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
+                  </div>
+                </template>
+
+                <ul class="list document-list">
+                  <li class="list-item"
+                    v-for="(document, index) in orderBy(item.filingDocuments, 'name', 1)"
+                    v-bind:key="index">
+                    <a href="#">
+                      <img class="list-item-icon" src="@/assets/images/icons/file-pdf-outline.svg" />
+                      <div class="list-item-title">{{document.name}}</div>
+                    </a>
+                  </li>
+                  <li class="list-item">
+                    <a href="#">
+                      <img class="list-item-icon" src="@/assets/images/icons/file-pdf-outline.svg" />
+                      <div class="list-item-title">Receipt</div>
+                    </a>
+                  </li>
+                </ul>
+                <div class="documents-actions-bar">
+                  <v-btn class="download-all-btn" color="primary" @click="downloadAll(item)">Download All</v-btn>
+                </div>
+              </v-expansion-panel-content>
+            </v-expansion-panel>
           </v-card>
         </section>
       </article>
@@ -44,13 +89,19 @@
 </template>
 
 <script lang="ts">
+import { Vue } from 'vue-property-decorator'
+import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
 // TODO - implement these
 // import TodoList from '@/components/TodoList.vue'
 // import FilingHistory from '@/components/FilingHistory.vue'
 
+Vue.use(Vue2Filters)
+
 export default {
   name: 'Dashboard',
+
+  mixins: [Vue2Filters.mixin],
 
   components: {
     // TodoList,
@@ -81,13 +132,13 @@ export default {
 
   mounted () {
     console.log('Dashboard is mounted')
+    this.getTodoItems()
+    this.getFiledItems()
   },
 
   methods: {
     getTodoItems () {
-      if (!this.corpNum) {
-        console.log('getTodoItems() error - Corp Num is null')
-      } else {
+      if (this.corpNum) {
         // TODO - make proper axios call
         var url = this.corpNum + '/todo'
         axios.get(url).then(response => {
@@ -108,9 +159,7 @@ export default {
       }
     },
     getFiledItems () {
-      if (!this.corpNum) {
-        console.log('getFiledItems() error - Corp Num is null')
-      } else {
+      if (this.corpNum) {
         // TODO - make proper axios call
         var url = this.corpNum + '/filingsx'
         axios.get(url).then(response => {
@@ -173,20 +222,28 @@ export default {
           this.$store.state.ARFilingYear = null
         }
       }
+    },
+    fileAnnualReport (item) {
+      console.log('fileAnnualReport(), item =', item)
+      // setTimeout(() => { this.$router.push({ path: '/annual-report' }) })
+      this.$router.push({ path: '/annual-report' })
+    },
+    downloadAll (item) {
+      console.log('downloadAll(), item =', item)
     }
   },
 
   watch: {
     corpNum (val) {
-      // when Corp Num is set or changes, get new items
+      // when Corp Num changes, get new items
       this.getTodoItems()
       this.getFiledItems()
     },
     lastAgmDate (val) {
-      // when Last AGM Date is set or changes, set AR info
+      // when Last AGM Date changes, set AR info
       this.setARInfo()
     }
-    // TODO - need to watch something to update dashboard after new AR is submitted
+    // TODO - need to watch "something" to update dashboard after new AR is submitted
   }
 }
 </script>
