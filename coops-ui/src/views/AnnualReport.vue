@@ -21,21 +21,13 @@
       </div>
 
       <v-container id="annual-report-container" class="view-container">
-        <article
-          id="annual-report-article"
-          :class="this.agmDate ? 'agm-date-selected' : 'no-agm-date-selected'"
-        >
+        <article id="annual-report-article" :class="this.agmDate ? 'agm-date-selected' : 'no-agm-date-selected'">
           <header>
-            <h1 id="AR-header">
-              File {{ ARFilingYear }} Annual Report -
-              <span
-                style="font-style: italic"
-              >{{ reportState }}</span>
+            <h1 id="AR-header">File {{ ARFilingYear }} Annual Report -
+              <span style="font-style: italic">{{ reportState }}</span>
             </h1>
-            <p>
-              Select your Annual General Meeting (AGM) date, and verify or change your Registered office address
-              and List of Directors as of your AGM.
-            </p>
+            <p>Select your Annual General Meeting (AGM) date, and verify or change your Registered office address
+              and List of Directors as of your AGM.</p>
           </header>
 
           <div v-if="filedDate === null">
@@ -45,18 +37,15 @@
                 <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
               </header>
               <v-card flat id="AR-step-1-container">
-                <AGMDate />
+                <AGMDate/>
               </v-card>
             </section>
 
             <!-- Addresses -->
             <section>
               <header>
-                <h2 id="AR-step-2-header">
-                  2. Registered Office Addresses
-                  <span
-                    class="agm-date"
-                  >(as of {{ ARFilingYear }} Annual General Meeting)</span>
+                <h2 id="AR-step-2-header">2. Registered Office Addresses
+                  <span class="agm-date">(as of {{ ARFilingYear }} Annual General Meeting)</span>
                 </h2>
                 <p>Verify or change your Registered Office Addresses.</p>
               </header>
@@ -69,26 +58,21 @@
             <section>
               <header>
                 <h2 id="AR-step-3-header">3. Directors</h2>
-                <p>
-                  Tell us who was elected or appointed and who ceased to be a director at your
-                  {{ ARFilingYear }} AGM.
-                </p>
+                <p>Tell us who was elected or appointed and who ceased to be a director at your
+                  {{ ARFilingYear }} AGM.</p>
               </header>
               <!-- <v-card flat id="AR-step-3-container"> -->
-              <Directors ref="directors" @directorsChange="directorsChangeEventHandler" />
+                <Directors @directorsChange="directorsChangeEventHandler" />
               <!-- </v-card> -->
             </section>
           </div>
           <div v-else>
-            <ARComplete />
+            <ARComplete/>
           </div>
         </article>
 
         <aside>
-          <affix
-            relative-element-selector="#annual-report-article"
-            :offset="{ top: 120, bottom: 40 }"
-          >
+          <affix relative-element-selector="#annual-report-article" :offset="{ top: 120, bottom: 40 }">
             <sbc-fee-summary v-bind:filingData="[...filingData]" />
           </affix>
         </aside>
@@ -102,17 +86,24 @@
             color="primary"
             large
             :disabled="!validated"
-            @click="submit"
-          >File & Pay</v-btn>
+            @click="submit">
+            File &amp; Pay
+          </v-btn>
           <v-btn
             v-else
             id="ar-next-btn"
             color="primary"
             large
             :disabled="currentYear === ARFilingYear"
-            @click="nextAR"
-          >Next</v-btn>
-          <v-btn id="ar-cancel-btn" large to="/dashboard">Cancel</v-btn>
+            @click="nextAR">
+            Next
+          </v-btn>
+          <v-btn
+            id="ar-cancel-btn"
+            large
+            to="/dashboard">
+            Cancel
+          </v-btn>
         </div>
       </v-container>
     </div>
@@ -120,6 +111,7 @@
 </template>
 
 <script lang="ts">
+import axios from '@/axios-auth'
 import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
@@ -163,11 +155,6 @@ export default {
     }
   },
 
-  created () {
-    // (re)initialize data -- to force (re)load later
-    // this.setARFilingYear(null)
-  },
-
   mounted () {
     // if tombstone data isn't set, redirect to home
     if (!this.corpNum) {
@@ -175,31 +162,67 @@ export default {
     } else {
       // load initial data
       // TODO - need to get id of current AR
-      this.getARInfo(1)
+      this.getARInfo(0)
     }
   },
 
   methods: {
-    ...mapActions(['getARInfo', 'setARFilingYear']),
+    ...mapActions(['setARFilingYear']),
+
+    getARInfo (id) {
+      if (this.corpNum) {
+        // TODO - make proper axios call
+        var url = this.corpNum + '/filings/' + id
+        axios.get(url)
+          .then(response => {
+            if (response && response.data) {
+              const lastARJson = response.data
+              if (lastARJson && lastARJson.filing && lastARJson.filing.annualReport) {
+                // TODO - do something with JSON data
+                // TODO - enable filing for current year
+                if (this.currentDate && this.lastAgmDate) {
+                  const currentYear = +this.currentDate.substring(0, 4)
+                  const lastAgmYear = +this.lastAgmDate.substring(0, 4)
+                  if (lastAgmYear < currentYear) {
+                    this.setARFilingYear((lastAgmYear + 1).toString())
+                  } else {
+                    // already filed for this year
+                    this.setARFilingYear(null)
+                  }
+                }
+              } else {
+                console.log('setARInfo() error - invalid Annual Report')
+              }
+            } else {
+              console.log('getARInfo() error - invalid response data')
+            }
+          })
+          .catch(error => console.error('getARInfo() error =', error))
+      }
+    },
 
     directorsChangeEventHandler (val) {
       this.directorsChange = val
     },
+
     submit () {
       // TODO - redirect to payment - will need to save state of page, etc
       // TODO - make proper axios call and delete hardcoded data below
       // TODO - other team doing credit card entering/payment confirmation? don't know what to check for in result
       // const url = this.payURL
-      // axios.get(url).then(response => {
-      //   if (response && response.data) {
-      //     this.$store.state.filedDate = this.currentDate
-      //   } else {
-      //     console.log('submit() error - invalid response data')
-      //   }
-      // }).catch(error => console.error('submit() error =', error))
+      // axios.get(url)
+      //   .then(response => {
+      //     if (response && response.data) {
+      //       this.$store.state.filedDate = this.currentDate
+      //     } else {
+      //       console.log('submit() error - invalid response data')
+      //     }
+      //   })
+      //   .catch(error => console.error('submit() error =', error))
 
       this.$store.state.filedDate = this.currentDate
     },
+
     resetARInfo () {
       this.$store.state.agmDate = null
       this.$store.state.filedDate = null
@@ -210,10 +233,11 @@ export default {
       // refresh this page
       this.$router.go()
     },
+
     nextAR () {
       this.resetARInfo()
       // TODO - need to get id of next AR
-      this.getARInfo(2)
+      this.getARInfo(0)
     },
 
     toggleFiling (setting, filing) {
@@ -240,6 +264,7 @@ export default {
     // corpNum (val) {
     //   console.log('AnnualReport - got corpNum =', val)
     // },
+
     agmDate (val) {
       // when AGM Date changes, update filing data
       console.log('AnnualReport, agmDate =', val)
@@ -250,6 +275,7 @@ export default {
       }
       this.$store.state.validated = Boolean(this.noAGM || this.agmDate)
     },
+
     noAGM (val) {
       // when No AGM changes, update filing data
       console.log('AnnualReport, noAGM =', val)
@@ -260,6 +286,7 @@ export default {
       }
       this.$store.state.validated = Boolean(this.noAGM || this.agmDate)
     },
+
     regOffAddrChange: function (val) {
       console.log('AnnualReport, regOffAddrChange =', val)
       if (val) {
@@ -268,6 +295,7 @@ export default {
         this.toggleFiling('remove', 'OTADD')
       }
     },
+
     directorsChange: function (val) {
       console.log('AnnualReport, directorsChange =', val)
       if (val) {
@@ -276,9 +304,11 @@ export default {
         this.toggleFiling('remove', 'OTCDR')
       }
     },
+
     validated (val) {
       console.log('AnnualReport, validated =', val)
     },
+
     filingData: function (val) {
       console.log('AnnualReport, filingData =', val)
     }
@@ -287,64 +317,52 @@ export default {
 </script>
 
 <style lang="stylus" scoped>
-@import '../assets/styles/theme.styl';
+@import '../assets/styles/theme.styl'
 
-article {
-  .v-card {
+article
+  .v-card
     line-height: 1.2rem;
     font-size: 0.875rem;
-  }
-}
 
-section p {
+section p
   // font-size 0.875rem
   color: $gray6;
-}
 
-section + section {
+section + section
   margin-top: 3rem;
-}
 
-h2 {
+h2
   margin-bottom: 0.25rem;
-}
 
-#AR-header {
+#AR-header
   margin-bottom: 1.25rem;
   line-height: 2rem;
   letter-spacing: -0.01rem;
   font-size: 2rem;
   font-weight: 500;
-}
 
-#AR-step-1-header, #AR-step-2-header, #AR-step-3-header {
+#AR-step-1-header, #AR-step-2-header, #AR-step-3-header
   margin-bottom: 0.25rem;
   margin-top: 3rem;
   font-size: 1.125rem;
   font-weight: 500;
-}
 
-#AR-step-1-container, #AR-step-2-container, #AR-step-3-container {
+#AR-step-1-container, #AR-step-2-container, #AR-step-3-container
   margin-top: 1rem;
-}
 
-.title-container {
+.title-container
   margin-bottom: 0.5rem;
-}
 
-.agm-date {
+.agm-date
   margin-left: 0.25rem;
   font-weight: 300;
-}
 
 // Filing Buttons
-.ar-filing-buttons {
+.ar-filing-buttons
   padding-top: 2rem;
   border-top: 1px solid $gray5;
   text-align: right;
 
-  .v-btn + .v-btn {
+  .v-btn + .v-btn
     margin-left: 0.5rem;
-  }
-}
 </style>

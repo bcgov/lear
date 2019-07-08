@@ -162,8 +162,8 @@
                   </div>
                 </div>
               </div>
-              <!-- END: Static Details (Mailing Address) -->
             </v-expand-transition>
+            <!-- END: Static Details (Mailing Address) -->
 
             <!-- START: Form / Editable Fields (Mailing Address) -->
             <v-expand-transition>
@@ -281,7 +281,7 @@ import { mapState, mapActions } from 'vuex'
 import axios from '@/axios-auth'
 
 export default {
-  name: 'RegisteredOfficeAddress.vue',
+  name: 'RegisteredOfficeAddress',
   data () {
     return {
       Regions: [
@@ -378,9 +378,7 @@ export default {
     this.getRegOffAddr(this.corpNum)
 
     if (deliveryCanadaPostObject) {
-      deliveryCanadaPostObject.listen('populate', function (
-        autoCompleteResponse
-      ) {
+      deliveryCanadaPostObject.listen('populate', autoCompleteResponse => {
         vue.DeliveryAddressStreet = autoCompleteResponse.Line1
         vue.DeliveryAddressStreetAdditional = autoCompleteResponse.Line2
         vue.DeliveryAddressCity = autoCompleteResponse.City
@@ -388,16 +386,12 @@ export default {
         vue.DeliveryAddressPostalCode = autoCompleteResponse.PostalCode
         vue.DeliveryAddressCountry = autoCompleteResponse.CountryName
       })
-      deliveryCanadaPostObject.listen('country', function (
-        autoCompleteResponse
-      ) {
+      deliveryCanadaPostObject.listen('country', autoCompleteResponse => {
         vue.DeliveryAddressCountry = autoCompleteResponse.name
       })
     }
     if (mailingCanadaPostObject) {
-      mailingCanadaPostObject.listen('populate', function (
-        autoCompleteResponse
-      ) {
+      mailingCanadaPostObject.listen('populate', autoCompleteResponse => {
         vue.MailingAddressStreet = autoCompleteResponse.Line1
         vue.MailingAddressStreetAdditional = autoCompleteResponse.Line2
         vue.MailingAddressCity = autoCompleteResponse.City
@@ -405,7 +399,7 @@ export default {
         vue.MailingAddressPostalCode = autoCompleteResponse.PostalCode
         vue.MailingAddressCountry = autoCompleteResponse.CountryName
       })
-      mailingCanadaPostObject.listen('country', function (autoCompleteResponse) {
+      mailingCanadaPostObject.listen('country', autoCompleteResponse => {
         vue.MailingAddressCountry = autoCompleteResponse.name
       })
     }
@@ -454,8 +448,7 @@ export default {
     checkSameAddresses () {
       if (
         this.MailingAddressStreet === this.DeliveryAddressStreet &&
-        this.MailingAddressStreetAdditional ===
-          this.DeliveryAddressStreetAdditional &&
+        this.MailingAddressStreetAdditional === this.DeliveryAddressStreetAdditional &&
         this.MailingAddressCity === this.DeliveryAddressCity &&
         this.MailingAddressRegion === this.DeliveryAddressRegion &&
         this.MailingAddressCountry === this.DeliveryAddressCountry &&
@@ -469,18 +462,14 @@ export default {
     checkAddrChange () {
       if (
         this.DeliveryAddressStreet !== this.storeDeliveryAddressStreet ||
-        this.DeliveryAddressStreetAdditional !==
-          this.storeDeliveryAddressStreetAdditional ||
+        this.DeliveryAddressStreetAdditional !== this.storeDeliveryAddressStreetAdditional ||
         this.DeliveryAddressCity !== this.storeDeliveryAddressCity ||
         this.DeliveryAddressRegion !== this.storeDeliveryAddressRegion ||
         this.DeliveryAddressCountry !== this.storeDeliveryAddressCountry ||
-        this.DeliveryAddressPostalCode !==
-          this.storeDeliveryAddressPostalCode ||
-        this.DeliveryAddressInstructions !==
-          this.storeDeliveryAddressInstructions ||
+        this.DeliveryAddressPostalCode !== this.storeDeliveryAddressPostalCode ||
+        this.DeliveryAddressInstructions !== this.storeDeliveryAddressInstructions ||
         this.MailingAddressStreet !== this.storeMailingAddressStreet ||
-        this.MailingAddressStreetAdditional !==
-          this.storeMailingAddressStreetAdditional ||
+        this.MailingAddressStreetAdditional !== this.storeMailingAddressStreetAdditional ||
         this.MailingAddressCity !== this.storeMailingAddressCity ||
         this.MailingAddressRegion !== this.storeMailingAddressRegion ||
         this.MailingAddressCountry !== this.storeMailingAddressCountry ||
@@ -544,8 +533,7 @@ export default {
     getRegOffAddr (corpNum) {
       if (this.corpNum) {
         const url = this.corpNum + '/addresses'
-        axios
-          .get(url)
+        axios.get(url)
           .then(response => {
             if (response && response.data) {
               this.setRegOffAddr(response.data)
@@ -617,140 +605,111 @@ export default {
 </script>
 
 <style lang="stylus" scoped>
-@import '../../assets/styles/theme.styl';
+@import '../../assets/styles/theme.styl'
 
-.v-btn {
+.v-btn
   margin: 0;
   min-width: 6rem;
   text-transform: none;
-}
 
-.reset-btn {
+.reset-btn
   margin-top: 0.5rem;
-}
 
-.meta-container {
+.meta-container
   display: flex;
   flex-flow: column nowrap;
   position: relative;
-}
 
-.meta-container__inner {
+.meta-container__inner
   margin-top: 1rem;
-}
 
-label:first-child {
+label:first-child
   font-weight: 500;
-}
 
-&__inner {
+&__inner
   flex: 1 1 auto;
-}
 
-@media (min-width: 768px) {
-  .meta-container {
+@media (min-width: 768px)
+  .meta-container
     flex-flow: row nowrap;
 
-    label:first-child {
+    label:first-child
       flex: 0 0 auto;
       padding-right: 4rem;
       width: 12rem;
-    }
-  }
 
-  .meta-container__inner {
+  .meta-container__inner
     margin-top: 0;
-  }
-}
 
 // List Layout
-.list {
-  li {
+.list 
+  li
     border-bottom: 1px solid $gray3;
-  }
-}
 
-.address-list .form {
+.address-list .form
   margin-top: 1rem;
-}
 
-@media (min-width: 768px) {
-  .address-list .form {
+@media (min-width: 768px)
+  .address-list .form
     margin-top: 0;
-  }
-}
 
 // Address Block Layout
-.address-block {
+.address-block
   display: flex;
-}
 
-.address-block__info {
+.address-block__info
   flex: 1 1 auto;
-}
 
-.address-block__actions {
+.address-block__actions
   position: absolute;
   top: 0;
   right: 0;
 
-  .v-btn {
+  .v-btn
     min-width: 4rem;
-  }
 
-  .v-btn + .v-btn {
+  .v-btn + .v-btn
     margin-left: 0.5rem;
-  }
-}
 
 // Form Row Elements
-.form__row + .form__row {
+.form__row + .form__row
   margin-top: 0.25rem;
-}
 
-.form__btns {
+.form__btns
   text-align: right;
 
-  .v-btn {
+  .v-btn
     margin: 0;
 
-    + .v-btn {
+    + .v-btn
       margin-left: 0.5rem;
-    }
-  }
-}
 
-.form__row.three-column {
+.form__row.three-column
   display: flex;
   flex-flow: row nowrap;
   align-items: stretch;
   margin-right: -0.5rem;
   margin-left: -0.5rem;
 
-  .item {
+  .item
     flex: 1 1 auto;
     flex-basis: 0;
     margin-right: 0.5rem;
     margin-left: 0.5rem;
-  }
 }
 
-.inherit-checkbox {
+.inherit-checkbox
   margin-top: -3px;
   margin-left: -3px;
   padding: 0;
-}
 
 // Registered Office Address Form Behavior
-.show-address-form {
-  li:first-child {
+.show-address-form
+  li:first-child
     padding-bottom: 0;
-  }
-}
 
-ul {
+ul
   margin: 0;
   padding: 0;
   list-style-type: none;
-}
 </style>

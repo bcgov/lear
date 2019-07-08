@@ -141,60 +141,64 @@ export default {
         ]
       }
     },
+
     getFiledItems () {
       if (this.corpNum) {
         // TODO - make proper axios call
         var url = this.corpNum + '/filings'
-        axios.get(url).then(response => {
-          if (response && response.data) {
-            // this.filedItems = response.data
-            // TODO - build actual data from response
-            this.filedItems = [
-              {
-                name: 'Annual Report (2015)',
-                filingAuthor: 'Jane Doe',
-                filingDate: 'Feb 07, 2016',
-                filingStatus: 'Complete',
-                filingDocuments: [
-                  { name: 'Change of Address' },
-                  { name: 'Change of Directors' },
-                  { name: 'Annual Report' }
-                ]
-              },
-              {
-                name: 'Annual Report (2016)',
-                filingAuthor: 'Jane Doe',
-                filingDate: 'Feb 05, 2017',
-                filingStatus: 'Complete',
-                filingDocuments: [
-                  { name: 'Change of Address' },
-                  { name: 'Change of Directors' },
-                  { name: 'Annual Report' }
-                ]
-              },
-              {
-                name: 'Annual Report (2017)',
-                filingAuthor: 'Jane Doe',
-                filingDate: 'Feb 01, 2018',
-                filingStatus: 'Complete',
-                filingDocuments: [
-                  { name: 'Change of Address' },
-                  { name: 'Change of Directors' },
-                  { name: 'Annual Report' }
-                ]
-              }
-            ]
-          } else {
-            console.log('getFiledItems() error - invalid response data')
-          }
-        }).catch(error => console.error('getFiledItems() error =', error))
+        axios.get(url)
+          .then(response => {
+            if (response && response.data) {
+              // this.filedItems = response.data
+              // TODO - build actual data from response
+              this.filedItems = [
+                {
+                  name: 'Annual Report (2015)',
+                  filingAuthor: 'Jane Doe',
+                  filingDate: 'Feb 07, 2016',
+                  filingStatus: 'Complete',
+                  filingDocuments: [
+                    { name: 'Change of Address' },
+                    { name: 'Change of Directors' },
+                    { name: 'Annual Report' }
+                  ]
+                },
+                {
+                  name: 'Annual Report (2016)',
+                  filingAuthor: 'Jane Doe',
+                  filingDate: 'Feb 05, 2017',
+                  filingStatus: 'Complete',
+                  filingDocuments: [
+                    { name: 'Change of Address' },
+                    { name: 'Change of Directors' },
+                    { name: 'Annual Report' }
+                  ]
+                },
+                {
+                  name: 'Annual Report (2017)',
+                  filingAuthor: 'Jane Doe',
+                  filingDate: 'Feb 01, 2018',
+                  filingStatus: 'Complete',
+                  filingDocuments: [
+                    { name: 'Change of Address' },
+                    { name: 'Change of Directors' },
+                    { name: 'Annual Report' }
+                  ]
+                }
+              ]
+            } else {
+              console.log('getFiledItems() error - invalid response data')
+            }
+          })
+          .catch(error => console.error('getFiledItems() error =', error))
       }
     },
+
     fileAnnualReport (item) {
-      // console.log('fileAnnualReport(), item =', item)
       this.setARFilingYear(item.year)
       this.$router.push({ path: '/annual-report', query: { year: item.year } })
     },
+
     downloadAll (item) {
       // console.log('downloadAll(), item =', item)
     }
