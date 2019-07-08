@@ -36,11 +36,21 @@
                 },
                 "title": {
                     "type": "string"
+                },
+                "appointmentDate": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "cessationDate": {
+                    "type": ["string", "null"],
+                    "format": "date"
                 }
             },
             "required": [
                 "officer",
-                "deliveryAddress"
+                "deliveryAddress",
+                "appointmentDate",
+                "cessationDate"
             ]
         }
     },
