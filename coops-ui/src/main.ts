@@ -6,7 +6,7 @@ import Vuelidate from 'vuelidate'
 import Vue2Filters from 'vue2-filters'
 import Affix from 'vue-affix'
 import router from '@/router'
-import store from '@/store'
+import store from '@/store/store'
 import '@/registerServiceWorker'
 
 Vue.use(Vuelidate)
