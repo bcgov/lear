@@ -53,9 +53,9 @@ export default {
             if (lastARJson && lastARJson.filing && lastARJson.filing.annualReport) {
               // TODO - do something with JSON data
               // TODO - enable filing for current year
-              if (this.currentDate && this.lastAgmDate) {
-                const currentYear = +this.currentDate.substring(0, 4)
-                const lastAgmYear = +this.lastAgmDate.substring(0, 4)
+              if (state.currentDate && state.lastAgmDate) {
+                const currentYear = +state.currentDate.substring(0, 4)
+                const lastAgmYear = +state.lastAgmDate.substring(0, 4)
                 if (lastAgmYear < currentYear) {
                   commit('ARFilingYear', (lastAgmYear + 1).toString())
                 } else {
