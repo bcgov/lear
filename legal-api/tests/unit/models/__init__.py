@@ -58,9 +58,10 @@ def factory_business_mailing_address(business):
         street=f'{business.identifier}-Test Street',
         postal_code='T3S3T3',
         country='TA',
-        region='BC'
+        region='BC',
+        address_type=Address.MAILING
     )
-    business.business_mailing_address.append(address)
+    business.mailing_address.append(address)
     business.save()
     return business
 
