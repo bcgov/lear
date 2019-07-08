@@ -1,111 +1,110 @@
-import axios from '@/axios-auth'
+import axios from "@/axios-auth";
 
 export default {
-  setCorpNum ({ commit }, corpNum) {
-    commit('corpNum', corpNum)
+  setCorpNum({ commit }, corpNum) {
+    commit("corpNum", corpNum);
   },
-  setCurrentDate ({ commit }, currentDate) {
-    commit('currentDate', currentDate)
+  setCurrentDate({ commit }, currentDate) {
+    commit("currentDate", currentDate);
   },
-  setLastAgmDate ({ commit }, lastAgmDate) {
-    commit('lastAgmDate', lastAgmDate)
+  setLastAgmDate({ commit }, lastAgmDate) {
+    commit("lastAgmDate", lastAgmDate);
   },
-  setARFilingYear ({ commit }, ARFilingYear) {
-    commit('ARFilingYear', ARFilingYear)
+  setARFilingYear({ commit }, ARFilingYear) {
+    commit("ARFilingYear", ARFilingYear);
   },
-  setFiledDate ({ commit }, filedDate) {
-    commit('filedDate', filedDate)
+  setFiledDate({ commit }, filedDate) {
+    commit("filedDate", filedDate);
   },
-  setAgmDate ({ commit }, agmDate) {
-    commit('agmDate', agmDate)
+  setAgmDate({ commit }, agmDate) {
+    commit("agmDate", agmDate);
   },
-  setNoAGM ({ commit }, noAGM) {
-    commit('noAGM', noAGM)
+  setNoAGM({ commit }, noAGM) {
+    commit("noAGM", noAGM);
   },
-  setRegOffAddrChange ({ commit }, regOffAddrChange) {
-    commit('regOffAddrChange', regOffAddrChange)
+  setRegOffAddrChange({ commit }, regOffAddrChange) {
+    commit("regOffAddrChange", regOffAddrChange);
   },
-  setValidated ({ commit }, validated) {
-    commit('validated', validated)
+  setValidated({ commit }, validated) {
+    commit("validated", validated);
   },
-  setEntityBusinessNo ({ commit }, entityBusinessNo) {
-    commit('entityBusinessNo', entityBusinessNo)
+  setEntityBusinessNo({ commit }, entityBusinessNo) {
+    commit("entityBusinessNo", entityBusinessNo);
   },
-  setEntityName ({ commit }, entityName) {
-    commit('entityName', entityName)
+  setEntityName({ commit }, entityName) {
+    commit("entityName", entityName);
   },
-  setEntityStatus ({ commit }, entityStatus) {
-    commit('entityStatus', entityStatus)
+  setEntityStatus({ commit }, entityStatus) {
+    commit("entityStatus", entityStatus);
   },
-  setEntityIncNo ({ commit }, entityIncNo) {
-    commit('entityIncNo', entityIncNo)
+  setEntityIncNo({ commit }, entityIncNo) {
+    commit("entityIncNo", entityIncNo);
   },
 
-  getARInfo ({ commit, state }, id) {
+  getARInfo({ commit, state }, id) {
     if (state.corpNum) {
       // TODO - make proper axios call
-      var url = state.corpNum + '/filings/' + id
+      var url = state.corpNum + "/filings/" + id;
       axios
         .get(url)
         .then(response => {
           if (response && response.data) {
-            const lastARJson = response.data
+            const lastARJson = response.data;
             if (lastARJson && lastARJson.filing && lastARJson.filing.annualReport) {
               // TODO - do something with JSON data
               // TODO - enable filing for current year
               if (this.currentDate && this.lastAgmDate) {
-                const currentYear = +this.currentDate.substring(0, 4)
-                const lastAgmYear = +this.lastAgmDate.substring(0, 4)
+                const currentYear = +this.currentDate.substring(0, 4);
+                const lastAgmYear = +this.lastAgmDate.substring(0, 4);
                 if (lastAgmYear < currentYear) {
-                  commit('ARFilingYear', (lastAgmYear + 1).toString())
+                  commit("ARFilingYear", (lastAgmYear + 1).toString());
                 } else {
                   // already filed for this year
-                  commit('ARFilingYear', null)
+                  commit("ARFilingYear", null);
                 }
               }
             } else {
-              console.log('setARInfo() error - invalid Annual Report')
+              console.log("setARInfo() error - invalid Annual Report");
             }
           } else {
-            console.log('getARInfo() error - invalid response data')
+            console.log("getARInfo() error - invalid response data");
           }
         })
         .catch(error => {
-          console.error('getARInfo() error =', error)
+          console.error("getARInfo() error =", error);
           // TODO - delete this when API works
-          this.setARInfo({})
-        })
+        });
     }
   },
 
-  fetchEntityInfo ({ commit, state }) {
+  fetchEntityInfo({ commit, state }) {
     if (state.corpNum) {
-      const url = state.corpNum
+      const url = state.corpNum;
       axios
         .get(url)
         .then(response => {
           if (response && response.data && response.data.business) {
-            commit('entityName', response.data.business.legalName)
-            commit('entityStatus', response.data.business.status)
-            commit('entityBusinessNo', response.data.business.taxId)
-            commit('entityIncNo', response.data.business.identifier)
-            commit(
-              'lastAgmDate',
-              this.isValidateDateFormat(response.data.business.lastAnnualGeneralMeetingDate)
-                ? response.data.business.lastAnnualGeneralMeetingDate
-                : null
-            )
+            commit("entityName", response.data.business.legalName);
+            commit("entityStatus", response.data.business.status);
+            commit("entityBusinessNo", response.data.business.taxId);
+            commit("entityIncNo", response.data.business.identifier);
+            const dateInput = response.data.business.lastAnnualGeneralMeetingDate;
+            if (
+              dateInput &&
+              dateInput.length === 10 &&
+              dateInput.indexOf("-") === 4 &&
+              dateInput.indexOf("-", 5) === 7 &&
+              dateInput.indexOf("-", 8) === -1
+            ) {
+              commit("lastAgmDate", dateInput);
+            } else {
+              commit("lastAgmDate", null);
+            }
           } else {
-            console.log('getEntityInfo() error - invalid response data')
+            console.log("getEntityInfo() error - invalid response data");
           }
         })
-        .catch(error => console.error('getEntityInfo() error =', error))
+        .catch(error => console.error("getEntityInfo() error =", error));
     }
-  },
-  isValidateDateFormat (date) {
-    // validate ISO date format (YYYY-MM-DD)
-    return (
-      date && date.length === 10 && date.indexOf('-') === 4 && date.indexOf('-', 5) === 7 && date.indexOf('-', 8) === -1
-    )
   }
-}
+};
