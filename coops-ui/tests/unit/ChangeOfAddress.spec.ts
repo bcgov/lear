@@ -3,6 +3,7 @@ import Vuetify from 'vuetify'
 
 import App from '@/App.vue'
 import AnnualReport from '@/views/AnnualReport.vue'
+ 
 import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import store from '@/store/store'
 import sinon from 'sinon'
@@ -159,11 +160,11 @@ describe('App.vue', () => {
 
     const RootConstructor = Vue.extend(App)
     let rootInstance = new RootConstructor({ store: store })
-    rootvm = rootInstance.$mount()
+    rootvm = rootInstance.$mount()     
 
     const Constructor = Vue.extend(AnnualReport)
     let instance = new Constructor({ store: store })
-    vm = instance.$mount()
+    vm = instance.$mount()     
 
     const ChildConstructor = Vue.extend(RegisteredOfficeAddress)
     let childInstance = new ChildConstructor({ store: store })
@@ -181,7 +182,8 @@ describe('App.vue', () => {
     }, 750)
   })
   it('initializes the store variables properly', () => {
-    expect(vm.$store.state.DeliveryAddressStreet).toEqual('1234 Main Street')
+    // Commenting out the below as address details are removed from state
+    /* expect(vm.$store.state.DeliveryAddressStreet).toEqual('1234 Main Street')
     expect(vm.$store.state.DeliveryAddressStreetAdditional).toEqual('')
     expect(vm.$store.state.DeliveryAddressCity).toEqual('Victoria')
     expect(vm.$store.state.DeliveryAddressRegion).toEqual('BC')
@@ -194,7 +196,7 @@ describe('App.vue', () => {
     expect(vm.$store.state.MailingAddressRegion).toEqual('BC')
     expect(vm.$store.state.MailingAddressPostalCode).toEqual('V9A 2G8')
     expect(vm.$store.state.MailingAddressCountry).toEqual('Canada')
-    expect(vm.$store.state.MailingAddressInstructions).toEqual('')
+    expect(vm.$store.state.MailingAddressInstructions).toEqual('') */
     // currently, address change doesn't affect 'validated'
     // expect(vm.$store.state.validated).toBeFalsy()
     console.log('Passed Test 1')
@@ -251,13 +253,14 @@ describe('App.vue', () => {
     childvm.$data.MailingAddressCountry = vm.$store.state.MailingAddressCountry
     childvm.$data.MailingAddressInstructions = vm.$store.state.MailingAddressInstructions
     vm.$store.state.noAGM = true
-    setTimeout(() => {
+
+    Vue.nextTick(() => {
       expect(vm.$store.state.regOffAddrChange).toBeFalsy()
       expect(childvm.$data.showAddressForm).toBeFalsy()
       expect(childvm.$el.querySelector('#reg-off-addr-change-btn')).not.toBeNull()
       expect(childvm.$el.querySelector('#reg-off-addr-reset-btn')).toBeNull()
       click('#reg-off-addr-change-btn')
-      setTimeout(() => {
+      Vue.nextTick(() => {
         // editable address form shown
         expect(childvm.$data.showAddressForm).toBeTruthy()
         if (childvm.$el.querySelector('#delivery-address-form').style.length > 0) {
@@ -276,7 +279,7 @@ describe('App.vue', () => {
         expect(childvm.$el.querySelector('#mailing-address-expanded').getAttribute('style'))
           .toContain('display: none;')
         childvm.$data.inheritDeliveryAddress = false
-        setTimeout(() => {
+        Vue.nextTick(() => {
           if (vm.$el.querySelector('#mailing-address-expanded').style.length > 0) {
             expect(childvm.$el.querySelector('#mailing-address-expanded').getAttribute('style'))
               .not.toContain('display: none;')
@@ -284,11 +287,11 @@ describe('App.vue', () => {
           expect(childvm.$el.querySelector('#reg-off-update-addr-btn').disabled).toBeFalsy()
           expect(childvm.$el.querySelector('#reg-off-cancel-addr-btn').disabled).toBeFalsy()
           childvm.$data.DeliveryAddressStreet = null
-          setTimeout(() => {
+          Vue.nextTick(() => {
             expect(childvm.$el.querySelector('#reg-off-update-addr-btn').disabled).toBeTruthy()
             childvm.$data.DeliveryAddressStreet = '1234'
             click('#reg-off-update-addr-btn')
-            setTimeout(() => {
+            Vue.nextTick(() => {
               expect(childvm.$data.showAddressForm).toBeFalsy()
               if (childvm.$el.querySelector('#delivery-address-display').style.length > 0) {
                 expect(childvm.$el.querySelector('#delivery-address-display')
@@ -307,28 +310,28 @@ describe('App.vue', () => {
               expect(childvm.$data.MailingAddressStreet).toEqual('1234 Main Street')
               expect(childvm.$el.querySelector('#reg-off-addr-reset-btn')).not.toBeNull()
               click('#reg-off-addr-change-btn')
-              setTimeout(() => {
+              Vue.nextTick(() => {
                 childvm.$data.DeliveryAddressStreet = '12345678'
                 childvm.$data.MailingAddressStreet = '12345678'
                 expect(childvm.$el.querySelector('#reg-off-cancel-addr-btn')).not.toBeNull()
                 click('#reg-off-cancel-addr-btn')
-                setTimeout(() => {
+                Vue.nextTick(() => {
                   expect(childvm.$data.DeliveryAddressStreet).toEqual('1234')
                   expect(childvm.$data.MailingAddressStreet).toEqual('1234 Main Street')
                   expect(childvm.$el.querySelector('#reg-off-addr-reset-btn')).not.toBeNull()
                   click('#reg-off-addr-reset-btn')
-                  setTimeout(() => {
+                  Vue.nextTick(() => {
                     expect(childvm.$data.DeliveryAddressStreet).toEqual('1234 Main Street')
                     expect(vm.$store.state.regOffAddrChange).toBeFalsy()
                     expect(childvm.$el.querySelector('#reg-off-addr-reset-btn')).toBeNull()
                     console.log('Passed Test 4')
-                  }, 10)
-                }, 10)
-              }, 10)
-            }, 500)
-          }, 10)
-        }, 10)
-      }, 100)
-    }, 10)
+                  })
+                })
+              })
+            })
+          })
+        })
+      })
+    })
   })
 })
