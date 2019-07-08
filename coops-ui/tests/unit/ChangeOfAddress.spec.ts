@@ -3,7 +3,7 @@ import Vuetify from 'vuetify'
 
 import App from '@/App.vue'
 import AnnualReport from '@/views/AnnualReport.vue'
- 
+
 import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import store from '@/store/store'
 import sinon from 'sinon'
@@ -160,11 +160,11 @@ describe('App.vue', () => {
 
     const RootConstructor = Vue.extend(App)
     let rootInstance = new RootConstructor({ store: store })
-    rootvm = rootInstance.$mount()     
+    rootvm = rootInstance.$mount()
 
     const Constructor = Vue.extend(AnnualReport)
     let instance = new Constructor({ store: store })
-    vm = instance.$mount()     
+    vm = instance.$mount()
 
     const ChildConstructor = Vue.extend(RegisteredOfficeAddress)
     let childInstance = new ChildConstructor({ store: store })
