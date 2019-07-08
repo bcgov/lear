@@ -54,7 +54,9 @@ CHANGE_OF_DIRECTORS = {
                 'addressCountry': 'mailing_address country',
                 'postalCode': 'H0H0H0',
                 'addressRegion': 'BC'
-            }
+            },
+            'appointmentDate': '2018-01-01',
+            'cessationDate': '2019-04-03'
         },
         {
             'officer': {
@@ -70,7 +72,9 @@ CHANGE_OF_DIRECTORS = {
                 'postalCode': 'H0H 0H0',
                 'addressRegion': 'SC'
             },
-            'title': 'Treasurer'
+            'title': 'Treasurer',
+            'cessationDate': None,
+            'appointmentDate': '2018-01-01'
         }
     ]
 }
