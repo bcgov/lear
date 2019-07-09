@@ -12,73 +12,46 @@
     <v-container id="dashboardContainer" class="view-container">
       <article id="dashboardArticle">
         <header>
-          <h1 id="dashboardHeader">Dashboard</h1>
+          <h1>Dashboard</h1>
         </header>
 
-        <section v-if="todoItems && todoItems.length">
-          <header>
-            <h2 id="dashboardTodoHeader">To Do
-              <span class="text-muted">({{todoItems.length}})</span>
-            </h2>
-          </header>
+        <div class="dashboard-content">
+          <div class="dashboard-content__main">
+            <section>
+              <header>
+                <h2>To Do <span class="text-muted">({{todoCount}})</span></h2>
+              </header>
+              <todo-list @todo-count="todoCount = $event"/>
+            </section>
 
-          <v-card flat id="dashboardTodoContainer">
-            <ul class="list todo-list">
-              <li class="list-item"
-                v-for="(item, index) in orderBy(todoItems, 'year', 1)"
-                v-bind:key="index">
-                <div class="list-item-title">{{item.name}}</div>
-                <div class="list-item-actions">
-                  <v-btn color="primary" @click="fileAnnualReport(item)" :disabled="!item.enabled">File Now</v-btn>
-                </div>
-              </li>
-            </ul>
-          </v-card>
-        </section>
+            <section>
+              <header>
+                <h2>Recent Filing History <span class="text-muted">({{filingCount}})</span></h2>
+              </header>
+              <filing-history-list @filing-count="filingCount = $event"/>
+            </section>
+          </div>
 
-        <section v-if="filedItems && filedItems.length">
-          <header>
-            <h2 id="dashboardFilingHeader">Recent Filing History
-              <span class="text-muted">({{filedItems.length}})</span>
-            </h2>
-          </header>
+          <aside class="dashboard-content__aside">
+            <section>
+              <header>
+                <h2>Registered Office Addresses</h2>
+              </header>
+              <v-card flat>
+                <address-list-sm></address-list-sm>
+              </v-card>
+            </section>
+            <section>
+              <header>
+                <h2>Current Directors</h2>
+              </header>
+              <v-card flat>
+                <director-list-sm></director-list-sm>
+              </v-card>
+            </section>
+          </aside>
+        </div>
 
-          <v-card flat id="dashboardFilingContainer">
-            <v-expansion-panel>
-              <v-expansion-panel-content
-                class="filing-history-list"
-                v-for="(item, index) in orderBy(filedItems, 'name', -1)"
-                v-bind:key="index">
-                <template v-slot:header>
-                  <div class="list-item">
-                    <div class="list-item-title">{{item.name}}</div>
-                    <div class="list-item-subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
-                  </div>
-                </template>
-
-                <ul class="list document-list">
-                  <li class="list-item"
-                    v-for="(document, index) in orderBy(item.filingDocuments, 'name')"
-                    v-bind:key="index">
-                    <a href="#">
-                      <img class="list-item-icon" src="@/assets/images/icons/file-pdf-outline.svg" />
-                      <div class="list-item-title">{{document.name}}</div>
-                    </a>
-                  </li>
-                  <li class="list-item">
-                    <a href="#">
-                      <img class="list-item-icon" src="@/assets/images/icons/file-pdf-outline.svg" />
-                      <div class="list-item-title">Receipt</div>
-                    </a>
-                  </li>
-                </ul>
-                <div class="documents-actions-bar">
-                  <v-btn class="download-all-btn" color="primary" @click="downloadAll(item)">Download All</v-btn>
-                </div>
-              </v-expansion-panel-content>
-            </v-expansion-panel>
-          </v-card>
-        </section>
       </article>
     </v-container>
 
@@ -87,128 +60,26 @@
 
 <script lang="ts">
 import { Vue } from 'vue-property-decorator'
-import Vue2Filters from 'vue2-filters'
-import axios from '@/axios-auth'
+import TodoList from '@/components/Dashboard/TodoList.vue'
+import FilingHistoryList from '@/components/Dashboard/FilingHistoryList.vue'
+import AddressListSm from '@/components/Dashboard/AddressListSm.vue'
+import DirectorListSm from '@/components/Dashboard/DirectorListSm.vue'
 import { mapState, mapActions } from 'vuex'
-// TODO - implement these
-// import TodoList from '@/components/TodoList.vue'
-// import FilingHistory from '@/components/FilingHistory.vue'
-
-Vue.use(Vue2Filters)
 
 export default {
   name: 'Dashboard',
 
-  mixins: [Vue2Filters.mixin],
-
   components: {
-    // TodoList,
-    // FilingHistory
+    TodoList,
+    FilingHistoryList,
+    AddressListSm,
+    DirectorListSm
   },
 
   data () {
     return {
-      todoItems: null,
-      filedItems: null
-    }
-  },
-
-  computed: {
-    corpNum () {
-      return this.$store.state.corpNum
-    },
-    currentDate () {
-      return this.$store.state.currentDate
-    }
-  },
-
-  mounted () {
-    // get data for this page
-    this.getTodoItems()
-    this.getFiledItems()
-  },
-
-  methods: {
-    ...mapActions(['setARFilingYear']),
-
-    getTodoItems () {
-      // TODO - this needs to be constructed based on last AR date (not retrieved)
-      // only the earliest non-submitted AR can be filed
-      if (this.corpNum) {
-        this.todoItems = [
-          { name: 'File 2019 Annual Report', year: 2019, enabled: false },
-          { name: 'File 2018 Annual Report', year: 2018, enabled: true }
-        ]
-      }
-    },
-
-    getFiledItems () {
-      if (this.corpNum) {
-        // TODO - make proper axios call
-        var url = this.corpNum + '/filings'
-        axios.get(url)
-          .then(response => {
-            if (response && response.data) {
-              // this.filedItems = response.data
-              // TODO - build actual data from response
-              this.filedItems = [
-                {
-                  name: 'Annual Report (2015)',
-                  filingAuthor: 'Jane Doe',
-                  filingDate: 'Feb 07, 2016',
-                  filingStatus: 'Complete',
-                  filingDocuments: [
-                    { name: 'Change of Address' },
-                    { name: 'Change of Directors' },
-                    { name: 'Annual Report' }
-                  ]
-                },
-                {
-                  name: 'Annual Report (2016)',
-                  filingAuthor: 'Jane Doe',
-                  filingDate: 'Feb 05, 2017',
-                  filingStatus: 'Complete',
-                  filingDocuments: [
-                    { name: 'Change of Address' },
-                    { name: 'Change of Directors' },
-                    { name: 'Annual Report' }
-                  ]
-                },
-                {
-                  name: 'Annual Report (2017)',
-                  filingAuthor: 'Jane Doe',
-                  filingDate: 'Feb 01, 2018',
-                  filingStatus: 'Complete',
-                  filingDocuments: [
-                    { name: 'Change of Address' },
-                    { name: 'Change of Directors' },
-                    { name: 'Annual Report' }
-                  ]
-                }
-              ]
-            } else {
-              console.log('getFiledItems() error - invalid response data')
-            }
-          })
-          .catch(error => console.error('getFiledItems() error =', error))
-      }
-    },
-
-    fileAnnualReport (item) {
-      this.setARFilingYear(item.year)
-      this.$router.push({ path: '/annual-report', query: { year: item.year } })
-    },
-
-    downloadAll (item) {
-      // console.log('downloadAll(), item =', item)
-    }
-  },
-
-  watch: {
-    corpNum (val) {
-      // when Corp Num changes, get new items
-      this.getTodoItems()
-      this.getFiledItems()
+      todoCount: 0,
+      filingCount: 0
     }
   }
 }
@@ -229,24 +100,23 @@ export default {
   section + section
     margin-top 3rem
 
+  h1
+    margin-bottom 0
+
   h2
-    margin-bottom 0.25rem
-
-  #dashboardHeader
-    margin-bottom 1.25rem
-    line-height 2rem
-    letter-spacing -0.01rem
-    font-size 2rem
-    font-weight 500
-
-  #dashboardTodoHeader, #dashboardFilingHeader
     margin-bottom 0.25rem
     margin-top 3rem
     font-size 1.125rem
     font-weight 500
 
-  #dashboardTodoContainer, #dashboardFilingContainer
-    margin-top 1rem
+  .dashboard-content
+    display flex
+
+  .dashboard-content__main
+    flex 1 1 auto
+
+  .dashboard-content__aside
+    margin-left 2rem
 
   // Common
   .list
@@ -285,37 +155,4 @@ export default {
       margin 0
       min-width 8rem
       font-weight 500
-
-  // Filing History
-  .filing-history-list .list-item
-    flex-direction column
-    align-items flex-start
-    padding 0
-
-  // Document List
-  .document-list
-    border-top 1px solid $gray3
-
-    .list-item a
-      display flex
-      flex-direction row
-      align-items center
-      padding 0.5rem
-
-    .list-item-title
-      font-weight 400
-
-  // Documents Action Bar
-  .documents-actions-bar
-    padding-top 1rem
-    padding-bottom 1.25rem
-    display flex
-    border-top 1px solid $gray3
-
-    .v-btn
-      margin-right 0
-
-  .download-all-btn
-    margin-left auto
-    min-width 8rem
 </style>

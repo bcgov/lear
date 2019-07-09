@@ -241,16 +241,15 @@ export default {
     },
 
     toggleFiling (setting, filing) {
-      var added = false
-      for (var i = 0; i < this.filingData.length; i++) {
+      let added = false
+      for (let i = 0; i < this.filingData.length; i++) {
         if (this.filingData[i].filingTypeCode === filing) {
           if (setting === 'add') {
             added = true
-            break
           } else {
             this.filingData.splice(i, 1)
-            break
           }
+          break
         }
       }
       if (setting === 'add' && !added) {
@@ -262,7 +261,7 @@ export default {
   watch: {
     // TODO - what to do if Corp Num ever changes?
     // corpNum (val) {
-    //   console.log('AnnualReport - got corpNum =', val)
+    //   console.log('AnnualReport, corpNum =', val)
     // },
 
     agmDate (val) {

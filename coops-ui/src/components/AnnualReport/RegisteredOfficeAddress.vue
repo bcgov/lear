@@ -642,7 +642,7 @@ label:first-child
     margin-top: 0;
 
 // List Layout
-.list 
+.list
   li
     border-bottom: 1px solid $gray3;
 
@@ -696,7 +696,6 @@ label:first-child
     flex-basis: 0;
     margin-right: 0.5rem;
     margin-left: 0.5rem;
-}
 
 .inherit-checkbox
   margin-top: -3px;
