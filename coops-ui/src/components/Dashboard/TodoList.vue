@@ -25,6 +25,7 @@
 
 <script lang="ts">
 import Vue2Filters from 'vue2-filters'
+import { mapState } from 'vuex'
 
 export default {
   name: 'TodoList',
@@ -38,12 +39,7 @@ export default {
   },
 
   computed: {
-    corpNum () {
-      return this.$store.state.corpNum
-    },
-    currentDate () {
-      return this.$store.state.currentDate
-    }
+    ...mapState(['currentDate', 'lastAgmDate'])
   },
 
   mounted () {
@@ -53,25 +49,39 @@ export default {
 
   methods: {
     getTodoItems () {
-      // TODO - this needs to be constructed based on last AR date (not retrieved)
-      // only the earliest non-submitted AR can be filed
-      if (this.corpNum) {
-        this.todoItems = [
-          { name: 'File 2019 Annual Report', year: 2019, enabled: false },
-          { name: 'File 2018 Annual Report', year: 2018, enabled: true }
-        ]
+      if (this.currentDate && this.lastAgmDate) {
+        this.todoItems = []
+        const currentYear = +this.currentDate.substring(0, 4)
+        const lastAgmYear = +this.lastAgmDate.substring(0, 4)
+        // create items for past years
+        for (let year = lastAgmYear; year < currentYear; year++) {
+          this.todoItems.push({ name: `File ${year} Annual Report`, year, enabled: false })
+        }
+        // create item for this year
+        if (lastAgmYear === currentYear) {
+          if (this.lastAgmDate < this.currentDate) {
+            this.todoItems.push({ name: `File ${lastAgmYear} Annual Report`, lastAgmYear, enabled: false })
+          }
+        }
+        // enable earliest AR
+        if (this.todoItems.length > 0) {
+          this.todoItems[0].enabled = true
+        }
         this.$emit('todo-count', this.todoItems.length)
       }
     },
     fileAnnualReport (item) {
-      // console.log('fileAnnualReport(), item =', item)
       this.$router.push({ path: '/annual-report', query: { year: item.year } })
     }
   },
 
   watch: {
-    corpNum (val) {
-      // when Corp Num is set or changes, get new todo items
+    currentDate (val) {
+      // when Current Date is set or changes, get new todo items
+      this.getTodoItems()
+    },
+    lastAgmDate (val) {
+      // when Last AGM Date is set or changes, get new todo items
       this.getTodoItems()
     }
   }

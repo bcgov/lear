@@ -143,7 +143,7 @@ export default {
 
   computed: {
     ...mapState(['agmDate', 'noAGM', 'regOffAddrChange', 'filedDate',
-      'validated', 'currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate' ]),
+      'validated', 'currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate']),
 
     currentYear () {
       return this.currentDate ? this.currentDate.substring(0, 4) : null
