@@ -25,7 +25,7 @@
 
 <script lang="ts">
 import Vue2Filters from 'vue2-filters'
-import { mapState } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 
 export default {
   name: 'TodoList',
@@ -48,6 +48,8 @@ export default {
   },
 
   methods: {
+    ...mapActions(['setARFilingYear']),
+
     getTodoItems () {
       if (this.currentDate && this.lastAgmDate) {
         this.todoItems = []
@@ -71,7 +73,8 @@ export default {
       }
     },
     fileAnnualReport (item) {
-      this.$router.push({ path: '/annual-report', query: { year: item.year } })
+      this.setARFilingYear(item.year)
+      this.$router.push('/annual-report')
     }
   },
 

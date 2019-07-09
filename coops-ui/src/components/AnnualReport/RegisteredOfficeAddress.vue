@@ -545,7 +545,6 @@ export default {
       }
     },
     setRegOffAddr (regOffAddrJson) {
-      console.log(regOffAddrJson)
       if (regOffAddrJson && regOffAddrJson.deliveryAddress) {
         this.DeliveryAddressStreet =
           regOffAddrJson.deliveryAddress.streetAddress

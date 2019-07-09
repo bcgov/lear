@@ -67,6 +67,7 @@
 
 <script>
 import { isNotNull, isValidYear, isValidMonth, isValidDay, isISOFormat } from '@/validators'
+import { mapState, mapActions } from 'vuex'
 
 export default {
   name: 'AGMDate',
@@ -78,7 +79,9 @@ export default {
       menu: false, // bound to calendar menu
       didNotHoldAGM: false, // bound to checkbox
       agmDateValid: true,
-      agmDateRules: [ v => this.didNotHoldAGM || isNotNull(v) || 'An Annual General Meeting date is required.' ]
+      agmDateRules: [
+        v => this.didNotHoldAGM || isNotNull(v) || 'An Annual General Meeting date is required.'
+      ]
     }
   },
 
@@ -94,9 +97,8 @@ export default {
   },
 
   computed: {
-    ARFilingYear () {
-      return this.$store.state.ARFilingYear
-    },
+    ...mapState(['ARFilingYear', 'agmDate', 'currentDate']),
+
     checkBoxLabel () {
       return 'We did not hold an Annual General Meeting in ' + this.ARFilingYear
     },
@@ -106,18 +108,20 @@ export default {
     minDate () {
       return `${this.ARFilingYear}-01-01`
     },
-    agmDate () {
-      return this.$store.state.agmDate
-    },
-    currentDate () {
-      return this.$store.state.currentDate
-    },
-    currentYear () {
-      return this.currentDate ? this.currentDate.substring(0, 4) : null
+    currentYear () /* Number */ {
+      return this.currentDate ? +this.currentDate.substring(0, 4) : null
     }
   },
 
+  mounted () {
+    // load initial data
+    this.setAgmDate(this.minDate)
+    this.dateFormatted = this.formatDate(this.agmDate)
+  },
+
   methods: {
+    ...mapActions(['setAgmDate', 'setNoAGM']),
+
     formatDate (date) {
       // changes date from YYYY-MM-DD to YYYY/MM/DD
       if (!this.isValidDateFormat(date, '-')) return ''
@@ -143,7 +147,7 @@ export default {
         date.indexOf(separator) === 4 &&
         date.indexOf(separator, 5) === 7 &&
         date.indexOf(separator, 8) === -1 &&
-        date.substring(0, 4) === this.ARFilingYear &&
+        +date.substring(0, 4) === this.ARFilingYear &&
         +date.substring(5, 7) > 0 &&
         +date.substring(5, 7) <= +this.maxDate.substring(5, 7) &&
         +date.substring(8, 10) === (new Date(date)).getUTCDate() &&
@@ -165,25 +169,20 @@ export default {
         }
       }
       // also update value in store
-      this.$store.state.agmDate = val || null
+      this.setAgmDate(val || null)
     },
     didNotHoldAGM (val) {
       // when checkbox changes, update properties accordingly
       if (val) {
-        this.$store.state.noAGM = true
+        this.setNoAGM(true)
         // clear text field value
         this.dateFormatted = null
       } else {
-        this.$store.state.noAGM = false
+        this.setNoAGM(false)
         // reset text field value
-        this.$store.state.agmDate = this.minDate
+        this.setAgmDate(this.minDate)
         this.dateFormatted = this.formatDate(this.agmDate)
       }
-    },
-    ARFilingYear (val) {
-      // when AR Filing Year changes (ie. on init), set initial text field value
-      this.$store.state.agmDate = this.minDate
-      this.dateFormatted = this.formatDate(this.agmDate)
     }
   }
 }

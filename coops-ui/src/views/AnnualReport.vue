@@ -90,15 +90,6 @@
             File &amp; Pay
           </v-btn>
           <v-btn
-            v-else
-            id="ar-next-btn"
-            color="primary"
-            large
-            :disabled="currentYear === ARFilingYear"
-            @click="nextAR">
-            Next
-          </v-btn>
-          <v-btn
             id="ar-cancel-btn"
             large
             to="/dashboard">
@@ -145,10 +136,6 @@ export default {
     ...mapState(['agmDate', 'noAGM', 'regOffAddrChange', 'filedDate',
       'validated', 'currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate']),
 
-    currentYear () {
-      return this.currentDate ? this.currentDate.substring(0, 4) : null
-    },
-
     reportState () {
       // TODO - look at filing.annual.status instead
       return this.filedDate ? 'Filed' : 'Draft'
@@ -156,50 +143,18 @@ export default {
   },
 
   mounted () {
+    console.log('Annual Report is mounted')
     // if tombstone data isn't set, redirect to home
-    if (!this.corpNum) {
+    if (!this.corpNum || !this.ARFilingYear) {
       this.$router.push('/')
     } else {
       // load initial data
-      // TODO - need to get id of current AR
-      this.getARInfo(0)
+      // TODO - anything here?
     }
   },
 
   methods: {
-    ...mapActions(['setARFilingYear']),
-
-    getARInfo (id) {
-      if (this.corpNum) {
-        // TODO - make proper axios call
-        var url = this.corpNum + '/filings/' + id
-        axios.get(url)
-          .then(response => {
-            if (response && response.data) {
-              const lastARJson = response.data
-              if (lastARJson && lastARJson.filing && lastARJson.filing.annualReport) {
-                // TODO - do something with JSON data
-                // TODO - enable filing for current year
-                if (this.currentDate && this.lastAgmDate) {
-                  const currentYear = +this.currentDate.substring(0, 4)
-                  const lastAgmYear = +this.lastAgmDate.substring(0, 4)
-                  if (lastAgmYear < currentYear) {
-                    this.setARFilingYear((lastAgmYear + 1).toString())
-                  } else {
-                    // already filed for this year
-                    this.setARFilingYear(null)
-                  }
-                }
-              } else {
-                console.log('setARInfo() error - invalid Annual Report')
-              }
-            } else {
-              console.log('getARInfo() error - invalid response data')
-            }
-          })
-          .catch(error => console.error('getARInfo() error =', error))
-      }
-    },
+    ...mapActions(['setARFilingYear', 'setFiledDate', 'setValidated']),
 
     directorsChangeEventHandler (val) {
       this.directorsChange = val
@@ -213,31 +168,14 @@ export default {
       // axios.get(url)
       //   .then(response => {
       //     if (response && response.data) {
-      //       this.$store.state.filedDate = this.currentDate
+      //       this.setFiledDate(this.currentDate)
       //     } else {
       //       console.log('submit() error - invalid response data')
       //     }
       //   })
       //   .catch(error => console.error('submit() error =', error))
 
-      this.$store.state.filedDate = this.currentDate
-    },
-
-    resetARInfo () {
-      this.$store.state.agmDate = null
-      this.$store.state.filedDate = null
-      this.$store.state.validated = false
-      this.$store.state.noAGM = false
-      this.$store.state.regOffAddrChange = false
-      this.$refs.registeredAddress.setRegOffAddrNull()
-      // refresh this page
-      this.$router.go()
-    },
-
-    nextAR () {
-      this.resetARInfo()
-      // TODO - need to get id of next AR
-      this.getARInfo(0)
+      this.setFiledDate(this.currentDate)
     },
 
     toggleFiling (setting, filing) {
@@ -272,7 +210,7 @@ export default {
       } else {
         if (!this.noAGM) this.toggleFiling('remove', 'OTANN')
       }
-      this.$store.state.validated = Boolean(this.noAGM || this.agmDate)
+      this.setValidated(Boolean(this.noAGM || this.agmDate))
     },
 
     noAGM (val) {
@@ -283,10 +221,11 @@ export default {
       } else {
         this.toggleFiling('remove', 'OTANN')
       }
-      this.$store.state.validated = Boolean(this.noAGM || this.agmDate)
+      this.setValidated(Boolean(this.noAGM || this.agmDate))
     },
 
     regOffAddrChange: function (val) {
+      // when addresses change, update filing data
       console.log('AnnualReport, regOffAddrChange =', val)
       if (val) {
         this.toggleFiling('add', 'OTADD')
@@ -296,6 +235,7 @@ export default {
     },
 
     directorsChange: function (val) {
+      // when directors change, update filing data
       console.log('AnnualReport, directorsChange =', val)
       if (val) {
         this.toggleFiling('add', 'OTCDR')
