@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "443fb919-48a1-4dcb-a715-fe82a7c2c5a5",
 		"name": "legal-api",
-		"description": "version=0.73 - This is a Legal API description",
+		"description": "version=0.74 - This is a Legal API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
 	"item": [
@@ -1446,7 +1446,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002103\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastAnnualGeneralMeetingDate\": \"2019-04-08\",\n        \"lastAnnualReport\": \"2019-04-08\",\n        \"legalName\": \"legal name CP0002103\",\n        \"taxId\": \"123456789\"\n    }\n}"
+					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002103\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastAnnualGeneralMeetingDate\": \"2019-04-08\",\n        \"lastAnnualReport\": \"2019-04-08\",\n        \"legalName\": \"legal name CP0002103\",\n        \"status\": \"PENDINGDISSOLUTION\",\n        \"taxId\": \"123456789\"\n    }\n}"
 				},
 				{
 					"name": "get-business - CP0002098",
@@ -1498,7 +1498,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002098\",\n        \"lastAnnualGeneralMeetingDate\": \"2017-04-08\",\n        \"lastAnnualReport\": \"2017-04-08\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"legalName\": \"legal name CP0002098\",\n        \"taxId\": \"123456789\"\n    }\n}"
+					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002098\",\n        \"lastAnnualGeneralMeetingDate\": \"2017-04-08\",\n        \"lastAnnualReport\": \"2017-04-08\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"legalName\": \"legal name CP0002098\",\n        \"status\": \"GOODSTANDING\",\n        \"taxId\": \"123456789\"\n    }\n}"
 				},
 				{
 					"name": "get-business - CP0002106",
@@ -1554,7 +1554,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002106\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastAnnualGeneralMeetingDate\": \"2019-04-08\",\n        \"lastAnnualReport\": \"2019-04-08\",\n        \"legalName\": \"legal name CP0002106\",\n        \"taxId\": \"123456789\"\n    }\n}"
+					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002106\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastAnnualGeneralMeetingDate\": \"2019-04-08\",\n        \"lastAnnualReport\": \"2019-04-08\",\n        \"legalName\": \"legal name CP0002106\",\n        \"status\": \"NOTINCOMPLIANCE\",\n        \"taxId\": \"123456789\"\n    }\n}"
 				}
 			]
 		},
@@ -2360,7 +2360,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id/directoris",
+							"raw": "{{url}}/api/v1/businesses/:id/directors",
 							"host": [
 								"{{url}}"
 							],
@@ -2369,7 +2369,7 @@
 								"v1",
 								"businesses",
 								":id",
-								"directoris"
+								"directors"
 							],
 							"variable": [
 								{
@@ -2405,7 +2405,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\r\n\t\"directors\": [{\r\n\t\t\t\"officer\": {\r\n\t\t\t\t\"firstName\": \"Scott\",\r\n\t\t\t\t\"lastName\": \"Johnson\"\r\n\t\t\t},\r\n\t\t\t\"deliveryAddress\": {\r\n\t\t\t\t\"streetAddress\": \"3950 Helen Road\",\r\n\t\t\t\t\"addressCity\": \"Edmonton\",\r\n\t\t\t\t\"addressCountry\": \"CA\",\r\n\t\t\t\t\"postalCode\": \"V8Z 5C5\",\r\n\t\t\t\t\"addressRegion\": \"AB\"\r\n\t\t\t},\r\n\t\t\t\"appointmentDate\": \"2015-10-12\",\r\n\t\t\t\"cessationDate\": null\r\n\t\t}\r\n\t]\r\n}"
+					"body": "{\n    \"directors\": [\n        {\n            \"officer\": {\n                \"firstName\": \"Scott\",\n                \"lastName\": \"Johnson\"\n            },\n            \"deliveryAddress\": {\n                \"streetAddress\": \"3950 Helen Road\",\n                \"addressCity\": \"Edmonton\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"V8Z 5C5\",\n                \"addressRegion\": \"AB\"\n            },\n            \"appointmentDate\": \"2015-10-12\",\n            \"cessationDate\": null\n        }\n    ]\n}"
 				}
 			]
 		}
