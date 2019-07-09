@@ -18,7 +18,7 @@ Currently this only provides API versioning information
 from flask import current_app
 
 from colin_api.exceptions import DirectorsNotFoundException
-from colin_api.models import Address
+from colin_api.models import Address, Business
 from colin_api.resources.db import DB
 
 
@@ -79,7 +79,7 @@ class Director:
         return directors_list
 
     @classmethod
-    def get_by_event(cls, event_id: str = None):
+    def get_by_event(cls, event_id: int = None):
         """Get all directors added/deleted during this event."""
         if not event_id:
             return None
@@ -103,6 +103,72 @@ class Director:
             raise DirectorsNotFoundException(event_id=event_id)
 
         return directors_list
+
+    @classmethod
+    def end_current(cls, cursor, event_id: int = None):
+        """Set all end_event_ids for current directors."""
+        if not event_id:
+            current_app.logger.error('Error in director: No event id given to end current directors.')
+            return None
+
+        try:
+            cursor.execute("""update corp_party set end_event_id=:event_id where end_event_id is null""",
+                           event_id=event_id)
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            current_app.logger.error(f'Error in director: Failed to end current directors for event {event_id}')
+            raise err
+
+    @classmethod
+    def create_new_director(cls, cursor, event_id: int = None, director: dict = None, business: Business = None):
+        """Insert new director into the corp_party table."""
+        if not event_id:
+            current_app.logger.error('Error in director: No event id given to create director.')
+        if not director:
+            current_app.logger.error('Error in director: No director data given to create director.')
+
+        # validate appointment + cessation dates
+
+        # create new address
+        addr_id = Address.create_new_address(cursor=cursor, address_info=director['deliveryAddress'])
+
+        # create new corp party entry
+        try:
+            cursor.execute("""select noncorp_party_seq.NEXTVAL from dual""")
+            row = cursor.fetchone()
+            corp_party_id = int(row[0])
+        except Exception as err:
+            current_app.logger.error('Error in director: Failed to get next corp_party_id.')
+            raise err
+        try:
+            cursor.execute("""
+                insert into corp_party (corp_party_id, mailing_addr_id, delivery_addr_id, corp_num, party_typ_cd,
+                start_event_id, end_event_id, appointment_dt, cessation_dt, last_nme, middle_nme, first_nme,
+                business_nme, bus_company_num)
+                values (:corp_party_id, :mailing_addr_id, :delivery_addr_id, :corp_num, :party_typ_cd, :start_event_id,
+                :end_event_id, :appointment_dt, :cessation_dt, :last_nme, :middle_nme, :first_nme, :business_nme,
+                :bus_company_num)
+                """,
+                           corp_party_id=corp_party_id,
+                           mailing_addr_id=addr_id,
+                           delivery_addr_id=addr_id,
+                           corp_num=business['identifier'],
+                           party_typ_cd='DIR',
+                           start_event_id=event_id,
+                           end_event_id=event_id if director['cessationDate'] else '',
+                           appointment_dt=director['appointmentDate'],
+                           cessation_dt=director['cessation_dt'] if director['cessation_dt'] else '',
+                           last_nme=director['officer']['lastName'],
+                           middle_nme=director['officer']['middleName'],
+                           first_nme=director['officer']['firstName'],
+                           business_nme=business['legalName'],
+                           bus_company_num=business['taxId']
+                           )
+        except Exception as err:
+            current_app.logger.error(f'Error in director: Failed create new director for event {event_id}')
+            raise err
+
+        return corp_party_id
 
     @classmethod
     def _build_directors_list(cls, cursor):

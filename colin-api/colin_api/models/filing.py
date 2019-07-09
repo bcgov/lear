@@ -116,17 +116,17 @@ class Filing:
             event_id = cls._get_event_id(cursor, corp_num, 'FILE')
 
             # create new filing user
-            cls._add_filing_user(cursor, event_id, filing)
+            cls._create_filing_user(cursor, event_id, filing)
 
             if filing.filing_type == 'annualReport':
                 date = filing.body['annualGeneralMeetingDate']
                 filing_type_cd = 'OTANN'
 
                 # create new filing
-                cls._add_filing(cursor, event_id, filing, date, filing_type_cd)
+                cls._create_filing(cursor, event_id, corp_num, date, filing_type_cd)
 
                 # update corporation record
-                cls._update_corporation(cursor, corp_num, date)
+                Business.update_corporation(cursor, corp_num, date)
 
                 # update corp_state TO ACT (active) if it is in good standing. From CRUD:
                 # - the current corp_state != 'ACT' and,
@@ -135,10 +135,9 @@ class Filing:
                     agm_year = int(date[:4])
                     last_year = datetime.datetime.now().year - 1
                     if agm_year >= last_year:
-                        cls._update_corp_state(cursor, event_id, corp_num, state='ACT')
+                        Business.update_corp_state(cursor, event_id, corp_num, state='ACT')
 
             elif filing.filing_type == 'changeOfAddress':
-
                 # set date to last agm date + 1
                 last_agm_date = filing.business.business['lastAgmDate']
                 day = int(last_agm_date[-2:]) + 1
@@ -155,10 +154,10 @@ class Filing:
                         mm_dd = '-01-01'
                         yyyy = int(last_agm_date[:4]) + 1
                         date = str(datetime.datetime.strptime(str(yyyy) + mm_dd, '%Y-%m-%d'))[:10]
-                filing_type_cd = 'OTADD'
 
                 # create new filing
-                cls._add_filing(cursor, event_id, filing, date, filing_type_cd)
+                filing_type_cd = 'OTADD'
+                cls._create_filing(cursor, event_id, corp_num, date, filing_type_cd)
 
                 # create new addresses for delivery + mailing, return address ids
                 delivery_addr_id = Address.create_new_address(cursor, filing.body['deliveryAddress'])
@@ -168,12 +167,36 @@ class Filing:
                 Office.update_office(cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, 'RG')
 
                 # update corporation record
-                cls._update_corporation(cursor, corp_num, None)
+                Business.update_corporation(cursor, corp_num, date)
 
                 # create new ledger text for address change
                 cls._add_ledger_text(cursor, event_id, 'Change to the Registered Office, effective on {} as filed with'
                                                        ' {} Annual Report'.format(date, date[:4]))
 
+            elif filing.filing_type == 'changeOfDirectors':
+                # create new filing
+                date = filing.business.business['lastAgmDate']
+                filing_type_cd = 'OTCDR'
+                cls._create_filing(cursor, event_id, corp_num, date, filing_type_cd)
+
+                # end all current directors - each one in filing added as a new director afterwards
+                Director.end_current(cursor=cursor, event_id=event_id)
+
+                # create new director for each one in filing
+                for director in filing.directors:
+                    Director.create_new_director(cursor=cursor, event_id=event_id, director=director,
+                                                 business=filing.business)
+                    # add ledger text
+                    if director['cessationDate']:
+                        cls._add_ledger_text(cursor, event_id, f'Director {director["officer"]["firstName"]} '
+                                             f'{director["officer"]["middleName"]} {director["officer"]["lastName"]} '
+                                             f'ceased for {corp_num}.'
+                                             )
+                    else:
+                        cls._add_ledger_text(cursor, event_id, f'Director {director["officer"]["firstName"]} '
+                                             f'{director["officer"]["middleName"]} {director["officer"]["lastName"]} '
+                                             f'appointed/continued for {corp_num}.'
+                                             )
             else:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
@@ -196,10 +219,11 @@ class Filing:
         :param cursor: oracle cursor
         :return: (int) event ID
         """
-        cursor.execute("""select noncorp_event_seq.NEXTVAL from dual""")
-        row = cursor.fetchone()
-        event_id = int(row[0])
         try:
+            cursor.execute("""select noncorp_event_seq.NEXTVAL from dual""")
+            row = cursor.fetchone()
+            event_id = int(row[0])
+
             cursor.execute("""
             INSERT INTO event (event_id, corp_num, event_typ_cd, event_timestmp, trigger_dts)
               VALUES (:event_id, :corp_num, :event_type, sysdate, NULL)
@@ -209,27 +233,24 @@ class Filing:
                            event_type=event_type
                            )
         except Exception as err:
-            current_app.logger.error(err.with_traceback(None))
+            current_app.logger.error("Error in filing: Failed to create new event.")
             raise err
 
         return event_id
 
     @classmethod
-    def _add_filing(cls, cursor, event_id, filing, date,  # pylint: disable=too-many-arguments; need all these args
-                    filing_type_code='FILE'):
+    def _create_filing(cls, cursor, event_id, corp_num, date,  # pylint: disable=too-many-arguments; need all these args
+                       filing_type_code='FILE'):
         """Add record to FILING.
 
         Note: Period End Date and AGM Date are both the AGM Date value for Co-ops.
 
         :param cursor: oracle cursor
         :param event_id: (int) event_id for all events for this transaction
-        :param filing: (obj) Filing data object
         :param date: (str) period_end_date
         :param filing_type_code: (str) filing type code
         """
-        if not filing_type_code:
-            raise FilingNotFoundException(identifier=filing.business.business['identifier'],
-                                          filing_type=filing.filing_type, event_id=event_id)
+
         try:
             if filing_type_code == 'OTANN':
                 cursor.execute("""
@@ -242,7 +263,7 @@ class Filing:
                                period_end_date=date,
                                agm_date=date
                                )
-            elif filing_type_code == 'OTADD':
+            elif filing_type_code == 'OTADD' or 'OTCDR':
                 cursor.execute("""
                 INSERT INTO filing (event_id, filing_typ_cd, effective_dt, period_end_dt)
                   VALUES (:event_id, :filing_type_code, sysdate, TO_DATE(:period_end_date, 'YYYY-mm-dd'))
@@ -252,11 +273,11 @@ class Filing:
                                period_end_date=date,
                                )
         except Exception as err:
-            current_app.logger.error(err.with_traceback(None))
+            current_app.logger.error(f'error in filing: could not create filing {filing_type_code} for {corp_num}')
             raise err
 
     @classmethod
-    def _add_filing_user(cls, cursor, event_id, filing):
+    def _create_filing_user(cls, cursor, event_id, filing):
         """Add to the FILING_USER table.
 
         :param cursor: oracle cursor
@@ -278,79 +299,13 @@ class Filing:
             raise err
 
     @classmethod
-    def _update_corporation(cls, cursor, corp_num, date):
-        """Update corporation record.
-
-        :param cursor: oracle cursor
-        :param corp_num: (str) corporation number
-        """
-        try:
-            if date:
-                cursor.execute("""
-                UPDATE corporation
-                SET
-                    LAST_AR_FILED_DT = sysdate,
-                    LAST_AGM_DATE = TO_DATE(:agm_date, 'YYYY-mm-dd'),
-                    LAST_LEDGER_DT = sysdate
-                WHERE corp_num = :corp_num
-                """,
-                               agm_date=date,
-                               corp_num=corp_num
-                               )
-
-            else:
-                cursor.execute("""
-                                UPDATE corporation
-                                SET
-                                    LAST_LEDGER_DT = sysdate
-                                WHERE corp_num = :corp_num
-                                """,
-                               corp_num=corp_num
-                               )
-
-        except Exception as err:
-            current_app.logger.error(err.with_traceback(None))
-            raise err
-
-    @classmethod
-    def _update_corp_state(cls, cursor, event_id, corp_num, state='ACT'):
-        """Update corporation state.
-
-        End previous corp_state record (end event id) and and create new corp_state record.
-
-        :param cursor: oracle cursor
-        :param filing: (obj) Filing data object
-        """
-        try:
-            cursor.execute("""
-            UPDATE corp_state
-            SET end_event_id = :event_id
-            WHERE corp_num = :corp_num and end_event_id is NULL
-            """,
-                           event_id=event_id,
-                           corp_num=corp_num
-                           )
-
-        except Exception as err:
-            current_app.logger.error(err.with_traceback(None))
-            raise err
-        try:
-            cursor.execute("""
-            INSERT INTO corp_state (corp_num, start_event_id, state_typ_cd)
-              VALUES (:corp_num, :event_id, :state
-              )
-            """,
-                           event_id=event_id,
-                           corp_num=corp_num,
-                           state=state
-                           )
-
-        except Exception as err:
-            current_app.logger.error(err.with_traceback(None))
-            raise err
-
-    @classmethod
     def _add_ledger_text(cls, cursor, event_id, text):
+        """Add note to ledger test table.
+
+        :param cursor: oracle cursor
+        :param event_id: (int) event id for corresponding event
+        :param text: (str) note for ledger
+        """
         try:
             cursor.execute("""
             INSERT INTO ledger_text (event_id, ledger_text_dts, notation, dd_event_id)
@@ -361,7 +316,7 @@ class Filing:
                            dd_event_id=event_id
                            )
         except Exception as err:
-            current_app.logger.error(err.with_traceback(None))
+            current_app.logger.error(f'Failed to add ledger text: \'{text}\' for event {event_id}')
             raise err
 
     @classmethod

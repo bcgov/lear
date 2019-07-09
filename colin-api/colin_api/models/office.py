@@ -126,7 +126,7 @@ class Office:
                            )
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errs
-            current_app.logger.error(err.with_traceback(None))
+            current_app.logger.error('Error updating office table')
             raise err
 
         try:
@@ -143,5 +143,5 @@ class Office:
                            )
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errs
-            current_app.logger.error('Error updating office table')
+            current_app.logger.error('Error inserting into office table')
             raise err

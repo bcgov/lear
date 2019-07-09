@@ -19,7 +19,7 @@ from flask import current_app, jsonify, request
 from flask_restplus import Resource, cors
 from registry_schemas import validate
 
-from colin_api.exceptions import GenericException
+from colin_api.exceptions import GenericException, FilingNotFoundException
 from colin_api.models import Business, Filing
 from colin_api.resources.business import API
 from colin_api.utils.util import cors_preflight
@@ -97,7 +97,10 @@ class FilingInfo(Resource):
             # return the completed filing data
             completed_filing = Filing.find_filing(business=filing.business, event_id=event_id,
                                                   filing_type=filing.filing_type)
-            return jsonify(completed_filing.as_dict()), 200
+            if not completed_filing:
+                raise FilingNotFoundException(identifier=identifier, filing_type=filing_type, event_id=event_id)
+
+            return jsonify(completed_filing.as_dict()), 201
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             # general catch-all exception

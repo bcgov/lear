@@ -71,80 +71,11 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
             return address_obj
 
         except Exception as err:
-            current_app.logger.error('error getting address with id: {}'.format(address_id))
-            raise err
+            current_app.logger.error(err.with_traceback(None))
+            raise AddressNotFoundException(address_id=address_id)
 
     @classmethod
-    def find_current_by_identifier(cls, identifier: str = None,  # pylint: disable=too-many-locals; need all these vars
-                                   address_grp: str = None, typ_cd: str = None):
-        """Return most current addresses by corpnum and address group (office, corp_party, etc.)."""
-        # build base querystring
-        # todo: check full_desc in country_type table matches with canada post api for foreign countries
-        querystring = ("""
-            select ADDR_ID, ADDR_LINE_1, ADDR_LINE_2, ADDR_LINE_3, CITY, PROVINCE, COUNTRY_TYPE.FULL_DESC, POSTAL_CD,
-            DELIVERY_INSTRUCTIONS, EVENT.EVENT_TIMESTMP, FILING_USER.FIRST_NME, FILING_USER.LAST_NME,
-            FILING_USER.MIDDLE_NME, FILING_USER.EMAIL_ADDR
-            from ADDRESS
-            join {address_grp} on ADDRESS.ADDR_ID = {address_grp}.{addr_id_typ}
-            join COUNTRY_TYPE on ADDRESS.COUNTRY_TYP_CD = COUNTRY_TYPE.COUNTRY_TYP_CD
-            join EVENT on {address_grp}.START_EVENT_ID = EVENT.EVENT_ID
-            left join FILING_USER on EVENT.EVENT_ID = FILING_USER.EVENT_ID
-            where {address_grp}.END_EVENT_ID IS NULL and {address_grp}.CORP_NUM=:corp_num
-            """)
-
-        if typ_cd == 'RG':
-            querystring += "and {address_grp}.OFFICE_TYP_CD='{typ_cd}'".format(address_grp=address_grp, typ_cd=typ_cd)
-
-        elif typ_cd == 'DIR':
-            if typ_cd == 'RG':
-                querystring += "and {address_grp}.PARTY_TYP_CD='{typ_cd}'".format(address_grp=address_grp,
-                                                                                  typ_cd=typ_cd)
-
-        querystring_delivery = querystring.format(address_grp=address_grp, addr_id_typ='DELIVERY_ADDR_ID')
-        querystring_mailing = querystring.format(address_grp=address_grp, addr_id_typ='MAILING_ADDR_ID')
-        try:
-            # get record
-            cursor = DB.connection.cursor()
-            cursor.execute(querystring_delivery, corp_num=identifier)
-            delivery_addresses = cursor.fetchall()
-
-            cursor.execute(querystring_mailing, corp_num=identifier)
-            mailing_addresses = cursor.fetchall()
-
-        except Exception as err:
-            current_app.logger.error('error getting address info for {}'.format(identifier))
-            raise err
-
-        if not delivery_addresses:
-            raise AddressNotFoundException(identifier=identifier, address_type='deliveryAddress')
-        if not mailing_addresses:
-            raise AddressNotFoundException(identifier=identifier, address_type='mailingAddress')
-
-        if len(delivery_addresses) != len(mailing_addresses):
-            current_app.logger.error('Should have the same number of delivery + mailing addresses: {corp_num}, {type}'
-                                     .format(corp_num=identifier, type=address_grp))
-            raise AddressNotFoundException(
-                identifier=identifier,
-                address_type='mailingAddress'
-                if len(mailing_addresses) < len(delivery_addresses) else 'deliveryAddress')
-
-        addresses = []
-        for delivery, mailing in zip(delivery_addresses, mailing_addresses):
-            addresses.append({'deliveryAddress': dict(zip([x[0].lower() for x in cursor.description], delivery)),
-                              'mailingAddress': dict(zip([x[0].lower() for x in cursor.description], mailing))})
-
-        # todo: check all fields for data - may be different for data outside of coops
-        # expecting data-fix for all bad data in address table for coops: this will catch if anything was missed
-        address_objs = []
-        for address_pair in addresses:
-            delivery_address = cls._build_address_obj(address_pair['deliveryAddress'])
-            mailing_address = cls._build_address_obj(address_pair['mailingAddress'])
-            address_objs.append((delivery_address.as_dict(), mailing_address.as_dict()))
-
-        return address_objs
-
-    @classmethod
-    def create_new_address(cls, cursor, address_info):
+    def create_new_address(cls, cursor, address_info: dict = None):
         """Get new address id and insert address into address table."""
         try:
             cursor.execute("""select noncorp_address_seq.NEXTVAL from dual""")
@@ -177,13 +108,13 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
                            if 'deliveryInstructions' in address_info.keys() else ''
                            )
         except Exception as err:
-            current_app.logger.error(err.with_traceback(None))
+            current_app.logger.error(f'Error in address: failed to insert new address: {address_info}')
             raise err
 
         return addr_id
 
     @classmethod
-    def _build_address_obj(cls, address):
+    def _build_address_obj(cls, address: dict = None):
         # returns address obj given address dict
         if address['addr_line_1'] and address['addr_line_2'] and address['addr_line_3']:
             current_app.logger.error('Expected 2, but got 3 address lines for addr_id: {}'
