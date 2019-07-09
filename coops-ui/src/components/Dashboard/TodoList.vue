@@ -51,8 +51,8 @@ export default {
     ...mapActions(['setARFilingYear']),
 
     getTodoItems () {
+      this.todoItems = []
       if (this.currentDate && this.lastAgmDate) {
-        this.todoItems = []
         const currentYear = +this.currentDate.substring(0, 4)
         const lastAgmYear = +this.lastAgmDate.substring(0, 4)
         // create items for past years

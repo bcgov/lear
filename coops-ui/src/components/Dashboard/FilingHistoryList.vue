@@ -70,8 +70,8 @@ export default {
 
   methods: {
     getFiledItems () {
+      this.filedItems = []
       if (this.corpNum) {
-        this.filedItems = []
         var url = this.corpNum + '/filings'
         axios.get(url).then(response => {
           if (response && response.data && response.data.filings) {
