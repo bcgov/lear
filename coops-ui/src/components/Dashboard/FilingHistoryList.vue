@@ -46,6 +46,7 @@
 <script lang="ts">
 import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
+import { mapState } from 'vuex'
 
 export default {
   name: 'FilingHistoryList',
@@ -59,12 +60,7 @@ export default {
   },
 
   computed: {
-    corpNum () {
-      return this.$store.state.corpNum
-    },
-    currentDate () {
-      return this.$store.state.currentDate
-    }
+    ...mapState(['corpNum'])
   },
 
   mounted () {
@@ -75,66 +71,43 @@ export default {
   methods: {
     getFiledItems () {
       if (this.corpNum) {
+        this.filedItems = []
         var url = this.corpNum + '/filings'
         axios.get(url).then(response => {
-          if (response && response.data) {
-            // this.filedItems = response.data
-            // TODO - build actual data from response
-            this.filedItems = [
-              {
-                name: 'Annual Report (2014)',
-                filingAuthor: 'Jane Doe',
-                filingDate: 'Feb 07, 2016',
-                filingStatus: 'Complete',
-                filingDocuments: [
-                  { name: 'Change of Address' },
-                  { name: 'Change of Directors' },
-                  { name: 'Annual Report' }
-                ]
-              },
-              {
-                name: 'Annual Report (2015)',
-                filingAuthor: 'Jane Doe',
-                filingDate: 'Feb 07, 2016',
-                filingStatus: 'Complete',
-                filingDocuments: [
-                  { name: 'Change of Address' },
-                  { name: 'Change of Directors' },
-                  { name: 'Annual Report' }
-                ]
-              },
-              {
-                name: 'Annual Report (2016)',
-                filingAuthor: 'Jane Doe',
-                filingDate: 'Feb 05, 2017',
-                filingStatus: 'Complete',
-                filingDocuments: [
-                  { name: 'Change of Address' },
-                  { name: 'Change of Directors' },
-                  { name: 'Annual Report' }
-                ]
-              },
-              {
-                name: 'Annual Report (2017)',
-                filingAuthor: 'Jane Doe',
-                filingDate: 'Feb 01, 2018',
-                filingStatus: 'Complete',
-                filingDocuments: [
-                  { name: 'Change of Address' },
-                  { name: 'Change of Directors' },
-                  { name: 'Annual Report' }
-                ]
+          if (response && response.data && response.data.filings) {
+            // sort by id descending (ie, latest to earliest)
+            const filings = response.data.filings.sort((a, b) => (b.filing.header.filingId - a.filing.header.filingId))
+            // create filed items
+            for (let i = 0; i < filings.length; i++) {
+              const filing = response.data.filings[i].filing
+              if (filing.annualReport) {
+                const agmYear = filing.annualReport.annualGeneralMeetingDate.substring(0, 4)
+                this.filedItems.push({
+                  name: `Annual Report (${agmYear})`,
+                  filingAuthor: filing.annualReport.certifiedBy,
+                  filingDate: filing.header.date,
+                  filingStatus: filing.header.status,
+                  filingDocuments: [ // TODO
+                    { name: 'Change of Address', url: '' },
+                    { name: 'Change of Directors', url: '' },
+                    { name: 'Annual Report', url: '' }
+                  ]
+                })
+              } else if (filing.directorChange) {
+                // TODO
+              } else if (filing.addressChange) {
+                // TODO
               }
-            ]
-            this.$emit('filing-count', this.filedItems.length)
+            }
           } else {
-            console.log('getFiledItems() error - invalid response data')
-            this.$emit('filing-count', 0)
+            console.log('getFiledItems() error - invalid Filings')
           }
+          this.$emit('filing-count', this.filedItems.length)
         }).catch(error => console.error('getFiledItems() error =', error))
       }
     },
     downloadAll (item) {
+      // TODO
       // console.log('downloadAll(), item =', item)
     }
   },
