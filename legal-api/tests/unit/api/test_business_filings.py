@@ -43,7 +43,8 @@ def test_get_all_business_filings_only_one_in_ledger(session, client):
 
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('filings')) == 1
-    assert rv.json.get('filings')[0] == ar
+    assert rv.json.get('filings')[0]['filing']['annualReport'] == ar['filing']['annualReport']
+    assert rv.json.get('filings')[0]['filing']['business'] == ar['filing']['business']
 
 
 def test_get_all_business_filings_multi_in_ledger(session, client):
@@ -82,7 +83,8 @@ def test_get_one_business_filing_by_id(session, client):
     rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings.id}')
 
     assert rv.status_code == HTTPStatus.OK
-    assert rv.json == ar
+    assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
+    assert rv.json['filing']['business'] == ar['filing']['business']
 
 
 def test_get_404_when_business_invalid_filing_id(session, client):
@@ -232,9 +234,12 @@ def test_post_only_validate_error_ar(session, client, jwt):
 
 def test_post_valid_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
+    from legal_api.models import Address
     identifier = 'CP7654321'
     business = factory_business(identifier)
-    factory_business_mailing_address(business)
+    mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
+    business.mailing_address.append(mailing_address)
+    business.save()
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=AR_FILING,

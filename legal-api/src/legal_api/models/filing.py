@@ -14,6 +14,7 @@
 """Filings are legal documents that alter the state of a business."""
 import copy
 from datetime import datetime
+from enum import Enum
 from http import HTTPStatus
 from typing import List
 
@@ -34,6 +35,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
     Manages the filing ledger for the associated business.
     """
 
+    class Status(Enum):
+        """Render an Enum of the Filing Statuses."""
+
+        COMPLETED = 'COMPLETED'
+        PENDING = 'PENDING'
+        DRAFT = 'DRAFT'
+
     FILINGS = {'annualReport': {'name': 'annualReport', 'title': 'Annual Report Filing', 'code': 'OTANN'},
                'changeOfAddress': {'name': 'changeOfAddress', 'title': 'Change of Address Filing', 'code': 'OTADD'},
                }
@@ -46,6 +54,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
     _filing_json = db.Column('filing_json', JSONB)
     _payment_token = db.Column('payment_id', db.String(4096))
     colin_event_id = db.Column('colin_event_id', db.Integer)
+    status = db.Column('status', db.String(10), default='DRAFT')
 
     # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
@@ -137,6 +146,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             json_submission['filing']['header']['filingId'] = self.id
             json_submission['filing']['header']['name'] = self.filing_type
             json_submission['filing']['header']['colinId'] = self.colin_event_id
+            json_submission['filing']['header']['status'] = self.status
 
             if self.payment_token:
                 json_submission['filing']['header']['paymentToken'] = self.payment_token
@@ -145,6 +155,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             return json_submission
         except Exception:  # noqa: B901, E722
             raise KeyError
+
+    @staticmethod
+    def get_filing_by_payment_token(token: str):
+        """Return a Filing by it's payment token."""
+        filing = db.session.query(Filing). \
+            filter(Filing.payment_token == token). \
+            one_or_none()
+        return filing
 
     def save(self):
         """Save and commit immediately."""

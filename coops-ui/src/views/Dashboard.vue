@@ -89,6 +89,7 @@
 import { Vue } from 'vue-property-decorator'
 import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
+import { mapState, mapActions } from 'vuex'
 // TODO - implement these
 // import TodoList from '@/components/TodoList.vue'
 // import FilingHistory from '@/components/FilingHistory.vue'
@@ -128,6 +129,8 @@ export default {
   },
 
   methods: {
+    ...mapActions(['setARFilingYear']),
+
     getTodoItems () {
       // TODO - this needs to be constructed based on last AR date (not retrieved)
       // only the earliest non-submitted AR can be filed
@@ -189,6 +192,7 @@ export default {
     },
     fileAnnualReport (item) {
       // console.log('fileAnnualReport(), item =', item)
+      this.setARFilingYear(item.year)
       this.$router.push({ path: '/annual-report', query: { year: item.year } })
     },
     downloadAll (item) {

@@ -60,7 +60,14 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
-    business_mailing_address = db.relationship('Address', lazy='dynamic')
+    mailing_address = db.relationship('Address',
+                                      lazy='dynamic',
+                                      primaryjoin='and_(Business.id==Address.business_id, '
+                                      f"Address.address_type=='{Address.MAILING}')")
+    delivery_address = db.relationship('Address',
+                                       lazy='dynamic',
+                                       primaryjoin='and_(Business.id==Address.business_id, '
+                                       f"Address.address_type=='{Address.DELIVERY}')")
 
     @hybrid_property
     def identifier(self):
@@ -95,6 +102,14 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         business = None
         if identifier:
             business = cls.query.filter_by(identifier=identifier).one_or_none()
+        return business
+
+    @classmethod
+    def find_by_internal_id(cls, internal_id: int = None):
+        """Return a Business by the internal id."""
+        business = None
+        if internal_id:
+            business = cls.query.filter_by(id=internal_id).one_or_none()
         return business
 
     def save(self):
@@ -136,9 +151,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.tax_id:
             d['taxId'] = self.tax_id
-        mailing = self.business_mailing_address.one_or_none()
-        if mailing:
-            d['mailingAddress'] = mailing.json
 
         return d
 
