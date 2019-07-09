@@ -62,7 +62,7 @@ def test_address_save(session):
     assert address.id
 
 
-def test_address_save_to_business(session):
+def test_mailing_address_save_to_business(session):
     """Assert that the address saves correctly."""
     identifier = 'CP1234567'
     business = factory_business(identifier)
@@ -76,8 +76,8 @@ def test_address_save_to_business(session):
         address_type=Address.MAILING
     )
 
-    business.business_mailing_address.append(address)
+    business.mailing_address.append(address)
     business.save()
 
-    mailing = business.business_mailing_address.one_or_none()
+    mailing = business.mailing_address.one_or_none()
     assert mailing.id

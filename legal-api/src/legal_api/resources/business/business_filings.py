@@ -225,7 +225,7 @@ class ListFilingResource(Resource):
             if Filing.FILINGS.get(k, None):
                 filing_types.append({'filing_type_code': Filing.FILINGS[k].get('code')})
 
-        mailing_address = business.business_mailing_address.one_or_none()
+        mailing_address = business.mailing_address.one_or_none()
 
         payload = {
             'payment_info': {'method_of_payment': 'CC'},

@@ -245,9 +245,14 @@ def test_business_relationships_json(session):
                         identifier='CP1234567',
                         last_modified=EPOCH_DATETIME)
 
-    # include dissolutionDate
-    address = Address(city='Test City', address_type=Address.MAILING)
-    business.business_mailing_address.append(address)
+    mailing_address = Address(city='Test City', address_type=Address.MAILING)
+    business.mailing_address.append(mailing_address)
     business.save()
 
-    assert business.json().get('mailingAddress')
+    assert business.mailing_address.one_or_none()
+
+    delivery_address = Address(city='Test City', address_type=Address.DELIVERY)
+    business.delivery_address.append(delivery_address)
+    business.save()
+
+    assert business.delivery_address.one_or_none()
