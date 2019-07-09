@@ -56,14 +56,20 @@ export default {
         const currentYear = +this.currentDate.substring(0, 4)
         const lastAgmYear = +this.lastAgmDate.substring(0, 4)
         // create items for past years
-        for (let year = lastAgmYear; year < currentYear; year++) {
-          this.todoItems.push({ name: `File ${year} Annual Report`, year, enabled: false })
+        for (let year = (lastAgmYear + 1); year < currentYear; year++) {
+          this.todoItems.push({
+            name: `File ${year} Annual Report`,
+            year: year,
+            enabled: false
+          })
         }
         // create item for this year
-        if (lastAgmYear === currentYear) {
-          if (this.lastAgmDate < this.currentDate) {
-            this.todoItems.push({ name: `File ${lastAgmYear} Annual Report`, lastAgmYear, enabled: false })
-          }
+        if (this.lastAgmDate < this.currentDate) {
+          this.todoItems.push({
+            name: `File ${currentYear} Annual Report`,
+            year: currentYear,
+            enabled: false
+          })
         }
         // enable earliest AR
         if (this.todoItems.length > 0) {
