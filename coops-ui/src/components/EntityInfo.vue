@@ -8,17 +8,16 @@
           label
           small
           text-color="white"
-          v-bind:class="{
+          :class="{
             'blue' : entityStatus === 'GOODSTANDING',
             'red' : entityStatus === 'PENDINGDISSOLUTION' | 'NOTINCOMPLIANCE',
           }"
-          tabindex="-1">
+          disabled>
           <!-- TODO: These strings should be pulled out into a globally accessible file -->
           <span v-if="entityStatus === 'GOODSTANDING'">In Good Standing</span>
           <span v-else-if="entityStatus === 'PENDINGDISSOLUTION'">Pending Dissolution</span>
           <span v-else-if="entityStatus === 'NOTINCOMPLIANCE'">Not in Compliance</span>
           <span v-else>Not Available</span>
-
         </v-chip>
       </div>
       <dl class="meta-container">
