@@ -234,7 +234,7 @@ def test_post_only_validate_error_ar(session, client, jwt):
 
 def test_post_valid_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
-    from legal_api.models import Address
+    from legal_api.models import Address, Filing
     identifier = 'CP7654321'
     business = factory_business(identifier)
     mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
@@ -246,11 +246,17 @@ def test_post_valid_ar(session, client, jwt):
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
+    # check return
     assert rv.status_code == HTTPStatus.CREATED
     assert not rv.json.get('errors')
     assert rv.json['filing']['header']['filingId']
     assert rv.json['filing']['header']['paymentToken']
     assert rv.json['filing']['header']['paymentToken'] == '153'
+
+    # check stored filing
+    filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
+    assert filing
+    assert filing.status == Filing.Status.PENDING.value
 
 
 def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
@@ -269,7 +275,8 @@ def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
 
     current_app.config['PAYMENT_SVC_URL'] = old_svc
     assert rv.status_code == HTTPStatus.PAYMENT_REQUIRED
-    assert not rv.json.get('errors')
+    assert rv.json.get('errors')
+    assert rv.json['errors'][0]['message'] == 'unable to create invoice for payment.'
 
 
 def test_update_ar_filing_to_a_business(session, client, jwt):
