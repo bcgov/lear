@@ -158,12 +158,12 @@ describe('Directors.vue', () => {
   it('displays the list of directors', () => {
     var directorListUI = childvm.$el.querySelectorAll('.director-list .container')
 
-    // shows list of all directors in the UI
+    // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(2)
-    expect(directorListUI[0].textContent).toContain('Griffin')
-    expect(directorListUI[0].textContent).toContain('mailing_address city')
-    expect(directorListUI[1].textContent).toContain('Joe')
-    expect(directorListUI[1].textContent).toContain('Glasgow')
+    expect(directorListUI[1].textContent).toContain('Griffin')
+    expect(directorListUI[1].textContent).toContain('mailing_address city')
+    expect(directorListUI[0].textContent).toContain('Joe')
+    expect(directorListUI[0].textContent).toContain('Glasgow')
 
     // shows "cease" button, indicating this is an active director, ie: starting state for list
     expect(directorListUI[0].innerHTML).toContain('<span>Cease</span>')
@@ -226,7 +226,29 @@ describe('Directors.vue', () => {
   })
 
   it('displays Add New Director form when button clicked', () => {
-    // todo
+    // set "No AGM" in AGMDate component
+    childvm.$store.state.noAGM = true
+
+    setTimeout(() => {
+      // confirm that flag is set correctly
+      expect(childvm.agmEntered).toEqual(true)
+
+      // check that Add New Director button is enabled
+      expect(
+        childvm.$el.querySelector('.new-director-btn').attributes.getNamedItem('disabled')
+      ).toBeNull()
+
+      // click Add New Director button
+      click('.new-director-btn')
+
+      setTimeout(() => {
+        // check that button is hidden
+        expect(childvm.$el.querySelector('.new-director-btn').closest('div').getAttribute('style')).toContain('display: none;')
+
+        // check that form is showing
+        expect(childvm.$el.querySelector('.new-director').getAttribute('style')).not.toContain('display: none;')
+      }, 100)
+    }, 100)
   })
   it('handles "ceased" action', () => {
     // todo

@@ -42,9 +42,6 @@
                   />
 
                   <div class="form__row form__btns">
-                    <v-btn color="error" disabled>
-                      <span>Remove</span>
-                    </v-btn>
                     <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
                     <v-btn @click="cancelNewDirector">Cancel</v-btn>
                   </div>
@@ -58,8 +55,9 @@
       <!-- Current Director List -->
       <ul class="list director-list">
         <li class="container"
+          :id="'director-' + director.id"
           v-bind:class="{ 'remove' : !director.isDirectorActive }"
-          v-for="(director, index) in orderBy(directors, 'lastName')"
+          v-for="(director, index) in orderBy(directors, 'id', -1)"
           v-bind:key="index">
           <div class="meta-container">
             <label>
@@ -85,20 +83,22 @@
                   <div class="address">
                     <BaseAddress v-bind:address="director.deliveryAddress"  />
                   </div>
-                    <div class="actions">
-                      <v-btn small flat color="primary" :disabled="!agmEntered"
-                        v-show="director.isNew"
-                        @click="editDirector(index)">
-                        <v-icon small>edit</v-icon>
-                        <span>Change</span>
-                      </v-btn>
-                      <v-btn small flat color="primary" :disabled="!agmEntered"
-                        v-show="!director.isNew"
-                        @click="removeDirector(director)">
-                        <v-icon small>{{director.isDirectorActive ? 'close':'undo'}}</v-icon>
-                        <span>{{director.isDirectorActive ? 'Cease':'Undo'}}</span>
-                      </v-btn>
-                    </div>
+                  <div class="actions">
+                    <v-btn small flat color="primary" :disabled="!agmEntered"
+                      :id="'director-' + director.id + '-change-btn'"
+                      v-show="director.isNew"
+                      @click="editDirector(index)">
+                      <v-icon small>edit</v-icon>
+                      <span>Change</span>
+                    </v-btn>
+                    <v-btn small flat color="primary" :disabled="!agmEntered"
+                      :id="'director-' + director.id + '-cease-btn'"
+                      v-show="!director.isNew"
+                      @click="removeDirector(director)">
+                      <v-icon small>{{director.isDirectorActive ? 'close':'undo'}}</v-icon>
+                      <span>{{director.isDirectorActive ? 'Cease':'Undo'}}</span>
+                    </v-btn>
+                  </div>
                 </div>
               </v-expand-transition>
 
@@ -132,12 +132,12 @@
 
                   <div class="form__row form__btns">
                     <v-btn color="error"
-                      :disabled="!director.isNew"
-                      @click="deleteDirector(index)">
+                      v-show="director.isNew"
+                      @click="deleteDirector(director.id)">
                       <span>Remove</span>
                     </v-btn>
                     <v-btn class="form-primary-btn" color="primary"
-                      @click="saveEditDirector(index)">
+                      @click="saveEditDirector(index, director.id)">
                       Done</v-btn>
                     <v-btn @click="cancelEditDirector(index)">Cancel</v-btn>
                   </div>
@@ -271,16 +271,16 @@ export default {
       this.$refs.baseAddressNew.$refs.addressForm.reset()
     },
 
-    deleteDirector: function (director, index) {
-      if (this.directors[index] === director) {
-        this.directors.splice(index, 1)
+    deleteDirector: function (director, id) {
+      if (this.directors[id] === director) {
+        this.directors.splice(id, 1)
       } else {
         let found = this.directors.indexOf(director)
         this.directors.splice(found, 1)
       }
     },
 
-    validateNewDirectorForm: function (index) {
+    validateNewDirectorForm: function () {
       var mainFormIsValid = this.$refs.newDirectorForm.validate()
       var addressFormIsValid = this.$refs.baseAddressNew.$refs.addressForm.validate()
       if (mainFormIsValid && addressFormIsValid) {
@@ -291,7 +291,7 @@ export default {
       }
     },
 
-    pushNewDirectorData: function (index) {
+    pushNewDirectorData: function () {
       let newDirector = {
         id: this.directors.length + 1,
         isDirectorActive: true,
@@ -319,7 +319,6 @@ export default {
 
     // Remove director
     removeDirector: function (director) {
-      console.log('got to removeDirector()')
       // if this is a Cease, apply a fee
       // otherwise it's just undoing a cease or undoing a new director, so remove fee
       if (director.isDirectorActive) director.isFeeApplied = true
@@ -334,17 +333,14 @@ export default {
       this.cancelNewDirector()
     },
 
-    saveEditDirector: function (index) {
-      console.log(index)
-      console.log(this.$refs)
-
+    saveEditDirector: function (index, id) {
       var mainFormIsValid = this.$refs.editDirectorForm[index].validate()
       var addressFormIsValid = this.$refs.baseAddressEdit[index].$refs.addressForm.validate()
       if (mainFormIsValid && addressFormIsValid) {
         // save data from BaseAddress component
         if (this.inProgressAddress != null) {
-          this.directors[index].deliveryAddress = this.inProgressAddress
-          this.directors[index].isFeeApplied = true
+          this.directors[id].deliveryAddress = this.inProgressAddress
+          this.directors[id].isFeeApplied = true
         }
 
         // clear in-progress director data from form in BaseAddress component
