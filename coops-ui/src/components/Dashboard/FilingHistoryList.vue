@@ -47,6 +47,7 @@
 import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
 import { mapState } from 'vuex'
+import { isEmpty } from 'lodash'
 
 export default {
   name: 'FilingHistoryList',
@@ -72,15 +73,17 @@ export default {
     getFiledItems () {
       this.filedItems = []
       if (this.corpNum) {
-        var url = this.corpNum + '/filings'
+        var url = this.corpNum + '/filings' // TODO - add URL param to get only history items
         axios.get(url).then(response => {
           if (response && response.data && response.data.filings) {
             // sort by id descending (ie, latest to earliest)
-            const filings = response.data.filings.sort((a, b) => (b.filing.header.filingId - a.filing.header.filingId))
+            const filings = response.data.filings.sort(
+              (a, b) => (b.filing.header.filingId - a.filing.header.filingId)
+            )
             // create filed items
             for (let i = 0; i < filings.length; i++) {
               const filing = response.data.filings[i].filing
-              if (filing.annualReport) {
+              if (!isEmpty(filing.annualReport)) {
                 const agmYear = filing.annualReport.annualGeneralMeetingDate.substring(0, 4)
                 this.filedItems.push({
                   name: `Annual Report (${agmYear})`,
@@ -93,16 +96,16 @@ export default {
                     { name: 'Annual Report', url: '' }
                   ]
                 })
-              } else if (filing.directorChange) {
+              } else if (!isEmpty(filing.directorChange)) {
                 // TODO
-              } else if (filing.addressChange) {
+              } else if (!isEmpty(filing.addressChange)) {
                 // TODO
               }
             }
           } else {
             console.log('getFiledItems() error - invalid Filings')
           }
-          this.$emit('filing-count', this.filedItems.length)
+          this.$emit('filed-count', this.filedItems.length)
         }).catch(error => console.error('getFiledItems() error =', error))
       }
     },
@@ -123,33 +126,41 @@ export default {
 
 <style lang="stylus" scoped>
   @import "../../assets/styles/theme.styl"
+
    // Filing History
   .filing-history-list .list-item
     flex-direction column
     align-items flex-start
     padding 0
+
    // Document List
   .document-list
     border-top 1px solid $gray3
-     .list-item a
+
+    .list-item a
       display flex
       flex-direction row
       align-items center
       padding 0.5rem
       width 100%
-     .list-item-title
+
+    .list-item-title
       font-weight 400
+
    // Documents Action Bar
   .documents-actions-bar
     padding-top 1rem
     padding-bottom 1.25rem
     display flex
     border-top 1px solid $gray3
-     .v-btn
+
+    .v-btn
       margin-right 0
-   .download-all-btn
+
+  .download-all-btn
     margin-left auto
     min-width 8rem
-   .no-results
+
+  .no-results
     flex-direction column
 </style>

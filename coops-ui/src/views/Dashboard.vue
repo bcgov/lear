@@ -26,9 +26,9 @@
 
             <section>
               <header>
-                <h2>Recent Filing History <span class="text-muted">({{filingCount}})</span></h2>
+                <h2>Recent Filing History <span class="text-muted">({{filedCount}})</span></h2>
               </header>
-              <filing-history-list @filing-count="filingCount = $event"/>
+              <filing-history-list @filed-count="filedCount = $event"/>
             </section>
           </div>
 
@@ -79,7 +79,7 @@ export default {
   data () {
     return {
       todoCount: 0,
-      filingCount: 0
+      filedCount: 0
     }
   }
 }
