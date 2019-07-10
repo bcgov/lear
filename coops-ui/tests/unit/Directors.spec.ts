@@ -1,52 +1,30 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
-
-import App from '@/App.vue'
-import AnnualReport from '@/views/AnnualReport.vue'
-import Directors from '@/components/AnnualReport/Directors.vue'
-import store from '@/store/store'
-import sinon from 'sinon'
-import axios from '@/axios-auth'
 import Vuelidate from 'vuelidate'
+import sinon from 'sinon'
+
+import axios from '@/axios-auth'
+import store from '@/store/store'
+import Directors from '@/components/AnnualReport/Directors.vue'
+
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
 describe('Directors.vue', () => {
-  // just need a token that can get parsed properly (will be expired but doesn't matter for tests)
-  // note - the corp num in this token is CP0001191
-  sessionStorage.setItem('KEYCLOAK_TOKEN', 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUbWdtZUk0MnVsdUZ0N' +
-    '3FQbmUtcTEzdDUwa0JDbjF3bHF6dHN0UGdUM1dFIn0.eyJqdGkiOiIxYzQ2YjIzOS02ZWY0LTQxYTQtYThmMy05N2M5M2IyNmNlMjAiLCJle' +
-    'HAiOjE1NTcxNzMyNTYsIm5iZiI6MCwiaWF0IjoxNTU3MTY5NjU2LCJpc3MiOiJodHRwczovL3Nzby1kZXYucGF0aGZpbmRlci5nb3YuYmMuY2' +
-    'EvYXV0aC9yZWFsbXMvZmNmMGtwcXIiLCJhdWQiOiJzYmMtYXV0aC13ZWIiLCJzdWIiOiIwMzZlN2I4Ny0zZTQxLTQ2MTMtYjFiYy04NWU5OTA' +
-    'xNTgzNzAiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJzYmMtYXV0aC13ZWIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiJkOGZmYjk4' +
-    'OS0zNzRlLTRhYTktODc4OS03YTRkODA1ZjNkOTAiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly8xOTIuMTY4LjAuMTM6O' +
-    'DA4MC8iLCIxOTIuMTY4LjAuMTMiLCIqIiwiaHR0cDovLzE5Mi4xNjguMC4xMzo4MDgwIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJlZGl' +
-    '0IiwidW1hX2F1dGhvcml6YXRpb24iLCJiYXNpYyJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY' +
-    '291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInByZWZlcnJlZF91c2VybmFtZSI6ImNwMDAwMTE5MSJ9.Ou' +
-    'JLtzYCnkp5KXSiudGFJY6hTSvdE3KokhkEzqU-icxAzQwZSTYbzZQdGsIScy4-DIWHahIGp9L-e6mYlQSQta2rK2Kte85MxThubyw0096UOtAE' +
-    'wnS9VURHXPUm4ZUyI4ECkyLlFywOPxAftNdeSYeJx26GHBCvo6uR9Zv6A3yTlJy3B1HJxBWk_6xTAzGPPDCLoyKGeIxGidGujKCKCAfXRMrjhX' +
-    'yBv90XzDgZ-To-6_jMjSjBX6Dtq7icdZYLWWDdrhjCpJA5CKS0PlSgeH1Yq4rHd8Ztp5cvVdJFxt87gIopIOQvcy4ji0gtaovgUhiyg07gXGl8' +
-    'dGZwn1tpLA')
-  let rootvm
   let vm
-  let childvm
 
-  let click = function (id) {
-    console.log('ID: ', id)
-    let button = childvm.$el.querySelector(id)
-    let window = button.ownerDocument.defaultView
-    var click = new window.Event('click')
+  function click (id) {
+    const button = vm.$el.querySelector(id)
+    const window = button.ownerDocument.defaultView
+    const click = new window.Event('click')
     button.dispatchEvent(click)
   }
-  beforeEach((done) => {
-    // reset store
-    store.state.agmDate = null
-    store.state.filedDate = null
-    store.state.validated = false
-    store.state.noAGM = false
+
+  beforeEach(done => {
+    // init store
     store.state.corpNum = 'CP0001191'
 
-    // GET current directors list
+    // GET directors
     sinon.stub(axios, 'get').withArgs('CP0001191/directors')
       .returns(new Promise((resolve) => resolve({
         data:
@@ -90,71 +68,62 @@ describe('Directors.vue', () => {
           }
       })))
 
-    const RootConstructor = Vue.extend(App)
-    let rootInstance = new RootConstructor({ store: store })
-    rootvm = rootInstance.$mount()
-
-    const Constructor = Vue.extend(AnnualReport)
-    let instance = new Constructor({ store: store })
+    const constructor = Vue.extend(Directors)
+    const instance = new constructor({ store: store })
     vm = instance.$mount()
 
-    const ChildConstructor = Vue.extend(Directors)
-    let childInstance = new ChildConstructor({ store: store })
-    childvm = childInstance.$mount()
-
     // call getDirectors() since it won't be triggered from parent component
-    childvm.getDirectors()
+    vm.getDirectors()
 
     Vue.nextTick(() => {
       done()
     })
   })
 
-  afterEach((done) => {
+  afterEach(() => {
     sinon.restore()
-    done()
   })
 
   it('initializes the director meta data properly', () => {
-    expect(childvm.directors.length).toEqual(2)
-    expect(childvm.directors[0].id).toEqual(1)
-    expect(childvm.directors[0].isNew).toEqual(false)
-    expect(childvm.directors[0].isDirectorActive).toEqual(true)
-    expect(childvm.directors[1].id).toEqual(2)
-    expect(childvm.directors[1].isNew).toEqual(false)
-    expect(childvm.directors[1].isDirectorActive).toEqual(true)
+    expect(vm.directors.length).toEqual(2)
+    expect(vm.directors[0].id).toEqual(1)
+    expect(vm.directors[0].isNew).toEqual(false)
+    expect(vm.directors[0].isDirectorActive).toEqual(true)
+    expect(vm.directors[1].id).toEqual(2)
+    expect(vm.directors[1].isNew).toEqual(false)
+    expect(vm.directors[1].isDirectorActive).toEqual(true)
   })
 
   it('initializes the director name data properly', () => {
-    expect(childvm.directors.length).toEqual(2)
-    expect(childvm.directors[0].officer.firstName).toEqual('Peter')
-    expect(childvm.directors[0].officer.middleInitial).toBeNull()
-    expect(childvm.directors[0].officer.lastName).toEqual('Griffin')
-    expect(childvm.directors[0].title).toBeNull()
-    expect(childvm.directors[1].officer.firstName).toEqual('Joe')
-    expect(childvm.directors[1].officer.middleInitial).toEqual('P')
-    expect(childvm.directors[1].officer.lastName).toEqual('Swanson')
-    expect(childvm.directors[1].title).toEqual('Treasurer')
+    expect(vm.directors.length).toEqual(2)
+    expect(vm.directors[0].officer.firstName).toEqual('Peter')
+    expect(vm.directors[0].officer.middleInitial).toBeNull()
+    expect(vm.directors[0].officer.lastName).toEqual('Griffin')
+    expect(vm.directors[0].title).toBeNull()
+    expect(vm.directors[1].officer.firstName).toEqual('Joe')
+    expect(vm.directors[1].officer.middleInitial).toEqual('P')
+    expect(vm.directors[1].officer.lastName).toEqual('Swanson')
+    expect(vm.directors[1].title).toEqual('Treasurer')
   })
 
   it('initializes the director address data properly', () => {
     // check complete first address
-    expect(childvm.directors.length).toEqual(2)
-    expect(childvm.directors[0].deliveryAddress.streetAddress).toEqual('mailing_address - address line one')
-    expect(childvm.directors[0].deliveryAddress.streetAddressAdditional).toBeNull()
-    expect(childvm.directors[0].deliveryAddress.addressCity).toEqual('mailing_address city')
-    expect(childvm.directors[0].deliveryAddress.addressRegion).toEqual('BC')
-    expect(childvm.directors[0].deliveryAddress.addressCountry).toEqual('mailing_address country')
-    expect(childvm.directors[0].deliveryAddress.postalCode).toEqual('H0H0H0')
-    expect(childvm.directors[0].deliveryAddress.deliveryInstructions).toBeNull()
+    expect(vm.directors.length).toEqual(2)
+    expect(vm.directors[0].deliveryAddress.streetAddress).toEqual('mailing_address - address line one')
+    expect(vm.directors[0].deliveryAddress.streetAddressAdditional).toBeNull()
+    expect(vm.directors[0].deliveryAddress.addressCity).toEqual('mailing_address city')
+    expect(vm.directors[0].deliveryAddress.addressRegion).toEqual('BC')
+    expect(vm.directors[0].deliveryAddress.addressCountry).toEqual('mailing_address country')
+    expect(vm.directors[0].deliveryAddress.postalCode).toEqual('H0H0H0')
+    expect(vm.directors[0].deliveryAddress.deliveryInstructions).toBeNull()
 
     // spot-check second address
-    expect(childvm.directors[1].deliveryAddress.streetAddressAdditional).toEqual('Kirkintiloch')
-    expect(childvm.directors[1].deliveryAddress.deliveryInstructions).toEqual('go to the back')
+    expect(vm.directors[1].deliveryAddress.streetAddressAdditional).toEqual('Kirkintiloch')
+    expect(vm.directors[1].deliveryAddress.deliveryInstructions).toEqual('go to the back')
   })
 
   it('displays the list of directors', () => {
-    var directorListUI = childvm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
 
     // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(2)
@@ -168,110 +137,89 @@ describe('Directors.vue', () => {
     expect(directorListUI[1].innerHTML).toContain('<span>Cease</span>')
   })
 
-  it('buttons/actions are disabled when the AGM date has not been set', () => {
-    // clear AGM Date in AGMDate component
-    childvm.$store.state.agmDate = null
+  it('disables buttons/actions when AGM Date is invalid', done => {
+    // invalidate AGM Date
+    vm.$store.state.agmDateValid = false
 
     Vue.nextTick(() => {
-      var directorListUI = childvm.$el.querySelectorAll('.director-list .container')
-
       // confirm that flag is set correctly
-      expect(childvm.agmEntered).toEqual(false)
+      expect(vm.agmDateValid).toEqual(false)
+
+      const directorListUI = vm.$el.querySelectorAll('.director-list .container')
 
       // check that buttons are disabled (checks first button in first director, plus the Add New Director button)
-      expect(
-        directorListUI[0].querySelector('.cease-btn').attributes.getNamedItem('disabled').value
-      ).toEqual('disabled')
-      expect(
-        childvm.$el.querySelector('.new-director-btn').attributes.getNamedItem('disabled').value
-      ).toEqual('disabled')
+      expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(true)
+      expect(vm.$el.querySelector('.new-director-btn').disabled).toBe(true)
+
+      done()
     })
   })
 
-  it('buttons/actions are enabled when the AGM date has been set', () => {
-    var directorListUI = childvm.$el.querySelectorAll('.director-list .container')
-
-    // set AGM Date in AGMDate component
-    childvm.$store.state.agmDate = '2018-06-18'
+  it('enables buttons/actions when AGM Date is valid', done => {
+    // validate AGM Date
+    vm.$store.state.agmDateValid = true
 
     Vue.nextTick(() => {
       // confirm that flag is set correctly
-      expect(childvm.agmEntered).toEqual(true)
+      expect(vm.agmDateValid).toEqual(true)
+
+      const directorListUI = vm.$el.querySelectorAll('.director-list .container')
 
       // check that buttons are enabled (checks first button in first director, plus the Add New Director button)
-      expect(
-        directorListUI[0].querySelector('.cease-btn').attributes.getNamedItem('disabled')
-      ).toBeNull()
-      expect(
-        childvm.$el.querySelector('.new-director-btn').attributes.getNamedItem('disabled')
-      ).toBeNull()
+      expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(false)
+      expect(vm.$el.querySelector('.new-director-btn').disabled).toBe(false)
+
+      done()
     })
   })
 
-  it('buttons/actions are enabled when "No AGM" option set', () => {
-    var directorListUI = childvm.$el.querySelectorAll('.director-list .container')
-
-    // set "No AGM" in AGMDate component
-    childvm.$store.state.noAGM = true
-
-    setTimeout(() => {
-      // confirm that flag is set correctly
-      expect(childvm.agmEntered).toEqual(true)
-
-      // check that buttons are enabled (checks first button in first director, plus the Add New Director button)
-      expect(
-        directorListUI[0].querySelector('.actions .v-btn').attributes.getNamedItem('disabled')
-      ).toBeNull()
-      expect(
-        childvm.$el.querySelector('.new-director-btn').attributes.getNamedItem('disabled')
-      ).toBeNull()
-    }, 100)
-  })
-
-  it('displays Add New Director form when button clicked', () => {
-    // set "No AGM" in AGMDate component
-    childvm.$store.state.noAGM = true
+  it('displays Add New Director form when button clicked', done => {
+    // validate AGM Date
+    vm.$store.state.agmDateValid = true
 
     Vue.nextTick(() => {
       // confirm that flag is set correctly
-      expect(childvm.agmEntered).toEqual(true)
+      expect(vm.agmDateValid).toEqual(true)
 
       // check that Add New Director button is enabled
-      expect(
-        childvm.$el.querySelector('.new-director-btn').attributes.getNamedItem('disabled')
-      ).toBeNull()
+      expect(vm.$el.querySelector('.new-director-btn').disabled).toBe(false)
 
       // click Add New Director button
       click('.new-director-btn')
 
       Vue.nextTick(() => {
         // check that button is hidden
-        expect(childvm.$el.querySelector('.new-director-btn').closest('div')
-          .getAttribute('style')).toContain('display: none;')
+        expect(vm.$el.querySelector('.new-director-btn').closest('div')
+          .getAttribute('style')).toContain('height: 0px;')
 
         // check that form is showing
-        expect(childvm.$el.querySelector('.new-director')
+        expect(vm.$el.querySelector('.new-director')
           .getAttribute('style')).not.toContain('display: none;')
+
+        done()
       })
     })
   })
-  it('handles "ceased" action', () => {
-    var directorListUI = childvm.$el.querySelectorAll('.director-list .container')
+
+  it('handles "ceased" action', done => {
+    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
 
     // click first director's cease button
     click('#director-1-cease-btn')
 
     Vue.nextTick(() => {
       // check that button has changed to "undo"
-      expect(childvm.$el.querySelector('#director-1-cease-btn').innerHTML).toContain('Undo')
+      expect(vm.$el.querySelector('#director-1-cease-btn').innerHTML).toContain('Undo')
 
       // check that director is marked as ceased
-      expect(childvm.$el.querySelector('#director-1 .director-status').innerHTML).toContain('Ceased')
+      expect(vm.$el.querySelector('#director-1 .director-status').innerHTML).toContain('Ceased')
+
+      done()
     })
   })
 
-  it('handles un-"ceased" action', () => {
-    var directorListUI = childvm.$el.querySelectorAll('.director-list .container')
+  it('handles un-"ceased" action', done => {
+    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
 
     // click first director's cease button
     click('#director-1-cease-btn')
@@ -282,19 +230,22 @@ describe('Directors.vue', () => {
 
       Vue.nextTick(() => {
         // check that button has changed back to "cease"
-        expect(childvm.$el.querySelector('#director-1-cease-btn').innerHTML).toContain('Cease')
+        expect(vm.$el.querySelector('#director-1-cease-btn').innerHTML).toContain('Cease')
 
         // check that director is not marked as ceased
-        expect(childvm.$el.querySelector('#director-1 .director-status .v-chip')
+        expect(vm.$el.querySelector('#director-1 .director-status .v-chip')
           .getAttribute('style')).toContain('display: none;')
+
+        done()
       })
     })
   })
 
-  it('adds a new director to list', () => {
-    // todo
-  })
-  it('can undo adding new director', () => {
-    // todo
-  })
+  // todo
+  // it('adds a new director to list', () => {
+  // })
+
+  // todo
+  // it('can undo adding new director', () => {
+  // })
 })

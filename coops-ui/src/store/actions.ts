@@ -43,5 +43,14 @@ export default {
   },
   setCurrentARStatus ({ commit }, currentARStatus) {
     commit('currentARStatus', currentARStatus)
+  },
+  setAddressesFormValid ({ commit }, addressesFormValid) {
+    commit('addressesFormValid', addressesFormValid)
+  },
+  setDirectorFormValid ({ commit }, directorFormValid) {
+    commit('directorFormValid', directorFormValid)
+  },
+  setAgmDateValid ({ commit }, agmDateValid) {
+    commit('agmDateValid', agmDateValid)
   }
 }

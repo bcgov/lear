@@ -43,5 +43,14 @@ export default {
   },
   currentARStatus (state, currentARStatus) {
     state.currentARStatus = currentARStatus
+  },
+  addressesFormValid (state, addressesFormValid) {
+    state.addressesFormValid = addressesFormValid
+  },
+  directorFormValid (state, directorFormValid) {
+    state.directorFormValid = directorFormValid
+  },
+  agmDateValid (state, agmDateValid) {
+    state.agmDateValid = agmDateValid
   }
 }

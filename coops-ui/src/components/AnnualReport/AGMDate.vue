@@ -120,7 +120,7 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setAgmDate', 'setNoAGM']),
+    ...mapActions(['setAgmDate', 'setNoAGM', 'setAgmDateValid']),
 
     formatDate (date) {
       // changes date from YYYY-MM-DD to YYYY/MM/DD
@@ -162,7 +162,7 @@ export default {
       this.date = this.parseDate(val)
     },
     date (val) {
-      // when date picker changes, update text field
+      // when date picker changes, update text field and store
       if (this.didNotHoldAGM || val) {
         if (this.isValidDateFormat(val, '-')) {
           this.dateFormatted = this.formatDate(val)
@@ -170,9 +170,10 @@ export default {
       }
       // also update value in store
       this.setAgmDate(val || null)
+      this.setAgmDateValid(Boolean(this.didNotHoldAGM || this.agmDate))
     },
     didNotHoldAGM (val) {
-      // when checkbox changes, update properties accordingly
+      // when checkbox changes, update text field and store
       if (val) {
         this.setNoAGM(true)
         // clear text field value
@@ -183,6 +184,7 @@ export default {
         this.setAgmDate(this.minDate)
         this.dateFormatted = this.formatDate(this.agmDate)
       }
+      this.setAgmDateValid(Boolean(this.didNotHoldAGM || this.agmDate))
     }
   }
 }

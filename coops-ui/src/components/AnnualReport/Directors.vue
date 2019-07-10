@@ -3,7 +3,7 @@
 
     <v-expand-transition>
       <div v-show="!showNewDirectorForm">
-        <v-btn class="new-director-btn" outline color="primary" :disabled="!agmEntered"
+        <v-btn class="new-director-btn" outline color="primary" :disabled="!agmDateValid"
           @click="addNewDirector">
           <v-icon>add</v-icon>
           <span>Appoint New Director</span>
@@ -84,14 +84,14 @@
                     <BaseAddress v-bind:address="director.deliveryAddress"  />
                   </div>
                   <div class="actions">
-                    <v-btn small flat color="primary" :disabled="!agmEntered"
+                    <v-btn small flat color="primary" :disabled="!agmDateValid"
                       :id="'director-' + director.id + '-change-btn'"
                       v-show="director.isNew"
                       @click="editDirector(index)">
                       <v-icon small>edit</v-icon>
                       <span>Change</span>
                     </v-btn>
-                    <v-btn small flat color="primary" :disabled="!agmEntered"
+                    <v-btn small flat color="primary" :disabled="!agmDateValid"
                       class="cease-btn"
                       :id="'director-' + director.id + '-cease-btn'"
                       v-show="!director.isNew"
@@ -219,13 +219,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['corpNum', 'agmDate', 'noAGM']),
-
-    agmEntered () {
-      if (this.agmDate) return true
-      else if (this.noAGM) return true
-      else return false
-    },
+    ...mapState(['corpNum', 'agmDateValid']),
 
     directorsChange () {
       // One or more actions taken on directors (add, cease) require a single fee, so check how many directors in the
@@ -239,8 +233,10 @@ export default {
   },
 
   methods: {
+    ...mapActions(['setDirectorFormValid']),
+
     getDirectors: function () {
-      if (this.corpNum !== null) {
+      if (this.corpNum) {
         var url = this.corpNum + '/directors'
         axios.get(url)
           .then(response => {
@@ -381,6 +377,9 @@ export default {
     directorsChange: function (val) {
       // emit event back up to parent
       this.$emit('directorsChange', val)
+    },
+    directorFormValid (val) {
+      this.setDirectorFormValid(val)
     }
   }
 }

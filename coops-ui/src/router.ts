@@ -1,10 +1,10 @@
 import Vue from 'vue'
-import Router from 'vue-router'
+import VueRouter from 'vue-router'
 import AnnualReport from '@/views/AnnualReport.vue'
 import Dashboard from '@/views/Dashboard.vue'
 import axios from '@/axios-auth'
 
-Vue.use(Router)
+Vue.use(VueRouter)
 var payURL
 var authURL
 /* load configurations from file */
@@ -49,7 +49,7 @@ window.addEventListener('message', function (e) {
   }
 })
 
-let router = new Router({
+let router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
   routes: [

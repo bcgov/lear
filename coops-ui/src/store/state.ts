@@ -16,5 +16,9 @@ export default {
   regOffAddrChange: false,
   validated: false,
 
-  currentARStatus: null
+  currentARStatus: null,
+
+  addressesFormValid: true,
+  directorFormValid: true,
+  agmDateValid: true
 }
