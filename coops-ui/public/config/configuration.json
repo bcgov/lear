@@ -1,5 +1,5 @@
 {
-  "API_URL": "https://mock-lear-tools.pathfinder.gov.bc.ca/rest/legal-api/0.73/api/v1/businesses/",
+  "API_URL": "https://mock-lear-tools.pathfinder.gov.bc.ca/rest/legal-api/0.74/api/v1/businesses/",
   "PAY_URL": "https://mock-lear-tools.pathfinder.gov.bc.ca/rest/pay/0.1/api/v1/payments/fees/AR/CP?date=2019-04-15",
   "AUTH_URL": "http://auth-ui-1rdehl-dev.pathfinder.gov.bc.ca/",
   "CP_CSS_URL": "http://ws1.postescanada-canadapost.ca/css/addresscomplete-2.00.min.css?key=",
