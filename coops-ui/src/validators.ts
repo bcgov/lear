@@ -4,7 +4,7 @@ export function isNotNull (date: string): boolean {
 
 export function isValidYear (date: string): boolean {
   if (!date || date === '') return true
-  const year = date.substring(0, 4)
+  const year = +date.substring(0, 4)
   return (year === this.ARFilingYear)
 }
 
