@@ -7,7 +7,7 @@ export default {
   entityBusinessNo: null,
   entityIncNo: null,
   lastAgmDate: null,
-  ARFilingYear: null,
+  ARFilingYear: null, /* Number */
   filedDate: null,
   agmDate: null,
   noAGM: false,
