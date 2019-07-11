@@ -6,6 +6,8 @@ export default {
   entityStatus: null,
   entityBusinessNo: null,
   entityIncNo: null,
+  entityFoundingDate: null,
+  
   lastAgmDate: null,
   ARFilingYear: null, /* Number */
   filedDate: null,

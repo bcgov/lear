@@ -37,5 +37,8 @@ export default {
   },
   entityIncNo (state, entityIncNo) {
     state.entityIncNo = entityIncNo
+  },
+  entityFoundingDate (state, entityFoundingDate) {
+    state.entityFoundingDate = entityFoundingDate
   }
 }

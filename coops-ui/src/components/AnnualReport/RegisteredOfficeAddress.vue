@@ -405,6 +405,28 @@ export default {
     }
   },
   methods: {
+    getDeliveryAddress () {
+      return {
+        'streetAddress': this.DeliveryAddressStreet,
+        'streetAddressAdditional': this.DeliveryAddressStreetAdditional,
+        'addressCity': this.DeliveryAddressCity,
+        'addressCountry': this.DeliveryAddressCountry,
+        'addressRegion': this.DeliveryAddressRegion,
+        'postalCode': this.DeliveryAddressPostalCode,
+        'deliveryInstructions': this.DeliveryAddressInstructions
+      }
+    },
+    getMailingAddress () {
+      return {
+        'streetAddress': this.MailingAddressStreet,
+        'streetAddressAdditional': this.MailingAddressStreetAdditional,
+        'addressCity': this.MailingAddressCity,
+        'addressCountry': this.MailingAddressCountry,
+        'addressRegion': this.MailingAddressRegion,
+        'postalCode': this.MailingAddressPostalCode,
+        'deliveryInstructions': this.MailingAddressInstructions
+      }
+    },
     editAddress () {
       if (this.checkSameAddresses()) this.inheritDeliveryAddress = true
       else this.inheritDeliveryAddress = false
