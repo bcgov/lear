@@ -111,7 +111,9 @@ class ListFilingResource(Resource):
         if not draft or draft.lower() != 'true':
             err_msg, err_code = ListFilingResource._create_invoice(business, filing)
             if err_code:
-                return jsonify(err_msg), err_code
+                reply = filing.json
+                reply['errors'] = [err_msg, ]
+                return jsonify(reply), err_code
 
         # all done
         return jsonify(filing.json),\
@@ -252,5 +254,6 @@ class ListFilingResource(Resource):
 
         pid = rv.json().get('id')
         filing.payment_token = pid
+        filing.status = Filing.Status.PENDING.value
         filing.save()
         return None, None
