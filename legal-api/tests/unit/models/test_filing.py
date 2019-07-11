@@ -76,7 +76,8 @@ def test_filing_json(session):
     ar['filing']['header']['colinId'] = None
 
     assert filing.id
-    assert filing.json == ar
+    assert filing.json['filing']['business'] == AR_FILING['filing']['business']
+    assert filing.json['filing']['annualReport'] == AR_FILING['filing']['annualReport']
 
 
 def test_filing_delete_is_blocked(session):
@@ -114,19 +115,16 @@ def test_filing_dump_json(session):
 
     # Check base JSON
     filings = factory_filing(b, AR_FILING)
-    ar = copy.deepcopy(AR_FILING)
-    ar['filing']['header']['filingId'] = filings.id
-    ar['filing']['header']['colinId'] = None
 
-    assert filings.json == ar
+    assert filings.json['filing']['business'] == AR_FILING['filing']['business']
+    assert filings.json['filing']['annualReport'] == AR_FILING['filing']['annualReport']
 
     # Check payment token
     ar = copy.deepcopy(AR_FILING)
-    ar['filing']['header']['paymentToken'] = 'token'
+    token = 'token'
+    ar['filing']['header']['paymentToken'] = token
     filings = factory_filing(b, ar)
-    ar['filing']['header']['filingId'] = filings.id
-    ar['filing']['header']['colinId'] = None
-    assert filings.json == ar
+    assert filings.json['filing']['header']['paymentToken'] == token
 
     # check submitter
     u = User()
@@ -136,10 +134,7 @@ def test_filing_dump_json(session):
     filings = factory_filing(b, ar)
     filings.submitter_id = u.id
     filings.save()
-    ar['filing']['header']['filingId'] = filings.id
-    ar['filing']['header']['submitter'] = 'submitter'
-    ar['filing']['header']['colinId'] = None
-    assert filings.json == ar
+    assert filings.json['filing']['header']['submitter'] == u.username
 
     # check Exception
     ar = copy.deepcopy(AR_FILING)
@@ -213,3 +208,30 @@ def test_updating_filing_with_payment_token(session):
 
     with not_raises(BusinessException):
         filing.payment_token = 'payment token'
+
+
+def test_get_legal_filings():
+    """Assert that the legal_filings member returns valid JSON Legal Filing segments."""
+    filing = Filing()
+
+    assert not filing.legal_filings()
+
+    filing.filing_json = AR_FILING
+    legal_filings = filing.legal_filings()
+
+    assert legal_filings
+    assert 'annualReport' in legal_filings[0].keys()
+
+
+def test_get_filing_by_payment_token(session):
+    """Assert that a filing can be retrieved by a unique payment token."""
+    payment_token = '1000'
+    filing = Filing()
+    filing.filing_json = AR_FILING
+    filing.payment_token = payment_token
+    filing.save()
+
+    rv = Filing.get_filing_by_payment_token(payment_token)
+
+    assert rv
+    assert rv.payment_token == payment_token

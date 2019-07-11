@@ -18,7 +18,7 @@
 <script>
 
 export default {
-  name: 'StdHeader.vue'
+  name: 'StdHeader'
 }
 </script>
 
@@ -66,5 +66,4 @@ export default {
       font-weight 600
     }
   }
-
 </style>

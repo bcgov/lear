@@ -210,13 +210,14 @@
 
 <script>
 import Vue2Filters from 'vue2-filters'
-import axios from '../../axios-auth'
+import axios from '@/axios-auth'
+import { mapState, mapActions } from 'vuex'
 
 export default {
-  name: 'Directors.vue',
+  name: 'Directors',
+
   mixins: [Vue2Filters.mixin],
-  components: {
-  },
+
   data () {
     return {
       directors: [],
@@ -267,101 +268,44 @@ export default {
       ]
     }
   },
+
   computed: {
-    corpNum () {
-      return this.$store.state.corpNum
-    },
+    ...mapState(['corpNum', 'agmDate', 'noAGM']),
+
     agmEntered () {
-      if (this.$store.state.agmDate) return true
-      else if (this.$store.state.noAGM) return true
+      if (this.agmDate) return true
+      else if (this.noAGM) return true
       else return false
     },
+
     directorsChange () {
       if (this.directorsChangeCount > 0) return true
       else return false
     }
   },
+
+  mounted () {
+    this.getDirectors()
+  },
+
   methods: {
     getDirectors: function () {
       if (this.corpNum !== null) {
-        console.log('got here 2')
-        var token = sessionStorage.getItem('KEYCLOAK_TOKEN')
-        var url = this.corpNum + '/directors' // todo - deal with year or date
-        console.log(url)
-        axios.get(url).then(response => {
-          console.log(response.data)
-          this.directors = response.data.directors
-          for (var i = 0; i < this.directors.length; i++) {
-            this.directors[i].id = i + 1
-            this.directors[i].isNew = false
-            this.directors[i].isDirectorActive = true
-          }
-        }).catch(error => {
-          console.log('getDirectors ERROR: ' + error + ' ' + axios.get)
-          // TODO - remove this stub data
-          this.directors = [
-            {
-              id: 1,
-              isNew: false,
-              isDirectorActive: true,
-              officer: { firstName: 'Alli', lastName: 'Myers', middleInitial: '' },
-              deliveryAddress: {
-                streetAddress: '1111 First Street',
-                streetAddressAdditional: '',
-                addressCity: 'Victoria',
-                addressRegion: 'BC',
-                postalCode: 'V8A 2G8',
-                addressCountry: 'Canada'
-              },
-              title: 'Pres'
-            },
-            {
-              id: 2,
-              isNew: false,
-              isDirectorActive: true,
-              officer: { firstName: 'Nora', lastName: 'Patton', middleInitial: '' },
-              deliveryAddress: {
-                streetAddress: '2222 Second Street',
-                streetAddressAdditional: '',
-                addressCity: 'Victoria',
-                addressRegion: 'BC',
-                postalCode: 'V8A 2G8',
-                addressCountry: 'Canada'
-              },
-              title: null
-            },
-            {
-              id: 3,
-              isNew: false,
-              isDirectorActive: true,
-              officer: { firstName: 'Phoebe', lastName: 'Jones', middleInitial: '' },
-              deliveryAddress: {
-                streetAddress: '3333 Third Street',
-                streetAddressAdditional: null,
-                addressCity: 'Victoria',
-                addressRegion: 'BC',
-                postalCode: 'V8A 2G8',
-                addressCountry: 'Canada'
-              },
-              title: null
-            },
-            {
-              id: 4,
-              isNew: false,
-              isDirectorActive: true,
-              officer: { firstName: 'Cole', lastName: 'Bryan', middleInitial: '' },
-              deliveryAddress: {
-                streetAddress: '4444 Fourth Street',
-                streetAddressAdditional: null,
-                addressCity: 'Victoria',
-                addressRegion: 'BC',
-                postalCode: 'V8A 2G8',
-                addressCountry: 'Canada'
-              },
-              title: 'Vice Pres'
+        var url = this.corpNum + '/directors'
+        axios.get(url)
+          .then(response => {
+            if (response && response.data && response.data.directors) {
+              this.directors = response.data.directors
+              for (var i = 0; i < this.directors.length; i++) {
+                this.directors[i].id = i + 1
+                this.directors[i].isNew = false
+                this.directors[i].isDirectorActive = true
+              }
+            } else {
+              console.log('getDirectors() error - invalid response data')
             }
-          ]
-        })
+          })
+          .catch(error => console.error('getDirectors() error =', error))
       }
     },
 
@@ -439,6 +383,7 @@ export default {
       this.activeIndex = undefined
     }
   },
+
   watch: {
     // if we have director changes (add or cease) add a single fee to the filing
     // - when we've made one change, add the fee; when we've removed/undone all changes, remove the fee

@@ -3,10 +3,10 @@ import Vuetify from 'vuetify'
 
 import EntityInfo from '@/components/EntityInfo.vue'
 import App from '@/App.vue'
-import Home from '@/views/Home.vue'
+import AnnualReport from '@/views/AnnualReport.vue'
 import axios from '@/axios-auth'
 import sinon from 'sinon'
-import store from '@/store'
+import store from '@/store/store'
 import Vuelidate from 'vuelidate'
 
 Vue.use(Vuetify)
@@ -74,7 +74,7 @@ describe('EntityInfo.vue', () => {
     let rootInstance = new RootConstructor({ store: store })
     rootvm = rootInstance.$mount()
 
-    const ParentConstructor = Vue.extend(Home)
+    const ParentConstructor = Vue.extend(AnnualReport)
     let parentInstance = new ParentConstructor({ store: store })
     parentvm = parentInstance.$mount()
 
@@ -94,11 +94,12 @@ describe('EntityInfo.vue', () => {
   })
 
   it('shows all elements', () => {
-    // expect business name, business no, incorp no, and status to be on the screen
-    expect(vm.$el.querySelector('.entity-name').textContent).toEqual('test name - CP0001191')
-    expect(vm.$el.querySelector('.entity-status').textContent).toContain('In Good Standing')
-    expect(vm.$el.querySelector('.business-number').textContent).toEqual('123456789')
-    expect(vm.$el.querySelector('.incorp-number').textContent).toEqual('CP0001191')
+    Vue.nextTick(() => {
+      expect(vm.$el.querySelector('.entity-name').textContent).toEqual('test name - CP0001191')
+      expect(vm.$el.querySelector('.entity-status').textContent).toContain('In Good Standing')
+      expect(vm.$el.querySelector('.business-number').textContent).toEqual('123456789')
+      expect(vm.$el.querySelector('.incorp-number').textContent).toEqual('CP0001191')
+    })
   })
 
   it('handles empty data', () => {

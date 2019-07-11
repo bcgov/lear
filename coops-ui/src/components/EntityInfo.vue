@@ -2,7 +2,7 @@
   <div class="entity-info">
     <v-container>
       <div class="title-container">
-        <div class="entity-name">{{ entityName }}</div>
+        <div class="entity-name">{{ entityName || 'Not Available' }}</div>
         <!-- TODO: Discuss/decide how we are handling entity statuses (e.g. 'GOODSTANDING' etc.) -->
         <v-chip class="entity-status"
           label
@@ -12,55 +12,73 @@
             'blue' : entityStatus === 'GOODSTANDING',
             'red' : entityStatus === 'PENDINGDISSOLUTION' | 'NOTINCOMPLIANCE',
           }"
-        >
+          tabindex="-1">
           <!-- TODO: These strings should be pulled out into a globally accessible file -->
           <span v-if="entityStatus === 'GOODSTANDING'">In Good Standing</span>
-          <span v-if="entityStatus === 'PENDINGDISSOLUTION'">Pending Dissolution</span>
-          <span v-if="entityStatus === 'NOTINCOMPLIANCE'">Not in Compliance</span>
+          <span v-else-if="entityStatus === 'PENDINGDISSOLUTION'">Pending Dissolution</span>
+          <span v-else-if="entityStatus === 'NOTINCOMPLIANCE'">Not in Compliance</span>
+          <span v-else>Not Available</span>
 
         </v-chip>
       </div>
       <dl class="meta-container">
         <dt>Business No:</dt>
-        <!-- TODO: Strings should be pulled out into a globally accessible file (e.g. 'Not Available') -->
-        <dd class="business-number">{{ entityBusinessNo ? entityBusinessNo : 'Not Available' }}</dd>
+        <!-- TODO: These strings should be pulled out into a globally accessible file (e.g. 'Not Available') -->
+        <dd class="business-number">{{ entityBusinessNo || 'Not Available' }}</dd>
         <dt>Incorporation No:</dt>
-        <dd class="incorp-number">{{ entityIncNo ? entityIncNo : 'Not Available' }}</dd>
+        <dd class="incorp-number">{{ entityIncNo || 'Not Available' }}</dd>
       </dl>
     </v-container>
   </div>
 </template>
 
 <script>
+import axios from '@/axios-auth'
+import { mapState, mapActions } from 'vuex'
+
 export default {
-  name: 'EntityInfo.vue',
+  name: 'EntityInfo',
+
   computed: {
-    entityName () {
-      if (this.$store.state.entityName == null) return ''
-      return this.$store.state.entityName
-    },
-    entityStatus () {
-      if (this.$store.state.entityStatus == null) return ''
-      return this.$store.state.entityStatus
-    },
-    entityBusinessNo () {
-      if (this.$store.state.entityBusinessNo == null) return 'Not Available'
-      return this.$store.state.entityBusinessNo
-    },
-    entityIncNo () {
-      if (this.$store.state.entityIncNo == null) return 'Not Available'
-      return this.$store.state.entityIncNo
-    }
+    ...mapState(['entityName', 'entityStatus', 'entityBusinessNo', 'entityIncNo', 'corpNum'])
   },
-  data () {
-    return {
-    }
-  },
-  methods: {
-  },
+
   mounted () {
+    this.getEntityInfo()
   },
-  watch: {
+
+  methods: {
+    ...mapActions(['setEntityName', 'setEntityStatus', 'setEntityBusinessNo', 'setEntityIncNo', 'setLastAgmDate']),
+
+    getEntityInfo () {
+      if (this.corpNum) {
+        const url = this.corpNum
+        axios.get(url)
+          .then(response => {
+            if (response && response.data && response.data.business) {
+              this.setEntityName(response.data.business.legalName)
+              this.setEntityStatus(response.data.business.status)
+              this.setEntityBusinessNo(response.data.business.taxId)
+              this.setEntityIncNo(response.data.business.identifier)
+              const date = response.data.business.lastAnnualGeneralMeetingDate
+              if (
+                date &&
+                date.length === 10 &&
+                date.indexOf('-') === 4 &&
+                date.indexOf('-', 5) === 7 &&
+                date.indexOf('-', 8) === -1
+              ) {
+                this.setLastAgmDate(date)
+              } else {
+                this.setLastAgmDate(null)
+              }
+            } else {
+              console.log('getEntityInfo() error - invalid response data')
+            }
+          })
+          .catch(error => console.error('getEntityInfo() error =', error))
+      }
+    }
   }
 }
 </script>
@@ -73,8 +91,8 @@ export default {
     background #ffffff
 
   .container
-    padding-top 2rem
-    padding-bottom 2rem
+    padding-top 1.5rem
+    padding-bottom 1.5rem
 
   .title-container
     margin-top -0.2rem
@@ -84,7 +102,7 @@ export default {
     margin-bottom 0.25rem
     display inline-block
     font-size 1.125rem
-    font-weight 500
+    font-weight 600
 
   .entity-status
     margin-left 0.5rem

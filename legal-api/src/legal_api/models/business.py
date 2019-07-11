@@ -46,7 +46,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
     last_ledger_id = db.Column('last_ledger_id', db.Integer)
     last_remote_ledger_id = db.Column('last_remote_ledger_id', db.Integer, default=0)
-    last_ar_date = db.Column('last_ar_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    last_ar_date = db.Column('last_ar_date', db.DateTime(timezone=True))
+    last_agm_date = db.Column('last_agm_date', db.DateTime(timezone=True))
     legal_name = db.Column('legal_name', db.String(1000), index=True)
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
@@ -59,7 +60,14 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
-    business_mailing_address = db.relationship('Address', lazy='dynamic')
+    mailing_address = db.relationship('Address',
+                                      lazy='dynamic',
+                                      primaryjoin='and_(Business.id==Address.business_id, '
+                                      f"Address.address_type=='{Address.MAILING}')")
+    delivery_address = db.relationship('Address',
+                                       lazy='dynamic',
+                                       primaryjoin='and_(Business.id==Address.business_id, '
+                                       f"Address.address_type=='{Address.DELIVERY}')")
 
     @hybrid_property
     def identifier(self):
@@ -96,6 +104,14 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             business = cls.query.filter_by(identifier=identifier).one_or_none()
         return business
 
+    @classmethod
+    def find_by_internal_id(cls, internal_id: int = None):
+        """Return a Business by the internal id."""
+        business = None
+        if internal_id:
+            business = cls.query.filter_by(id=internal_id).one_or_none()
+        return business
+
     def save(self):
         """Render a Business to the local cache."""
         db.session.add(self)
@@ -119,6 +135,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'foundingDate': self.founding_date.isoformat(),
             'identifier': self.identifier,
             'lastModified': self.last_modified.isoformat(),
+            'lastAnnualReport': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
+            'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'legalName': self.legal_name,
         }
         # if self.last_remote_ledger_timestamp:
@@ -133,9 +151,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.tax_id:
             d['taxId'] = self.tax_id
-        mailing = self.business_mailing_address.one_or_none()
-        if mailing:
-            d['mailingAddress'] = mailing.json
 
         return d
 
