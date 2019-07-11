@@ -214,10 +214,7 @@ export default {
           changeOfAddress,
           changeOfDirectors
         )
-      }
-
-      console.log('Filing Request %%%%%%%%%%%%')
-      console.log(filingData)
+      }       
 
       //Temp fix Added to remove cors error while invoking mock endpoint.
       //To be removed when the API is in place
