@@ -92,6 +92,7 @@
                       <span>Change</span>
                     </v-btn>
                     <v-btn small flat color="primary" :disabled="!agmEntered"
+                      class="cease-btn"
                       :id="'director-' + director.id + '-cease-btn'"
                       v-show="!director.isNew"
                       @click="removeDirector(director)">
@@ -244,13 +245,19 @@ export default {
         axios.get(url)
           .then(response => {
             if (response && response.data && response.data.directors) {
-              this.directors = response.data.directors
-              for (var i = 0; i < this.directors.length; i++) {
-                this.directors[i].id = i + 1
-                this.directors[i].isNew = false
-                this.directors[i].isDirectorActive = true
-                this.directors[i].isFeeApplied = false
+              // note - director list manipulated locally here (attributes added), THEN saved to this.directors,
+              // otherwise new attributes are not reflected in initial draw of HTML list.
+
+              var directors = response.data.directors
+              for (var i = 0; i < directors.length; i++) {
+                directors[i].id = i + 1
+                directors[i].isNew = false
+                directors[i].isDirectorActive = true
+                directors[i].isFeeApplied = false
               }
+
+              // save to component data now that extra attributes are added
+              this.directors = directors
             } else {
               console.log('getDirectors() error - invalid response data')
             }
@@ -278,6 +285,7 @@ export default {
         let found = this.directors.indexOf(director)
         this.directors.splice(found, 1)
       }
+      this.activeIndex = null
     },
 
     validateNewDirectorForm: function () {
@@ -339,8 +347,8 @@ export default {
       if (mainFormIsValid && addressFormIsValid) {
         // save data from BaseAddress component
         if (this.inProgressAddress != null) {
-          this.directors[id].deliveryAddress = this.inProgressAddress
-          this.directors[id].isFeeApplied = true
+          this.directors[id - 1].deliveryAddress = this.inProgressAddress
+          this.directors[id - 1].isFeeApplied = true
         }
 
         // clear in-progress director data from form in BaseAddress component

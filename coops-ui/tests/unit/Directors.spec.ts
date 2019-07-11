@@ -105,16 +105,14 @@ describe('Directors.vue', () => {
     // call getDirectors() since it won't be triggered from parent component
     childvm.getDirectors()
 
-    setTimeout(() => {
+    Vue.nextTick(() => {
       done()
-    }, 100)
+    })
   })
 
   afterEach((done) => {
     sinon.restore()
-    setTimeout(() => {
-      done()
-    }, 500)
+    done()
   })
 
   it('initializes the director meta data properly', () => {
@@ -171,18 +169,23 @@ describe('Directors.vue', () => {
   })
 
   it('buttons/actions are disabled when the AGM date has not been set', () => {
-    var directorListUI = childvm.$el.querySelectorAll('.director-list .container')
+    // clear AGM Date in AGMDate component
+    childvm.$store.state.agmDate = null
 
-    // confirm that flag is set correctly
-    expect(childvm.agmEntered).toEqual(false)
+    Vue.nextTick(() => {
+      var directorListUI = childvm.$el.querySelectorAll('.director-list .container')
 
-    // check that buttons are disabled (checks first button in first director, plus the Add New Director button)
-    expect(
-      directorListUI[0].querySelector('.actions .v-btn').attributes.getNamedItem('disabled').value
-    ).toEqual('disabled')
-    expect(
-      childvm.$el.querySelector('.new-director-btn').attributes.getNamedItem('disabled').value
-    ).toEqual('disabled')
+      // confirm that flag is set correctly
+      expect(childvm.agmEntered).toEqual(false)
+
+      // check that buttons are disabled (checks first button in first director, plus the Add New Director button)
+      expect(
+        directorListUI[0].querySelector('.cease-btn').attributes.getNamedItem('disabled').value
+      ).toEqual('disabled')
+      expect(
+        childvm.$el.querySelector('.new-director-btn').attributes.getNamedItem('disabled').value
+      ).toEqual('disabled')
+    })
   })
 
   it('buttons/actions are enabled when the AGM date has been set', () => {
@@ -191,18 +194,18 @@ describe('Directors.vue', () => {
     // set AGM Date in AGMDate component
     childvm.$store.state.agmDate = '2018-06-18'
 
-    setTimeout(() => {
+    Vue.nextTick(() => {
       // confirm that flag is set correctly
       expect(childvm.agmEntered).toEqual(true)
 
       // check that buttons are enabled (checks first button in first director, plus the Add New Director button)
       expect(
-        directorListUI[0].querySelector('.actions .v-btn').attributes.getNamedItem('disabled')
+        directorListUI[0].querySelector('.cease-btn').attributes.getNamedItem('disabled')
       ).toBeNull()
       expect(
         childvm.$el.querySelector('.new-director-btn').attributes.getNamedItem('disabled')
       ).toBeNull()
-    }, 100)
+    })
   })
 
   it('buttons/actions are enabled when "No AGM" option set', () => {
@@ -229,7 +232,7 @@ describe('Directors.vue', () => {
     // set "No AGM" in AGMDate component
     childvm.$store.state.noAGM = true
 
-    setTimeout(() => {
+    Vue.nextTick(() => {
       // confirm that flag is set correctly
       expect(childvm.agmEntered).toEqual(true)
 
@@ -241,20 +244,51 @@ describe('Directors.vue', () => {
       // click Add New Director button
       click('.new-director-btn')
 
-      setTimeout(() => {
+      Vue.nextTick(() => {
         // check that button is hidden
-        expect(childvm.$el.querySelector('.new-director-btn').closest('div').getAttribute('style')).toContain('display: none;')
+        expect(childvm.$el.querySelector('.new-director-btn').closest('div')
+          .getAttribute('style')).toContain('display: none;')
 
         // check that form is showing
-        expect(childvm.$el.querySelector('.new-director').getAttribute('style')).not.toContain('display: none;')
-      }, 100)
-    }, 100)
+        expect(childvm.$el.querySelector('.new-director')
+          .getAttribute('style')).not.toContain('display: none;')
+      })
+    })
   })
   it('handles "ceased" action', () => {
-    // todo
+    var directorListUI = childvm.$el.querySelectorAll('.director-list .container')
+
+    // click first director's cease button
+    click('#director-1-cease-btn')
+
+    Vue.nextTick(() => {
+      // check that button has changed to "undo"
+      expect(childvm.$el.querySelector('#director-1-cease-btn').innerHTML).toContain('Undo')
+
+      // check that director is marked as ceased
+      expect(childvm.$el.querySelector('#director-1 .director-status').innerHTML).toContain('Ceased')
+    })
   })
+
   it('handles un-"ceased" action', () => {
-    // todo
+    var directorListUI = childvm.$el.querySelectorAll('.director-list .container')
+
+    // click first director's cease button
+    click('#director-1-cease-btn')
+
+    Vue.nextTick(() => {
+      // click first director's undo cease button
+      click('#director-1-cease-btn')
+
+      Vue.nextTick(() => {
+        // check that button has changed back to "cease"
+        expect(childvm.$el.querySelector('#director-1-cease-btn').innerHTML).toContain('Cease')
+
+        // check that director is not marked as ceased
+        expect(childvm.$el.querySelector('#director-1 .director-status .v-chip')
+          .getAttribute('style')).toContain('display: none;')
+      })
+    })
   })
 
   it('adds a new director to list', () => {
