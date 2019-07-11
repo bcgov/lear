@@ -227,10 +227,12 @@ export default {
         }
       }
 
-      axios.post(this.corpNum + '/filings', filingData, config).then(res => {
-        //Redirection on success to pay UI. Change the URL construction logic once
-        //API returns proper data
-        console.log(res.data)
+      axios.post(this.corpNum + '/filings', filingData, config).then(res => {               
+        let payRequestId = res.data.filing.header.paymentToken
+        payRequestId = '189'//To be removed
+        let returnURL = window.location.origin+'/AnnualReport?pay_id='+ payRequestId         
+        let payURL = this.authURL+'makepayment/'+payRequestId+'/'+ encodeURIComponent(returnURL)          
+        window.location.href = payURL    
       }).catch((error) => {
         //TODO : To Decide how and where to display the error message from API
         console.log(error)
