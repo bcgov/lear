@@ -49,41 +49,4 @@ node {
             }
           }
     } // end stage
-    stage('Run NATS commands to use DB') {
-        script {
-            openshift.withCluster() {
-                openshift.withProject("${NAMESPACE}-${TAG_NAME}") {   
-                    SERVICE_POD = openshift.selector('pod', [app: "${COMPONENT_NAME}-${TAG_NAME}"])
-                    
-                    SERVICE_POD = openshift.selector('pod', [app: "${COMPONENT_NAME}-${TAG_NAME}"])
-                    USERNAME = openshift.selector('configmaps', [app: "${COMPONENT_NAME}-${TAG_NAME}"])
-                    PASSWORD = openshift.selector('configmaps', [app: "${COMPONENT_NAME}-${TAG_NAME}"])
-                    
-		    echo SERVICE_POD.objects()[0].metadata.name    
- 		    
- 		    try {
-                        def install_reqs = openshift.exec(
-                            SERVICE_POD.objects()[0].metadata.name,
-                            '--',
-                            "bash -c 'nats-streaming -m 8222 --store SQL --sql_driver postgres --sql_source postgres://nats-db?user=${USERNAME}&password=${PASSWORD}&sslmode=disable'"
-                        )                        
-                    } catch (Exception e) {
-                        PASSED = false
-                        def error_message = e.getMessage()
-                        // send below to rocket chat
-                        error_message = error_message.substring(0, error_message.lastIndexOf("\n"))
-                        error_message_summary = error_message.substring(error_message.lastIndexOf("\n"))
-                        echo """
-                        Error details for ${COMPONENT_NAME}-${TAG_NAME}:
-                            ${error_message}
-                        Error result summary for ${COMPONENT_NAME}-${TAG_NAME}:
-                            ${error_message_summary}
-                        """
-                    }                    
-
-                }
-            }
-        }
-
-    } // end stage
 } // end node
