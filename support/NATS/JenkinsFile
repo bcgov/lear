@@ -65,9 +65,7 @@ node {
                         def install_reqs = openshift.exec(
                             SERVICE_POD.objects()[0].metadata.name,
                             '--',
-                            "bash -c ' \                                                
-                            nats-streaming -m 8222 --store SQL --sql_driver postgres --sql_source postgres://nats-db?user=${USERNAME}&password=${PASSWORD}&sslmode=disable \        
-                            '"
+                            "bash -c 'nats-streaming -m 8222 --store SQL --sql_driver postgres --sql_source postgres://nats-db?user=${USERNAME}&password=${PASSWORD}&sslmode=disable'"
                         )                        
                     } catch (Exception e) {
                         PASSED = false
