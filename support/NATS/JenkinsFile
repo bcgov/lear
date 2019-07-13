@@ -23,7 +23,7 @@
 
 def TAG_NAME = 'dev'
 def COMPONENT_NAME = 'nats-streaming'
-def IMAGENAMESPACE = 'gl2ous'
+def IMAGENAMESPACE = 'gl2ous-tools'
 def NAMESPACE = 'hak2zo'
 
 
