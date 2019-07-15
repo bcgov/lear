@@ -44,7 +44,7 @@ Vue.mixin({
 
 window.addEventListener('message', function (e) {
   if (e.origin === authURL) {
-    sessionStorage.setItem('KEYCLOAK_TOKEN', e.data)
+    sessionStorage.setItem('KEYCLOAK_TOKEN', JSON.parse(e.data)['access_token'])
     sessionStorage.setItem('REDIRECTED', 'false')
   }
 })
