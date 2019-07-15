@@ -64,12 +64,11 @@ class Office:
                 current_app.logger.error('got more than 1 current registered office address for {}'.format(identifier))
 
             office_info = dict(zip([x[0].lower() for x in cursor.description], office_info))
-
             office_obj = Office()
             office_obj.event_id = office_info['start_event_id']
             office_obj.delivery_address = Address.get_by_address_id(office_info['delivery_addr_id']).as_dict()
-            office_obj.mailing_address = Address.get_by_address_id(office_info['mailing_addr_id']).as_dict()
-
+            if office_info['mailing_addr_id']:
+                office_obj.mailing_address = Address.get_by_address_id(office_info['mailing_addr_id']).as_dict()
             return office_obj
 
         except Exception as err:

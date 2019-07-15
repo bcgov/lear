@@ -153,7 +153,7 @@ class Business:
             raise err
 
     @classmethod
-    def update_corporation(cls, cursor, corp_num, date):
+    def update_corporation(cls, cursor, corp_num: str = None, date: str = None):
         """Update corporation record.
 
         :param cursor: oracle cursor

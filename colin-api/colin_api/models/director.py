@@ -15,11 +15,14 @@
 
 Currently this only provides API versioning information
 """
+import datetime
+
 from flask import current_app
 
 from colin_api.exceptions import DirectorsNotFoundException
-from colin_api.models import Address, Business
+from colin_api.models import Address
 from colin_api.resources.db import DB
+from colin_api.utils import convert_to_json_date
 
 
 class Director:
@@ -90,7 +93,7 @@ class Director:
                 select first_nme, middle_nme, last_nme, delivery_addr_id, appointment_dt, cessation_dt, start_event_id,
                 end_event_id
                 from corp_party
-                where (start_event_id=:event_id or end_event_id=:event_id) and party_typ_cd='DIR'
+                where start_event_id=:event_id and party_typ_cd='DIR'
                 """, event_id=event_id)
 
             directors_list = cls._build_directors_list(cursor)
@@ -105,22 +108,24 @@ class Director:
         return directors_list
 
     @classmethod
-    def end_current(cls, cursor, event_id: int = None):
+    def end_current(cls, cursor, event_id: int = None, corp_num: str = None):
         """Set all end_event_ids for current directors."""
         if not event_id:
             current_app.logger.error('Error in director: No event id given to end current directors.')
-            return None
 
         try:
-            cursor.execute("""update corp_party set end_event_id=:event_id where end_event_id is null""",
-                           event_id=event_id)
+            cursor.execute("""
+                update corp_party set end_event_id=:event_id where corp_num=:corp_num and end_event_id is null""",
+                           event_id=event_id,
+                           corp_num=corp_num
+                           )
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error(f'Error in director: Failed to end current directors for event {event_id}')
             raise err
 
     @classmethod
-    def create_new_director(cls, cursor, event_id: int = None, director: dict = None, business: Business = None):
+    def create_new_director(cls, cursor, event_id: int = None, director: dict = None, business: dict = None):
         """Insert new director into the corp_party table."""
         if not event_id:
             current_app.logger.error('Error in director: No event id given to create director.')
@@ -146,23 +151,24 @@ class Director:
                 start_event_id, end_event_id, appointment_dt, cessation_dt, last_nme, middle_nme, first_nme,
                 business_nme, bus_company_num)
                 values (:corp_party_id, :mailing_addr_id, :delivery_addr_id, :corp_num, :party_typ_cd, :start_event_id,
-                :end_event_id, :appointment_dt, :cessation_dt, :last_nme, :middle_nme, :first_nme, :business_nme,
-                :bus_company_num)
+                :end_event_id, TO_DATE(:appointment_dt, 'YYYY-mm-dd'), TO_DATE(:cessation_dt, 'YYYY-mm-dd'), :last_nme,
+                :middle_nme, :first_nme, :business_nme, :bus_company_num)
                 """,
                            corp_party_id=corp_party_id,
                            mailing_addr_id=addr_id,
                            delivery_addr_id=addr_id,
-                           corp_num=business['identifier'],
+                           corp_num=business['business']['identifier'],
                            party_typ_cd='DIR',
                            start_event_id=event_id,
-                           end_event_id=event_id if director['cessationDate'] else '',
-                           appointment_dt=director['appointmentDate'],
-                           cessation_dt=director['cessation_dt'] if director['cessation_dt'] else '',
+                           end_event_id=event_id if director['cessationDate'] else None,
+                           appointment_dt=str(datetime.datetime.strptime(director['appointmentDate'], '%Y-%m-%d'))[:10],
+                           cessation_dt=str(datetime.datetime.strptime(director['cessationDate'], '%Y-%m-%d'))[:10]
+                           if director['cessationDate'] else None,
                            last_nme=director['officer']['lastName'],
-                           middle_nme=director['officer']['middleName'],
+                           middle_nme=director['officer']['middleInitial'],
                            first_nme=director['officer']['firstName'],
-                           business_nme=business['legalName'],
-                           bus_company_num=business['taxId']
+                           business_nme=business['business']['legalName'],
+                           bus_company_num=business['business']['businessNumber']
                            )
         except Exception as err:
             current_app.logger.error(f'Error in director: Failed create new director for event {event_id}')
@@ -187,8 +193,8 @@ class Director:
                                 'middleInitial': row['middle_nme'] if row['middle_nme'] else ''}
 
             director.delivery_address = Address.get_by_address_id(row['delivery_addr_id']).as_dict()
-            director.appointment_date = row['appointment_dt'] if row['appointment_dt'] else ''
-            director.cessation_date = row['cessation_dt'] if row['cessation_dt'] else ''
+            director.appointment_date = convert_to_json_date(row['appointment_dt']) if row['appointment_dt'] else None
+            director.cessation_date = convert_to_json_date(row['cessation_dt']) if row['cessation_dt'] else None
             director.start_event_id = row['start_event_id'] if row['start_event_id'] else ''
             director.end_event_id = row['end_event_id'] if row['end_event_id'] else ''
 

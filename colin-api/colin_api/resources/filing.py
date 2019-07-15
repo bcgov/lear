@@ -19,7 +19,7 @@ from flask import current_app, jsonify, request
 from flask_restplus import Resource, cors
 from registry_schemas import validate
 
-from colin_api.exceptions import GenericException, FilingNotFoundException
+from colin_api.exceptions import FilingNotFoundException, GenericException
 from colin_api.models import Business, Filing
 from colin_api.resources.business import API
 from colin_api.utils.util import cors_preflight
@@ -61,7 +61,7 @@ class FilingInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def post(identifier, filing_type):
+    def post(identifier, **kwargs):  # pylint: disable=unused-argument; filing_type is only used for the get
         """Create a new filing."""
         try:
             json_data = request.get_json()
@@ -78,27 +78,41 @@ class FilingInfo(Resource):
 
             json_data = json_data.get('filing', None)
 
+            filing_list = {'annualReport': json_data.get('annualReport', None),
+                           'changeOfAddress': json_data.get('changeOfAddress', None),
+                           'changeOfDirectors': json_data.get('changeOfDirectors', None)}
+
             # ensure that the business in the AR matches the business in the URL
             if identifier != json_data['business']['identifier']:
                 return jsonify(
                     {'message': 'Error: Identifier in URL does not match identifier in filing data'}), 400
 
-            filing = Filing()
-            filing.header = json_data['header']
+            filings_added = []
+            for filing_type in filing_list:
+                if filing_list[filing_type]:
+                    filing = Filing()
+                    filing.business = Business.find_by_identifier(identifier)
+                    filing.header = json_data['header']
+                    filing.filing_type = filing_type
+                    filing.body = filing_list[filing_type]
 
-            filing.filing_type = filing_type
-            filing.body = json_data[filing.filing_type]
-
-            filing.business = Business.find_by_identifier(identifier)
-
-            # add the new filing
-            event_id = Filing.add_filing(filing)
+                    # add the new filing
+                    event_id = Filing.add_filing(filing)
+                    filings_added.append({'event_id': event_id, 'filing_type': filing_type})
 
             # return the completed filing data
-            completed_filing = Filing.find_filing(business=filing.business, event_id=event_id,
-                                                  filing_type=filing.filing_type)
-            if not completed_filing:
-                raise FilingNotFoundException(identifier=identifier, filing_type=filing_type, event_id=event_id)
+            completed_filing = Filing()
+            completed_filing.header = json_data['header']
+            # get business info again - could have changed since filings were applied
+            completed_filing.business = Business.find_by_identifier(identifier)
+            completed_filing.body = {}
+            for filing_info in filings_added:
+                filing = Filing.find_filing(business=completed_filing.business, event_id=filing_info['event_id'],
+                                            filing_type=filing_info['filing_type'])
+                if not filing:
+                    raise FilingNotFoundException(identifier=identifier, filing_type=filing_info['filing_type'],
+                                                  event_id=filing_info['event_id'])
+                completed_filing.body.update({filing_info['filing_type']: filing.body})
 
             return jsonify(completed_filing.as_dict()), 201
 

@@ -33,7 +33,6 @@ class Filing:
     header = None
     body = None
     filing_type = None
-    event_id = None
 
     def __init__(self):
         """Initialize with all values None."""
@@ -52,14 +51,23 @@ class Filing:
 
     def as_dict(self):
         """Return dict of object that can be json serialized and fits schema requirements."""
-        return {
+        filing = {
             'filing': {
                 'header': self.header,
-                self.filing_type: self.body,
                 'business': self.business.business,
-                'eventId': self.event_id
             }
         }
+        possible_filings = ['annualReport', 'changeOfAddress', 'changeOfDirectors']
+        entered_filings = [x for x in self.body.keys() if x in possible_filings]
+
+        # TODO: change filing object to support multiple filings better
+        if entered_filings:  # filing object possibly storing multiple filings
+            for key in entered_filings:
+                filing['filing'].update({key: self.body[key]})
+        else:  # filing object storing 1 filing
+            filing['filing'].update({self.filing_type: self.body})
+
+        return filing
 
     @classmethod
     def find_filing(cls, business: Business = None, event_id: str = None, filing_type: str = None, year: int = None):
@@ -98,7 +106,7 @@ class Filing:
             raise err
 
     @classmethod
-    def add_filing(cls, filing):  # pylint: disable=too-many-locals; filing needs a lot of vars to build
+    def add_filing(cls, filing):  # pylint: disable=too-many-locals,too-many-statements;
         """Add new filing to COLIN tables.
 
         :param filing: Filing dict.
@@ -117,7 +125,6 @@ class Filing:
 
             # create new filing user
             cls._create_filing_user(cursor, event_id, filing)
-
             if filing.filing_type == 'annualReport':
                 date = filing.body['annualGeneralMeetingDate']
                 filing_type_cd = 'OTANN'
@@ -166,12 +173,11 @@ class Filing:
                 # update office table to include new addresses
                 Office.update_office(cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, 'RG')
 
-                # update corporation record
-                Business.update_corporation(cursor, corp_num, date)
-
                 # create new ledger text for address change
                 cls._add_ledger_text(cursor, event_id, 'Change to the Registered Office, effective on {} as filed with'
                                                        ' {} Annual Report'.format(date, date[:4]))
+                # update corporation record
+                Business.update_corporation(cursor, corp_num)
 
             elif filing.filing_type == 'changeOfDirectors':
                 # create new filing
@@ -180,23 +186,21 @@ class Filing:
                 cls._create_filing(cursor, event_id, corp_num, date, filing_type_cd)
 
                 # end all current directors - each one in filing added as a new director afterwards
-                Director.end_current(cursor=cursor, event_id=event_id)
+                Director.end_current(cursor=cursor, event_id=event_id, corp_num=corp_num)
 
                 # create new director for each one in filing
-                for director in filing.directors:
+                for director in filing.body['directors']:
                     Director.create_new_director(cursor=cursor, event_id=event_id, director=director,
-                                                 business=filing.business)
-                    # add ledger text
-                    if director['cessationDate']:
-                        cls._add_ledger_text(cursor, event_id, f'Director {director["officer"]["firstName"]} '
-                                             f'{director["officer"]["middleName"]} {director["officer"]["lastName"]} '
-                                             f'ceased for {corp_num}.'
-                                             )
-                    else:
-                        cls._add_ledger_text(cursor, event_id, f'Director {director["officer"]["firstName"]} '
-                                             f'{director["officer"]["middleName"]} {director["officer"]["lastName"]} '
-                                             f'appointed/continued for {corp_num}.'
-                                             )
+                                                 business=filing.business.as_dict())
+                # TODO: add ledger text - nice to have (can't use same event id for each entry)
+                # if director['cessationDate']:
+                #     cls._add_ledger_text(cursor, event_id, f'Director {director["officer"]["firstName"]} '
+                #                          f'{director["officer"]["middleInitial"]} {director["officer"]["lastName"]} '
+                #                          f'ceased for {corp_num}.')
+                # else:
+                #     cls._add_ledger_text(cursor, event_id, f'Director {director["officer"]["firstName"]} '
+                #                          f'{director["officer"]["middleInitial"]} {director["officer"]["lastName"]} '
+                #                          f'appointed/continued for {corp_num}.')
             else:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
@@ -233,7 +237,7 @@ class Filing:
                            event_type=event_type
                            )
         except Exception as err:
-            current_app.logger.error("Error in filing: Failed to create new event.")
+            current_app.logger.error('Error in filing: Failed to create new event.')
             raise err
 
         return event_id
@@ -250,7 +254,6 @@ class Filing:
         :param date: (str) period_end_date
         :param filing_type_code: (str) filing type code
         """
-
         try:
             if filing_type_code == 'OTANN':
                 cursor.execute("""
@@ -272,6 +275,9 @@ class Filing:
                                filing_type_code=filing_type_code,
                                period_end_date=date,
                                )
+            else:
+                current_app.logger.error(f'error in filing: Did not recognize filing type code: {filing_type_code}')
+                raise InvalidFilingTypeException(filing_type=filing_type_code)
         except Exception as err:
             current_app.logger.error(f'error in filing: could not create filing {filing_type_code} for {corp_num}')
             raise err
@@ -316,18 +322,18 @@ class Filing:
                            dd_event_id=event_id
                            )
         except Exception as err:
-            current_app.logger.error(f'Failed to add ledger text: \'{text}\' for event {event_id}')
+            current_app.logger.error(f'Failed to add ledger text: "{text}" for event {event_id}')
             raise err
 
     @classmethod
-    def _find_filing_event_info(cls,  # pylint: disable=too-many-arguments; needed to work for all filing types
+    def _find_filing_event_info(cls,  # pylint: disable=too-many-arguments,too-many-branches;
                                 identifier: str = None, event_id: str = None, filing_type_cd1: str = None,
                                 filing_type_cd2: str = 'empty', year: int = None):
 
         # build base querystring
         querystring = ("""
             select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt, agm_date,
-            effective_dt
+            effective_dt, event.corp_num
             from event
             join filing on filing.event_id = event.event_id
             left join filing_user on event.event_id = filing_user.event_id
@@ -349,11 +355,11 @@ class Filing:
             cursor = DB.connection.cursor()
             if event_id:
                 if year:
-                    cursor.execute(querystring, event_id=event_id, filing_type_cd1=filing_type_cd1,
-                                   filing_type_cd2=filing_type_cd2, year=year)
+                    cursor.execute(querystring, identifier=identifier, event_id=event_id,
+                                   filing_type_cd1=filing_type_cd1, filing_type_cd2=filing_type_cd2, year=year)
                 else:
-                    cursor.execute(querystring, event_id=event_id, filing_type_cd1=filing_type_cd1,
-                                   filing_type_cd2=filing_type_cd2)
+                    cursor.execute(querystring, identifier=identifier, event_id=event_id,
+                                   filing_type_cd1=filing_type_cd1, filing_type_cd2=filing_type_cd2)
             else:
                 if year:
                     cursor.execute(querystring, identifier=identifier, filing_type_cd1=filing_type_cd1,
@@ -383,7 +389,6 @@ class Filing:
 
             event_info['certifiedBy'] = filing_user_name
             event_info['email'] = filing_email
-
             return event_info
 
         except Exception as err:
@@ -397,7 +402,8 @@ class Filing:
     def find_ar(cls, identifier: str = None, event_id: str = None, year: int = None):
         """Return annual report filing."""
         if event_id:
-            filing_event_info = cls._find_filing_event_info(event_id=event_id, filing_type_cd1='OTANN', year=year)
+            filing_event_info = cls._find_filing_event_info(identifier=identifier, event_id=event_id,
+                                                            filing_type_cd1='OTANN', year=year)
         else:
             filing_event_info = cls._find_filing_event_info(identifier=identifier, filing_type_cd1='OTANN', year=year)
 
@@ -425,10 +431,11 @@ class Filing:
         filing_obj.body = {
             'annualGeneralMeetingDate': agm_date,
             'certifiedBy': filing_event_info['certifiedBy'],
-            'email': filing_event_info['email']
+            'email': filing_event_info['email'],
+            'eventId': filing_event_info['event_id']
         }
         filing_obj.filing_type = 'annualReport'
-        filing_obj.event_id = filing_event_info['event_id']
+        filing_obj.event_id = filing_event_info['event_id']  # pylint: disable=attribute-defined-outside-init
 
         return filing_obj
 
@@ -437,8 +444,8 @@ class Filing:
                             year: int = None):  # pylint: disable=unused-argument; will use year later
         """Return change of address filing."""
         if event_id:
-            filing_event_info = cls._find_filing_event_info(event_id=event_id, filing_type_cd1='OTADD',
-                                                            filing_type_cd2='OTARG')
+            filing_event_info = cls._find_filing_event_info(identifier=identifier, event_id=event_id,
+                                                            filing_type_cd1='OTADD', filing_type_cd2='OTARG')
         else:
             filing_event_info = cls._find_filing_event_info(identifier=identifier, filing_type_cd1='OTADD',
                                                             filing_type_cd2='OTARG')
@@ -456,10 +463,10 @@ class Filing:
         filing_obj.body = {
             'certifiedBy': filing_event_info['certifiedBy'],
             'email': filing_event_info['email'],
-            **registered_office_obj.as_dict()
+            **registered_office_obj.as_dict(),
+            'eventId': filing_event_info['event_id']
         }
         filing_obj.filing_type = 'changeOfAddress'
-        filing_obj.event_id = filing_event_info['event_id']
 
         return filing_obj
 
@@ -470,8 +477,8 @@ class Filing:
         filing_obj = Filing()
 
         if event_id:
-            filing_event_info = cls._find_filing_event_info(event_id=event_id, filing_type_cd1='OTCDR',
-                                                            filing_type_cd2='OTADR')
+            filing_event_info = cls._find_filing_event_info(identifier=identifier, event_id=event_id,
+                                                            filing_type_cd1='OTCDR', filing_type_cd2='OTADR')
         else:
             filing_event_info = cls._find_filing_event_info(identifier=identifier, filing_type_cd1='OTCDR',
                                                             filing_type_cd2='OTADR')
@@ -488,9 +495,9 @@ class Filing:
         filing_obj.body = {
             'certifiedBy': filing_event_info['certifiedBy'],
             'email': filing_event_info['email'],
-            'directors': [x.as_dict() for x in director_objs]
+            'directors': [x.as_dict() for x in director_objs],
+            'eventId': filing_event_info['event_id']
         }
-        filing_obj.filing_type = 'changeOfDirector'
-        filing_obj.event_id = filing_event_info['event_id']
+        filing_obj.filing_type = 'changeOfDirectors'
 
         return filing_obj
