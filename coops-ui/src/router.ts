@@ -46,7 +46,8 @@ window.addEventListener('message', function (e) {
   if (e.origin === authURL) {
     console.log('**********************')
     console.log(e.data)
-    sessionStorage.setItem('KEYCLOAK_TOKEN', e.data['access_token'])
+    console.log(JSON.parse(e.data))
+    sessionStorage.setItem('KEYCLOAK_TOKEN', JSON.parse(e.data)['access_token'])
     sessionStorage.setItem('REDIRECTED', 'false')
   }
 })
