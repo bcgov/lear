@@ -48,8 +48,8 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setEntityName', 'setEntityStatus', 'setEntityBusinessNo', 'setEntityIncNo', 
-    'setLastAgmDate','setEntityFoundingDate']),
+    ...mapActions(['setEntityName', 'setEntityStatus', 'setEntityBusinessNo', 'setEntityIncNo',
+      'setLastAgmDate', 'setEntityFoundingDate']),
 
     getEntityInfo () {
       if (this.corpNum) {
@@ -62,7 +62,7 @@ export default {
               this.setEntityBusinessNo(response.data.business.taxId)
               this.setEntityIncNo(response.data.business.identifier)
               this.setEntityFoundingDate(response.data.business.foundingDate
-              ? response.data.business.foundingDate.split('T')[0] : null)
+                ? response.data.business.foundingDate.split('T')[0] : null)
               const date = response.data.business.lastAnnualGeneralMeetingDate
               if (
                 date &&

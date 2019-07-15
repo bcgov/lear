@@ -135,7 +135,7 @@ export default {
   computed: {
     ...mapState(['agmDate', 'noAGM', 'regOffAddrChange', 'filedDate',
       'validated', 'currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate',
-      'entityName','entityIncNo','entityFoundingDate']),
+      'entityName', 'entityIncNo', 'entityFoundingDate']),
 
     reportState () {
       // TODO - look at filing.annual.status instead
@@ -214,26 +214,26 @@ export default {
           changeOfAddress,
           changeOfDirectors
         )
-      }       
+      }
 
-      //Temp fix Added to remove cors error while invoking mock endpoint.
-      //To be removed when the API is in place
+      // Temp fix Added to remove cors error while invoking mock endpoint.
+      // To be removed when the API is in place
       let config = {
         headers: {
           'Content-Type': 'text/plain'
         }
       }
 
-      axios.post(this.corpNum + '/filings', filingData, config).then(res => {               
+      axios.post(this.corpNum + '/filings', filingData, config).then(res => {
         let payRequestId = res.data.filing.header.paymentToken
-        payRequestId = '189'//To be removed
-        let returnURL = window.location.origin+'/AnnualReport?pay_id='+ payRequestId         
-        let payURL = this.authURL+'makepayment/'+payRequestId+'/'+ encodeURIComponent(returnURL)          
-        window.location.href = payURL    
+        payRequestId = '189'// To be removed
+        let returnURL = window.location.origin + '/AnnualReport?pay_id=' + payRequestId
+        let payURL = this.authURL + 'makepayment/' + payRequestId + '/' + encodeURIComponent(returnURL)
+        window.location.href = payURL
       }).catch((error) => {
-        //TODO : To Decide how and where to display the error message from API
+        // TODO : To Decide how and where to display the error message from API
         console.log(error)
-      })    
+      })
 
       this.setFiledDate(this.currentDate)
     },
@@ -254,7 +254,7 @@ export default {
         this.filingData.push({ filingTypeCode: filing, entityType: 'CP' })
       }
     },
-    
+
     isDataChanged (key) {
       return this.filingData.find(o => o.filingTypeCode === key)
     }

@@ -38,7 +38,7 @@ export default {
   setEntityIncNo ({ commit }, entityIncNo) {
     commit('entityIncNo', entityIncNo)
   },
-  setEntityFoundingDate({ commit }, entityFoundingDate){
+  setEntityFoundingDate ({ commit }, entityFoundingDate) {
     commit('entityFoundingDate', entityFoundingDate)
   }
 }
