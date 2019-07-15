@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-dialog  v-model="dialog" width="50rem">      
+    <v-dialog  v-model="dialog" width="50rem">
       <v-card>
         <v-card-title>Error</v-card-title>
 
@@ -254,7 +254,6 @@ export default {
         // TODO : To Decide how and where to display the error message from API
         console.log(error)
         this.dialog = true
-
       })
 
       this.setFiledDate(this.currentDate)
@@ -281,7 +280,7 @@ export default {
       return this.filingData.find(o => o.filingTypeCode === key)
     },
 
-    navigateToDashboard(){
+    navigateToDashboard () {
       this.dialog = false
       this.$router.push('/')
     }
