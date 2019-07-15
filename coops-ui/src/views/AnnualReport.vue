@@ -1,5 +1,24 @@
 <template>
   <div>
+    <v-dialog  v-model="dialog" width="50rem">      
+      <v-card>
+        <v-card-title>Error</v-card-title>
+
+        <v-card-text>
+          An error occured during processing. Please try later
+        </v-card-text>
+
+        <v-divider></v-divider>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" flat @click="navigateToDashboard">
+           Back to My Dashboard
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Transition to Payment -->
     <!-- TODO - this should be on Payment page -->
     <v-fade-transition>
@@ -62,7 +81,7 @@
                   {{ ARFilingYear }} AGM.</p>
               </header>
               <!-- <v-card flat id="AR-step-3-container"> -->
-                <Directors @directorsChange="directorsChangeEventHandler" />
+                <Directors @directorsChange="directorsChangeEventHandler" ref="directorsList"/>
               <!-- </v-card> -->
             </section>
           </div>
@@ -128,7 +147,8 @@ export default {
       showLoading: false,
       loadingMsg: 'Redirecting to PayBC to Process Your Payment',
       directorsChange: false,
-      filingData: []
+      filingData: [],
+      dialog: false
     }
   },
 
@@ -189,7 +209,7 @@ export default {
           changeOfDirectors: {
             certifiedBy: 'Full Name',
             email: 'no_one@never.get',
-            directors: this.$refs.directors.getAllDirectors()
+            directors: this.$refs.directorsList.getAllDirectors()
           }
         }
       }
@@ -233,6 +253,8 @@ export default {
       }).catch((error) => {
         // TODO : To Decide how and where to display the error message from API
         console.log(error)
+        this.dialog = true
+
       })
 
       this.setFiledDate(this.currentDate)
@@ -257,6 +279,11 @@ export default {
 
     isDataChanged (key) {
       return this.filingData.find(o => o.filingTypeCode === key)
+    },
+
+    navigateToDashboard(){
+      this.dialog = false
+      this.$router.push('/')
     }
   },
 
