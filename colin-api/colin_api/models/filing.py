@@ -60,7 +60,6 @@ class Filing:
         possible_filings = ['annualReport', 'changeOfAddress', 'changeOfDirectors']
         entered_filings = [x for x in self.body.keys() if x in possible_filings]
 
-        # TODO: change filing object to support multiple filings better
         if entered_filings:  # filing object possibly storing multiple filings
             for key in entered_filings:
                 filing['filing'].update({key: self.body[key]})
