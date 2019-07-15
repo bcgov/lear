@@ -27,15 +27,15 @@
 <script lang="ts">
 export default {
   name: 'FeeSummary',
-   data () {
+  data () {
     return {
       expand: true,
       headers: [
-        { text: 'Name', align: 'left', sortable: false, value: 'name'},
+        { text: 'Name', align: 'left', sortable: false, value: 'name' },
         { text: 'Status', sortable: false, value: 'status' },
         { text: 'Price (CDN)', sortable: false, value: 'price' }
       ],
-       filedItems: [
+      filedItems: [
         { name: 'Annual Report (2019)', status: 'Completed', price: '$70.00', enabled: false },
         { name: 'Annual Report (2018)', status: 'Completed', price: '$70.00', enabled: false }
       ]

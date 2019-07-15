@@ -1,5 +1,24 @@
 <template>
   <div>
+    <v-dialog  v-model="dialog" width="50rem">
+      <v-card>
+        <v-card-title>Error</v-card-title>
+
+        <v-card-text>
+          An error occured during processing. Please try later
+        </v-card-text>
+
+        <v-divider></v-divider>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" flat @click="navigateToDashboard">
+           Back to My Dashboard
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Transition to Payment -->
     <!-- TODO - this should be on Payment page -->
     <v-fade-transition>
@@ -62,7 +81,7 @@
                   {{ ARFilingYear }} AGM.</p>
               </header>
               <!-- <v-card flat id="AR-step-3-container"> -->
-                <Directors @directorsChange="directorsChangeEventHandler" />
+                <Directors @directorsChange="directorsChangeEventHandler" ref="directorsList"/>
               <!-- </v-card> -->
             </section>
           </div>
@@ -128,13 +147,15 @@ export default {
       showLoading: false,
       loadingMsg: 'Redirecting to PayBC to Process Your Payment',
       directorsChange: false,
-      filingData: []
+      filingData: [],
+      dialog: false
     }
   },
 
   computed: {
     ...mapState(['agmDate', 'noAGM', 'regOffAddrChange', 'filedDate',
-      'validated', 'currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate']),
+      'validated', 'currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate',
+      'entityName', 'entityIncNo', 'entityFoundingDate']),
 
     reportState () {
       // TODO - look at filing.annual.status instead
@@ -161,19 +182,79 @@ export default {
     },
 
     submit () {
-      // TODO - redirect to payment - will need to save state of page, etc
-      // TODO - make proper axios call and delete hardcoded data below
-      // TODO - other team doing credit card entering/payment confirmation? don't know what to check for in result
-      // const url = this.payURL
-      // axios.get(url)
-      //   .then(response => {
-      //     if (response && response.data) {
-      //       this.setFiledDate(this.currentDate)
-      //     } else {
-      //       console.log('submit() error - invalid response data')
-      //     }
-      //   })
-      //   .catch(error => console.error('submit() error =', error))
+      let changeOfDirectors = null
+      let changeOfAddress = null
+
+      const header = {
+        header: { name: 'annual_report', date: this.currentDate }
+      }
+      const business = {
+        business: {
+          foundingDate: this.entityFoundingDate,
+          identifier: this.entityIncNo,
+          legalName: this.entityName
+        }
+      }
+
+      const annualReport = {
+        annualReport: {
+          annualGeneralMeetingDate: this.agmDate,
+          certifiedBy: 'full name',
+          email: 'no_one@never.get'
+        }
+      }
+
+      if (this.isDataChanged('OTCDR')) {
+        changeOfDirectors = {
+          changeOfDirectors: {
+            certifiedBy: 'Full Name',
+            email: 'no_one@never.get',
+            directors: this.$refs.directorsList.getAllDirectors()
+          }
+        }
+      }
+
+      if (this.isDataChanged('OTADD')) {
+        changeOfAddress = {
+          changeOfAddress: {
+            certifiedBy: 'Full Name',
+            email: 'no_one@never.get',
+            deliveryAddress: this.$refs.registeredAddress.getDeliveryAddress(),
+            mailingAddress: this.$refs.registeredAddress.getMailingAddress()
+          }
+        }
+      }
+
+      const filingData = {
+        filing: Object.assign(
+          {},
+          header,
+          business,
+          annualReport,
+          changeOfAddress,
+          changeOfDirectors
+        )
+      }
+
+      // Temp fix Added to remove cors error while invoking mock endpoint.
+      // To be removed when the API is in place
+      let config = {
+        headers: {
+          'Content-Type': 'text/plain'
+        }
+      }
+
+      axios.post(this.corpNum + '/filings', filingData, config).then(res => {
+        let payRequestId = res.data.filing.header.paymentToken
+        payRequestId = '189'// To be removed
+        let returnURL = window.location.origin + '/AnnualReport?pay_id=' + payRequestId
+        let payURL = this.authURL + 'makepayment/' + payRequestId + '/' + encodeURIComponent(returnURL)
+        window.location.href = payURL
+      }).catch((error) => {
+        // TODO : To Decide how and where to display the error message from API
+        console.log(error)
+        this.dialog = true
+      })
 
       this.setFiledDate(this.currentDate)
     },
@@ -193,6 +274,15 @@ export default {
       if (setting === 'add' && !added) {
         this.filingData.push({ filingTypeCode: filing, entityType: 'CP' })
       }
+    },
+
+    isDataChanged (key) {
+      return this.filingData.find(o => o.filingTypeCode === key)
+    },
+
+    navigateToDashboard () {
+      this.dialog = false
+      this.$router.push('/')
     }
   },
 

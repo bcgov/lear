@@ -368,6 +368,10 @@ export default {
       // Watches changes to the address data in BaseAddress component, and updates our inProgressAddress holder, to be
       // used when we want to save the data.
       this.inProgressAddress = val
+    },
+
+    getAllDirectors: function () {
+      return this.directors
     }
   },
 
