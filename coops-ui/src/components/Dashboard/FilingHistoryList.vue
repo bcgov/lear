@@ -83,7 +83,7 @@ export default {
       this.filedItems = []
       this.errorMessage = null
       if (this.corpNum) {
-        var url = this.corpNum + '/filings' // TODO - add URL param to get only history items
+        var url = this.corpNum + '/filings'
         axios.get(url).then(response => {
           if (response && response.data && response.data.filings) {
             // sort by id descending (ie, latest to earliest)
@@ -93,23 +93,19 @@ export default {
             // create filed items
             for (let i = 0; i < filings.length; i++) {
               const filing = response.data.filings[i].filing
-              if (!isEmpty(filing.annualReport)) {
-                const agmYear = filing.annualReport.annualGeneralMeetingDate.substring(0, 4)
-                this.filedItems.push({
-                  name: `Annual Report (${agmYear})`,
-                  filingAuthor: filing.annualReport.certifiedBy,
-                  filingDate: filing.header.date,
-                  filingStatus: filing.header.status,
-                  filingDocuments: [ // TODO
-                    { name: 'Change of Address', url: '' },
-                    { name: 'Change of Directors', url: '' },
-                    { name: 'Annual Report', url: '' }
-                  ]
-                })
-              } else if (!isEmpty(filing.directorChange)) {
-                // TODO
-              } else if (!isEmpty(filing.addressChange)) {
-                // TODO
+              switch (filing.header.name) {
+                case 'annual_report':
+                  this.loadAnnualReport(filing)
+                  break
+                case 'change_of_directors':
+                  this.loadChangeOfDirectors(filing)
+                  break
+                case 'change_of_address':
+                  this.loadChangeOfAddress(filing)
+                  break
+                default:
+                  console.log('ERROR - got unknown filing =', filing)
+                  break
               }
             }
           } else {
@@ -123,9 +119,59 @@ export default {
         })
       }
     },
+
+    loadAnnualReport (filing) {
+      if (!isEmpty(filing.annualReport)) {
+        const agmYear = filing.annualReport.annualGeneralMeetingDate.substring(0, 4)
+        // TODO - finish implementation
+        const item = {
+          name: `Annual Report (${agmYear})`,
+          filingAuthor: filing.annualReport.certifiedBy,
+          filingDate: filing.header.date,
+          filingStatus: filing.header.status,
+          filingDocuments: [{ name: 'Annual Report', url: '' }]
+        }
+        if (!isEmpty(filing.changeOfDirectors)) {
+          // TODO
+          item.filingDocuments.push({ name: 'Director Change (AGM)', url: '' })
+        }
+        if (!isEmpty(filing.changeOfAddress)) {
+          // TODO
+          item.filingDocuments.push({ name: 'Address Change (AGM)', url: '' })
+        }
+        this.filedItems.push(item)
+      }
+    },
+
+    loadChangeOfDirectors (filing) {
+      if (!isEmpty(filing.changeOfDirectors)) {
+        const item = {
+          name: 'Director Change',
+          filingAuthor: filing.changeOfDirectors.certifiedBy,
+          filingDate: filing.header.date,
+          filingStatus: filing.header.status,
+          filingDocuments: [{ name: 'Director Change', url: '' }]
+        }
+        this.filedItems.push(item)
+      }
+    },
+
+    loadChangeOfAddress (filing) {
+      if (!isEmpty(filing.changeOfAddress)) {
+        const item = {
+          name: 'Address Change',
+          filingAuthor: filing.changeOfAddress.certifiedBy,
+          filingDate: filing.header.date,
+          filingStatus: filing.header.status,
+          filingDocuments: [{ name: 'Address Change', url: '' }]
+        }
+        this.filedItems.push(item)
+      }
+    },
+
     downloadAll (item) {
       // TODO
-      // console.log('downloadAll(), item =', item)
+      console.log('downloadAll(), item =', item)
     }
   },
 
