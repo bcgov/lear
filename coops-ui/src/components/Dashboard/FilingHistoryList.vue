@@ -7,8 +7,8 @@
         v-bind:key="index">
         <template v-slot:header>
           <div class="list-item">
-            <div class="list-item-title">{{item.name}}</div>
-            <div class="list-item-subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
+            <div class="list-item__title">{{item.name}}</div>
+            <div class="list-item__subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
           </div>
         </template>
         <ul class="list document-list">
@@ -16,14 +16,14 @@
             v-for="(document, index) in orderBy(item.filingDocuments, 'name')"
             v-bind:key="index">
             <a href="#">
-              <img class="list-item-icon" src="@/assets/images/icons/file-pdf-outline.svg" />
-              <div class="list-item-title">{{document.name}}</div>
+              <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
+              <div class="list-item__title">{{document.name}}</div>
             </a>
           </li>
           <li class="list-item">
             <a href="#">
-              <img class="list-item-icon" src="@/assets/images/icons/file-pdf-outline.svg" />
-              <div class="list-item-title">Receipt</div>
+              <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
+              <div class="list-item__title">Receipt</div>
             </a>
           </li>
         </ul>

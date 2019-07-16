@@ -217,7 +217,7 @@ export default {
       width 12rem
 
 #agm-checkbox
-  font-size 14
+  font-size 14px
   margin-top 0
   margin-left -3px
   padding 0
