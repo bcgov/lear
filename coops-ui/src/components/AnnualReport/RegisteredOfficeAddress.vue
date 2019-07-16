@@ -483,20 +483,20 @@ export default {
     },
     checkAddrChange () {
       if (
-        this.DeliveryAddressStreet !== this.storeDeliveryAddressStreet ||
-        this.DeliveryAddressStreetAdditional !== this.storeDeliveryAddressStreetAdditional ||
-        this.DeliveryAddressCity !== this.storeDeliveryAddressCity ||
-        this.DeliveryAddressRegion !== this.storeDeliveryAddressRegion ||
-        this.DeliveryAddressCountry !== this.storeDeliveryAddressCountry ||
-        this.DeliveryAddressPostalCode !== this.storeDeliveryAddressPostalCode ||
-        this.DeliveryAddressInstructions !== this.storeDeliveryAddressInstructions ||
-        this.MailingAddressStreet !== this.storeMailingAddressStreet ||
-        this.MailingAddressStreetAdditional !== this.storeMailingAddressStreetAdditional ||
-        this.MailingAddressCity !== this.storeMailingAddressCity ||
-        this.MailingAddressRegion !== this.storeMailingAddressRegion ||
-        this.MailingAddressCountry !== this.storeMailingAddressCountry ||
-        this.MailingAddressPostalCode !== this.storeMailingAddressPostalCode ||
-        this.MailingAddressInstructions !== this.storeMailingAddressInstructions
+        this.DeliveryAddressStreet !== this.tmpDeliveryAddressStreet ||
+        this.DeliveryAddressStreetAdditional !== this.tmpDeliveryAddressStreetAdditional ||
+        this.DeliveryAddressCity !== this.tmpDeliveryAddressCity ||
+        this.DeliveryAddressRegion !== this.tmpDeliveryAddressRegion ||
+        this.DeliveryAddressCountry !== this.tmpDeliveryAddressCountry ||
+        this.DeliveryAddressPostalCode !== this.tmpDeliveryAddressPostalCode ||
+        this.DeliveryAddressInstructions !== this.tmpDeliveryAddressInstructions ||
+        this.MailingAddressStreet !== this.tmpMailingAddressStreet ||
+        this.MailingAddressStreetAdditional !== this.tmpMailingAddressStreetAdditional ||
+        this.MailingAddressCity !== this.tmpMailingAddressCity ||
+        this.MailingAddressRegion !== this.tmpMailingAddressRegion ||
+        this.MailingAddressCountry !== this.tmpMailingAddressCountry ||
+        this.MailingAddressPostalCode !== this.tmpMailingAddressPostalCode ||
+        this.MailingAddressInstructions !== this.tmpMailingAddressInstructions
       ) {
         this.$store.state.regOffAddrChange = true
       } else {
