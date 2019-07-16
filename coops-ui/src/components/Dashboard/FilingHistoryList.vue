@@ -33,11 +33,19 @@
       </v-expansion-panel-content>
     </v-expansion-panel>
 
-     <!-- No Results Message -->
-    <v-card class="no-results" flat v-if="filedItems.length === 0">
+    <!-- No Results Message -->
+    <v-card class="no-results" flat v-if="filedItems.length === 0 && !errorMessage">
       <v-card-text>
         <div class="no-results__title">You have no filing history</div>
         <div class="no-results__subtitle">Your completed filings and transactions will appear here</div>
+      </v-card-text>
+    </v-card>
+
+    <!-- ErrorMessage -->
+    <v-card class="network-error" flat v-if="filedItems.length === 0 && errorMessage">
+      <v-card-text>
+        <div class="network-error__title">{{errorMessage}}</div>
+        <div class="no-results__subtitle">Your completed filings and transactions will normally appear here</div>
       </v-card-text>
     </v-card>
   </div>
@@ -56,7 +64,8 @@ export default {
 
   data () {
     return {
-      filedItems: null
+      filedItems: null,
+      errorMessage: null
     }
   },
 
@@ -72,6 +81,7 @@ export default {
   methods: {
     getFiledItems () {
       this.filedItems = []
+      this.errorMessage = null
       if (this.corpNum) {
         var url = this.corpNum + '/filings' // TODO - add URL param to get only history items
         axios.get(url).then(response => {
@@ -104,9 +114,13 @@ export default {
             }
           } else {
             console.log('getFiledItems() error - invalid Filings')
+            this.errorMessage = 'Oops, could not parse data from server'
           }
           this.$emit('filed-count', this.filedItems.length)
-        }).catch(error => console.error('getFiledItems() error =', error))
+        }).catch(error => {
+          console.error('getFiledItems() error =', error)
+          this.errorMessage = 'Oops, could not load data from server'
+        })
       }
     },
     downloadAll (item) {

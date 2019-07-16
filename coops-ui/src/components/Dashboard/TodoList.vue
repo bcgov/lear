@@ -39,11 +39,19 @@
       </ul>
     </v-card>
 
-     <!-- No Results Message -->
-    <v-card class="no-results" flat v-if="todoItems.length === 0">
+    <!-- No Results Message -->
+    <v-card class="no-results" flat v-if="todoItems.length === 0 && !errorMessage">
       <v-card-text>
         <div class="no-results__title">You don't have anything to do yet</div>
         <div class="no-results__subtitle">Filings that require your attention will appear here</div>
+      </v-card-text>
+    </v-card>
+
+    <!-- Error Message -->
+    <v-card class="network-error" flat v-if="todoItems.length === 0 && errorMessage">
+      <v-card-text>
+        <div class="network-error__title">{{errorMessage}}</div>
+        <div class="network-error__subtitle">Filings that require your attention will normally appear here</div>
       </v-card-text>
     </v-card>
   </div>
@@ -62,7 +70,8 @@ export default {
 
   data () {
     return {
-      todoItems: null
+      todoItems: null,
+      errorMessage: null
     }
   },
 
@@ -81,6 +90,7 @@ export default {
 
     getTodoItems () {
       this.todoItems = []
+      this.errorMessage = null
       if (this.corpNum) {
         const url = this.corpNum + '/filings' // TODO - add URL param to get only todo items
         axios.get(url).then(response => {
@@ -141,9 +151,13 @@ export default {
             })
           } else {
             console.log('getTodoItems() error - invalid Filings')
+            this.errorMessage = 'Oops, could not parse data from server'
           }
           this.$emit('todo-count', this.todoItems.length)
-        }).catch(error => console.error('getTodoItems() error =', error))
+        }).catch(error => {
+          console.error('getTodoItems() error =', error)
+          this.errorMessage = 'Oops, could not load data from server'
+        })
       }
     },
     doFile (item) {
