@@ -33,7 +33,7 @@ class BusinessNotFoundException(GenericException):
 
     def __init__(self, *args, identifier=None, **kwargs):
         """Return a valid BusinessNotFoundException."""
-        super(BusinessNotFoundException, self).__init__(*args, **kwargs)
+        super(BusinessNotFoundException, self).__init__(None, None, *args, **kwargs)
         if identifier:
             self.error = f'{identifier} not found'
         else:
@@ -44,24 +44,45 @@ class BusinessNotFoundException(GenericException):
 class FilingNotFoundException(GenericException):
     """Exception with defined error code and messaging."""
 
-    def __init__(self, *args, identifier=None, filing_type=None, **kwargs):
+    def __init__(self, *args, identifier=None, filing_type=None, event_id=None, **kwargs):
         """Return a valid FilingNotFoundException."""
-        super(FilingNotFoundException, self).__init__(*args, **kwargs)
-        if identifier and filing_type:
+        super(FilingNotFoundException, self).__init__(None, None, *args, **kwargs)
+        if identifier and filing_type and event_id:
+            self.error = f'{filing_type} not found for {identifier} at event {event_id}'
+        elif identifier and filing_type:
             self.error = f'{filing_type} not found for {identifier}'
+        elif event_id and filing_type:
+            self.error = f'{filing_type} not found for event {event_id}'
         else:
             self.error = 'Filing not found'
+        self.status_code = 404
+
+
+class OfficeNotFoundException(GenericException):
+    """Exception with defined error code and messaging."""
+
+    def __init__(self, *args, identifier=None, event_id=None, **kwargs):
+        """Return a valid AddressNotFoundException."""
+        super(OfficeNotFoundException, self).__init__(None, None, *args, **kwargs)
+        if identifier and event_id:
+            self.error = f'Office not found for {identifier} at event {event_id}'
+        elif identifier:
+            self.error = f'Office not found for {identifier}'
+        elif event_id:
+            self.error = f'Office not found for event {event_id}'
+        else:
+            self.error = 'Office not found'
         self.status_code = 404
 
 
 class AddressNotFoundException(GenericException):
     """Exception with defined error code and messaging."""
 
-    def __init__(self, *args, identifier=None, address_type=None, **kwargs):
+    def __init__(self, *args, address_id, **kwargs):
         """Return a valid AddressNotFoundException."""
-        super(AddressNotFoundException, self).__init__(*args, **kwargs)
-        if identifier and address_type:
-            self.error = f'{address_type} not found with id: {identifier}'
+        super(AddressNotFoundException, self).__init__(None, None, *args, **kwargs)
+        if address_id:
+            self.error = f'Address not found with id: {address_id}'
         else:
             self.error = 'Address not found'
         self.status_code = 404
@@ -70,11 +91,15 @@ class AddressNotFoundException(GenericException):
 class DirectorsNotFoundException(GenericException):
     """Exception with defined error code and messaging."""
 
-    def __init__(self, *args, identifier=None, **kwargs):
+    def __init__(self, *args, identifier=None, event_id=None, **kwargs):
         """Return a valid DirectorsNotFoundException."""
-        super(DirectorsNotFoundException, self).__init__(*args, **kwargs)
-        if identifier:
-            self.error = f'Directors not found for: {identifier}'
+        super(DirectorsNotFoundException, self).__init__(None, None, *args, **kwargs)
+        if identifier and event_id:
+            self.error = f'Directors not found for {identifier} at event {event_id}'
+        elif identifier:
+            self.error = f'Directors not found for {identifier}'
+        elif event_id:
+            self.error = f'Directors not found for event {event_id}'
         else:
             self.error = 'Directors not found'
         self.status_code = 404
@@ -85,7 +110,7 @@ class InvalidFilingTypeException(GenericException):
 
     def __init__(self, *args, filing_type=None, **kwargs):
         """Return a valid InvalidFilingTypeException."""
-        super(InvalidFilingTypeException, self).__init__(*args, **kwargs)
+        super(InvalidFilingTypeException, self).__init__(None, None, *args, **kwargs)
         if filing_type:
             self.error = f'{filing_type} is an invalid filing type'
         else:

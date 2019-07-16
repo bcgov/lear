@@ -17,6 +17,7 @@ Currently this only provides API versioning information
 """
 from flask import current_app
 
+from colin_api.exceptions import OfficeNotFoundException
 from colin_api.models import Address
 from colin_api.resources.db import DB
 
@@ -55,17 +56,19 @@ class Office:
             cursor.execute(querystring, identifier=identifier)
 
             office_info = cursor.fetchone()
+            if not office_info:
+                raise OfficeNotFoundException(identifier=identifier)
+
             test_second_office = cursor.fetchone()
             if test_second_office:
                 current_app.logger.error('got more than 1 current registered office address for {}'.format(identifier))
 
             office_info = dict(zip([x[0].lower() for x in cursor.description], office_info))
-
             office_obj = Office()
             office_obj.event_id = office_info['start_event_id']
             office_obj.delivery_address = Address.get_by_address_id(office_info['delivery_addr_id']).as_dict()
-            office_obj.mailing_address = Address.get_by_address_id(office_info['mailing_addr_id']).as_dict()
-
+            if office_info['mailing_addr_id']:
+                office_obj.mailing_address = Address.get_by_address_id(office_info['mailing_addr_id']).as_dict()
             return office_obj
 
         except Exception as err:
@@ -89,6 +92,9 @@ class Office:
             cursor.execute(querystring, event_id=event_id)
 
             office_info = cursor.fetchone()
+            if not office_info:
+                raise OfficeNotFoundException(event_id=event_id)
+
             office_info = dict(zip([x[0].lower() for x in cursor.description], office_info))
 
             office_obj = Office()
@@ -100,6 +106,7 @@ class Office:
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errs
             current_app.logger.error('error getting office from event : {}'.format(event_id))
+
             raise err
 
     @classmethod
@@ -118,7 +125,7 @@ class Office:
                            )
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errs
-            current_app.logger.error(err.with_traceback(None))
+            current_app.logger.error('Error updating office table')
             raise err
 
         try:
@@ -135,5 +142,5 @@ class Office:
                            )
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errs
-            current_app.logger.error('Error updating office table')
+            current_app.logger.error('Error inserting into office table')
             raise err

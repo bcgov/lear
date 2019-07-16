@@ -151,3 +151,77 @@ class Business:
 
             # pass through exception to caller
             raise err
+
+    @classmethod
+    def update_corporation(cls, cursor, corp_num: str = None, date: str = None):
+        """Update corporation record.
+
+        :param cursor: oracle cursor
+        :param corp_num: (str) corporation number
+        :param date: (str) last agm date
+        """
+        try:
+            if date:
+                cursor.execute("""
+                    UPDATE corporation
+                    SET
+                        LAST_AR_FILED_DT = sysdate,
+                        LAST_AGM_DATE = TO_DATE(:agm_date, 'YYYY-mm-dd'),
+                        LAST_LEDGER_DT = sysdate
+                    WHERE corp_num = :corp_num
+                    """,
+                               agm_date=date,
+                               corp_num=corp_num
+                               )
+
+            else:
+                cursor.execute("""
+                                    UPDATE corporation
+                                    SET
+                                        LAST_LEDGER_DT = sysdate
+                                    WHERE corp_num = :corp_num
+                                    """,
+                               corp_num=corp_num
+                               )
+
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+
+    @classmethod
+    def update_corp_state(cls, cursor, event_id, corp_num, state='ACT'):
+        """Update corporation state.
+
+        End previous corp_state record (end event id) and and create new corp_state record.
+
+        :param cursor: oracle cursor
+        :param event_id: (int) event id for corresponding event
+        :param corp_num: (str) corporation number
+        """
+        try:
+            cursor.execute("""
+                UPDATE corp_state
+                SET end_event_id = :event_id
+                WHERE corp_num = :corp_num and end_event_id is NULL
+                """,
+                           event_id=event_id,
+                           corp_num=corp_num
+                           )
+
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+        try:
+            cursor.execute("""
+                INSERT INTO corp_state (corp_num, start_event_id, state_typ_cd)
+                  VALUES (:corp_num, :event_id, :state
+                  )
+                """,
+                           event_id=event_id,
+                           corp_num=corp_num,
+                           state=state
+                           )
+
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err

@@ -19,36 +19,10 @@ import json
 from registry_schemas import validate
 
 from tests import oracle_integration
+from tests.unit.api.test_ar import coa_ids as coa_ids
 
 
-@oracle_integration
-def test_get_coa(client):
-    """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0001965/filings/changeOfAddress')
-
-    assert 200 == rv.status_code
-    is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
-    if errors:
-        for err in errors:
-            print('\nERROR MESSAGE:')
-            print(err.message)
-
-    assert is_valid
-
-
-@oracle_integration
-def test_get_by_id(client):
-    """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0001965/filings/changeOfAddress?eventId=111362565')
-
-    assert 200 == rv.status_code
-    is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
-    if errors:
-        for err in errors:
-            print('\nERROR MESSAGE:')
-            print(err.message)
-
-    assert is_valid
+ids = coa_ids
 
 
 @oracle_integration
@@ -64,14 +38,6 @@ def test_get_current(client):
             print(err.message)
 
     assert is_valid
-
-
-@oracle_integration
-def test_get_coa_no_results(client):
-    """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0000000/filings/changeOfAddress')
-
-    assert 404 == rv.status_code
 
 
 @oracle_integration
@@ -122,6 +88,24 @@ def test_post_coa(client):
     rv = client.post('/api/v1/businesses/CP0001965/filings/changeOfAddress',
                      data=json.dumps(fake_filing), headers=headers)
 
+    assert 201 == rv.status_code
+    is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
+    if errors:
+        for err in errors:
+            print('\nERROR MESSAGE:')
+            print(err.message)
+
+    assert is_valid
+    assert "changeOfAddress" == rv.json['filing']['header']['name']
+    ids.append(str(rv.json['filing']['changeOfAddress']['eventId']))
+    assert str(rv.json['filing']['changeOfAddress']['eventId']) in ids
+
+
+@oracle_integration
+def test_get_coa(client):
+    """Assert that the business info for regular (not xpro) business is correct to spec."""
+    rv = client.get('/api/v1/businesses/CP0001965/filings/changeOfAddress')
+
     assert 200 == rv.status_code
     is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
     if errors:
@@ -130,6 +114,40 @@ def test_post_coa(client):
             print(err.message)
 
     assert is_valid
+    assert "changeOfAddress" == rv.json['filing']['header']['name']
+
+
+@oracle_integration
+def test_get_coa_by_id(client):
+    """Assert that the business info for regular (not xpro) business is correct to spec."""
+    for event_id in ids:
+        rv = client.get(f'/api/v1/businesses/CP0001965/filings/changeOfAddress?eventId={event_id}')
+
+        assert 200 == rv.status_code
+        is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
+        if errors:
+            for err in errors:
+                print('\nERROR MESSAGE:')
+                print(err.message)
+
+        assert is_valid
+        assert "changeOfAddress" == rv.json['filing']['header']['name']
+        assert f'{event_id}' == str(rv.json['filing']['changeOfAddress']['eventId'])
+
+
+@oracle_integration
+def test_get_coa_by_id_wrong_corp(client):
+    """Assert that a coop searching for a coa filing associated with a different coop returns a 404."""
+    rv = client.get(f'/api/v1/businesses/CP0000005/filings/changeOfAddress?eventId={ids[0]}')
+    assert 404 == rv.status_code
+
+
+@oracle_integration
+def test_get_coa_no_results(client):
+    """Assert that the business info for regular (not xpro) business is correct to spec."""
+    rv = client.get('/api/v1/businesses/CP0000000/filings/changeOfAddress')
+
+    assert 404 == rv.status_code
 
 
 @oracle_integration
