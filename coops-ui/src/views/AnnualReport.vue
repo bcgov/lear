@@ -69,7 +69,12 @@
                 <p>Verify or change your Registered Office Addresses.</p>
               </header>
               <v-card flat id="AR-step-2-container">
-                <RegisteredOfficeAddress ref="registeredAddress"/>
+                <RegisteredOfficeAddress
+                  ref="registeredAddress"
+                  :changeButtonDisabled="!agmDateValid"
+                  :legalEntityNumber="corpNum"
+                  @modified="regOffAddrChange = $event"
+                ></RegisteredOfficeAddress>
               </v-card>
             </section>
 

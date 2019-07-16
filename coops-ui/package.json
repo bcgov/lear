@@ -15,7 +15,7 @@
     "@babel/polyfill": "^7.0.0-rc.1",
     "axios": "^0.18.0",
     "register-service-worker": "^1.6.2",
-    "sbc-common-components": "^0.0.24",
+    "sbc-common-components": "^0.0.25",
     "sinon": "^7.3.2",
     "vue": "^2.6.6",
     "vue-affix": "^0.5.2",
