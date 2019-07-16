@@ -164,9 +164,11 @@ export default {
   name: 'Directors',
 
   mixins: [Vue2Filters.mixin],
+
   components: {
     BaseAddress
   },
+
   data () {
     return {
       directors: [],

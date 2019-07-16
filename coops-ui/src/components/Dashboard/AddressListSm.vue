@@ -1,14 +1,37 @@
 <template>
   <ul class="list">
     <li class="list-item" v-if="mailingAddress">
-      {{ mailingAddress.streetAddress }}<br>
-      {{ mailingAddress.addressCity }}, {{ mailingAddress.addressRegion }}<br>
-      {{ mailingAddress.addressCountry }}
+      <v-avatar>
+        <v-icon color="primary">mail_outline</v-icon>
+      </v-avatar>
+      <div class="address">
+        <div class="list-item__title">Mailing Address</div>
+        <div class="list-item__subtitle">
+          <ul class="address-details">
+            <li>{{ mailingAddress.streetAddress }}</li>
+            <li>{{ mailingAddress.addressCity }} {{ mailingAddress.addressRegion }}
+              &nbsp;&nbsp;{{ mailingAddress.postalCode}}</li>
+            <li>{{ mailingAddress.addressCountry }}</li>
+          </ul>
+        </div>
+      </div>
     </li>
+
     <li class="list-item" v-if="deliveryAddress">
-      {{ deliveryAddress.streetAddress }}<br>
-      {{ deliveryAddress.addressCity }}, {{ deliveryAddress.addressRegion }}<br>
-      {{ deliveryAddress.addressCountry }}
+      <v-avatar>
+        <v-icon color="primary">local_shipping</v-icon>
+      </v-avatar>
+      <div class="address">
+        <div class="list-item__title">Delivery Address</div>
+        <div class="list-item__subtitle">
+          <ul class="address-details">
+            <li>{{ deliveryAddress.streetAddress }}</li>
+            <li>{{ deliveryAddress.addressCity }} {{ deliveryAddress.addressRegion }}
+              &nbsp;&nbsp;{{ deliveryAddress.postalCode}}</li>
+            <li>{{ deliveryAddress.addressCountry }}</li>
+          </ul>
+        </div>
+      </div>
     </li>
   </ul>
 </template>
@@ -66,6 +89,14 @@ export default {
 </script>
 
 <style lang="stylus" scoped>
-  ul
+  .address-details
+    padding 0
     list-style-type none
+
+  .list-item
+    flex-direction row
+    align-items flex-start
+
+  .v-icon
+    margin-right 1.25rem
 </style>
