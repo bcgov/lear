@@ -49,7 +49,7 @@
               and List of Directors as of your AGM.</p>
           </header>
 
-          <div v-if="filedDate === null">
+          <div v-if="isAnnualReportEditable">
             <!-- Annual General Meeting Date -->
             <section>
               <header>
@@ -86,7 +86,7 @@
             </section>
           </div>
           <div v-else>
-            <ARComplete/>
+           <!-- <ARComplete/> -->
           </div>
         </article>
 
@@ -100,7 +100,7 @@
       <v-container id="submit-container" class="pt-0">
         <div class="ar-filing-buttons">
           <v-btn
-            v-if="filedDate === null"
+            v-if="isAnnualReportEditable"
             id="ar-pay-btn"
             color="primary"
             large
@@ -125,10 +125,10 @@ import axios from '@/axios-auth'
 import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
-import ARComplete from '@/components/AnnualReport/ARComplete.vue'
+// import ARComplete from '@/components/AnnualReport/ARComplete.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapActions, mapGetters } from 'vuex'
 
 export default {
   name: 'AnnualReport',
@@ -137,7 +137,7 @@ export default {
     AGMDate,
     RegisteredOfficeAddress,
     Directors,
-    ARComplete,
+    // ARComplete,
     SbcFeeSummary,
     Affix
   },
@@ -153,14 +153,11 @@ export default {
   },
 
   computed: {
-    ...mapState(['agmDate', 'noAGM', 'regOffAddrChange', 'filedDate',
+    ...mapState(['agmDate', 'noAGM', 'regOffAddrChange',
       'validated', 'currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate',
-      'entityName', 'entityIncNo', 'entityFoundingDate']),
+      'entityName', 'entityIncNo', 'entityFoundingDate', 'currentARStatus']),
 
-    reportState () {
-      // TODO - look at filing.annual.status instead
-      return this.filedDate ? 'Filed' : 'Draft'
-    }
+    ...mapGetters(['isAnnualReportEditable', 'reportState'])
   },
 
   mounted () {
@@ -175,7 +172,7 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setARFilingYear', 'setFiledDate', 'setValidated']),
+    ...mapActions(['setARFilingYear', 'setValidated']),
 
     directorsChangeEventHandler (val) {
       this.directorsChange = val
@@ -255,8 +252,6 @@ export default {
         console.log(error)
         this.dialog = true
       })
-
-      this.setFiledDate(this.currentDate)
     },
 
     toggleFiling (setting, filing) {

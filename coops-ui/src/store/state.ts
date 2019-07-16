@@ -14,5 +14,7 @@ export default {
   agmDate: null,
   noAGM: false,
   regOffAddrChange: false,
-  validated: false
+  validated: false,
+
+  currentARStatus: null
 }

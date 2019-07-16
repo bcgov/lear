@@ -48,7 +48,8 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setARFilingYear']),
+    ...mapActions(['setARFilingYear', 'setCurrentARStatus', 'setRegOffAddrChange', 'setAgmDate',
+      'setFiledDate', 'setNoAGM', 'setValidated']),
 
     getTodoItems () {
       this.todoItems = []
@@ -79,8 +80,17 @@ export default {
       }
     },
     fileAnnualReport (item) {
-      this.setARFilingYear(item.year)
+      this.resetStore(item)
       this.$router.push('/annual-report')
+    },
+    resetStore (item) {
+      this.setARFilingYear(item.year)
+      this.setCurrentARStatus('TODO')
+      this.setRegOffAddrChange(false)
+      this.setAgmDate(null)
+      this.setFiledDate(null)
+      this.setNoAGM(false)
+      this.setValidated(false)
     }
   },
 
