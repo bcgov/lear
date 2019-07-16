@@ -52,7 +52,8 @@ node {
     
                 // Don't tag with BUILD_ID so the pruner can do it's job; it won't delete tagged images.
                 // Tag the images for deployment based on the image's hash
-                def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}")
+                //def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}")
+                def IMAGE_HASH = sha256:3a89ad4170c9a066993bf0ef264d9e69b003e9fe42683670e9c09d4bf9dd3710
                 echo "IMAGE_HASH: ${IMAGE_HASH}"
                 openshift.tag("${IMAGENAMESPACE}/${COMPONENT_NAME}@${IMAGE_HASH}", "${NAMESPACE}/${COMPONENT_NAME}:${TAG_NAME}")
               }
