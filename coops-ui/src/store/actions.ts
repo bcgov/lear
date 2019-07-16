@@ -40,5 +40,8 @@ export default {
   },
   setEntityFoundingDate ({ commit }, entityFoundingDate) {
     commit('entityFoundingDate', entityFoundingDate)
+  },
+  setCurrentARStatus ({ commit }, currentARStatus) {
+    commit('currentARStatus', currentARStatus)
   }
 }

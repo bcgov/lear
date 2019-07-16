@@ -40,5 +40,8 @@ export default {
   },
   entityFoundingDate (state, entityFoundingDate) {
     state.entityFoundingDate = entityFoundingDate
+  },
+  currentARStatus (state, currentARStatus) {
+    state.currentARStatus = currentARStatus
   }
 }
