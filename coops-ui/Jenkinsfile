@@ -111,7 +111,7 @@ if( run_pipeline ) {
                         def testResults = sh(script: "npm run test:unit-silent", returnStatus: true)
 
                         echo "Unit tests ran, returned ${testResults}"
-                        if (testResults > 0) {
+                        if (testResults <> 0) {
                             try {
                                 timeout(time: 1, unit: 'DAYS') {
                                     input message: "Unit tests failed. Continue?", id: "1"
