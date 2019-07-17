@@ -22,6 +22,7 @@ describe('AnnualReport.vue', () => {
     // init store
     store.state.corpNum = 'CP0001191'
     store.state.ARFilingYear = 2017
+    store.state.currentARStatus = 'TODO'
     store.state.filedDate = null
     store.state.validated = true
 
