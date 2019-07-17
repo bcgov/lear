@@ -1,259 +1,202 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
-
-import App from '@/App.vue'
-import AnnualReport from '@/views/AnnualReport.vue'
-import AGMDate from '@/components/AnnualReport/AGMDate.vue'
-import store from '@/store/store'
-import sinon from 'sinon'
-import axios from '@/axios-auth'
 import Vuelidate from 'vuelidate'
+
+import store from '@/store/store'
+import AnnualReport from '@/views/AnnualReport.vue'
+
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('App.vue', () => {
-  // just need a token that can get parsed properly (will be expired but doesn't matter for tests)
-  sessionStorage.setItem('KEYCLOAK_TOKEN', 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUbWdtZUk0MnVsdUZ0N' +
-    '3FQbmUtcTEzdDUwa0JDbjF3bHF6dHN0UGdUM1dFIn0.eyJqdGkiOiIxYzQ2YjIzOS02ZWY0LTQxYTQtYThmMy05N2M5M2IyNmNlMjAiLCJle' +
-    'HAiOjE1NTcxNzMyNTYsIm5iZiI6MCwiaWF0IjoxNTU3MTY5NjU2LCJpc3MiOiJodHRwczovL3Nzby1kZXYucGF0aGZpbmRlci5nb3YuYmMuY2' +
-    'EvYXV0aC9yZWFsbXMvZmNmMGtwcXIiLCJhdWQiOiJzYmMtYXV0aC13ZWIiLCJzdWIiOiIwMzZlN2I4Ny0zZTQxLTQ2MTMtYjFiYy04NWU5OTA' +
-    'xNTgzNzAiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJzYmMtYXV0aC13ZWIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiJkOGZmYjk4' +
-    'OS0zNzRlLTRhYTktODc4OS03YTRkODA1ZjNkOTAiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly8xOTIuMTY4LjAuMTM6O' +
-    'DA4MC8iLCIxOTIuMTY4LjAuMTMiLCIqIiwiaHR0cDovLzE5Mi4xNjguMC4xMzo4MDgwIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJlZGl' +
-    '0IiwidW1hX2F1dGhvcml6YXRpb24iLCJiYXNpYyJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY' +
-    '291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInByZWZlcnJlZF91c2VybmFtZSI6ImNwMDAwMTE5MSJ9.Ou' +
-    'JLtzYCnkp5KXSiudGFJY6hTSvdE3KokhkEzqU-icxAzQwZSTYbzZQdGsIScy4-DIWHahIGp9L-e6mYlQSQta2rK2Kte85MxThubyw0096UOtAE' +
-    'wnS9VURHXPUm4ZUyI4ECkyLlFywOPxAftNdeSYeJx26GHBCvo6uR9Zv6A3yTlJy3B1HJxBWk_6xTAzGPPDCLoyKGeIxGidGujKCKCAfXRMrjhX' +
-    'yBv90XzDgZ-To-6_jMjSjBX6Dtq7icdZYLWWDdrhjCpJA5CKS0PlSgeH1Yq4rHd8Ztp5cvVdJFxt87gIopIOQvcy4ji0gtaovgUhiyg07gXGl8' +
-    'dGZwn1tpLA')
-  let rootvm
+describe('AnnualReport.vue', () => {
   let vm
-  let childvm
 
-  let click = function (id) {
-    console.log('ID: ', id)
-    let button = vm.$el.querySelector(id)
-    let window = button.ownerDocument.defaultView
-    var click = new window.Event('click')
+  function click (id) {
+    const button = vm.$el.querySelector(id)
+    const window = button.ownerDocument.defaultView
+    const click = new window.Event('click')
     button.dispatchEvent(click)
   }
-  sinon.getStub = sinon.stub(axios, 'get')
 
-  beforeEach((done) => {
-    // reset store
-    store.state.agmDate = null
+  beforeEach(done => {
+    // init store
+    store.state.corpNum = 'CP0001191'
+    store.state.ARFilingYear = 2017
     store.state.filedDate = null
-    store.state.validated = false
-    store.state.noAGM = false
+    store.state.validated = true
 
-    // ar info stub
-    sinon.getStub.withArgs('CP0001191/filings/annual_report?year=2017')
-      .returns(new Promise((resolve) => resolve({
-        data:
-          {
-            filing: {
-              header: {
-                name: 'annual report',
-                date: '2016-04-08'
-              },
-              business_info: {
-                founding_date: '2001-08-05',
-                identifier: 'CP0001191',
-                legal_name: 'legal name - CP0001191'
-              },
-              annual_report: {
-                annual_general_meeting_date: '2016-04-08',
-                certified_by: 'full name',
-                email: 'no_one@never.get'
-              }
-            }
-          }
-      })))
-    // business info stub
-    sinon.getStub.withArgs('CP0001187')
-      .returns(new Promise((resolve) => resolve({
-        data:
-          {
-            business_info: {
-              founding_date: '2001-08-05',
-              identifier: 'CP0001191',
-              legal_name: 'legal name - CP0001191'
-            }
-          }
-      })))
-    // pay stub
-    sinon.getStub.withArgs(
-      'https://mock-lear-tools.pathfinder.gov.bc.ca/rest/pay/0.1/api/v1/payments/fees/AR/CP?date=2019-04-15')
-      .returns(new Promise((resolve) => resolve({
-        data:
-          {
-            filingType: 'annual-report',
-            corpType: 'CP',
-            vaildDate: '2019-04-15',
-            fees: {
-              filing: 45,
-              service: 1.5,
-              processing: 0.75
-            }
-          }
-      })))
-    // pay-api-otann stub
-    sinon.getStub.withArgs(
-      'https://pay-api-dev.pathfinder.gov.bc.ca/api/v1/fees/CP/OTANN')
-      .returns(new Promise((resolve) => resolve({
-        data:
-          {
-            filing_fees: 30,
-            filing_type: 'ANNUAL REPORT',
-            processing_fees: 0,
-            service_fees: 0,
-            tax: { gst: 0, pst: 0 },
-            total: 30
-          }
-      })))
-
-    const RootConstructor = Vue.extend(App)
-    let rootInstance = new RootConstructor({ store: store })
-    rootvm = rootInstance.$mount()
+    //
+    // TODO - should stub out sub-components and just focus on THIS component's functionality
+    //      - see Dashboard for example
+    //
 
     const Constructor = Vue.extend(AnnualReport)
     let instance = new Constructor({ store: store })
     vm = instance.$mount()
 
-    const ChildConstructor = Vue.extend(AGMDate)
-    let childInstance = new ChildConstructor({ store: store })
-    childvm = childInstance.$mount()
-
-    setTimeout(() => {
+    Vue.nextTick(() => {
       done()
-    }, 500)
-  })
-
-  afterEach((done) => {
-    sinon.restore()
-    setTimeout(() => {
-      done()
-    }, 750)
+    })
   })
 
   it('initializes the store variables properly', () => {
-    expect(vm.$store.state.corpNum).toEqual('CP0001191')
-    expect(vm.$store.state.ARFilingYear).toEqual('2017')
-    expect(vm.$store.state.currentDate).toBeDefined()
+    expect(vm.$store.state.ARFilingYear).toEqual(2017)
     expect(vm.$store.state.filedDate).toBeNull()
-    // AGM Date is now initialized to 'minDate'
-    expect(vm.$store.state.agmDate).toEqual('2017-01-01')
-    expect(vm.$store.state.noAGM).toBeFalsy()
-    expect(vm.$store.state.validated).toBeTruthy()
+    expect(vm.$store.state.validated).toBe(true)
+
+    // check titles and sub-titles
+    expect(vm.$el.querySelector('#AR-header').textContent).toContain('2017')
+    expect(vm.$el.querySelector('#AR-step-2-header span').textContent).toContain('2017')
+    expect(vm.$el.querySelector('#AR-step-3-header + p').textContent).toContain('2017')
+
     console.log('Passed Test 1')
   })
 
-  // pay button disable based on 'validate' (store var)
-  it('pay button disables based on validation', () => {
-    // starts disabled
-    expect(vm.$el.querySelector('#ar-pay-btn').getAttribute('disabled')).toBeTruthy()
-    // when validated is true it becomes enabled
-    vm.$store.state.validated = true
-    setTimeout(() => {
-      expect(vm.$el.querySelector('#ar-pay-btn').getAttribute('disabled')).toBeFalsy()
+  it('enables Validated flag when sub-component flags are valid', done => {
+    // set flags
+    vm.setAgmDateValid(true)
+    vm.setAddressesFormValid(true)
+    vm.setDirectorFormValid(true)
+
+    Vue.nextTick(() => {
+      // confirm that flag is set correctly
+      expect(vm.validated).toEqual(true)
       console.log('Passed Test 2')
-    }, 10)
+      done()
+    })
   })
 
-  // select noAGM and pay
-  it('sets the store vars properly on \'no agm\' submit', () => {
-    click('#agm-checkbox')
-    setTimeout(() => {
-      expect(vm.$store.state.noAGM).toBeTruthy()
-      expect(vm.$store.state.validated).toBeTruthy()
-      expect(vm.$el.querySelector('#ar-pay-btn').getAttribute('disabled')).toBeFalsy()
-      click('#ar-pay-btn')
-      setTimeout(() => {
-        expect(vm.$store.state.ARFilingYear).toEqual('2017')
-        expect(vm.$store.state.filedDate).toEqual(vm.$store.state.currentDate)
-        expect(vm.$store.state.agmDate).toBeNull()
-        console.log('Passed Test 3')
-      }, 70)
-    }, 50)
+  it('disables Validated flag when AGM Date is invalid', done => {
+    // set flags
+    vm.setAgmDateValid(false)
+    vm.setAddressesFormValid(true)
+    vm.setDirectorFormValid(true)
+
+    Vue.nextTick(() => {
+      // confirm that flag is set correctly
+      expect(vm.validated).toEqual(false)
+      console.log('Passed Test 3')
+      done()
+    })
   })
 
-  // select date and pay
-  it('sets the store vars properly on \'selected date\' submit', () => {
-    // select valid date
-    var validMMDD = vm.$store.state.currentDate.substring(4)
-    var myValidDate = vm.$store.state.ARFilingYear + validMMDD
-    childvm.$data.date = myValidDate
+  it('disables Validated flag when Addresses Form is invalid', done => {
+    // set flags
+    vm.setAgmDateValid(true)
+    vm.setAddressesFormValid(false)
+    vm.setDirectorFormValid(true)
 
-    setTimeout(() => {
-      expect(vm.$store.state.validated).toBeTruthy()
-      expect(vm.$el.querySelector('#ar-pay-btn').getAttribute('disabled')).toBeFalsy()
-      click('#ar-pay-btn')
-      setTimeout(() => {
-        expect(vm.$store.state.ARFilingYear).toEqual('2017')
-        expect(vm.$store.state.filedDate).toEqual(vm.$store.state.currentDate)
-        expect(vm.$store.state.agmDate).toEqual(myValidDate)
-        console.log('Passed Test 4')
-      }, 50)
-    }, 10)
+    Vue.nextTick(() => {
+      // confirm that flag is set correctly
+      expect(vm.validated).toEqual(false)
+      console.log('Passed Test 4')
+      done()
+    })
   })
 
+  it('disables Validated flag when Director Form is invalid', done => {
+    // set flags
+    vm.setAgmDateValid(true)
+    vm.setAddressesFormValid(true)
+    vm.setDirectorFormValid(false)
+
+    Vue.nextTick(() => {
+      // confirm that flag is set correctly
+      expect(vm.validated).toEqual(false)
+      console.log('Passed Test 5')
+      done()
+    })
+  })
+
+  it('enables Pay & File button when Validated is true', done => {
+    // set flag
+    vm.setValidated(true)
+
+    Vue.nextTick(() => {
+      expect(vm.$el.querySelector('#ar-pay-btn').disabled).toBe(false)
+      console.log('Passed Test 6')
+      done()
+    })
+  })
+
+  it('disables Pay & File button when Validated is false', done => {
+    // set flag
+    vm.setValidated(false)
+
+    Vue.nextTick(() => {
+      expect(vm.$el.querySelector('#ar-pay-btn').disabled).toBe(true)
+      console.log('Passed Test 7')
+      done()
+    })
+  })
+
+  // TODO - fix this when Next button is implemented
   // next button
-  it('the next button works after payment', () => {
-    click('#agm-checkbox')
-    setTimeout(() => {
-      expect(vm.$store.state.noAGM).toBeTruthy()
-      expect(vm.$store.state.validated).toBeTruthy()
-      expect(vm.$el.querySelector('#ar-pay-btn').getAttribute('disabled')).toBeFalsy()
-      click('#ar-pay-btn')
-      setTimeout(() => {
-        expect(vm.$store.state.filedDate).toBeDefined()
-        expect(vm.$el.querySelector('#ar-next-btn').getAttribute('disabled')).toBeFalsy()
-        // test disable button
-        var tempYear = vm.$store.state.ARFilingYear
-        vm.$store.state.ARFilingYear = vm.$store.state.currentDate.substring(0, 4)
-        setTimeout(() => {
-          expect(vm.$el.querySelector('#ar-next-btn').getAttribute('disabled')).toBeTruthy()
-          vm.$store.state.ARFilingYear = tempYear
-          setTimeout(() => {
-            expect(vm.$el.querySelector('#ar-next-btn').getAttribute('disabled')).toBeFalsy()
-            sinon.restore()
-            sinon.getStub.withArgs('CP0001191/filings/annual_report?year=2017')
-              .returns(new Promise((resolve) => resolve({
-                data:
-                  {
-                    filing: {
-                      header: {
-                        name: 'annual report',
-                        date: '2017-04-08'
-                      },
-                      business_info: {
-                        founding_date: '2001-08-05',
-                        identifier: 'CP0001191',
-                        legal_name: 'legal name - CP0001191'
-                      },
-                      annual_report: {
-                        annual_general_meeting_date: '2017-04-08',
-                        certified_by: 'full name',
-                        email: 'no_one@never.get'
-                      }
-                    }
-                  }
-              })))
-            click('#ar-next-btn')
-            setTimeout(() => {
-              expect(vm.$store.state.corpNum).toEqual('CP0001191')
-              expect(vm.$store.state.ARFilingYear).toEqual('2018')
-              expect(vm.$store.state.currentDate).toBeDefined()
-              expect(vm.$store.state.filedDate).toBeNull()
-              // AGM Date is now initialized to 'minDate'
-              expect(vm.$store.state.agmDate).toEqual('2018-01-01')
-              expect(vm.$store.state.noAGM).toBeFalsy()
-              expect(vm.$store.state.validated).toBeFalsy()
-              console.log('Passed Test 5')
-            }, 600)
-          }, 10)
-        }, 10)
-      }, 50)
-    }, 50)
-  })
+  // it('verifies that the next button works after payment', () => {
+  //   // set flag
+  //   vm.setValidateFlag(true)
+
+  //   Vue.nextTick(() => {
+  //     expect(vm.$store.state.noAGM).toBe(true)
+  //     expect(vm.$store.state.validated).toBe(true)
+  //     expect(vm.$el.querySelector('#ar-pay-btn').disabled).toBe(false)
+  //     click('#ar-pay-btn')
+
+  //     Vue.nextTick(() => {
+  //       expect(vm.$store.state.filedDate).toBeDefined()
+  //       expect(vm.$el.querySelector('#ar-next-btn').disabled).toBe(false)
+  //       // test disable button
+  //       var tempYear = vm.$store.state.ARFilingYear
+  //       vm.$store.state.ARFilingYear = +vm.$store.state.currentDate.substring(0, 4)
+
+  //       Vue.nextTick(() => {
+  //         expect(vm.$el.querySelector('#ar-next-btn').disabled).toBe(true)
+  //         vm.$store.state.ARFilingYear = tempYear
+
+  //         Vue.nextTick(() => {
+  //           expect(vm.$el.querySelector('#ar-next-btn').disabled).toBe(false)
+  //           sinon.restore()
+  //           sinon.getStub.withArgs('CP0001191/filings/1')
+  //             .returns(new Promise((resolve) => resolve({
+  //               data:
+  //                 {
+  //                   filing: {
+  //                     annualReport: {
+  //                       annualGeneralMeetingDate: '2016-04-08',
+  //                       certifiedBy: 'full name',
+  //                       email: 'no_one@never.get',
+  //                       status: 'PENDING'
+  //                     },
+  //                     business: {
+  //                       foundingDate: '2001-08-05',
+  //                       identifier: 'CP0001191',
+  //                       legalName: 'legal name - CP0001191'
+  //                     },
+  //                     header: {
+  //                       date: '2016-04-08',
+  //                       filingId: 1,
+  //                       name: 'annual_report',
+  //                       paymentToken: 'token',
+  //                       status: 'PENDING' }
+  //                   }
+  //                 }
+  //             })))
+  //           click('#ar-next-btn')
+
+  //           Vue.nextTick(() => {
+  //             expect(vm.$store.state.corpNum).toEqual('CP0001191')
+  //             expect(vm.$store.state.ARFilingYear).toEqual(2018)
+  //             expect(vm.$store.state.currentDate).toBeDefined()
+  //             expect(vm.$store.state.filedDate).toBeNull()
+  //             // AGM Date is now initialized to 'minDate'
+  //             expect(vm.$store.state.agmDate).toEqual('2018-01-01')
+  //             expect(vm.$store.state.noAGM).toBe(false)
+  //             expect(vm.$store.state.validated).toBe(false)
+  //             console.log('Passed Test 8')
+  //           })
+  //         })
+  //       })
+  //     })
+  //   })
+  // })
 })

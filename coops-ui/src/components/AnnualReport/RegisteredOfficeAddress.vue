@@ -27,7 +27,7 @@
                     small
                     flat
                     color="primary"
-                    :disabled="!agmEntered"
+                    :disabled="!agmDateValid"
                     @click="editAddress"
                   >
                     <v-icon small>edit</v-icon>
@@ -282,6 +282,7 @@ import axios from '@/axios-auth'
 
 export default {
   name: 'RegisteredOfficeAddress',
+
   data () {
     return {
       Regions: [
@@ -363,13 +364,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['corpNum', 'regOffAddrChange', 'agmDate', 'noAGM']),
-
-    agmEntered () {
-      if (this.agmDate) return true
-      else if (this.noAGM) return true
-      else return false
-    }
+    ...mapState(['corpNum', 'regOffAddrChange', 'agmDateValid'])
   },
 
   mounted () {
@@ -404,7 +399,10 @@ export default {
       })
     }
   },
+
   methods: {
+    ...mapActions(['setAddressesFormValid']),
+
     getDeliveryAddress () {
       return {
         'streetAddress': this.DeliveryAddressStreet,
@@ -620,6 +618,15 @@ export default {
       } else {
         console.log('setRegOffAddr() error - invalid Mailing Address')
       }
+    }
+  },
+
+  watch: {
+    deliveryAddressFormValid (val) {
+      this.setAddressesFormValid(val && this.mailingAddressFormValid)
+    },
+    mailingAddressFormValid (val) {
+      this.setAddressesFormValid(val && this.deliveryAddressFormValid)
     }
   }
 }

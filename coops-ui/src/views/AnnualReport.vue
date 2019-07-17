@@ -155,13 +155,13 @@ export default {
   computed: {
     ...mapState(['agmDate', 'noAGM', 'regOffAddrChange',
       'validated', 'currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate',
-      'entityName', 'entityIncNo', 'entityFoundingDate', 'currentARStatus']),
+      'entityName', 'entityIncNo', 'entityFoundingDate', 'currentARStatus',
+      'addressesFormValid', 'directorFormValid', 'agmDateValid']),
 
     ...mapGetters(['isAnnualReportEditable', 'reportState'])
   },
 
   mounted () {
-    console.log('Annual Report is mounted')
     // if tombstone data isn't set, redirect to home
     if (!this.corpNum || !this.ARFilingYear) {
       this.$router.push('/')
@@ -172,7 +172,8 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setARFilingYear', 'setValidated']),
+    ...mapActions(['setARFilingYear', 'setValidated',
+      'setAddressesFormValid', 'setDirectorFormValid', 'setAgmDateValid']),
 
     directorsChangeEventHandler (val) {
       this.directorsChange = val
@@ -278,6 +279,11 @@ export default {
     navigateToDashboard () {
       this.dialog = false
       this.$router.push('/')
+    },
+
+    setValidateFlag () {
+      // compute the AR page's valid state
+      this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid)
     }
   },
 
@@ -295,7 +301,6 @@ export default {
       } else {
         if (!this.noAGM) this.toggleFiling('remove', 'OTANN')
       }
-      this.setValidated(Boolean(this.noAGM || this.agmDate))
     },
 
     noAGM (val) {
@@ -306,7 +311,10 @@ export default {
       } else {
         this.toggleFiling('remove', 'OTANN')
       }
-      this.setValidated(Boolean(this.noAGM || this.agmDate))
+    },
+
+    agmDateValid (val) {
+      this.setValidateFlag()
     },
 
     regOffAddrChange: function (val) {
@@ -319,6 +327,10 @@ export default {
       }
     },
 
+    addressesFormValid (val) {
+      this.setValidateFlag()
+    },
+
     directorsChange: function (val) {
       // when directors change, update filing data
       console.log('AnnualReport, directorsChange =', val)
@@ -327,6 +339,10 @@ export default {
       } else {
         this.toggleFiling('remove', 'OTCDR')
       }
+    },
+
+    directorFormValid (val) {
+      this.setValidateFlag()
     },
 
     validated (val) {
