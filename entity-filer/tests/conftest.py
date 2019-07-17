@@ -196,3 +196,19 @@ def future(event_loop):
     """Return a future that is used for managing function tests."""
     _future = asyncio.Future(loop=event_loop)
     return _future
+
+
+@pytest.fixture
+def create_mock_coro(mocker, monkeypatch):
+    """Return a mocked coroutine, and optionally patch-it in."""
+    def _create_mock_patch_coro(to_patch=None):
+        mock = mocker.Mock()
+
+        async def _coro(*args, **kwargs):
+            return mock(*args, **kwargs)
+
+        if to_patch:  # <-- may not need/want to patch anything
+            monkeypatch.setattr(to_patch, _coro)
+        return mock, _coro
+
+    return _create_mock_patch_coro

@@ -50,7 +50,7 @@ async def test_get_queued_payment_tokens(app, stan_server, event_loop, client_id
     assert len(msgs) == 5
     for i in range(0, 5):
         m = msgs[i]
-        assert 'paymentToken' in m.data.decode('utf - 8')
-        assert 'COMPLETED' == dpath.util.get(json.loads(m.data.decode('utf - 8')),
+        assert 'paymentToken' in m.data.decode('utf-8')
+        assert 'COMPLETED' == dpath.util.get(json.loads(m.data.decode('utf-8')),
                                              'paymentToken/statusCode')
         assert m.sequence == i + 1

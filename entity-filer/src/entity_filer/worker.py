@@ -11,11 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Worker.
+"""The unique worker functionality for this service is contained here.
 
-The Q worker.
+The entry-point is the **cb_subscription_handler**
+
+The design and flow leverage a few constraints that are placed upon it
+by NATS Streaming and using AWAIT on the default loop.
+- NATS streaming queues require one message to be processed at a time.
+- AWAIT on the default loop effectively runs synchronously
+
+If these constraints change, the use of Flask-SQLAlchemy would need to change.
+Flask-SQLAlchemy currently allows the base model to be changed, or reworking
+the model to a standalone SQLAlchemy usage with an async engine would need
+to be pursued.
 """
-import asyncio
 import json
 
 import nats
@@ -26,11 +35,12 @@ from sqlalchemy_continuum import versioning_manager
 
 from entity_filer.config import get_named_config
 from entity_filer.filing_processors import annual_report
+from entity_filer.service_utils import logger
 
 
 def extract_payment_token(msg: nats.aio.client.Msg) -> dict:
     """Return a dict of the json string in the Msg.data."""
-    return json.loads(msg.data.decode('utf - 8'))
+    return json.loads(msg.data.decode('utf-8'))
 
 
 def get_filing_by_payment_id(payment_id: int) -> Filing:
@@ -64,19 +74,15 @@ def process_filing(filing_submission, flask_app):
         db.session.commit()
 
 
-def future(event_loop):
-    """Return a future that is used for managing function tests."""
-    _future = asyncio.Future(loop=event_loop)
-    return _future
-
-
 FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(get_named_config('production'))
 db.init_app(FLASK_APP)
 
 
-async def cb_process_filing(msg: nats.aio.client.Msg):
+async def cb_subscription_handler(msg: nats.aio.client.Msg):
     """Use Callback to process Queue Msg objects."""
+    logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
     payment_token = extract_payment_token(msg)
+    logger.debug('Extracted payment token: %s', payment_token)
     filing_submission = get_filing_by_payment_id(payment_token['paymentToken'].get('id'))
     process_filing(filing_submission, FLASK_APP)

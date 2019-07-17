@@ -22,10 +22,10 @@ from .utils import helper_add_payment_to_queue, subscribe_to_queue
 
 
 @pytest.mark.asyncio
-async def test_cb_process_filing(app, session, stan_server, event_loop, client_id, entity_stan, future):
+async def test_cb_subscription_handler(app, session, stan_server, event_loop, client_id, entity_stan, future):
     """Assert that payment tokens can be retrieved and decoded from the Queue."""
     # Call back for the subscription
-    from entity_filer.worker import cb_process_filing
+    from entity_filer.worker import cb_subscription_handler
     from entity_filer.worker import get_filing_by_payment_id
     from legal_api.models import Business
     from tests.unit import create_filing, AR_FILING, create_business, EPOCH_DATETIME
@@ -40,7 +40,8 @@ async def test_cb_process_filing(app, session, stan_server, event_loop, client_i
     business_id = business.id
     create_filing(payment_id, AR_FILING, business.id)
 
-    entity_subject = await subscribe_to_queue(entity_stan, cb_process_filing)
+    # register the handler to test it
+    entity_subject = await subscribe_to_queue(entity_stan, cb_subscription_handler)
 
     # add payment tokens to queue
     await helper_add_payment_to_queue(entity_stan, entity_subject, payment_id=payment_id, status_code='COMPLETED')

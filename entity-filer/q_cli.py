@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # Copyright © 2019 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
@@ -17,19 +20,20 @@ This service registers interest in listening to a Queue and processing received 
 """
 import asyncio
 import functools
+import getopt
+import json
 import os
 import random
 import signal
-
+import sys
 
 from nats.aio.client import Client as NATS  # noqa N814; by convention the name is NATS
 from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 
-from entity_filer.service_utils import closed_cb, error_cb, logger, signal_handler  # noqa I001; sort issue due to comments on the NATS & STAN lines
-from entity_filer.worker import cb_subscription_handler  # noqa I001; sort issue due to comments on the NATS & STAN lines
+from entity_filer.service_utils import error_cb, logger, closed_cb, signal_handler
 
 
-async def run(loop):  # pylint: disable=too-many-locals
+async def run(loop, token):  # pylint: disable=too-many-locals
     """Run the main application loop for the service.
 
     This runs the main top level service functions for working with the Queue.
@@ -37,13 +41,6 @@ async def run(loop):  # pylint: disable=too-many-locals
     # NATS client connections
     nc = NATS()
     sc = STAN()
-
-    async def reconnected_cb():
-        """Connect to the NATS services.
-
-        This gets called when the client successfully connects, or reconnects.
-        """
-        logger.info('Connected to NATS at %s...', nc.connected_url.netloc)
 
     async def close():
         """Close the stream and nats connections."""
@@ -57,7 +54,6 @@ async def run(loop):  # pylint: disable=too-many-locals
             'io_loop': loop,
             'error_cb': error_cb,
             'closed_cb': closed_cb,
-            'reconnected_cb': reconnected_cb,
             'name': os.getenv('NATS_CLIENT_NAME', 'entity.filing.tester')
         }
 
@@ -72,8 +68,7 @@ async def run(loop):  # pylint: disable=too-many-locals
         return {
             'subject': os.getenv('NATS_SUBJECT', 'entity.filings'),
             'queue': os.getenv('NATS_QUEUE', 'filing-worker'),
-            'durable_name': os.getenv('NATS_QUEUE', 'filing-worker') + '_durable',
-            'cb': cb_subscription_handler
+            'durable_name': os.getenv('NATS_QUEUE', 'filing-worker') + '_durable'
         }
 
     try:
@@ -81,28 +76,34 @@ async def run(loop):  # pylint: disable=too-many-locals
         await nc.connect(**nats_connection_options())
         await sc.connect(**stan_connection_options())
 
-        # Attach the callback queue
-        await sc.subscribe(**subscription_options())
-        logger.info('Subscribe the callback: %s to the queue: %s.',
-                    subscription_options().get('cb').__name__, subscription_options().get('queue'))
-
         # register the signal handler
         for sig in ('SIGINT', 'SIGTERM'):
             loop.add_signal_handler(getattr(signal, sig),
                                     functools.partial(signal_handler, sig_loop=loop, sig_nc=nc, task=close)
                                     )
 
+        payload = {'paymentToken': {'id': token, 'statusCode': 'COMPLETED'}}
+        await sc.publish(subject=subscription_options().get('subject'),
+                         payload=json.dumps(payload).encode('utf-8'))
+
     except Exception as e:  # pylint: disable=broad-except
         # TODO tighten this error and decide when to bail on the infinite reconnect
         logger.error(e)
 
-    logger.info('looped!')
-
 
 if __name__ == '__main__':
-    event_loop = asyncio.get_event_loop()
-    event_loop.run_until_complete(run(event_loop))
     try:
-        event_loop.run_forever()
-    finally:
-        event_loop.close()
+        opts, args = getopt.getopt(sys.argv[1:], "hp:", ["pid=", ])
+    except getopt.GetoptError:
+        print('q_cli.py -p <payment_invoice_id>')
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print('q_cli.py -p <payment_invoice_id>')
+            sys.exit()
+        elif opt in ("-p", "--pid"):
+            pid = arg
+
+    print('publish:', pid)
+    event_loop = asyncio.get_event_loop()
+    event_loop.run_until_complete(run(event_loop, pid))

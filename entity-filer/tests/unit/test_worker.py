@@ -16,6 +16,8 @@ import datetime
 import json
 import random
 
+import pytest
+
 from tests import EPOCH_DATETIME
 from tests.unit import AR_FILING, create_business, create_filing
 
@@ -47,6 +49,23 @@ def test_get_filing_by_payment_id(app, session):
 
     assert filing
     assert filing.payment_token == payment_id
+
+
+def test_process_filing_missing_app(app, session):
+    """Assert that a filling will fail with no flask app supplied."""
+    from entity_filer.worker import process_filing
+
+    # vars
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    identifier = 'CP1234567'
+
+    # setup
+    business = create_business(identifier)
+    test_filing = create_filing(payment_id, AR_FILING, business.id)
+
+    # TEST
+    with pytest.raises(Exception):
+        process_filing(test_filing, flask_app=None)
 
 
 def test_process_filing(app, session):
