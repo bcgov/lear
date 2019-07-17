@@ -22,7 +22,6 @@ TEST_ERROR_MSG_DATA = [
      'error message',  # error message
      'error message',  # expected outcome
      ),
-    ('message', 'error message', 'error message'),
     ('No Message', None, 'None'),
     ('Exception', Exception('exception message'), 'exception message'),
 ]
