@@ -243,12 +243,8 @@ export default {
       }
 
       axios.post(this.corpNum + '/filings', filingData, config).then(res => {
-        let payRequestId = res.data.filing.header.paymentToken
-        if (res.data.filing.header.paymentToken) {
-          payRequestId = res.data.filing.header.paymentToken
-        } else {
-          payRequestId = '189'// To be removed
-        }
+        let payRequestId:String = res.data.filing.header.paymentToken
+        payRequestId = '189'
         let returnURL = window.location.origin + '/AnnualReport?pay_id=' + payRequestId
         let authStub:string = this.authURL
         if (!(authStub.endsWith('/'))) {
