@@ -11,7 +11,7 @@
   </v-app>
 </template>
 
-<script> 
+<script>
 import EntityInfo from '@/components/EntityInfo.vue'
 import { mapActions } from 'vuex'
 import SbcLayout from 'sbc-common-components/src/components/SbcLayout.vue'
