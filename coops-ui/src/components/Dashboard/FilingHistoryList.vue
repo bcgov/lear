@@ -75,11 +75,11 @@ export default {
 
   mounted () {
     // reload data for this page
-    this.getFiledItems()
+    this.getFilings()
   },
 
   methods: {
-    getFiledItems () {
+    getFilings () {
       this.filedItems = []
       this.errorMessage = null
       if (this.corpNum) {
@@ -92,7 +92,7 @@ export default {
             )
             // create filed items
             for (let i = 0; i < filings.length; i++) {
-              const filing = response.data.filings[i].filing
+              const filing = filings[i].filing
               switch (filing.header.name) {
                 case 'annual_report':
                   this.loadAnnualReport(filing)
@@ -109,12 +109,12 @@ export default {
               }
             }
           } else {
-            console.log('getFiledItems() error - invalid Filings')
+            console.log('getFilings() error - invalid Filings')
             this.errorMessage = 'Oops, could not parse data from server'
           }
           this.$emit('filed-count', this.filedItems.length)
         }).catch(error => {
-          console.error('getFiledItems() error =', error)
+          console.error('getFilings() error =', error)
           this.errorMessage = 'Oops, could not load data from server'
         })
       }
@@ -178,7 +178,7 @@ export default {
   watch: {
     corpNum (val) {
       // when Corp Num is set or changes, get new filed items
-      this.getFiledItems()
+      this.getFilings()
     }
   }
 }
