@@ -1,0 +1,10 @@
+Flask
+Flask-SQLAlchemy
+SQLAlchemy-Continuum
+flask-jwt-oidc>=0.1.5
+jsonschema
+python-dotenv
+psycopg2-binary
+sentry-sdk[flask]
+asyncio-nats-client
+asyncio-nats-streaming
