@@ -92,7 +92,7 @@
 
         <aside>
           <affix relative-element-selector="#annual-report-article" :offset="{ top: 120, bottom: 40 }">
-            <sbc-fee-summary v-bind:filingData="[...filingData]" v-bind:payURL="payURL"/>
+            <sbc-fee-summary v-bind:filingData="[...filingData]" v-bind:payURL="payAPIURL"/>
           </affix>
         </aside>
       </v-container>

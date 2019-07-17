@@ -1,6 +1,6 @@
 <template>
   <v-app class="app-container theme--light" id="app">
-    <sbc-layout v-bind:logoutRedirectURL="authURL">
+    <sbc-layout v-bind:authURL="authAPIURL">
       <div class="app-body">
         <main>
           <EntityInfo/>
