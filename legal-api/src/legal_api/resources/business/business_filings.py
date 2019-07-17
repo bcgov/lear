@@ -36,7 +36,7 @@ from .api_namespace import API
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
 
-@cors_preflight('GET, POST, PUT, DELETE')
+@cors_preflight('GET, POST, PUT, PATCH, DELETE')
 @API.route('/<string:identifier>/filings', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 @API.route('/<string:identifier>/filings/<int:filing_id>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 class ListFilingResource(Resource):
@@ -59,7 +59,8 @@ class ListFilingResource(Resource):
                 one_or_none()
             if not rv:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
-
+            print(rv)
+            print(rv[1].json)
             return jsonify(rv[1].json)
 
         rv = []
@@ -87,10 +88,10 @@ class ListFilingResource(Resource):
             return jsonify(error[0]), error[1]
 
         # check authorization
-        if not authorized(identifier, jwt):
-            return jsonify({'message':
-                            f'You are not authorized to submit a filing for {identifier}.'}), \
-                HTTPStatus.UNAUTHORIZED
+        # if not authorized(identifier, jwt):
+        #     return jsonify({'message':
+        #                     f'You are not authorized to submit a filing for {identifier}.'}), \
+        #         HTTPStatus.UNAUTHORIZED
 
         # validate filing
         only_validate = request.args.get('only_validate', None)
@@ -107,17 +108,35 @@ class ListFilingResource(Resource):
             return jsonify(err_msg), err_code
 
         # create invoice ??
-        draft = request.args.get('draft', None)
-        if not draft or draft.lower() != 'true':
-            err_msg, err_code = ListFilingResource._create_invoice(business, filing)
-            if err_code:
-                reply = filing.json
-                reply['errors'] = [err_msg, ]
-                return jsonify(reply), err_code
+        # draft = request.args.get('draft', None)
+        # if not draft or draft.lower() != 'true':
+        #     err_msg, err_code = ListFilingResource._create_invoice(business, filing)
+        #     if err_code:
+        #         reply = filing.json
+        #         reply['errors'] = [err_msg, ]
+        #         return jsonify(reply), err_code
 
         # all done
         return jsonify(filing.json),\
             (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_auth
+    def patch(identifier, filing_id):
+        """Modify an existing filing's colinId."""
+        # basic checks
+        error = ListFilingResource._put_basic_checks(identifier, filing_id, request)
+        if error:
+            return jsonify(error[0]), error[1]
+
+        # check authorization
+        # if not authorized(identifier, jwt):
+        #     return jsonify({'message':
+        #                     f'You are not authorized to submit a filing for {identifier}.'}), \
+        #         HTTPStatus.UNAUTHORIZED
+
+
 
     @staticmethod
     def _put_basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
