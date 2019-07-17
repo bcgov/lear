@@ -139,16 +139,6 @@ export default class RegisteredOfficeAddress extends Vue {
   }
 
   /**
-   * Emits the valid state of the addresses.
-   *
-   * @returns a boolean that is true if the address data is valid, false otherwise.
-   */
-  @Emit('valid')
-  private emitValid (): boolean {
-    return this.formValid
-  }
-
-  /**
    * Emits the modified state of the addresses.
    *
    * @returns a boolean that is true if an address has been modified, false otherwise.
@@ -156,6 +146,16 @@ export default class RegisteredOfficeAddress extends Vue {
   @Emit('modified')
   private emitModified (): boolean {
     return this.modified
+  }
+
+  /**
+   * Emits the valid state of the addresses.
+   *
+   * @returns a boolean that is true if the address data is valid, false otherwise.
+   */
+  @Emit('valid')
+  private emitValid (): boolean {
+    return this.formValid
   }
 
   /**
