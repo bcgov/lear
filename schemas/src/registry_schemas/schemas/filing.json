@@ -53,11 +53,12 @@
                     "properties": {
                         "name": {
                             "type": "string",
-                            "title": "The name of the main filing.",
+                            "title": "The type of the main filing.",
                             "examples": [
                                 "annual_report",
                                 "change_of_directors",
-                                "change_of_address"
+                                "change_of_address",
+                                "todo_item"
                             ]
                         },
                         "date": {
@@ -80,7 +81,17 @@
                         "submitter": {
                             "type": "string",
                             "title": "Account name of the person submitting this filing."
-                        }
+                        },
+                        "status": {
+                            "type": "string",
+                            "title": "The status of this filing.",
+                            "examples": [
+                                "NEW",
+                                "DRAFT",
+                                "PENDING",
+                                "COMPLETED"
+                            ]
+                      }
                     }
                 }
             }
@@ -107,6 +118,9 @@
                 },
                 {
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/change_of_directors"
+                },
+                {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/todo_item"
                 }
             ]
         }
