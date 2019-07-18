@@ -30,9 +30,9 @@ describe('Dashboard.vue', () => {
 
   it('updates its counts from sub-component events', () => {
     wrapper.find(TodoList).vm.$emit('todo-count', 2)
-    wrapper.find(FilingHistoryList).vm.$emit('filing-count', 3)
+    wrapper.find(FilingHistoryList).vm.$emit('filed-count', 3)
 
     expect(wrapper.vm.todoCount).toEqual(2)
-    expect(wrapper.vm.filingCount).toEqual(3)
+    expect(wrapper.vm.filedCount).toEqual(3)
   })
 })

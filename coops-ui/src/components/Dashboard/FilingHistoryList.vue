@@ -10,6 +10,9 @@
             <div class="list-item__title">{{item.name}}</div>
             <div class="list-item__subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
           </div>
+          <div class="v-expansion-panel__header__icon">
+            View Documents
+          </div>
         </template>
         <ul class="list document-list">
           <li class="list-item"

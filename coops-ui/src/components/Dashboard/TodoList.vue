@@ -2,7 +2,7 @@
   <div v-if="taskItems">
     <v-card flat>
       <ul class="list todo-list">
-        <li class="list-item" v-for="(item, index) in taskItems" v-bind:key="index">
+        <li class="list-item" v-for="(item, index) in taskItems" v-bind:key="index" :class="{ 'disabled': index > 0 }">
           <div class="list-item__title">{{item.title}}</div>
 
           <div class="list-item__subtitle" v-if="isNew(item)">
@@ -17,10 +17,12 @@
             </div>
 
             <div class="list-item__status2">
-              <span v-if="isDraft(item)">&nbsp;</span>
-              <span v-else-if="isPending(item)">PAYMENT INCOMPLETE</span>
-              <span v-else-if="isError(item)">PAYMENT UNSUCCESSFUL</span>
-              <span v-else-if="!isCompleted(item)">&nbsp;</span>
+              <span v-if="isPending(item)">
+                PAYMENT INCOMPLETE<v-btn flat icon color="black"><v-icon>info_outline</v-icon></v-btn>
+              </span>
+              <span v-else-if="isError(item)">
+                PAYMENT UNSUCCESSFUL<v-btn flat icon color="black"><v-icon>info_outline</v-icon></v-btn>
+              </span>
             </div>
           </template>
 
@@ -314,14 +316,26 @@ export default {
       font-size 0.75rem
 
     .list-item__status1
-      width 25%
+      width 20%
       color $gray7
 
     .list-item__status2
-      width 25%
+      width 36%
       color $gray7
+
+      .v-btn
+        margin 0
 
     .list-item__actions
       .v-btn
         min-width 142px
+
+  .list-item.disabled
+    background-color $gray0
+
+    .list-item__title,
+    .list-item__subtitle,
+    .list-item__status1,
+    .list-item__status2
+      color $gray6
 </style>
