@@ -417,12 +417,6 @@ label:first-child
     margin-top: 0;
 
 // Address Block Layout
-.address-block
-  display: flex;
-
-.address-block__info
-  flex: 1 1 auto;
-
 .address-block__actions
   position: absolute;
   top: 0;
@@ -453,12 +447,6 @@ label:first-child
   align-items: stretch;
   margin-right: -0.5rem;
   margin-left: -0.5rem;
-
-  .item
-    flex: 1 1 auto;
-    flex-basis: 0;
-    margin-right: 0.5rem;
-    margin-left: 0.5rem;
 
 .inherit-checkbox
   margin-top: -3px;
