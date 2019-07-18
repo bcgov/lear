@@ -267,8 +267,10 @@ class InternalRequests(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     def get():
+        """Get the filings ready for colin."""
         pending_filings = db.session.query(Filing). \
-            filter(Filing.colin_event_id == None, Filing.status == 'COMPLETED').all()
+            filter(Filing.colin_event_id == None,  # pylint: disable=singleton-comparison # noqa: E711;
+                   Filing.status == 'COMPLETED').all()
 
         filings = [x.json for x in pending_filings]
 
@@ -277,6 +279,7 @@ class InternalRequests(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     def patch(filing_id):
+        """Patch the colin_event_id for a filing."""
         json_input = request.get_json()
         if not json_input:
             return None, None, {'message': f'No filing json data in body of patch for {filing_id}.'}, \

@@ -18,6 +18,7 @@ flake8-quotes
 pep8-naming
 autopep8
 coverage
+pydocstyle<4.0
 pylint
 pylint-flask
 sqlalchemy
