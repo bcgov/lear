@@ -166,11 +166,50 @@ def test_filing_save_to_session(session):
 def test_add_json_after_payment(session):
     """Assert that the json can be added in the same session that a paymentToken was applied."""
     filing = Filing()
-    filing.payment_token = 'payment token'
     filing.filing_date = EPOCH_DATETIME
+
+    # sanity check starting value
+    assert not filing.status
+
+    filing.payment_token = 'payment token'
     filing.filing_json = AR_FILING
 
     assert filing.json
+    assert filing.status == Filing.Status.PENDING.value
+
+
+def test_add_json_and_payment_after_saved_filing(session):
+    """Assert that the json can be added in the same session that a paymentToken was applied."""
+    filing = Filing()
+    filing.filing_date = EPOCH_DATETIME
+    filing.save()
+
+    # sanity check starting value
+    assert filing.status == Filing.Status.DRAFT.value
+
+    filing.payment_token = 'payment token'
+    filing.filing_json = AR_FILING
+
+    assert filing.json
+    assert filing.status == Filing.Status.PENDING.value
+
+
+def test_add_payment_completion_date_after_payment(session):
+    """Assert that the json can be added in the same session that a paymentToken was applied."""
+    filing = Filing()
+    filing.filing_date = EPOCH_DATETIME
+    filing.save()
+
+    filing.payment_token = 'payment token'
+    filing.filing_json = AR_FILING
+
+    # sanity check starting position
+    assert filing.json
+    assert filing.status == Filing.Status.PENDING.value
+
+    filing.payment_completion_date = EPOCH_DATETIME
+    print(filing.status)
+    assert filing.status == Filing.Status.COMPLETED.value
 
 
 def test_add_invalid_json_after_payment(session):

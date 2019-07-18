@@ -341,7 +341,7 @@ def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
                     )
 
     assert rv.status_code == HTTPStatus.FORBIDDEN
-    assert rv.json == {'message': 'Filings cannot be changed after they are paid for and stored.'}
+    assert rv.json == {'message': 'Filings cannot be changed after the invoice is created.'}
 
 
 def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
