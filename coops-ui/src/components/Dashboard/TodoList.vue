@@ -2,12 +2,11 @@
   <div v-if="taskItems">
     <v-card flat>
       <ul class="list todo-list">
-        <li class="list-item" v-for="(item, index) in taskItems" v-bind:key="index" :class="{ 'disabled': index > 0 }">
+        <li class="list-item" v-for="(item, index) in taskItems" v-bind:key="index" :class="{ 'disabled': !item.enabled }">
           <div class="list-item__title">{{item.title}}</div>
 
           <div class="list-item__subtitle" v-if="isNew(item)">
-            <!-- NB: only show this for the first item -->
-            <span v-show="index === 0">(including Address and/or Director Change)</span>
+            <span v-if="item.subtitle">{{item.subtitle}}</span>
           </div>
           <template v-else>
             <div class="list-item__status1">
@@ -27,17 +26,16 @@
           </template>
 
           <div class="list-item__actions">
-            <!-- NB: disable all items except the first one -->
-            <v-btn color="primary" v-if="isDraft(item)" :disabled="index > 0" @click="doResumeFiling(item)">
+            <v-btn color="primary" v-if="isDraft(item)" :disabled="!item.enabled" @click="doResumeFiling(item)">
               Resume
             </v-btn>
-            <v-btn color="primary" v-else-if="isPending(item)" :disabled="index > 0" @click="doResumePayment(item)">
+            <v-btn color="primary" v-else-if="isPending(item)" :disabled="!item.enabled" @click="doResumePayment(item)">
               Resume Payment
             </v-btn>
-            <v-btn color="primary" v-else-if="isError(item)" :disabled="index > 0" @click="doRetryPayment(item)">
+            <v-btn color="primary" v-else-if="isError(item)" :disabled="!item.enabled" @click="doRetryPayment(item)">
               Retry Payment
             </v-btn>
-            <v-btn color="primary" v-else-if="!isCompleted(item)" :disabled="index > 0" @click="doFileNow(item)">
+            <v-btn color="primary" v-else-if="!isCompleted(item)" :disabled="!item.enabled" @click="doFileNow(item)">
               File Now
             </v-btn>
           </div>
@@ -67,7 +65,6 @@
 import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
 import { mapState, mapActions } from 'vuex'
-import { isEmpty } from 'lodash'
 import sample from './tasks_json' // FOR DEBUGGING
 
 export default {
@@ -85,15 +82,16 @@ export default {
   computed: {
     ...mapState(['corpNum']),
 
-    // TODO - implement Filing Unavailable functionality
+    // TODO - implement Filing Unavailable functionality (ticket #920)
     isFilingUnavailable () {
-      const openHours = [
-        {
-          "Monday to Friday": { from: 600, to: 2100 },
-          "Saturday": { from: 0, to: 700 }
-        }
-      ]
-      return true
+      // const openHours = [
+      //   {
+      //     "Monday to Friday": { from: 600, to: 2100 },
+      //     "Saturday": { from: 0, to: 700 },
+      //     "Sunday": { from: 1200, to: 0 }
+      //   }
+      // ]
+      return false
     }
   },
 
@@ -114,31 +112,18 @@ export default {
         // axios.get(url).then(response => {
           const response = { data: { tasks: sample.tasks }} // FOR DEBUGGING
           if (response && response.data && response.data.tasks) {
-            // sort by id ascending (ie, earliest to latest)
-            const tasks = response.data.tasks.sort(
-              (a, b) => (a.filing.header.filingId - b.filing.header.filingId)
-            )
-            // create task items
-            for (let i = 0; i < tasks.length; i++) {
-              const task = tasks[i].filing
-              switch (task.header.name) {
-                case 'todo_item':
-                  this.loadTodoItem(task)
-                  break
-                case 'annual_report':
-                  this.loadAnnualReport(task)
-                  break
-                case 'change_of_directors':
-                  this.loadChangeOfDirectors(task)
-                  break
-                case 'change_of_address':
-                  this.loadChangeOfAddress(task)
-                  break
-                default:
-                  console.log('ERROR - got unknown task =', task)
-                  break
+            // sort by id ascending
+            const tasks = response.data.tasks.sort((a, b) => (a.order - b.order))
+            // create items
+            tasks.forEach(task => {
+              if (task.todo) {
+                this.loadTodoItem(task)
+              } else if (task.filing) {
+                this.loadFilingItem(task)
+              } else {
+                console.log('ERROR - got unknown task =', task)
               }
-            }
+            })
           } else {
             console.log('getTasks() error - invalid Filings')
             this.errorMessage = 'Oops, could not parse data from server'
@@ -152,15 +137,17 @@ export default {
     },
 
     loadTodoItem (task) {
-      if (!isEmpty(task.todoItem)) {
-        switch (task.todoItem.name) {
+      if (task.todo && task.todo.header) {
+        switch (task.todo.header.name) {
           case 'annual_report': {
-            const ARFilingYear = task.todoItem.ARFilingYear
+            const ARFilingYear = task.todo.header.ARFilingYear
             this.taskItems.push({
-              type: 'annual_report',
+              type: task.todo.header.name,
               title: `File ${ARFilingYear} Annual Report`,
+              subtitle: task.enabled ? '(including Address and/or Director Change)' : null,
               ARFilingYear,
-              status: 'NEW'
+              status: task.todo.header.status || 'NEW',
+              enabled: Boolean(task.enabled)
             })
             break
           }
@@ -171,59 +158,59 @@ export default {
       }
     },
 
-    loadAnnualReport (task) {
-      // File {{year}} Annual Report
-      //   - could be Draft (data but no invoice) -> Resume
-      //   - could be Pending (data and invoice but no payment data) -> Payment Incomplete / Resume Payment
-      //   - could be Pending (data and invoice but payment unsuccessful) -> Payment Unsuccessful / Resume Payment
-
-      if (!isEmpty(task.annualReport)) {
-        const ARFilingYear = +task.annualReport.annualGeneralMeetingDate.substring(0, 4)
-        const item = {
-          type: task.header.name,
-          title: `File ${ARFilingYear} Annual Report`,
-          ARFilingYear,
-          status: task.header.status
+    loadFilingItem (task) {
+      if (task.filing && task.filing.header) {
+        switch (task.filing.header.name) {
+          case 'annual_report':
+            this.loadAnnualReport(task)
+            break
+          case 'change_of_directors':
+            this.loadChangeOfDirectors(task)
+            break
+          case 'change_of_address':
+            this.loadChangeOfAddress(task)
+            break
+          default:
+            console.log('ERROR - got unknown filing =', task.filing)
+            break
         }
+      }
+    },
 
-        // TODO - handle associated Change of Directors?
-        // if (!isEmpty(task.changeOfDirectors)) {
-        // }
-
-        // TODO - handle associated Change of Address?
-        // if (!isEmpty(task.changeOfAddress)) {
-        // }
-
-        this.taskItems.push(item)
+    loadAnnualReport (task) {
+      if (task.filing && task.filing.header && task.filing.annualReport) {
+        const date = task.filing.annualReport.annualGeneralMeetingDate
+        if (date) {
+          const ARFilingYear = +date.substring(0, 4)
+          this.taskItems.push({
+            type: task.filing.header.name,
+            title: `File ${ARFilingYear} Annual Report`,
+            ARFilingYear,
+            status: task.filing.header.status || 'NEW',
+            enabled: Boolean(task.enabled)
+          })
+        }
       }
     },
 
     loadChangeOfDirectors (task) {
-      // File Director Change
-      //   - could be Draft (data but no invoice) -> Resume
-      //   - could be Pending (data and invoice but no payment data) -> Payment Incomplete / Resume Payment
-      //   - could be Pending (data and invoice but payment unsuccessful) -> Payment Unsuccessful / Resume Payment
-
-      if (!isEmpty(task.changeOfDirectors)) {
+      if (task.filing && task.filing.header && task.filing.changeOfDirectors) {
         this.taskItems.push({
-          type: task.header.name,
+          type: task.filing.header.name,
           title: `File Director Change`,
-          status: task.header.status
+          status: task.filing.header.status || 'NEW',
+          enabled: Boolean(task.enabled)
         })
       }
     },
 
     loadChangeOfAddress (task) {
-      // File Address Change
-      //   - could be Draft (data but no invoice) -> Resume
-      //   - could be Pending (data and invoice but no payment data) -> Payment Incomplete / Resume Payment
-      //   - could be Pending (data and invoice but payment unsuccessful) -> Payment Unsuccessful / Resume Payment
-
-      if (!isEmpty(task.changeOfAddress)) {
+      if (task.filing && task.filing.header && task.filing.changeOfAddress) {
         this.taskItems.push({
-          type: task.header.name,
+          type: task.filing.header.name,
           title: `File Address Change`,
-          status: task.header.status
+          status: task.filing.header.status || 'NEW',
+          enabled: Boolean(task.enabled)
         })
       }
     },

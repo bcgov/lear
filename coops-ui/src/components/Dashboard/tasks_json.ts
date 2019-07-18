@@ -4,7 +4,7 @@ export default
 {
     "tasks": [
         {
-            filing: {
+            "filing": {
                 "annualReport": {
                     "annualGeneralMeetingDate": "2018-07-15",
                     "certifiedBy": "full name",
@@ -31,14 +31,12 @@ export default
                     "name": "annual_report",
                     "status": "DRAFT"
                 }
-            }
+            },
+            "order": 1,
+            "enabled": true
         },
         {
-            filing: {
-                "todoItem": {
-                    "name": "annual_report",
-                    "ARFilingYear": 2019
-                },
+            "todo": {
                 "business": {
                     "cacheId": 1,
                     "foundingDate": "2007-04-08",
@@ -47,15 +45,16 @@ export default
                     "legalName": "legal name - CP0002098"
                 },
                 "header": {
-                    "date": "2019-07-15",
-                    "filingId": 2,
-                    "name": "todo_item",
+                    "name": "annual_report",
+                    "ARFilingYear": 2019,
                     "status": "NEW"
                 }
-            }
+            },
+            "order": 2,
+            "enabled": false
         },
         {
-            filing:  {
+            "filing":  {
                 "changeOfDirectors": {
                     "certifiedBy": "full name",
                     "email": "no_one@never.get"
@@ -74,10 +73,12 @@ export default
                     "paymentToken": "token",
                     "status": "PENDING"
                 }
-            }
+            },
+            "order": 3,
+            "enabled": false
         },
         {
-            filing:  {
+            "filing":  {
                 "changeOfAddress": {
                     "certifiedBy": "full name",
                     "email": "no_one@never.get"
@@ -96,7 +97,9 @@ export default
                     "paymentToken": "token",
                     "status": "ERROR"
                 }
-            }
+            },
+            "order": 4,
+            "enabled": false
         }
     ]
 }
