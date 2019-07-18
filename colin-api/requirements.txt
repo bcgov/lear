@@ -1,10 +1,10 @@
 Click==7.0
 Flask-Moment==0.8.0
 Flask-Script==2.0.6
-Flask==1.0.3
+Flask==1.1.1
 Jinja2==2.10.1
 MarkupSafe==1.1.1
-Werkzeug==0.15.4
+Werkzeug==0.15.5
 aniso8601==7.0.0
 attrs==19.1.0
 cx-Oracle==7.2.0
@@ -17,7 +17,7 @@ itsdangerous==1.1.0
 jsonschema==3.0.1
 psycopg2-binary==2.8.3
 pyasn1==0.4.5
-pyrsistent==0.15.2
+pyrsistent==0.15.3
 python-dotenv==0.10.3
 python-jose==3.0.1
 pytz==2019.1

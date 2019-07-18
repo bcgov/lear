@@ -59,8 +59,6 @@ class ListFilingResource(Resource):
                 one_or_none()
             if not rv:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
-            print(rv)
-            print(rv[1].json)
             return jsonify(rv[1].json)
 
         rv = []
@@ -88,10 +86,10 @@ class ListFilingResource(Resource):
             return jsonify(error[0]), error[1]
 
         # check authorization
-        # if not authorized(identifier, jwt):
-        #     return jsonify({'message':
-        #                     f'You are not authorized to submit a filing for {identifier}.'}), \
-        #         HTTPStatus.UNAUTHORIZED
+        if not authorized(identifier, jwt):
+            return jsonify({'message':
+                            f'You are not authorized to submit a filing for {identifier}.'}), \
+                HTTPStatus.UNAUTHORIZED
 
         # validate filing
         only_validate = request.args.get('only_validate', None)
@@ -108,35 +106,17 @@ class ListFilingResource(Resource):
             return jsonify(err_msg), err_code
 
         # create invoice ??
-        # draft = request.args.get('draft', None)
-        # if not draft or draft.lower() != 'true':
-        #     err_msg, err_code = ListFilingResource._create_invoice(business, filing)
-        #     if err_code:
-        #         reply = filing.json
-        #         reply['errors'] = [err_msg, ]
-        #         return jsonify(reply), err_code
+        draft = request.args.get('draft', None)
+        if not draft or draft.lower() != 'true':
+            err_msg, err_code = ListFilingResource._create_invoice(business, filing)
+            if err_code:
+                reply = filing.json
+                reply['errors'] = [err_msg, ]
+                return jsonify(reply), err_code
 
         # all done
         return jsonify(filing.json),\
             (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
-
-    @staticmethod
-    @cors.crossdomain(origin='*')
-    @jwt.requires_auth
-    def patch(identifier, filing_id):
-        """Modify an existing filing's colinId."""
-        # basic checks
-        error = ListFilingResource._put_basic_checks(identifier, filing_id, request)
-        if error:
-            return jsonify(error[0]), error[1]
-
-        # check authorization
-        # if not authorized(identifier, jwt):
-        #     return jsonify({'message':
-        #                     f'You are not authorized to submit a filing for {identifier}.'}), \
-        #         HTTPStatus.UNAUTHORIZED
-
-
 
     @staticmethod
     def _put_basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
@@ -276,3 +256,43 @@ class ListFilingResource(Resource):
         filing.status = Filing.Status.PENDING.value
         filing.save()
         return None, None
+
+
+@cors_preflight('GET, POST, PUT, PATCH, DELETE')
+@API.route('/internal/filings', methods=['GET', 'OPTIONS'])
+@API.route('/internal/filings/<int:filing_id>', methods=['PATCH', 'OPTIONS'])
+class InternalRequests(Resource):
+    """Internal Filings service for cron jobs."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    def get():
+        pending_filings = db.session.query(Filing). \
+            filter(Filing.colin_event_id == None, Filing.status == 'COMPLETED').all()
+
+        filings = [x.json for x in pending_filings]
+
+        return jsonify(filings), HTTPStatus.OK
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    def patch(filing_id):
+        json_input = request.get_json()
+        if not json_input:
+            return None, None, {'message': f'No filing json data in body of patch for {filing_id}.'}, \
+                HTTPStatus.BAD_REQUEST
+
+        colin_id = json_input['colinId']
+        rv = db.session.query(Filing). \
+            filter(Filing.id == filing_id). \
+            one_or_none()
+        if not rv:
+            return {'message': f'{filing_id} no filings found'}, HTTPStatus.NOT_FOUND
+        filing = rv
+        try:
+            filing.colin_event_id = colin_id
+            filing.save()
+        except BusinessException as err:
+            return None, None, {'message': err.error}, err.status_code
+
+        return jsonify(filing.json), HTTPStatus.ACCEPTED
