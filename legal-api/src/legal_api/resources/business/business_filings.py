@@ -36,7 +36,7 @@ from .api_namespace import API
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
 
-@cors_preflight('GET, POST, PUT, PATCH, DELETE')
+@cors_preflight('GET, POST, PUT, DELETE')
 @API.route('/<string:identifier>/filings', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 @API.route('/<string:identifier>/filings/<int:filing_id>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 class ListFilingResource(Resource):

@@ -63,16 +63,9 @@ def register_shellcontext(app):
     app.shell_context_processor(shell_context)
 
 
-def check_completed_filings():
-    """Get completed filing ids from queue."""
-
-    return [{'corp_num': 'CP0001219', 'filing_id': '35'}]
-
-
 def get_filings(app: Flask = None):
     """Get a filing with filing_id."""
     r = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings')
-    # r = requests.get(f'{app.config["LEGAL_URL"]}/CP0001219')
     if not r or r.status_code != 200:
         app.logger.error(f'Failed to collect filings from legal-api. {r} {r.json()} {r.status_code}')
         raise Exception
