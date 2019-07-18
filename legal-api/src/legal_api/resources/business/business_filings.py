@@ -59,7 +59,6 @@ class ListFilingResource(Resource):
                 one_or_none()
             if not rv:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
-
             return jsonify(rv[1].json)
 
         rv = []
@@ -257,3 +256,46 @@ class ListFilingResource(Resource):
         filing.status = Filing.Status.PENDING.value
         filing.save()
         return None, None
+
+
+@cors_preflight('GET, POST, PUT, PATCH, DELETE')
+@API.route('/internal/filings', methods=['GET', 'OPTIONS'])
+@API.route('/internal/filings/<int:filing_id>', methods=['PATCH', 'OPTIONS'])
+class InternalRequests(Resource):
+    """Internal Filings service for cron jobs."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    def get():
+        """Get the filings ready for colin."""
+        pending_filings = db.session.query(Filing). \
+            filter(Filing.colin_event_id == None,  # pylint: disable=singleton-comparison # noqa: E711;
+                   Filing.status == 'COMPLETED').all()
+
+        filings = [x.json for x in pending_filings]
+
+        return jsonify(filings), HTTPStatus.OK
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    def patch(filing_id):
+        """Patch the colin_event_id for a filing."""
+        json_input = request.get_json()
+        if not json_input:
+            return None, None, {'message': f'No filing json data in body of patch for {filing_id}.'}, \
+                HTTPStatus.BAD_REQUEST
+
+        colin_id = json_input['colinId']
+        rv = db.session.query(Filing). \
+            filter(Filing.id == filing_id). \
+            one_or_none()
+        if not rv:
+            return {'message': f'{filing_id} no filings found'}, HTTPStatus.NOT_FOUND
+        filing = rv
+        try:
+            filing.colin_event_id = colin_id
+            filing.save()
+        except BusinessException as err:
+            return None, None, {'message': err.error}, err.status_code
+
+        return jsonify(filing.json), HTTPStatus.ACCEPTED

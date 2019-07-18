@@ -54,10 +54,10 @@
                         "name": {
                             "type": "string",
                             "title": "The name of the main filing.",
-                            "examples": [
-                                "annual_report",
-                                "change_of_directors",
-                                "change_of_address"
+                            "enum": [
+                                "annualReport",
+                                "changeOfDirectors",
+                                "changeOfAddress"
                             ]
                         },
                         "date": {

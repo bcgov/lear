@@ -85,7 +85,7 @@ def check_for_manual_filings(cursor, application: Flask = None):
         # get all cp event_ids greater than above
         try:
             # call colin api for ids + filing types list
-            r = requests.get(config.ProdConfig.COLIN_URL + '/event/CP/' + last_event_id)
+            r = requests.get(application.config['COLIN_URL'] + '/event/CP/' + last_event_id)
             colin_events = dict(r.json())
 
         except Exception as err:
@@ -125,15 +125,12 @@ def get_filing(event_info: dict = None, application: Flask = None):
 
     filing_type_dict = {'OTANN': 'annualReport',
                         'OTADD': 'changeOfAddress',
-                        'OTARG': 'changeOfAddress',
+                        'OTARG': 'changeOfAddress',  # correction
                         'OTCDR': 'changeOfDirectors',
-                        'OTADR': 'changeOfDirectors'
+                        'OTADR': 'changeOfDirectors'  # correction
                         }
-    r = requests.get(config.ProdConfig.COLIN_URL + '/{identifier}/filings/{filing_typ_cd}?eventId={event_id}'.format(
-        identifier=event_info['corp_num'],
-        filing_typ_cd=filing_type_dict[event_info['filing_typ_cd']],
-        event_id=event_info['event_id']
-    ))
+    r = requests.get(f'{application.config["COLIN_URL"]}/{event_info["corp_num"]}/filings/'
+                     f'{filing_type_dict[event_info["filing_typ_cd"]]}?eventId={event_info["event_id"]}')
     filing = dict(r.json())
     return filing
 
@@ -143,10 +140,10 @@ def run():
 
     try:
         pg_conn = psycopg2.connect(
-            host=config.ProdConfig.DB_HOST,
-            user=config.ProdConfig.DB_USER,
-            password=config.ProdConfig.DB_PASSWORD,
-            dbname=config.ProdConfig.DB_NAME
+            host=application.config['DB_HOST'],
+            user=application.config['DB_USER'],
+            password=application.config['DB_PASSWORD'],
+            dbname=application.config['DB_NAME']
         )
         cursor = pg_conn.cursor()
 
@@ -167,7 +164,7 @@ def run():
                     # call legal api with filing
                     application.logger.debug('sending filing with event info: {} to legal api.'.format(event_info))
                     with application.app_context():
-                        r = requests.post(config.ProdConfig.LEGAL_URL +
+                        r = requests.post(application.config['LEGAL_URL'] +
                                           'api/v1/businesses/' + event_info['corp_num'] + '/filings',
                                           json=filing)
                         if r.status_code != 201:

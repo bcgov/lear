@@ -20,7 +20,7 @@ from tests import EPOCH_DATETIME, FROZEN_DATETIME
 AR_FILING = {
     'filing': {
         'header': {
-            'name': 'annual_report',
+            'name': 'annualReport',
             'date': '2001-08-05'
         },
         'business': {
