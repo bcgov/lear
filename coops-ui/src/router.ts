@@ -49,7 +49,11 @@ Vue.mixin({
 })
 
 window.addEventListener('message', function (e) {
+  console.log('got here 1')
+  console.log('e.origin=' + e.origin)
   if (e.origin === authURL) {
+    console.log('got here 2')
+    console.log(JSON.parse(e.data))
     const data = JSON.parse(e.data)
     sessionStorage.setItem('KEYCLOAK_TOKEN', data['access_token'])
     sessionStorage.setItem('KEYCLOAK_REFRESH_TOKEN', data['refresh_token'])
