@@ -92,7 +92,7 @@
 
         <aside>
           <affix relative-element-selector="#annual-report-article" :offset="{ top: 120, bottom: 40 }">
-            <sbc-fee-summary v-bind:filingData="[...filingData]" />
+            <sbc-fee-summary v-bind:filingData="[...filingData]" v-bind:payURL="payAPIURL"/>
           </affix>
         </aside>
       </v-container>
@@ -243,10 +243,14 @@ export default {
       }
 
       axios.post(this.corpNum + '/filings', filingData, config).then(res => {
-        let payRequestId = res.data.filing.header.paymentToken
-        payRequestId = '189'// To be removed
+        let payRequestId:String = res.data.filing.header.paymentToken
+        payRequestId = '189'
         let returnURL = window.location.origin + '/AnnualReport?pay_id=' + payRequestId
-        let payURL = this.authURL + 'makepayment/' + payRequestId + '/' + encodeURIComponent(returnURL)
+        let authStub:string = this.authURL
+        if (!(authStub.endsWith('/'))) {
+          authStub = authStub + '/'
+        }
+        let payURL = authStub + 'makepayment/' + payRequestId + '/' + encodeURIComponent(returnURL)
         window.location.href = payURL
       }).catch((error) => {
         // TODO : To Decide how and where to display the error message from API
