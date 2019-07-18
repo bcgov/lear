@@ -51,9 +51,9 @@ Vue.mixin({
 window.addEventListener('message', function (e) {
   if (e.origin === authURL) {
     const data = JSON.parse(e.data)
-    sessionStorage.setItem('KEYCLOAK_TOKEN', data.access_token)
-    sessionStorage.setItem('KEYCLOAK_REFRESH_TOKEN', data.refresh_token)
-    sessionStorage.setItem('REGISTRIES_TRACE_ID', data.registries_trace_id)
+    sessionStorage.setItem('KEYCLOAK_TOKEN', data['access_token'])
+    sessionStorage.setItem('KEYCLOAK_REFRESH_TOKEN', data['refresh_token'])
+    sessionStorage.setItem('REGISTRIES_TRACE_ID', data['registries_trace_id'])
     sessionStorage.setItem('REDIRECTED', 'false')
   }
 })
