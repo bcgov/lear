@@ -87,7 +87,7 @@ describe('RegisteredOfficeAddress.vue', () => {
 
   it('has enabled Change button', () => {
     const wrapper: Wrapper<RegisteredOfficeAddress> = mount(RegisteredOfficeAddress, {
-      propsData: { legalEntityNumber: 'CP0001191', changeButtonDisabled: false }
+      propsData: { changeButtonDisabled: false }
     })
 
     expect(wrapper.find('#reg-off-addr-change-btn').attributes('disabled')).not.toBeDefined()
@@ -95,7 +95,7 @@ describe('RegisteredOfficeAddress.vue', () => {
 
   it('has disabled Change button', () => {
     const wrapper: Wrapper<RegisteredOfficeAddress> = mount(RegisteredOfficeAddress, {
-      propsData: { legalEntityNumber: 'CP0001191', changeButtonDisabled: true }
+      propsData: { changeButtonDisabled: true }
     })
 
     expect(wrapper.find('#reg-off-addr-change-btn').attributes('disabled')).toBe('disabled')

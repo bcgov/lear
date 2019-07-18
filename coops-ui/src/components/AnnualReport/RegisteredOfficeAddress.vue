@@ -32,7 +32,7 @@
                   id="reg-off-addr-reset-btn"
                   outline
                   small
-                  v-if="modified"
+                  v-if="!showAddressForm && modified"
                   @click="resetAddress"
                 >Reset</v-btn>
               </div>
@@ -128,6 +128,10 @@ export default class RegisteredOfficeAddress extends Vue {
 
   // State of the form checkbox for determining whether or not the mailing address is the same as the delivery address.
   private inheritDeliveryAddress: boolean = true
+
+  // TODO: these should be properties - no coupling to internal state.
+  public getDeliveryAddress () { return this.deliveryAddress }
+  public getMailingAddress () { return this.mailingAddress }
 
   /**
    * Lifecycle callback to set up the component when it is mounted.

@@ -73,7 +73,8 @@
                   ref="registeredAddress"
                   :changeButtonDisabled="!agmDateValid"
                   :legalEntityNumber="corpNum"
-                  @modified="regOffAddrChange = $event"
+                  @modified="setRegOffAddrChange($event)"
+                  @valid="setAddressesFormValid($event)"
                 ></RegisteredOfficeAddress>
               </v-card>
             </section>
@@ -177,7 +178,7 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setARFilingYear', 'setValidated',
+    ...mapActions(['setARFilingYear', 'setRegOffAddrChange', 'setValidated',
       'setAddressesFormValid', 'setDirectorFormValid', 'setAgmDateValid']),
 
     directorsChangeEventHandler (val) {
