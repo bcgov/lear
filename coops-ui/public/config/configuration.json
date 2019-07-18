@@ -1,6 +1,6 @@
 {
   "API_URL": "https://mock-lear-tools.pathfinder.gov.bc.ca/rest/legal-api/0.74/api/v1/businesses/",   
-  "AUTH_URL": "http://localhost:8082",
+  "AUTH_URL": "https://auth-web-dev.pathfinder.gov.bc.ca/",
   "AUTH_API_URL": "https://auth-api-dev.pathfinder.gov.bc.ca/",
   "PAY_API_URL": "https://pay-api-dev.pathfinder.gov.bc.ca/", 
   "CP_CSS_URL": "http://ws1.postescanada-canadapost.ca/css/addresscomplete-2.00.min.css?key=",
