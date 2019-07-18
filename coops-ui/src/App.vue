@@ -28,14 +28,14 @@ export default {
     // get Keycloak Token
     const token = sessionStorage.getItem('KEYCLOAK_TOKEN')
     if (!token) {
-      console.err('App error - Keycloak Token is null')
+      console.error('App error - Keycloak Token is null')
       return
     }
 
     // decode Username
     const username = this.parseJwt(token).preferred_username
     if (!username) {
-      console.err('App error - Username is null')
+      console.error('App error - Username is null')
       return
     }
 
