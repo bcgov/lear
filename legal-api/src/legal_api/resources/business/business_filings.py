@@ -22,7 +22,6 @@ from typing import Tuple
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
 from flask import current_app, g, jsonify, request
-from flask_jwt_oidc import JwtManager
 from flask_restplus import Resource, cors
 from werkzeug.local import LocalProxy
 
@@ -81,7 +80,7 @@ class ListFilingResource(Resource):
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
     def put(identifier, filing_id):
-        """Modify a filing that hasn't been invoiced yet, for the business."""
+        """Modify an incomplete filing for the business."""
         # basic checks
         error = ListFilingResource._put_basic_checks(identifier, filing_id, request)
         if error:
@@ -110,9 +109,11 @@ class ListFilingResource(Resource):
         # create invoice ??
         draft = request.args.get('draft', None)
         if not draft or draft.lower() != 'true':
-            err_msg, err_code = ListFilingResource._create_invoice(business, filing, jwt)
+            err_msg, err_code = ListFilingResource._create_invoice(business, filing)
             if err_code:
-                return jsonify(err_msg), err_code
+                reply = filing.json
+                reply['errors'] = [err_msg, ]
+                return jsonify(reply), err_code
 
         # all done
         return jsonify(filing.json),\
@@ -182,7 +183,6 @@ class ListFilingResource(Resource):
             filing.submitter_id = user.id
             filing.filing_date = datetime.datetime.utcnow()
             filing.filing_json = json_input
-            filing.status = Filing.Status.DRAFT.value
             filing.save()
         except BusinessException as err:
             return None, None, {'message': err.error}, err.status_code
@@ -210,8 +210,7 @@ class ListFilingResource(Resource):
 
     @staticmethod
     def _create_invoice(business: Business,
-                        filing: Filing,
-                        jwt_mgr: JwtManager) \
+                        filing: Filing) \
             -> Tuple[int, dict, int]:
         """Create the invoice for the filing submission.
 
@@ -248,17 +247,12 @@ class ListFilingResource(Resource):
         }
 
         try:
-            token = jwt_mgr.get_token_auth_header()
-            headers = {'Authorization': 'Bearer ' + token}
-            rv = requests.post(url=payment_svc_url,
-                               headers=headers,
-                               json=payload)
+            rv = requests.post(payment_svc_url, json=payload)
         except exceptions.ConnectionError as err:
             current_app.logger.error(f'Payment connection failure for {business.identifier}: filing:{filing.id}', err)
             return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
         pid = rv.json().get('id')
         filing.payment_token = pid
-        filing.status = Filing.Status.PENDING.value
         filing.save()
         return None, None

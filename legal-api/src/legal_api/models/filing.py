@@ -18,10 +18,10 @@ from enum import Enum
 from http import HTTPStatus
 from typing import List
 
-from sqlalchemy import event
+from sqlalchemy import event, inspect
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import attributes, backref
+from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
 from legal_api.schemas import rsbc_schemas
@@ -49,12 +49,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
     __tablename__ = 'filings'
 
     id = db.Column(db.Integer, primary_key=True)
-    filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _filing_type = db.Column('filing_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
     _payment_token = db.Column('payment_id', db.String(4096))
+    _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
     colin_event_id = db.Column('colin_event_id', db.Integer)
-    status = db.Column('status', db.String(10), default='DRAFT')
+    _status = db.Column('status', db.String(10), default='DRAFT')
 
     # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
@@ -70,25 +71,54 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
 
     # properties
     @hybrid_property
+    def filing_date(self):
+        """Property containing the date a filing was submitted."""
+        return self._filing_date
+
+    @filing_date.setter
+    def filing_date(self, value: datetime):
+        if self.locked:
+            self._raise_default_lock_exception()
+        self._filing_date = value
+
+    @property
     def filing_type(self):
-        """Property containing the main filing type, as extracted from the filing."""
+        """Property containing the filing type."""
         return self._filing_type
 
     @hybrid_property
     def payment_token(self):
-        """Property containing the payment token, as extracted from the filing."""
+        """Property containing the payment token."""
         return self._payment_token
 
     @payment_token.setter
     def payment_token(self, token: int):
-        old_payment_token = attributes.get_history(self, '_payment_token')
-        if self._payment_token \
-                and (old_payment_token.deleted or old_payment_token.unchanged):
+        if self.locked:
+            self._raise_default_lock_exception()
+        self._payment_token = token
+
+    @hybrid_property
+    def payment_completion_date(self):
+        """Property containing the date the payment cleared."""
+        return self._payment_completion_date
+
+    @payment_completion_date.setter
+    def payment_completion_date(self, value: datetime):
+
+        if self.locked or \
+                (self._payment_token and self._filing_json):
+            self._payment_completion_date = value
+            self._status = Filing.Status.COMPLETED.value
+        else:
             raise BusinessException(
-                error='Filings cannot be changed after they are paid for and stored.',
+                error="Payment Dates cannot set for unlocked filings unless the filing hasn't been saved yet.",
                 status_code=HTTPStatus.FORBIDDEN
             )
-        self._payment_token = token
+
+    @property
+    def status(self):
+        """Property containing the filing status."""
+        return self._status
 
     @hybrid_property
     def filing_json(self):
@@ -98,13 +128,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
     @filing_json.setter
     def filing_json(self, json_data: dict):
         """Property containing the filings data."""
-        old_payment_token = attributes.get_history(self, '_payment_token')
-        if self._payment_token \
-                and (old_payment_token.deleted or old_payment_token.unchanged):
-            raise BusinessException(
-                error='Filings cannot be changed after they are paid for and stored.',
-                status_code=HTTPStatus.FORBIDDEN
-            )
+        if self.locked:
+            self._raise_default_lock_exception()
 
         try:
             self._filing_type = json_data.get('filing').get('header').get('name')
@@ -128,6 +153,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
                     error=f'{errors}',
                     status_code=HTTPStatus.UNPROCESSABLE_ENTITY
                 )
+
+            self._status = Filing.Status.PENDING.value
         self._filing_json = json_data
         try:
             self.colin_event_id = int(json_data.get('filing').get('eventId'))
@@ -135,6 +162,29 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             # eventId is from colin_api (will not be set until added in colin db)
             # todo: could make the post call for filing with json_data to colin api here and then set the colin_event_Id
             pass
+
+    @property
+    def locked(self):
+        """Return the locked state of the filing.
+
+        Once a filing, with valid json has an invoice attached, it can no longer be altered and is locked.
+        Exception to this rule, payment_completion_date requires the filing to be locked.
+        """
+        insp = inspect(self)
+        attr_state = insp.attrs._payment_token  # pylint: disable=protected-access;
+        # inspect requires the member, and the hybrid decorator doesn't help us here
+
+        if self._payment_token and not attr_state.history.added:
+            return True
+
+        return False
+
+    @staticmethod
+    def _raise_default_lock_exception():
+        raise BusinessException(
+            error='Filings cannot be changed after the invoice is created.',
+            status_code=HTTPStatus.FORBIDDEN
+        )
 
     # json serializer
     @property
@@ -155,6 +205,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             return json_submission
         except Exception:  # noqa: B901, E722
             raise KeyError
+
+    @classmethod
+    def find_by_id(cls, filing_id: str = None):
+        """Return a Business by the id assigned by the Registrar."""
+        filing = None
+        if filing_id:
+            filing = cls.query.filter_by(id=filing_id).one_or_none()
+        return filing
 
     @staticmethod
     def get_filing_by_payment_token(token: str):
@@ -207,3 +265,18 @@ def block_filing_delete_listener_function(*arg):  # pylint: disable=unused-argum
         error='Deletion not allowed.',
         status_code=HTTPStatus.FORBIDDEN
     )
+
+
+@event.listens_for(Filing, 'before_insert')
+@event.listens_for(Filing, 'before_update')
+def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
+    """Set the state of the filing, based upon column values."""
+    filing = target
+    # changes are part of the class and are not externalized
+    if filing.payment_token and filing.filing_json:
+        if filing.payment_completion_date:
+            filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
+        else:
+            filing._status = Filing.Status.PENDING.value  # pylint: disable=protected-access
+    else:
+        filing._status = Filing.Status.DRAFT.value  # pylint: disable=protected-access
