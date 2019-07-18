@@ -202,6 +202,7 @@ export default class RegisteredOfficeAddress extends Vue {
    */
   private isDeliveryValid (valid: boolean): void {
     this.deliveryAddressValid = valid
+    this.emitValid()
   }
 
   /**
@@ -222,6 +223,7 @@ export default class RegisteredOfficeAddress extends Vue {
    */
   private isMailingValid (valid: boolean): void {
     this.mailingAddressValid = valid
+    this.emitValid()
   }
 
   /**
