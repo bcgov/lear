@@ -5,7 +5,6 @@ import Dashboard from '@/views/Dashboard.vue'
 import axios from '@/axios-auth'
 
 Vue.use(VueRouter)
-var payURL
 var authURL
 var payAPIURL
 var authAPIURL
@@ -20,8 +19,6 @@ req.onreadystatechange = function (response) {
     if (req.status === 200) {
       axios.defaults.baseURL = JSON.parse(req.responseText)['API_URL']
       console.log('Set axios.baseURL to: ' + axios.defaults.baseURL)
-      payURL = JSON.parse(req.responseText)['PAY_URL']
-      console.log('Set payURL to: ' + payURL)
       authURL = JSON.parse(req.responseText)['AUTH_URL']
       console.log('Set authURL to: ' + authURL)
       authAPIURL = JSON.parse(req.responseText)['AUTH_API_URL']
@@ -38,9 +35,6 @@ req.send()
 Vue.mixin({
   data: function () {
     return {
-      get payURL () {
-        return payURL
-      },
       get authURL () {
         return authURL
       },
