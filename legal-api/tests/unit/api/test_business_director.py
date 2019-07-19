@@ -1,0 +1,120 @@
+# Copyright © 2019 Province of British Columbia
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Tests to assure the business-directors end-point.
+
+Test-Suite to ensure that the /businesses../directors endpoint is working as expected.
+"""
+from http import HTTPStatus
+
+from legal_api.services.authz import STAFF_ROLE
+from tests.unit.models import Director, factory_business
+from tests.unit.services.utils import create_header
+
+import datetime
+
+
+def test_get_business_directors(session, client, jwt):
+    """Assert that business directors are returned."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    director = Director(
+        first_name='Michael',
+        last_name='Crane',
+        middle_initial='Joe',
+        title='VP',
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None
+    )
+    business.directors.append(director)
+    business.save()
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/directors',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.OK
+    assert 'directors' in rv.json
+
+
+def test_get_business_no_directors(session, client, jwt):
+    """Assert that business directors are not returned."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/directors',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.json == {'message': f'{business.identifier} directors not found'}
+
+
+def test_get_business_director_by_id(session, client, jwt):
+    """Assert that business director is returned."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    director = Director(
+        first_name='Michael',
+        last_name='Crane',
+        middle_initial='Joe',
+        title='VP',
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None
+    )
+    business.directors.append(director)
+    business.save()
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/directors/{director.id}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.OK
+
+
+def test_get_business_director_by_invalid_id(session, client, jwt):
+    """Assert that business directors are not returned."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    director_id = 5000
+    business.save()
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/directors/{director_id}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.json == {'message': f'{identifier} director not found'}
+
+
+def test_get_directors_invalid_business(session, client, jwt):
+    """Assert that business is not returned."""
+    # setup
+    identifier = 'CP7654321'
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/directors',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.json == {'message': f'{identifier} not found'}
