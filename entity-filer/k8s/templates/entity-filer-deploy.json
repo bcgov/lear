@@ -140,6 +140,51 @@
                                                 "key": "PAYMENT_SVC_URL"
                                             }
                                         }
+                                    },
+                                    {
+                                        "name": "NATS_SERVERS",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NATS_SERVERS"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_CLUSTER_ID",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NATS_CLUSTER_ID"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_CLIENT_NAME",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NATS_CLIENT_NAME"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_SUBJECT",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NATS_SUBJECT"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_QUEUE",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NATS_QUEUE"
+                                            }
+                                        }
                                     }
                                 ]
                             }
@@ -204,7 +249,7 @@
             "displayName": "Payment Service URL",
             "description": "The payment service URL.",
             "required": true,
-            "value": "https://mock-lear-tools.pathfinder.gov.bc.ca/rest/SBC+Pay+API+Reference/1.0.1/api/v1/payments"
+            "value": "http://pay-api.l4ygcl-dev.svc/api/v1/payments"
         },
         {
             "name": "NATS_SERVERS",

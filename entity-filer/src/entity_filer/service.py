@@ -96,8 +96,6 @@ async def run(loop):  # pylint: disable=too-many-locals
         # TODO tighten this error and decide when to bail on the infinite reconnect
         logger.error(e)
 
-    logger.info('looped!')
-
 
 if __name__ == '__main__':
     event_loop = asyncio.get_event_loop()
