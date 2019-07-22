@@ -27,41 +27,41 @@ objects:
               - -c
               - cd /opt/app-root/src; ./run.sh
               env:
-                  - name: DATABASE_USERNAME
-                    valueFrom:
-                      secretKeyRef:
-                        key: database-user
-                        name: postgresql-${ENV_TAG}
-                  - name: DATABASE_PASSWORD
-                    valueFrom:
-                      secretKeyRef:
-                        key: database-password
-                        name: postgresql-${ENV_TAG}
-                  - name: DATABASE_NAME
-                    valueFrom:
-                      configMapKeyRef:
-                        key: DATABASE_NAME
-                        name: legal-api-dev-config
-                  - name: DATABASE_HOST
-                    valueFrom:
-                      configMapKeyRef:
-                        key: DATABASE_HOST
-                        name: legal-api-dev-config
-                  - name: DATABASE_PORT
-                    valueFrom:
-                      configMapKeyRef:
-                        key: DB_PORT
-                        name: legal-api-dev-config
-                  - name: COLIN_URL
-                    valueFrom:
-                      configMapKeyRef:
-                        key: ROUTE
-                        name: colin-api-dev-config
-                  - name: LEGAL_URL
-                      valueFrom:
-                        configMapKeyRef:
-                          key: ROUTE
-                          name: legal-api-dev-config
+                - name: DATABASE_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-user
+                      name: postgresql-${ENV_TAG}
+                - name: DATABASE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-password
+                      name: postgresql-${ENV_TAG}
+                - name: DATABASE_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      key: DATABASE_NAME
+                      name: legal-api-dev-config
+                - name: DATABASE_HOST
+                  valueFrom:
+                    configMapKeyRef:
+                      key: DATABASE_HOST
+                      name: legal-api-dev-config
+                - name: DATABASE_PORT
+                  valueFrom:
+                    configMapKeyRef:
+                      key: DB_PORT
+                      name: legal-api-dev-config
+                - name: COLIN_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: ROUTE
+                      name: colin-api-dev-config
+                - name: LEGAL_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: ROUTE
+                      name: legal-api-dev-config
             restartPolicy: "Never"
             concurrencyPolicy: "Forbid"
 parameters: [
