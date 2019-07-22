@@ -73,8 +73,8 @@
                   ref="registeredAddress"
                   :changeButtonDisabled="!agmDateValid"
                   :legalEntityNumber="corpNum"
-                  @modified="setRegOffAddrChange($event)"
-                  @valid="setAddressesFormValid($event)"
+                  @modified="officeModifiedEventHandler($event)"
+                  @valid="officeValidEventHandler($event)"
                 ></RegisteredOfficeAddress>
               </v-card>
             </section>
@@ -180,6 +180,30 @@ export default {
   methods: {
     ...mapActions(['setARFilingYear', 'setRegOffAddrChange', 'setValidated',
       'setAddressesFormValid', 'setDirectorFormValid', 'setAgmDateValid']),
+
+    /**
+     * Callback method for the "modified" event from RegisteredOfficeAddress.
+     *
+     * @param modified a boolean indicating whether or not the office address(es) have been modified from their
+     * original values.
+     */
+    officeModifiedEventHandler (modified: boolean): void {
+      console.log('AnnualReport, regOffAddrChange=', modified)
+
+      // When addresses change, update the filing data.
+      this.setRegOffAddrChange(modified)
+      this.toggleFiling(modified ? 'add' : 'remove', 'OTADD')
+    },
+
+    /**
+     * Callback method for the "valid" event from RegisteredOfficeAddress.
+     *
+     * @param valid a boolean that is true if the office addresses form contains valid data.
+     */
+    officeValidEventHandler (valid: boolean): void {
+      this.setAddressesFormValid(valid)
+      this.setValidateFlag()
+    },
 
     directorsChangeEventHandler (val) {
       this.directorsChange = val
@@ -324,20 +348,6 @@ export default {
     },
 
     agmDateValid (val) {
-      this.setValidateFlag()
-    },
-
-    regOffAddrChange: function (val) {
-      // when addresses change, update filing data
-      console.log('AnnualReport, regOffAddrChange =', val)
-      if (val) {
-        this.toggleFiling('add', 'OTADD')
-      } else {
-        this.toggleFiling('remove', 'OTADD')
-      }
-    },
-
-    addressesFormValid (val) {
       this.setValidateFlag()
     },
 

@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@babel/polyfill": "^7.0.0-rc.1",
-    "@types/vuelidate": "^0.7.5",
+    "@types/vuelidate": "^0.7.4",
     "axios": "^0.18.0",
     "register-service-worker": "^1.6.2",
     "sbc-common-components": "^0.0.25",
