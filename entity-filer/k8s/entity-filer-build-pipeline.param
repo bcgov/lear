@@ -1,14 +1,14 @@
 #=========================================================
 # Template parameters for:
-# Project: legal-api
+# Project:entity-filer 
 # Component: pipeline
 # Action: build
-# Template File: templates/legal-api-pipeline.json
+# Template File: templates/entity-filer-build-pipeline.json
 #=========================================================
-NAME="legal-api"
+NAME="entity-filer"
 PIPELINE_PURPOSE="build"
 GIT_REPO_URL="https://github.com/bcgov/lear.git"
 GIT_REF="master"
-SOURCE_CONTEXT_DIR="legal-api"
+SOURCE_CONTEXT_DIR="entity-filer"
 JENKINS_FILE="Jenkinsfiles/build.groovy"
 WEBHOOK="github-lear"

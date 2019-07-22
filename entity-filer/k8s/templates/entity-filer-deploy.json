@@ -3,7 +3,7 @@
     "apiVersion": "v1",
     "metadata": {
         "annotations": {
-            "description": "Deployment template for a legal api service.",
+            "description": "Deployment template for a entity-filer service.",
             "tags": "${NAME}-${TAG_NAME}"
         },
         "name": "${NAME}-${TAG_NAME}-deploy-template"
@@ -27,72 +27,7 @@
                         "intervalSeconds": 1,
                         "timeoutSeconds": 600,
                         "maxUnavailable": "25%",
-                        "maxSurge": "25%",
-                        "pre": {
-                            "failurePolicy": "Abort",
-                            "execNewPod": {
-                                "command": [
-                                    "/opt/app-root/src/pre-hook-update-db.sh"
-                                ],
-                                "env": [
-                                    {
-                                        "name": "DB_ADMIN_PASSWORD",
-                                        "valueFrom": {
-                                            "secretKeyRef": {
-                                                "name": "postgresql-${TAG_NAME}",
-                                                "key": "admin-password"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "name": "DATABASE_USERNAME",
-                                        "valueFrom": {
-                                            "secretKeyRef": {
-                                                "name": "postgresql-${TAG_NAME}",
-                                                "key": "database-user"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "name": "DATABASE_PASSWORD",
-                                        "valueFrom": {
-                                            "secretKeyRef": {
-                                                "name": "postgresql-${TAG_NAME}",
-                                                "key": "database-password"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "name": "DATABASE_NAME",
-                                        "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "name": "${NAME}-${TAG_NAME}-config",
-                                                "key": "DATABASE_NAME"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "name": "DATABASE_HOST",
-                                        "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "name": "${NAME}-${TAG_NAME}-config",
-                                                "key": "DATABASE_HOST"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "name": "DATABASE_PORT",
-                                        "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "name": "${NAME}-${TAG_NAME}-config",
-                                                "key": "DB_PORT"
-                                            }
-                                        }
-                                    }
-                                ],
-                                "containerName": "${NAME}-${TAG_NAME}"
-                            }
-                        }
+                        "maxSurge": "25%"
                     }
                 },
                 "triggers": [
@@ -133,6 +68,10 @@
                                 "name": "${NAME}-${TAG_NAME}",
                                 "image": "docker-registry.default.svc:5000/${IMAGE_NAMESPACE}/${NAME}:${TAG_NAME}",
                                 "ports": [
+                                    {
+                                        "containerPort": 8080,
+                                        "protocol": "TCP"
+                                    },
                                     {
                                         "containerPort": 8080,
                                         "protocol": "TCP"
@@ -192,34 +131,62 @@
                                                 "key": "JWT_OIDC_JWKS_CACHE_TIMEOUT"
                                             }
                                         }
+                                    },
+                                    {
+                                        "name": "PAYMENT_SVC_URL",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "PAYMENT_SVC_URL"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_SERVERS",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NATS_SERVERS"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_CLUSTER_ID",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NATS_CLUSTER_ID"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_CLIENT_NAME",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NATS_CLIENT_NAME"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_SUBJECT",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NATS_SUBJECT"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_QUEUE",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NATS_QUEUE"
+                                            }
+                                        }
                                     }
-                                ],
-                                "resources": {},
-                                "livenessProbe": {
-                                    "httpGet": {
-                                        "path": "/ops/healthz",
-                                        "port": 8080,
-                                        "scheme": "HTTP"
-                                    },
-                                    "timeoutSeconds": 1,
-                                    "periodSeconds": 10,
-                                    "successThreshold": 1,
-                                    "failureThreshold": 3
-                                },
-                                "readinessProbe": {
-                                    "httpGet": {
-                                        "path": "/ops/readyz",
-                                        "port": 8080,
-                                        "scheme": "HTTP"
-                                    },
-                                    "timeoutSeconds": 1,
-                                    "periodSeconds": 10,
-                                    "successThreshold": 1,
-                                    "failureThreshold": 3
-                                },
-                                "terminationMessagePath": "/dev/termination-log",
-                                "terminationMessagePolicy": "File",
-                                "imagePullPolicy": "Always"
+                                ]
                             }
                         ],
                         "restartPolicy": "Always",
@@ -245,78 +212,13 @@
                 "DATABASE_HOST": "postgresql-${TAG_NAME}",
                 "DATABASE_NAME": "${DATABASE_NAME}",
                 "DB_PORT": "5432",
-                "JWT_OIDC_JWKS_CACHE_TIMEOUT": "300"
-            }
-        },
-        {
-            "kind": "Service",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": "${NAME}-${TAG_NAME}",
-                "creationTimestamp": null,
-                "labels": {
-                    "app": "${NAME}-${TAG_NAME}",
-                    "app-group": "${APP_GROUP}-${TAG_NAME}"
-                }
-            },
-            "spec": {
-                "ports": [
-                    {
-                        "name": "8080-tcp",
-                        "protocol": "TCP",
-                        "port": 8080,
-                        "targetPort": 8080
-                    }
-                ],
-                "selector": {
-                    "deploymentconfig": "${NAME}-${TAG_NAME}"
-                },
-                "type": "ClusterIP",
-                "sessionAffinity": "None"
-            },
-            "status": {
-                "loadBalancer": {}
-            }
-        },
-        {
-            "kind": "Route",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": "${NAME}-${TAG_NAME}",
-                "labels": {
-                    "app": "${NAME}-${TAG_NAME}",
-                    "app-group": "${NAME}-${TAG_NAME}"
-                }
-            },
-            "spec": {
-                "host": "${NAME}-${TAG_NAME}.pathfinder.gov.bc.ca",
-                "to": {
-                    "kind": "Service",
-                    "name": "${NAME}-${TAG_NAME}",
-                    "weight": 100
-                },
-                "port": {
-                    "targetPort": "8080-tcp"
-                },
-                "tls": {
-                    "termination": "edge"
-                },
-                "wildcardPolicy": "None"
-            },
-            "status": {
-                "ingress": [
-                    {
-                        "host": "${NAME}-${TAG_NAME}.pathfinder.gov.bc.ca",
-                        "routerName": "router",
-                        "conditions": [
-                            {
-                                "type": "Admitted",
-                                "status": "True"
-                            }
-                        ],
-                        "wildcardPolicy": "None"
-                    }
-                ]
+                "JWT_OIDC_JWKS_CACHE_TIMEOUT": "300",
+                "PAYMENT_SVC_URL": "${PAYMENT_SVC_URL}",
+                "NATS_SERVERS": "${NATS_SERVERS}",
+                "NATS_CLUSTER_ID": "${NATS_CLUSTER_ID}",
+                "NATS_CLIENT_NAME": "${NATS_CLIENT_NAME}",
+                "NATS_SUBJECT": "${NATS_SUBJECT}",
+                "NATS_QUEUE": "${NATS_QUEUE}"
             }
         }
     ],
@@ -326,14 +228,14 @@
             "displayName": "Name",
             "description": "The name assigned to all of the OpenShift resources associated to the server instance.",
             "required": true,
-            "value": "legal-api"
+            "value": "entity-filer"
         },
         {
             "name": "APP_GROUP",
             "displayName": "App Group",
             "description": "The name assigned to all of the deployments in this project.",
             "required": true,
-            "value": "legal-api"
+            "value": "entity-filer"
         },
         {
             "name": "DATABASE_NAME",
@@ -341,6 +243,48 @@
             "description": "A valid database name used by the service.",
             "required": true,
             "value": "lear"
+        },
+        {
+            "name": "PAYMENT_SVC_URL",
+            "displayName": "Payment Service URL",
+            "description": "The payment service URL.",
+            "required": true,
+            "value": "http://pay-api.l4ygcl-dev.svc/api/v1/payments"
+        },
+        {
+            "name": "NATS_SERVERS",
+            "displayName": "NATS Streaming Service URL",
+            "description": "NATS Streaming Service URL.",
+            "required": true,
+            "value": "nats://nats-streaming.hak2zo-dev.svc:4222"
+        },
+        {
+            "name": "NATS_CLUSTER_ID",
+            "displayName": "NATS Cluster Id",
+            "description": "NATS cluster id.",
+            "required": true,
+            "value": "test-cluster"
+        },
+        {
+            "name": "NATS_CLIENT_NAME",
+            "displayName": "NATS Client Name",
+            "description": "NATS client name as displayed in the connection info.",
+            "required": true,
+            "value": "entity.filing.payment.worker"
+        },
+        {
+            "name": "NATS_SUBJECT",
+            "displayName": "NATS Subject Name",
+            "description": "A unique NATS subject name that is set to receive payment tokens.",
+            "required": true,
+            "value": "entity.filing.payment"
+        },
+        {
+            "name": "NATS_QUEUE",
+            "displayName": "NATS Queue Name",
+            "description": "A unique NATS queue name that is set to receive payment tokens.",
+            "required": true,
+            "value": "filing-worker"
         },
         {
             "name": "IMAGE_NAMESPACE",
@@ -386,7 +330,7 @@
         },
         {
             "name": "REPLICAS",
-            "displayName": "The number of erplicas to run",
+            "displayName": "The number of replicas to run",
             "description": "The number of replicas to run in this environment.",
             "required": true,
             "value": "1"

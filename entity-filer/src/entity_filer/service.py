@@ -58,7 +58,7 @@ async def run(loop):  # pylint: disable=too-many-locals
             'error_cb': error_cb,
             'closed_cb': closed_cb,
             'reconnected_cb': reconnected_cb,
-            'name': os.getenv('NATS_CLIENT_NAME', 'entity.filing.tester')
+            'name': os.getenv('NATS_CLIENT_NAME', 'entity.filing.worker')
         }
 
     def stan_connection_options():
@@ -95,8 +95,6 @@ async def run(loop):  # pylint: disable=too-many-locals
     except Exception as e:  # pylint: disable=broad-except
         # TODO tighten this error and decide when to bail on the infinite reconnect
         logger.error(e)
-
-    logger.info('looped!')
 
 
 if __name__ == '__main__':
