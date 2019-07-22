@@ -86,7 +86,6 @@
                             "type": "string",
                             "title": "The status of this filing.",
                             "examples": [
-                                "NEW",
                                 "DRAFT",
                                 "PENDING",
                                 "COMPLETED"
@@ -98,7 +97,8 @@
         }
     },
     "type": "object",
-    "title": "Registry Filings",
+    "title": "Registry Filing Item",
+    "required": [ "filing" ],
     "properties": {
         "filing": {
             "allOf": [

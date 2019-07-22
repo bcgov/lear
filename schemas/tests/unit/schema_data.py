@@ -24,6 +24,8 @@ TEST_SCHEMAS_DATA = [
     ('filing.json'),
     ('directors.json'),
     ('change_of_directors.json'),
+    ('tasks.json'),
+    ('todo.json'),
 ]
 
 TEST_AR = {
