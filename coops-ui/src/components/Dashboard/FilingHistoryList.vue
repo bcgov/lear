@@ -1,9 +1,9 @@
 <template>
-  <div v-if="filedItems">
-    <v-expansion-panel v-if="filedItems">
+  <div>
+    <v-expansion-panel v-if="filedItems && filedItems.length > 0">
       <v-expansion-panel-content
         class="filing-history-list"
-        v-for="(item, index) in orderBy(filedItems, 'name', -1)"
+        v-for="(item, index) in orderBy(filedItems, 'filingDate', -1)"
         v-bind:key="index">
         <template v-slot:header>
           <div class="list-item">
@@ -37,7 +37,7 @@
     </v-expansion-panel>
 
     <!-- No Results Message -->
-    <v-card class="no-results" flat v-if="filedItems.length === 0 && !errorMessage">
+    <v-card class="no-results" flat v-if="filedItems && filedItems.length === 0 && !errorMessage">
       <v-card-text>
         <div class="no-results__title">You have no filing history</div>
         <div class="no-results__subtitle">Your completed filings and transactions will appear here</div>
@@ -45,7 +45,7 @@
     </v-card>
 
     <!-- ErrorMessage -->
-    <v-card class="network-error" flat v-if="filedItems.length === 0 && errorMessage">
+    <v-card class="network-error" flat v-if="filedItems && filedItems.length === 0 && errorMessage">
       <v-card-text>
         <div class="network-error__title">{{errorMessage}}</div>
         <div class="no-results__subtitle">Your completed filings and transactions will normally appear here</div>
@@ -190,7 +190,6 @@ export default {
 <style lang="stylus" scoped>
   @import "../../assets/styles/theme.styl"
 
-   // Filing History
   .filing-history-list .list-item
     flex-direction column
     align-items flex-start
@@ -223,7 +222,4 @@ export default {
   .download-all-btn
     margin-left auto
     min-width 8rem
-
-  .no-results
-    flex-direction column
 </style>
