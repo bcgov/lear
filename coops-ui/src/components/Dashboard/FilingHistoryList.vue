@@ -212,7 +212,6 @@ export default {
    // Documents Action Bar
   .documents-actions-bar
     padding-top 1rem
-    padding-bottom 1.25rem
     display flex
     border-top 1px solid $gray3
 

@@ -1,50 +1,71 @@
 <template>
-  <div v-if="taskItems">
-    <v-card flat>
-      <ul class="list todo-list">
-        <li class="list-item" v-for="(item, index) in taskItems" v-bind:key="index" :class="{ 'disabled': !item.enabled }">
-          <div class="list-item__title">{{item.title}}</div>
+  <div>
+    <v-expansion-panel v-if="taskItems && taskItems.length > 0">
+      <v-expansion-panel-content
+        class="todo-list"
+        v-for="(item, index) in orderBy(taskItems, 'order')"
+        v-bind:key="index"
+        expand-icon=""
+        :class="{ 'disabled': !item.enabled }">
 
-          <div class="list-item__subtitle" v-if="isNew(item)">
-            <span v-if="item.subtitle">{{item.subtitle}}</span>
-          </div>
-          <template v-else>
-            <div class="list-item__status1">
-              <span v-if="isDraft(item)">DRAFT</span>
-              <span v-else-if="isPending(item)">FILING PENDING</span>
-              <span v-else-if="isError(item)">FILING PENDING</span>
+        <template v-slot:header>
+          <div class="list-item">
+            <div class="list-item__title">{{item.title}}</div>
+
+            <div class="list-item__subtitle" v-if="isNew(item)">
+              <span v-if="item.subtitle">{{item.subtitle}}</span>
             </div>
+            <template v-else>
+              <div class="list-item__status1">
+                <span v-if="isDraft(item)">DRAFT</span>
+                <span v-else-if="isPending(item)">FILING PENDING</span>
+                <span v-else-if="isError(item)">FILING PENDING</span>
+              </div>
 
-            <div class="list-item__status2">
-              <span v-if="isPending(item)">
-                PAYMENT INCOMPLETE<v-btn flat icon color="black"><v-icon>info_outline</v-icon></v-btn>
-              </span>
-              <span v-else-if="isError(item)">
-                PAYMENT UNSUCCESSFUL<v-btn flat icon color="black"><v-icon>info_outline</v-icon></v-btn>
-              </span>
+              <div class="list-item__status2">
+                <span v-if="isPending(item)">
+                  PAYMENT INCOMPLETE<v-btn flat icon color="black"><v-icon>info_outline</v-icon></v-btn>
+                </span>
+                <span v-else-if="isError(item)">
+                  PAYMENT UNSUCCESSFUL<v-btn flat icon color="black"><v-icon>info_outline</v-icon></v-btn>
+                </span>
+              </div>
+            </template>
+
+            <div class="list-item__actions">
+              <v-btn color="primary" v-if="isDraft(item)" :disabled="!item.enabled"
+                @click.native.stop="doResumeFiling(item)">Resume</v-btn>
+              <v-btn color="primary" v-else-if="isPending(item)" :disabled="!item.enabled"
+                @click.native.stop="doResumePayment(item)">Resume Payment</v-btn>
+              <v-btn color="primary" v-else-if="isError(item)" :disabled="!item.enabled"
+                @click.native.stop="doRetryPayment(item)">Retry Payment</v-btn>
+              <v-btn color="primary" v-else-if="!isCompleted(item)" :disabled="!item.enabled"
+                @click.native.stop="doFileNow(item)">File Now</v-btn>
             </div>
-          </template>
-
-          <div class="list-item__actions">
-            <v-btn color="primary" v-if="isDraft(item)" :disabled="!item.enabled" @click="doResumeFiling(item)">
-              Resume
-            </v-btn>
-            <v-btn color="primary" v-else-if="isPending(item)" :disabled="!item.enabled" @click="doResumePayment(item)">
-              Resume Payment
-            </v-btn>
-            <v-btn color="primary" v-else-if="isError(item)" :disabled="!item.enabled" @click="doRetryPayment(item)">
-              Retry Payment
-            </v-btn>
-            <v-btn color="primary" v-else-if="!isCompleted(item)" :disabled="!item.enabled" @click="doFileNow(item)">
-              File Now
-            </v-btn>
           </div>
-        </li>
-      </ul>
-    </v-card>
+        </template>
+
+        <v-card v-if="isPending(item)">
+          <v-card-text>
+            <p class="bold">Payment Incomplete</P>
+            <p>This filing is pending payment. The payment process appears to have been interrupted for some reason.<p>
+            <p>You may continue this filing by selecting "Resume Payment".</p>
+          </v-card-text>
+        </v-card>
+
+        <v-card v-if="isError(item)">
+          <v-card-text>
+            <p class="bold">Payment Unsuccessful</p>
+            <p>This filing is pending payment. The payment process appears to have been unsuccessful for some reason.</p>
+            <p>You may continue this filing by selecting "Retry Payment".</p>
+          </v-card-text>
+        </v-card>
+
+      </v-expansion-panel-content>
+    </v-expansion-panel>
 
     <!-- No Results Message -->
-    <v-card class="no-results" flat v-if="taskItems.length === 0 && !errorMessage">
+    <v-card class="no-results" flat v-if="taskItems && taskItems.length === 0 && !errorMessage">
       <v-card-text>
         <div class="no-results__title">You don't have anything to do yet</div>
         <div class="no-results__subtitle">Filings that require your attention will appear here</div>
@@ -52,7 +73,7 @@
     </v-card>
 
     <!-- Error Message -->
-    <v-card class="network-error" flat v-if="taskItems.length === 0 && errorMessage">
+    <v-card class="network-error" flat v-if="taskItems && taskItems.length === 0 && errorMessage">
       <v-card-text>
         <div class="network-error__title">{{errorMessage}}</div>
         <div class="network-error__subtitle">Filings that require your attention will normally appear here</div>
@@ -110,12 +131,10 @@ export default {
       if (this.corpNum) {
         // const url = this.corpNum + '/tasks'
         // axios.get(url).then(response => {
-          const response = { data: { tasks: sample.tasks }} // FOR DEBUGGING
+          const response = { data: { tasks: sample.tasks } } // FOR DEBUGGING
           if (response && response.data && response.data.tasks) {
-            // sort by id ascending
-            const tasks = response.data.tasks.sort((a, b) => (a.order - b.order))
-            // create items
-            tasks.forEach(task => {
+            // create task items
+            response.data.tasks.forEach(task => {
               if (task.todo) {
                 this.loadTodoItem(task)
               } else if (task.filing) {
@@ -147,7 +166,8 @@ export default {
               subtitle: task.enabled ? '(including Address and/or Director Change)' : null,
               ARFilingYear,
               status: task.todo.header.status || 'NEW',
-              enabled: Boolean(task.enabled)
+              enabled: Boolean(task.enabled),
+              order: task.order
             })
             break
           }
@@ -187,7 +207,8 @@ export default {
             title: `File ${ARFilingYear} Annual Report`,
             ARFilingYear,
             status: task.filing.header.status || 'NEW',
-            enabled: Boolean(task.enabled)
+            enabled: Boolean(task.enabled),
+            order: task.order
           })
         }
       }
@@ -199,7 +220,8 @@ export default {
           type: task.filing.header.name,
           title: `File Director Change`,
           status: task.filing.header.status || 'NEW',
-          enabled: Boolean(task.enabled)
+          enabled: Boolean(task.enabled),
+          order: task.order
         })
       }
     },
@@ -210,7 +232,8 @@ export default {
           type: task.filing.header.name,
           title: `File Address Change`,
           status: task.filing.header.status || 'NEW',
-          enabled: Boolean(task.enabled)
+          enabled: Boolean(task.enabled),
+          order: task.order
         })
       }
     },
@@ -293,36 +316,54 @@ export default {
 </script>
 
 <style lang="stylus" scoped>
-  @import "../../assets/styles/theme.styl"
+@import "../../assets/styles/theme.styl"
 
-  .list-item
-    .list-item__title
-      width 25%
+.todo-list
+  // disable expansion
+  pointer-events none
 
-    .list-item__subtitle
-      font-size 0.75rem
+.todo-list .list-item
+  padding 0
 
-    .list-item__status1
-      width 20%
-      color $gray7
+  .list-item__title
+    width 25%
 
-    .list-item__status2
-      width 36%
-      color $gray7
+  .list-item__subtitle
+    font-size 0.75rem
 
-      .v-btn
-        margin 0
+  .list-item__status1
+    width 20%
+    color $gray7
 
-    .list-item__actions
-      .v-btn
-        min-width 142px
+  .list-item__status2
+    width 36%
+    color $gray7
 
-  .list-item.disabled
-    background-color $gray0
+    .v-btn
+      margin 0
 
-    .list-item__title,
-    .list-item__subtitle,
-    .list-item__status1,
-    .list-item__status2
-      color $gray6
+  .list-item__actions
+    .v-btn
+      min-width 142px
+
+.todo-list.disabled
+  background-color $gray0
+
+  .list-item__title,
+  .list-item__subtitle,
+  .list-item__status1,
+  .list-item__status2
+    color $gray6
+
+    .v-btn
+      // enable expansion buttons
+      pointer-events auto
+
+.todo-list:not(.disabled)
+  .v-btn
+    // enable action buttons
+    pointer-events auto
+
+p.bold
+  font-weight 500
 </style>
