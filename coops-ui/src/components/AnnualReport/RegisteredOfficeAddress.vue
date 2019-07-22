@@ -192,7 +192,7 @@ export default class RegisteredOfficeAddress extends Vue {
   private updateDelivery (address: object): void {
     // Note that we do a copy of the fields (rather than change the object reference) to prevent an infinite loop with
     // the property.
-    RegisteredOfficeAddress.copyAddress(address, this.deliveryAddress)
+    Object.assign(this.deliveryAddress, address)
   }
 
   /**
@@ -213,7 +213,7 @@ export default class RegisteredOfficeAddress extends Vue {
   private updateMailing (address: object): void {
     // Note that we do a copy of the fields (rather than change the object reference) to prevent an infinite loop with
     // the property.
-    RegisteredOfficeAddress.copyAddress(address, this.mailingAddress)
+    Object.assign(this.mailingAddress, address)
   }
 
   /**
@@ -240,22 +240,6 @@ export default class RegisteredOfficeAddress extends Vue {
     const json2 = JSON.stringify(address2, (name: string, val: any) : any => { return val !== '' ? val : undefined })
 
     return json1 === json2
-  }
-
-  /**
-   * Copies one address object's fields into the other's.
-   *
-   * @param source the address object to copy from.
-   * @param target the address object to copy to.
-   */
-  private static copyAddress (source: object, target: object): void {
-    target['streetAddress'] = source['streetAddress']
-    target['streetAddressAdditional'] = source['streetAddressAdditional']
-    target['addressCity'] = source['addressCity']
-    target['addressRegion'] = source['addressRegion']
-    target['postalCode'] = source['postalCode']
-    target['addressCountry'] = source['addressCountry']
-    target['deliveryInstructions'] = source['deliveryInstructions']
   }
 
   /**
