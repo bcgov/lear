@@ -21,6 +21,7 @@ from flask_restplus import Resource, cors
 
 from legal_api.models import Business, Director, db
 from legal_api.utils.util import cors_preflight
+from datetime import date, datetime
 
 from .api_namespace import API
 
@@ -39,13 +40,17 @@ class DirectorResource(Resource):
 
         if not business:
             return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+
         # return the matching director
         if director_id:
             director, msg, code = DirectorResource._get_director(business, director_id)
             return jsonify(director or msg), code
-        # return all directors
+
+        # return all active directors as of date query param
         res = []
-        director_list = business.directors.all()
+        end_date = datetime.strptime(request.args.get('date'), '%Y-%m-%d').date()\
+            if request.args.get('date') else date.today()
+        director_list = Director.get_active_directors(business.id, end_date)
         for director in director_list:
             res.append(director.json)
 
@@ -59,13 +64,13 @@ class DirectorResource(Resource):
         director = None
         if director_id:
             rv = db.session.query(Business, Director). \
-                filter(Business.id == Director.business_id).\
-                filter(Business.identifier == business.identifier).\
-                filter(Director.id == director_id).\
+                filter(Business.id == Director.business_id). \
+                filter(Business.identifier == business.identifier). \
+                filter(Director.id == director_id). \
                 one_or_none()
-            if rv:                 
+            if rv:
                 director = {'director': rv[1].json}
- 
+
         if not director:
             return None, {'message': f'{business.identifier} director not found'}, HTTPStatus.NOT_FOUND
 

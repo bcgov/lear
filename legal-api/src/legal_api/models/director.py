@@ -17,6 +17,7 @@ Currently this only provides API versioning information
 """
 from .db import db
 from datetime import datetime
+from sqlalchemy import Date, cast, or_
 
 
 class Director(db.Model):  # pylint: disable=too-many-instance-attributes
@@ -39,7 +40,7 @@ class Director(db.Model):  # pylint: disable=too-many-instance-attributes
     address_id = db.Column('address_id', db.Integer, db.ForeignKey('addresses.id'))
 
     # Relationships - Address
-    deliveryAddress = db.relationship('Address',foreign_keys=[address_id])
+    deliveryAddress = db.relationship('Address', foreign_keys=[address_id])
 
     def save(self):        
         db.session.add(self)
@@ -65,3 +66,12 @@ class Director(db.Model):  # pylint: disable=too-many-instance-attributes
             d['officer']['middleInitial'] = self.middle_initial
 
         return d
+
+    @staticmethod
+    def get_active_directors(business_id: int, end_date: datetime):
+        directors = db.session.query(Director). \
+            filter(Director.business_id == business_id). \
+            filter(or_(Director.cessation_date.is_(None), cast(Director.cessation_date, Date) > end_date)). \
+            all()
+        return directors
+

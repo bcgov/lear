@@ -65,6 +65,31 @@ def test_get_business_no_directors(session, client, jwt):
     assert rv.json == {'message': f'{business.identifier} directors not found'}
 
 
+def test_get_business_ceased_directors(session, client, jwt):
+    """Assert that business directors are not returned."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    director = Director(
+        first_name='Michael',
+        last_name='Crane',
+        middle_initial='Joe',
+        title='VP',
+        appointment_date=datetime.datetime(2012, 5, 17),
+        cessation_date=datetime.datetime(2013, 5, 17)
+    )
+    business.directors.append(director)
+    business.save()
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/directors',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.json == {'message': f'{business.identifier} directors not found'}
+
+
 def test_get_business_director_by_id(session, client, jwt):
     """Assert that business director is returned."""
     # setup
@@ -80,7 +105,6 @@ def test_get_business_director_by_id(session, client, jwt):
     )
     business.directors.append(director)
     business.save()
-
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/directors/{director.id}',
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
