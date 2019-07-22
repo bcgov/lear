@@ -1,4 +1,5 @@
-import '@babel/polyfill'
+import 'core-js/stable' // to polyfill ECMAScript features
+import 'regenerator-runtime/runtime' // to use transpiled generator functions
 import Vue from 'vue'
 import '@/plugins/vuetify'
 import App from '@/App.vue'
