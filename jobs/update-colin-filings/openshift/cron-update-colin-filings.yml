@@ -27,16 +27,16 @@ objects:
               - -c
               - cd /opt/app-root/src; ./run.sh
               env:
-                  - name: COLIN_URL
-                    valueFrom:
-                      configMapKeyRef:
-                        key: ROUTE
-                        name: colin-api-dev-config
-                  - name: LEGAL_URL
-                      valueFrom:
-                        configMapKeyRef:
-                          key: ROUTE
-                          name: legal-api-dev-config
+                - name: COLIN_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: ROUTE
+                      name: colin-api-dev-config
+                - name: LEGAL_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: ROUTE
+                      name: legal-api-dev-config
             restartPolicy: "Never"
             concurrencyPolicy: "Forbid"
 parameters: [

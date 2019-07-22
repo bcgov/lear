@@ -19,10 +19,10 @@ We have oracle running in our lear dev namespace. To deploy an oracle image you 
 	    - expose port
 	    - run init script to setup oracle
 	    - will have local permission issues with /ORCL, but this won’t be the case in openshift
-- build image (docker build `<path to folder containing dockerfile + bin folder with scripts>` -t `<image name>`
+- build image (docker build `<path to folder containing dockerfile + bin folder with scripts>` -t `<image name>`)
 - push image to openshift (I used script from bcdevops repo: https://github.com/BCDevOps/openshift-developer-tools) 
 	- ./oc-push-image.sh -i `<image name>` -n `<name space>`
-- ######NOTE: Each environment will need its own image built from a different dockerfile because each one has it's own set of user ids available (i.e. the uid=1003919999 exists in 'tools' but not 'dev')
+- ##### NOTE: Each environment will need its own image built from a different dockerfile because each one has it's own set of user ids available (i.e. the uid=1003919999 exists in 'tools' but not 'dev')
 
 ##### Deployment Steps:
 - deploy the image 
@@ -31,12 +31,15 @@ We have oracle running in our lear dev namespace. To deploy an oracle image you 
 	- create 2 pvcs with 24G for /ORCL and /ORCL_base
 	    - the 2nd one on /ORCL_base is used to keep a copy of the original data (this is how we ensure a baseline for all our tests)
 - edit the .yaml for the deployment config
-    - add *runAsUser:* `<userid specified in Dockerfile>` under *spec: template: spec: container: securityContext:*
+    - add *runAsUser:* `<userid specified in Dockerfile>` under *spec: template: spec: containers: securityContext:*
 	    - this will set the userid for the container as long as it is an id within the range of your namespace (which you can find with `oc describe project <namespace name>`) and provided the id is not being used
 	- add *supplementalGroups: -0 -54321 -54322* under *spec: template: spec: securityContext*
 	- ##### NOTE: The two above are in *different* securityContexts
 - edit resource limits for the deployment and under *Memory* change *Limit* to 2G
-    - For faster performance I raised the limit on *Cores* = 2 and *Memory* = 8G  
+    - For faster performance I raised the limit on *Cores* = 2 and *Memory* = 8G
+- add environment variables:
+    - ORACLE_SID = ORCLCDB
+    - ORACLE_PDB = oracle1
 		
 ### Importing CDEV
 
@@ -78,5 +81,7 @@ The steps for importing CDEV are:
 
 4. Clean up
     - remove the /ORCL/dumpfs folder (no longer needed)
+        - *rm -r /ORCL/dumpfs*
     - create a copy of the /ORCL folder into /ORCL_base (used to refresh the data on each deploy from the pipeline)
+        - *cp -a /ORCL/. /ORCL_base/*
     - in the deployment configuration unmount the pvc containing the import (no longer needed)
