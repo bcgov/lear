@@ -22,7 +22,7 @@
                 <v-form ref="newDirectorForm" v-on:submit.prevent="addNewDirector" v-model="directorFormValid"
                         lazy-validation>
                   <div class="form__row three-column">
-                    <v-text-field box class="item" label="First Name"
+                    <v-text-field box class="item" label="First Name" id="new-director__first-name"
                       v-model="director.officer.firstName"
                       :rules="directorFirstNameRules"
                       required></v-text-field>
