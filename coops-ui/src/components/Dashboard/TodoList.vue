@@ -65,7 +65,7 @@
 import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
 import { mapState, mapActions } from 'vuex'
-import sample from './tasks_json' // FOR DEBUGGING
+import sample from './sample-tasks-json' // FOR DEBUGGING
 
 export default {
   name: 'TodoList',
