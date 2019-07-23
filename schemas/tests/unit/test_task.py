@@ -32,7 +32,7 @@ def test_valid_task_todo():
                     "legalName": "Legal Name - CP0002098"
                 },
                 "header": {
-                    "name": "annual_report",
+                    "name": "annualReport",
                     "ARFilingYear": 2019,
                     "status": "NEW"
                 }
@@ -72,7 +72,7 @@ def test_valid_task_filing():
                 "header": {
                     "date": "2017-06-06",
                     "filingId": 1,
-                    "name": "annual_report",
+                    "name": "annualReport",
                     "status": "DRAFT"
                 }
             }
@@ -127,7 +127,7 @@ def test_invalid_task_missing_order():
                     "legalName": "Legal Name - CP0002098"
                 },
                 "header": {
-                    "name": "annual_report",
+                    "name": "annualReport",
                     "ARFilingYear": 2019,
                     "status": "NEW"
                 }
@@ -159,7 +159,7 @@ def test_invalid_task_missing_enabled():
                     "legalName": "Legal Name - CP0002098"
                 },
                 "header": {
-                    "name": "annual_report",
+                    "name": "annualReport",
                     "ARFilingYear": 2019,
                     "status": "NEW"
                 }

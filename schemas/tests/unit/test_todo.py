@@ -13,7 +13,7 @@
 # limitations under the License.
 """Test Suite to ensure the legal todo schema is valid.
 
-This suite should have at least 1 test for the annual_report todo item.
+This suite should have at least 1 test for the annualReport todo item.
 """
 
 from registry_schemas import validate
@@ -31,7 +31,7 @@ def test_valid_todo():
                 "legalName": "Legal Name - CP0002098"
             },
             "header": {
-                "name": "annual_report",
+                "name": "annualReport",
                 "ARFilingYear": 2019,
                 "status": "NEW"
             }
@@ -60,7 +60,7 @@ def test_invalid_todo_name():
                 "legalName": "Legal Name - CP0002098"
             },
             "header": {
-                "name": "annual_report",
+                "name": "annualReport",
                 "ARFilingYear": 2019,
                 "status": "NEW"
             }
@@ -82,7 +82,7 @@ def test_invalid_todo_missing_business():
     todo = {
         "todo": {
             "header": {
-                "name": "annual_report",
+                "name": "annualReport",
                 "ARFilingYear": 2019,
                 "status": "NEW"
             }
