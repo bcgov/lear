@@ -11,9 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Retrieve the directors for the entity.
-"""
+"""Retrieve the directors for the entity."""
+from datetime import date, datetime
 from http import HTTPStatus
 
 from flask import jsonify, request
@@ -21,14 +20,13 @@ from flask_restplus import Resource, cors
 
 from legal_api.models import Business, Director, db
 from legal_api.utils.util import cors_preflight
-from datetime import date, datetime
 
 from .api_namespace import API
 
 
 @cors_preflight('GET,')
 @API.route('/<string:identifier>/directors', methods=['GET', 'OPTIONS'])
-@API.route('/<string:identifier>/directors/<int:director_id>', methods=['GET', 'OPTIONS']) 
+@API.route('/<string:identifier>/directors/<int:director_id>', methods=['GET', 'OPTIONS'])
 class DirectorResource(Resource):
     """Business Directors service."""
 

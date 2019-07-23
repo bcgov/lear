@@ -15,15 +15,16 @@
 
 Currently this only provides API versioning information
 """
-from .db import db
 from datetime import datetime
+
 from sqlalchemy import Date, cast, or_
+
+from .db import db
 
 
 class Director(db.Model):  # pylint: disable=too-many-instance-attributes
-    """This class manages all of the business directors.  
-    """
-     
+    """This class manages all of the business directors."""
+
     __versioned__ = {}
     __tablename__ = 'directors'
 
@@ -33,34 +34,34 @@ class Director(db.Model):  # pylint: disable=too-many-instance-attributes
     last_name = db.Column('last_name', db.String(1000))
     title = db.Column('title', db.String(1000))
     appointment_date = db.Column('appointment_date', db.DateTime(timezone=True))
-    cessation_date = db.Column('cessation_date', db.DateTime(timezone=True))    
+    cessation_date = db.Column('cessation_date', db.DateTime(timezone=True))
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
     address_id = db.Column('address_id', db.Integer, db.ForeignKey('addresses.id'))
 
     # Relationships - Address
-    deliveryAddress = db.relationship('Address', foreign_keys=[address_id])
+    delivery_address = db.relationship('Address', foreign_keys=[address_id])
 
-    def save(self):        
+    def save(self):
+        """Save the object to the database immediately."""
         db.session.add(self)
         db.session.commit()
-    
+
     @property
     def json(self):
-        """Return the director as a json object.        
-        """
+        """Return the director as a json object."""
         d = {
-             'officer': {'firstName': self.first_name, 'lastName':self.last_name},
-             'appointmentDate': datetime.date(self.appointment_date).isoformat(),
-             'cessationDate': datetime.date(self.cessation_date).isoformat() if self.cessation_date else None
+            'officer': {'firstName': self.first_name, 'lastName': self.last_name},
+            'appointmentDate': datetime.date(self.appointment_date).isoformat(),
+            'cessationDate': datetime.date(self.cessation_date).isoformat() if self.cessation_date else None
         }
-        if self.deliveryAddress:
-            director_address = self.deliveryAddress.json
+        if self.delivery_address:
+            director_address = self.delivery_address.json
             if 'addressType' in director_address:
                 del director_address['addressType']
-            d['deliveryAddress'] = director_address
-        if self.title:        
+            d['delivery_address'] = director_address
+        if self.title:
             d['title'] = self.title
         if self.middle_initial:
             d['officer']['middleInitial'] = self.middle_initial
@@ -69,9 +70,9 @@ class Director(db.Model):  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def get_active_directors(business_id: int, end_date: datetime):
+        """Return the active directors as of given date."""
         directors = db.session.query(Director). \
             filter(Director.business_id == business_id). \
             filter(or_(Director.cessation_date.is_(None), cast(Director.cessation_date, Date) > end_date)). \
             all()
         return directors
-

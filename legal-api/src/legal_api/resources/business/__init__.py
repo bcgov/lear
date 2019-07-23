@@ -18,8 +18,8 @@ Provides all business entity externalized services.
 from .api_namespace import API
 from .business import BusinessResource
 from .business_address import AddressResource
-from .business_filings import ListFilingResource
 from .business_directors import DirectorResource
+from .business_filings import ListFilingResource
 
 
 __all__ = ('API')

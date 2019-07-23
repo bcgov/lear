@@ -25,7 +25,8 @@ from legal_api.exceptions import BusinessException
 
 from .db import db, ma
 
-from .director import Director
+
+from .director import Director  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .address import Address  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref

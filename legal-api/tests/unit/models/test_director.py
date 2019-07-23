@@ -16,18 +16,17 @@
 
 Test-Suite to ensure that the Director Model is working as expected.
 """
+import datetime
+
 from legal_api.models import Director
 from tests.unit.models import factory_business
-import datetime
 
 
 def test_director_json(session):
     """Assert the json format of director."""
-    identifier = 'CP1234567'
-
     director = Director(
         first_name='Michael',
-        last_name='Crane', 
+        last_name='Crane',
         middle_initial='Joe',
         title='VP',
         appointment_date=datetime.datetime(2017, 5, 17),
@@ -36,7 +35,7 @@ def test_director_json(session):
 
     director_json = {
         'appointmentDate': director.appointment_date.date().isoformat(),
-        'cessationDate': director.cessation_date,         
+        'cessationDate': director.cessation_date,
         'officer': {
             'firstName': director.first_name,
             'lastName': director.last_name,
@@ -48,10 +47,11 @@ def test_director_json(session):
     assert director.json == director_json
 
 
-def test_director_save(session):     
+def test_director_save(session):
+    """Assert that the director saves correctly."""
     director = Director(
         first_name='Michael',
-        last_name='Crane', 
+        last_name='Crane',
         middle_initial='Joe',
         title='VP',
         appointment_date=datetime.datetime(2017, 5, 17),
@@ -69,16 +69,16 @@ def test_director_save_to_business(session):
 
     director1 = Director(
         first_name='Michael',
-        last_name='Crane', 
+        last_name='Crane',
         middle_initial='Joe',
         title='VP',
         appointment_date=datetime.datetime(2020, 5, 17),
-        cessation_date= None              
+        cessation_date=None
     )
 
     director2 = Director(
         first_name='Scott',
-        last_name='James', 
+        last_name='James',
         middle_initial=None,
         title='AVP',
         appointment_date=datetime.datetime(2017, 5, 17),

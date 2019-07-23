@@ -16,13 +16,12 @@
 
 Test-Suite to ensure that the /businesses../directors endpoint is working as expected.
 """
+import datetime
 from http import HTTPStatus
 
 from legal_api.services.authz import STAFF_ROLE
 from tests.unit.models import Director, factory_business
 from tests.unit.services.utils import create_header
-
-import datetime
 
 
 def test_get_business_directors(session, client, jwt):

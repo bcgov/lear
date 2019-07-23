@@ -18,9 +18,10 @@ from .address import Address
 from .business import Business, BusinessSchema  # noqa: I001
 from .colin_update import ColinLastUpdate
 from .comment import Comment
+from .director import Director
 from .filing import Filing
 from .user import User, UserSchema
-from .director import Director
 
 
-__all__ = ('db', 'ma', 'Business', 'BusinessSchema', 'ColinLastUpdate', 'Comment', 'Filing', 'User', 'UserSchema', 'Director')
+__all__ = ('db', 'ma', 'Business', 'BusinessSchema', 'ColinLastUpdate', 'Comment', 'Filing', 'User', 'UserSchema',
+           'Director')
