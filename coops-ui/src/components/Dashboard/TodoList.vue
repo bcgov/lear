@@ -161,7 +161,7 @@ export default {
       const todo = task.task.todo
       if (todo && todo.header) {
         switch (todo.header.name) {
-          case 'annual_report': {
+          case 'annualReport': {
             const ARFilingYear = todo.header.ARFilingYear
             this.taskItems.push({
               type: todo.header.name,
@@ -185,13 +185,13 @@ export default {
       const filing = task.task.filing
       if (filing && filing.header) {
         switch (filing.header.name) {
-          case 'annual_report':
+          case 'annualReport':
             this.loadAnnualReport(task)
             break
-          case 'change_of_directors':
+          case 'changeOfDirectors':
             this.loadChangeOfDirectors(task)
             break
-          case 'change_of_address':
+          case 'changeOfAddress':
             this.loadChangeOfAddress(task)
             break
           default:
@@ -247,16 +247,16 @@ export default {
 
     doFileNow (item) {
       switch (item.type) {
-        case 'annual_report':
+        case 'annualReport':
           // file the subject Annual Report
           this.resetStore(item)
           this.$router.push('/annual-report')
           break
-        case 'change_of_directors':
+        case 'changeOfDirectors':
           // TODO - file the subject Change of Directors
           console.log('doFileNow(), Director Change item =', item)
           break
-        case 'change_of_address':
+        case 'changeOfAddress':
           // TODO - file the subject Change Of Address
           console.log('doFileNow(), Address Change item =', item)
           break

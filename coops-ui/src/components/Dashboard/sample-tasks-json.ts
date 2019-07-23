@@ -14,7 +14,7 @@ export default
             'legalName': 'Legal Name - CP0002098'
           },
           'header': {
-            'name': 'annual_report',
+            'name': 'annualReport',
             'ARFilingYear': 2019,
             'status': 'NEW'
           }
@@ -49,7 +49,7 @@ export default
           'header': {
             'date': '2017-06-06',
             'filingId': 123,
-            'name': 'annual_report',
+            'name': 'annualReport',
             'status': 'DRAFT'
           }
         }
@@ -74,7 +74,7 @@ export default
           'header': {
             'date': '2017-06-06',
             'filingId': 456,
-            'name': 'change_of_address',
+            'name': 'changeOfAddress',
             'status': 'ERROR'
           }
         }
@@ -99,7 +99,7 @@ export default
           'header': {
             'date': '2017-06-06',
             'filingId': 789,
-            'name': 'change_of_directors',
+            'name': 'changeOfDirectors',
             'status': 'PENDING'
           }
         }
