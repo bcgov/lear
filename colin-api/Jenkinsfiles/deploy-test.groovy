@@ -19,56 +19,15 @@
 //   -> hudson.model.DirectoryBrowserSupport.CSP : removes restrictions on CSS file load, thus html pages of test reports are displayed pretty
 //   See: https://docs.openshift.com/container-platform/3.9/using_images/other_images/jenkins.html for a complete list of JENKINS env vars
 // define constants
-def COMPONENT_NAME = 'entity-filer'
-def TAG_NAME = 'dev'
 def NAMESPACE = 'gl2uos'
+def COMPONENT_NAME = 'colin-api'
+def COMPONENT_NAME_INTER = 'colin-api-base'
+def TAG_NAME = 'test'
+def SOURCE_TAG = 'dev'
 
 // define groovy functions
 import groovy.json.JsonOutput
 
-// Determine whether there were any changes the files within the project's context directory.
-// return a string listing commit msgs occurred since last build
-@NonCPS
-String triggerBuild(String contextDirectory) {
-    // Determine if code has changed within the source context directory.
-    def changeLogSets = currentBuild.changeSets
-    def filesChangeCnt = 0
-    MAX_MSG_LEN = 512
-    def changeString = ""
-    for (int i = 0; i < changeLogSets.size(); i++) {
-        def entries = changeLogSets[i
-        ].items
-        for (int j = 0; j < entries.length; j++) {
-            def entry = entries[j
-            ]
-            //echo "${entry.commitId} by ${entry.author} on ${new Date(entry.timestamp)}: ${entry.msg}"
-            def files = new ArrayList(entry.affectedFiles)
-
-            for (int k = 0; k < files.size(); k++) {
-                def file = files[k
-                ]
-                def filePath = file.path
-                //echo ">> ${file.path}"
-                if (filePath.contains(contextDirectory)) {
-
-                    filesChangeCnt = 1
-                    truncated_msg = entry.msg.take(MAX_MSG_LEN)
-                    changeString += " - ${truncated_msg} [${entry.author}]\n"
-                    k = files.size()
-                    j = entries.length
-                }
-            }
-        }
-    }
-    if ( filesChangeCnt < 1 ) {
-        echo('The changes do not require a build.')
-        return ""
-    }
-    else {
-        echo('The changes require a build.')
-        return changeString
-    }
-}
 // Get an image's hash tag
 String getImageTagHash(String imageName, String tag = "") {
 
@@ -88,37 +47,7 @@ properties([
     ]
 ])
 
-def run_pipeline = true
-if( triggerBuild(COMPONENT_NAME) == "" ) {
-    node {
-        try {
-            timeout(time: 1, unit: 'DAYS') {
-                input message: "Run ${COMPONENT_NAME}-${TAG_NAME}-pipeline?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin'
-            }
-        } catch (Exception e) {
-            run_pipeline = false;
-        }
-    }
-}
-if (!run_pipeline) {
-    echo('No Build Wanted - End of Build.')
-    currentBuild.result = 'SUCCESS'
-    return
-}
-
 node {
-    stage("Build ${COMPONENT_NAME}") {
-      script {
-        openshift.withCluster() {
-          openshift.withProject() {
-
-            echo "Building ${COMPONENT_NAME} ..."
-            def build = openshift.selector("bc", "${COMPONENT_NAME}")
-            build.startBuild("--wait=true").logs("-f")
-          }
-        }
-      }
-    }
     def old_version
     stage("Deploy ${COMPONENT_NAME}:${TAG_NAME}") {
         script {
@@ -134,7 +63,7 @@ node {
 
                     // Don't tag with BUILD_ID so the pruner can do it's job; it won't delete tagged images.
                     // Tag the images for deployment based on the image's hash
-                    def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}")
+                    def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${SOURCE_TAG}")
                     echo "IMAGE_HASH: ${IMAGE_HASH}"
                     openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${TAG_NAME}")
                 }
@@ -167,18 +96,21 @@ node {
             }
         }
     }
-    stage("Run tests on ${COMPONENT_NAME}:${TAG_NAME}") {
-        openshift.withCluster() {
-            openshift.withProject() {
-                def test_pipeline = openshift.selector('bc', 'pytest-pipeline')
-                try {
-                    test_pipeline.startBuild('--wait=true', "-e=component=${COMPONENT_NAME}", "-e=tag=${TAG_NAME}", "-e=namespace=${NAMESPACE}", "-e=db_type=PG").logs('-F')
-                    echo "All tests passed"
-                } catch (Exception e) {
-                    echo "Not all tests passed."
-                    currentBuild.result = 'FAILURE'
+    stage("Run pytests for ${COMPONENT_NAME}:${TAG_NAME}") {
+        script {
+            openshift.withCluster() {
+                openshift.withProject() {
+                    def test_pipeline = openshift.selector('bc', 'pytest-pipeline')
+                    try {
+                        test_pipeline.startBuild('--wait=true', "-e=component=${COMPONENT_NAME}", "-e=tag=${TAG_NAME}", "-e=namespace=${NAMESPACE}", "-e=db_type=ORA").logs('-f')
+                        echo "All tests passed"
+                    } catch (Exception e) {
+                        echo e.getMessage()
+                        echo "Not all tests passed."
+                        currentBuild.result = 'FAILURE'
+                    }
                 }
             }
         }
     }
-}
+}//end node

@@ -65,7 +65,7 @@
             "displayName": "Name",
             "description": "The name assigned to all of the resources defined in this template.",
             "required": true,
-            "value": "legal-api"
+            "value": "entity-filer"
         },
         {
             "name": "GIT_REPO_URL",
@@ -86,7 +86,7 @@
             "displayName": "Source Context Directory",
             "description": "The source context directory.",
             "required": false,
-            "value": "/legal-api"
+            "value": "/entity-filer"
         },
         {
             "name": "SOURCE_IMAGE_KIND",
