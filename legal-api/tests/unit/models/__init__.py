@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """The Test-Suite used to ensure that the Model objects are working correctly."""
-from legal_api.models import Address, Business, Filing
+from legal_api.models import Address, Business, Director, Filing
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
 
