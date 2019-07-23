@@ -60,7 +60,7 @@ class Director(db.Model):  # pylint: disable=too-many-instance-attributes
             director_address = self.delivery_address.json
             if 'addressType' in director_address:
                 del director_address['addressType']
-            d['delivery_address'] = director_address
+            d['deliveryAddress'] = director_address
         if self.title:
             d['title'] = self.title
         if self.middle_initial:
