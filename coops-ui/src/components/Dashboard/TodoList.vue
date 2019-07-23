@@ -48,7 +48,8 @@
         <v-card v-if="isPending(item)">
           <v-card-text>
             <p class="bold">Payment Incomplete</P>
-            <p>This filing is pending payment. The payment process appears to have been interrupted for some reason.<p>
+            <p>This filing is pending payment. The payment process appears to have been interrupted for some
+              reason.<p>
             <p>You may continue this filing by selecting "Resume Payment".</p>
           </v-card-text>
         </v-card>
@@ -56,7 +57,8 @@
         <v-card v-if="isError(item)">
           <v-card-text>
             <p class="bold">Payment Unsuccessful</p>
-            <p>This filing is pending payment. The payment process appears to have been unsuccessful for some reason.</p>
+            <p>This filing is pending payment. The payment process appears to have been unsuccessful for some
+              reason.</p>
             <p>You may continue this filing by selecting "Retry Payment".</p>
           </v-card-text>
         </v-card>
@@ -135,9 +137,9 @@ export default {
           if (response && response.data && response.data.tasks) {
             // create task items
             response.data.tasks.forEach(task => {
-              if (task.todo) {
+              if (task && task.task && task.task.todo) {
                 this.loadTodoItem(task)
-              } else if (task.filing) {
+              } else if (task && task.task && task.task.filing) {
                 this.loadFilingItem(task)
               } else {
                 console.log('ERROR - got unknown task =', task)
@@ -156,31 +158,33 @@ export default {
     },
 
     loadTodoItem (task) {
-      if (task.todo && task.todo.header) {
-        switch (task.todo.header.name) {
+      const todo = task.task.todo
+      if (todo && todo.header) {
+        switch (todo.header.name) {
           case 'annual_report': {
-            const ARFilingYear = task.todo.header.ARFilingYear
+            const ARFilingYear = todo.header.ARFilingYear
             this.taskItems.push({
-              type: task.todo.header.name,
+              type: todo.header.name,
               title: `File ${ARFilingYear} Annual Report`,
               subtitle: task.enabled ? '(including Address and/or Director Change)' : null,
               ARFilingYear,
-              status: task.todo.header.status || 'NEW',
+              status: todo.header.status || 'NEW',
               enabled: Boolean(task.enabled),
               order: task.order
             })
             break
           }
           default:
-            console.log('ERROR - got unknown todo item =', task)
+            console.log('ERROR - got unknown todo item =', todo)
             break
         }
       }
     },
 
     loadFilingItem (task) {
-      if (task.filing && task.filing.header) {
-        switch (task.filing.header.name) {
+      const filing = task.task.filing
+      if (filing && filing.header) {
+        switch (filing.header.name) {
           case 'annual_report':
             this.loadAnnualReport(task)
             break
@@ -191,22 +195,23 @@ export default {
             this.loadChangeOfAddress(task)
             break
           default:
-            console.log('ERROR - got unknown filing =', task.filing)
+            console.log('ERROR - got unknown filing item =', filing)
             break
         }
       }
     },
 
     loadAnnualReport (task) {
-      if (task.filing && task.filing.header && task.filing.annualReport) {
-        const date = task.filing.annualReport.annualGeneralMeetingDate
+      const filing = task.task.filing
+      if (filing && filing.header && filing.annualReport) {
+        const date = filing.annualReport.annualGeneralMeetingDate
         if (date) {
           const ARFilingYear = +date.substring(0, 4)
           this.taskItems.push({
-            type: task.filing.header.name,
+            type: filing.header.name,
             title: `File ${ARFilingYear} Annual Report`,
             ARFilingYear,
-            status: task.filing.header.status || 'NEW',
+            status: filing.header.status || 'NEW',
             enabled: Boolean(task.enabled),
             order: task.order
           })
@@ -215,11 +220,12 @@ export default {
     },
 
     loadChangeOfDirectors (task) {
-      if (task.filing && task.filing.header && task.filing.changeOfDirectors) {
+      const filing = task.task.filing
+      if (filing && filing.header && filing.changeOfDirectors) {
         this.taskItems.push({
-          type: task.filing.header.name,
+          type: filing.header.name,
           title: `File Director Change`,
-          status: task.filing.header.status || 'NEW',
+          status: filing.header.status || 'NEW',
           enabled: Boolean(task.enabled),
           order: task.order
         })
@@ -227,11 +233,12 @@ export default {
     },
 
     loadChangeOfAddress (task) {
-      if (task.filing && task.filing.header && task.filing.changeOfAddress) {
+      const filing = task.task.filing
+      if (filing && filing.header && filing.changeOfAddress) {
         this.taskItems.push({
-          type: task.filing.header.name,
+          type: filing.header.name,
           title: `File Address Change`,
-          status: task.filing.header.status || 'NEW',
+          status: filing.header.status || 'NEW',
           enabled: Boolean(task.enabled),
           order: task.order
         })
