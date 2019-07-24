@@ -103,19 +103,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['corpNum']),
-
-    // TODO - implement Filing Unavailable functionality (ticket #920)
-    isFilingUnavailable () {
-      // const openHours = [
-      //   {
-      //     "Monday to Friday": { from: 600, to: 2100 },
-      //     "Saturday": { from: 0, to: 700 },
-      //     "Sunday": { from: 1200, to: 0 }
-      //   }
-      // ]
-      return false
-    }
+    ...mapState(['corpNum'])
   },
 
   mounted () {
@@ -178,6 +166,8 @@ export default {
             console.log('ERROR - got unknown todo item =', todo)
             break
         }
+      } else {
+        console.log('ERROR - invalid todo or header in task =', task)
       }
     },
 
@@ -198,6 +188,8 @@ export default {
             console.log('ERROR - got unknown filing item =', filing)
             break
         }
+      } else {
+        console.log('ERROR - invalid filing or header in task =', task)
       }
     },
 
@@ -215,7 +207,11 @@ export default {
             enabled: Boolean(task.enabled),
             order: task.order
           })
+        } else {
+          console.log('ERROR - invalid date in filing =', filing)
         }
+      } else {
+        console.log('ERROR - invalid filing or header or annualReport in task =', task)
       }
     },
 
@@ -229,6 +225,8 @@ export default {
           enabled: Boolean(task.enabled),
           order: task.order
         })
+      } else {
+        console.log('ERROR - invalid filing or header or changeOfDirectors in task =', task)
       }
     },
 
@@ -242,6 +240,8 @@ export default {
           enabled: Boolean(task.enabled),
           order: task.order
         })
+      } else {
+        console.log('ERROR - invalid filing or header or changeOfAddress in task =', task)
       }
     },
 

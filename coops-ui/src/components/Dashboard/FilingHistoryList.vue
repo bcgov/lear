@@ -58,7 +58,6 @@
 import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
 import { mapState } from 'vuex'
-import { isEmpty } from 'lodash'
 
 export default {
   name: 'FilingHistoryList',
@@ -96,19 +95,21 @@ export default {
             // create filed items
             for (let i = 0; i < filings.length; i++) {
               const filing = filings[i].filing
-              switch (filing.header.name) {
-                case 'annual_report':
-                  this.loadAnnualReport(filing)
-                  break
-                case 'change_of_directors':
-                  this.loadChangeOfDirectors(filing)
-                  break
-                case 'change_of_address':
-                  this.loadChangeOfAddress(filing)
-                  break
-                default:
-                  console.log('ERROR - got unknown filing =', filing)
-                  break
+              if (filing && filing.header) {
+                switch (filing.header.name) {
+                  case 'annualReport':
+                    this.loadAnnualReport(filing)
+                    break
+                  case 'changeOfDirectors':
+                    this.loadChangeOfDirectors(filing)
+                    break
+                  case 'changeOfAddress':
+                    this.loadChangeOfAddress(filing)
+                    break
+                  default:
+                    console.log('ERROR - got unknown filing =', filing)
+                    break
+                }
               }
             }
           } else {
@@ -124,30 +125,37 @@ export default {
     },
 
     loadAnnualReport (filing) {
-      if (!isEmpty(filing.annualReport)) {
-        const agmYear = filing.annualReport.annualGeneralMeetingDate.substring(0, 4)
-        // TODO - finish implementation
-        const item = {
-          name: `Annual Report (${agmYear})`,
-          filingAuthor: filing.annualReport.certifiedBy,
-          filingDate: filing.header.date,
-          filingStatus: filing.header.status,
-          filingDocuments: [{ name: 'Annual Report', url: '' }]
+      if (filing.annualReport) {
+        const date = filing.annualReport.annualGeneralMeetingDate
+        if (date) {
+          const agmYear = +date.substring(0, 4)
+          // TODO - finish implementation
+          const item = {
+            name: `Annual Report (${agmYear})`,
+            filingAuthor: filing.annualReport.certifiedBy,
+            filingDate: filing.header.date,
+            filingStatus: filing.header.status,
+            filingDocuments: [{ name: 'Annual Report', url: '' }]
+          }
+          if (filing.changeOfDirectors) {
+            // TODO
+            item.filingDocuments.push({ name: 'Director Change (AGM)', url: '' })
+          }
+          if (filing.changeOfAddress) {
+            // TODO
+            item.filingDocuments.push({ name: 'Address Change (AGM)', url: '' })
+          }
+          this.filedItems.push(item)
+        } else {
+          console.log('ERROR - invalid date in filing =', filing)
         }
-        if (!isEmpty(filing.changeOfDirectors)) {
-          // TODO
-          item.filingDocuments.push({ name: 'Director Change (AGM)', url: '' })
-        }
-        if (!isEmpty(filing.changeOfAddress)) {
-          // TODO
-          item.filingDocuments.push({ name: 'Address Change (AGM)', url: '' })
-        }
-        this.filedItems.push(item)
+      } else {
+        console.log('ERROR - invalid annualReport in filing =', filing)
       }
     },
 
     loadChangeOfDirectors (filing) {
-      if (!isEmpty(filing.changeOfDirectors)) {
+      if (filing.changeOfDirectors) {
         const item = {
           name: 'Director Change',
           filingAuthor: filing.changeOfDirectors.certifiedBy,
@@ -156,11 +164,13 @@ export default {
           filingDocuments: [{ name: 'Director Change', url: '' }]
         }
         this.filedItems.push(item)
+      } else {
+        console.log('ERROR - invalid changeOfDirectors in filing =', filing)
       }
     },
 
     loadChangeOfAddress (filing) {
-      if (!isEmpty(filing.changeOfAddress)) {
+      if (filing.changeOfAddress) {
         const item = {
           name: 'Address Change',
           filingAuthor: filing.changeOfAddress.certifiedBy,
@@ -169,6 +179,8 @@ export default {
           filingDocuments: [{ name: 'Address Change', url: '' }]
         }
         this.filedItems.push(item)
+      } else {
+        console.log('ERROR - invalid changeOfAddress in filing =', filing)
       }
     },
 
