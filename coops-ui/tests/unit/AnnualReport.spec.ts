@@ -24,7 +24,6 @@ describe('AnnualReport.vue', () => {
     store.state.ARFilingYear = 2017
     store.state.currentARStatus = 'TODO'
     store.state.filedDate = null
-    store.state.validated = true
 
     //
     // TODO - should stub out sub-components and just focus on THIS component's functionality
@@ -41,9 +40,10 @@ describe('AnnualReport.vue', () => {
   })
 
   it('initializes the store variables properly', () => {
+    expect(vm.$store.state.corpNum).toEqual('CP0001191')
     expect(vm.$store.state.ARFilingYear).toEqual(2017)
+    expect(vm.$store.state.currentARStatus).toEqual('TODO')
     expect(vm.$store.state.filedDate).toBeNull()
-    expect(vm.$store.state.validated).toBe(true)
 
     // check titles and sub-titles
     expect(vm.$el.querySelector('#AR-header').textContent).toContain('2017')
@@ -58,6 +58,7 @@ describe('AnnualReport.vue', () => {
     vm.setAgmDateValid(true)
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(true)
+    vm.setValidateFlag()
 
     Vue.nextTick(() => {
       // confirm that flag is set correctly
@@ -72,6 +73,7 @@ describe('AnnualReport.vue', () => {
     vm.setAgmDateValid(false)
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(true)
+    vm.setValidateFlag()
 
     Vue.nextTick(() => {
       // confirm that flag is set correctly
@@ -86,6 +88,7 @@ describe('AnnualReport.vue', () => {
     vm.setAgmDateValid(true)
     vm.setAddressesFormValid(false)
     vm.setDirectorFormValid(true)
+    vm.setValidateFlag()
 
     Vue.nextTick(() => {
       // confirm that flag is set correctly
@@ -100,6 +103,7 @@ describe('AnnualReport.vue', () => {
     vm.setAgmDateValid(true)
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(false)
+    vm.setValidateFlag()
 
     Vue.nextTick(() => {
       // confirm that flag is set correctly
