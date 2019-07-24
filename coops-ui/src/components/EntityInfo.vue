@@ -17,7 +17,6 @@
           <span v-if="entityStatus === 'GOODSTANDING'">In Good Standing</span>
           <span v-else-if="entityStatus === 'PENDINGDISSOLUTION'">Pending Dissolution</span>
           <span v-else-if="entityStatus === 'NOTINCOMPLIANCE'">Not in Compliance</span>
-          <span v-else>Not Available</span>
         </v-chip>
       </div>
       <dl class="meta-container">
