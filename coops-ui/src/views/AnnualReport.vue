@@ -4,14 +4,14 @@
       <v-card>
         <v-card-title>Unable to Save Filing</v-card-title>
         <v-card-text>
-          <p>We were unable to save your filing. You can continue to try to save this
+          <p class="genErr">We were unable to save your filing. You can continue to try to save this
              filing or you can exit without saving and re-create this filing at another time.</p>
-          <p>If you exit this filing, any changes you've made will not be saved.</p>
-          <p>
+          <p  class="genErr">If you exit this filing, any changes you've made will not be saved.</p>
+          <p class="genErr">
             <v-icon small>phone</v-icon>
             <span class="error-dialog-padding">250 952-0568</span>
           </p>
-          <p>
+          <p class="genErr">
             <v-icon small>email</v-icon>
             <span class="error-dialog-padding">SBC_ITOperationsSupport@gov.bc.ca</span>
           </p>
@@ -25,24 +25,24 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="paymentErrorDialog" width="60rem">
+    <v-dialog v-model="paymentErrorDialog" width="60rem" id="payErr">
       <v-card>
         <v-card-title>Unable to Process Payment</v-card-title>
         <v-card-text>
-          <p>PayBC is unable to process payments at this time.</p>
-          <p>Your filing has been saved as a DRAFT and you can resume your filing from your Dashboard
+          <p class="genErr">PayBC is unable to process payments at this time.</p>
+          <p class="genErr">Your filing has been saved as a DRAFT and you can resume your filing from your Dashboard
             at a later time.</p>
-          <p>PayBC is normally available:</p>
-          <p>
+          <p class="genErr">PayBC is normally available:</p>
+          <p class="genErr">
             Monday to Friday: 6:00am to 9:00pm
             <br />Saturday: 12:00am to 7:00pm
             <br />Sunday: 12:00pm to 12:00am
           </p>
-          <p>
+          <p class="genErr">
             <v-icon small>phone</v-icon>
             <span class="error-dialog-padding">250 952-0568</span>
           </p>
-          <p>
+          <p class="genErr">
             <v-icon small>email</v-icon>
             <span class="error-dialog-padding">SBC_ITOperationsSupport@gov.bc.ca</span>
           </p>
@@ -457,8 +457,8 @@ h2
   .v-btn + .v-btn
     margin-left: 0.5rem;
 
-.error-dialog-text
-  font-size: 0.85rem;
+.genErr
+  font-size: 0.9rem;
 
 .error-dialog-padding
   margin-left: 1rem;
