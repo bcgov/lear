@@ -24,12 +24,14 @@ TEST_SCHEMAS_DATA = [
     ('filing.json'),
     ('directors.json'),
     ('change_of_directors.json'),
+    ('task.json'),
+    ('todo.json'),
 ]
 
 TEST_AR = {
     'filing': {
         'header': {
-            'name': 'annual report',
+            'name': 'annualReport',
             'date': '2019-04-08',
             'filingId': 1
         },

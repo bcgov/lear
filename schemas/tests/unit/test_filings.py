@@ -21,7 +21,7 @@ from registry_schemas import validate
 AR = {
     'filing': {
         'header': {
-            'name': 'annual report',
+            'name': 'annualReport',
             'date': '2019-04-08'
         },
         'business': {
@@ -118,7 +118,7 @@ def test_invalid_ar_filing():
     iar = {
         'filing': {
             'header': {
-                'name': 'annual report',
+                'name': 'annualReport',
                 'date': '2019-04-08'
             },
             'business': {
@@ -145,7 +145,7 @@ def test_valid_coa_filing():
     iar = {
         'filing': {
             'header': {
-                'name': 'annual report',
+                'name': 'changeOfAddress',
                 'date': '2019-04-08'
             },
             'business': {
@@ -173,7 +173,7 @@ def test_valid_cod_filing():
     filing = {
         'filing': {
             'header': {
-                'name': 'something doesn\'t matter',
+                'name': 'changeOfDirectors',
                 'date': '2019-04-08'
             },
             'business': {
@@ -203,7 +203,7 @@ def test_invalid_cod_filing():
     filing = {
         'filing': {
             'header': {
-                'name': 'something doesn\'t matter',
+                'name': 'changeOfDirectors',
                 'date': '2019-04-08'
             },
             'business': {
@@ -252,7 +252,7 @@ def test_valid_multi_filing():
     filing = {
         'filing': {
             'header': {
-                'name': 'something doesn\'t matter',
+                'name': 'annualReport',
                 'date': '2019-04-08'
             },
             'business': {
@@ -262,6 +262,7 @@ def test_valid_multi_filing():
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
             },
+            'annualReport': AR,
             'changeOfDirectors': CHANGE_OF_DIRECTORS,
             'changeOfAddress': CHANGE_OF_ADDRESS
         }

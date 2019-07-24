@@ -214,7 +214,7 @@ export default {
       let changeOfAddress = null
 
       const header = {
-        header: { name: 'annual_report', date: this.currentDate }
+        header: { name: 'annualReport', date: this.currentDate }
       }
       const business = {
         business: {
