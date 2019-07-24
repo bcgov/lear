@@ -75,13 +75,6 @@
                                 }
                             },
                             {
-                                "name": "web-keycloak",
-                                "configMap": {
-                                    "name": "web-keycloak",
-                                    "defaultMode": 420
-                                }
-                            },
-                            {
                                 "name": "web-ui-configuration",
                                 "configMap": {
                                     "name": "web-ui-configuration",
@@ -108,11 +101,6 @@
                                         "readOnly": true,
                                         "mountPath": "/etc/Caddyfile",
                                         "subPath": "Caddyfile"
-                                    },
-                                    {
-                                        "name": "web-keycloak",
-                                        "readOnly": true,
-                                        "mountPath": "/var/www/html/static/keycloak"
                                     },
                                     {
                                         "name": "web-ui-configuration",
