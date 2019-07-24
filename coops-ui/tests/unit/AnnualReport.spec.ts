@@ -176,7 +176,7 @@ describe('AnnualReport.vue', () => {
   //                     header: {
   //                       date: '2016-04-08',
   //                       filingId: 1,
-  //                       name: 'annual_report',
+  //                       name: 'annualReport',
   //                       paymentToken: 'token',
   //                       status: 'PENDING' }
   //                   }

@@ -40,7 +40,7 @@ describe('FilingHistoryList.vue', () => {
                   'header': {
                     'date': '2017-06-06',
                     'filingId': 123,
-                    'name': 'annual_report',
+                    'name': 'annualReport',
                     'status': 'DRAFT'
                   }
                 }
@@ -61,7 +61,7 @@ describe('FilingHistoryList.vue', () => {
                   'header': {
                     'date': '2017-06-06',
                     'filingId': 456,
-                    'name': 'change_of_address',
+                    'name': 'changeOfAddress',
                     'status': 'ERROR'
                   }
                 }
@@ -82,7 +82,7 @@ describe('FilingHistoryList.vue', () => {
                   'header': {
                     'date': '2017-06-06',
                     'filingId': 789,
-                    'name': 'change_of_directors',
+                    'name': 'changeOfDirectors',
                     'status': 'PENDING'
                   }
                 }

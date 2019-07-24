@@ -97,13 +97,13 @@ export default {
               const filing = filings[i].filing
               if (filing && filing.header) {
                 switch (filing.header.name) {
-                  case 'annual_report':
+                  case 'annualReport':
                     this.loadAnnualReport(filing)
                     break
-                  case 'change_of_directors':
+                  case 'changeOfDirectors':
                     this.loadChangeOfDirectors(filing)
                     break
-                  case 'change_of_address':
+                  case 'changeOfAddress':
                     this.loadChangeOfAddress(filing)
                     break
                   default:
