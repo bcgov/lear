@@ -88,7 +88,6 @@
 import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
 import { mapState, mapActions } from 'vuex'
-import sample from './sample-tasks-json' // FOR DEBUGGING
 
 export default {
   name: 'TodoList',
@@ -119,9 +118,8 @@ export default {
       this.taskItems = []
       this.errorMessage = null
       if (this.corpNum) {
-        // const url = this.corpNum + '/tasks'
-        // axios.get(url).then(response => {
-          const response = { data: { tasks: sample.tasks } } // FOR DEBUGGING
+        const url = this.corpNum + '/tasks'
+        axios.get(url).then(response => {
           if (response && response.data && response.data.tasks) {
             // create task items
             response.data.tasks.forEach(task => {
@@ -138,10 +136,10 @@ export default {
             this.errorMessage = 'Oops, could not parse data from server'
           }
           this.$emit('todo-count', this.taskItems.length)
-        // }).catch(error => {
-        //   console.error('getTasks() error =', error)
-        //   this.errorMessage = 'Oops, could not load data from server'
-        // })
+        }).catch(error => {
+          console.error('getTasks() error =', error)
+          this.errorMessage = 'Oops, could not load data from server'
+        })
       }
     },
 
