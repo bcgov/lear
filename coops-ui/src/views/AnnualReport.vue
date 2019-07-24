@@ -1,20 +1,56 @@
 <template>
   <div>
-    <v-dialog  v-model="dialog" width="50rem">
+    <v-dialog v-model="dialog" width="50rem">
       <v-card>
-        <v-card-title>Error</v-card-title>
-
+        <v-card-title>Unable to Save Filing</v-card-title>
         <v-card-text>
-          An error occured during processing. Please try later
+          <p class="genErr">We were unable to save your filing. You can continue to try to save this
+             filing or you can exit without saving and re-create this filing at another time.</p>
+          <p  class="genErr">If you exit this filing, any changes you've made will not be saved.</p>
+          <p class="genErr">
+            <v-icon small>phone</v-icon>
+            <span class="error-dialog-padding">250 952-0568</span>
+          </p>
+          <p class="genErr">
+            <v-icon small>email</v-icon>
+            <span class="error-dialog-padding">SBC_ITOperationsSupport@gov.bc.ca</span>
+          </p>
         </v-card-text>
-
         <v-divider></v-divider>
+        <v-card-actions>
+          <v-btn color="primary" flat @click="navigateToDashboard">Exit without saving</v-btn>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" flat @click="submit">Retry</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
+    <v-dialog v-model="paymentErrorDialog" width="60rem" id="payErr">
+      <v-card>
+        <v-card-title>Unable to Process Payment</v-card-title>
+        <v-card-text>
+          <p class="genErr">PayBC is unable to process payments at this time.</p>
+          <p class="genErr">Your filing has been saved as a DRAFT and you can resume your filing from your Dashboard
+            at a later time.</p>
+          <p class="genErr">PayBC is normally available:</p>
+          <p class="genErr">
+            Monday to Friday: 6:00am to 9:00pm
+            <br />Saturday: 12:00am to 7:00pm
+            <br />Sunday: 12:00pm to 12:00am
+          </p>
+          <p class="genErr">
+            <v-icon small>phone</v-icon>
+            <span class="error-dialog-padding">250 952-0568</span>
+          </p>
+          <p class="genErr">
+            <v-icon small>email</v-icon>
+            <span class="error-dialog-padding">SBC_ITOperationsSupport@gov.bc.ca</span>
+          </p>
+        </v-card-text>
+        <v-divider></v-divider>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" flat @click="navigateToDashboard">
-           Back to My Dashboard
-          </v-btn>
+          <v-btn color="primary" flat @click="navigateToDashboard">Back to My Dashboard</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -154,7 +190,8 @@ export default {
       loadingMsg: 'Redirecting to PayBC to Process Your Payment',
       directorsChange: false,
       filingData: [],
-      dialog: false
+      dialog: false,
+      paymentErrorDialog: false
     }
   },
 
@@ -210,6 +247,7 @@ export default {
     },
 
     submit () {
+      this.dialog = false
       let changeOfDirectors = null
       let changeOfAddress = null
 
@@ -264,17 +302,8 @@ export default {
         )
       }
 
-      // Temp fix Added to remove cors error while invoking mock endpoint.
-      // To be removed when the API is in place
-      let config = {
-        headers: {
-          'Content-Type': 'text/plain'
-        }
-      }
-
-      axios.post(this.corpNum + '/filings', filingData, config).then(res => {
+      axios.post(this.corpNum + '/filings', filingData).then(res => {
         let payRequestId:String = res.data.filing.header.paymentToken
-        payRequestId = '189'
         let returnURL = window.location.origin + '/AnnualReport?pay_id=' + payRequestId
         let authStub:string = this.authURL
         if (!(authStub.endsWith('/'))) {
@@ -283,9 +312,11 @@ export default {
         let payURL = authStub + 'makepayment/' + payRequestId + '/' + encodeURIComponent(returnURL)
         window.location.href = payURL
       }).catch((error) => {
-        // TODO : To Decide how and where to display the error message from API
-        console.log(error)
-        this.dialog = true
+        if (error.response && error.response.status && error.response.status === 402) {
+          this.paymentErrorDialog = true
+        } else {
+          this.dialog = true
+        }
       })
     },
 
@@ -425,4 +456,10 @@ h2
 
   .v-btn + .v-btn
     margin-left: 0.5rem;
+
+.genErr
+  font-size: 0.9rem;
+
+.error-dialog-padding
+  margin-left: 1rem;
 </style>
