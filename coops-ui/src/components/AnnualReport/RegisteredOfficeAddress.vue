@@ -5,270 +5,74 @@
         <div class="meta-container">
           <label>Delivery Address</label>
           <div class="meta-container__inner">
-            <!-- START: Static Details (Delivery Address) -->
+            <delivery-address
+              :address="deliveryAddress"
+              :editing="showAddressForm"
+              v-on:update:address="updateDelivery($event)"
+              @valid="isDeliveryValid"
+            ></delivery-address>
             <v-expand-transition>
-              <div id="delivery-address-display" class="address-block" v-show="!showAddressForm">
-                <div class="address-block__info">
-                  <div class="address-block__info-row">{{DeliveryAddressStreet}}</div>
-                  <div
-                    class="address-block__info-row"
-                    v-if="DeliveryAddressStreetAdditional"
-                  >{{DeliveryAddressStreetAdditional}}</div>
-                  <div class="address-block__info-row">
-                    <span>{{DeliveryAddressCity}}</span>
-                    <span>&nbsp;{{DeliveryAddressRegion}}</span>
-                    <span>&nbsp;{{DeliveryAddressPostalCode}}</span>
-                  </div>
-                  <div class="address-block__info-row">{{DeliveryAddressCountry}}</div>
-                </div>
-                <div class="address-block__actions">
-                  <v-btn
-                    id="reg-off-addr-change-btn"
-                    small
-                    flat
-                    color="primary"
-                    :disabled="!agmDateValid"
-                    @click="editAddress"
-                  >
-                    <v-icon small>edit</v-icon>
-                    <span>Change</span>
-                  </v-btn>
-                  <br />
-                  <v-btn
-                    id="reg-off-addr-reset-btn"
-                    v-if="regOffAddrChange"
-                    class="reset-btn"
-                    small
-                    outline
-                    color="red"
-                    @click="resetAddress"
-                  >Reset</v-btn>
-                </div>
+              <div class="address-block__actions">
+                <v-btn
+                  color="primary"
+                  flat
+                  id="reg-off-addr-change-btn"
+                  small
+                  v-if="!showAddressForm"
+                  :disabled="changeButtonDisabled"
+                  @click="editAddress"
+                >
+                  <v-icon small>edit</v-icon>
+                  <span>Change</span>
+                </v-btn>
+                <br />
+                <v-btn
+                  class="reset-btn"
+                  color="red"
+                  id="reg-off-addr-reset-btn"
+                  outline
+                  small
+                  v-if="!showAddressForm && modified"
+                  @click="resetAddress"
+                >Reset</v-btn>
               </div>
             </v-expand-transition>
-            <!-- END: Static Details (Delivery Address) -->
-
-            <!-- START: Form / Editable Fields (Delivery Address) -->
-            <v-expand-transition>
-              <v-form
-                id="delivery-address-form"
-                ref="deliveryAddressForm"
-                v-show="showAddressForm"
-                v-model="deliveryAddressFormValid"
-                lazy-validation
-              >
-                <div class="form__row">
-                  <v-text-field
-                    box
-                    id="delivery-street-address"
-                    label="Street Address Line 1"
-                    v-model="DeliveryAddressStreet"
-                    :rules="DeliveryAddressStreetRules"
-                    maxlength="50"
-                    required
-                  ></v-text-field>
-                </div>
-                <div class="form__row">
-                  <v-text-field
-                    box
-                    id="delivery-street-address-additional"
-                    label="Street Address Line 2"
-                    v-model="DeliveryAddressStreetAdditional"
-                    maxlength="50"
-                  ></v-text-field>
-                </div>
-                <div class="form__row three-column">
-                  <v-text-field
-                    class="item"
-                    box
-                    id="delivery-city"
-                    label="City"
-                    v-model="DeliveryAddressCity"
-                    :rules="DeliveryAddressCityRules"
-                    maxlength="15"
-                    required
-                  ></v-text-field>
-                  <v-select
-                    class="item"
-                    box
-                    id="delivery-state"
-                    label="Province"
-                    :items="Regions"
-                    v-model="DeliveryAddressRegion"
-                    required
-                  ></v-select>
-                  <v-text-field
-                    box
-                    class="item"
-                    id="delivery-postcode"
-                    label="Postal Code"
-                    v-model="DeliveryAddressPostalCode"
-                    :rules="DeliveryAddressPostalCodeRules"
-                    maxlength="10"
-                    required
-                  ></v-text-field>
-                </div>
-                <div class="form__row">
-                  <v-text-field
-                    box
-                    id="delivery-country"
-                    label="Country"
-                    v-model="DeliveryAddressCountry"
-                    :rules="DeliveryAddressCountryRules"
-                    maxlength="15"
-                    required
-                  ></v-text-field>
-                </div>
-                <div class="form__row">
-                  <v-textarea
-                    box
-                    rows="2"
-                    auto-grow
-                    label="Delivery Instructions (Optional)"
-                    v-model="DeliveryAddressInstructions"
-                    maxlength="80"
-                  ></v-textarea>
-                </div>
-              </v-form>
-            </v-expand-transition>
-            <!-- END: Form / Editable Fields (Delivery Address) -->
           </div>
         </div>
       </li>
+
       <li class="container">
         <div class="meta-container">
           <label>Mailing Address</label>
           <div class="meta-container__inner">
-            <!-- START: Static Details (Mailing Address) -->
-            <v-expand-transition>
-              <div
-                id="mailing-address-display"
-                class="meta-container__inner"
-                v-show="!showAddressForm"
-              >
-                <div class="address-block">
-                  <div class="address-block__info">
-                    <div class="address-block__info-row">{{MailingAddressStreet}}</div>
-                    <div
-                      class="address-block__info-row"
-                      v-if="MailingAddressStreetAdditional"
-                    >{{MailingAddressStreetAdditional}}</div>
-                    <div class="address-block__info-row">
-                      <span>{{MailingAddressCity}}</span>
-                      <span>&nbsp;{{MailingAddressRegion}}</span>
-                      <span>&nbsp;{{MailingAddressPostalCode}}</span>
-                    </div>
-                    <div class="address-block__row">{{MailingAddressCountry}}</div>
-                  </div>
-                </div>
-              </div>
-            </v-expand-transition>
-            <!-- END: Static Details (Mailing Address) -->
-
-            <!-- START: Form / Editable Fields (Mailing Address) -->
-            <v-expand-transition>
-              <v-form
-                id="mailing-address-form"
-                class="form"
-                v-show="showAddressForm"
-                v-model="mailingAddressFormValid"
-                lazy-validation
-              >
-                <div class="form__row">
-                  <v-checkbox
-                    class="inherit-checkbox"
-                    label="Same as Delivery Address"
-                    v-model="inheritDeliveryAddress"
-                  ></v-checkbox>
-                </div>
-                <v-expand-transition>
-                  <div id="mailing-address-expanded" v-show="!inheritDeliveryAddress">
-                    <div class="form__row">
-                      <v-text-field
-                        box
-                        label="Street Address Line 1"
-                        id="mailing-street-address"
-                        v-model="MailingAddressStreet"
-                        :rules="MailingAddressStreetRules"
-                        maxlength="50"
-                        required
-                      ></v-text-field>
-                    </div>
-                    <div class="form__row">
-                      <v-text-field
-                        box
-                        label="Street Address Line 2"
-                        id="mailing-street-address-additional"
-                        v-model="MailingAddressStreetAdditional"
-                        maxlength="50"
-                      ></v-text-field>
-                    </div>
-                    <div class="form__row three-column">
-                      <v-text-field
-                        class="item"
-                        box
-                        id="mailing-city"
-                        label="City"
-                        v-model="MailingAddressCity"
-                        :rules="MailingAddressCityRules"
-                        maxlength="15"
-                        required
-                      ></v-text-field>
-                      <v-select
-                        class="item"
-                        box
-                        id="mailing-state"
-                        label="Province"
-                        :items="Regions"
-                        v-model="MailingAddressRegion"
-                        required
-                      ></v-select>
-                      <v-text-field
-                        class="item"
-                        box
-                        id="mailing-postcode"
-                        label="Postal Code"
-                        v-model="MailingAddressPostalCode"
-                        :rules="MailingAddressPostalCodeRules"
-                        maxlength="10"
-                        required
-                      ></v-text-field>
-                    </div>
-                    <div class="form__row">
-                      <v-text-field
-                        box
-                        id="mailing-country"
-                        label="Country"
-                        v-model="MailingAddressCountry"
-                        maxlength="15"
-                        required
-                      ></v-text-field>
-                    </div>
-                    <div class="form__row">
-                      <v-textarea
-                        box
-                        rows="2"
-                        label="Delivery Instructions (Optional)"
-                        v-model="MailingAddressInstructions"
-                        maxlength="80"
-                      ></v-textarea>
-                    </div>
-                  </div>
-                </v-expand-transition>
-                <div class="form__row form__btns">
-                  <v-btn
-                    id="reg-off-update-addr-btn"
-                    class="update-btn"
-                    color="primary"
-                    :disabled="!deliveryAddressFormValid ||
-                          (!mailingAddressFormValid && !inheritDeliveryAddress)"
-                    @click="updateAddress"
-                  >Update Addresses</v-btn>
-                  <v-btn id="reg-off-cancel-addr-btn" @click="cancelEditAddress">Cancel</v-btn>
-                </div>
-              </v-form>
-            </v-expand-transition>
-            <!-- END: Form / Editable Fields (Mailing Address) -->
+            <div class="form__row">
+              <v-checkbox
+                class="inherit-checkbox"
+                label="Same as Delivery Address"
+                v-if="showAddressForm"
+                v-model="inheritDeliveryAddress"
+              ></v-checkbox>
+            </div>
+            <mailing-address
+              v-if="!showAddressForm || !inheritDeliveryAddress"
+              :address="mailingAddress"
+              :editing="showAddressForm"
+              v-on:update:address="updateMailing($event)"
+              @valid="isMailingValid"
+            ></mailing-address>
+            <div
+              class="form__row form__btns"
+              v-show="showAddressForm"
+            >
+              <v-btn
+                class="update-btn"
+                color="primary"
+                id="reg-off-update-addr-btn"
+                :disabled="!formValid"
+                @click="updateAddress"
+              >Update Addresses</v-btn>
+              <v-btn id="reg-off-cancel-addr-btn" @click="cancelEditAddress">Cancel</v-btn>
+            </div>
           </div>
         </div>
       </li>
@@ -276,360 +80,281 @@
   </div>
 </template>
 
-<script>
-import { mapState, mapActions } from 'vuex'
+<script lang="ts">
+
+import Vue from 'vue'
+import { Component, Emit, Prop } from 'vue-property-decorator'
+
 import axios from '@/axios-auth'
 
-export default {
-  name: 'RegisteredOfficeAddress',
+import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
-  data () {
-    return {
-      Regions: [
-        'BC',
-        'AB',
-        'MB',
-        'NB',
-        'NL',
-        'NS',
-        'NT',
-        'NU',
-        'ON',
-        'PE',
-        'QC',
-        'SK',
-        'YT'
-      ],
-      regOffAddrJson: null,
-      showAddressForm: false,
-      inheritDeliveryAddress: true,
+@Component({
+  components: {
+    'delivery-address': BaseAddress,
+    'mailing-address': BaseAddress
+  }
+})
+export default class RegisteredOfficeAddress extends Vue {
+  /**
+   * The identifier for the legal entity that is to have its addresses retrieved from the API.
+   */
+  @Prop({ default: '' }) readonly legalEntityNumber: string
 
-      // Validation
-      deliveryAddressFormValid: true,
-      mailingAddressFormValid: true,
+  /**
+   * Indicates whether the change button should be disabled or not
+   */
+  @Prop({ default: false }) readonly changeButtonDisabled: boolean
 
-      DeliveryAddressStreet: '',
-      tmpDeliveryAddressStreet: '',
-      DeliveryAddressStreetRules: [
-        v => (v && !!v.trim()) || 'A street address is required'
-      ],
-      DeliveryAddressStreetAdditional: '',
-      tmpDeliveryAddressStreetAdditional: '',
-      DeliveryAddressCity: '',
-      tmpDeliveryAddressCity: '',
-      DeliveryAddressCityRules: [
-        v => (v && !!v.trim()) || 'A city is required'
-      ],
-      DeliveryAddressRegion: '',
-      tmpDeliveryAddressRegion: '',
-      DeliveryAddressRegionRules: [
-        v => (v && !!v.trim()) || 'A province/state is required'
-      ],
-      DeliveryAddressPostalCode: '',
-      tmpDeliveryAddressPostalCode: '',
-      DeliveryAddressPostalCodeRules: [
-        v => (v && !!v.trim()) || 'A postal code is required'
-      ],
-      DeliveryAddressCountry: '',
-      tmpDeliveryAddressCountry: '',
-      DeliveryAddressCountryRules: [
-        v => (v && !!v.trim()) || 'A country is required'
-      ],
-      DeliveryAddressInstructions: '',
-      tmpDeliveryAddressInstructions: '',
-      MailingAddressStreet: '',
-      tmpMailingAddressStreet: '',
-      MailingAddressStreetRules: [
-        v => (v && !!v.trim()) || 'A street address is required'
-      ],
-      MailingAddressStreetAdditional: '',
-      tmpMailingAddressStreetAdditional: '',
-      MailingAddressCity: '',
-      tmpMailingAddressCity: '',
-      MailingAddressCityRules: [v => (v && !!v.trim()) || 'A city is required'],
-      MailingAddressRegion: '',
-      tmpMailingAddressRegion: '',
-      MailingAddressPostalCode: '',
-      tmpMailingAddressPostalCode: '',
-      MailingAddressPostalCodeRules: [
-        v => (v && !!v.trim()) || 'A postal code is required'
-      ],
-      MailingAddressCountry: '',
-      tmpMailingAddressCountry: '',
-      MailingAddressInstructions: '',
-      tmpMailingAddressInstructions: '',
+  // The two addresses that come from the API. These are used to reset the address.
+  private deliveryAddressOriginal: object = {}
+  private mailingAddressOriginal: object = {}
 
-      activeIndex: undefined
+  // The two addresses that are the current state of the BaseAddress components.
+  private deliveryAddress: object = {}
+  private mailingAddress: object = {}
+
+  // The two addresses where the above are stored prior to an edit. These allow a cancel to the address prior to
+  // edit, which if there was a prior edit will not be the data that originally came from the API.
+  private deliveryAddressTemp: object = {}
+  private mailingAddressTemp: object = {}
+
+  // Validation events from BaseAddress.
+  private deliveryAddressValid: boolean = true
+  private mailingAddressValid: boolean = true
+
+  // Whether to show the editable forms for the addresses (true) or just the static display addresses (false).
+  private showAddressForm: boolean = false
+
+  // State of the form checkbox for determining whether or not the mailing address is the same as the delivery address.
+  private inheritDeliveryAddress: boolean = true
+
+  // TODO: these should be properties - no coupling to internal state.
+  public getDeliveryAddress () { return this.deliveryAddress }
+  public getMailingAddress () { return this.mailingAddress }
+
+  /**
+   * Lifecycle callback to set up the component when it is mounted.
+   */
+  private mounted (): void {
+    this.loadAddressesFromApi(this.legalEntityNumber)
+    // this.setupCanadaPost()
+    this.emitValid()
+  }
+
+  /**
+   * Emits the modified state of the addresses.
+   *
+   * @returns a boolean that is true if an address has been modified, false otherwise.
+   */
+  @Emit('modified')
+  private emitModified (): boolean {
+    return this.modified
+  }
+
+  /**
+   * Emits the valid state of the addresses.
+   *
+   * @returns a boolean that is true if the address data is valid, false otherwise.
+   */
+  @Emit('valid')
+  private emitValid (): boolean {
+    return this.formValid
+  }
+
+  /**
+   * Computed value of whether or not the address form is valid.
+   *
+   * @return a boolean that is true if the data on the form is valid, or false otherwise.
+   */
+  private get formValid (): boolean {
+    return this.deliveryAddressValid && (this.inheritDeliveryAddress || this.mailingAddressValid)
+  }
+
+  /**
+   * Computed value of whether or not an address has been modified from the original.
+   *
+   * @return a boolean that is true if one or both addresses have been modified, or false otherwise.
+   */
+  private get modified (): boolean {
+    // Unfortunately we cannot use the modified event from the BaseAddress components due to timing issues on loading
+    // since we're using the API to load on mount. That should be looked into at some point.
+    return !(
+      this.sameAddress(this.deliveryAddress, this.deliveryAddressOriginal) &&
+      this.sameAddress(this.mailingAddress, this.mailingAddressOriginal))
+  }
+
+  /**
+   * Event callback to update the delivery address when its component changes.
+   *
+   * @param address the object containing the new address.
+   */
+  private updateDelivery (address: object): void {
+    // Note that we do a copy of the fields (rather than change the object reference) to prevent an infinite loop with
+    // the property.
+    Object.assign(this.deliveryAddress, address)
+  }
+
+  /**
+   * Event callback to keep track of the validity of the delivery address.
+   *
+   * @param valid a boolean indicating the validity of the address.
+   */
+  private isDeliveryValid (valid: boolean): void {
+    this.deliveryAddressValid = valid
+    this.emitValid()
+  }
+
+  /**
+   * Event callback to update the mailing address when its component changes.
+   *
+   * @param address the object containing the new address.
+   */
+  private updateMailing (address: object): void {
+    // Note that we do a copy of the fields (rather than change the object reference) to prevent an infinite loop with
+    // the property.
+    Object.assign(this.mailingAddress, address)
+  }
+
+  /**
+   * Event callback to keep track of the validity of the mailing address.
+   *
+   * @param valid a boolean indicating the validity of the address.
+   */
+  private isMailingValid (valid: boolean): void {
+    this.mailingAddressValid = valid
+    this.emitValid()
+  }
+
+  /**
+   * Compares two address objects for equivalency. Empty strings and undefined fields will be considered to be
+   * equivalent.
+   *
+   * @param address1 the first address object to compare.
+   * @param address2 the second address object to compare.
+   *
+   * @return a boolean that is true if the addresses are equivalent, or false otherwise.
+   */
+  private sameAddress (address1: object, address2: object): boolean {
+    const json1 = JSON.stringify(address1, (name: string, val: any) : any => { return val !== '' ? val : undefined })
+    const json2 = JSON.stringify(address2, (name: string, val: any) : any => { return val !== '' ? val : undefined })
+
+    return json1 === json2
+  }
+
+  /**
+   * Sets up the component for editing, retaining a copy of current state so that the user can cancel.
+   */
+  private editAddress (): void {
+    this.inheritDeliveryAddress = this.sameAddress(this.mailingAddress, this.deliveryAddress)
+    this.deliveryAddressTemp = { ...this.deliveryAddress }
+    this.mailingAddressTemp = { ...this.mailingAddress }
+
+    this.showAddressForm = true
+  }
+
+  /**
+   * Cancels the editing of addresses, setting the addresses to the value they had before editing began.
+   */
+  private cancelEditAddress (): void {
+    this.deliveryAddress = { ...this.deliveryAddressTemp }
+    this.mailingAddress = { ...this.mailingAddressTemp }
+
+    this.showAddressForm = false
+  }
+
+  /**
+   * Updates the address data using what was entered on the forms.
+   */
+  private updateAddress (): void {
+    if (this.inheritDeliveryAddress) {
+      this.mailingAddress = { ...this.deliveryAddress }
     }
-  },
 
-  computed: {
-    ...mapState(['corpNum', 'regOffAddrChange', 'agmDateValid'])
-  },
+    this.showAddressForm = false
+    this.emitModified()
+  }
 
-  mounted () {
-    var vue = this
+  /**
+   * Resets the address data to what it was before any edits were done.
+   */
+  private resetAddress (): void {
+    this.deliveryAddress = { ...this.deliveryAddressOriginal }
+    this.mailingAddress = { ...this.mailingAddressOriginal }
+    this.emitModified()
+  }
 
-    this.getRegOffAddr(this.corpNum)
-
-    if (deliveryCanadaPostObject) {
-      deliveryCanadaPostObject.listen('populate', autoCompleteResponse => {
-        vue.DeliveryAddressStreet = autoCompleteResponse.Line1
-        vue.DeliveryAddressStreetAdditional = autoCompleteResponse.Line2
-        vue.DeliveryAddressCity = autoCompleteResponse.City
-        vue.DeliveryAddressRegion = autoCompleteResponse.ProvinceCode
-        vue.DeliveryAddressPostalCode = autoCompleteResponse.PostalCode
-        vue.DeliveryAddressCountry = autoCompleteResponse.CountryName
-      })
-      deliveryCanadaPostObject.listen('country', autoCompleteResponse => {
-        vue.DeliveryAddressCountry = autoCompleteResponse.name
-      })
-    }
-    if (mailingCanadaPostObject) {
-      mailingCanadaPostObject.listen('populate', autoCompleteResponse => {
-        vue.MailingAddressStreet = autoCompleteResponse.Line1
-        vue.MailingAddressStreetAdditional = autoCompleteResponse.Line2
-        vue.MailingAddressCity = autoCompleteResponse.City
-        vue.MailingAddressRegion = autoCompleteResponse.ProvinceCode
-        vue.MailingAddressPostalCode = autoCompleteResponse.PostalCode
-        vue.MailingAddressCountry = autoCompleteResponse.CountryName
-      })
-      mailingCanadaPostObject.listen('country', autoCompleteResponse => {
-        vue.MailingAddressCountry = autoCompleteResponse.name
-      })
-    }
-  },
-
-  methods: {
-    ...mapActions(['setAddressesFormValid']),
-
-    getDeliveryAddress () {
-      return {
-        'streetAddress': this.DeliveryAddressStreet,
-        'streetAddressAdditional': this.DeliveryAddressStreetAdditional,
-        'addressCity': this.DeliveryAddressCity,
-        'addressCountry': this.DeliveryAddressCountry,
-        'addressRegion': this.DeliveryAddressRegion,
-        'postalCode': this.DeliveryAddressPostalCode,
-        'deliveryInstructions': this.DeliveryAddressInstructions
-      }
-    },
-    getMailingAddress () {
-      return {
-        'streetAddress': this.MailingAddressStreet,
-        'streetAddressAdditional': this.MailingAddressStreetAdditional,
-        'addressCity': this.MailingAddressCity,
-        'addressCountry': this.MailingAddressCountry,
-        'addressRegion': this.MailingAddressRegion,
-        'postalCode': this.MailingAddressPostalCode,
-        'deliveryInstructions': this.MailingAddressInstructions
-      }
-    },
-    editAddress () {
-      if (this.checkSameAddresses()) this.inheritDeliveryAddress = true
-      else this.inheritDeliveryAddress = false
-      this.showAddressForm = true
-    },
-    editMailingAddress () {
-      this.showMailingAddressForm = true
-    },
-    cancelEditAddress () {
-      this.DeliveryAddressStreet = this.tmpDeliveryAddressStreet
-      this.DeliveryAddressStreetAdditional = this.tmpDeliveryAddressStreetAdditional
-      this.DeliveryAddressCity = this.tmpDeliveryAddressCity
-      this.DeliveryAddressRegion = this.tmpDeliveryAddressRegion
-      this.DeliveryAddressCountry = this.tmpDeliveryAddressCountry
-      this.DeliveryAddressPostalCode = this.tmpDeliveryAddressPostalCode
-      this.DeliveryAddressInstructions = this.tmpDeliveryAddressInstructions
-
-      this.MailingAddressStreet = this.tmpMailingAddressStreet
-      this.MailingAddressStreetAdditional = this.tmpMailingAddressStreetAdditional
-      this.MailingAddressCity = this.tmpMailingAddressCity
-      this.MailingAddressRegion = this.tmpMailingAddressRegion
-      this.MailingAddressCountry = this.tmpMailingAddressCountry
-      this.MailingAddressPostalCode = this.tmpMailingAddressPostalCode
-      this.MailingAddressInstructions = this.tmpMailingAddressInstructions
-
-      this.showAddressForm = false
-    },
-    updateAddress () {
-      if (this.inheritDeliveryAddress) {
-        this.MailingAddressStreet = this.DeliveryAddressStreet
-        this.MailingAddressStreetAdditional = this.DeliveryAddressStreetAdditional
-        this.MailingAddressCity = this.DeliveryAddressCity
-        this.MailingAddressRegion = this.DeliveryAddressRegion
-        this.MailingAddressCountry = this.DeliveryAddressCountry
-        this.MailingAddressPostalCode = this.DeliveryAddressPostalCode
-        this.MailingAddressInstructions = this.DeliveryAddressInstructions
-      }
-      this.showAddressForm = false
-      this.checkAddrChange()
-    },
-    checkSameAddresses () {
-      if (
-        this.MailingAddressStreet === this.DeliveryAddressStreet &&
-        this.MailingAddressStreetAdditional === this.DeliveryAddressStreetAdditional &&
-        this.MailingAddressCity === this.DeliveryAddressCity &&
-        this.MailingAddressRegion === this.DeliveryAddressRegion &&
-        this.MailingAddressCountry === this.DeliveryAddressCountry &&
-        this.MailingAddressPostalCode === this.DeliveryAddressPostalCode &&
-        this.MailingAddressInstructions === this.DeliveryAddressInstructions
-      ) {
-        return true
-      }
-      return false
-    },
-    checkAddrChange () {
-      if (
-        this.DeliveryAddressStreet !== this.tmpDeliveryAddressStreet ||
-        this.DeliveryAddressStreetAdditional !== this.tmpDeliveryAddressStreetAdditional ||
-        this.DeliveryAddressCity !== this.tmpDeliveryAddressCity ||
-        this.DeliveryAddressRegion !== this.tmpDeliveryAddressRegion ||
-        this.DeliveryAddressCountry !== this.tmpDeliveryAddressCountry ||
-        this.DeliveryAddressPostalCode !== this.tmpDeliveryAddressPostalCode ||
-        this.DeliveryAddressInstructions !== this.tmpDeliveryAddressInstructions ||
-        this.MailingAddressStreet !== this.tmpMailingAddressStreet ||
-        this.MailingAddressStreetAdditional !== this.tmpMailingAddressStreetAdditional ||
-        this.MailingAddressCity !== this.tmpMailingAddressCity ||
-        this.MailingAddressRegion !== this.tmpMailingAddressRegion ||
-        this.MailingAddressCountry !== this.tmpMailingAddressCountry ||
-        this.MailingAddressPostalCode !== this.tmpMailingAddressPostalCode ||
-        this.MailingAddressInstructions !== this.tmpMailingAddressInstructions
-      ) {
-        this.$store.state.regOffAddrChange = true
-      } else {
-        this.$store.state.regOffAddrChange = false
-      }
-    },
-    resetAddress () {
-      this.$store.state.regOffAddrChange = false
-
-      this.DeliveryAddressStreet = this.tmpDeliveryAddressStreet
-      this.DeliveryAddressStreetAdditional = this.tmpDeliveryAddressStreetAdditional
-      this.DeliveryAddressCity = this.tmpDeliveryAddressCity
-      this.DeliveryAddressRegion = this.tmpDeliveryAddressRegion
-      this.DeliveryAddressCountry = this.tmpDeliveryAddressCountry
-      this.DeliveryAddressPostalCode = this.tmpDeliveryAddressPostalCode
-      this.DeliveryAddressInstructions = this.tmpDeliveryAddressInstructions
-
-      this.MailingAddressStreet = this.tmpMailingAddressStreet
-      this.MailingAddressStreetAdditional = this.tmpMailingAddressStreetAdditional
-      this.MailingAddressCity = this.tmpMailingAddressCity
-      this.MailingAddressRegion = this.tmpMailingAddressRegion
-      this.MailingAddressCountry = this.tmpMailingAddressCountry
-      this.MailingAddressPostalCode = this.tmpMailingAddressPostalCode
-      this.MailingAddressInstructions = this.tmpMailingAddressInstructions
-    },
-    setRegOffAddrNull () {
-      this.DeliveryAddressStreet = null
-      this.DeliveryAddressStreetAdditional = null
-      this.DeliveryAddressCity = null
-      this.DeliveryAddressRegion = null
-      this.DeliveryAddressPostalCode = null
-      this.DeliveryAddressCountry = null
-      this.DeliveryAddressInstructions = null
-      this.MailingAddressStreet = null
-      this.MailingAddressStreetAdditional = null
-      this.MailingAddressCity = null
-      this.MailingAddressRegion = null
-      this.MailingAddressPostalCode = null
-      this.MailingAddressCountry = null
-      this.MailingAddressInstructions = null
-      this.tmpDeliveryAddressStreet = null
-      this.tmpDeliveryAddressStreetAdditional = null
-      this.tmpDeliveryAddressCity = null
-      this.tmpDeliveryAddressRegion = null
-      this.tmpDeliveryAddressPostalCode = null
-      this.tmpDeliveryAddressCountry = null
-      this.tmpDeliveryAddressInstructions = null
-      this.tmpMailingAddressStreet = null
-      this.tmpMailingAddressStreetAdditional = null
-      this.tmpMailingAddressCity = null
-      this.tmpMailingAddressRegion = null
-      this.tmpMailingAddressPostalCode = null
-      this.tmpMailingAddressCountry = null
-      this.tmpMailingAddressInstructions = null
-    },
-    getRegOffAddr (corpNum) {
-      if (this.corpNum) {
-        const url = this.corpNum + '/addresses'
-        axios.get(url)
-          .then(response => {
-            if (response && response.data) {
-              this.setRegOffAddr(response.data)
+  /**
+   * Loads the office addresses from an API call.
+   *
+   * @param legalEntityNumber the identifier for the legal entity whose office addresses are fetched.
+   */
+  private loadAddressesFromApi (legalEntityNumber: string): void {
+    if (legalEntityNumber) {
+      const url = legalEntityNumber + '/addresses'
+      axios.get(url)
+        .then(response => {
+          if (response && response.data) {
+            if (response.data.deliveryAddress) {
+              this.deliveryAddressOriginal = { ...response.data.deliveryAddress }
+              this.deliveryAddress = { ...response.data.deliveryAddress }
             } else {
-              console.log('getRegOffAddr() error - invalid response data')
+              console.log('loadAddressesFromApi() error - invalid Delivery Address')
+              console.log(response.data.deliveryAddress)
             }
-          })
-          .catch(error => console.error('getRegOffAddr() error =', error))
-      }
-    },
-    setRegOffAddr (regOffAddrJson) {
-      if (regOffAddrJson && regOffAddrJson.deliveryAddress) {
-        this.DeliveryAddressStreet =
-          regOffAddrJson.deliveryAddress.streetAddress
-        this.DeliveryAddressStreetAdditional =
-          regOffAddrJson.deliveryAddress.streetAddressAdditional
-        this.DeliveryAddressCity =
-          regOffAddrJson.deliveryAddress.addressCity
-        this.DeliveryAddressRegion =
-          regOffAddrJson.deliveryAddress.addressRegion
-        this.DeliveryAddressPostalCode =
-          regOffAddrJson.deliveryAddress.postalCode
-        this.DeliveryAddressCountry =
-          regOffAddrJson.deliveryAddress.addressCountry
-        this.DeliveryAddressInstructions =
-          regOffAddrJson.deliveryAddress.deliveryInstructions
 
-        this.tmpDeliveryAddressStreet = this.DeliveryAddressStreet
-        this.tmpDeliveryAddressStreetAdditional = this.DeliveryAddressStreetAdditional
-        this.tmpDeliveryAddressCity = this.DeliveryAddressCity
-        this.tmpDeliveryAddressRegion = this.DeliveryAddressRegion
-        this.tmpDeliveryAddressCountry = this.DeliveryAddressCountry
-        this.tmpDeliveryAddressPostalCode = this.DeliveryAddressPostalCode
-        this.tmpDeliveryAddressInstructions = this.DeliveryAddressInstructions
-      } else {
-        console.log('setRegOffAddr() error - invalid Delivery Address')
-      }
-
-      if (regOffAddrJson && regOffAddrJson.mailingAddress) {
-        this.MailingAddressStreet =
-          regOffAddrJson.mailingAddress.streetAddress
-        this.MailingAddressStreetAdditional =
-          regOffAddrJson.mailingAddress.streetAddressAdditional
-        this.MailingAddressCity =
-          regOffAddrJson.mailingAddress.addressCity
-        this.MailingAddressRegion =
-          regOffAddrJson.mailingAddress.addressRegion
-        this.MailingAddressPostalCode =
-          regOffAddrJson.mailingAddress.postalCode
-        this.MailingAddressCountry =
-          regOffAddrJson.mailingAddress.addressCountry
-        this.MailingAddressInstructions =
-          regOffAddrJson.mailingAddress.deliveryInstructions
-
-        this.tmpMailingAddressStreet = this.MailingAddressStreet
-        this.tmpMailingAddressStreetAdditional = this.MailingAddressStreetAdditional
-        this.tmpMailingAddressCity = this.MailingAddressCity
-        this.tmpMailingAddressRegion = this.MailingAddressRegion
-        this.tmpMailingAddressCountry = this.MailingAddressCountry
-        this.tmpMailingAddressPostalCode = this.MailingAddressPostalCode
-        this.tmpMailingAddressInstructions = this.MailingAddressInstructions
-      } else {
-        console.log('setRegOffAddr() error - invalid Mailing Address')
-      }
-    }
-  },
-
-  watch: {
-    deliveryAddressFormValid (val) {
-      this.setAddressesFormValid(val && this.mailingAddressFormValid)
-    },
-    mailingAddressFormValid (val) {
-      this.setAddressesFormValid(val && this.deliveryAddressFormValid)
+            if (response.data.mailingAddress) {
+              this.mailingAddressOriginal = { ...response.data.mailingAddress }
+              this.mailingAddress = { ...response.data.mailingAddress }
+            } else {
+              console.log('loadAddressesFromApi() error - invalid Mailing Address')
+              console.log(response.data.mailingAddress)
+            }
+          } else {
+            console.log('loadAddressesFromApi() error - invalid response data')
+            console.log(response)
+          }
+        })
+        .catch(error => console.error('loadAddressesFromApi() error =', error))
     }
   }
+
+  /**
+   * Sets up the Canada Post address completion fields.
+   */
+  /*
+  private setupCanadaPost (): void {
+    if (deliveryCanadaPostObject) {
+      deliveryCanadaPostObject.listen('populate', autoCompleteResponse => {
+        this.deliveryAddress['streetAddress'] = autoCompleteResponse.Line1
+        this.deliveryAddress['streetAddressAdditional'] = autoCompleteResponse.Line2
+        this.deliveryAddress['addressCity'] = autoCompleteResponse.City
+        this.deliveryAddress['addressRegion'] = autoCompleteResponse.ProvinceCode
+        this.deliveryAddress['postalCode'] = autoCompleteResponse.PostalCode
+        this.deliveryAddress['addressCountry'] = autoCompleteResponse.CountryName
+      })
+      deliveryCanadaPostObject.listen('country', autoCompleteResponse => {
+        this.deliveryAddress['addressCountry'] = autoCompleteResponse.name
+      })
+    }
+
+    if (mailingCanadaPostObject) {
+      mailingCanadaPostObject.listen('populate', autoCompleteResponse => {
+        this.mailingAddress['streetAddress'] = autoCompleteResponse.Line1
+        this.mailingAddress['streetAddressAdditional'] = autoCompleteResponse.Line2
+        this.mailingAddress['addressCity'] = autoCompleteResponse.City
+        this.mailingAddress['addressRegion'] = autoCompleteResponse.ProvinceCode
+        this.mailingAddress['postalCode'] = autoCompleteResponse.PostalCode
+        this.mailingAddress['addressCountry'] = autoCompleteResponse.CountryName
+      })
+      mailingCanadaPostObject.listen('country', autoCompleteResponse => {
+        this.mailingAddress['addressCountry'] = autoCompleteResponse.name
+      })
+    }
+  }
+  */
 }
+
 </script>
 
 <style lang="stylus" scoped>
@@ -682,12 +407,6 @@ label:first-child
     margin-top: 0;
 
 // Address Block Layout
-.address-block
-  display: flex;
-
-.address-block__info
-  flex: 1 1 auto;
-
 .address-block__actions
   position: absolute;
   top: 0;
@@ -718,12 +437,6 @@ label:first-child
   align-items: stretch;
   margin-right: -0.5rem;
   margin-left: -0.5rem;
-
-  .item
-    flex: 1 1 auto;
-    flex-basis: 0;
-    margin-right: 0.5rem;
-    margin-left: 0.5rem;
 
 .inherit-checkbox
   margin-top: -3px;
