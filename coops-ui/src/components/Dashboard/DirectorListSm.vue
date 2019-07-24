@@ -1,5 +1,5 @@
 <template>
-  <ul class="list" :class="layout">
+  <ul class="list">
     <li class="list-item" v-for="director in directors" v-bind:key="director.id">
       <v-avatar color="primary" size="25">
         <span class="white--text small">{{ director.officer.firstName.substring(0,1)}}</span>
@@ -25,10 +25,6 @@ import { mapState } from 'vuex'
 
 export default {
   name: 'DirectorListSm',
-
-  props: {
-    layout: String
-  },
 
   data () {
     return {
