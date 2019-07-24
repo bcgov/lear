@@ -20,8 +20,6 @@ describe('TodoList.vue', () => {
     store.state.lastAgmDate = '2017-04-08'
 
     // GET tasks
-    // NB: we would never receive this kind of data
-    //     (draft + new + payment incomplete + payment unsucessful)
     sinon.stub(axios, 'get').withArgs('CP0001191/tasks')
       .returns(new Promise((resolve) => resolve({
         data:
@@ -153,49 +151,59 @@ describe('TodoList.vue', () => {
     expect(vm.taskItems.length).toEqual(4)
   })
 
-  it('loads the Draft task properly', () => {
-    // TODO:
+  it('loads the \'New\' task properly', () => {
     // find first item
-    // expect title to be "File 2019 Annual Report"
-    // expect subtitle to be "(including Address and/or Director Change)"
-    // expect status1 to be null
-    // expect status2 to be null
-    // expect button to be "File Now"
-    // expect button to be enabled
+    const item = vm.$el.querySelectorAll('.list-item')[0]
+
+    expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
+    expect(item.querySelector('.list-item__subtitle').textContent).toBe('(including Address and/or Director Change)')
+    expect(item.querySelector('.list-item__status1')).toBeNull()
+    expect(item.querySelector('.list-item__status2')).toBeNull()
+
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button.disabled).toBe(false)
+    expect(button.querySelector('.v-btn__content').textContent).toEqual('File Now')
   })
 
-  it('loads the New task properly', () => {
-    // TODO:
+  it('loads the \'Draft\' task properly', () => {
     // find second item
-    // expect title to be "File 2018 Annual Report"
-    // expect subtitle to be null
-    // expect status1 to be "DRAFT"
-    // expect status2 to be null
-    // expect button to be "Resume"
-    // expect button to be disabled
+    const item = vm.$el.querySelectorAll('.list-item')[1]
+
+    expect(item.querySelector('.list-item__title').textContent).toEqual('File 2018 Annual Report')
+    expect(item.querySelector('.list-item__subtitle')).toBeNull()
+    expect(item.querySelector('.list-item__status1').textContent).toContain('DRAFT')
+    expect(item.querySelector('.list-item__status2').textContent).toEqual('')
+
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button.disabled).toBe(true)
+    expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume')
   })
 
-  it('loads the Filing Pending - Payment Incomplete task properly', () => {
-    // TODO:
+  it('loads the \'Filing Pending - Payment Incomplete\' task properly', () => {
     // find third item
-    // expect title to be "File Director Change"
-    // expect subtitle to be null
-    // expect status1 to be "FILING PENDING"
-    // expect status2 to be "PAYMENT INCOMPLETE"
-    // expect status2 button to be enabled
-    // expect button to be "Resume Payment"
-    // expect button to be disabled
+    const item = vm.$el.querySelectorAll('.list-item')[2]
+
+    expect(item.querySelector('.list-item__title').textContent).toEqual('File Director Change')
+    expect(item.querySelector('.list-item__subtitle')).toBeNull()
+    expect(item.querySelector('.list-item__status1').textContent).toContain('FILING PENDING')
+    expect(item.querySelector('.list-item__status2').textContent).toContain('PAYMENT INCOMPLETE')
+
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button.disabled).toBe(true)
+    expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume Payment')
   })
 
-  it('loads the Filing Pending - Payment Unsuccessful task properly', () => {
-    // TODO:
+  it('loads the \'Filing Pending - Payment Unsuccessful\' task properly', () => {
     // find fourth item
-    // expect title to be "File Address Change"
-    // expect subtitle to be null
-    // expect status1 to be "FILING PENDING"
-    // expect status2 to be "PAYMENT UNSUCCESSFUL"
-    // expect status2 button to be enabled
-    // expect button to be "Retry Payment"
-    // expect button to be disabled
+    const item = vm.$el.querySelectorAll('.list-item')[3]
+
+    expect(item.querySelector('.list-item__title').textContent).toEqual('File Address Change')
+    expect(item.querySelector('.list-item__subtitle')).toBeNull()
+    expect(item.querySelector('.list-item__status1').textContent).toContain('FILING PENDING')
+    expect(item.querySelector('.list-item__status2').textContent).toContain('PAYMENT UNSUCCESSFUL')
+
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button.disabled).toBe(true)
+    expect(button.querySelector('.v-btn__content').textContent).toEqual('Retry Payment')
   })
 })
