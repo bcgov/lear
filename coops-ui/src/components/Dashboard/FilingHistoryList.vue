@@ -51,6 +51,17 @@
         <div class="no-results__subtitle">Your completed filings and transactions will normally appear here</div>
       </v-card-text>
     </v-card>
+
+    <!-- Past Filings Message -->
+    <v-card class="past-filings" flat>
+      <v-card-text>
+        <div class="past-filings__text">
+          Filings completed before August 21, 2019 will be available from the BC Registry as printed
+          documents.<br>Please contact us at <a href="tel:250-952-0568">250-952-0568</a> to request
+          paper copies of these past filings.
+        </div>
+      </v-card-text>
+    </v-card>
   </div>
 </template>
 
@@ -202,10 +213,12 @@ export default {
 <style lang="stylus" scoped>
   @import "../../assets/styles/theme.styl"
 
-  .filing-history-list .list-item
-    flex-direction column
-    align-items flex-start
-    padding 0
+  // Filing History List
+  .filing-history-list
+    .list-item
+      flex-direction column
+      align-items flex-start
+      padding 0
 
    // Document List
   .document-list
@@ -221,7 +234,7 @@ export default {
     .list-item-title
       font-weight 400
 
-   // Documents Action Bar
+   // Documents Actions Bar
   .documents-actions-bar
     padding-top 1rem
     display flex
@@ -233,4 +246,15 @@ export default {
   .download-all-btn
     margin-left auto
     min-width 8rem
+
+  // Past Filings
+  .past-filings
+    border-top 1px solid $gray3
+    text-align center
+
+  .past-filings__text
+    margin-top 0.25rem
+    color $gray6
+    font-size 0.875rem
+    font-weight 500
 </style>
