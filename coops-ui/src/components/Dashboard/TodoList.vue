@@ -267,7 +267,6 @@ export default {
 
     doResumeFiling (item) {
       // TODO
-      this.doFileNow(item) // for now...
     },
 
     doResumePayment (item) {

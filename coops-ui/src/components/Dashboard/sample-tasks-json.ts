@@ -5,26 +5,6 @@ export default
   'tasks': [
     {
       'task': {
-        'todo': {
-          'business': {
-            'cacheId': 1,
-            'foundingDate': '2007-04-08',
-            'identifier': 'CP0002098',
-            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-            'legalName': 'Legal Name - CP0002098'
-          },
-          'header': {
-            'name': 'annualReport',
-            'ARFilingYear': 2019,
-            'status': 'NEW'
-          }
-        }
-      },
-      'order': 2,
-      'enabled': false
-    },
-    {
-      'task': {
         'filing': {
           'annualReport': {
             'annualGeneralMeetingDate': '2018-07-15',
@@ -51,6 +31,26 @@ export default
             'filingId': 123,
             'name': 'annualReport',
             'status': 'DRAFT'
+          }
+        }
+      },
+      'order': 2,
+      'enabled': false
+    },
+    {
+      'task': {
+        'todo': {
+          'business': {
+            'cacheId': 1,
+            'foundingDate': '2007-04-08',
+            'identifier': 'CP0002098',
+            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+            'legalName': 'Legal Name - CP0002098'
+          },
+          'header': {
+            'name': 'annualReport',
+            'ARFilingYear': 2019,
+            'status': 'NEW'
           }
         }
       },
