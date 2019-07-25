@@ -80,7 +80,7 @@ export default {
 
   data () {
     return {
-      panel: null,  // currently expanded panel
+      panel: null, // currently expanded panel
       filedItems: null,
       errorMessage: null
     }
