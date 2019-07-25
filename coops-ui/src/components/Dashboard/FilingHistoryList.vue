@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-expansion-panel v-if="filedItems && filedItems.length > 0">
+    <v-expansion-panel v-if="filedItems && filedItems.length > 0" v-model="panel">
       <v-expansion-panel-content
         class="filing-history-list"
         v-for="(item, index) in orderBy(filedItems, 'filingDate', -1)"
@@ -11,7 +11,10 @@
             <div class="list-item__subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
           </div>
           <div class="v-expansion-panel__header__icon">
-            View Documents
+            <strong>
+              <span v-if="panel === index">Hide Documents</span>
+              <span v-else>View Documents</span>
+            </strong>
           </div>
         </template>
         <ul class="list document-list">
@@ -77,6 +80,7 @@ export default {
 
   data () {
     return {
+      panel: null,  // currently expanded panel
       filedItems: null,
       errorMessage: null
     }
