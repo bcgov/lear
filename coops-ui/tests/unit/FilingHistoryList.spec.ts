@@ -26,39 +26,64 @@ describe('FilingHistoryList.vue', () => {
               {
                 'filing': {
                   'annualReport': {
-                    'annualGeneralMeetingDate': '2017-04-08',
-                    'certifiedBy': 'full name'
+                    'annualGeneralMeetingDate': '2018-07-15',
+                    'certifiedBy': 'full1 name1',
+                    'email': 'no_one@never.get'
+                  },
+                  'business': {
+                    'cacheId': 1,
+                    'foundingDate': '2007-04-08',
+                    'identifier': 'CP0002098',
+                    'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                    'legalName': 'Legal Name - CP0002098'
                   },
                   'header': {
                     'date': '2017-06-06',
-                    'filingId': 3,
-                    'status': 'COMPLETE'
+                    'filingId': 123,
+                    'name': 'annualReport',
+                    'status': 'DRAFT'
                   }
                 }
               },
               {
                 'filing': {
-                  'annualReport': {
-                    'annualGeneralMeetingDate': '2015-04-08',
-                    'certifiedBy': 'full name'
+                  'changeOfAddress': {
+                    'certifiedBy': 'full2 name2',
+                    'email': 'no_one@never.get'
+                  },
+                  'business': {
+                    'cacheId': 1,
+                    'foundingDate': '2007-04-08',
+                    'identifier': 'CP0002098',
+                    'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                    'legalName': 'Legal Name - CP0002098'
                   },
                   'header': {
-                    'date': '2015-06-06',
-                    'filingId': 1,
+                    'date': '2017-06-06',
+                    'filingId': 456,
+                    'name': 'changeOfAddress',
+                    'status': 'ERROR'
+                  }
+                }
+              },
+              {
+                'filing': {
+                  'changeOfDirectors': {
+                    'certifiedBy': 'full3 name3',
+                    'email': 'no_one@never.get'
+                  },
+                  'business': {
+                    'cacheId': 1,
+                    'foundingDate': '2007-04-08',
+                    'identifier': 'CP0002098',
+                    'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                    'legalName': 'Legal Name - CP0002098'
+                  },
+                  'header': {
+                    'date': '2017-06-06',
+                    'filingId': 789,
+                    'name': 'changeOfDirectors',
                     'status': 'PENDING'
-                  }
-                }
-              },
-              {
-                'filing': {
-                  'annualReport': {
-                    'annualGeneralMeetingDate': '2016-04-08',
-                    'certifiedBy': 'full name'
-                  },
-                  'header': {
-                    'date': '2016-06-06',
-                    'filingId': 2,
-                    'status': 'COMPLETE'
                   }
                 }
               }

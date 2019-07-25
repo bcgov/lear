@@ -26,24 +26,33 @@
 
             <section>
               <header>
-                <h2>Recent Filing History <span class="text-muted">({{filingCount}})</span></h2>
+                <h2>Recent Filing History <span class="text-muted">({{filedCount}})</span></h2>
               </header>
-              <filing-history-list @filing-count="filingCount = $event"/>
+              <filing-history-list @filed-count="filedCount = $event"/>
             </section>
           </div>
 
           <aside class="dashboard-content__aside">
             <section>
               <header>
-                <h2>Registered Office Addresses</h2>
+                <h2>Office Addresses</h2>
+                <v-btn flat small disabled color="primary">
+                  <v-icon small>edit</v-icon>
+                  <span>EDIT</span>
+                </v-btn>
               </header>
               <v-card flat>
                 <address-list-sm></address-list-sm>
               </v-card>
             </section>
+
             <section>
               <header>
                 <h2>Current Directors</h2>
+                <v-btn flat small disabled color="primary">
+                  <v-icon small>edit</v-icon>
+                  <span>EDIT</span>
+                </v-btn>
               </header>
               <v-card flat>
                 <director-list-sm></director-list-sm>
@@ -51,10 +60,8 @@
             </section>
           </aside>
         </div>
-
       </article>
     </v-container>
-
   </div>
 </template>
 
@@ -79,7 +86,7 @@ export default {
   data () {
     return {
       todoCount: 0,
-      filingCount: 0
+      filedCount: 0
     }
   }
 }
@@ -88,26 +95,11 @@ export default {
 <style lang="stylus" scoped>
   @import "../assets/styles/theme.styl"
 
-  // TODO: Create/Move to Helper Stylesheet
   .text-muted
     color $gray5
 
-  article
-    .v-card
-      line-height 1.2rem
-      font-size 0.875rem
-
-  section + section
-    margin-top 3rem
-
   h1
     margin-bottom 0
-
-  h2
-    margin-bottom 0.25rem
-    margin-top 3rem
-    font-size 1.125rem
-    font-weight 500
 
   .dashboard-content
     display flex
@@ -118,41 +110,12 @@ export default {
   .dashboard-content__aside
     margin-left 2rem
 
-  // Common
-  .list
-    margin 0
-    padding 0
-    list-style-type none
-
-  .list-item
+  section header
     display flex
     flex-direction row
-    align-items center
-    padding 1.25rem
-    background #fff
-    font-size 0.875rem
-
-  list-item + .list-item
-    border-top 1px solid $gray3
-
-  .list-item-icon
-    margin-top -1px
-    margin-right 0.5rem
-    opacity 0.4
-
-  .list-item-title
-    font-weight 700
-
-  .list-item-subtitle
-    color $gray5
-    font-weight 400
-
-  .list-item-actions
-    flex 0 0 auto
-    margin-left auto
 
     .v-btn
-      margin 0
-      min-width 8rem
-      font-weight 500
+      margin-top 0
+      margin-right 0
+      margin-left auto
 </style>

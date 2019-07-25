@@ -70,7 +70,7 @@ export default {
 </script>
 
 <style lang="stylus">
-  @import "./assets/styles/base.styl";
-  @import "./assets/styles/layout.styl";
-  @import "./assets/styles/overrides.styl";
+  @import "./assets/styles/base.styl"
+  @import "./assets/styles/layout.styl"
+  @import "./assets/styles/overrides.styl"
 </style>
