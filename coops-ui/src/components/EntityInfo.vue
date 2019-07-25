@@ -4,15 +4,11 @@
       <div class="title-container">
         <div class="entity-name">{{ entityName || 'Not Available' }}</div>
         <!-- TODO: Discuss/decide how we are handling entity statuses (e.g. 'GOODSTANDING' etc.) -->
-        <v-chip class="entity-status"
-          label
-          small
-          text-color="white"
+        <v-chip class="entity-status" label small disabled text-color="white" v-if="entityStatus"
           :class="{
             'blue' : entityStatus === 'GOODSTANDING',
             'red' : entityStatus === 'PENDINGDISSOLUTION' | 'NOTINCOMPLIANCE',
-          }"
-          disabled>
+          }">
           <!-- TODO: These strings should be pulled out into a globally accessible file -->
           <span v-if="entityStatus === 'GOODSTANDING'">In Good Standing</span>
           <span v-else-if="entityStatus === 'PENDINGDISSOLUTION'">Pending Dissolution</span>
