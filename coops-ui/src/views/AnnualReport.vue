@@ -154,15 +154,22 @@
         </div>
 
         <div class="buttons-right">
-          <v-btn
-            v-if="isAnnualReportEditable"
-            id="ar-pay-btn"
-            color="primary"
-            large
-            :disabled="!validated"
-            @click="submit">
-            File &amp; Pay
-          </v-btn>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on }">
+              <v-btn
+                v-if="isAnnualReportEditable"
+                id="ar-pay-btn"
+                color="primary"
+                large
+                :disabled="!validated"
+                @click="submit"
+                v-on="on">
+                File &amp; Pay
+              </v-btn>
+            </template>
+            <span>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
+              There is no opportunity to change information beyond this point.</span>
+          </v-tooltip>
           <v-btn
             id="ar-cancel-btn"
             large
