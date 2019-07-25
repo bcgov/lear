@@ -26,8 +26,8 @@ from legal_api.utils.util import cors_preflight
 from .api_namespace import API
 
 
-@cors_preflight('GET')
-@API.route('/<string:identifier>')
+@cors_preflight('GET,')
+@API.route('/<string:identifier>', methods=['GET', 'OPTIONS'])
 class BusinessResource(Resource):
     """Meta information about the overall service."""
 
