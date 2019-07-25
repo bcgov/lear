@@ -139,8 +139,21 @@
         </aside>
       </v-container>
 
-      <v-container id="submit-container" class="pt-0">
-        <div class="ar-filing-buttons">
+      <v-container id="buttons-container" class="list-item">
+        <div class="buttons-left">
+          <v-btn id="ar-save-btn" large
+            v-if="isAnnualReportEditable"
+            :disabled="true"><!-- !validated -->
+            Save
+          </v-btn>
+          <v-btn id="ar-save-resume-btn" large
+            v-if="isAnnualReportEditable"
+            :disabled="true"><!-- !validated -->
+            Save &amp; Resume Later
+          </v-btn>
+        </div>
+
+        <div class="buttons-right">
           <v-btn
             v-if="isAnnualReportEditable"
             id="ar-pay-btn"
@@ -204,19 +217,26 @@ export default {
     ...mapGetters(['isAnnualReportEditable', 'reportState'])
   },
 
-  mounted () {
+  created () {
     // if tombstone data isn't set, redirect to home
     if (!this.corpNum || !this.ARFilingYear) {
       this.$router.push('/')
-    } else {
+    } else if (this.id) {
       // load initial data
-      // TODO - anything here?
+      this.fetchData()
     }
+    // else do nothing (just load empty page)
+    // this.filingData = []
   },
 
   methods: {
     ...mapActions(['setARFilingYear', 'setRegOffAddrChange', 'setValidated',
       'setAddressesFormValid', 'setDirectorFormValid', 'setAgmDateValid']),
+
+    fetchData () {
+      // TODO: load draft Annual Report
+      // in case of error, display popup
+    },
 
     /**
      * Callback method for the "modified" event from RegisteredOfficeAddress.
@@ -303,9 +323,9 @@ export default {
       }
 
       axios.post(this.corpNum + '/filings', filingData).then(res => {
-        let payRequestId:String = res.data.filing.header.paymentToken
+        let payRequestId: string = res.data.filing.header.paymentToken
         let returnURL = window.location.origin + '/AnnualReport?pay_id=' + payRequestId
-        let authStub:string = this.authURL
+        let authStub: string = this.authURL
         if (!(authStub.endsWith('/'))) {
           authStub = authStub + '/'
         }
@@ -448,11 +468,16 @@ h2
   margin-left: 0.25rem;
   font-weight: 300;
 
-// Filing Buttons
-.ar-filing-buttons
+// Save & Filing Buttons
+#buttons-container
   padding-top: 2rem;
   border-top: 1px solid $gray5;
-  text-align: right;
+
+  .buttons-left
+    width: 50%;
+
+  .buttons-right
+    margin-left auto
 
   .v-btn + .v-btn
     margin-left: 0.5rem;
