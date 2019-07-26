@@ -14,6 +14,7 @@ var req = new XMLHttpRequest()
 req.open('GET', '/config/configuration.json', false)
 req.setRequestHeader('Accept', 'application/json')
 req.setRequestHeader('ResponseType', 'application/json')
+req.setRequestHeader('Cache-Control', 'no-cache')
 req.onreadystatechange = function (response) {
   if (req.readyState === 4) {
     if (req.status === 200) {
