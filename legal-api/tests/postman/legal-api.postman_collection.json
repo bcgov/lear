@@ -2016,7 +2016,7 @@
 			]
 		},
 		{
-			"name": "get-business-filing - annual report CP0002098",
+			"name": "get-business-filing-by-id",
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -2047,7 +2047,7 @@
 			},
 			"response": [
 				{
-					"name": "get-business-filing - CP0002103",
+					"name": "get-business-filing-by-id - CP0002103",
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -2109,7 +2109,7 @@
 					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"status\": \"DRAFT\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002103\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP0002103\"\n        },\n        \"header\": {\n            \"date\": \"2019-06-06\",\n            \"filingId\": 1,\n            \"name\": \"annualReport\",\n            \"status\": \"DRAFT\"\n        }\n    }\n}"
 				},
 				{
-					"name": "get-business-filing - CP0002106",
+					"name": "get-business-filing-by-id - CP0002106",
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -2171,7 +2171,7 @@
 					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"status\": \"COMPLETED\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002106\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP0002106\"\n        },\n        \"header\": {\n            \"date\": \"2019-06-06\",\n            \"filingId\": 1,\n            \"name\": \"annualReport\",\n            \"paymentToken\": \"token\",\n            \"status\": \"COMPLETED\"\n        }\n    }\n}"
 				},
 				{
-					"name": "get-business-filing - CP0002098",
+					"name": "get-business-filing-by-id - CP0002098",
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -2195,7 +2195,7 @@
 								},
 								{
 									"key": "filing_id",
-									"value": "1"
+									"value": "4"
 								}
 							]
 						}
@@ -2230,12 +2230,12 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"status\": \"PENDING\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002098\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP0002098\"\n        },\n        \"header\": {\n            \"date\": \"2019-06-06\",\n            \"filingId\": 1,\n            \"name\": \"annualReport\",\n            \"paymentToken\": \"token\",\n            \"status\": \"PENDING\"\n        }\n    }\n}"
+					"body": "{\n\t\"filing\": {\n\t  \"annualReport\": {\n\t    \"annualGeneralMeetingDate\": \"2018-07-15\",\n\t    \"certifiedBy\": \"full1 name1\",\n\t    \"email\": \"no_one@never.get\"\n\t  },\n\t  \"changeOfAddress\": {\n\t    \"certifiedBy\": \"full2 name2\",\n\t    \"email\": \"no_one@never.get\",\n\t    \"mailingAddress\": {\n\t        \"addressCity\": \"Victoria\",\n\t        \"addressCountry\": \"CANADA\",\n\t        \"addressRegion\": \"BC\",\n\t        \"addressType\": \"mailing\",\n\t        \"deliveryInstructions\": \"draft filing\",\n\t        \"postalCode\": \"T3S3T3\",\n\t        \"streetAddress\": \"2098 North Street\",\n\t        \"streetAddressAdditional\": \"apt 2098\"\n\t    },\n\t    \"deliveryAddress\": {\n\t        \"addressCity\": \"Victoria\",\n\t        \"addressCountry\": \"CANADA\",\n\t        \"addressRegion\": \"BC\",\n\t        \"addressType\": \"mailing\",\n\t        \"deliveryInstructions\": \"draft filing\",\n\t        \"postalCode\": \"T3S3T3\",\n\t        \"streetAddress\": \"2098 West Avenue\",\n\t        \"streetAddressAdditional\": \"suite 2098\"\n\t    }\n\t  },\n\t  \"changeOfDirectors\": {\n\t    \"certifiedBy\": \"full3 name3\",\n\t    \"email\": \"no_one@never.get\",\n\t    \"directors\": [\n\t        {\n\t            \"officer\": {\n\t                \"firstName\": \"Scott2\",\n\t                \"lastName\": \"Johnson2\"\n\t            },\n\t            \"deliveryAddress\": {\n\t                \"streetAddress\": \"3950A Helen Road\",\n\t                \"addressCity\": \"Edmonton\",\n\t                \"addressCountry\": \"CA\",\n\t                \"postalCode\": \"V5Z 8C8\",\n\t                \"addressRegion\": \"AB\"\n\t            },\n\t            \"appointmentDate\": \"2015-10-12\",\n\t            \"cessationDate\": null\n\t        }\n\t    ]\n\t  },\n\t  \"business\": {\n\t    \"cacheId\": 1,\n\t    \"foundingDate\": \"2007-04-08\",\n\t    \"identifier\": \"CP0002098\",\n\t    \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n\t    \"legalName\": \"Legal Name - CP0002098\"\n\t  },\n\t  \"header\": {\n\t    \"date\": \"2017-06-06\",\n\t    \"filingId\": 4,\n\t    \"name\": \"annualReport\",\n\t    \"status\": \"DRAFT\"\n\t  }\n\t}\n}"
 				}
 			]
 		},
 		{
-			"name": "get-business-filings - CP0002098",
+			"name": "get-business-filings",
 			"request": {
 				"method": "GET",
 				"header": [],
