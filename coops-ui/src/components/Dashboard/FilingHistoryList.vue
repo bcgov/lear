@@ -10,11 +10,10 @@
             <div class="list-item__title">{{item.name}}</div>
             <div class="list-item__subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
           </div>
+          <div class="v-expansion-panel__header__status">FILED AND PAID</div>
           <div class="v-expansion-panel__header__icon">
-            <strong>
-              <span v-if="panel === index">Hide Documents</span>
-              <span v-else>View Documents</span>
-            </strong>
+            <span v-if="panel === index">Hide Documents</span>
+            <span v-else>View Documents</span>
           </div>
         </template>
         <ul class="list document-list">
@@ -47,7 +46,7 @@
       </v-card-text>
     </v-card>
 
-    <!-- ErrorMessage -->
+    <!-- Error Message -->
     <v-card class="network-error" flat v-if="filedItems && filedItems.length === 0 && errorMessage">
       <v-card-text>
         <div class="network-error__title">{{errorMessage}}</div>
@@ -223,6 +222,14 @@ export default {
       flex-direction column
       align-items flex-start
       padding 0
+
+    .v-expansion-panel__header__status
+      font-size 0.875rem
+      color $gray6
+
+    .v-expansion-panel__header__icon
+      font-size 0.875rem
+      font-weight 700
 
    // Document List
   .document-list
