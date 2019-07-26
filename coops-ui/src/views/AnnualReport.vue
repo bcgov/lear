@@ -9,11 +9,12 @@
           <p  class="genErr">If you exit this filing, any changes you've made will not be saved.</p>
           <p class="genErr">
             <v-icon small>phone</v-icon>
-            <span class="error-dialog-padding">250 952-0568</span>
+            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
           </p>
           <p class="genErr">
             <v-icon small>email</v-icon>
-            <span class="error-dialog-padding">SBC_ITOperationsSupport@gov.bc.ca</span>
+            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
+              >SBC_ITOperationsSupport@gov.bc.ca</a>
           </p>
         </v-card-text>
         <v-divider></v-divider>
@@ -25,7 +26,7 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="paymentErrorDialog" width="60rem" id="payErr">
+    <v-dialog v-model="paymentErrorDialog" width="60rem">
       <v-card>
         <v-card-title>Unable to Process Payment</v-card-title>
         <v-card-text>
@@ -40,11 +41,12 @@
           </p>
           <p class="genErr">
             <v-icon small>phone</v-icon>
-            <span class="error-dialog-padding">250 952-0568</span>
+            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
           </p>
           <p class="genErr">
             <v-icon small>email</v-icon>
-            <span class="error-dialog-padding">SBC_ITOperationsSupport@gov.bc.ca</span>
+            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
+              >SBC_ITOperationsSupport@gov.bc.ca</a>
           </p>
         </v-card-text>
         <v-divider></v-divider>
