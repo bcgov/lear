@@ -5,34 +5,46 @@ import Dashboard from '@/views/Dashboard.vue'
 import axios from '@/axios-auth'
 
 Vue.use(VueRouter)
-var authURL
-var payAPIURL
-var authAPIURL
+
+let authURL: string
+let payAPIURL: string
+let authAPIURL: string
+
 /* load configurations from file */
-var req = new XMLHttpRequest()
+const req = new XMLHttpRequest()
 // TODO - change request to async:true once UI is more complete - currently too quick because we jump straight to AR
 req.open('GET', '/config/configuration.json', false)
 req.setRequestHeader('Accept', 'application/json')
 req.setRequestHeader('ResponseType', 'application/json')
 req.setRequestHeader('Cache-Control', 'no-cache')
-req.onreadystatechange = function (response) {
-  if (req.readyState === 4) {
+req.onreadystatechange = function () {
+  if (req.readyState === XMLHttpRequest.DONE) {
     if (req.status === 200) {
-      axios.defaults.baseURL = JSON.parse(req.responseText)['API_URL']
-      console.log('Set axios.baseURL to: ' + axios.defaults.baseURL)
-      authURL = JSON.parse(req.responseText)['AUTH_URL']
+      const configuration = JSON.parse(req.responseText)
+
+      axios.defaults.baseURL = configuration['API_URL']
+      console.log('Set axios.defaults.baseURL to: ' + axios.defaults.baseURL)
+
+      authURL = configuration['AUTH_URL']
       console.log('Set authURL to: ' + authURL)
-      authAPIURL = JSON.parse(req.responseText)['AUTH_API_URL']
-      console.log('Set authURL to: ' + authAPIURL)
-      payAPIURL = JSON.parse(req.responseText)['PAY_API_URL']
-      console.log('Set authURL to: ' + payAPIURL)
+
+      authAPIURL = configuration['AUTH_API_URL']
+      console.log('Set authAPIURL to: ' + authAPIURL)
+
+      payAPIURL = configuration['PAY_API_URL']
+      console.log('Set payAPIURL to: ' + payAPIURL)
+
+      window['addressCompleteKey'] = configuration['ADDRESS_COMPLETE_KEY']
+      console.log('Set addressCompleteKey')
     } else {
       // nothing
       console.log('could not load configurations')
     }
   }
 }
+
 req.send()
+
 Vue.mixin({
   data: function () {
     return {
