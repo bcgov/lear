@@ -60,7 +60,7 @@ describe('EntityInfo.vue', () => {
 
     Vue.nextTick(() => {
       expect(vm.$el.querySelector('.entity-name').textContent).toEqual('Not Available')
-      expect(vm.$el.querySelector('.entity-status').textContent).toBe('')
+      expect(vm.$el.querySelector('.entity-status')).toBeNull()
       expect(vm.$el.querySelector('.business-number').textContent).toEqual('Not Available')
       expect(vm.$el.querySelector('.incorp-number').textContent).toEqual('Not Available')
       done()

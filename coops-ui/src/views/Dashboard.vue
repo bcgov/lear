@@ -88,6 +88,12 @@ export default {
       todoCount: 0,
       filedCount: 0
     }
+  },
+
+  created () {
+    // TODO: load data for all subcomponents here
+    // see axios.all()
+    // in case of error, display popup
   }
 }
 </script>
