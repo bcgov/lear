@@ -31,7 +31,7 @@ def authorized(identifier: str, jwt: JwtManager) -> bool:
     token = g.jwt_oidc_token_info
     username = token.get('username', None)
 
-    if jwt.validate_roles([BASIC_USER]) and identifier == username:
+    if username and jwt.validate_roles([BASIC_USER]) and identifier.upper() == username.upper():
         return True
 
     return False
