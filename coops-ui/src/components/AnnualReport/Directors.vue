@@ -1,6 +1,31 @@
 <template>
   <div id="directors">
 
+    <!-- delete new director - confirmation popup -->
+    <v-dialog v-model="showPopup" width="30rem">
+      <v-card>
+        <v-card-text>
+          Are you sure you want to remove
+            <span v-if="activeDirectorToDelete" class="font-weight-bold">
+              <span>{{activeDirectorToDelete.officer.firstName}} </span>
+              <span>{{activeDirectorToDelete.officer.middleInitial}} </span>
+              <span>{{activeDirectorToDelete.officer.lastName}}</span>
+            </span>
+          from your Directors list?
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" @click="deleteDirector(activeDirectorToDelete.id)">
+           Remove
+          </v-btn>
+          <v-btn color="default" @click="showPopup = false; activeDirectorToDelete = null">
+           Cancel
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-expand-transition>
       <div v-show="!showNewDirectorForm">
         <v-btn class="new-director-btn" outline color="primary" :disabled="!agmDateValid"
@@ -40,6 +65,58 @@
                     v-bind:editing="true"
                     @update:address="baseAddressWatcher"
                   />
+
+                  <div class="form__row three-column new-director__dates">
+                    <v-menu
+                      :nudge-right="40"
+                      lazy
+                      transition="scale-transition"
+                      offset-y
+                      full-width
+                      min-width="18rem">
+                      <template v-slot:activator="{ on }">
+                        <v-text-field class="item"
+                          id="new-director__appointment-date"
+                          v-model="director.appointmentDate"
+                          label="Apointment / Election Date"
+                          hint="YYYY/MM/DD"
+                          append-icon="event"
+                          v-on="on"
+                          box>
+                        </v-text-field>
+                      </template>
+                      <v-date-picker
+                        id="new-director__appointment-date__datepicker"
+                        v-model="director.appointmentDate"
+                        no-title>
+                      </v-date-picker>
+                    </v-menu>
+
+                    <v-menu
+                      :nudge-right="40"
+                      lazy
+                      transition="scale-transition"
+                      offset-y
+                      full-width
+                      min-width="18rem">
+                      <template v-slot:activator="{ on }">
+                        <v-text-field class="item"
+                          id="new-director__cessation-date"
+                          v-model="director.cessationDate"
+                          label="Cessation Date"
+                          hint="YYYY/MM/DD"
+                          append-icon="event"
+                          v-on="on"
+                          box>
+                        </v-text-field>
+                      </template>
+                      <v-date-picker
+                        id="new-director__cessation-date__datepicker"
+                        v-model="director.cessationDate"
+                        no-title>
+                      </v-date-picker>
+                    </v-menu>
+                  </div>
 
                   <div class="form__row form__btns">
                     <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
@@ -83,22 +160,67 @@
                   <div class="address">
                     <BaseAddress v-bind:address="director.deliveryAddress"  />
                   </div>
-                  <div class="actions">
-                    <v-btn small flat color="primary" :disabled="!agmDateValid"
-                      :id="'director-' + director.id + '-change-btn'"
-                      v-show="director.isNew"
-                      @click="editDirector(index)">
-                      <v-icon small>edit</v-icon>
-                      <span>Change</span>
-                    </v-btn>
-                    <v-btn small flat color="primary" :disabled="!agmDateValid"
-                      class="cease-btn"
-                      :id="'director-' + director.id + '-cease-btn'"
-                      v-show="!director.isNew"
-                      @click="removeDirector(director)">
-                      <v-icon small>{{director.isDirectorActive ? 'close':'undo'}}</v-icon>
-                      <span>{{director.isDirectorActive ? 'Cease':'Undo'}}</span>
-                    </v-btn>
+                  <div class="director_dates">
+                    <div>Appointed/Elected</div>
+                    <div class="director_dates__date">{{ director.appointmentDate }}</div>
+                    <div v-if="director.cessationDate">Ceased</div>
+                    <div class="director_dates__date">{{ director.cessationDate }}</div>
+                  </div>
+                  <div class="actions" v-show="director.isDirectorActionable">
+
+                    <!-- Edit menu -->
+                    <span v-show="director.isNew">
+                      <v-btn small flat color="primary" :disabled="!agmDateValid"
+                        :id="'director-' + director.id + '-change-btn'"
+                        @click="editDirector(index)">
+                        <v-icon small>edit</v-icon>
+                        <span>Edit</span>
+                      </v-btn>
+                      <v-menu offset-y>
+                        <template v-slot:activator="{ on }">
+                          <v-btn flat small class="actions__more-actions__btn"
+                            v-on="on"
+                          >
+                            <v-icon>arrow_drop_down</v-icon>
+                          </v-btn>
+                        </template>
+                        <v-list class="actions__more_actions">
+                          <v-list-tile @click="showDeleteDirectorConfirmation(director)">
+                            <v-list-tile-title>Remove</v-list-tile-title>
+                          </v-list-tile>
+                        </v-list>
+                      </v-menu>
+                    </span>
+
+                    <!-- Cease menu -->
+                    <span v-show="!director.isNew">
+                      <v-btn small flat color="primary" :disabled="!agmDateValid"
+                        class="cease-btn"
+                        :id="'director-' + director.id + '-cease-btn'"
+                        @click="ceaseDirector(director)">
+                        <v-icon small>{{director.isDirectorActive ? 'close':'undo'}}</v-icon>
+                        <span>{{director.isDirectorActive ? 'Cease':'Undo'}}</span>
+                      </v-btn>
+                      <span v-show="director.isDirectorActive">
+                        <v-menu offset-y>
+                          <template v-slot:activator="{ on }">
+                            <v-btn flat small class="actions__more-actions__btn"
+                              v-on="on"
+                            >
+                              <v-icon>arrow_drop_down</v-icon>
+                            </v-btn>
+                          </template>
+                          <v-list class="actions__more_actions">
+                            <v-list-tile
+                              v-for="(item, index) in activeDirectorMenuList"
+                              :key="index"
+                            >
+                              <v-list-tile-title>{{ item }}</v-list-tile-title>
+                            </v-list-tile>
+                          </v-list>
+                        </v-menu>
+                      </span>
+                    </span>
                   </div>
                 </div>
               </v-expand-transition>
@@ -130,6 +252,58 @@
                     v-bind:editing="true"
                     @update:address="baseAddressWatcher"
                   />
+
+                  <div class="form__row three-column edit-director__dates">
+                    <v-menu
+                      :nudge-right="40"
+                      lazy
+                      transition="scale-transition"
+                      offset-y
+                      full-width
+                      min-width="18rem">
+                      <template v-slot:activator="{ on }">
+                        <v-text-field class="item"
+                          id="edit-director__appointment-date"
+                          v-model="director.appointmentDate"
+                          label="Apointment / Election Date"
+                          hint="YYYY/MM/DD"
+                          append-icon="event"
+                          v-on="on"
+                          box>
+                        </v-text-field>
+                      </template>
+                      <v-date-picker
+                        id="edit-director__appointment-date__datepicker"
+                        v-model="director.appointmentDate"
+                        no-title>
+                      </v-date-picker>
+                    </v-menu>
+
+                    <v-menu
+                      :nudge-right="40"
+                      lazy
+                      transition="scale-transition"
+                      offset-y
+                      full-width
+                      min-width="18rem">
+                      <template v-slot:activator="{ on }">
+                        <v-text-field class="item"
+                          id="edit-director__cessation-date"
+                          v-model="director.cessationDate"
+                          label="Cessation Date"
+                          hint="YYYY/MM/DD"
+                          append-icon="event"
+                          v-on="on"
+                          box>
+                        </v-text-field>
+                      </template>
+                      <v-date-picker
+                        id="edit-director__cessation-date__datepicker"
+                        v-model="director.cessationDate"
+                        no-title>
+                      </v-date-picker>
+                    </v-menu>
+                  </div>
 
                   <div class="form__row form__btns">
                     <v-btn color="error"
@@ -168,7 +342,9 @@ export default {
   components: {
     BaseAddress
   },
-
+  props: {
+    asOfDate: String
+  },
   data () {
     return {
       directors: [],
@@ -178,7 +354,14 @@ export default {
       regionList: [
         'BC'
       ],
+      activeDirectorMenuList: [
+        'Set custom cessation date',
+        'Change address',
+        'Change of legal name'
+      ],
       showNewDirectorForm: false,
+      showPopup: false,
+      activeDirectorToDelete: null,
       activeIndex: undefined,
       isEditingDirector: false,
       isDirectorActive: true,
@@ -192,7 +375,9 @@ export default {
           addressRegion: '',
           postalCode: '',
           addressCountry: ''
-        }
+        },
+        appointmentDate: this.asOfDate,
+        cessationDate: null
       },
       inProgressAddress: null,
       directorFormValid: true,
@@ -216,6 +401,9 @@ export default {
       ],
       directorCountryRules: [
         v => !!v || 'A country is required'
+      ],
+      newDirectorAppointmentDateRules: [
+        v => !!v || 'Appointment Date is required'
       ]
     }
   },
@@ -238,8 +426,8 @@ export default {
     ...mapActions(['setDirectorFormValid']),
 
     getDirectors: function () {
-      if (this.corpNum) {
-        var url = this.corpNum + '/directors'
+      if (this.corpNum && this.asOfDate) {
+        var url = this.corpNum + '/directors?date=' + this.asOfDate
         axios.get(url)
           .then(response => {
             if (response && response.data && response.data.directors) {
@@ -252,6 +440,7 @@ export default {
                 directors[i].isNew = false
                 directors[i].isDirectorActive = true
                 directors[i].isFeeApplied = false
+                directors[i].isDirectorActionable = directors[i].cessationDate == null
               }
 
               // save to component data now that extra attributes are added
@@ -274,16 +463,25 @@ export default {
       this.showNewDirectorForm = false
       this.$refs.newDirectorForm.reset()
       this.$refs.baseAddressNew.$refs.addressForm.reset()
+
+      // set form to initial director data again
+      this.director.appointmentDate = this.asOfDate
     },
 
-    deleteDirector: function (director, id) {
-      if (this.directors[id] === director) {
-        this.directors.splice(id, 1)
-      } else {
-        let found = this.directors.indexOf(director)
-        this.directors.splice(found, 1)
-      }
+    showDeleteDirectorConfirmation: function (director) {
+      this.showPopup = true
+      this.activeDirectorToDelete = director
+    },
+
+    deleteDirector: function (id) {
+      let newList = this.directors.filter(function (director) {
+        return director.id !== id
+      })
+      this.directors = newList
+
       this.activeIndex = null
+      this.showPopup = false
+      this.activeDirectorToDelete = null
     },
 
     validateNewDirectorForm: function () {
@@ -301,6 +499,7 @@ export default {
       let newDirector = {
         id: this.directors.length + 1,
         isDirectorActive: true,
+        isDirectorActionable: true,
         isNew: true,
         isFeeApplied: true,
         officer: {
@@ -315,7 +514,9 @@ export default {
           addressRegion: this.inProgressAddress.addressRegion,
           postalCode: this.inProgressAddress.postalCode,
           addressCountry: this.inProgressAddress.addressCountry
-        }
+        },
+        appointmentDate: this.director.appointmentDate,
+        cessationDate: this.director.cessationDate
       }
       this.directors.push(newDirector)
 
@@ -323,14 +524,19 @@ export default {
       this.inProgressAddress = null
     },
 
-    // Remove director
-    removeDirector: function (director) {
+    // Cease director
+    ceaseDirector: function (director) {
       // if this is a Cease, apply a fee
       // otherwise it's just undoing a cease or undoing a new director, so remove fee
       if (director.isDirectorActive) director.isFeeApplied = true
       else director.isFeeApplied = false
 
+      // reverse state of director
       director.isDirectorActive = !director.isDirectorActive
+
+      // either set or undo cessation date
+      if (director.cessationDate == null) director.cessationDate = this.asOfDate
+      else director.cessationDate = null
     },
 
     // Modify Existing Directors
@@ -387,6 +593,9 @@ export default {
     },
     directorFormValid (val) {
       this.setDirectorFormValid(val)
+    },
+    asOfDate (val) {
+      this.getDirectors()
     }
   }
 }
@@ -467,6 +676,7 @@ export default {
   // Director Display
   .director-info
     display flex
+    color $gray6
 
     .status
       flex 1 1 auto
@@ -494,7 +704,7 @@ export default {
     font-weight 700
     vertical-align top
 
-  .remove
+  .remove, .remove .director-info
     color $gray5 !important
 
   .new-director .meta-container,
@@ -502,4 +712,30 @@ export default {
     flex-flow column nowrap
     > label:first-child
       margin-bottom 1.5rem
+
+  .director_dates
+    font-size 0.8rem
+    margin-left 100px
+
+    .director_dates__date
+      margin-left 20px
+
+  .actions .v-btn.actions__more-actions__btn
+    min-width 25px
+    border-left 1px solid $gray3
+    border-radius 0
+    margin-left 5px !important
+    padding 0 5px
+    color $gray6
+
+</style>
+
+<style lang="stylus">
+  @import "../../assets/styles/theme.styl"
+
+  .actions__more_actions .v-list__tile
+    color $gray6
+    font-size 8pt
+    height 28px
+    font-weight 500
 </style>

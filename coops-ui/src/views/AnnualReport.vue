@@ -150,7 +150,7 @@
                   {{ ARFilingYear }} AGM.</p>
               </header>
               <!-- <v-card flat id="AR-step-3-container"> -->
-                <Directors @directorsChange="directorsChangeEventHandler" ref="directorsList"/>
+                <Directors @directorsChange="directorsChangeEventHandler" ref="directorsList" :asOfDate="agmDate" />
               <!-- </v-card> -->
             </section>
           </div>
