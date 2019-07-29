@@ -18,7 +18,7 @@ from enum import Enum
 from http import HTTPStatus
 from typing import List
 
-from sqlalchemy import event, inspect
+from sqlalchemy import desc, event, inspect
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -221,6 +221,25 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             filter(Filing.payment_token == token). \
             one_or_none()
         return filing
+
+    @staticmethod
+    def get_filings_by_status(business_id: int, status: []):
+        """Return the filings with statuses in the status array input."""
+        filings = db.session.query(Filing). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._status.in_(status)). \
+            all()
+        return filings
+
+    @staticmethod
+    def get_filings_by_type(business_id: int, filing_type: str):
+        """Return the filings of a particular type."""
+        filings = db.session.query(Filing). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._filing_type == filing_type). \
+            order_by(desc(Filing.id)). \
+            all()
+        return filings
 
     def save(self):
         """Save and commit immediately."""
