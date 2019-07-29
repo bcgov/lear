@@ -22,7 +22,7 @@ describe('AnnualReport.vue', () => {
     // init store
     store.state.corpNum = 'CP0001191'
     store.state.ARFilingYear = 2017
-    store.state.currentARStatus = 'TODO'
+    store.state.currentARStatus = 'NEW'
     store.state.filedDate = null
 
     //
@@ -42,7 +42,7 @@ describe('AnnualReport.vue', () => {
   it('initializes the store variables properly', () => {
     expect(vm.$store.state.corpNum).toEqual('CP0001191')
     expect(vm.$store.state.ARFilingYear).toEqual(2017)
-    expect(vm.$store.state.currentARStatus).toEqual('TODO')
+    expect(vm.$store.state.currentARStatus).toEqual('NEW')
     expect(vm.$store.state.filedDate).toBeNull()
 
     // check titles and sub-titles

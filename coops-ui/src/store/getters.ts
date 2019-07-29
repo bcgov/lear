@@ -1,12 +1,12 @@
 export default {
   isAnnualReportEditable: state => {
-    return (state.currentARStatus === 'TODO' || state.currentARStatus === 'DRAFT')
+    return (state.currentARStatus === 'NEW' || state.currentARStatus === 'DRAFT')
   },
   reportState: state => {
-    if (state.currentARStatus === 'TODO' || state.currentARStatus === 'DRAFT') {
-      return 'Draft'
-    } else {
-      return state.currentARStatus
+    switch (state.currentARStatus) {
+      case 'NEW': return ''
+      case 'DRAFT': return 'Draft'
+      default: return state.currentARStatus
     }
   }
 }

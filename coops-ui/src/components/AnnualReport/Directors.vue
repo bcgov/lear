@@ -370,6 +370,11 @@ export default {
 
     getAllDirectors: function () {
       return this.directors
+    },
+
+    setAllDirectors (directors) {
+      // load data from existing filing
+      this.directors = directors
     }
   },
 

@@ -38,7 +38,7 @@
               <v-btn color="primary" v-else-if="isPending(item)" :disabled="!item.enabled"
                 @click.native.stop="doResumePayment(item)">Resume Payment</v-btn>
               <v-btn color="primary" v-else-if="isError(item)" :disabled="!item.enabled"
-                @click.native.stop="doRetryPayment(item)">Retry Payment</v-btn>
+                @click.native.stop="doResumePayment(item)">Retry Payment</v-btn>
               <v-btn color="primary" v-else-if="!isCompleted(item)" :disabled="!item.enabled"
                 @click.native.stop="doFileNow(item)">File Now</v-btn>
             </div>
@@ -48,8 +48,8 @@
         <v-card v-if="isPending(item)">
           <v-card-text>
             <p class="bold">Payment Incomplete</P>
-            <p>This filing is pending payment. The payment process appears to have been interrupted for some
-              reason.<p>
+            <p>This filing is pending payment. The payment may still be in progress or may have been
+              interrupted for some reason.<p>
             <p>You may continue this filing by selecting "Resume Payment".</p>
           </v-card-text>
         </v-card>
@@ -57,7 +57,7 @@
         <v-card v-if="isError(item)">
           <v-card-text>
             <p class="bold">Payment Unsuccessful</p>
-            <p>This filing is pending payment. The payment process appears to have been unsuccessful for some
+            <p>This filing is pending payment. The payment appears to have been unsuccessful for some
               reason.</p>
             <p>You may continue this filing by selecting "Retry Payment".</p>
           </v-card-text>
@@ -132,7 +132,7 @@ export default {
               }
             })
           } else {
-            console.log('getTasks() error - invalid Filings')
+            console.log('getTasks() error - invalid response =', response)
             this.errorMessage = 'Oops, could not parse data from server'
           }
           this.$emit('todo-count', this.taskItems.length)
@@ -199,6 +199,7 @@ export default {
           const ARFilingYear = +date.substring(0, 4)
           this.taskItems.push({
             type: filing.header.name,
+            id: filing.header.filingId,
             title: `File ${ARFilingYear} Annual Report`,
             ARFilingYear,
             status: filing.header.status || 'NEW',
@@ -218,6 +219,7 @@ export default {
       if (filing && filing.header && filing.changeOfDirectors) {
         this.taskItems.push({
           type: filing.header.name,
+          id: filing.header.filingId,
           title: `File Director Change`,
           status: filing.header.status || 'NEW',
           enabled: Boolean(task.enabled),
@@ -233,6 +235,7 @@ export default {
       if (filing && filing.header && filing.changeOfAddress) {
         this.taskItems.push({
           type: filing.header.name,
+          id: filing.header.filingId,
           title: `File Address Change`,
           status: filing.header.status || 'NEW',
           enabled: Boolean(task.enabled),
@@ -248,7 +251,7 @@ export default {
         case 'annualReport':
           // file the subject Annual Report
           this.resetStore(item)
-          this.$router.push('/annual-report')
+          this.$router.push({ name: 'annual-report', params: { id: 0 } }) // 0 means "new AR"
           break
         case 'changeOfDirectors':
           // TODO - file the subject Change of Directors
@@ -264,24 +267,36 @@ export default {
     },
 
     doResumeFiling (item) {
-      // TODO
+      switch (item.type) {
+        case 'annualReport':
+          // resume the subject Annual Report
+          this.resetStore(item)
+          this.$router.push({ name: 'annual-report', params: { id: item.id } })
+          break
+        case 'changeOfDirectors':
+          // TODO - resume the subject Change of Directors
+          console.log('doFileNow(), Director Change item =', item)
+          break
+        case 'changeOfAddress':
+          // TODO - resume the subject Change Of Address
+          console.log('doFileNow(), Address Change item =', item)
+          break
+        default:
+          console.log('doFileNow(), invalid type for item =', item)
+      }
     },
 
+    // this is called to either Resume Payment or Retry Payment
     doResumePayment (item) {
       // TODO
-    },
-
-    doPay (item) {
-      // TODO
-    },
-
-    doRetryPayment (item) {
-      // TODO
+      // 1. check if pay UI is reachable, else display modal dialog
+      // 2. redirect to pay URL
+      // see submit() in AnnualReport.vue
     },
 
     resetStore (item) {
       this.setARFilingYear(item.ARFilingYear)
-      this.setCurrentARStatus('TODO')
+      this.setCurrentARStatus('NEW')
       this.setRegOffAddrChange(false)
       this.setAgmDate(null)
       this.setFiledDate(null)

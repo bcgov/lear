@@ -133,6 +133,10 @@ export default class RegisteredOfficeAddress extends Vue {
   public getDeliveryAddress () { return this.deliveryAddress }
   public getMailingAddress () { return this.mailingAddress }
 
+  // load data from existing filing
+  public setDeliveryAddress (address) { this.deliveryAddress = address }
+  public setMailingAddress (address) { this.mailingAddress = address }
+
   /**
    * Lifecycle callback to set up the component when it is mounted.
    */
