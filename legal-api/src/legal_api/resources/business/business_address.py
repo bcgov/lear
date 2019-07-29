@@ -60,7 +60,7 @@ class AddressResource(Resource):
             rv[Address.JSON_DELIVERY] = delivery.json
         if not rv:
             return jsonify({'message': f'{identifier} address not found'}), HTTPStatus.NOT_FOUND
-        return jsonify(addresses=rv)
+        return jsonify(rv)
 
     @staticmethod
     def _get_address(business, addresses_id=None, address_type=None):
@@ -75,7 +75,7 @@ class AddressResource(Resource):
             if rv:
                 _address_type = Address.JSON_MAILING \
                     if rv[1].address_type == Address.MAILING else Address.JSON_DELIVERY
-                addresses = {'addresses': {_address_type: rv[1].json}}
+                addresses = {_address_type: rv[1].json}
 
         # find by address type
         if address_type:
@@ -86,7 +86,7 @@ class AddressResource(Resource):
                 _address_type = Address.JSON_DELIVERY
                 address = business.delivery_address.one_or_none()
             if address:
-                addresses = {'addresses': {_address_type: address.json}}
+                addresses = {_address_type: address.json}
 
         if not addresses:
             return None, {'message': f'{business.identifier} address not found'}, HTTPStatus.NOT_FOUND
