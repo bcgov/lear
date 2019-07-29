@@ -1,6 +1,30 @@
 <template>
   <div>
-    <v-dialog v-model="dialog" width="50rem">
+    <v-dialog v-model="resumeErrorDialog" width="50rem" persistent>
+      <v-card>
+        <v-card-title>Unable to Resume Filing</v-card-title>
+        <v-card-text>
+          <p class="genErr">We were unable to resume your filing. You can return to your dashboard
+            and try again.</p>
+          <p class="genErr">If this error persists, please contact us.</p>
+          <p class="genErr">
+            <v-icon small>phone</v-icon>
+            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
+          </p>
+          <p class="genErr">
+            <v-icon small>email</v-icon>
+            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
+              >SBC_ITOperationsSupport@gov.bc.ca</a>
+          </p>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-btn color="primary" flat @click="navigateToDashboard">Return to dashboard</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="saveErrorDialog" width="50rem">
       <v-card>
         <v-card-title>Unable to Save Filing</v-card-title>
         <v-card-text>
@@ -63,7 +87,7 @@
       <div class="loading-container" v-show="showLoading">
         <div class="loading__content">
           <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-          <div class="loading-msg">{{this.loadingMsg}}</div>
+          <div class="loading-msg">Redirecting to PayBC to Process Your Payment</div>
         </div>
       </div>
     </v-fade-transition>
@@ -73,15 +97,15 @@
       <div class="loading-container fade-out">
         <div class="loading__content">
           <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-          <div class="loading-msg">Preparing Your {{ ARFilingYear }} Annual Report</div>
+          <div class="loading-msg">{{this.loadingMessage}}</div>
         </div>
       </div>
 
       <v-container id="annual-report-container" class="view-container">
         <article id="annual-report-article" :class="this.agmDate ? 'agm-date-selected' : 'no-agm-date-selected'">
           <header>
-            <h1 id="AR-header">File {{ ARFilingYear }} Annual Report -
-              <span style="font-style: italic">{{ reportState }}</span>
+            <h1 id="AR-header">File {{ ARFilingYear }} Annual Report
+              <span style="font-style: italic" v-if="reportState">- {{ reportState }}</span>
             </h1>
             <p>Select your Annual General Meeting (AGM) date, and verify or change your Registered office address
               and List of Directors as of your AGM.</p>
@@ -94,7 +118,7 @@
                 <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
               </header>
               <v-card flat id="AR-step-1-container">
-                <AGMDate/>
+                <AGMDate ref="agmDate"/>
               </v-card>
             </section>
 
@@ -208,11 +232,13 @@ export default {
 
   data () {
     return {
+      filingId: null,
       showLoading: false,
-      loadingMsg: 'Redirecting to PayBC to Process Your Payment',
+      loadingMessage: 'Loading...', // initial generic message
       directorsChange: false,
       filingData: [],
-      dialog: false,
+      resumeErrorDialog: false,
+      saveErrorDialog: false,
       paymentErrorDialog: false
     }
   },
@@ -227,15 +253,19 @@ export default {
   },
 
   created () {
+    this.filingId = this.$route.params.id
+
     // if tombstone data isn't set, redirect to home
-    if (!this.corpNum || !this.ARFilingYear) {
+    if (!this.corpNum || !this.ARFilingYear || (this.filingId === undefined)) {
       this.$router.push('/')
-    } else if (this.id) {
-      // load initial data
+    } else if (this.filingId) {
+      this.loadingMessage = `Resuming Your ${this.ARFilingYear} Annual Report`
+      // load draft filing
       this.fetchData()
+    } else {
+      this.loadingMessage = `Preparing Your ${this.ARFilingYear} Annual Report`
+      // else do nothing (just load empty page)
     }
-    // else do nothing (just load empty page)
-    // this.filingData = []
   },
 
   methods: {
@@ -243,8 +273,54 @@ export default {
       'setAddressesFormValid', 'setDirectorFormValid', 'setAgmDateValid']),
 
     fetchData () {
-      // TODO: load draft Annual Report
-      // in case of error, display popup
+      const url = this.corpNum + '/filings/' + this.filingId
+      axios.get(url).then(response => {
+        if (response && response.data) {
+          const filing = response.data.filing
+          try {
+            // verify data
+            if (!filing) throw new Error('missing filing')
+            if (!filing.header) throw new Error('missing header')
+            if (!filing.business) throw new Error('missing business')
+            if (filing.header.name !== 'annualReport') throw new Error('invalid filing type')
+            if (filing.header.status !== 'DRAFT') throw new Error('invalid filing status')
+            if (filing.business.identifier !== this.entityIncNo) throw new Error('invalid business identifier')
+            if (filing.business.legalName !== this.entityName) throw new Error('invalid business legal name')
+
+            // load Annual Report fields
+            if (!filing.annualReport) throw new Error('missing annual report')
+            else {
+              // NOTE: AR Filing Year (which is needed by agmDate component) was already set by Todo List
+              this.$refs.agmDate.loadAgmDate(filing.annualReport.annualGeneralMeetingDate)
+              this.toggleFiling('add', 'OTANN')
+            }
+
+            // load Change of Directors fields
+            // TODO: add more validation?
+            if (filing.changeOfDirectors) {
+              this.$refs.directorsList.setAllDirectors(filing.changeOfDirectors.directors)
+              this.toggleFiling('add', 'OTCDR')
+            }
+
+            // load Change of Address fields
+            // TODO: add more validation?
+            if (filing.changeOfAddress) {
+              this.$refs.registeredAddress.setDeliveryAddress(filing.changeOfAddress.deliveryAddress)
+              this.$refs.registeredAddress.setMailingAddress(filing.changeOfAddress.mailingAddress)
+              this.toggleFiling('add', 'OTADD')
+            }
+          } catch (err) {
+            console.log(`fetchData() error - ${err.message}, filing =`, filing)
+            this.resumeErrorDialog = true
+          }
+        } else {
+          console.log('fetchData() error - invalid response =', response)
+          this.resumeErrorDialog = true
+        }
+      }).catch(error => {
+        console.error('fetchData() error =', error)
+        this.resumeErrorDialog = true
+      })
     },
 
     /**
@@ -276,13 +352,14 @@ export default {
     },
 
     submit () {
-      this.dialog = false
+      this.saveErrorDialog = false
       let changeOfDirectors = null
       let changeOfAddress = null
 
       const header = {
         header: { name: 'annualReport', date: this.currentDate }
       }
+
       const business = {
         business: {
           foundingDate: this.entityFoundingDate,
@@ -333,18 +410,21 @@ export default {
 
       axios.post(this.corpNum + '/filings', filingData).then(res => {
         let payRequestId: string = res.data.filing.header.paymentToken
+        // TODO: use return URL / param to display Dashboard with paid filing expanded?
         let returnURL = window.location.origin + '/AnnualReport?pay_id=' + payRequestId
         let authStub: string = this.authURL
         if (!(authStub.endsWith('/'))) {
           authStub = authStub + '/'
         }
         let payURL = authStub + 'makepayment/' + payRequestId + '/' + encodeURIComponent(returnURL)
+        // TODO: need to check if pay UI is reachable, else display modal dialog
         window.location.href = payURL
-      }).catch((error) => {
-        if (error.response && error.response.status && error.response.status === 402) {
+      }).catch(error => {
+        console.error('submit() error =', error)
+        if (error.response && error.response.status === 402) {
           this.paymentErrorDialog = true
         } else {
-          this.dialog = true
+          this.saveErrorDialog = true
         }
       })
     },

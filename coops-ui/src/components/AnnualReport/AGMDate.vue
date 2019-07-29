@@ -153,6 +153,14 @@ export default {
         +date.substring(8, 10) === (new Date(date)).getUTCDate() &&
         +date.substring(8, 10) > 0 &&
         +date.substring(8, 10) <= +this.maxDate.substring(8, 10))
+    },
+    loadAgmDate (date) {
+      // load data from existing filing
+      if (!date) {
+        this.didNotHoldAGM = true
+      } else {
+        this.dateFormatted = this.formatDate(date)
+      }
     }
   },
 
