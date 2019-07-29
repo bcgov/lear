@@ -122,7 +122,7 @@
               </v-card>
             </section>
 
-            <!-- Addresses -->
+            <!-- Registered Office Addresses -->
             <section>
               <header>
                 <h2 id="AR-step-2-header">2. Registered Office Addresses
@@ -135,13 +135,14 @@
                   ref="registeredAddress"
                   :changeButtonDisabled="!agmDateValid"
                   :legalEntityNumber="corpNum"
+                  :addresses.sync="addresses"
                   @modified="officeModifiedEventHandler($event)"
                   @valid="officeValidEventHandler($event)"
                 ></RegisteredOfficeAddress>
               </v-card>
             </section>
 
-            <!-- Director Information -->
+            <!-- Directors -->
             <section>
               <header>
                 <h2 id="AR-step-3-header">3. Directors</h2>
@@ -232,6 +233,7 @@ export default {
 
   data () {
     return {
+      addresses: null,
       filingId: null,
       showLoading: false,
       loadingMessage: 'Loading...', // initial generic message
@@ -253,18 +255,20 @@ export default {
   },
 
   created () {
+    // NB: filing id of 0 means "new AR"
+    // otherwise it's a draft AR filing id
     this.filingId = this.$route.params.id
 
     // if tombstone data isn't set, redirect to home
     if (!this.corpNum || !this.ARFilingYear || (this.filingId === undefined)) {
       this.$router.push('/')
     } else if (this.filingId) {
+      // resume draft filing
       this.loadingMessage = `Resuming Your ${this.ARFilingYear} Annual Report`
-      // load draft filing
       this.fetchData()
     } else {
+      // else just load new page
       this.loadingMessage = `Preparing Your ${this.ARFilingYear} Annual Report`
-      // else do nothing (just load empty page)
     }
   },
 
@@ -296,18 +300,28 @@ export default {
             }
 
             // load Change of Directors fields
-            // TODO: add more validation?
-            if (filing.changeOfDirectors) {
-              this.$refs.directorsList.setAllDirectors(filing.changeOfDirectors.directors)
-              this.toggleFiling('add', 'OTCDR')
+            const changeOfDirectors = filing.changeOfDirectors
+            if (changeOfDirectors) {
+              if (changeOfDirectors.directors && changeOfDirectors.directors.length > 0) {
+                this.$refs.directorsList.setAllDirectors(changeOfDirectors.directors)
+                this.toggleFiling('add', 'OTCDR')
+              } else {
+                throw new Error('invalid change of directors')
+              }
             }
 
             // load Change of Address fields
-            // TODO: add more validation?
-            if (filing.changeOfAddress) {
-              this.$refs.registeredAddress.setDeliveryAddress(filing.changeOfAddress.deliveryAddress)
-              this.$refs.registeredAddress.setMailingAddress(filing.changeOfAddress.mailingAddress)
-              this.toggleFiling('add', 'OTADD')
+            const changeOfAddress = filing.changeOfAddress
+            if (changeOfAddress) {
+              if (changeOfAddress.deliveryAddress && changeOfAddress.mailingAddress) {
+                this.addresses = {
+                  deliveryAddress: changeOfAddress.deliveryAddress,
+                  mailingAddress: changeOfAddress.mailingAddress
+                }
+                this.toggleFiling('add', 'OTADD')
+              } else {
+                throw new Error('invalid change of address')
+              }
             }
           } catch (err) {
             console.log(`fetchData() error - ${err.message}, filing =`, filing)
@@ -357,7 +371,10 @@ export default {
       let changeOfAddress = null
 
       const header = {
-        header: { name: 'annualReport', date: this.currentDate }
+        header: {
+          name: 'annualReport',
+          date: this.currentDate
+        }
       }
 
       const business = {
@@ -371,7 +388,7 @@ export default {
       const annualReport = {
         annualReport: {
           annualGeneralMeetingDate: this.agmDate,
-          certifiedBy: 'full name',
+          certifiedBy: 'Full Name',
           email: 'no_one@never.get'
         }
       }
@@ -386,13 +403,13 @@ export default {
         }
       }
 
-      if (this.isDataChanged('OTADD')) {
+      if (this.isDataChanged('OTADD') && this.addresses) {
         changeOfAddress = {
           changeOfAddress: {
             certifiedBy: 'Full Name',
             email: 'no_one@never.get',
-            deliveryAddress: this.$refs.registeredAddress.getDeliveryAddress(),
-            mailingAddress: this.$refs.registeredAddress.getMailingAddress()
+            deliveryAddress: this.addresses['deliveryAddress'],
+            mailingAddress: this.addresses['mailingAddress']
           }
         }
       }
@@ -408,25 +425,51 @@ export default {
         )
       }
 
-      axios.post(this.corpNum + '/filings', filingData).then(res => {
-        let payRequestId: string = res.data.filing.header.paymentToken
-        // TODO: use return URL / param to display Dashboard with paid filing expanded?
-        let returnURL = window.location.origin + '/AnnualReport?pay_id=' + payRequestId
-        let authStub: string = this.authURL
-        if (!(authStub.endsWith('/'))) {
-          authStub = authStub + '/'
-        }
-        let payURL = authStub + 'makepayment/' + payRequestId + '/' + encodeURIComponent(returnURL)
-        // TODO: need to check if pay UI is reachable, else display modal dialog
-        window.location.href = payURL
-      }).catch(error => {
-        console.error('submit() error =', error)
-        if (error.response && error.response.status === 402) {
-          this.paymentErrorDialog = true
-        } else {
-          this.saveErrorDialog = true
-        }
-      })
+      if (this.filingId) {
+        // we have a filing id, so we are updating an existing filing
+        const url = this.corpNum + '/filings/' + this.filingId
+        axios.put(url, filingData).then(res => {
+          let payRequestId: string = res.data.filing.header.paymentToken
+          // TODO: use return URL / param to display Dashboard with paid filing expanded?
+          let returnURL = window.location.origin + '/AnnualReport?pay_id=' + payRequestId
+          let authStub: string = this.authURL
+          if (!(authStub.endsWith('/'))) {
+            authStub = authStub + '/'
+          }
+          let payURL = authStub + 'makepayment/' + payRequestId + '/' + encodeURIComponent(returnURL)
+          // TODO: need to check if pay UI is reachable, else display modal dialog
+          window.location.href = payURL
+        }).catch(error => {
+          console.error('submit() error =', error)
+          if (error.response && error.response.status === 402) {
+            this.paymentErrorDialog = true
+          } else {
+            this.saveErrorDialog = true
+          }
+        })
+      } else {
+        // filing id is 0, so we are saving a new filing
+        const url = this.corpNum + '/filings'
+        axios.post(url, filingData).then(res => {
+          let payRequestId: string = res.data.filing.header.paymentToken
+          // TODO: use return URL / param to display Dashboard with paid filing expanded?
+          let returnURL = window.location.origin + '/AnnualReport?pay_id=' + payRequestId
+          let authStub: string = this.authURL
+          if (!(authStub.endsWith('/'))) {
+            authStub = authStub + '/'
+          }
+          let payURL = authStub + 'makepayment/' + payRequestId + '/' + encodeURIComponent(returnURL)
+          // TODO: need to check if pay UI is reachable, else display modal dialog
+          window.location.href = payURL
+        }).catch(error => {
+          console.error('submit() error =', error)
+          if (error.response && error.response.status === 402) {
+            this.paymentErrorDialog = true
+          } else {
+            this.saveErrorDialog = true
+          }
+        })
+      }
     },
 
     toggleFiling (setting, filing) {

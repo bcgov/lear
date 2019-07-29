@@ -18,10 +18,10 @@ const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
 document.body.append(app)
 
-describe('RegisteredOfficeAddress.vue', () => {
-  // TODO: too tightly-coupled to the internal workings of the component. Wait for it to be refactored to support the
-  // v-model and then re-write this using the prop. Also gets rid of code needed to mock the API call.
-  it('loads the addresses properly', async () => {
+describe('RegisteredOfficeAddress', () => {
+
+  beforeAll(() => {
+    // API call to get current addresses
     sinon.stub(axios, 'get').withArgs('CP0001191/addresses')
       .returns(new Promise((resolve) => resolve({
         data:
@@ -48,7 +48,36 @@ describe('RegisteredOfficeAddress.vue', () => {
             }
           }
       })))
+  })
 
+  // draft addresses passed in from parent page
+  const draftAddresses = {
+    'mailingAddress': {
+      'addressCity': 'Test City',
+      'addressCountry': 'TA',
+      'addressRegion': 'BC',
+      'addressType': 'mailing',
+      'deliveryInstructions': 'draft',
+      'postalCode': 'T3S3T3',
+      'streetAddress': '3333 Test Street',
+      'streetAddressAdditional': null
+    },
+    'deliveryAddress': {
+      'addressCity': 'Test City',
+      'addressCountry': 'TA',
+      'addressRegion': 'BC',
+      'addressType': 'mailing',
+      'deliveryInstructions': 'draft',
+      'postalCode': 'T3S3T3',
+      'streetAddress': '4444 Test Street',
+      'streetAddressAdditional': null
+    }
+  }
+
+
+  // TODO: too tightly-coupled to the internal workings of the component. Wait for it to be refactored to support the
+  // v-model and then re-write this using the prop. Also gets rid of code needed to mock the API call.
+  it('loads the current addresses properly', async () => {
     const wrapper: Wrapper<RegisteredOfficeAddress> = mount(RegisteredOfficeAddress, {
       propsData: { legalEntityNumber: 'CP0001191' }
     })
@@ -83,6 +112,37 @@ describe('RegisteredOfficeAddress.vue', () => {
     } catch (Exception) {
       // Eat it.
     }
+  })
+
+  it('loads the draft addresses properly', async () => {
+    const wrapper: Wrapper<RegisteredOfficeAddress> = mount(RegisteredOfficeAddress, {
+      propsData: { legalEntityNumber: 'CP0001191', addresses: null }
+    })
+
+    await flushPromises()
+
+    // simulate parent asynchronously loading a draft filing
+    wrapper.setProps({ addresses: draftAddresses })
+
+    // verify that property was set properly
+    expect(wrapper.vm['addresses']['deliveryAddress'].streetAddress).toEqual('4444 Test Street')
+    expect(wrapper.vm['addresses']['deliveryAddress'].deliveryInstructions).toEqual('draft')
+    expect(wrapper.vm['addresses']['mailingAddress'].streetAddress).toEqual('3333 Test Street')
+    expect(wrapper.vm['addresses']['mailingAddress'].deliveryInstructions).toEqual('draft')
+
+    // call addresses watcher (since setProps() apparently doesn't call it in a TS component)
+    // see: https://github.com/vuejs/vue-test-utils/issues/255#issuecomment-408810553
+    await (wrapper.vm as any).onAddressesChanged()
+
+    // verify that current delivery address was updated by property watcher
+    const deliveryAddress: object = wrapper.vm['deliveryAddress']
+    expect(deliveryAddress['streetAddress']).toEqual('4444 Test Street')
+    expect(deliveryAddress['deliveryInstructions']).toEqual('draft')
+
+    // verify that current mailing address was updated by property watcher
+    const mailingAddress: object = wrapper.vm['mailingAddress']
+    expect(mailingAddress['streetAddress']).toEqual('3333 Test Street')
+    expect(mailingAddress['deliveryInstructions']).toEqual('draft')
   })
 
   it('has enabled Change button', () => {
