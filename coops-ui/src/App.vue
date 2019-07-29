@@ -1,26 +1,30 @@
 <template>
   <v-app class="app-container theme--light" id="app">
-    <sbc-layout v-bind:authURL="authAPIURL">
-      <div class="app-body">
-        <main>
-          <EntityInfo/>
-          <router-view/>
-        </main>
-      </div>
-    </sbc-layout>
+    <sbc-header v-bind:authURL="authAPIURL" />
+
+    <div class="app-body">
+      <main>
+        <EntityInfo/>
+        <router-view/>
+      </main>
+    </div>
+
+    <sbc-footer />
   </v-app>
 </template>
 
 <script>
 import EntityInfo from '@/components/EntityInfo.vue'
 import { mapActions } from 'vuex'
-import SbcLayout from 'sbc-common-components/src/components/SbcLayout.vue'
+import SbcHeader from 'sbc-common-components/src/components/SbcHeader.vue'
+import SbcFooter from 'sbc-common-components/src/components/SbcFooter.vue'
 
 export default {
   name: 'App',
 
   components: {
-    SbcLayout,
+    SbcHeader,
+    SbcFooter,
     EntityInfo
   },
 
