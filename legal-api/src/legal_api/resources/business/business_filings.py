@@ -63,7 +63,7 @@ class ListFilingResource(Resource):
             return jsonify(rv[1].json)
 
         rv = []
-        filings = business.filings.all()
+        filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
         for filing in filings:
             rv.append(filing.json)
 
