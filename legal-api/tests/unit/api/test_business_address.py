@@ -40,8 +40,8 @@ def test_get_business_addresses(session, client, jwt):
                     )
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert 'mailingAddress' in rv.json['addresses']
-    assert 'deliveryAddress' in rv.json['addresses']
+    assert 'mailingAddress' in rv.json
+    assert 'deliveryAddress' in rv.json
 
 
 def test_get_business_no_addresses(session, client, jwt):
@@ -74,7 +74,7 @@ def test_get_business_addresses_by_id(session, client, jwt):
                     )
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert 'mailingAddress' in rv.json['addresses']
+    assert 'mailingAddress' in rv.json
 
 
 def test_get_business_addresses_by_invalid_id(session, client, jwt):
@@ -111,7 +111,7 @@ def test_get_business_mailing_addresses_by_type(session, client, jwt):
                     )
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert Address.JSON_MAILING in rv.json['addresses']
+    assert Address.JSON_MAILING in rv.json
 
 
 def test_get_business_delivery_addresses_by_type_missing_address(session, client, jwt):
@@ -147,7 +147,7 @@ def test_get_business_delivery_addresses_by_type(session, client, jwt):
                     )
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert Address.JSON_DELIVERY in rv.json['addresses']
+    assert Address.JSON_DELIVERY in rv.json
 
 
 def test_get_addresses_invalid_business(session, client, jwt):

@@ -42,9 +42,7 @@ def test_get_all_business_filings_only_one_in_ledger(session, client):
     rv = client.get(f'/api/v1/businesses/{identifier}/filings')
 
     assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json.get('filings')) == 1
-    assert rv.json.get('filings')[0]['filing']['annualReport'] == ar['filing']['annualReport']
-    assert rv.json.get('filings')[0]['filing']['business'] == ar['filing']['business']
+    assert len(rv.json.get('filings')) == 0  # The endpoint will return only completed filings
 
 
 def test_get_all_business_filings_multi_in_ledger(session, client):
@@ -67,7 +65,7 @@ def test_get_all_business_filings_multi_in_ledger(session, client):
     rv = client.get(f'/api/v1/businesses/{identifier}/filings')
 
     assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json.get('filings')) == 3
+    assert len(rv.json.get('filings')) == 0
 
 
 def test_get_one_business_filing_by_id(session, client):

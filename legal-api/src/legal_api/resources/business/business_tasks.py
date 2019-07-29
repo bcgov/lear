@@ -54,7 +54,7 @@ class TaskListResource(Resource):
         pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
                                                                      Filing.Status.PENDING.value])
         for filing in pending_filings:
-            task = {'task': {'filing': filing.json, 'order': order, 'enabled': True}}
+            task = {'task': filing.json, 'order': order, 'enabled': True}
             tasks.append(task)
             order += 1
 
@@ -84,9 +84,9 @@ class TaskListResource(Resource):
                         'ARFilingYear': todo_year,
                         'status': 'NEW'
                     }
-                },
-                'order': order,
-                'enabled': enabled
-            }
+                }
+            },
+            'order': order,
+            'enabled': enabled
         }
         return todo
