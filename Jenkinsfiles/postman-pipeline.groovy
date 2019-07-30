@@ -81,7 +81,7 @@ podTemplate(label: py3nodejs_label, name: py3nodejs_label, serviceAccount: 'jenk
                 } catch (Exception e) {
                     echo "One or more tests failed."
                     echo "${e.getMessage()}"
-                    currentBuild.result = "UNSTABLE"
+                    currentBuild.result = "FAILED"
                 }
 
             } // end dir
