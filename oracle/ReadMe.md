@@ -82,6 +82,9 @@ The steps for importing CDEV are:
 4. Clean up
     - remove the /ORCL/dumpfs folder (no longer needed)
         - *rm -r /ORCL/dumpfs*
+    - shutdown the database
+        - *$ORACLE_HOME/bin/sqlplus / as sysdba*
+        - *database shutdown*
     - create a copy of the /ORCL folder into /ORCL_base (used to refresh the data on each deploy from the pipeline)
         - *cp -a /ORCL/. /ORCL_base/*
     - in the deployment configuration unmount the pvc containing the import (no longer needed)

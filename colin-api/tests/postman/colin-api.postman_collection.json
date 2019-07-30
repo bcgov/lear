@@ -1332,7 +1332,7 @@
 									"        pm.expect(directors[i].title).to.exist",
 									"        var name = directors[i].officer.firstName",
 									"        if (current.includes(name)) {",
-									"            pm.expect(directors[i].cessationDate).to.eql(\"\")",
+									"            pm.expect(directors[i].cessationDate).to.be.null",
 									"            var index = current.indexOf(name)",
 									"            if (index > -1) {",
 									"              current.splice(index, 1)",
