@@ -20,7 +20,7 @@ import datetime
 from http import HTTPStatus
 
 from legal_api.services.authz import STAFF_ROLE
-from tests.unit.models import Director, factory_business
+from tests.unit.models import Address, Director, factory_business
 from tests.unit.services.utils import create_header
 
 
@@ -37,6 +37,8 @@ def test_get_business_directors(session, client, jwt):
         appointment_date=datetime.datetime(2017, 5, 17),
         cessation_date=None
     )
+    director_address = Address(city='Test Mailing City', address_type=Address.DELIVERY)
+    director.delivery_address = director_address
     business.directors.append(director)
     business.save()
 
@@ -47,6 +49,7 @@ def test_get_business_directors(session, client, jwt):
     # check
     assert rv.status_code == HTTPStatus.OK
     assert 'directors' in rv.json
+    assert rv.json['directors'][0]['deliveryAddress']['addressCity'] == 'Test Mailing City'
 
 
 def test_get_business_no_directors(session, client, jwt):
