@@ -218,6 +218,7 @@ import Directors from '@/components/AnnualReport/Directors.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapActions, mapGetters } from 'vuex'
+import { PAYMENT_REQUIRED } from 'http-status-codes'
 
 export default {
   name: 'AnnualReport',
@@ -441,7 +442,7 @@ export default {
           window.location.href = payURL
         }).catch(error => {
           console.error('submit() error =', error)
-          if (error.response && error.response.status === 402) {
+          if (error.response && error.response.status === PAYMENT_REQUIRED) {
             this.paymentErrorDialog = true
           } else {
             this.saveErrorDialog = true
@@ -463,7 +464,7 @@ export default {
           window.location.href = payURL
         }).catch(error => {
           console.error('submit() error =', error)
-          if (error.response && error.response.status === 402) {
+          if (error.response && error.response.status === PAYMENT_REQUIRED) {
             this.paymentErrorDialog = true
           } else {
             this.saveErrorDialog = true
