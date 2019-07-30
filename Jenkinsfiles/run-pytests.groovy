@@ -56,7 +56,7 @@ node {
                     openshift.withProject('gl2uos-tools') {
                         // start + wait for ora-pipline to finish
                         def ora = openshift.selector('bc', 'oradb-startup-pipeline')
-                        ora.startBuild('--wait=true', "-e=namespace=${NAMESPACE}", "-e=component=oracle", "-e=tag=${TAG_NAME}").logs('-f')
+                        ora.startBuild('--wait=true', "-e=namespace=${NAMESPACE}", "-e=component=oracle", "-e=tag=${TAG_NAME}", "-e=component_tag=${COMPONENT_TAG}").logs('-f')
                     }
                 } else if (DB_TYPE == 'PG') {
                     openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
