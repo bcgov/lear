@@ -31,13 +31,9 @@ def test_get_current(client):
     rv = client.get('/api/v1/businesses/CP0001965/office')
 
     assert 200 == rv.status_code
-    is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
-    if errors:
-        for err in errors:
-            print('\nERROR MESSAGE:')
-            print(err.message)
 
-    assert is_valid
+    assert rv.json['deliveryAddress']
+    assert rv.json['mailingAddress']
 
 
 @oracle_integration
