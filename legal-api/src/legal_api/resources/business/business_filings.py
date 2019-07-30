@@ -266,7 +266,7 @@ class ListFilingResource(Resource):
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')
 @API.route('/internal/filings', methods=['GET', 'OPTIONS'])
 @API.route('/internal/filings/<int:filing_id>', methods=['PATCH', 'OPTIONS'])
-class InternalRequests(Resource):
+class InternalFilings(Resource):
     """Internal Filings service for cron jobs."""
 
     @staticmethod
@@ -283,6 +283,7 @@ class InternalRequests(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @jwt.requires_auth
     def patch(filing_id):
         """Patch the colin_event_id for a filing."""
         json_input = request.get_json()
@@ -304,3 +305,60 @@ class InternalRequests(Resource):
             return None, None, {'message': err.error}, err.status_code
 
         return jsonify(filing.json), HTTPStatus.ACCEPTED
+
+
+@cors_preflight('GET, POST, PUT, PATCH, DELETE')
+@API.route('/internal/filings/colin_id', methods=['GET', 'OPTIONS'])
+@API.route('/internal/filings/colin_id/<int:colin_id>', methods=['GET', 'POST', 'OPTIONS'])
+class ColinLastUpdate(Resource):
+    """Endpoints for colin_last_update table."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    def get(colin_id=None):
+        """Get the last colin id updated in legal."""
+        if colin_id:
+            query = db.session.execute(
+                f"""
+                select colin_event_id
+                from filings
+                where colin_event_id={colin_id}
+                """
+            )
+            colin_id = query.fetchone()
+            if not colin_id:
+                return {'message': f'No colin ids found'}, HTTPStatus.NOT_FOUND
+
+            return {'colinId': colin_id[0]}, HTTPStatus.OK
+
+        else:
+            query = db.session.execute(
+                """
+                select last_event_id from colin_last_update
+                order by id desc 
+                """
+            )
+            last_event_id = query.fetchone()[0]
+            if not last_event_id:
+                return {'message': f'No colin ids found'}, HTTPStatus.NOT_FOUND
+
+            return {'maxId': last_event_id}, HTTPStatus.OK if request.method == 'GET' else HTTPStatus.CREATED
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_auth
+    def post(colin_id):
+        """Add a row to the colin_last_update table"""
+        try:
+            db.session.execute(
+                f"""
+                insert into colin_last_update (last_update, last_event_id)
+                values (current_timestamp, {colin_id})
+                """
+            )
+            db.session.commit()
+            return ColinLastUpdate.get()
+
+        except Exception as err:
+            current_app.logger.error(f'Error updating colin_last_update table in legal db: {err}')
+            return {f'message: failed to update colin_last_update.', 500}

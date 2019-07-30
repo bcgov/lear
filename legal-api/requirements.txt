@@ -30,7 +30,7 @@ marshmallow-sqlalchemy==0.17.0
 marshmallow==2.19.5
 psycopg2-binary==2.8.3
 pyasn1==0.4.5
-pyrsistent==0.15.3
+pyrsistent==0.15.4
 python-dateutil==2.8.0
 python-dotenv==0.10.3
 python-editor==1.0.4
