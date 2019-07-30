@@ -350,6 +350,9 @@ class ColinLastUpdate(Resource):
     def post(colin_id):
         """Add a row to the colin_last_update table"""
         try:
+            # check authorization
+            if not jwt.validate_roles(['colin']):
+                return jsonify({'message': 'You are not authorized to update this table'}), HTTPStatus.UNAUTHORIZED
             db.session.execute(
                 f"""
                 insert into colin_last_update (last_update, last_event_id)
