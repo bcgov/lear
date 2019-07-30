@@ -331,24 +331,23 @@ class ColinLastUpdate(Resource):
 
             return {'colinId': colin_id[0]}, HTTPStatus.OK
 
-        else:
-            query = db.session.execute(
-                """
-                select last_event_id from colin_last_update
-                order by id desc 
-                """
-            )
-            last_event_id = query.fetchone()[0]
-            if not last_event_id:
-                return {'message': f'No colin ids found'}, HTTPStatus.NOT_FOUND
+        query = db.session.execute(
+            """
+            select last_event_id from colin_last_update
+            order by id desc
+            """
+        )
+        last_event_id = query.fetchone()[0]
+        if not last_event_id:
+            return {'message': f'No colin ids found'}, HTTPStatus.NOT_FOUND
 
-            return {'maxId': last_event_id}, HTTPStatus.OK if request.method == 'GET' else HTTPStatus.CREATED
+        return {'maxId': last_event_id}, HTTPStatus.OK if request.method == 'GET' else HTTPStatus.CREATED
 
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
     def post(colin_id):
-        """Add a row to the colin_last_update table"""
+        """Add a row to the colin_last_update table."""
         try:
             # check authorization
             if not jwt.validate_roles(['colin']):
@@ -362,6 +361,6 @@ class ColinLastUpdate(Resource):
             db.session.commit()
             return ColinLastUpdate.get()
 
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except
             current_app.logger.error(f'Error updating colin_last_update table in legal db: {err}')
             return {f'message: failed to update colin_last_update.', 500}
