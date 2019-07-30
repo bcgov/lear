@@ -310,6 +310,8 @@ export default class RegisteredOfficeAddress extends Vue {
 
   /**
    * Loads the office addresses from an API call.
+   *
+   * @param legalEntityNumber the identifier for the legal entity whose office addresses are fetched.
    */
   private loadAddressesFromApi (legalEntityNumber: string): void {
     if (legalEntityNumber) {
