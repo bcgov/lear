@@ -48,7 +48,7 @@ node {
                         OLD_POD,
                         '--',
                         "bash -c ' \
-                        echo \"shutdown immediate;\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba \
+                        echo \"shutdown abort;\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba \
                         '"
                     ).actions[0].out
                     echo shutdownDb
@@ -66,7 +66,7 @@ node {
                             "bash -c '\
                             cp -a /ORCL_base/. /ORCL/'"
                         ).actions[0].out
-                        echo "3" + resetORCL
+                        echo resetORCL
                     } catch (Exception e) {
                         echo e.getMessage()
                     }

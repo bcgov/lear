@@ -304,7 +304,12 @@ node {
                     for (name in apis) {
                         echo "Running ${name} pm collection"
                         try {
-                            def url = "https://${name}-e2e.pathfinder.gov.bc.ca"
+                            def url = ""
+                            if (name == 'colin-api') {
+                                url = "http://${name}-${COMPONENT_TAG}.${NAMESPACE}-${TAG_NAME}.svc:8080"
+                            } else {
+                                url = "https://${name}-${COMPONENT_TAG}.pathfinder.gov.bc.ca"
+                            }
                             def pm_pipeline = openshift.selector('bc', 'postman-pipeline')
                             pm_pipeline.startBuild('--wait=true', "-e=component=${name}", "-e=url=${url}").logs('-f')
                         } catch (Exception e) {
