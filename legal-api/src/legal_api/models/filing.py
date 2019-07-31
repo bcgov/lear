@@ -41,9 +41,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         COMPLETED = 'COMPLETED'
         PENDING = 'PENDING'
         DRAFT = 'DRAFT'
+        ERROR = 'ERROR'
 
     FILINGS = {'annualReport': {'name': 'annualReport', 'title': 'Annual Report Filing', 'code': 'OTANN'},
                'changeOfAddress': {'name': 'changeOfAddress', 'title': 'Change of Address Filing', 'code': 'OTADD'},
+               'changeOfDirectors': {'name': 'changeOfDirectors', 'title': 'Change of Directors Filing',
+                                     'code': 'OTCDR'}
                }
 
     __tablename__ = 'filings'

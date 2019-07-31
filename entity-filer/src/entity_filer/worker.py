@@ -48,27 +48,35 @@ def get_filing_by_payment_id(payment_id: int) -> Filing:
     return Filing.get_filing_by_payment_token(str(payment_id))
 
 
-def process_filing(filing_submission, flask_app):
+def process_filing(payment_token, flask_app):
     """Render the filings contained in the submission."""
     if not flask_app:
         raise Exception
 
     with flask_app.app_context():
+        filing_submission = get_filing_by_payment_id(payment_token['paymentToken'].get('id'))
         legal_filings = filing_submission.legal_filings()
         # TODO: handle case where there are no legal_filings
 
         uow = versioning_manager.unit_of_work(db.session)
         transaction = uow.create_transaction(db.session)
 
-        business = Business.find_by_internal_id(filing_submission.business_id)
+        if payment_token['paymentToken'].get('statusCode') == 'TRANSACTION_FAILED':
+            filing_submission.status = Filing.Status.ERROR.value
+        else:
+            if not payment_token['paymentToken'].get('statusCode') == Filing.Status.COMPLETED.value:
+                logger.error('Unknown payment status given: %s', payment_token['paymentToken'].get('statusCode'))
+                raise Exception
 
-        for filing in legal_filings:
-            if filing.get('annualReport'):
-                annual_report.process(business, filing, filing_submission.filing_date)
-                db.session.add(business)
+            business = Business.find_by_internal_id(filing_submission.business_id)
 
-        filing_submission.transaction_id = transaction.id
-        filing_submission.status = Filing.Status.COMPLETED.value
+            for filing in legal_filings:
+                if filing.get('annualReport'):
+                    annual_report.process(business, filing, filing_submission.filing_date)
+                    db.session.add(business)
+
+            filing_submission.transaction_id = transaction.id
+            filing_submission.status = Filing.Status.COMPLETED.value
 
         db.session.add(filing_submission)
         db.session.commit()
@@ -84,5 +92,4 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
     logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
     payment_token = extract_payment_token(msg)
     logger.debug('Extracted payment token: %s', payment_token)
-    filing_submission = get_filing_by_payment_id(payment_token['paymentToken'].get('id'))
-    process_filing(filing_submission, FLASK_APP)
+    process_filing(payment_token, FLASK_APP)
