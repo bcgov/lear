@@ -19,7 +19,6 @@ app.setAttribute('data-app', 'true')
 document.body.append(app)
 
 describe('RegisteredOfficeAddress', () => {
-
   beforeAll(() => {
     // API call to get current addresses
     sinon.stub(axios, 'get').withArgs('CP0001191/addresses')
@@ -73,7 +72,6 @@ describe('RegisteredOfficeAddress', () => {
       'streetAddressAdditional': null
     }
   }
-
 
   // TODO: too tightly-coupled to the internal workings of the component. Wait for it to be refactored to support the
   // v-model and then re-write this using the prop. Also gets rid of code needed to mock the API call.
