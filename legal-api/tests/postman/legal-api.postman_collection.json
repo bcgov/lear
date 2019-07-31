@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "2b9f5445-d054-4608-b3e6-7612a0f3aded",
 		"name": "legal-api",
-		"description": "version=0.78 - This is a Legal API description",
+		"description": "version=0.79 - This is a Legal API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -516,6 +516,486 @@
 						}
 					},
 					"response": []
+				}
+			]
+		},
+		{
+			"name": "internal-requests-for-jobs",
+			"item": [
+				{
+					"name": "authenticate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c6720c75-f388-4f9a-a157-c4b4b560a99f",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Returns the access token\", () => {",
+									"    pm.expect(jsonData.access_token).to.exist",
+									"    pm.environment.set(\"job_token\", jsonData['access_token'])",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"username\":\"coops-updater-job\", \"password\":\"coops-updater-job\"}"
+						},
+						"url": {
+							"raw": "{{get_token_url}}",
+							"host": [
+								"{{get_token_url}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "authenticate",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"username\":\"coops-updater-job\", \"password\":\"coops-updater-job\"}"
+								},
+								"url": {
+									"raw": "{{get_token_url}}",
+									"host": [
+										"{{get_token_url}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "html",
+							"header": [
+								{
+									"key": "Server",
+									"value": "gunicorn/19.9.0"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 30 Jul 2019 18:39:41 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "text/html; charset=utf-8"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS"
+								},
+								{
+									"key": "Access-Control-Max-Age",
+									"value": "21600"
+								},
+								{
+									"key": "API",
+									"value": "auth_api/0.1.0a0.dev-462c33674f5ae76b1e8ef2f968e55f41f26d8f95"
+								}
+							],
+							"cookie": [],
+							"body": "{\"access_token\": \"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUbWdtZUk0MnVsdUZ0N3FQbmUtcTEzdDUwa0JDbjF3bHF6dHN0UGdUM1dFIn0.eyJqdGkiOiI4NmQzMGNhNi04ZmM2LTRiMDctYWFmNS1mYWEzMjg0ODk0NzciLCJleHAiOjE1NjQ1OTgzODEsIm5iZiI6MCwiaWF0IjoxNTY0NTExOTgxLCJpc3MiOiJodHRwczovL3Nzby1kZXYucGF0aGZpbmRlci5nb3YuYmMuY2EvYXV0aC9yZWFsbXMvZmNmMGtwcXIiLCJhdWQiOiJzYmMtYXV0aC13ZWIiLCJzdWIiOiI1MmRjZDNjZi1jMmNmLTQ1NWQtYjY4Zi04NTU4NTcyMjg1OTEiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJzYmMtYXV0aC13ZWIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiJkMjQ3YjhlZS1kMGI3LTQxZDgtYTA1Yy0yZGVlY2UyNmMxMTIiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly8xOTIuMTY4LjAuMTM6ODA4MC8iLCIxOTIuMTY4LjAuMTMiLCIqIiwiaHR0cDovLzE5Mi4xNjguMC4xMzo4MDgwIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJjb2xpbiIsInVtYV9hdXRob3JpemF0aW9uIiwiam9iIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwicHJlZmVycmVkX3VzZXJuYW1lIjoiY29vcHMtdXBkYXRlci1qb2IiLCJ1c2VybmFtZSI6ImNvb3BzLXVwZGF0ZXItam9iIn0.Bbr9ehKYRfUvFLhjtfR3QfzRx5ItZzTWjdtxevBh1kPLhhSIqH456LBLh96vUOCqA3X2MsWpqFQrKRHdhxe5mkisXFME3J3dQKXcXnGJSsam8yRfDtMyre1DYC6bo3tIujtwr7G6OMwotcz_hGqYKm_8FjsNIKOXcMv9S88NNKohj_o9F6RXgq9JnTTP2fZakpqYn2E4imLmOSIK7ft2ODfCyH74owd35NQBse4U0B7YAvlsFjtyFInzO5wGXCzVUnS99vm4Hv4JMTsQz5R4S_HlTVwM5jAJGn4ZXu_QK6tH8J78t-7MZQn39QEdGHtf-oc4RyRGLIPdqp7wsvwfJw\", \"expires_in\": 86400, \"refresh_expires_in\": 86400, \"refresh_token\": \"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUbWdtZUk0MnVsdUZ0N3FQbmUtcTEzdDUwa0JDbjF3bHF6dHN0UGdUM1dFIn0.eyJqdGkiOiI2M2UwMGYwMi00MGNjLTQzOTUtYTJlMS00MjliOTViMDQ5ODMiLCJleHAiOjE1NjQ1OTgzODEsIm5iZiI6MCwiaWF0IjoxNTY0NTExOTgxLCJpc3MiOiJodHRwczovL3Nzby1kZXYucGF0aGZpbmRlci5nb3YuYmMuY2EvYXV0aC9yZWFsbXMvZmNmMGtwcXIiLCJhdWQiOiJzYmMtYXV0aC13ZWIiLCJzdWIiOiI1MmRjZDNjZi1jMmNmLTQ1NWQtYjY4Zi04NTU4NTcyMjg1OTEiLCJ0eXAiOiJSZWZyZXNoIiwiYXpwIjoic2JjLWF1dGgtd2ViIiwiYXV0aF90aW1lIjowLCJzZXNzaW9uX3N0YXRlIjoiZDI0N2I4ZWUtZDBiNy00MWQ4LWEwNWMtMmRlZWNlMjZjMTEyIiwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImNvbGluIiwidW1hX2F1dGhvcml6YXRpb24iLCJqb2IiXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19fQ.HYmcM0cM2kVtB81mvqjVe5A3wtDW8ERidoC0M-vkSNVTscb6GuqEvaw_0w2jXZJccAhXlmKdKIb_YLWrSAg_hYJz04rj-Vw3r7TuE_I_tpAMbycsSBEb9XREGV9XNTzYk1SNAGQGsQrCDXOZWqKaAR8_QkISLRlnHmwyLXM-FrgJk8Msh37z4nnmF5dr68d5mavx6AfDJdlxx-c6A7pUaKVaQhPnzSdy80Hdew8zLUUS1oWLCMsUosDNBosv0nnfpDEaScSAxrqimIhjVRWOGZDEa3b9qkXf1pgPDU6We_n17aA77ytgepbMJNqqOLPZkZNEF9gQIJ7l0dPQGCE_vw\", \"token_type\": \"bearer\", \"not-before-policy\": 1562910731, \"session_state\": \"d247b8ee-d0b7-41d8-a05c-2deece26c112\", \"registries-trace-id\": \"f2dfaa910187eccb:f42fb400f9f894ac:f2dfaa910187eccb:1\"}"
+						}
+					]
+				},
+				{
+					"name": "POST last updated colin id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "88b30149-92d0-4759-b1c6-bf40d8f0c731",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the max id set by the call.\", () => {",
+									"    pm.expect(jsonData.maxId).to.exist",
+									"    pm.expect(jsonData.maxId).to.eql(pm.environment.get(\"colin_id\"))",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "8459f2a2-3bec-423f-9f65-57c5c6ca8f1a",
+								"exec": [
+									"pm.environment.set(\"colin_id\", 103251025)"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/internal/filings/colin_id/{{colin_id}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"internal",
+								"filings",
+								"colin_id",
+								"{{colin_id}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "POST last updated colin id",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/internal/filings/colin_id/{{colin_id}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"internal",
+										"filings",
+										"colin_id",
+										"{{colin_id}}"
+									]
+								}
+							},
+							"status": "CREATED",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, HEAD, GET, OPTIONS"
+								},
+								{
+									"key": "Access-Control-Max-Age",
+									"value": "21600"
+								},
+								{
+									"key": "API",
+									"value": "legal_api/0.1.0a0.dev"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/0.15.5 Python/3.7.4"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 30 Jul 2019 18:58:54 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"maxId\": 103251025\n}"
+						}
+					]
+				},
+				{
+					"name": "POST unauthorized",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "88b30149-92d0-4759-b1c6-bf40d8f0c731",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the max id set by the call.\", () => {",
+									"    pm.expect(jsonData.message).to.exist",
+									"    pm.expect(jsonData.message).to.contain(\"not authorized\")",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "8459f2a2-3bec-423f-9f65-57c5c6ca8f1a",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/internal/filings/colin_id/{{colin_id}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"internal",
+								"filings",
+								"colin_id",
+								"{{colin_id}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "POST last updated colin id",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/internal/filings/colin_id/{{colin_id}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"internal",
+										"filings",
+										"colin_id",
+										"{{colin_id}}"
+									]
+								}
+							},
+							"status": "CREATED",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, HEAD, GET, OPTIONS"
+								},
+								{
+									"key": "Access-Control-Max-Age",
+									"value": "21600"
+								},
+								{
+									"key": "API",
+									"value": "legal_api/0.1.0a0.dev"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/0.15.5 Python/3.7.4"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 30 Jul 2019 18:58:54 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"maxId\": 103251025\n}"
+						}
+					]
+				},
+				{
+					"name": "GET last updated colin id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "bc74898f-ff77-4474-a64d-8feb6bada074",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the max id set by the call.\", () => {",
+									"    pm.expect(jsonData.maxId).to.exist",
+									"    pm.expect(jsonData.maxId).to.eql(pm.environment.get(\"colin_id\"))",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/internal/filings/colin_id",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"internal",
+								"filings",
+								"colin_id"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "GET last updated colin id",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/internal/filings/colin_id",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"internal",
+										"filings",
+										"colin_id"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "HEAD, GET, OPTIONS"
+								},
+								{
+									"key": "Access-Control-Max-Age",
+									"value": "21600"
+								},
+								{
+									"key": "API",
+									"value": "legal_api/0.1.0a0.dev"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/0.15.5 Python/3.7.4"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 30 Jul 2019 18:58:58 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"maxId\": 103251025\n}"
+						}
+					]
 				}
 			]
 		},
