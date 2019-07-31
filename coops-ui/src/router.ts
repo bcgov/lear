@@ -61,18 +61,6 @@ Vue.mixin({
   }
 })
 
-/*
-window.addEventListener('message', function (e) {
-  if (e.origin === authURL) { // assumes authURL does not have slash if referrer URL does not have slash
-    const data = JSON.parse(e.data)
-    sessionStorage.setItem('KEYCLOAK_TOKEN', data['access_token'])
-    sessionStorage.setItem('KEYCLOAK_REFRESH_TOKEN', data['refresh_token'])
-    sessionStorage.setItem('REGISTRIES_TRACE_ID', data['registries_trace_id'])
-    sessionStorage.setItem('REDIRECTED', 'false')
-  }
-})
-*/
-
 let router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
