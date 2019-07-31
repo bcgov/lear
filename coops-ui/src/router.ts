@@ -61,6 +61,7 @@ Vue.mixin({
   }
 })
 
+/*
 window.addEventListener('message', function (e) {
   if (e.origin === authURL) { // assumes authURL does not have slash if referrer URL does not have slash
     const data = JSON.parse(e.data)
@@ -70,6 +71,7 @@ window.addEventListener('message', function (e) {
     sessionStorage.setItem('REDIRECTED', 'false')
   }
 })
+*/
 
 let router = new VueRouter({
   mode: 'history',
