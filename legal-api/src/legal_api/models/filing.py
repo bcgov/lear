@@ -296,8 +296,10 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     filing = target
     # changes are part of the class and are not externalized
     if filing.payment_token and filing.filing_json:
-        if filing.payment_completion_date:
+        if filing.payment_completion_date and filing.transaction_id:
             filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
+        elif filing.payment_completion_date:
+            filing._status = Filing.Status.ERROR.value  # pylint: disable=protected-access
         else:
             filing._status = Filing.Status.PENDING.value  # pylint: disable=protected-access
     else:

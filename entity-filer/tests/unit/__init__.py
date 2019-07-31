@@ -26,10 +26,92 @@ AR_FILING = {
             'cacheId': 1,
             'foundingDate': '2007-04-08',
             'identifier': 'CP1234567',
+            'last_agm_date': '2017-04-08',
+            'legalName': 'legal name - CP1234567'
+        },
+        'annualReport': {
+            'annualGeneralMeetingDate': '2018-04-08',
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get'
+        }
+    }
+}
+
+COA_FILING = {
+    'filing': {
+        'header': {
+            'name': 'changeOfAddress',
+            'date': '2019-07-30'
+        },
+        'business': {
+            'cacheId': 1,
+            'foundingDate': '2007-04-08',
+            'identifier': 'CP1234567',
+            'last_agm_date': '2018-04-08',
+            'legalName': 'legal name - CP1234567'
+        },
+        'changeOfAddress': {
+            'deliveryAddress': {
+                'streetAddress': 'test lane',
+                'streetAddressAdditional': 'test line 1',
+                'addressCity': 'testcity',
+                'addressCountry': 'CA',
+                'addressRegion': 'BC',
+                'postalCode': 'T3S T3R',
+                'deliveryInstructions': 'Test address delivery'
+            },
+            'mailingAddress': {
+                'streetAddress': 'test lane',
+                'streetAddressAdditional': 'test line 1',
+                'addressCity': 'testcity',
+                'addressCountry': 'CA',
+                'addressRegion': 'BC',
+                'postalCode': 'T3S T3R',
+                'deliveryInstructions': 'Test address mailing'
+            },
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get'
+        }
+    }
+}
+
+COMBINED_FILING = {
+    'filing': {
+        'header': {
+            'name': 'changeOfAddress',
+            'date': '2019-07-30'
+        },
+        'business': {
+            'cacheId': 1,
+            'foundingDate': '2007-04-08',
+            'identifier': 'CP1234567',
+            'last_agm_date': '2018-04-08',
             'legalName': 'legal name - CP1234567'
         },
         'annualReport': {
             'annualGeneralMeetingDate': '2019-04-08',
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get'
+        },
+        'changeOfAddress': {
+            'deliveryAddress': {
+                'streetAddress': 'test lane',
+                'streetAddressAdditional': 'test line 1',
+                'addressCity': 'testcity',
+                'addressCountry': 'CA',
+                'addressRegion': 'BC',
+                'postalCode': 'T3S T3R',
+                'deliveryInstructions': 'Test address delivery'
+            },
+            'mailingAddress': {
+                'streetAddress': 'test lane',
+                'streetAddressAdditional': 'test line 1',
+                'addressCity': 'testcity',
+                'addressCountry': 'CA',
+                'addressRegion': 'BC',
+                'postalCode': 'T3S T3R',
+                'deliveryInstructions': 'Test address mailing'
+            },
             'certifiedBy': 'full name',
             'email': 'no_one@never.get'
         }
