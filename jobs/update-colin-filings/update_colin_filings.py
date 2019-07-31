@@ -118,6 +118,15 @@ def run():
 
     with application.app_context():
         try:
+            # get updater-job token
+            # creds = {'username': application.config['USERNAME'], 'password': application.config['PASSWORD']}
+            # auth = requests.post(application.config['AUTH_URL'], json=creds, headers={
+            #     'Content-Type': 'application/json'})
+            # if auth.status_code != 200:
+            #     application.logger.error(f'legal-updater failed to authenticate {auth.json()} {auth.status_code}')
+            #     raise Exception
+            # token = dict(auth.json())['access_token']
+
             # filing_params = check_completed_filings()
             # for params in filing_params:
             filings = get_filings(app=application)

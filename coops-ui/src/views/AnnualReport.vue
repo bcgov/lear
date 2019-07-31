@@ -150,7 +150,7 @@
                   {{ ARFilingYear }} AGM.</p>
               </header>
               <!-- <v-card flat id="AR-step-3-container"> -->
-                <Directors @directorsChange="directorsChangeEventHandler" ref="directorsList"/>
+                <Directors @directorsChange="directorsChange" ref="directorsList" :asOfDate="agmDate" />
               <!-- </v-card> -->
             </section>
 
@@ -269,7 +269,6 @@ export default {
       filingId: null,
       showLoading: false,
       loadingMessage: 'Loading...', // initial generic message
-      directorsChange: false,
       filingData: [],
       resumeErrorDialog: false,
       saveErrorDialog: false,
@@ -402,8 +401,14 @@ export default {
       this.setValidateFlag()
     },
 
-    directorsChangeEventHandler (val) {
-      this.directorsChange = val
+    directorsChange (val) {
+      // when directors change, update filing data
+      console.log('AnnualReport, directorsChange =', val)
+      if (val) {
+        this.toggleFiling('add', 'OTCDR')
+      } else {
+        this.toggleFiling('remove', 'OTCDR')
+      }
     },
 
     submit () {
@@ -573,16 +578,6 @@ export default {
 
     agmDateValid (val) {
       this.setValidateFlag()
-    },
-
-    directorsChange: function (val) {
-      // when directors change, update filing data
-      console.log('AnnualReport, directorsChange =', val)
-      if (val) {
-        this.toggleFiling('add', 'OTCDR')
-      } else {
-        this.toggleFiling('remove', 'OTCDR')
-      }
     },
 
     directorFormValid (val) {

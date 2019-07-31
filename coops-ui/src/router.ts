@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import AnnualReport from '@/views/AnnualReport.vue'
+import StandaloneDirectorsFiling from '@/views/StandaloneDirectorsFiling.vue'
 import Dashboard from '@/views/Dashboard.vue'
 import axios from '@/axios-auth'
 
@@ -61,16 +62,6 @@ Vue.mixin({
   }
 })
 
-window.addEventListener('message', function (e) {
-  if (e.origin === authURL) { // assumes authURL does not have slash if referrer URL does not have slash
-    const data = JSON.parse(e.data)
-    sessionStorage.setItem('KEYCLOAK_TOKEN', data['access_token'])
-    sessionStorage.setItem('KEYCLOAK_REFRESH_TOKEN', data['refresh_token'])
-    sessionStorage.setItem('REGISTRIES_TRACE_ID', data['registries_trace_id'])
-    sessionStorage.setItem('REDIRECTED', 'false')
-  }
-})
-
 let router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
@@ -91,6 +82,14 @@ let router = new VueRouter({
       path: '/annual-report',
       name: 'annual-report',
       component: AnnualReport,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/standalone-directors',
+      name: 'standalone-directors',
+      component: StandaloneDirectorsFiling,
       meta: {
         requiresAuth: true
       }

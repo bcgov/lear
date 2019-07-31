@@ -84,10 +84,11 @@
                         "status": {
                             "type": "string",
                             "title": "The status of this filing.",
-                            "examples": [
+                            "enum": [
                                 "DRAFT",
                                 "PENDING",
-                                "COMPLETED"
+                                "COMPLETED",
+                                "ERROR"
                             ]
                       }
                     }

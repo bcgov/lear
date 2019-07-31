@@ -10,6 +10,11 @@ import Directors from '@/components/AnnualReport/Directors.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+// Boilerplate to prevent the complaint "[Vuetify] Unable to locate target [data-app]"
+const app: HTMLDivElement = document.createElement('div')
+app.setAttribute('data-app', 'true')
+document.body.append(app)
+
 describe('Directors.vue', () => {
   let vm
 
@@ -25,7 +30,7 @@ describe('Directors.vue', () => {
     store.state.corpNum = 'CP0001191'
 
     // GET directors
-    sinon.stub(axios, 'get').withArgs('CP0001191/directors')
+    sinon.stub(axios, 'get').withArgs('CP0001191/directors?date=2019-04-01')
       .returns(new Promise((resolve) => resolve({
         data:
           {
@@ -71,6 +76,9 @@ describe('Directors.vue', () => {
     const constructor = Vue.extend(Directors)
     const instance = new constructor({ store: store })
     vm = instance.$mount()
+
+    // set as-of date
+    vm.asOfDate = '2019-04-01'
 
     // call getDirectors() since it won't be triggered from parent component
     vm.getDirectors()
