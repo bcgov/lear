@@ -40,5 +40,5 @@ requests==2.22.0
 rsa==4.0
 sentry-sdk==0.10.2
 six==1.12.0
-urllib3==1.25.3
+urllib3<1.25
 git+https://github.com/bcgov/lear.git#egg=registry_schemas&subdirectory=schemas
