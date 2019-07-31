@@ -1,11 +1,12 @@
 <template>
   <div>
+    <!-- TODO - get in line with more up-to-date alerting in AR -->
     <v-dialog  v-model="dialog" width="50rem">
       <v-card>
         <v-card-title>Error</v-card-title>
 
         <v-card-text>
-          An error occured during processing. Please try later
+          An error occurred during processing. Please try later.
         </v-card-text>
 
         <v-divider></v-divider>
@@ -51,7 +52,7 @@
               <header>
                 <h2 id="AR-step-3-header">xxx</h2>
               </header>
-                <Directors @directorsChange="directorsChangeEventHandler" ref="directorsList" :asOfDate="currentDate" />
+                <Directors @directorsChange="directorsChange" ref="directorsList" :asOfDate="currentDate" />
             </section>
           </div>
         </article>
@@ -89,7 +90,7 @@ import axios from '@/axios-auth'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
-import { mapState, mapActions, mapGetters } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 
 export default {
   name: 'StandaloneDirectorsFiling',
@@ -104,7 +105,6 @@ export default {
     return {
       showLoading: false,
       loadingMsg: 'Redirecting to PayBC to Process Your Payment',
-      directorsChange: false,
       filingData: [],
       dialog: false,
       lastFilingDate: 'something' // TODO
@@ -132,8 +132,14 @@ export default {
   methods: {
     ...mapActions(['setDirectorFormValid', 'setValidated']),
 
-    directorsChangeEventHandler (val) {
-      this.directorsChange = val
+    directorsChange (val) {
+      // when directors change, update filing data
+      console.log('Standalone Directors, directorsChange =', val)
+      if (val) {
+        this.toggleFiling('add', 'OTCDR')
+      } else {
+        this.toggleFiling('remove', 'OTCDR')
+      }
     },
 
     submit () {
@@ -178,14 +184,14 @@ export default {
       }
 
       axios.post(this.corpNum + '/filings', filingData, config).then(res => {
-        let payRequestId:String = res.data.filing.header.paymentToken
-        payRequestId = '189'
-        let returnURL = window.location.origin + '/standalone-directors?pay_id=' + payRequestId
+        const payRequestId:string = res.data.filing.header.paymentToken
+
+        const returnURL:string = window.location.origin + '/standalone-directors?pay_id=' + payRequestId
         let authStub:string = this.authURL
         if (!(authStub.endsWith('/'))) {
           authStub = authStub + '/'
         }
-        let payURL = authStub + 'makepayment/' + payRequestId + '/' + encodeURIComponent(returnURL)
+        const payURL:string = authStub + 'makepayment/' + payRequestId + '/' + encodeURIComponent(returnURL)
         window.location.href = payURL
       }).catch((error) => {
         // TODO : To Decide how and where to display the error message from API
@@ -227,16 +233,6 @@ export default {
   },
 
   watch: {
-
-    directorsChange: function (val) {
-      // when directors change, update filing data
-      console.log('Standalone Directors, directorsChange =', val)
-      if (val) {
-        this.toggleFiling('add', 'OTCDR')
-      } else {
-        this.toggleFiling('remove', 'OTCDR')
-      }
-    },
 
     directorFormValid (val) {
       this.setValidateFlag()
