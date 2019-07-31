@@ -130,7 +130,7 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setDirectorFormValid']),
+    ...mapActions(['setDirectorFormValid', 'setValidated']),
 
     directorsChangeEventHandler (val) {
       this.directorsChange = val
@@ -218,6 +218,11 @@ export default {
     navigateToDashboard () {
       this.dialog = false
       this.$router.push('/')
+    },
+
+    setValidateFlag () {
+      // compute the AR page's valid state
+      this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid)
     }
   },
 

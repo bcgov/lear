@@ -75,19 +75,20 @@
                       full-width
                       min-width="18rem">
                       <template v-slot:activator="{ on }">
-                        <v-text-field class="item"
+                        <v-text-field box class="item" label="Appointment / Election Date"
                           id="new-director__appointment-date"
                           v-model="director.appointmentDate"
-                          label="Apointment / Election Date"
                           hint="YYYY/MM/DD"
                           append-icon="event"
                           v-on="on"
-                          box>
+                          :rules="directorAppointmentDateRules"
+                        >
                         </v-text-field>
                       </template>
                       <v-date-picker
                         id="new-director__appointment-date__datepicker"
                         v-model="director.appointmentDate"
+                        :max="today"
                         no-title>
                       </v-date-picker>
                     </v-menu>
@@ -100,19 +101,21 @@
                       full-width
                       min-width="18rem">
                       <template v-slot:activator="{ on }">
-                        <v-text-field class="item"
+                        <v-text-field class="item" ref="newDirectorCessationDate"
                           id="new-director__cessation-date"
                           v-model="director.cessationDate"
                           label="Cessation Date"
                           hint="YYYY/MM/DD"
                           append-icon="event"
                           v-on="on"
+                          :rules="directorCessationDateRules"
                           box>
                         </v-text-field>
                       </template>
                       <v-date-picker
                         id="new-director__cessation-date__datepicker"
                         v-model="director.cessationDate"
+                        :max="today"
                         no-title>
                       </v-date-picker>
                     </v-menu>
@@ -133,7 +136,7 @@
       <ul class="list director-list">
         <li class="container"
           :id="'director-' + director.id"
-          v-bind:class="{ 'remove' : !director.isDirectorActive }"
+          v-bind:class="{ 'remove' : !director.isDirectorActive  || !director.isDirectorActionable}"
           v-for="(director, index) in orderBy(directors, 'id', -1)"
           v-bind:key="index">
           <div class="meta-container">
@@ -143,13 +146,20 @@
               <span>{{director.officer.lastName}}</span>
               <div class="director-status">
                 <v-scale-transition>
-                  <v-chip small label disabled color="blue" text-color="white" v-show="director.isNew">
+                  <v-chip small label disabled color="blue" text-color="white"
+                          v-show="director.isNew && !director.cessationDate">
                     New
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
-                  <v-chip small label disabled v-show="!director.isDirectorActive">
+                  <v-chip small label disabled v-show="!director.isDirectorActive || !director.isDirectorActionable">
                     Ceased
+                  </v-chip>
+                </v-scale-transition>
+                <v-scale-transition>
+                  <v-chip small label disabled color="blue lighten-2" text-color="white"
+                          v-show="director.isNew && director.cessationDate">
+                    Appointed & Ceased
                   </v-chip>
                 </v-scale-transition>
               </div>
@@ -211,28 +221,43 @@
                             </v-btn>
                           </template>
                           <v-list class="actions__more_actions">
-                            <v-list-tile
-                              v-for="(item, index) in activeDirectorMenuList"
-                              :key="index"
-                            >
-                              <v-list-tile-title>{{ item }}</v-list-tile-title>
+                            <v-list-tile @click="cessationDateTemp = asOfDate; activeIndexCustomCease = index;">
+                              <v-list-tile-title>Set custom cessation date</v-list-tile-title>
+                            </v-list-tile>
+                            <v-list-tile @click="editDirectorAddress(index)">
+                              <v-list-tile-title>Change address</v-list-tile-title>
+                            </v-list-tile>
+                            <v-list-tile @click="editDirectorName(index)">
+                              <v-list-tile-title>Change of legal name</v-list-tile-title>
                             </v-list-tile>
                           </v-list>
                         </v-menu>
                       </span>
                     </span>
                   </div>
+
+                  <!-- standalone Cease date picker -->
+                  <v-date-picker
+                    class="standalone__cessation-date__datepicker"
+                    v-model="cessationDateTemp"
+                    v-show="activeIndexCustomCease == index"
+                    no-title
+                    :min="director.appointmentDate"
+                    :max="today"
+                  >
+                    <v-btn text color="primary" @click="activeIndexCustomCease = null">Cancel</v-btn>
+                    <v-btn text color="primary" @click="ceaseDirector(director)">OK</v-btn>
+                  </v-date-picker>
+
                 </div>
               </v-expand-transition>
 
               <!-- EDIT director form -->
-              <!-- note - this is only used to edit a NEW director; editing existing directors is not supported in the
-                  current release -->
               <v-expand-transition>
                 <v-form ref="editDirectorForm"
                   v-show="activeIndex === index"
                   v-model="directorFormValid" lazy-validation>
-                  <div class="form__row three-column">
+                  <div class="form__row three-column" v-show="editFormShowHide.showName">
                     <v-text-field box label="First Name" class="item"
                       v-model="director.officer.firstName"
                       :rules="directorFirstNameRules"
@@ -248,12 +273,13 @@
                   </div>
 
                   <BaseAddress ref="baseAddressEdit"
+                    v-show="editFormShowHide.showAddress"
                     v-bind:address="director.deliveryAddress"
                     v-bind:editing="true"
                     @update:address="baseAddressWatcher"
                   />
 
-                  <div class="form__row three-column edit-director__dates">
+                  <div class="form__row three-column edit-director__dates" v-show="editFormShowHide.showDates">
                     <v-menu
                       :nudge-right="40"
                       lazy
@@ -262,19 +288,21 @@
                       full-width
                       min-width="18rem">
                       <template v-slot:activator="{ on }">
-                        <v-text-field class="item"
-                          id="edit-director__appointment-date"
+                        <v-text-field
+                          class="item edit-director__appointment-date"
                           v-model="director.appointmentDate"
                           label="Apointment / Election Date"
                           hint="YYYY/MM/DD"
                           append-icon="event"
                           v-on="on"
+                          :rules="directorAppointmentDateRules"
                           box>
                         </v-text-field>
                       </template>
                       <v-date-picker
-                        id="edit-director__appointment-date__datepicker"
+                        class="edit-director__appointment-date__datepicker"
                         v-model="director.appointmentDate"
+                        :max="today"
                         no-title>
                       </v-date-picker>
                     </v-menu>
@@ -287,19 +315,20 @@
                       full-width
                       min-width="18rem">
                       <template v-slot:activator="{ on }">
-                        <v-text-field class="item"
-                          id="edit-director__cessation-date"
+                        <v-text-field class="item edit-director__cessation-date"
                           v-model="director.cessationDate"
                           label="Cessation Date"
                           hint="YYYY/MM/DD"
                           append-icon="event"
                           v-on="on"
+                          :rules="directorCessationDateRules"
                           box>
                         </v-text-field>
                       </template>
                       <v-date-picker
-                        id="edit-director__cessation-date__datepicker"
+                        class="edit-director__cessation-date__datepicker"
                         v-model="director.cessationDate"
+                        :max="today"
                         no-title>
                       </v-date-picker>
                     </v-menu>
@@ -354,15 +383,12 @@ export default {
       regionList: [
         'BC'
       ],
-      activeDirectorMenuList: [
-        'Set custom cessation date',
-        'Change address',
-        'Change of legal name'
-      ],
       showNewDirectorForm: false,
       showPopup: false,
-      activeDirectorToDelete: null,
       activeIndex: undefined,
+      activeIndexCustomCease: undefined,
+      activeDirectorToDelete: null,
+      cessationDateTemp: null,
       isEditingDirector: false,
       isDirectorActive: true,
       director: {
@@ -377,9 +403,15 @@ export default {
           addressCountry: ''
         },
         appointmentDate: this.asOfDate,
-        cessationDate: null
+        cessationDate: null,
+        cessationDateTemp: null
       },
       inProgressAddress: null,
+      editFormShowHide: {
+        showAddress: true,
+        showName: true,
+        showDates: true
+      },
       directorFormValid: true,
       directorFirstNameRules: [
         v => !!v || 'A first name is required'
@@ -401,9 +433,6 @@ export default {
       ],
       directorCountryRules: [
         v => !!v || 'A country is required'
-      ],
-      newDirectorAppointmentDateRules: [
-        v => !!v || 'Appointment Date is required'
       ]
     }
   },
@@ -411,11 +440,82 @@ export default {
   computed: {
     ...mapState(['corpNum', 'agmDateValid']),
 
+    // today's date as YYYY-MM-DD, current timezone
+    today () {
+      let today = new Date()
+      today = '' +
+        today.getFullYear() + '-' +
+        (today.getMonth() * 1 + 1).toString().padStart(2, '0') + '-' +
+        today.getDate().toString().padStart(2, '0')
+      return today
+    },
+
     directorsChange () {
       // One or more actions taken on directors (add, cease) require a single fee, so check how many directors in the
       // list are marked as requiring a fee.
       return this.directors.filter(director => director.isFeeApplied).length > 0
+    },
+
+    directorAppointmentDateRules () {
+      console.log('got to directorAppointmentDateRules computed')
+      const rules = []
+      let cessationDate = null
+
+      rules.push(v => !!v || 'Appointment Date is required')
+
+      // set cessation date for comparison based on which form we're in
+      if (this.activeIndex !== undefined && this.activeIndex !== null) {
+        cessationDate = document
+          .getElementsByClassName('edit-director__cessation-date')[this.activeIndex]
+          .getElementsByTagName('input')[0].value
+      } else if (this.showNewDirectorForm) {
+        cessationDate = this.director.cessationDate
+      }
+
+      // appointment date must be before cessation date
+      const rule1 =
+        v => this.compareDates(v, cessationDate, '<') || 'Appointment Date must be before Cessation Date'
+
+      rules.push(rule1)
+
+      // appointment date must be in the past (or today)
+      const rule2 =
+        v => this.dateIsNotFuture(v) || 'Appointment Date cannot be in the future'
+
+      rules.push(rule2)
+
+      return rules
+    },
+
+    directorCessationDateRules () {
+      console.log('got to directorCessationDateRules computed')
+      const rules = []
+      let appointmentDate = null
+
+      // set appointment date for comparison based on which form we're in
+      if (this.activeIndex !== undefined && this.activeIndex !== null) {
+        appointmentDate = document
+          .getElementsByClassName('edit-director__appointment-date')[this.activeIndex]
+          .getElementsByTagName('input')[0].value
+      } else if (this.showNewDirectorForm) {
+        appointmentDate = this.director.appointmentDate
+      }
+
+      // cessation date must be after appointment date
+      const rule1 =
+        v => this.compareDates(v, appointmentDate, '>') || 'Cessation Date must be after Appointment Date'
+
+      rules.push(rule1)
+
+      // cessation date must be in the past (or today)
+      const rule2 =
+        v => this.dateIsNotFuture(v) || 'Cessation Date cannot be in the future'
+
+      rules.push(rule2)
+
+      return rules
     }
+
   },
 
   mounted () {
@@ -535,14 +635,46 @@ export default {
       director.isDirectorActive = !director.isDirectorActive
 
       // either set or undo cessation date
-      if (director.cessationDate == null) director.cessationDate = this.asOfDate
-      else director.cessationDate = null
+      if (director.cessationDate == null) {
+        director.cessationDate = this.cessationDateTemp ? this.cessationDateTemp : this.asOfDate
+      } else director.cessationDate = null
+
+      // close standalone cessation date picker and reset date
+      this.cessationDateTemp = null
+      this.activeIndexCustomCease = null
     },
 
     // Modify Existing Directors
     editDirector: function (index) {
       this.activeIndex = index
       this.cancelNewDirector()
+    },
+    editDirectorDates: function (index) {
+      this.editFormShowHide = {
+        showAddress: false,
+        showName: false,
+        showDates: true
+      }
+
+      this.editDirector(index)
+    },
+    editDirectorName: function (index) {
+      this.editFormShowHide = {
+        showAddress: false,
+        showName: true,
+        showDates: false
+      }
+
+      this.editDirector(index)
+    },
+    editDirectorAddress: function (index) {
+      this.editFormShowHide = {
+        showAddress: true,
+        showName: false,
+        showDates: false
+      }
+
+      this.editDirector(index)
     },
 
     saveEditDirector: function (index, id) {
@@ -566,6 +698,13 @@ export default {
 
     cancelEditDirector: function (index) {
       this.activeIndex = undefined
+
+      // reset form show/hide flags
+      this.editFormShowHide = {
+        showAddress: true,
+        showName: true,
+        showDates: true
+      }
     },
 
     baseAddressWatcher: function (val) {
@@ -581,6 +720,22 @@ export default {
     setAllDirectors (directors) {
       // load data from existing filing
       this.directors = directors
+    },
+
+    // util function to compare simple date strings YYYY-MM-DD
+    compareDates (date1, date2, operator) {
+      if (!date1 || !date2 || !operator) return true
+
+      // convert dates to numbers YYYYMMDD
+      date1 = date1.split('-').join('')
+      date2 = date2.split('-').join('')
+
+      return eval(date1 + operator + date2) // eslint-disable-line no-eval
+    },
+
+    // util function to check whether a date is in the future
+    dateIsNotFuture (thedate) {
+      return this.compareDates(thedate, this.today, '<=')
     }
   },
 
@@ -594,6 +749,7 @@ export default {
     directorFormValid (val) {
       this.setDirectorFormValid(val)
     },
+    // when as-of date changes (from parent component) refresh list of directors
     asOfDate (val) {
       this.getDirectors()
     }
@@ -728,6 +884,11 @@ export default {
     padding 0 5px
     color $gray6
 
+  .standalone__cessation-date__datepicker
+    margin-top 25px
+    right 0
+    position absolute
+    z-index 99
 </style>
 
 <style lang="stylus">
