@@ -83,10 +83,9 @@
 <script lang="ts">
 
 import Vue from 'vue'
-import { Component, Emit, Prop } from 'vue-property-decorator'
-
+import { Component, Emit, Prop, Watch } from 'vue-property-decorator'
 import axios from '@/axios-auth'
-
+import isEmpty from 'lodash.isempty'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
 @Component({
@@ -99,12 +98,22 @@ export default class RegisteredOfficeAddress extends Vue {
   /**
    * The identifier for the legal entity that is to have its addresses retrieved from the API.
    */
-  @Prop({ default: '' }) readonly legalEntityNumber: string
+  @Prop({ default: '' })
+  readonly legalEntityNumber: string
 
   /**
    * Indicates whether the change button should be disabled or not
    */
-  @Prop({ default: false }) readonly changeButtonDisabled: boolean
+  @Prop({ default: false })
+  readonly changeButtonDisabled: boolean
+
+  /**
+   * Addresses object from the parent page.
+   * If this is null then this is a new filing; otherwise these are the addresses from a draft filing.
+   * This will be emitted back to the parent page when the addresses are updated.
+   */
+  @Prop({ default: null })
+  readonly addresses: object
 
   // The two addresses that come from the API. These are used to reset the address.
   private deliveryAddressOriginal: object = {}
@@ -128,14 +137,6 @@ export default class RegisteredOfficeAddress extends Vue {
 
   // State of the form checkbox for determining whether or not the mailing address is the same as the delivery address.
   private inheritDeliveryAddress: boolean = true
-
-  // TODO: these should be properties - no coupling to internal state.
-  public getDeliveryAddress () { return this.deliveryAddress }
-  public getMailingAddress () { return this.mailingAddress }
-
-  // load data from existing filing
-  public setDeliveryAddress (address) { this.deliveryAddress = address }
-  public setMailingAddress (address) { this.mailingAddress = address }
 
   /**
    * Lifecycle callback to set up the component when it is mounted.
@@ -164,6 +165,23 @@ export default class RegisteredOfficeAddress extends Vue {
   @Emit('valid')
   private emitValid (): boolean {
     return this.formValid
+  }
+
+  /**
+   * Emits updated addresses object to the parent page.
+   */
+  @Emit('update:addresses')
+  private emitAddresses (): object {
+    return { deliveryAddress: this.deliveryAddress, mailingAddress: this.mailingAddress }
+  }
+
+  /**
+   * Called when addresses property changes (ie, when parent page has loaded a draft filing).
+   */
+  @Watch('addresses')
+  onAddressesChanged (): void {
+    this.deliveryAddress = isEmpty(this.addresses) ? {} : this.addresses['deliveryAddress']
+    this.mailingAddress = isEmpty(this.addresses) ? {} : this.addresses['mailingAddress']
   }
 
   /**
@@ -276,6 +294,7 @@ export default class RegisteredOfficeAddress extends Vue {
     }
 
     this.showAddressForm = false
+    this.emitAddresses()
     this.emitModified()
   }
 
@@ -285,6 +304,7 @@ export default class RegisteredOfficeAddress extends Vue {
   private resetAddress (): void {
     this.deliveryAddress = { ...this.deliveryAddressOriginal }
     this.mailingAddress = { ...this.mailingAddressOriginal }
+    this.emitAddresses()
     this.emitModified()
   }
 
@@ -299,24 +319,29 @@ export default class RegisteredOfficeAddress extends Vue {
       axios.get(url)
         .then(response => {
           if (response && response.data) {
-            if (response.data.deliveryAddress) {
-              this.deliveryAddressOriginal = { ...response.data.deliveryAddress }
-              this.deliveryAddress = { ...response.data.deliveryAddress }
+            const deliveryAddress = response.data.deliveryAddress
+            if (deliveryAddress) {
+              this.deliveryAddressOriginal = { ...deliveryAddress }
+              // If parent page loaded draft before this API call, don't overwrite draft delivery address.
+              // Otherwise this API call finished before parent page loaded draft, or parent page won't
+              // load draft (ie, this is a new filing) -> initialize delivery address.
+              if (isEmpty(this.deliveryAddress)) this.deliveryAddress = { ...deliveryAddress }
             } else {
-              console.log('loadAddressesFromApi() error - invalid Delivery Address')
-              console.log(response.data.deliveryAddress)
+              console.log('loadAddressesFromApi() error - invalid Delivery Address =', deliveryAddress)
             }
 
-            if (response.data.mailingAddress) {
-              this.mailingAddressOriginal = { ...response.data.mailingAddress }
-              this.mailingAddress = { ...response.data.mailingAddress }
+            const mailingAddress = response.data.mailingAddress
+            if (mailingAddress) {
+              this.mailingAddressOriginal = { ...mailingAddress }
+              // If parent page loaded draft before this API call, don't overwrite draft mailng address
+              // Otherwise this API call finished before parent page loaded draft, or parent page won't
+              // load draft (ie, this is a new filing) -> initialize mailing address.
+              if (isEmpty(this.mailingAddress)) this.mailingAddress = { ...mailingAddress }
             } else {
-              console.log('loadAddressesFromApi() error - invalid Mailing Address')
-              console.log(response.data.mailingAddress)
+              console.log('loadAddressesFromApi() error - invalid Mailing Address =', mailingAddress)
             }
           } else {
-            console.log('loadAddressesFromApi() error - invalid response data')
-            console.log(response)
+            console.log('loadAddressesFromApi() error - invalid response =', response)
           }
         })
         .catch(error => console.error('loadAddressesFromApi() error =', error))
