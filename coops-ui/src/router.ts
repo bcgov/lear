@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import AnnualReport from '@/views/AnnualReport.vue'
+import StandaloneDirectorsFiling from '@/views/StandaloneDirectorsFiling.vue'
 import Dashboard from '@/views/Dashboard.vue'
 import axios from '@/axios-auth'
 
@@ -81,6 +82,14 @@ let router = new VueRouter({
       path: '/annual-report',
       name: 'annual-report',
       component: AnnualReport,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/standalone-directors',
+      name: 'standalone-directors',
+      component: StandaloneDirectorsFiling,
       meta: {
         requiresAuth: true
       }

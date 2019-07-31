@@ -36,7 +36,7 @@
             <section>
               <header>
                 <h2>Office Addresses</h2>
-                <v-btn flat small disabled color="primary">
+                <v-btn flat small color="primary" @click.native.stop="goToStandaloneAddresses()">
                   <v-icon small>edit</v-icon>
                   <span>EDIT</span>
                 </v-btn>
@@ -49,7 +49,7 @@
             <section>
               <header>
                 <h2>Current Directors</h2>
-                <v-btn flat small disabled color="primary">
+                <v-btn flat small color="primary" @click.native.stop="goToStandaloneDirectors()">
                   <v-icon small>edit</v-icon>
                   <span>EDIT</span>
                 </v-btn>
@@ -94,6 +94,14 @@ export default {
     // TODO: load data for all subcomponents here
     // see axios.all()
     // in case of error, display popup
+  },
+  methods: {
+    goToStandaloneDirectors () {
+      this.$router.push('/standalone-directors')
+    },
+    goToStandaloneAddresses () {
+      this.$router.push('/standalone-addresses')
+    }
   }
 }
 </script>
