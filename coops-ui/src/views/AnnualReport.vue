@@ -153,6 +153,37 @@
                 <Directors @directorsChange="directorsChangeEventHandler" ref="directorsList"/>
               <!-- </v-card> -->
             </section>
+
+            <!--Certify -->
+            <section>
+              <header>
+                <h2 id="AR-step-4-header">4. Certify Correct</h2>
+                <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+              </header>
+              <v-card flat id="AR-step-4-container">
+                <div class="container">
+                  <div class="certifiedby-container">
+                      <label>
+                        <span>Legal Name</span>
+                      </label>
+                      <div class="value certifiedby">
+                          <v-text-field
+                            id="certified-by-textfield"
+                            v-model="certifiedBy"
+                            label="Name of current director, officer, or lawyer of the association"
+                            box/>
+                      </div>
+                  </div>
+                  <v-checkbox v-model="certifyCheckbox" :label="checkBoxLabel"></v-checkbox>
+                  <p class="certify-clause">{{currentDate}}</p>
+                  <p class="certify-clause">
+                    Note: It is an offence to make a false or misleading statement in
+                    respect of a material fact in a record submitted to the Corporate Registry for filing.
+                    See section 200 of the Cooperatives Association Act.
+                  </p>
+                </div>
+              </v-card>
+            </section>
           </div>
           <div v-else>
            <!-- <ARComplete/> -->
@@ -242,7 +273,9 @@ export default {
       filingData: [],
       resumeErrorDialog: false,
       saveErrorDialog: false,
-      paymentErrorDialog: false
+      paymentErrorDialog: false,
+      certifyCheckbox: false,
+      certifiedBy: ''
     }
   },
 
@@ -252,6 +285,13 @@ export default {
       'entityName', 'entityIncNo', 'entityFoundingDate', 'currentARStatus',
       'addressesFormValid', 'directorFormValid', 'agmDateValid']),
 
+    isCertifyValid () {
+      return this.certifyCheckbox && this.certifiedBy.trim() !== ''
+    },
+    checkBoxLabel () {
+      return 'I, ' + this.certifiedBy +
+       ', certify that I have relevant knowledge of the association and that I am authorized to make this filing. '
+    },
     ...mapGetters(['isAnnualReportEditable', 'reportState'])
   },
 
@@ -389,7 +429,7 @@ export default {
       const annualReport = {
         annualReport: {
           annualGeneralMeetingDate: this.agmDate,
-          certifiedBy: 'Full Name',
+          certifiedBy: this.certifiedBy,
           email: 'no_one@never.get'
         }
       }
@@ -397,7 +437,7 @@ export default {
       if (this.isDataChanged('OTCDR')) {
         changeOfDirectors = {
           changeOfDirectors: {
-            certifiedBy: 'Full Name',
+            certifiedBy: this.certifiedBy,
             email: 'no_one@never.get',
             directors: this.$refs.directorsList.getAllDirectors()
           }
@@ -407,7 +447,7 @@ export default {
       if (this.isDataChanged('OTADD') && this.addresses) {
         changeOfAddress = {
           changeOfAddress: {
-            certifiedBy: 'Full Name',
+            certifiedBy: this.certifiedBy,
             email: 'no_one@never.get',
             deliveryAddress: this.addresses['deliveryAddress'],
             mailingAddress: this.addresses['mailingAddress']
@@ -501,7 +541,7 @@ export default {
 
     setValidateFlag () {
       // compute the AR page's valid state
-      this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid)
+      this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.isCertifyValid)
     }
   },
 
@@ -555,6 +595,10 @@ export default {
 
     filingData: function (val) {
       console.log('AnnualReport, filingData =', val)
+    },
+
+    isCertifyValid: function (val) {
+      this.setValidateFlag()
     }
   }
 }
@@ -585,7 +629,7 @@ h2
   font-size: 2rem;
   font-weight: 500;
 
-#AR-step-1-header, #AR-step-2-header, #AR-step-3-header
+#AR-step-1-header, #AR-step-2-header, #AR-step-3-header, #AR-step-4-header
   margin-bottom: 0.25rem;
   margin-top: 3rem;
   font-size: 1.125rem;
@@ -593,6 +637,13 @@ h2
 
 #AR-step-1-container, #AR-step-2-container, #AR-step-3-container
   margin-top: 1rem;
+
+ #AR-step-4-container
+  margin-top: 1rem;
+  padding-bottom: 0.5rem;
+  padding-top: 1rem;
+  line-height: 1.2rem;
+  font-size: 0.875rem;
 
 .title-container
   margin-bottom: 0.5rem;
@@ -620,4 +671,28 @@ h2
 
 .error-dialog-padding
   margin-left: 1rem;
+
+.certifiedby-container
+  display flex
+  flex-flow column nowrap
+  position relative
+
+  > label:first-child
+    font-weight 500
+
+@media (min-width 768px)
+  .certifiedby-container
+    flex-flow row nowrap
+
+    > label:first-child
+      flex 0 0 auto
+      padding-right: 2rem
+      width 12rem
+
+.value.certifiedby
+  min-width 35rem
+
+.certify-clause
+  font-size 0.85rem
+  padding-left 2rem
 </style>
