@@ -38,4 +38,3 @@ def process(business: Business, filing: Filing):
                               delivery_instructions=address.get('deliveryInstructions'),
                               address_type=Address.MAILING)
     business.mailing_address.append(mailing_address)
-    business.save()

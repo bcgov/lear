@@ -76,9 +76,11 @@ def process_filing(payment_token, flask_app):
                     change_of_address.process(business, filing)
 
             filing_submission.transaction_id = transaction.id
+            db.session.add(business)
 
         filing_submission.payment_completion_date = datetime.datetime.utcnow()
-        filing_submission.save()
+        db.session.add(filing_submission)
+        db.session.commit()
 
 
 FLASK_APP = Flask(__name__)

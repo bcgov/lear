@@ -24,4 +24,3 @@ def process(business: Business, filing: Filing, submission_date: datetime.dateti
         agm_date = datetime.date.fromisoformat(agm_date)
     business.last_agm_date = agm_date
     business.last_ar_date = submission_date
-    business.save()
