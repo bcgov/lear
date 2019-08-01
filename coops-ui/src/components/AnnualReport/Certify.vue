@@ -35,44 +35,44 @@
 </template>
 
 <script>
-import { mapState } from "vuex";
+import { mapState } from 'vuex'
 
 export default {
-  name: "Certify",
+  name: 'Certify',
 
-  data() {
+  data () {
     return {
       certifyCheckbox: false,
-      certifiedBy: ""
-    };
+      certifiedBy: ''
+    }
   },
 
   computed: {
     ...mapState(['currentDate']),
 
-    isCertifyValid() {
-      return this.certifyCheckbox && this.certifiedBy.trim() !== "";
+    isCertifyValid () {
+      return this.certifyCheckbox && this.certifiedBy.trim() !== ''
     },
 
-    displayCertifyName() {
-      return this.certifiedBy.trim() === ""
-        ? "[Legal Name]"
-        : this.certifiedBy.trim();
+    displayCertifyName () {
+      return this.certifiedBy.trim() === ''
+        ? '[Legal Name]'
+        : this.certifiedBy.trim()
     }
   },
 
-  methods: {    
+  methods: {
     getLegalName () {
-        return this.certifiedBy;
+      return this.certifiedBy
     }
   },
 
   watch: {
-    isCertifyValid: function(val) {       
-      this.$emit("certifyChange", val);
+    isCertifyValid: function (val) {
+      this.$emit('certifyChange', val)
     }
   }
-};
+}
 </script>
 
 <style lang="stylus" scoped>
@@ -96,10 +96,10 @@ export default {
 .value.certifiedby
   min-width 35rem
 
-.certify-clause   
+.certify-clause
   padding-left 2rem
   color gray
- 
+
 .certify-stmt
   display:inline
 
@@ -110,4 +110,3 @@ export default {
   line-height: 1.2rem;
   font-size: 0.875rem;
 </style>
- 
