@@ -172,7 +172,7 @@ node {
             openshift.withProject() {
                 def test_pipeline = openshift.selector('bc', 'pytest-pipeline')
                 try {
-                    test_pipeline.startBuild('--wait=true', "-e=component=${COMPONENT_NAME}", "-e=tag=${TAG_NAME}", "-e=namespace=${NAMESPACE}", "-e=db_type=PG").logs('-F')
+                    test_pipeline.startBuild('--wait=true', "-e=component=${COMPONENT_NAME}", "-e=component_tag=${TAG_NAME}", "-e=tag=${TAG_NAME}", "-e=namespace=${NAMESPACE}", "-e=db_type=PG").logs('-F')
                     echo "All tests passed"
                 } catch (Exception e) {
                     echo "Not all tests passed."
