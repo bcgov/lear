@@ -160,36 +160,7 @@
                 <h2 id="AR-step-4-header">4. Certify Correct</h2>
                 <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
               </header>
-              <v-card flat id="AR-step-4-container">
-                <div class="container">
-                  <div class="certifiedby-container">
-                      <label>
-                        <span>Legal Name</span>
-                      </label>
-                      <div class="value certifiedby">
-                          <v-text-field
-                            id="certified-by-textfield"
-                            v-model="certifiedBy"
-                            label="Name of current director, officer, or lawyer of the association"
-                            box/>
-                      </div>
-                  </div>
-                  <v-checkbox v-model="certifyCheckbox">
-                      <template slot="label">
-                          <div class="certify-stmt">
-                            I, <b>{{!displayCertifyName ? '[Legal Name]' : displayCertifyName}}</b>, certify that I have relevant knowledge of the association
-                            and that I am authorized to make this filing.
-                          </div>
-                      </template>
-                  </v-checkbox>
-                  <p class="certify-clause">{{currentDate}}</p>
-                  <p class="certify-clause">
-                    Note: It is an offence to make a false or misleading statement in
-                    respect of a material fact in a record submitted to the Corporate Registry for filing.
-                    See section 200 of the Cooperatives Association Act.
-                  </p>
-                </div>
-              </v-card>
+              <Certify @certifyChange="changeCertifyData"/>
             </section>
           </div>
           <div v-else>
@@ -252,6 +223,7 @@ import axios from '@/axios-auth'
 import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
+import Certify from '@/components/AnnualReport/Certify.vue'
 // import ARComplete from '@/components/AnnualReport/ARComplete.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
@@ -267,7 +239,8 @@ export default {
     Directors,
     // ARComplete,
     SbcFeeSummary,
-    Affix
+    Affix,
+    Certify
   },
 
   data () {
@@ -280,8 +253,7 @@ export default {
       resumeErrorDialog: false,
       saveErrorDialog: false,
       paymentErrorDialog: false,
-      certifyCheckbox: false,
-      certifiedBy: ''
+      certifyChange: false
     }
   },
 
@@ -291,16 +263,6 @@ export default {
       'entityName', 'entityIncNo', 'entityFoundingDate', 'currentARStatus',
       'addressesFormValid', 'directorFormValid', 'agmDateValid']),
 
-    isCertifyValid () {
-      return this.certifyCheckbox && this.certifiedBy.trim() !== ''
-    },
-    checkBoxLabel () {
-      return 'I, ' + this.certifiedBy +
-       ', certify that I have relevant knowledge of the association and that I am authorized to make this filing. '
-    },
-    displayCertifyName() {
-      return this.certifiedBy.trim()
-    },
     ...mapGetters(['isAnnualReportEditable', 'reportState'])
   },
 
@@ -419,6 +381,10 @@ export default {
       } else {
         this.toggleFiling('remove', 'OTCDR')
       }
+    },
+
+    changeCertifyData (val) {
+      this.certifyChange = val
     },
 
     submit () {
@@ -556,7 +522,7 @@ export default {
 
     setValidateFlag () {
       // compute the AR page's valid state
-      this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.isCertifyValid)
+      this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.certifyChange)
     }
   },
 
@@ -602,7 +568,7 @@ export default {
       console.log('AnnualReport, filingData =', val)
     },
 
-    isCertifyValid: function (val) {
+    certifyChange: function (val) {
       this.setValidateFlag()
     }
   }
@@ -643,13 +609,6 @@ h2
 #AR-step-1-container, #AR-step-2-container, #AR-step-3-container
   margin-top: 1rem;
 
- #AR-step-4-container
-  margin-top: 1rem;
-  padding-bottom: 0.5rem;
-  padding-top: 1rem;
-  line-height: 1.2rem;
-  font-size: 0.875rem;
-
 .title-container
   margin-bottom: 0.5rem;
 
@@ -676,30 +635,4 @@ h2
 
 .error-dialog-padding
   margin-left: 1rem;
-
-.certifiedby-container
-  display flex
-  flex-flow column nowrap
-  position relative
-
-  > label:first-child
-    font-weight 500
-
-@media (min-width 768px)
-  .certifiedby-container
-    flex-flow row nowrap
-
-    > label:first-child
-      flex 0 0 auto
-      padding-right: 2rem
-      width 12rem
-
-.value.certifiedby
-  min-width 35rem
-
-.certify-clause   
-  padding-left 2rem
-  
-.certify-stmt
-  display:inline
 </style>
