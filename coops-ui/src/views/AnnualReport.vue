@@ -45,7 +45,7 @@
         <v-card-actions>
           <v-btn color="primary" flat @click="navigateToDashboard">Exit without saving</v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="primary" flat @click="doFilePay">Retry</v-btn>
+          <v-btn color="primary" flat @click="onClickFilePay">Retry</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -163,15 +163,13 @@
           <v-btn id="ar-save-btn" large
             v-if="isAnnualReportEditable"
             :disabled="!validated"
-            @click="doSave"
-            v-show="false"><!-- TODO: show when ready -->
+            @click="onClickSave">
             Save
           </v-btn>
           <v-btn id="ar-save-resume-btn" large
             v-if="isAnnualReportEditable"
             :disabled="!validated"
-            @click="doSaveResume"
-            v-show="false"><!-- TODO: show when ready -->
+            @click="onClickSaveResume">
             Save &amp; Resume Later
           </v-btn>
         </div>
@@ -185,7 +183,7 @@
               color="primary"
               large
               :disabled="!validated"
-              @click="doFilePay">
+              @click="onClickFilePay">
               File &amp; Pay
             </v-btn>
             <span>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
@@ -363,15 +361,43 @@ export default {
       }
     },
 
-    doSave () {
-      // TODO
+    async onClickSave () {
+      const filing = await this.saveFiling(true)
+      if (!filing) {
+        console.log('onClickSave() error - invalid filing =', filing)
+      }
     },
 
-    doSaveResume () {
-      // TODO
+    async onClickSaveResume () {
+      const filing = await this.saveFiling(true)
+      // on success, redirect to Home URL
+      if (filing) {
+        const homeURL = window.location.origin || ''
+        window.location.assign(homeURL)
+      } else {
+        console.log('onClickSaveResume() error - invalid filing =', filing)
+      }
     },
 
-    doFilePay () {
+    async onClickFilePay () {
+      const filing = await this.saveFiling(false)
+      // on success, redirect to Pay URL
+      if (filing && filing.header) {
+        const origin = window.location.origin || ''
+        const filingId = filing.header.filingId
+        const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
+        let authStub: string = this.authURL || ''
+        if (!(authStub.endsWith('/'))) { authStub += '/' }
+        const paymentToken = filing.header.paymentToken
+        const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
+        // TODO: first check if pay UI is reachable, else display modal dialog
+        window.location.assign(payURL)
+      } else {
+        console.log('onClickFilePay() error - invalid filing =', filing)
+      }
+    },
+
+    async saveFiling (isDraft) {
       this.saveErrorDialog = false
       let changeOfDirectors = null
       let changeOfAddress = null
@@ -433,46 +459,38 @@ export default {
 
       if (this.filingId) {
         // we have a filing id, so we are updating an existing filing
-        const url = this.corpNum + '/filings/' + this.filingId
-        axios.put(url, filingData).then(res => {
-          const origin = window.location.origin || ''
-          const filingId = res.data.filing.header.filingId
-          const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
-          let authStub: string = this.authURL || ''
-          if (!(authStub.endsWith('/'))) { authStub = authStub + '/' }
-          const paymentToken = res.data.filing.header.paymentToken
-          const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
-          // TODO: first check if pay UI is reachable, else display modal dialog
-          window.location.assign(payURL)
+        let url = this.corpNum + '/filings/' + this.filingId
+        if (isDraft) { url += '?draft=true' }
+        let filing = null
+        await axios.put(url, filingData).then(res => {
+          if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
+          filing = res.data.filing
         }).catch(error => {
-          console.error('doFilePay() error =', error)
-          if (error.response && error.response.status === PAYMENT_REQUIRED) {
+          console.error('saveFiling() error =', error)
+          if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
             this.paymentErrorDialog = true
           } else {
             this.saveErrorDialog = true
           }
         })
+        return filing
       } else {
         // filing id is 0, so we are saving a new filing
-        const url = this.corpNum + '/filings'
-        axios.post(url, filingData).then(res => {
-          const origin = window.location.origin || ''
-          const filingId = res.data.filing.header.filingId
-          const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
-          let authStub: string = this.authURL || ''
-          if (!(authStub.endsWith('/'))) { authStub = authStub + '/' }
-          const paymentToken = res.data.filing.header.paymentToken
-          const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
-          // TODO: first check if pay UI is reachable, else display modal dialog
-          window.location.assign(payURL)
+        let url = this.corpNum + '/filings'
+        if (isDraft) { url += '?draft=true' }
+        let filing = null
+        await axios.post(url, filingData).then(res => {
+          if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
+          filing = res.data.filing
         }).catch(error => {
-          console.error('doFilePay() error =', error)
-          if (error.response && error.response.status === PAYMENT_REQUIRED) {
+          console.error('saveFiling() error =', error)
+          if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
             this.paymentErrorDialog = true
           } else {
             this.saveErrorDialog = true
           }
         })
+        return filing
       }
     },
 
