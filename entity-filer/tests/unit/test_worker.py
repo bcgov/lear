@@ -134,12 +134,12 @@ def test_process_coa_filing(app, session):
 
     delivery_address = business.delivery_address.one_or_none().json
     for key in delivery_address.keys():
-        if key is not 'addressType':
+        if key != 'addressType':
             assert delivery_address[key] == new_delivery_address[key]
 
     mailing_address = business.mailing_address.one_or_none().json
     for key in mailing_address.keys():
-        if key is not 'addressType':
+        if key != 'addressType':
             assert mailing_address[key] == new_mailing_address[key]
 
 
@@ -181,12 +181,12 @@ def test_process_combined_filing(app, session):
 
     delivery_address = business.delivery_address.one_or_none().json
     for key in delivery_address.keys():
-        if key is not 'addressType':
+        if key != 'addressType':
             assert delivery_address[key] == new_delivery_address[key]
 
     mailing_address = business.mailing_address.one_or_none().json
     for key in mailing_address.keys():
-        if key is not 'addressType':
+        if key != 'addressType':
             assert mailing_address[key] == new_mailing_address[key]
 
 
