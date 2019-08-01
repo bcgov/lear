@@ -1,5 +1,5 @@
 {
-  "API_URL": "https://mock-lear-tools.pathfinder.gov.bc.ca/rest/legal-api/0.77/api/v1/businesses/",
+  "API_URL": "https://legal-api-dev.pathfinder.gov.bc.ca/api/v1/businesses/",
   "AUTH_URL": "https://coops-dev.pathfinder.gov.bc.ca/auth/",
   "AUTH_API_URL": "https://auth-api-dev.pathfinder.gov.bc.ca/",
   "PAY_API_URL": "https://pay-api-dev.pathfinder.gov.bc.ca/",
