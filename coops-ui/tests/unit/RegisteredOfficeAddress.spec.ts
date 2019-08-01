@@ -18,7 +18,7 @@ const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
 document.body.append(app)
 
-describe('RegisteredOfficeAddress', () => {
+describe('RegisteredOfficeAddress.vue', () => {
   beforeAll(() => {
     // API call to get current addresses
     sinon.stub(axios, 'get').withArgs('CP0001191/addresses')

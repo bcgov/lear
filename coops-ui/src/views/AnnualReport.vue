@@ -45,7 +45,7 @@
         <v-card-actions>
           <v-btn color="primary" flat @click="navigateToDashboard">Exit without saving</v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="primary" flat @click="submit">Retry</v-btn>
+          <v-btn color="primary" flat @click="doFilePay">Retry</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -92,7 +92,7 @@
       </div>
     </v-fade-transition>
 
-    <div id="annual-report" ref="annualReport">
+    <div id="annual-report">
       <!-- Initial Page Load Transition -->
       <div class="loading-container fade-out">
         <div class="loading__content">
@@ -117,9 +117,7 @@
               <header>
                 <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
               </header>
-              <v-card flat id="AR-step-1-container">
-                <AGMDate ref="agmDate"/>
-              </v-card>
+              <AGMDate ref="agmDate" />
             </section>
 
             <!-- Registered Office Addresses -->
@@ -130,16 +128,12 @@
                 </h2>
                 <p>Verify or change your Registered Office Addresses.</p>
               </header>
-              <v-card flat id="AR-step-2-container">
-                <RegisteredOfficeAddress
-                  ref="registeredAddress"
-                  :changeButtonDisabled="!agmDateValid"
-                  :legalEntityNumber="corpNum"
-                  :addresses.sync="addresses"
-                  @modified="officeModifiedEventHandler($event)"
-                  @valid="officeValidEventHandler($event)"
-                ></RegisteredOfficeAddress>
-              </v-card>
+              <RegisteredOfficeAddress
+                :changeButtonDisabled="!agmDateValid"
+                :legalEntityNumber="corpNum"
+                :addresses.sync="addresses"
+                @modified="officeModifiedEventHandler($event)"
+                @valid="officeValidEventHandler($event)" />
             </section>
 
             <!-- Directors -->
@@ -149,9 +143,7 @@
                 <p>Tell us who was elected or appointed and who ceased to be a director at your
                   {{ ARFilingYear }} AGM.</p>
               </header>
-              <!-- <v-card flat id="AR-step-3-container"> -->
-                <Directors @directorsChange="directorsChange" ref="directorsList" :asOfDate="agmDate" />
-              <!-- </v-card> -->
+              <Directors @directorsChange="directorsChange" ref="directorsList" :asOfDate="agmDate" />
             </section>
           </div>
           <div v-else>
@@ -170,30 +162,32 @@
         <div class="buttons-left">
           <v-btn id="ar-save-btn" large
             v-if="isAnnualReportEditable"
-            :disabled="true"><!-- !validated -->
+            :disabled="!validated"
+            @click="doSave"
+            v-show="false"><!-- TODO: show when ready -->
             Save
           </v-btn>
           <v-btn id="ar-save-resume-btn" large
             v-if="isAnnualReportEditable"
-            :disabled="true"><!-- !validated -->
+            :disabled="!validated"
+            @click="doSaveResume"
+            v-show="false"><!-- TODO: show when ready -->
             Save &amp; Resume Later
           </v-btn>
         </div>
 
         <div class="buttons-right">
           <v-tooltip bottom>
-            <template v-slot:activator="{ on }">
-              <v-btn
-                v-if="isAnnualReportEditable"
-                id="ar-pay-btn"
-                color="primary"
-                large
-                :disabled="!validated"
-                @click="submit"
-                v-on="on">
-                File &amp; Pay
-              </v-btn>
-            </template>
+            <v-btn
+              slot="activator"
+              v-if="isAnnualReportEditable"
+              id="ar-file-pay-btn"
+              color="primary"
+              large
+              :disabled="!validated"
+              @click="doFilePay">
+              File &amp; Pay
+            </v-btn>
             <span>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
               There is no opportunity to change information beyond this point.</span>
           </v-tooltip>
@@ -294,6 +288,7 @@ export default {
             // load Annual Report fields
             if (!filing.annualReport) throw new Error('missing annual report')
             else {
+              // TODO: use props instead of $refs (which cause an error in the unit tests)
               // NOTE: AR Filing Year (which is needed by agmDate component) was already set by Todo List
               this.$refs.agmDate.loadAgmDate(filing.annualReport.annualGeneralMeetingDate)
               this.toggleFiling('add', 'OTANN')
@@ -344,9 +339,7 @@ export default {
      * original values.
      */
     officeModifiedEventHandler (modified: boolean): void {
-      console.log('AnnualReport, regOffAddrChange=', modified)
-
-      // When addresses change, update the filing data.
+      // when addresses change, update filing data
       this.setRegOffAddrChange(modified)
       this.toggleFiling(modified ? 'add' : 'remove', 'OTADD')
     },
@@ -363,7 +356,6 @@ export default {
 
     directorsChange (val) {
       // when directors change, update filing data
-      console.log('AnnualReport, directorsChange =', val)
       if (val) {
         this.toggleFiling('add', 'OTCDR')
       } else {
@@ -371,7 +363,15 @@ export default {
       }
     },
 
-    submit () {
+    doSave () {
+      // TODO
+    },
+
+    doSaveResume () {
+      // TODO
+    },
+
+    doFilePay () {
       this.saveErrorDialog = false
       let changeOfDirectors = null
       let changeOfAddress = null
@@ -435,18 +435,17 @@ export default {
         // we have a filing id, so we are updating an existing filing
         const url = this.corpNum + '/filings/' + this.filingId
         axios.put(url, filingData).then(res => {
-          let payRequestId: string = res.data.filing.header.paymentToken
-          // TODO: use return URL / param to display Dashboard with paid filing expanded?
-          let returnURL = window.location.origin + '/AnnualReport?pay_id=' + payRequestId
-          let authStub: string = this.authURL
-          if (!(authStub.endsWith('/'))) {
-            authStub = authStub + '/'
-          }
-          let payURL = authStub + 'makepayment/' + payRequestId + '/' + encodeURIComponent(returnURL)
-          // TODO: need to check if pay UI is reachable, else display modal dialog
-          window.location.href = payURL
+          const origin = window.location.origin || ''
+          const filingId = res.data.filing.header.filingId
+          const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
+          let authStub: string = this.authURL || ''
+          if (!(authStub.endsWith('/'))) { authStub = authStub + '/' }
+          const paymentToken = res.data.filing.header.paymentToken
+          const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
+          // TODO: first check if pay UI is reachable, else display modal dialog
+          window.location.assign(payURL)
         }).catch(error => {
-          console.error('submit() error =', error)
+          console.error('doFilePay() error =', error)
           if (error.response && error.response.status === PAYMENT_REQUIRED) {
             this.paymentErrorDialog = true
           } else {
@@ -457,18 +456,17 @@ export default {
         // filing id is 0, so we are saving a new filing
         const url = this.corpNum + '/filings'
         axios.post(url, filingData).then(res => {
-          let payRequestId: string = res.data.filing.header.paymentToken
-          // TODO: use return URL / param to display Dashboard with paid filing expanded?
-          let returnURL = window.location.origin + '/AnnualReport?pay_id=' + payRequestId
-          let authStub: string = this.authURL
-          if (!(authStub.endsWith('/'))) {
-            authStub = authStub + '/'
-          }
-          let payURL = authStub + 'makepayment/' + payRequestId + '/' + encodeURIComponent(returnURL)
-          // TODO: need to check if pay UI is reachable, else display modal dialog
-          window.location.href = payURL
+          const origin = window.location.origin || ''
+          const filingId = res.data.filing.header.filingId
+          const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
+          let authStub: string = this.authURL || ''
+          if (!(authStub.endsWith('/'))) { authStub = authStub + '/' }
+          const paymentToken = res.data.filing.header.paymentToken
+          const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
+          // TODO: first check if pay UI is reachable, else display modal dialog
+          window.location.assign(payURL)
         }).catch(error => {
-          console.error('submit() error =', error)
+          console.error('doFilePay() error =', error)
           if (error.response && error.response.status === PAYMENT_REQUIRED) {
             this.paymentErrorDialog = true
           } else {
@@ -511,14 +509,8 @@ export default {
   },
 
   watch: {
-    // TODO - what to do if Corp Num ever changes?
-    // corpNum (val) {
-    //   console.log('AnnualReport, corpNum =', val)
-    // },
-
     agmDate (val) {
       // when AGM Date changes, update filing data
-      console.log('AnnualReport, agmDate =', val)
       if (val) {
         this.toggleFiling('add', 'OTANN')
       } else {
@@ -528,7 +520,6 @@ export default {
 
     noAGM (val) {
       // when No AGM changes, update filing data
-      console.log('AnnualReport, noAGM =', val)
       if (val) {
         this.toggleFiling('add', 'OTANN')
       } else {
@@ -542,14 +533,6 @@ export default {
 
     directorFormValid (val) {
       this.setValidateFlag()
-    },
-
-    validated (val) {
-      console.log('AnnualReport, validated =', val)
-    },
-
-    filingData: function (val) {
-      console.log('AnnualReport, filingData =', val)
     }
   }
 }
@@ -585,9 +568,6 @@ h2
   margin-top: 3rem;
   font-size: 1.125rem;
   font-weight: 500;
-
-#AR-step-1-container, #AR-step-2-container, #AR-step-3-container
-  margin-top: 1rem;
 
 .title-container
   margin-bottom: 0.5rem;
