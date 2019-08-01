@@ -174,7 +174,14 @@
                             box/>
                       </div>
                   </div>
-                  <v-checkbox v-model="certifyCheckbox" :label="checkBoxLabel"></v-checkbox>
+                  <v-checkbox v-model="certifyCheckbox">
+                      <template slot="label">
+                          <div class="certify-stmt">
+                            I, <b>{{!displayCertifyName ? '[Legal Name]' : displayCertifyName}}</b>, certify that I have relevant knowledge of the association
+                            and that I am authorized to make this filing.
+                          </div>
+                      </template>
+                  </v-checkbox>
                   <p class="certify-clause">{{currentDate}}</p>
                   <p class="certify-clause">
                     Note: It is an offence to make a false or misleading statement in
@@ -290,6 +297,9 @@ export default {
     checkBoxLabel () {
       return 'I, ' + this.certifiedBy +
        ', certify that I have relevant knowledge of the association and that I am authorized to make this filing. '
+    },
+    displayCertifyName() {
+      return this.certifiedBy.trim()
     },
     ...mapGetters(['isAnnualReportEditable', 'reportState'])
   },
@@ -687,7 +697,9 @@ h2
 .value.certifiedby
   min-width 35rem
 
-.certify-clause
-  font-size 0.85rem
+.certify-clause   
   padding-left 2rem
+  
+.certify-stmt
+  display:inline
 </style>
