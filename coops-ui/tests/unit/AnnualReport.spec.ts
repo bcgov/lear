@@ -1,10 +1,8 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
-import VueRouter from 'vue-router'
-import { createLocalVue, shallowMount } from '@vue/test-utils'
+import { shallowMount } from '@vue/test-utils'
 import sinon from 'sinon'
-import flushPromises from 'flush-promises'
 
 import axios from '@/axios-auth'
 import store from '@/store/store'
@@ -16,7 +14,7 @@ import Directors from '@/components/AnnualReport/Directors.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('AnnualReport Part 1', () => {
+describe('AnnualReport - Part 1', () => {
   beforeEach(() => {
     // init store
     store.state.corpNum = 'CP0001191'
@@ -135,7 +133,7 @@ describe('AnnualReport Part 1', () => {
   })
 })
 
-describe('AnnualReport Part 2', () => {
+describe('AnnualReport - Part 2', () => {
   const { assign } = window.location
 
   beforeAll(() => {
@@ -268,7 +266,7 @@ describe('AnnualReport Part 2', () => {
       // click the File & Pay button
       wrapper.find('#ar-file-pay-btn').trigger('click')
       // work-around because click trigger isn't working
-      await vm.doFilePay()
+      await vm.onClickFilePay()
 
       // verify redirection
       const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
@@ -293,11 +291,117 @@ describe('AnnualReport Part 2', () => {
       // click the File & Pay button
       wrapper.find('#ar-file-pay-btn').trigger('click')
       // work-around because click trigger isn't working
-      await vm.doFilePay()
+      await vm.onClickFilePay()
 
       // verify redirection
       const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
+    }
+  )
+})
+
+describe('AnnualReport - Part 3', () => {
+  const { assign } = window.location
+
+  beforeAll(() => {
+    // mock the window.location.assign function
+    delete window.location
+    window.location = { assign: jest.fn() } as any
+  })
+
+  afterAll(() => {
+    window.location.assign = assign
+  })
+
+  beforeEach(async () => {
+    // init store
+    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
+    store.state.entityName = 'Legal Name - CP0001191'
+    store.state.ARFilingYear = 2017
+    store.state.currentARStatus = 'NEW'
+    store.state.filedDate = null
+
+    // mock "save draft" endpoint
+    sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filing': {
+              'annualReport': {
+                'annualGeneralMeetingDate': '2018-07-15',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get'
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'annualReport',
+                'date': '2017-06-06',
+                'submitter': 'cp0001191',
+                'status': 'DRAFT',
+                'filingId': 123
+              }
+            }
+          }
+      })))
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  it('saves a new filing when this is a new AR and the Save button is clicked',
+    async () => {
+      const $route = { params: { id: 0 } } // new filing id
+      const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+      const vm = wrapper.vm as any
+
+      // make sure form is validated
+      vm.setValidated(true)
+
+      // sanity check
+      expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+      // TODO: verify that new filing was created
+
+      // click the Save button
+      wrapper.find('#ar-save-btn').trigger('click')
+      // work-around because click trigger isn't working
+      await vm.onClickSave()
+
+      // verify no redirection
+      expect(window.location.assign).not.toHaveBeenCalled()
+    }
+  )
+
+  it('saves a new filing and redirects to Home URL when this is a new AR and the Save & Resume button is clicked',
+    async () => {
+      const $route = { params: { id: 0 } } // new filing id
+      const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+      const vm = wrapper.vm as any
+
+      // make sure form is validated
+      vm.setValidated(true)
+
+      // sanity check
+      expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+      // TODO: verify that new filing was created
+
+      // click the Save & Resume Later button
+      wrapper.find('#ar-save-resume-btn').trigger('click')
+      // work-around because click trigger isn't working
+      await vm.onClickSaveResume()
+
+      // verify redirection
+      const homeURL = ''
+      expect(window.location.assign).toHaveBeenCalledWith(homeURL)
     }
   )
 })
