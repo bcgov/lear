@@ -160,7 +160,7 @@
                 <h2 id="AR-step-4-header">4. Certify Correct</h2>
                 <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
               </header>
-              <Certify @certifyChange="changeCertifyData"/>
+              <Certify @certifyChange="changeCertifyData" ref="certifyClause"/>
             </section>
           </div>
           <div v-else>
@@ -410,7 +410,7 @@ export default {
       const annualReport = {
         annualReport: {
           annualGeneralMeetingDate: this.agmDate,
-          certifiedBy: this.certifiedBy,
+          certifiedBy: this.$refs.certifyClause.getLegalName(),
           email: 'no_one@never.get'
         }
       }
@@ -418,7 +418,7 @@ export default {
       if (this.isDataChanged('OTCDR')) {
         changeOfDirectors = {
           changeOfDirectors: {
-            certifiedBy: this.certifiedBy,
+            certifiedBy: this.$refs.certifyClause.getLegalName(),
             email: 'no_one@never.get',
             directors: this.$refs.directorsList.getAllDirectors()
           }
@@ -428,7 +428,7 @@ export default {
       if (this.isDataChanged('OTADD') && this.addresses) {
         changeOfAddress = {
           changeOfAddress: {
-            certifiedBy: this.certifiedBy,
+            certifiedBy: this.$refs.certifyClause.getLegalName(),
             email: 'no_one@never.get',
             deliveryAddress: this.addresses['deliveryAddress'],
             mailingAddress: this.addresses['mailingAddress']

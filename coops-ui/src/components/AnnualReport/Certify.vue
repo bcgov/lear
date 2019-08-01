@@ -61,6 +61,12 @@ export default {
     }
   },
 
+  methods: {    
+    getLegalName () {
+        return this.certifiedBy;
+    }
+  },
+
   watch: {
     isCertifyValid: function(val) {       
       this.$emit("certifyChange", val);
