@@ -29,6 +29,7 @@ AR = {
             'foundingDate': '2007-04-08',
             'identifier': 'CP1234567',
             'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+            'lastPreBobFilingTimestamp': '2019-01-01T20:05:49.068272+00:00',
             'legalName': 'legal name - CP1234567'
         },
         'annualReport': {
@@ -153,6 +154,7 @@ def test_valid_coa_filing():
                 'foundingDate': '2007-04-08',
                 'identifier': 'CP1234567',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'lastPreBobFilingTimestamp': '',
                 'legalName': 'legal name - CP1234567'
             },
             'changeOfAddress': CHANGE_OF_ADDRESS
