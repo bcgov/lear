@@ -20,8 +20,9 @@ export function isValidDay (date: string): boolean {
   const day = +date.substring(8, 10)
   // use getUTCDate() to ignore local time (we only care about date part)
   const today = (new Date(date)).getUTCDate()
-  const max = +this.maxDate.substring(8, 10)
-  return (day === today && day > 0 && day <= max)
+  const date1 = date.split('/').join('')
+  const date2 = this.maxDate.split('-').join('')
+  return (day === today && day > 0 && date1 <= date2)
 }
 
 export function isISOFormat (date: string): boolean {

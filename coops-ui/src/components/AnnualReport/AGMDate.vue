@@ -103,7 +103,9 @@ export default {
       return 'We did not hold an Annual General Meeting in ' + this.ARFilingYear
     },
     maxDate () {
-      return (this.ARFilingYear === this.currentYear) ? this.currentDate : `${this.ARFilingYear}-12-31`
+      return (this.ARFilingYear === this.currentYear)
+        ? this.currentDate.split('/').join('-')
+        : `${this.ARFilingYear}-12-31`
     },
     minDate () {
       return `${this.ARFilingYear}-01-01`
@@ -152,7 +154,7 @@ export default {
         +date.substring(5, 7) <= +this.maxDate.substring(5, 7) &&
         +date.substring(8, 10) === (new Date(date)).getUTCDate() &&
         +date.substring(8, 10) > 0 &&
-        +date.substring(8, 10) <= +this.maxDate.substring(8, 10))
+        date.split(separator).join('') <= this.maxDate.split('-').join(''))
     },
     loadAgmDate (date) {
       // load data from existing filing
