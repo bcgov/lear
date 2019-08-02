@@ -58,6 +58,7 @@ describe('AnnualReport.vue', () => {
     vm.setAgmDateValid(true)
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(true)
+    vm.changeCertifyData(true)
     vm.setValidateFlag()
 
     Vue.nextTick(() => {
