@@ -75,11 +75,109 @@ COA_FILING = {
     }
 }
 
+COD_FILING = {
+    'filing': {
+        'header': {
+            'name': 'changeOfDirectors',
+            'date': '2019-07-29'
+        },
+        'business': {
+            'cacheId': 1,
+            'foundingDate': '2007-04-08',
+            'identifier': 'CP1234567',
+            'last_agm_date': '2018-04-08',
+            'legalName': 'legal name - CP1234567'
+        },
+        'changeOfDirectors': {
+            'directors': [
+                {
+                    'title': 'title',
+                    'appointmentDate': '2017-01-01',
+                    'cessationDate': None,
+                    'officer': {
+                        'firstName': 'director1',
+                        'lastName': 'test1',
+                        'middleInitial': 'd',
+                    },
+                    'deliveryAddress': {
+                        'streetAddress': 'test lane',
+                        'streetAddressAdditional': 'test line 1',
+                        'addressCity': 'testcity',
+                        'addressCountry': 'CA',
+                        'addressRegion': 'BC',
+                        'postalCode': 'T3S T3R',
+                        'deliveryInstructions': 'director1'
+                    },
+                },
+                {
+                    'title': 'title',
+                    'appointmentDate': '2018-01-01',
+                    'cessationDate': None,
+                    'officer': {
+                        'firstName': 'director2',
+                        'lastName': 'test2',
+                        'middleInitial': 'd',
+                    },
+                    'deliveryAddress': {
+                        'streetAddress': 'test lane',
+                        'streetAddressAdditional': 'test line 1',
+                        'addressCity': 'testcity',
+                        'addressCountry': 'CA',
+                        'addressRegion': 'BC',
+                        'postalCode': 'T3S T3R',
+                        'deliveryInstructions': 'director2'
+                    },
+                },
+                {
+                    'title': 'title',
+                    'appointmentDate': '2019-01-01',
+                    'cessationDate': None,
+                    'officer': {
+                        'firstName': 'director3',
+                        'lastName': 'test3',
+                        'middleInitial': 'd',
+                    },
+                    'deliveryAddress': {
+                        'streetAddress': 'test lane',
+                        'streetAddressAdditional': 'test line 1',
+                        'addressCity': 'testcity',
+                        'addressCountry': 'CA',
+                        'addressRegion': 'BC',
+                        'postalCode': 'T3S T3R',
+                        'deliveryInstructions': 'director3'
+                    },
+                },
+                {
+                    'title': 'title',
+                    'appointmentDate': '2019-01-01',
+                    'cessationDate': '2019-08-01',
+                    'officer': {
+                        'firstName': 'director4',
+                        'lastName': 'test4',
+                        'middleInitial': 'd',
+                    },
+                    'deliveryAddress': {
+                        'streetAddress': 'test lane',
+                        'streetAddressAdditional': 'test line 1',
+                        'addressCity': 'testcity',
+                        'addressCountry': 'CA',
+                        'addressRegion': 'BC',
+                        'postalCode': 'T3S T3R',
+                        'deliveryInstructions': 'director4'
+                    },
+                }
+            ],
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get'
+        }
+    }
+}
+
 COMBINED_FILING = {
     'filing': {
         'header': {
             'name': 'changeOfAddress',
-            'date': '2019-07-30'
+            'date': '2019-07-28'
         },
         'business': {
             'cacheId': 1,
@@ -112,6 +210,88 @@ COMBINED_FILING = {
                 'postalCode': 'T3S T3R',
                 'deliveryInstructions': 'Test address mailing'
             },
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get'
+        },
+        'changeOfDirectors': {
+            'directors': [
+                {
+                    'title': 'title',
+                    'appointmentDate': '2017-01-01',
+                    'cessationDate': None,
+                    'officer': {
+                        'firstName': 'director1',
+                        'lastName': 'test1',
+                        'middleInitial': 'd',
+                    },
+                    'deliveryAddress': {
+                        'streetAddress': 'test lane',
+                        'streetAddressAdditional': 'test line 1',
+                        'addressCity': 'testcity',
+                        'addressCountry': 'CA',
+                        'addressRegion': 'BC',
+                        'postalCode': 'T3S T3R',
+                        'deliveryInstructions': 'director1'
+                    },
+                },
+                {
+                    'title': 'title',
+                    'appointmentDate': '2018-01-01',
+                    'cessationDate': None,
+                    'officer': {
+                        'firstName': 'director2',
+                        'lastName': 'test2',
+                        'middleInitial': 'd',
+                    },
+                    'deliveryAddress': {
+                        'streetAddress': 'test lane',
+                        'streetAddressAdditional': 'test line 1',
+                        'addressCity': 'testcity',
+                        'addressCountry': 'CA',
+                        'addressRegion': 'BC',
+                        'postalCode': 'T3S T3R',
+                        'deliveryInstructions': 'director2'
+                    },
+                },
+                {
+                    'title': 'title',
+                    'appointmentDate': '2019-01-01',
+                    'cessationDate': None,
+                    'officer': {
+                        'firstName': 'director3',
+                        'lastName': 'test3',
+                        'middleInitial': 'd',
+                    },
+                    'deliveryAddress': {
+                        'streetAddress': 'test lane',
+                        'streetAddressAdditional': 'test line 1',
+                        'addressCity': 'testcity',
+                        'addressCountry': 'CA',
+                        'addressRegion': 'BC',
+                        'postalCode': 'T3S T3R',
+                        'deliveryInstructions': 'director3'
+                    },
+                },
+                {
+                    'title': 'title',
+                    'appointmentDate': '2016-01-01',
+                    'cessationDate': '2019-08-01',
+                    'officer': {
+                        'firstName': 'director4',
+                        'lastName': 'test4',
+                        'middleInitial': 'd',
+                    },
+                    'deliveryAddress': {
+                        'streetAddress': 'test lane',
+                        'streetAddressAdditional': 'test line 1',
+                        'addressCity': 'testcity',
+                        'addressCountry': 'CA',
+                        'addressRegion': 'BC',
+                        'postalCode': 'T3S T3R',
+                        'deliveryInstructions': 'director4'
+                    },
+                }
+            ],
             'certifiedBy': 'full name',
             'email': 'no_one@never.get'
         }
