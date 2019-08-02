@@ -145,7 +145,7 @@
               </header>
               <Directors @directorsChange="directorsChange" ref="directorsList" :asOfDate="agmDate" />
             </section>
-            
+
             <!--Certify -->
             <section>
               <header>
@@ -232,7 +232,7 @@ export default {
     // ARComplete,
     SbcFeeSummary,
     Affix,
-    Certify,
+    Certify
   },
 
   data () {

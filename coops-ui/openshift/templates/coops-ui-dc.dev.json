@@ -68,16 +68,16 @@
                     "spec": {
                         "volumes": [
                             {
-                                "name": "web-caddy-config",
+                                "name": "coops-web-caddy-config",
                                 "configMap": {
-                                    "name": "web-caddy-config",
+                                    "name": "coops-web-caddy-config",
                                     "defaultMode": 420
                                 }
                             },
                             {
-                                "name": "web-ui-configuration",
+                                "name": "coops-web-ui-configuration",
                                 "configMap": {
-                                    "name": "web-ui-configuration",
+                                    "name": "coops-web-ui-configuration",
                                     "defaultMode": 420
                                 }
                             }
@@ -97,13 +97,13 @@
                                 "resources": {},
                                 "volumeMounts": [
                                     {
-                                        "name": "web-caddy-config",
+                                        "name": "coops-web-caddy-config",
                                         "readOnly": true,
                                         "mountPath": "/etc/Caddyfile",
                                         "subPath": "Caddyfile"
                                     },
                                     {
-                                        "name": "web-ui-configuration",
+                                        "name": "coops-web-ui-configuration",
                                         "readOnly": true,
                                         "mountPath": "/var/www/html/config"
                                     }
