@@ -35,7 +35,7 @@ from legal_api.models import Business, Filing
 from sqlalchemy_continuum import versioning_manager
 
 from entity_filer.config import get_named_config
-from entity_filer.filing_processors import annual_report, change_of_address
+from entity_filer.filing_processors import annual_report, change_of_address, change_of_directors
 from entity_filer.service_utils import logger
 
 
@@ -74,6 +74,8 @@ def process_filing(payment_token, flask_app):
                     annual_report.process(business, filing, filing_submission.filing_date)
                 if filing.get('changeOfAddress'):
                     change_of_address.process(business, filing)
+                if filing.get('changeOfDirectors'):
+                    change_of_directors.process(business, filing)
 
             filing_submission.transaction_id = transaction.id
             db.session.add(business)

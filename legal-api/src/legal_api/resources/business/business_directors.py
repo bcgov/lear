@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Retrieve the directors for the entity."""
-from datetime import date, datetime
+from datetime import datetime
 from http import HTTPStatus
 
 from flask import jsonify, request
@@ -46,8 +46,8 @@ class DirectorResource(Resource):
 
         # return all active directors as of date query param
         res = []
-        end_date = datetime.strptime(request.args.get('date'), '%Y-%m-%d').date()\
-            if request.args.get('date') else date.today()
+        end_date = datetime.utcnow().strptime(request.args.get('date'), '%Y-%m-%d').date()\
+            if request.args.get('date') else datetime.utcnow().date()
         director_list = Director.get_active_directors(business.id, end_date)
         for director in director_list:
             res.append(director.json)
