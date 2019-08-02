@@ -20,8 +20,8 @@ See https://github.com/BCDevOps/openshift-templates
 - create the deployment config from the template  
   - oc process -f coops-ui-dc.prod.json | oc create -f -  
 - create the config maps in the Openshift console (see Namex for examples):  
-  - web-caddy-config  
-  - web-ui-configuration  
+  - coops-web-caddy-config
+  - coops-web-ui-configuration
 - create the route in the Openshift console for the "coops-ui" service  
   
 Note 1: Route needs to be created after service or the port (2015 in this case) won't be available.  
