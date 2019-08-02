@@ -1,5 +1,5 @@
 <template>
-  <div id="registered-office-address">
+  <v-card flat>
     <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
       <li class="container">
         <div class="meta-container">
@@ -77,7 +77,7 @@
         </div>
       </li>
     </ul>
-  </div>
+  </v-card>
 </template>
 
 <script lang="ts">

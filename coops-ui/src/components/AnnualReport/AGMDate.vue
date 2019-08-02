@@ -1,5 +1,5 @@
 <template>
-  <div id="agm-date" class="container">
+  <v-card flat class="container">
     <div class="meta-container">
       <label>
         <span>Annual General<br>Meeting Date</span>
@@ -62,7 +62,7 @@
                 v-model="didNotHoldAGM"
                 :label=checkBoxLabel>
     </v-checkbox>
-  </div>
+  </v-card>
 </template>
 
 <script>

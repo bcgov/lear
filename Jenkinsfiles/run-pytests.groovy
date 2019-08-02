@@ -23,6 +23,7 @@
 def NAMESPACE = namespace
 def TAG_NAME = tag
 def COMPONENT_NAME = component
+def COMPONENT_TAG = component_tag
 def DB_TYPE = db_type
 
 // set in setup stage (will be set to current values for running pods)

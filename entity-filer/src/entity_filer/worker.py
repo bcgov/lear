@@ -25,6 +25,7 @@ Flask-SQLAlchemy currently allows the base model to be changed, or reworking
 the model to a standalone SQLAlchemy usage with an async engine would need
 to be pursued.
 """
+import datetime
 import json
 
 import nats
@@ -34,7 +35,7 @@ from legal_api.models import Business, Filing
 from sqlalchemy_continuum import versioning_manager
 
 from entity_filer.config import get_named_config
-from entity_filer.filing_processors import annual_report
+from entity_filer.filing_processors import annual_report, change_of_address
 from entity_filer.service_utils import logger
 
 
@@ -61,9 +62,7 @@ def process_filing(payment_token, flask_app):
         uow = versioning_manager.unit_of_work(db.session)
         transaction = uow.create_transaction(db.session)
 
-        if payment_token['paymentToken'].get('statusCode') == 'TRANSACTION_FAILED':
-            filing_submission.status = Filing.Status.ERROR.value
-        else:
+        if not payment_token['paymentToken'].get('statusCode') == 'TRANSACTION_FAILED':
             if not payment_token['paymentToken'].get('statusCode') == Filing.Status.COMPLETED.value:
                 logger.error('Unknown payment status given: %s', payment_token['paymentToken'].get('statusCode'))
                 raise Exception
@@ -73,11 +72,13 @@ def process_filing(payment_token, flask_app):
             for filing in legal_filings:
                 if filing.get('annualReport'):
                     annual_report.process(business, filing, filing_submission.filing_date)
-                    db.session.add(business)
+                if filing.get('changeOfAddress'):
+                    change_of_address.process(business, filing)
 
             filing_submission.transaction_id = transaction.id
-            filing_submission.status = Filing.Status.COMPLETED.value
+            db.session.add(business)
 
+        filing_submission.payment_completion_date = datetime.datetime.utcnow()
         db.session.add(filing_submission)
         db.session.commit()
 

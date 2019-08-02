@@ -19,7 +19,7 @@ import random
 import pytest
 
 from tests import EPOCH_DATETIME
-from tests.unit import AR_FILING, create_business, create_filing
+from tests.unit import AR_FILING, COA_FILING, COMBINED_FILING, create_business, create_filing
 
 
 def test_extract_payment_token():
@@ -70,7 +70,7 @@ def test_process_filing_missing_app(app, session):
         process_filing(payment_token, flask_app=None)
 
 
-def test_process_filing(app, session):
+def test_process_ar_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
     from entity_filer.worker import process_filing
     from entity_filer.worker import get_filing_by_payment_id
@@ -102,6 +102,94 @@ def test_process_filing(app, session):
     assert business.last_ar_date.replace(tzinfo=None) == EPOCH_DATETIME
 
 
+def test_process_coa_filing(app, session):
+    """Assert that an AR filling can be applied to the model correctly."""
+    from entity_filer.worker import process_filing
+    from entity_filer.worker import get_filing_by_payment_id
+    from legal_api.models import Business, Filing
+
+    # vars
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    identifier = 'CP1234567'
+    new_delivery_address = COA_FILING['filing']['changeOfAddress']['deliveryAddress']
+    new_mailing_address = COA_FILING['filing']['changeOfAddress']['mailingAddress']
+
+    # setup
+    business = create_business(identifier)
+    business_id = business.id
+    create_filing(payment_id, COA_FILING, business.id)
+    payment_token = {'paymentToken': {'id': payment_id, 'statusCode': Filing.Status.COMPLETED.value}}
+
+    # TEST
+    process_filing(payment_token, app)
+
+    # Get modified data
+    filing = get_filing_by_payment_id(payment_id)
+    business = Business.find_by_internal_id(business_id)
+
+    # check it out
+    assert filing.transaction_id
+    assert filing.business_id == business_id
+    assert filing.status == Filing.Status.COMPLETED.value
+
+    delivery_address = business.delivery_address.one_or_none().json
+    for key in delivery_address.keys():
+        if key != 'addressType':
+            assert delivery_address[key] == new_delivery_address[key]
+
+    mailing_address = business.mailing_address.one_or_none().json
+    for key in mailing_address.keys():
+        if key != 'addressType':
+            assert mailing_address[key] == new_mailing_address[key]
+
+
+def test_process_combined_filing(app, session):
+    """Assert that an AR filling can be applied to the model correctly."""
+    from entity_filer.worker import process_filing
+    from entity_filer.worker import get_filing_by_payment_id
+    from legal_api.models import Business, Filing
+
+    # vars
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    identifier = 'CP1234567'
+    agm_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualGeneralMeetingDate'))
+    new_delivery_address = COMBINED_FILING['filing']['changeOfAddress']['deliveryAddress']
+    new_mailing_address = COMBINED_FILING['filing']['changeOfAddress']['mailingAddress']
+
+    # setup
+    business = create_business(identifier)
+    business_id = business.id
+    create_filing(payment_id, COMBINED_FILING, business.id)
+    payment_token = {'paymentToken': {'id': payment_id, 'statusCode': Filing.Status.COMPLETED.value}}
+
+    # TEST
+    process_filing(payment_token, app)
+
+    # Get modified data
+    filing = get_filing_by_payment_id(payment_id)
+    business = Business.find_by_internal_id(business_id)
+
+    # check it out
+    assert filing.transaction_id
+    assert filing.business_id == business_id
+    assert filing.status == Filing.Status.COMPLETED.value
+    print(business.json())
+    print(business.last_agm_date)
+    print(agm_date)
+    assert datetime.datetime.date(business.last_agm_date) == agm_date
+    assert business.last_ar_date.replace(tzinfo=None) == EPOCH_DATETIME
+
+    delivery_address = business.delivery_address.one_or_none().json
+    for key in delivery_address.keys():
+        if key != 'addressType':
+            assert delivery_address[key] == new_delivery_address[key]
+
+    mailing_address = business.mailing_address.one_or_none().json
+    for key in mailing_address.keys():
+        if key != 'addressType':
+            assert mailing_address[key] == new_mailing_address[key]
+
+
 def test_process_filing_failed(app, session):
     """Assert that an AR filling status is set to error if payment transaction failed."""
     from entity_filer.worker import process_filing
@@ -111,13 +199,12 @@ def test_process_filing_failed(app, session):
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
-    agm_date = datetime.date.fromisoformat(AR_FILING['filing']['annualReport'].get('annualGeneralMeetingDate'))
 
     # setup
     business = create_business(identifier)
     business_id = business.id
     create_filing(payment_id, AR_FILING, business.id)
-    payment_token = {'paymentToken': {'id': payment_id, 'statusCode': Filing.Status.COMPLETED.value}}
+    payment_token = {'paymentToken': {'id': payment_id, 'statusCode': 'TRANSACTION_FAILED'}}
 
     # TEST
     process_filing(payment_token, app)
@@ -129,5 +216,5 @@ def test_process_filing_failed(app, session):
     # check it out
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.ERROR.value
-    assert datetime.datetime.date(business.last_agm_date) != agm_date
-    assert business.last_ar_date.replace(tzinfo=None) != EPOCH_DATETIME
+    assert not business.last_agm_date
+    assert not business.last_ar_date

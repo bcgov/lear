@@ -1,45 +1,42 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
+import { shallowMount } from '@vue/test-utils'
+import sinon from 'sinon'
 
+import axios from '@/axios-auth'
 import store from '@/store/store'
 import AnnualReport from '@/views/AnnualReport.vue'
+import AGMDate from '@/components/AnnualReport/AGMDate.vue'
+import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
+import Directors from '@/components/AnnualReport/Directors.vue'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('AnnualReport.vue', () => {
-  let vm
-
-  function click (id) {
-    const button = vm.$el.querySelector(id)
-    const window = button.ownerDocument.defaultView
-    const click = new window.Event('click')
-    button.dispatchEvent(click)
-  }
-
-  beforeEach(done => {
+describe('AnnualReport - Part 1', () => {
+  beforeEach(() => {
     // init store
     store.state.corpNum = 'CP0001191'
     store.state.ARFilingYear = 2017
     store.state.currentARStatus = 'NEW'
     store.state.filedDate = null
+  })
 
-    //
-    // TODO - should stub out sub-components and just focus on THIS component's functionality
-    //      - see Dashboard for example
-    //
+  it('renders the Annual Report sub-components properly', () => {
+    const $route = { params: { id: 0 } }
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
 
-    const Constructor = Vue.extend(AnnualReport)
-    let instance = new Constructor({ store: store })
-    vm = instance.$mount()
-
-    Vue.nextTick(() => {
-      done()
-    })
+    expect(wrapper.find(AGMDate).exists()).toBe(true)
+    expect(wrapper.find(RegisteredOfficeAddress).exists()).toBe(true)
+    expect(wrapper.find(Directors).exists()).toBe(true)
   })
 
   it('initializes the store variables properly', () => {
+    const $route = { params: { id: 0 } }
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm: any = wrapper.vm
+
     expect(vm.$store.state.corpNum).toEqual('CP0001191')
     expect(vm.$store.state.ARFilingYear).toEqual(2017)
     expect(vm.$store.state.currentARStatus).toEqual('NEW')
@@ -49,11 +46,13 @@ describe('AnnualReport.vue', () => {
     expect(vm.$el.querySelector('#AR-header').textContent).toContain('2017')
     expect(vm.$el.querySelector('#AR-step-2-header span').textContent).toContain('2017')
     expect(vm.$el.querySelector('#AR-step-3-header + p').textContent).toContain('2017')
-
-    console.log('Passed Test 1')
   })
 
-  it('enables Validated flag when sub-component flags are valid', done => {
+  it('enables Validated flag when sub-component flags are valid', () => {
+    const $route = { params: { id: 0 } }
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm: any = wrapper.vm
+
     // set flags
     vm.setAgmDateValid(true)
     vm.setAddressesFormValid(true)
@@ -61,148 +60,349 @@ describe('AnnualReport.vue', () => {
     vm.changeCertifyData(true)
     vm.setValidateFlag()
 
-    Vue.nextTick(() => {
-      // confirm that flag is set correctly
-      expect(vm.validated).toEqual(true)
-      console.log('Passed Test 2')
-      done()
-    })
+    // confirm that flag is set correctly
+    expect(vm.validated).toEqual(true)
   })
 
-  it('disables Validated flag when AGM Date is invalid', done => {
+  it('disables Validated flag when AGM Date is invalid', () => {
+    const $route = { params: { id: 0 } }
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm: any = wrapper.vm
+
     // set flags
     vm.setAgmDateValid(false)
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(true)
     vm.setValidateFlag()
 
-    Vue.nextTick(() => {
-      // confirm that flag is set correctly
-      expect(vm.validated).toEqual(false)
-      console.log('Passed Test 3')
-      done()
-    })
+    // confirm that flag is set correctly
+    expect(vm.validated).toEqual(false)
   })
 
-  it('disables Validated flag when Addresses Form is invalid', done => {
+  it('disables Validated flag when Addresses Form is invalid', () => {
+    const $route = { params: { id: 0 } }
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm: any = wrapper.vm
+
     // set flags
     vm.setAgmDateValid(true)
     vm.setAddressesFormValid(false)
     vm.setDirectorFormValid(true)
     vm.setValidateFlag()
 
-    Vue.nextTick(() => {
-      // confirm that flag is set correctly
-      expect(vm.validated).toEqual(false)
-      console.log('Passed Test 4')
-      done()
-    })
+    // confirm that flag is set correctly
+    expect(vm.validated).toEqual(false)
   })
 
-  it('disables Validated flag when Director Form is invalid', done => {
+  it('disables Validated flag when Director Form is invalid', () => {
+    const $route = { params: { id: 0 } }
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm: any = wrapper.vm
+
     // set flags
     vm.setAgmDateValid(true)
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(false)
     vm.setValidateFlag()
 
-    Vue.nextTick(() => {
-      // confirm that flag is set correctly
-      expect(vm.validated).toEqual(false)
-      console.log('Passed Test 5')
-      done()
-    })
+    // confirm that flag is set correctly
+    expect(vm.validated).toEqual(false)
   })
 
-  it('enables Pay & File button when Validated is true', done => {
+  it('enables File & Pay button when Validated is true', () => {
+    const $route = { params: { id: 0 } }
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm: any = wrapper.vm
+
     // set flag
     vm.setValidated(true)
 
-    Vue.nextTick(() => {
-      expect(vm.$el.querySelector('#ar-pay-btn').disabled).toBe(false)
-      console.log('Passed Test 6')
-      done()
-    })
+    // confirm that button is enabled
+    expect(wrapper.find('#ar-file-pay-btn').attributes('disabled')).not.toBe('true')
   })
 
-  it('disables Pay & File button when Validated is false', done => {
+  it('disables File & Pay button when Validated is false', () => {
+    const $route = { params: { id: 0 } }
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm: any = wrapper.vm
+
     // set flag
     vm.setValidated(false)
 
-    Vue.nextTick(() => {
-      expect(vm.$el.querySelector('#ar-pay-btn').disabled).toBe(true)
-      console.log('Passed Test 7')
-      done()
-    })
+    // confirm that button is disabled
+    expect(wrapper.find('#ar-file-pay-btn').attributes('disabled')).toBe('true')
+  })
+})
+
+describe('AnnualReport - Part 2', () => {
+  const { assign } = window.location
+
+  beforeAll(() => {
+    // mock the window.location.assign function
+    delete window.location
+    window.location = { assign: jest.fn() } as any
   })
 
-  // TODO - fix this when Next button is implemented
-  // next button
-  // it('verifies that the next button works after payment', () => {
-  //   // set flag
-  //   vm.setValidateFlag(true)
+  afterAll(() => {
+    window.location.assign = assign
+  })
 
-  //   Vue.nextTick(() => {
-  //     expect(vm.$store.state.noAGM).toBe(true)
-  //     expect(vm.$store.state.validated).toBe(true)
-  //     expect(vm.$el.querySelector('#ar-pay-btn').disabled).toBe(false)
-  //     click('#ar-pay-btn')
+  beforeEach(async () => {
+    // init store
+    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
+    store.state.entityName = 'Legal Name - CP0001191'
+    store.state.ARFilingYear = 2017
+    store.state.currentARStatus = 'NEW'
+    store.state.filedDate = null
 
-  //     Vue.nextTick(() => {
-  //       expect(vm.$store.state.filedDate).toBeDefined()
-  //       expect(vm.$el.querySelector('#ar-next-btn').disabled).toBe(false)
-  //       // test disable button
-  //       var tempYear = vm.$store.state.ARFilingYear
-  //       vm.$store.state.ARFilingYear = +vm.$store.state.currentDate.substring(0, 4)
+    // mock "fetch a draft filing" endpoint
+    sinon.stub(axios, 'get').withArgs('CP0001191/filings/123')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filing': {
+              'annualReport': {
+                'annualGeneralMeetingDate': '2018-07-15',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get'
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'annualReport',
+                'date': '2017-06-06',
+                'submitter': 'cp0001191',
+                'status': 'DRAFT',
+                'filingId': 123
+              }
+            }
+          }
+      })))
 
-  //       Vue.nextTick(() => {
-  //         expect(vm.$el.querySelector('#ar-next-btn').disabled).toBe(true)
-  //         vm.$store.state.ARFilingYear = tempYear
+    // mock "save and file" endpoint
+    sinon.stub(axios, 'post').withArgs('CP0001191/filings')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filing': {
+              'annualReport': {
+                'annualGeneralMeetingDate': '2018-07-15',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get'
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'annualReport',
+                'date': '2017-06-06',
+                'submitter': 'cp0001191',
+                'status': 'PENDING',
+                'filingId': 123,
+                'paymentToken': '321'
+              }
+            }
+          }
+      })))
 
-  //         Vue.nextTick(() => {
-  //           expect(vm.$el.querySelector('#ar-next-btn').disabled).toBe(false)
-  //           sinon.restore()
-  //           sinon.getStub.withArgs('CP0001191/filings/1')
-  //             .returns(new Promise((resolve) => resolve({
-  //               data:
-  //                 {
-  //                   filing: {
-  //                     annualReport: {
-  //                       annualGeneralMeetingDate: '2016-04-08',
-  //                       certifiedBy: 'full name',
-  //                       email: 'no_one@never.get',
-  //                       status: 'PENDING'
-  //                     },
-  //                     business: {
-  //                       foundingDate: '2001-08-05',
-  //                       identifier: 'CP0001191',
-  //                       legalName: 'legal name - CP0001191'
-  //                     },
-  //                     header: {
-  //                       date: '2016-04-08',
-  //                       filingId: 1,
-  //                       name: 'annualReport',
-  //                       paymentToken: 'token',
-  //                       status: 'PENDING' }
-  //                   }
-  //                 }
-  //             })))
-  //           click('#ar-next-btn')
+    // mock "update and file" endpoint
+    sinon.stub(axios, 'put').withArgs('CP0001191/filings/123')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filing': {
+              'annualReport': {
+                'annualGeneralMeetingDate': '2018-07-15',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get'
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'annualReport',
+                'date': '2017-06-06',
+                'submitter': 'cp0001191',
+                'status': 'PENDING',
+                'filingId': 123,
+                'paymentToken': '321'
+              }
+            }
+          }
+      })))
+  })
 
-  //           Vue.nextTick(() => {
-  //             expect(vm.$store.state.corpNum).toEqual('CP0001191')
-  //             expect(vm.$store.state.ARFilingYear).toEqual(2018)
-  //             expect(vm.$store.state.currentDate).toBeDefined()
-  //             expect(vm.$store.state.filedDate).toBeNull()
-  //             // AGM Date is now initialized to 'minDate'
-  //             expect(vm.$store.state.agmDate).toEqual('2018-01-01')
-  //             expect(vm.$store.state.noAGM).toBe(false)
-  //             expect(vm.$store.state.validated).toBe(false)
-  //             console.log('Passed Test 8')
-  //           })
-  //         })
-  //       })
-  //     })
-  //   })
-  // })
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  it('saves a new filing and redirects to Pay URL when this is a new AR and the File & Pay button is clicked',
+    async () => {
+      const $route = { params: { id: 0 } } // new filing id
+      const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+      const vm = wrapper.vm as any
+
+      // make sure form is validated
+      vm.setValidated(true)
+
+      // sanity check
+      expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+      // TODO: verify that new filing was created
+
+      // click the File & Pay button
+      wrapper.find('#ar-file-pay-btn').trigger('click')
+      // work-around because click trigger isn't working
+      await vm.onClickFilePay()
+
+      // verify redirection
+      const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
+      expect(window.location.assign).toHaveBeenCalledWith(payURL)
+    }
+  )
+
+  it('updates an existing filing and redirects to Pay URL when this is a draft AR and the File & Pay button is clicked',
+    async () => {
+      const $route = { params: { id: 123 } } // draft filing id
+      const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+      const vm = wrapper.vm as any
+
+      // make sure form is validated
+      vm.setValidated(true)
+
+      // sanity check
+      expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+      // TODO: verify that draft filing was fetched
+
+      // click the File & Pay button
+      wrapper.find('#ar-file-pay-btn').trigger('click')
+      // work-around because click trigger isn't working
+      await vm.onClickFilePay()
+
+      // verify redirection
+      const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
+      expect(window.location.assign).toHaveBeenCalledWith(payURL)
+    }
+  )
+})
+
+describe('AnnualReport - Part 3', () => {
+  const { assign } = window.location
+
+  beforeAll(() => {
+    // mock the window.location.assign function
+    delete window.location
+    window.location = { assign: jest.fn() } as any
+  })
+
+  afterAll(() => {
+    window.location.assign = assign
+  })
+
+  beforeEach(async () => {
+    // init store
+    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
+    store.state.entityName = 'Legal Name - CP0001191'
+    store.state.ARFilingYear = 2017
+    store.state.currentARStatus = 'NEW'
+    store.state.filedDate = null
+
+    // mock "save draft" endpoint
+    sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filing': {
+              'annualReport': {
+                'annualGeneralMeetingDate': '2018-07-15',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get'
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'annualReport',
+                'date': '2017-06-06',
+                'submitter': 'cp0001191',
+                'status': 'DRAFT',
+                'filingId': 123
+              }
+            }
+          }
+      })))
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  it('saves a new filing when this is a new AR and the Save button is clicked',
+    async () => {
+      const $route = { params: { id: 0 } } // new filing id
+      const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+      const vm = wrapper.vm as any
+
+      // make sure form is validated
+      vm.setValidated(true)
+
+      // sanity check
+      expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+      // TODO: verify that new filing was created
+
+      // click the Save button
+      wrapper.find('#ar-save-btn').trigger('click')
+      // work-around because click trigger isn't working
+      await vm.onClickSave()
+
+      // verify no redirection
+      expect(window.location.assign).not.toHaveBeenCalled()
+    }
+  )
+
+  it('saves a new filing and redirects to Home URL when this is a new AR and the Save & Resume button is clicked',
+    async () => {
+      const $route = { params: { id: 0 } } // new filing id
+      const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+      const vm = wrapper.vm as any
+
+      // make sure form is validated
+      vm.setValidated(true)
+
+      // sanity check
+      expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+      // TODO: verify that new filing was created
+
+      // click the Save & Resume Later button
+      wrapper.find('#ar-save-resume-btn').trigger('click')
+      // work-around because click trigger isn't working
+      await vm.onClickSaveResume()
+
+      // verify redirection
+      const homeURL = ''
+      expect(window.location.assign).toHaveBeenCalledWith(homeURL)
+    }
+  )
 })
