@@ -145,6 +145,15 @@
               </header>
               <Directors @directorsChange="directorsChange" ref="directorsList" :asOfDate="agmDate" />
             </section>
+            
+            <!--Certify -->
+            <section>
+              <header>
+                <h2 id="AR-step-4-header">4. Certify Correct</h2>
+                <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+              </header>
+              <Certify @certifyChange="changeCertifyData" ref="certifyClause"/>
+            </section>
           </div>
           <div v-else>
            <!-- <ARComplete/> -->
@@ -211,6 +220,7 @@ import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapActions, mapGetters } from 'vuex'
 import { PAYMENT_REQUIRED } from 'http-status-codes'
+import Certify from '@/components/AnnualReport/Certify.vue'
 
 export default {
   name: 'AnnualReport',
@@ -221,7 +231,8 @@ export default {
     Directors,
     // ARComplete,
     SbcFeeSummary,
-    Affix
+    Affix,
+    Certify,
   },
 
   data () {
@@ -233,7 +244,8 @@ export default {
       filingData: [],
       resumeErrorDialog: false,
       saveErrorDialog: false,
-      paymentErrorDialog: false
+      paymentErrorDialog: false,
+      certifyChange: false
     }
   },
 
@@ -361,6 +373,10 @@ export default {
       }
     },
 
+    changeCertifyData (val) {
+      this.certifyChange = val
+    },
+
     async onClickSave () {
       const filing = await this.saveFiling(true)
       if (!filing) {
@@ -420,7 +436,7 @@ export default {
       const annualReport = {
         annualReport: {
           annualGeneralMeetingDate: this.agmDate,
-          certifiedBy: 'Full Name',
+          certifiedBy: this.$refs.certifyClause.getLegalName(),
           email: 'no_one@never.get'
         }
       }
@@ -428,7 +444,7 @@ export default {
       if (this.isDataChanged('OTCDR')) {
         changeOfDirectors = {
           changeOfDirectors: {
-            certifiedBy: 'Full Name',
+            certifiedBy: this.$refs.certifyClause.getLegalName(),
             email: 'no_one@never.get',
             directors: this.$refs.directorsList.getAllDirectors()
           }
@@ -438,7 +454,7 @@ export default {
       if (this.isDataChanged('OTADD') && this.addresses) {
         changeOfAddress = {
           changeOfAddress: {
-            certifiedBy: 'Full Name',
+            certifiedBy: this.$refs.certifyClause.getLegalName(),
             email: 'no_one@never.get',
             deliveryAddress: this.addresses['deliveryAddress'],
             mailingAddress: this.addresses['mailingAddress']
@@ -522,7 +538,7 @@ export default {
 
     setValidateFlag () {
       // compute the AR page's valid state
-      this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid)
+      this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.certifyChange)
     }
   },
 
@@ -550,6 +566,10 @@ export default {
     },
 
     directorFormValid (val) {
+      this.setValidateFlag()
+    },
+
+    certifyChange: function (val) {
       this.setValidateFlag()
     }
   }
@@ -581,7 +601,7 @@ h2
   font-size: 2rem;
   font-weight: 500;
 
-#AR-step-1-header, #AR-step-2-header, #AR-step-3-header
+#AR-step-1-header, #AR-step-2-header, #AR-step-3-header, #AR-step-4-header
   margin-bottom: 0.25rem;
   margin-top: 3rem;
   font-size: 1.125rem;

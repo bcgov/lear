@@ -57,6 +57,7 @@ describe('AnnualReport - Part 1', () => {
     vm.setAgmDateValid(true)
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(true)
+    vm.changeCertifyData(true)
     vm.setValidateFlag()
 
     // confirm that flag is set correctly
