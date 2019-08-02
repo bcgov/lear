@@ -1,8 +1,8 @@
 {
 	"info": {
-		"_postman_id": "2b9f5445-d054-4608-b3e6-7612a0f3aded",
+		"_postman_id": "1608b317-15d7-40c1-905e-315232b75a30",
 		"name": "legal-api",
-		"description": "version=0.79 - This is a Legal API description",
+		"description": "version=0.80 - This is a Legal API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -1067,7 +1067,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annualReport\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002098\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP0002098\"\n        },\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+					"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annualReport\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002098\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP0002098\"\n        },\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 				},
 				"url": {
 					"raw": "{{url}}/api/v1/businesses/:id/filings",
@@ -1104,7 +1104,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual_report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002098\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP0002098\"\n        },\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual_report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002098\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP0002098\"\n        },\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/:id/filings",
@@ -1129,7 +1129,7 @@
 					"_postman_previewlanguage": "json",
 					"header": [],
 					"cookie": [],
-					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-01-20\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"status\": \"PENDING\"\n        },\n        \"changeOfDirectors\": {\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"directors\": [\n                {\n                    \"officer\": {\n                        \"firstName\": \"Peter\",\n                        \"middleInitial\": \"G\",\n                        \"lastName\": \"Griffin\"\n                    },\n                    \"deliveryAddress\": {\n                        \"streetAddress\": \"2729 Belmont Ave\",\n                        \"additionalStreetAddress\": \"Back door\",\n                        \"addressCity\": \"Victoria\",\n                        \"addressCountry\": \"CA\",\n                        \"postalCode\": \"H0H0H0\",\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"Send to back\"\n                    },\n                    \"title\": \"President\",\n                    \"appointmentDate\": \"2014-03-30\",\n                    \"cessationDate\": null\n                },\n                {\n                    \"officer\": {\n                        \"firstName\": \"Joe\",\n                        \"middleInitial\": \"P\",\n                        \"lastName\": \"Swanson\"\n                    },\n                    \"deliveryAddress\": {\n                        \"streetAddress\": \"1020 Douglas Street\",\n                        \"additionalStreetAddress\": \"Kirkintiloch\",\n                        \"addressCity\": \"Glasgow\",\n                        \"addressCountry\": \"UK\",\n                        \"postalCode\": \"H0H 0H0\",\n                        \"addressRegion\": \"SC\",\n                        \"deliveryInstructions\": \"Please call 250-812-2445.\"\n                    },\n                    \"title\": \"Treasurer\",\n\t\t\t\t\t\"appointmentDate\": \"2017-01-20\",\n\t\t\t\t\t\"cessationDate\": \"2019-01-20\"\n                },\n                {\n                    \"officer\": {\n                        \"firstName\": \"Stewie\",\n                        \"lastName\": \"Griffin\"\n                    },\n                    \"deliveryAddress\": {\n                        \"streetAddress\": \"1020 Douglas Street\",\n                        \"additionalStreetAddress\": \"Kirkintiloch\",\n                        \"addressCity\": \"Glasgow\",\n                        \"addressCountry\": \"UK\",\n                        \"postalCode\": \"H0H 0H0\",\n                        \"addressRegion\": \"SC\",\n                        \"deliveryInstructions\": \"Please call 250-812-2445.\"\n                    },\n                    \"appointmentDate\": \"2019-01-20\",\n                    \"cessationDate\": null\n                }\n            ]\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2019-06-10\",\n            \"identifier\": \"CP0002103\",\n            \"lastLedgerTimestamp\": \"2019-06-10T22:35:19.652478+00:00\",\n            \"legalName\": \"legal name CP0002103\"\n        },\n        \"header\": {\n            \"date\": \"2019-05-30\",\n            \"name\": \"annualReport\",\n            \"paymentToken\": \"\",\n            \"status\": \"PENDING\"\n        }\n    }\n}"
+					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-01-20\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"status\": \"PENDING\"\n        },\n        \"changeOfDirectors\": {\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"directors\": [\n                {\n                    \"officer\": {\n                        \"firstName\": \"Peter\",\n                        \"middleInitial\": \"G\",\n                        \"lastName\": \"Griffin\"\n                    },\n                    \"deliveryAddress\": {\n                        \"streetAddress\": \"2729 Belmont Ave\",\n                        \"additionalStreetAddress\": \"Back door\",\n                        \"addressCity\": \"Victoria\",\n                        \"addressCountry\": \"CA\",\n                        \"postalCode\": \"H0H0H0\",\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"Send to back\"\n                    },\n                    \"title\": \"President\",\n                    \"appointmentDate\": \"2014-03-30\",\n                    \"cessationDate\": null\n                },\n                {\n                    \"officer\": {\n                        \"firstName\": \"Joe\",\n                        \"middleInitial\": \"P\",\n                        \"lastName\": \"Swanson\"\n                    },\n                    \"deliveryAddress\": {\n                        \"streetAddress\": \"1020 Douglas Street\",\n                        \"additionalStreetAddress\": \"Kirkintiloch\",\n                        \"addressCity\": \"Glasgow\",\n                        \"addressCountry\": \"UK\",\n                        \"postalCode\": \"H0H 0H0\",\n                        \"addressRegion\": \"SC\",\n                        \"deliveryInstructions\": \"Please call 250-812-2445.\"\n                    },\n                    \"title\": \"Treasurer\",\n\t\t\t\t\t\"appointmentDate\": \"2017-01-20\",\n\t\t\t\t\t\"cessationDate\": \"2019-01-20\"\n                },\n                {\n                    \"officer\": {\n                        \"firstName\": \"Stewie\",\n                        \"lastName\": \"Griffin\"\n                    },\n                    \"deliveryAddress\": {\n                        \"streetAddress\": \"1020 Douglas Street\",\n                        \"additionalStreetAddress\": \"Kirkintiloch\",\n                        \"addressCity\": \"Glasgow\",\n                        \"addressCountry\": \"UK\",\n                        \"postalCode\": \"H0H 0H0\",\n                        \"addressRegion\": \"SC\",\n                        \"deliveryInstructions\": \"Please call 250-812-2445.\"\n                    },\n                    \"appointmentDate\": \"2019-01-20\",\n                    \"cessationDate\": null\n                }\n            ]\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2019-06-10\",\n            \"identifier\": \"CP0002103\",\n            \"lastLedgerTimestamp\": \"2019-06-10T22:35:19.652478+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-06-10T22:35:19.652478+00:00\",\n            \"legalName\": \"legal name CP0002103\"\n        },\n        \"header\": {\n            \"date\": \"2019-05-30\",\n            \"name\": \"annualReport\",\n            \"paymentToken\": \"\",\n            \"status\": \"PENDING\"\n        }\n    }\n}"
 				},
 				{
 					"name": "post - annual report - CP0002098",
@@ -1145,7 +1145,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual_report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002098\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP0002098\"\n        },\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual_report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002098\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP0002098\"\n        },\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/:id/filings",
@@ -1193,7 +1193,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"status\": \"PENDING\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002098\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP0002098\"\n        },\n        \"header\": {\n            \"date\": \"2019-06-09\",\n            \"filingId\": 10,\n            \"name\": \"annualReport\",\n            \"paymentToken\": \"token\",\n            \"status\": \"PENDING\"\n        }\n    }\n}"
+					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"status\": \"PENDING\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002098\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP0002098\"\n        },\n        \"header\": {\n            \"date\": \"2019-06-09\",\n            \"filingId\": 10,\n            \"name\": \"annualReport\",\n            \"paymentToken\": \"token\",\n            \"status\": \"PENDING\"\n        }\n    }\n}"
 				}
 			]
 		},
@@ -1300,76 +1300,6 @@
 			},
 			"response": [
 				{
-					"name": "post - annual report - CP0002098 - Save Draft",
-					"originalRequest": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual_report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP1234567\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\"\n        },\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
-						},
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id/filings?draft=true",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								":id",
-								"filings"
-							],
-							"query": [
-								{
-									"key": "draft",
-									"value": "true"
-								}
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "CP0002098"
-								}
-							]
-						}
-					},
-					"status": "CREATED",
-					"code": 201,
-					"_postman_previewlanguage": "json",
-					"header": [
-						{
-							"key": "Content-Type",
-							"value": "application/json"
-						},
-						{
-							"key": "Access-Control-Allow-Origin",
-							"value": "*"
-						},
-						{
-							"key": "Access-Control-Allow-Methods",
-							"value": "HEAD, GET, OPTIONS, DELETE, POST, PUT"
-						},
-						{
-							"key": "API",
-							"value": "legal_api/0.1.0a0.dev"
-						},
-						{
-							"key": "Server",
-							"value": "Werkzeug/0.15.4 Python/3.7.3"
-						}
-					],
-					"cookie": [],
-					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"status\": \"DRAFT\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002098\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP0002098\"\n        },\n        \"header\": {\n            \"date\": \"2019-06-09\",\n            \"filingId\": 10,\n            \"name\": \"annualReport\",\n            \"status\": \"DRAFT\"\n        }\n    },\n    \"errors\":[\n    \t]\n}"
-				},
-				{
 					"name": "post - annual report - CP0002103 - Save Draft",
 					"originalRequest": {
 						"method": "POST",
@@ -1447,6 +1377,76 @@
 					],
 					"cookie": [],
 					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"status\": \"DRAFT\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002103\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP0002103\"\n        },\n        \"header\": {\n            \"date\": \"2019-06-09\",\n            \"filingId\": 10,\n            \"status\": \"DRAFT\"\n        }\n    },\n    \"errors\":[\n    \t{\"path\": \"filing/header\",\"error\": \"'name' is a required property\"}\n    \t]\n}"
+				},
+				{
+					"name": "post - annual report - CP0002098 - Save Draft",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"annual_report\",\n            \"date\": \"2019-04-08\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP1234567\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\"\n        },\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings?draft=true",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings"
+							],
+							"query": [
+								{
+									"key": "draft",
+									"value": "true"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0002098"
+								}
+							]
+						}
+					},
+					"status": "CREATED",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "HEAD, GET, OPTIONS, DELETE, POST, PUT"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev"
+						},
+						{
+							"key": "Server",
+							"value": "Werkzeug/0.15.4 Python/3.7.3"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"status\": \"DRAFT\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002098\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP0002098\"\n        },\n        \"header\": {\n            \"date\": \"2019-06-09\",\n            \"filingId\": 10,\n            \"name\": \"annualReport\",\n            \"status\": \"DRAFT\"\n        }\n    },\n    \"errors\":[\n    \t]\n}"
 				}
 			]
 		},
@@ -1906,114 +1906,6 @@
 			},
 			"response": [
 				{
-					"name": "get-business - CP0002106",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "CP0002106"
-								}
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [
-						{
-							"key": "Date",
-							"value": "Wed, 26 Jun 2019 20:26:08 GMT"
-						},
-						{
-							"key": "Server",
-							"value": "gunicorn/19.9.0"
-						},
-						{
-							"key": "API",
-							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
-						},
-						{
-							"key": "Access-Control-Allow-Origin",
-							"value": "*"
-						},
-						{
-							"key": "Access-Control-Allow-Methods",
-							"value": "GET, HEAD, OPTIONS"
-						},
-						{
-							"key": "Content-Type",
-							"value": "application/json"
-						}
-					],
-					"cookie": [],
-					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002106\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastAnnualGeneralMeetingDate\": \"2019-04-08\",\n        \"lastAnnualReport\": \"2019-04-08\",\n        \"legalName\": \"Legal Name CP0002106\",\n        \"status\": \"NOTINCOMPLIANCE\",\n        \"taxId\": \"21062106\"\n    }\n}"
-				},
-				{
-					"name": "get-business - CP0002098",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "CP0002098"
-								}
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [
-						{
-							"key": "Server",
-							"value": "gunicorn/19.9.0"
-						},
-						{
-							"key": "Content-Type",
-							"value": "application/json"
-						},
-						{
-							"key": "Access-Control-Allow-Origin",
-							"value": "*"
-						},
-						{
-							"key": "Access-Control-Allow-Methods",
-							"value": "GET, HEAD, OPTIONS"
-						},
-						{
-							"key": "API",
-							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
-						}
-					],
-					"cookie": [],
-					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002098\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastAnnualGeneralMeetingDate\": \"2017-04-08\",\n        \"lastAnnualReport\": \"2017-04-08\",\n        \"legalName\": \"Legal Name CP0002098\",\n        \"status\": \"GOODSTANDING\",\n        \"taxId\": \"20982098\"\n    }\n}"
-				},
-				{
 					"name": "get-business - CP0002103",
 					"originalRequest": {
 						"method": "GET",
@@ -2067,7 +1959,115 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002103\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastAnnualGeneralMeetingDate\": \"2018-04-08\",\n        \"lastAnnualReport\": \"2018-04-08\",\n        \"legalName\": \"Legal Name CP0002103\",\n        \"status\": \"PENDINGDISSOLUTION\",\n        \"taxId\": \"21032103\"\n    }\n}"
+					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002103\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastPreBobFilingTimestamp\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastAnnualGeneralMeetingDate\": \"2018-04-08\",\n        \"lastAnnualReport\": \"2018-04-08\",\n        \"legalName\": \"Legal Name CP0002103\",\n        \"status\": \"PENDINGDISSOLUTION\",\n        \"taxId\": \"21032103\"\n    }\n}"
+				},
+				{
+					"name": "get-business - CP0002098",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0002098"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET, HEAD, OPTIONS"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002098\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastPreBobFilingTimestamp\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastAnnualGeneralMeetingDate\": \"2017-04-08\",\n        \"lastAnnualReport\": \"2017-04-08\",\n        \"legalName\": \"Legal Name CP0002098\",\n        \"status\": \"GOODSTANDING\",\n        \"taxId\": \"20982098\"\n    }\n}"
+				},
+				{
+					"name": "get-business - CP0002106",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0002106"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Wed, 26 Jun 2019 20:26:08 GMT"
+						},
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET, HEAD, OPTIONS"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"business\": {\n        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n        \"identifier\": \"CP0002106\",\n        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastAnnualGeneralMeetingDate\": \"2019-04-08\",\n        \"lastPreBobFilingTimestamp\": \"2019-06-10T22:35:19.652478+00:00\",\n        \"lastAnnualReport\": \"2019-04-08\",\n        \"legalName\": \"Legal Name CP0002106\",\n        \"status\": \"NOTINCOMPLIANCE\",\n        \"taxId\": \"21062106\"\n    }\n}"
 				}
 			]
 		},
@@ -2097,6 +2097,63 @@
 				}
 			},
 			"response": [
+				{
+					"name": "get-business/addresses - CP0002106",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/addresses",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"addresses"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0002106"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Wed, 26 Jun 2019 20:26:08 GMT"
+						},
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET, HEAD, OPTIONS"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"mailingAddress\": {\n        \"addressCity\": \"Victoria\",\n        \"addressCountry\": \"CANADA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": \"mailing address for CP0002106\",\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"2106 North Street\",\n        \"streetAddressAdditional\": \"apt 2106\"\n    },\n    \"deliveryAddress\": {\n        \"addressCity\": \"Victoria\",\n        \"addressCountry\": \"CANADA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": \"delivery address for CP0002106\",\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"2106 West Avenue\",\n        \"streetAddressAdditional\": \"suite 2106\"\n    }\n}"
+				},
 				{
 					"name": "get-business/addresses - CP0002103",
 					"originalRequest": {
@@ -2206,63 +2263,6 @@
 					],
 					"cookie": [],
 					"body": "{\n    \"mailingAddress\": {\n        \"addressCity\": \"Victoria\",\n        \"addressCountry\": \"CANADA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": \"mailing address for CP0002098\",\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"2098 North Street\",\n        \"streetAddressAdditional\": \"apt 2098\"\n    },\n    \"deliveryAddress\": {\n        \"addressCity\": \"Victoria\",\n        \"addressCountry\": \"CANADA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": \"delivery address for CP0002098\",\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"2098 West Avenue\",\n        \"streetAddressAdditional\": \"suite 2098\"\n    }\n}"
-				},
-				{
-					"name": "get-business/addresses - CP0002106",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id/addresses",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								":id",
-								"addresses"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "CP0002106"
-								}
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [
-						{
-							"key": "Date",
-							"value": "Wed, 26 Jun 2019 20:26:08 GMT"
-						},
-						{
-							"key": "Server",
-							"value": "gunicorn/19.9.0"
-						},
-						{
-							"key": "API",
-							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
-						},
-						{
-							"key": "Access-Control-Allow-Origin",
-							"value": "*"
-						},
-						{
-							"key": "Access-Control-Allow-Methods",
-							"value": "GET, HEAD, OPTIONS"
-						},
-						{
-							"key": "Content-Type",
-							"value": "application/json"
-						}
-					],
-					"cookie": [],
-					"body": "{\n    \"mailingAddress\": {\n        \"addressCity\": \"Victoria\",\n        \"addressCountry\": \"CANADA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": \"mailing address for CP0002106\",\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"2106 North Street\",\n        \"streetAddressAdditional\": \"apt 2106\"\n    },\n    \"deliveryAddress\": {\n        \"addressCity\": \"Victoria\",\n        \"addressCountry\": \"CANADA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": \"delivery address for CP0002106\",\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"2106 West Avenue\",\n        \"streetAddressAdditional\": \"suite 2106\"\n    }\n}"
 				}
 			]
 		},
@@ -2297,68 +2297,6 @@
 				}
 			},
 			"response": [
-				{
-					"name": "get-business/addresses - CP0002106",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id/addresses/:address_type",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								":id",
-								"addresses",
-								":address_type"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "CP0002106"
-								},
-								{
-									"key": "address_type",
-									"value": "mailingAddress"
-								}
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [
-						{
-							"key": "Date",
-							"value": "Wed, 26 Jun 2019 20:26:08 GMT"
-						},
-						{
-							"key": "Server",
-							"value": "gunicorn/19.9.0"
-						},
-						{
-							"key": "API",
-							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
-						},
-						{
-							"key": "Access-Control-Allow-Origin",
-							"value": "*"
-						},
-						{
-							"key": "Access-Control-Allow-Methods",
-							"value": "GET, HEAD, OPTIONS"
-						},
-						{
-							"key": "Content-Type",
-							"value": "application/json"
-						}
-					],
-					"cookie": [],
-					"body": "{\n    \"mailingAddress\": {\n        \"addressCity\": \"Test City\",\n        \"addressCountry\": \"TA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": null,\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"CP0002106-mailingAddress-Test Street\",\n        \"streetAddressAdditional\": null\n    }\n}"
-				},
 				{
 					"name": "get-business/addresses - CP0002103",
 					"originalRequest": {
@@ -2420,6 +2358,68 @@
 					],
 					"cookie": [],
 					"body": "{\n    \"deliveryAddress\": {\n        \"addressCity\": \"Test City\",\n        \"addressCountry\": \"TA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": null,\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"CP0002103-deliveryAddress-Test Street\",\n        \"streetAddressAdditional\": null\n    }\n}"
+				},
+				{
+					"name": "get-business/addresses - CP0002106",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/addresses/:address_type",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"addresses",
+								":address_type"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0002106"
+								},
+								{
+									"key": "address_type",
+									"value": "mailingAddress"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Wed, 26 Jun 2019 20:26:08 GMT"
+						},
+						{
+							"key": "Server",
+							"value": "gunicorn/19.9.0"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "GET, HEAD, OPTIONS"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"mailingAddress\": {\n        \"addressCity\": \"Test City\",\n        \"addressCountry\": \"TA\",\n        \"addressRegion\": \"BC\",\n        \"addressType\": \"mailing\",\n        \"deliveryInstructions\": null,\n        \"postalCode\": \"T3S3T3\",\n        \"streetAddress\": \"CP0002106-mailingAddress-Test Street\",\n        \"streetAddressAdditional\": null\n    }\n}"
 				}
 			]
 		},
@@ -2514,69 +2514,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n\t\"filing\": {\n\t  \"annualReport\": {\n\t    \"annualGeneralMeetingDate\": \"2018-07-15\",\n\t    \"certifiedBy\": \"full1 name1\",\n\t    \"email\": \"no_one@never.get\"\n\t  },\n\t  \"changeOfAddress\": {\n\t    \"certifiedBy\": \"full2 name2\",\n\t    \"email\": \"no_one@never.get\",\n\t    \"mailingAddress\": {\n\t        \"addressCity\": \"Victoria\",\n\t        \"addressCountry\": \"CANADA\",\n\t        \"addressRegion\": \"BC\",\n\t        \"addressType\": \"mailing\",\n\t        \"deliveryInstructions\": \"draft filing\",\n\t        \"postalCode\": \"T3S3T3\",\n\t        \"streetAddress\": \"2098 North Street\",\n\t        \"streetAddressAdditional\": \"apt 2098\"\n\t    },\n\t    \"deliveryAddress\": {\n\t        \"addressCity\": \"Victoria\",\n\t        \"addressCountry\": \"CANADA\",\n\t        \"addressRegion\": \"BC\",\n\t        \"addressType\": \"mailing\",\n\t        \"deliveryInstructions\": \"draft filing\",\n\t        \"postalCode\": \"T3S3T3\",\n\t        \"streetAddress\": \"2098 West Avenue\",\n\t        \"streetAddressAdditional\": \"suite 2098\"\n\t    }\n\t  },\n\t  \"changeOfDirectors\": {\n\t    \"certifiedBy\": \"full3 name3\",\n\t    \"email\": \"no_one@never.get\",\n\t    \"directors\": [\n\t        {\n\t            \"officer\": {\n\t                \"firstName\": \"Scott2\",\n\t                \"lastName\": \"Johnson2\"\n\t            },\n\t            \"deliveryAddress\": {\n\t                \"streetAddress\": \"3950A Helen Road\",\n\t                \"addressCity\": \"Edmonton\",\n\t                \"addressCountry\": \"CA\",\n\t                \"postalCode\": \"V5Z 8C8\",\n\t                \"addressRegion\": \"AB\"\n\t            },\n\t            \"appointmentDate\": \"2015-10-12\",\n\t            \"cessationDate\": null\n\t        }\n\t    ]\n\t  },\n\t  \"business\": {\n\t    \"cacheId\": 1,\n\t    \"foundingDate\": \"2007-04-08\",\n\t    \"identifier\": \"CP0002098\",\n\t    \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n\t    \"legalName\": \"Legal Name CP0002098\"\n\t  },\n\t  \"header\": {\n\t    \"date\": \"2017-06-06\",\n\t    \"filingId\": 4,\n\t    \"name\": \"annualReport\",\n\t    \"status\": \"DRAFT\"\n\t  }\n\t}\n}"
-				},
-				{
-					"name": "get-business-filing-by-id - CP0002106",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id/filings/:filing_id",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								":id",
-								"filings",
-								":filing_id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "CP0002106"
-								},
-								{
-									"key": "filing_id",
-									"value": "1"
-								}
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [
-						{
-							"key": "X-Application-Context",
-							"value": "application:prod"
-						},
-						{
-							"key": "Access-Control-Allow-Origin",
-							"value": "*"
-						},
-						{
-							"key": "API",
-							"value": "legal_api/0.1.0a0.dev"
-						},
-						{
-							"key": "Server",
-							"value": "Werkzeug/0.15.4 Python/3.7.3"
-						},
-						{
-							"key": "Access-Control-Allow-Methods",
-							"value": "HEAD, GET, OPTIONS, DELETE, POST, PUT"
-						},
-						{
-							"key": "Content-Type",
-							"value": "application/json"
-						}
-					],
-					"cookie": [],
-					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"status\": \"COMPLETED\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002106\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name CP0002106\"\n        },\n        \"header\": {\n            \"date\": \"2019-06-06\",\n            \"filingId\": 1,\n            \"name\": \"annualReport\",\n            \"paymentToken\": \"token\",\n            \"status\": \"COMPLETED\"\n        }\n    }\n}"
+					"body": "{\n\t\"filing\": {\n\t  \"annualReport\": {\n\t    \"annualGeneralMeetingDate\": \"2018-07-15\",\n\t    \"certifiedBy\": \"full1 name1\",\n\t    \"email\": \"no_one@never.get\"\n\t  },\n\t  \"changeOfAddress\": {\n\t    \"certifiedBy\": \"full2 name2\",\n\t    \"email\": \"no_one@never.get\",\n\t    \"mailingAddress\": {\n\t        \"addressCity\": \"Victoria\",\n\t        \"addressCountry\": \"CANADA\",\n\t        \"addressRegion\": \"BC\",\n\t        \"addressType\": \"mailing\",\n\t        \"deliveryInstructions\": \"draft filing\",\n\t        \"postalCode\": \"T3S3T3\",\n\t        \"streetAddress\": \"2098 North Street\",\n\t        \"streetAddressAdditional\": \"apt 2098\"\n\t    },\n\t    \"deliveryAddress\": {\n\t        \"addressCity\": \"Victoria\",\n\t        \"addressCountry\": \"CANADA\",\n\t        \"addressRegion\": \"BC\",\n\t        \"addressType\": \"mailing\",\n\t        \"deliveryInstructions\": \"draft filing\",\n\t        \"postalCode\": \"T3S3T3\",\n\t        \"streetAddress\": \"2098 West Avenue\",\n\t        \"streetAddressAdditional\": \"suite 2098\"\n\t    }\n\t  },\n\t  \"changeOfDirectors\": {\n\t    \"certifiedBy\": \"full3 name3\",\n\t    \"email\": \"no_one@never.get\",\n\t    \"directors\": [\n\t        {\n\t            \"officer\": {\n\t                \"firstName\": \"Scott2\",\n\t                \"lastName\": \"Johnson2\"\n\t            },\n\t            \"deliveryAddress\": {\n\t                \"streetAddress\": \"3950A Helen Road\",\n\t                \"addressCity\": \"Edmonton\",\n\t                \"addressCountry\": \"CA\",\n\t                \"postalCode\": \"V5Z 8C8\",\n\t                \"addressRegion\": \"AB\"\n\t            },\n\t            \"appointmentDate\": \"2015-10-12\",\n\t            \"cessationDate\": null\n\t        }\n\t    ]\n\t  },\n\t  \"business\": {\n\t    \"cacheId\": 1,\n\t    \"foundingDate\": \"2007-04-08\",\n\t    \"identifier\": \"CP0002098\",\n\t    \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n\t    \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n\t    \"legalName\": \"Legal Name CP0002098\"\n\t  },\n\t  \"header\": {\n\t    \"date\": \"2017-06-06\",\n\t    \"filingId\": 4,\n\t    \"name\": \"annualReport\",\n\t    \"status\": \"DRAFT\"\n\t  }\n\t}\n}"
 				},
 				{
 					"name": "get-business-filing-by-id - CP0002103",
@@ -2638,7 +2576,69 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"status\": \"DRAFT\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002103\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name CP0002103\"\n        },\n        \"header\": {\n            \"date\": \"2019-06-06\",\n            \"filingId\": 1,\n            \"name\": \"annualReport\",\n            \"status\": \"DRAFT\"\n        }\n    }\n}"
+					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"status\": \"DRAFT\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002103\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name CP0002103\"\n        },\n        \"header\": {\n            \"date\": \"2019-06-06\",\n            \"filingId\": 1,\n            \"name\": \"annualReport\",\n            \"status\": \"DRAFT\"\n        }\n    }\n}"
+				},
+				{
+					"name": "get-business-filing-by-id - CP0002106",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings/:filing_id",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings",
+								":filing_id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0002106"
+								},
+								{
+									"key": "filing_id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "X-Application-Context",
+							"value": "application:prod"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev"
+						},
+						{
+							"key": "Server",
+							"value": "Werkzeug/0.15.4 Python/3.7.3"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "HEAD, GET, OPTIONS, DELETE, POST, PUT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2019-04-08\",\n            \"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"status\": \"COMPLETED\"\n        },\n        \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08\",\n            \"identifier\": \"CP0002106\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name CP0002106\"\n        },\n        \"header\": {\n            \"date\": \"2019-06-06\",\n            \"filingId\": 1,\n            \"name\": \"annualReport\",\n            \"paymentToken\": \"token\",\n            \"status\": \"COMPLETED\"\n        }\n    }\n}"
 				}
 			]
 		},
@@ -2668,73 +2668,6 @@
 				}
 			},
 			"response": [
-				{
-					"name": "get-business-filings - CP0002103",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id/filings",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								":id",
-								"filings"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "CP0002103"
-								}
-							]
-						}
-					},
-					"_postman_previewlanguage": "json",
-					"header": [
-						{
-							"key": "X-Application-Context",
-							"value": "application:prod",
-							"description": "",
-							"type": "text"
-						},
-						{
-							"key": "Access-Control-Allow-Origin",
-							"value": "*",
-							"description": "",
-							"type": "text"
-						},
-						{
-							"key": "API",
-							"value": "legal_api/0.1.0a0.dev",
-							"description": "",
-							"type": "text"
-						},
-						{
-							"key": "Server",
-							"value": "Werkzeug/0.15.4 Python/3.7.3",
-							"description": "",
-							"type": "text"
-						},
-						{
-							"key": "Access-Control-Allow-Methods",
-							"value": "HEAD, GET, OPTIONS, DELETE, POST, PUT",
-							"description": "",
-							"type": "text"
-						},
-						{
-							"key": "Content-Type",
-							"value": "application/json",
-							"description": "",
-							"type": "text"
-						}
-					],
-					"cookie": [],
-					"body": "{\n    \"filings\": [\n        {\n            \"filing\": {\n                \"annualReport\": {\n                    \"annualGeneralMeetingDate\": \"2018-04-08\",\n                    \"certifiedBy\": \"full name\",\n                    \"email\": \"no_one@never.get\",\n                    \"status\": \"COMPLETE\"\n                },\n                \"business\": {\n                    \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n                    \"identifier\": \"CP0002103\",\n                    \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n                    \"lastAnnualGeneralMeetingDate\": \"2018-04-08\",\n                    \"lastAnnualReport\": \"2018-04-08\",\n                    \"legalName\": \"Legal Name CP0002103\",\n                    \"status\": \"PENDINGDISSOLUTION\",\n                    \"taxId\": \"21032103\"\n                },\n                \"header\": {\n                    \"date\": \"2017-06-06\",\n                    \"filingId\": 1,\n                    \"name\": \"annualReport\",\n                    \"status\": \"COMPLETE\"\n                }\n            }\n        }\n    ]\n}"
-				},
 				{
 					"name": "get-business-filings - CP0002098",
 					"originalRequest": {
@@ -2790,7 +2723,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"filings\": [\n        {\n            \"filing\": {\n                \"annualReport\": {\n                    \"annualGeneralMeetingDate\": \"2017-04-08\",\n                    \"certifiedBy\": \"full name\",\n                    \"email\": \"no_one@never.get\",\n                    \"status\": \"COMPLETE\"\n                },\n                \"business\": {\n                    \"cacheId\": 1,\n                    \"foundingDate\": \"2007-04-08\",\n                    \"identifier\": \"CP0002098\",\n                    \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n                    \"legalName\": \"legal name CP0002098\"\n                },\n                \"header\": {\n                    \"date\": \"2017-06-06\",\n                    \"filingId\": 3,\n                    \"name\": \"annualReport\",\n                    \"status\": \"COMPLETE\"\n                }\n            }\n        },\n        {\n            \"filing\": {\n                \"annualReport\": {\n                    \"annualGeneralMeetingDate\": \"2015-04-08\",\n                    \"certifiedBy\": \"full name\",\n                    \"email\": \"no_one@never.get\",\n                    \"status\": \"COMPLETE\"\n                },\n                \"business\": {\n                    \"cacheId\": 1,\n                    \"foundingDate\": \"2007-04-08\",\n                    \"identifier\": \"CP0002098\",\n                    \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n                    \"legalName\": \"legal name CP0002098\"\n                },\n                \"header\": {\n                    \"date\": \"2015-06-06\",\n                    \"filingId\": 1,\n                    \"name\": \"annualReport\",\n                    \"paymentToken\": \"token\",\n                    \"status\": \"COMPLETE\"\n                }\n            }\n        },\n        {\n            \"filing\": {\n                \"annualReport\": {\n                    \"annualGeneralMeetingDate\": \"2016-04-08\",\n                    \"certifiedBy\": \"full name\",\n                    \"email\": \"no_one@never.get\",\n                    \"status\": \"COMPLETE\"\n                },\n                \"business\": {\n                    \"cacheId\": 1,\n                    \"foundingDate\": \"2007-04-08\",\n                    \"identifier\": \"CP0002098\",\n                    \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n                    \"legalName\": \"legal name CP0002098\"\n                },\n                \"header\": {\n                    \"date\": \"2016-06-06\",\n                    \"filingId\": 2,\n                    \"name\": \"annualReport\",\n                    \"paymentToken\": \"token\",\n                    \"status\": \"COMPLETE\"\n                }\n            }\n        }\n    ]\n}"
+					"body": "{\n    \"filings\": [\n        {\n            \"filing\": {\n                \"annualReport\": {\n                    \"annualGeneralMeetingDate\": \"2017-04-08\",\n                    \"certifiedBy\": \"full name\",\n                    \"email\": \"no_one@never.get\",\n                    \"status\": \"COMPLETE\"\n                },\n                \"business\": {\n                    \"cacheId\": 1,\n                    \"foundingDate\": \"2007-04-08\",\n                    \"identifier\": \"CP0002098\",\n                    \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n\t\t            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n                    \"legalName\": \"legal name CP0002098\"\n                },\n                \"header\": {\n                    \"date\": \"2017-06-06\",\n                    \"filingId\": 3,\n                    \"name\": \"annualReport\",\n                    \"status\": \"COMPLETE\"\n                }\n            }\n        },\n        {\n            \"filing\": {\n                \"annualReport\": {\n                    \"annualGeneralMeetingDate\": \"2015-04-08\",\n                    \"certifiedBy\": \"full name\",\n                    \"email\": \"no_one@never.get\",\n                    \"status\": \"COMPLETE\"\n                },\n                \"business\": {\n                    \"cacheId\": 1,\n                    \"foundingDate\": \"2007-04-08\",\n                    \"identifier\": \"CP0002098\",\n                    \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n                    \"legalName\": \"legal name CP0002098\"\n                },\n                \"header\": {\n                    \"date\": \"2015-06-06\",\n                    \"filingId\": 1,\n                    \"name\": \"annualReport\",\n                    \"paymentToken\": \"token\",\n                    \"status\": \"COMPLETE\"\n                }\n            }\n        },\n        {\n            \"filing\": {\n                \"annualReport\": {\n                    \"annualGeneralMeetingDate\": \"2016-04-08\",\n                    \"certifiedBy\": \"full name\",\n                    \"email\": \"no_one@never.get\",\n                    \"status\": \"COMPLETE\"\n                },\n                \"business\": {\n                    \"cacheId\": 1,\n                    \"foundingDate\": \"2007-04-08\",\n                    \"identifier\": \"CP0002098\",\n                    \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n                    \"legalName\": \"legal name CP0002098\"\n                },\n                \"header\": {\n                    \"date\": \"2016-06-06\",\n                    \"filingId\": 2,\n                    \"name\": \"annualReport\",\n                    \"paymentToken\": \"token\",\n                    \"status\": \"COMPLETE\"\n                }\n            }\n        }\n    ]\n}"
 				},
 				{
 					"name": "get-business-filings - CP0002106",
@@ -2857,7 +2790,74 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"filings\": [\n        {\n            \"filing\": {\n                \"annualReport\": {\n                    \"annualGeneralMeetingDate\": \"2019-04-08\",\n                    \"certifiedBy\": \"full name\",\n                    \"email\": \"no_one@never.get\",\n                    \"status\": \"COMPLETE\"\n                },\n\t\t\t    \"business\": {\n\t\t\t        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n\t\t\t        \"identifier\": \"CP0002106\",\n\t\t\t        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n\t\t\t        \"lastAnnualGeneralMeetingDate\": \"2019-04-08\",\n\t\t\t        \"lastAnnualReport\": \"2019-04-08\",\n\t\t\t        \"legalName\": \"Legal Name CP0002106\",\n\t\t\t        \"status\": \"NOTINCOMPLIANCE\",\n\t\t\t        \"taxId\": \"21062106\"\n\t\t\t    },\n                \"header\": {\n                    \"date\": \"2016-06-06\",\n                    \"filingId\": 1,\n                    \"name\": \"annualReport\",\n                    \"paymentToken\": \"token\",\n                    \"status\": \"COMPLETE\"\n                }\n            }\n        }\n    ]\n}"
+					"body": "{\n    \"filings\": [\n        {\n            \"filing\": {\n                \"annualReport\": {\n                    \"annualGeneralMeetingDate\": \"2019-04-08\",\n                    \"certifiedBy\": \"full name\",\n                    \"email\": \"no_one@never.get\",\n                    \"status\": \"COMPLETE\"\n                },\n\t\t\t    \"business\": {\n\t\t\t        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n\t\t\t        \"identifier\": \"CP0002106\",\n\t\t\t        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n\t\t\t        \"lastAnnualGeneralMeetingDate\": \"2019-04-08\",\n\t\t\t        \"lastAnnualReport\": \"2019-04-08\",\n\t\t            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n\t\t\t        \"legalName\": \"Legal Name CP0002106\",\n\t\t\t        \"status\": \"NOTINCOMPLIANCE\",\n\t\t\t        \"taxId\": \"21062106\"\n\t\t\t    },\n                \"header\": {\n                    \"date\": \"2016-06-06\",\n                    \"filingId\": 1,\n                    \"name\": \"annualReport\",\n                    \"paymentToken\": \"token\",\n                    \"status\": \"COMPLETE\"\n                }\n            }\n        }\n    ]\n}"
+				},
+				{
+					"name": "get-business-filings - CP0002103",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0002103"
+								}
+							]
+						}
+					},
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "X-Application-Context",
+							"value": "application:prod",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "Server",
+							"value": "Werkzeug/0.15.4 Python/3.7.3",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "HEAD, GET, OPTIONS, DELETE, POST, PUT",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"filings\": [\n        {\n            \"filing\": {\n                \"annualReport\": {\n                    \"annualGeneralMeetingDate\": \"2018-04-08\",\n                    \"certifiedBy\": \"full name\",\n                    \"email\": \"no_one@never.get\",\n                    \"status\": \"COMPLETE\"\n                },\n                \"business\": {\n                    \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\n                    \"identifier\": \"CP0002103\",\n                    \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\n                    \"lastAnnualGeneralMeetingDate\": \"2018-04-08\",\n                    \"lastAnnualReport\": \"2018-04-08\",\n\t\t            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n                    \"legalName\": \"Legal Name CP0002103\",\n                    \"status\": \"PENDINGDISSOLUTION\",\n                    \"taxId\": \"21032103\"\n                },\n                \"header\": {\n                    \"date\": \"2017-06-06\",\n                    \"filingId\": 1,\n                    \"name\": \"annualReport\",\n                    \"status\": \"COMPLETE\"\n                }\n            }\n        }\n    ]\n}"
 				}
 			]
 		},
@@ -2954,7 +2954,64 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\r\n\t\"tasks\": [\r\n\t\t{\r\n\t\t\t\"task\": {\r\n\t\t\t\t\"todo\": {\r\n\t\t\t\t\t\"business\": {\r\n\t\t\t\t\t\t\"foundingDate\": \"2019-06-10T00:00:00+00:00\",\r\n\t\t\t\t\t\t\"identifier\": \"CP0002103\",\r\n\t\t\t\t\t\t\"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\r\n\t\t\t\t\t\t\"lastAnnualGeneralMeetingDate\": \"2018-04-08\",\r\n\t\t\t\t\t\t\"lastAnnualReport\": \"2018-04-08\",\r\n\t\t\t\t\t\t\"legalName\": \"Legal Name CP0002103\",\r\n\t\t\t\t\t\t\"status\": \"PENDINGDISSOLUTION\",\r\n\t\t\t\t\t\t\"taxId\": \"21032103\"\r\n\t\t\t\t\t},\r\n\t\t\t\t\t\"header\": {\r\n\t\t\t\t\t\t\"name\": \"annualReport\",\r\n\t\t\t\t\t\t\"ARFilingYear\": 2019,\r\n\t\t\t\t\t\t\"status\": \"NEW\"\r\n\t\t\t\t\t}\r\n\t\t\t\t}\r\n\t\t\t},\r\n\t\t\t\"order\": 1,\r\n\t\t\t\"enabled\": true\r\n\t\t}\r\n\t]\r\n}"
+					"body": "{\r\n\t\"tasks\": [\r\n\t\t{\r\n\t\t\t\"task\": {\r\n\t\t\t\t\"todo\": {\r\n\t\t\t\t\t\"business\": {\r\n\t\t\t\t\t\t\"foundingDate\": \"2019-06-10T00:00:00+00:00\",\r\n\t\t\t\t\t\t\"identifier\": \"CP0002103\",\r\n\t\t\t\t\t\t\"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\r\n\t\t\t\t\t\t\"lastAnnualGeneralMeetingDate\": \"2018-04-08\",\r\n\t\t\t\t\t\t\"lastAnnualReport\": \"2018-04-08\",\r\n\t\t\t            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\r\n\t\t\t\t\t\t\"legalName\": \"Legal Name CP0002103\",\r\n\t\t\t\t\t\t\"status\": \"PENDINGDISSOLUTION\",\r\n\t\t\t\t\t\t\"taxId\": \"21032103\"\r\n\t\t\t\t\t},\r\n\t\t\t\t\t\"header\": {\r\n\t\t\t\t\t\t\"name\": \"annualReport\",\r\n\t\t\t\t\t\t\"ARFilingYear\": 2019,\r\n\t\t\t\t\t\t\"status\": \"NEW\"\r\n\t\t\t\t\t}\r\n\t\t\t\t}\r\n\t\t\t},\r\n\t\t\t\"order\": 1,\r\n\t\t\t\"enabled\": true\r\n\t\t}\r\n\t]\r\n}"
+				},
+				{
+					"name": "get-business-tasks - CP0002098",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/tasks",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"tasks"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP0002098"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "X-Application-Context",
+							"value": "application:prod"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev"
+						},
+						{
+							"key": "Server",
+							"value": "Werkzeug/0.15.4 Python/3.7.3"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "HEAD, GET, OPTIONS, DELETE, POST, PUT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\r\n  \"tasks\": [\r\n    {\r\n      \"task\": {\r\n        \"todo\": {\r\n          \"business\": {\r\n            \"cacheId\": 1,\r\n            \"foundingDate\": \"2007-04-08\",\r\n            \"identifier\": \"CP0002098\",\r\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\r\n\t\t\t\"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\r\n            \"legalName\": \"Legal Name CP0002098\"\r\n          },\r\n          \"header\": {\r\n            \"name\": \"annualReport\",\r\n            \"ARFilingYear\": 2019,\r\n            \"status\": \"NEW\"\r\n          }\r\n        }\r\n      },\r\n      \"order\": 2,\r\n      \"enabled\": false\r\n    },\r\n    {\r\n      \"task\": {\r\n        \"filing\": {\r\n          \"annualReport\": {\r\n            \"annualGeneralMeetingDate\": \"2018-07-15\",\r\n            \"certifiedBy\": \"full1 name1\",\r\n            \"email\": \"no_one@never.get\"\r\n          },\r\n          \"changeOfAddress\": {\r\n            \"certifiedBy\": \"full2 name2\",\r\n            \"email\": \"no_one@never.get\",\r\n\t\t    \"mailingAddress\": {\r\n\t\t        \"addressCity\": \"Victoria\",\r\n\t\t        \"addressCountry\": \"CANADA\",\r\n\t\t        \"addressRegion\": \"BC\",\r\n\t\t        \"addressType\": \"mailing\",\r\n\t\t        \"deliveryInstructions\": \"draft filing\",\r\n\t\t        \"postalCode\": \"T3S3T3\",\r\n\t\t        \"streetAddress\": \"2098 North Street\",\r\n\t\t        \"streetAddressAdditional\": \"apt 2098\"\r\n\t\t    },\r\n\t\t    \"deliveryAddress\": {\r\n\t\t        \"addressCity\": \"Victoria\",\r\n\t\t        \"addressCountry\": \"CANADA\",\r\n\t\t        \"addressRegion\": \"BC\",\r\n\t\t        \"addressType\": \"mailing\",\r\n\t\t        \"deliveryInstructions\": \"draft filing\",\r\n\t\t        \"postalCode\": \"T3S3T3\",\r\n\t\t        \"streetAddress\": \"2098 West Avenue\",\r\n\t\t        \"streetAddressAdditional\": \"suite 2098\"\r\n\t\t    }\r\n          },\r\n          \"changeOfDirectors\": {\r\n            \"certifiedBy\": \"full3 name3\",\r\n            \"email\": \"no_one@never.get\",\r\n\t\t    \"directors\": [\r\n\t\t        {\r\n\t\t            \"officer\": {\r\n\t\t                \"firstName\": \"Scott2\",\r\n\t\t                \"lastName\": \"Johnson2\"\r\n\t\t            },\r\n\t\t            \"deliveryAddress\": {\r\n\t\t                \"streetAddress\": \"3950A Helen Road\",\r\n\t\t                \"addressCity\": \"Edmonton\",\r\n\t\t                \"addressCountry\": \"CA\",\r\n\t\t                \"postalCode\": \"V5Z 8C8\",\r\n\t\t                \"addressRegion\": \"AB\"\r\n\t\t            },\r\n\t\t            \"appointmentDate\": \"2015-10-12\",\r\n\t\t            \"cessationDate\": null\r\n\t\t        }\r\n\t\t    ]\r\n          },\r\n          \"business\": {\r\n            \"cacheId\": 1,\r\n            \"foundingDate\": \"2007-04-08\",\r\n            \"identifier\": \"CP0002098\",\r\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\r\n\t\t\t\"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\r\n            \"legalName\": \"Legal Name CP0002098\"\r\n          },\r\n          \"header\": {\r\n            \"date\": \"2017-06-06\",\r\n            \"filingId\": 4,\r\n            \"name\": \"annualReport\",\r\n            \"status\": \"DRAFT\"\r\n          }\r\n        }\r\n      },\r\n      \"order\": 1,\r\n      \"enabled\": true\r\n    }\r\n  ]\r\n}"
 				},
 				{
 					"name": "get-business-tasks - CP0002106",
@@ -3023,64 +3080,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\r\n\t\"tasks\": [\r\n\t\t{\r\n\t\t\t\"task\": {\r\n\t\t\t\t\"filing\": {\r\n\t\t\t\t\t\"changeOfAddress\": {\r\n\t\t\t\t\t\t\"certifiedBy\": \"full2 name2\",\r\n\t\t\t\t\t\t\"email\": \"no_one@never.get\"\r\n\t\t\t\t\t},\r\n\t\t\t\t    \"business\": {\r\n\t\t\t\t        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\r\n\t\t\t\t        \"identifier\": \"CP0002106\",\r\n\t\t\t\t        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\r\n\t\t\t\t        \"lastAnnualGeneralMeetingDate\": \"2019-04-08\",\r\n\t\t\t\t        \"lastAnnualReport\": \"2019-04-08\",\r\n\t\t\t\t        \"legalName\": \"Legal Name CP0002106\",\r\n\t\t\t\t        \"status\": \"NOTINCOMPLIANCE\",\r\n\t\t\t\t        \"taxId\": \"21062106\"\r\n\t\t\t\t    },\r\n\t\t\t\t\t\"header\": {\r\n\t\t\t\t\t\t\"date\": \"2017-06-06\",\r\n\t\t\t\t\t\t\"filingId\": 456,\r\n\t\t\t\t\t\t\"name\": \"changeOfAddress\",\r\n\t\t\t\t\t\t\"status\": \"ERROR\"\r\n\t\t\t\t\t}\r\n\t\t\t\t}\r\n\t\t\t},\r\n\t\t\t\"order\": 2,\r\n\t\t\t\"enabled\": false\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"task\": {\r\n\t\t\t\t\"filing\": {\r\n\t\t\t\t\t\"changeOfDirectors\": {\r\n\t\t\t\t\t\t\"certifiedBy\": \"full3 name3\",\r\n\t\t\t\t\t\t\"email\": \"no_one@never.get\"\r\n\t\t\t\t\t},\r\n\t\t\t\t    \"business\": {\r\n\t\t\t\t        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\r\n\t\t\t\t        \"identifier\": \"CP0002106\",\r\n\t\t\t\t        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\r\n\t\t\t\t        \"lastAnnualGeneralMeetingDate\": \"2019-04-08\",\r\n\t\t\t\t        \"lastAnnualReport\": \"2019-04-08\",\r\n\t\t\t\t        \"legalName\": \"Legal Name CP0002106\",\r\n\t\t\t\t        \"status\": \"NOTINCOMPLIANCE\",\r\n\t\t\t\t        \"taxId\": \"21062106\"\r\n\t\t\t\t    },\r\n\t\t\t\t\t\"header\": {\r\n\t\t\t\t\t\t\"date\": \"2017-06-06\",\r\n\t\t\t\t\t\t\"filingId\": 789,\r\n\t\t\t\t\t\t\"name\": \"changeOfDirectors\",\r\n\t\t\t\t\t\t\"status\": \"PENDING\"\r\n\t\t\t\t\t}\r\n\t\t\t\t}\r\n\t\t\t},\r\n\t\t\t\"order\": 1,\r\n\t\t\t\"enabled\": true\r\n\t\t}\r\n\t]\r\n}"
-				},
-				{
-					"name": "get-business-tasks - CP0002098",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/:id/tasks",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								":id",
-								"tasks"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "CP0002098"
-								}
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [
-						{
-							"key": "X-Application-Context",
-							"value": "application:prod"
-						},
-						{
-							"key": "Access-Control-Allow-Origin",
-							"value": "*"
-						},
-						{
-							"key": "API",
-							"value": "legal_api/0.1.0a0.dev"
-						},
-						{
-							"key": "Server",
-							"value": "Werkzeug/0.15.4 Python/3.7.3"
-						},
-						{
-							"key": "Access-Control-Allow-Methods",
-							"value": "HEAD, GET, OPTIONS, DELETE, POST, PUT"
-						},
-						{
-							"key": "Content-Type",
-							"value": "application/json"
-						}
-					],
-					"cookie": [],
-					"body": "{\r\n  \"tasks\": [\r\n    {\r\n      \"task\": {\r\n        \"todo\": {\r\n          \"business\": {\r\n            \"cacheId\": 1,\r\n            \"foundingDate\": \"2007-04-08\",\r\n            \"identifier\": \"CP0002098\",\r\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\r\n            \"legalName\": \"Legal Name CP0002098\"\r\n          },\r\n          \"header\": {\r\n            \"name\": \"annualReport\",\r\n            \"ARFilingYear\": 2019,\r\n            \"status\": \"NEW\"\r\n          }\r\n        }\r\n      },\r\n      \"order\": 2,\r\n      \"enabled\": false\r\n    },\r\n    {\r\n      \"task\": {\r\n        \"filing\": {\r\n          \"annualReport\": {\r\n            \"annualGeneralMeetingDate\": \"2018-07-15\",\r\n            \"certifiedBy\": \"full1 name1\",\r\n            \"email\": \"no_one@never.get\"\r\n          },\r\n          \"changeOfAddress\": {\r\n            \"certifiedBy\": \"full2 name2\",\r\n            \"email\": \"no_one@never.get\",\r\n\t\t    \"mailingAddress\": {\r\n\t\t        \"addressCity\": \"Victoria\",\r\n\t\t        \"addressCountry\": \"CANADA\",\r\n\t\t        \"addressRegion\": \"BC\",\r\n\t\t        \"addressType\": \"mailing\",\r\n\t\t        \"deliveryInstructions\": \"draft filing\",\r\n\t\t        \"postalCode\": \"T3S3T3\",\r\n\t\t        \"streetAddress\": \"2098 North Street\",\r\n\t\t        \"streetAddressAdditional\": \"apt 2098\"\r\n\t\t    },\r\n\t\t    \"deliveryAddress\": {\r\n\t\t        \"addressCity\": \"Victoria\",\r\n\t\t        \"addressCountry\": \"CANADA\",\r\n\t\t        \"addressRegion\": \"BC\",\r\n\t\t        \"addressType\": \"mailing\",\r\n\t\t        \"deliveryInstructions\": \"draft filing\",\r\n\t\t        \"postalCode\": \"T3S3T3\",\r\n\t\t        \"streetAddress\": \"2098 West Avenue\",\r\n\t\t        \"streetAddressAdditional\": \"suite 2098\"\r\n\t\t    }\r\n          },\r\n          \"changeOfDirectors\": {\r\n            \"certifiedBy\": \"full3 name3\",\r\n            \"email\": \"no_one@never.get\",\r\n\t\t    \"directors\": [\r\n\t\t        {\r\n\t\t            \"officer\": {\r\n\t\t                \"firstName\": \"Scott2\",\r\n\t\t                \"lastName\": \"Johnson2\"\r\n\t\t            },\r\n\t\t            \"deliveryAddress\": {\r\n\t\t                \"streetAddress\": \"3950A Helen Road\",\r\n\t\t                \"addressCity\": \"Edmonton\",\r\n\t\t                \"addressCountry\": \"CA\",\r\n\t\t                \"postalCode\": \"V5Z 8C8\",\r\n\t\t                \"addressRegion\": \"AB\"\r\n\t\t            },\r\n\t\t            \"appointmentDate\": \"2015-10-12\",\r\n\t\t            \"cessationDate\": null\r\n\t\t        }\r\n\t\t    ]\r\n          },\r\n          \"business\": {\r\n            \"cacheId\": 1,\r\n            \"foundingDate\": \"2007-04-08\",\r\n            \"identifier\": \"CP0002098\",\r\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\r\n            \"legalName\": \"Legal Name CP0002098\"\r\n          },\r\n          \"header\": {\r\n            \"date\": \"2017-06-06\",\r\n            \"filingId\": 4,\r\n            \"name\": \"annualReport\",\r\n            \"status\": \"DRAFT\"\r\n          }\r\n        }\r\n      },\r\n      \"order\": 1,\r\n      \"enabled\": true\r\n    }\r\n  ]\r\n}"
+					"body": "{\r\n\t\"tasks\": [\r\n\t\t{\r\n\t\t\t\"task\": {\r\n\t\t\t\t\"filing\": {\r\n\t\t\t\t\t\"changeOfAddress\": {\r\n\t\t\t\t\t\t\"certifiedBy\": \"full2 name2\",\r\n\t\t\t\t\t\t\"email\": \"no_one@never.get\"\r\n\t\t\t\t\t},\r\n\t\t\t\t    \"business\": {\r\n\t\t\t\t        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\r\n\t\t\t\t        \"identifier\": \"CP0002106\",\r\n\t\t\t\t        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\r\n\t\t\t\t        \"lastAnnualGeneralMeetingDate\": \"2019-04-08\",\r\n\t\t\t\t        \"lastAnnualReport\": \"2019-04-08\",\r\n\t\t\t            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\r\n\t\t\t\t        \"legalName\": \"Legal Name CP0002106\",\r\n\t\t\t\t        \"status\": \"NOTINCOMPLIANCE\",\r\n\t\t\t\t        \"taxId\": \"21062106\"\r\n\t\t\t\t    },\r\n\t\t\t\t\t\"header\": {\r\n\t\t\t\t\t\t\"date\": \"2017-06-06\",\r\n\t\t\t\t\t\t\"filingId\": 456,\r\n\t\t\t\t\t\t\"name\": \"changeOfAddress\",\r\n\t\t\t\t\t\t\"status\": \"ERROR\"\r\n\t\t\t\t\t}\r\n\t\t\t\t}\r\n\t\t\t},\r\n\t\t\t\"order\": 2,\r\n\t\t\t\"enabled\": false\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"task\": {\r\n\t\t\t\t\"filing\": {\r\n\t\t\t\t\t\"changeOfDirectors\": {\r\n\t\t\t\t\t\t\"certifiedBy\": \"full3 name3\",\r\n\t\t\t\t\t\t\"email\": \"no_one@never.get\"\r\n\t\t\t\t\t},\r\n\t\t\t\t    \"business\": {\r\n\t\t\t\t        \"foundingDate\": \"2019-06-10T00:00:00+00:00\",\r\n\t\t\t\t        \"identifier\": \"CP0002106\",\r\n\t\t\t\t        \"lastModified\": \"2019-06-10T22:35:19.652478+00:00\",\r\n\t\t\t\t        \"lastAnnualGeneralMeetingDate\": \"2019-04-08\",\r\n\t\t\t\t        \"lastAnnualReport\": \"2019-04-08\",\r\n\t\t\t            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\r\n\t\t\t\t        \"legalName\": \"Legal Name CP0002106\",\r\n\t\t\t\t        \"status\": \"NOTINCOMPLIANCE\",\r\n\t\t\t\t        \"taxId\": \"21062106\"\r\n\t\t\t\t    },\r\n\t\t\t\t\t\"header\": {\r\n\t\t\t\t\t\t\"date\": \"2017-06-06\",\r\n\t\t\t\t\t\t\"filingId\": 789,\r\n\t\t\t\t\t\t\"name\": \"changeOfDirectors\",\r\n\t\t\t\t\t\t\"status\": \"PENDING\"\r\n\t\t\t\t\t}\r\n\t\t\t\t}\r\n\t\t\t},\r\n\t\t\t\"order\": 1,\r\n\t\t\t\"enabled\": true\r\n\t\t}\r\n\t]\r\n}"
 				}
 			]
 		},
@@ -3111,7 +3111,7 @@
 			},
 			"response": [
 				{
-					"name": "get-business/directors - CP0002098",
+					"name": "get-business/directors - CP0002106",
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -3130,7 +3130,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "CP0002098"
+									"value": "CP0002106"
 								}
 							]
 						}
@@ -3140,12 +3140,16 @@
 					"_postman_previewlanguage": "json",
 					"header": [
 						{
+							"key": "Date",
+							"value": "Wed, 26 Jun 2019 20:26:08 GMT"
+						},
+						{
 							"key": "Server",
 							"value": "gunicorn/19.9.0"
 						},
 						{
-							"key": "Content-Type",
-							"value": "application/json"
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
 						},
 						{
 							"key": "Access-Control-Allow-Origin",
@@ -3156,12 +3160,12 @@
 							"value": "GET, HEAD, OPTIONS"
 						},
 						{
-							"key": "API",
-							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
+							"key": "Content-Type",
+							"value": "application/json"
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"directors\": [\n        {\n            \"officer\": {\n                \"firstName\": \"Scott\",\n                \"lastName\": \"Johnson\"\n            },\n            \"deliveryAddress\": {\n                \"streetAddress\": \"3950 Helen Road\",\n                \"addressCity\": \"Edmonton\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"V8Z 5C5\",\n                \"addressRegion\": \"AB\"\n            },\n            \"appointmentDate\": \"2015-10-12\",\n            \"cessationDate\": null\n        }\n    ]\n}"
+					"body": "{\r\n\t\"directors\": [{\r\n\t\t\t\"officer\": {\r\n\t\t\t\t\"firstName\": \"Daffy\",\r\n\t\t\t\t\"middleInitial\": \"\",\r\n\t\t\t\t\"lastName\": \"Duck\"\r\n\t\t\t},\r\n\t\t\t\"deliveryAddress\": {\r\n\t\t\t\t\"streetAddress\": \"123 Disney Place\",\r\n\t\t\t\t\"additionalStreetAddress\": \"\",\r\n\t\t\t\t\"addressCity\": \"Toon Town\",\r\n\t\t\t\t\"addressCountry\": \"US\",\r\n\t\t\t\t\"postalCode\": \"90210\",\r\n\t\t\t\t\"addressRegion\": \"CA\",\r\n\t\t\t\t\"deliveryInstructions\": \"\"\r\n\t\t\t},\r\n\t\t\t\"title\": \"\",\r\n\t\t\t\"appointmentDate\": \"2014-03-30\",\r\n\t\t\t\"cessationDate\": null\r\n\t\t\t\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"officer\": {\r\n\t\t\t\t\"firstName\": \"Mickey\",\r\n\t\t\t\t\"middleInitial\": \"M\",\r\n\t\t\t\t\"lastName\": \"Mouse\"\r\n\t\t\t},\r\n\t\t\t\"deliveryAddress\": {\r\n\t\t\t\t\"streetAddress\": \"3456 West Seattle Drive\",\r\n\t\t\t\t\"additionalStreetAddress\": \"West Seattle\",\r\n\t\t\t\t\"addressCity\": \"Seattle\",\r\n\t\t\t\t\"addressCountry\": \"US\",\r\n\t\t\t\t\"postalCode\": \"90120-1234\",\r\n\t\t\t\t\"addressRegion\": \"WA\"\r\n\t\t\t},\r\n\t\t\t\"title\": \"Treasurer\",\r\n\t\t\t\"appointmentDate\": \"2014-03-30\",\r\n\t\t\t\"cessationDate\": null\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"officer\": {\r\n\t\t\t\t\"firstName\": \"Sharene\",\r\n\t\t\t\t\"lastName\": \"Foord\"\r\n\t\t\t},\r\n\t\t\t\"deliveryAddress\": {\r\n\t\t\t\t\"streetAddress\": \"567 Alpha Street\",\r\n\t\t\t\t\"additionalStreetAddress\": \"Bsmt Suite\",\r\n\t\t\t\t\"addressCity\": \"Bangalore\",\r\n\t\t\t\t\"addressCountry\": \"IN\",\r\n\t\t\t\t\"postalCode\": \"123456\",\r\n\t\t\t\t\"addressRegion\": \"KA\"\r\n\t\t\t},\r\n\t\t\t\"appointmentDate\": \"2014-03-30\",\r\n\t\t\t\"cessationDate\": null\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"officer\": {\r\n\t\t\t\t\"firstName\": \"Tom\",\r\n\t\t\t\t\"middleInitial\": \"F.\",\r\n\t\t\t\t\"lastName\": \"Jerry\"\r\n\t\t\t},\r\n\t\t\t\"deliveryAddress\": {\r\n\t\t\t\t\"streetAddress\": \"1127 McBriar Ave\",\r\n\t\t\t\t\"addressCity\": \"Victoria\",\r\n\t\t\t\t\"addressCountry\": \"CA\",\r\n\t\t\t\t\"postalCode\": \"V8X3M7\",\r\n\t\t\t\t\"addressRegion\": \"BC\"\r\n\t\t\t},\r\n\t\t\t\"title\": \"President\",\r\n\t\t\t\"appointmentDate\": \"2014-03-30\",\r\n\t\t\t\"cessationDate\": null\r\n\t\t}\t\t\r\n\t]\r\n}"
 				},
 				{
 					"name": "get-business/directors - CP0002103",
@@ -3221,7 +3225,7 @@
 					"body": "{\r\n\t\"directors\": [{\r\n\t\t\t\"officer\": {\r\n\t\t\t\t\"firstName\": \"Peter\",\r\n\t\t\t\t\"middleInitial\": \"G\",\r\n\t\t\t\t\"lastName\": \"Griffin\"\r\n\t\t\t},\r\n\t\t\t\"deliveryAddress\": {\r\n\t\t\t\t\"streetAddress\": \"2729 Belmont Ave\",\r\n\t\t\t\t\"additionalStreetAddress\": \"Back door\",\r\n\t\t\t\t\"addressCity\": \"Victoria\",\r\n\t\t\t\t\"addressCountry\": \"CA\",\r\n\t\t\t\t\"postalCode\": \"H0H0H0\",\r\n\t\t\t\t\"addressRegion\": \"BC\",\r\n\t\t\t\t\"deliveryInstructions\": \"Send to back\"\r\n\t\t\t},\r\n\t\t\t\"title\": \"President\",\r\n\t\t\t\"appointmentDate\": \"2014-03-30\",\r\n\t\t\t\"cessationDate\": null\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"officer\": {\r\n\t\t\t\t\"firstName\": \"Joe\",\r\n\t\t\t\t\"middleInitial\": \"P\",\r\n\t\t\t\t\"lastName\": \"Swanson\"\r\n\t\t\t},\r\n\t\t\t\"deliveryAddress\": {\r\n\t\t\t\t\"streetAddress\": \"1020 Douglas Street\",\r\n\t\t\t\t\"additionalStreetAddress\": \"Kirkintiloch\",\r\n\t\t\t\t\"addressCity\": \"Glasgow\",\r\n\t\t\t\t\"addressCountry\": \"UK\",\r\n\t\t\t\t\"postalCode\": \"H0H 0H0\",\r\n\t\t\t\t\"addressRegion\": \"SC\",\r\n\t\t\t\t\"deliveryInstructions\": \"Please call 250-812-2445.\"\r\n\t\t\t},\r\n\t\t\t\"title\": \"Treasurer\",\r\n\t\t\t\"appointmentDate\": \"2017-01-20\",\r\n\t\t\t\"cessationDate\": null\r\n\t\t\t\r\n\t\t}\r\n\t]\r\n}"
 				},
 				{
-					"name": "get-business/directors - CP0002106",
+					"name": "get-business/directors - CP0002098",
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
@@ -3240,7 +3244,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "CP0002106"
+									"value": "CP0002098"
 								}
 							]
 						}
@@ -3250,16 +3254,12 @@
 					"_postman_previewlanguage": "json",
 					"header": [
 						{
-							"key": "Date",
-							"value": "Wed, 26 Jun 2019 20:26:08 GMT"
-						},
-						{
 							"key": "Server",
 							"value": "gunicorn/19.9.0"
 						},
 						{
-							"key": "API",
-							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
+							"key": "Content-Type",
+							"value": "application/json"
 						},
 						{
 							"key": "Access-Control-Allow-Origin",
@@ -3270,12 +3270,12 @@
 							"value": "GET, HEAD, OPTIONS"
 						},
 						{
-							"key": "Content-Type",
-							"value": "application/json"
+							"key": "API",
+							"value": "legal_api/0.1.0a0.dev-962c1dd270b61e1588b4558cc697de777db05834"
 						}
 					],
 					"cookie": [],
-					"body": "{\r\n\t\"directors\": [{\r\n\t\t\t\"officer\": {\r\n\t\t\t\t\"firstName\": \"Daffy\",\r\n\t\t\t\t\"middleInitial\": \"\",\r\n\t\t\t\t\"lastName\": \"Duck\"\r\n\t\t\t},\r\n\t\t\t\"deliveryAddress\": {\r\n\t\t\t\t\"streetAddress\": \"123 Disney Place\",\r\n\t\t\t\t\"additionalStreetAddress\": \"\",\r\n\t\t\t\t\"addressCity\": \"Toon Town\",\r\n\t\t\t\t\"addressCountry\": \"US\",\r\n\t\t\t\t\"postalCode\": \"90210\",\r\n\t\t\t\t\"addressRegion\": \"CA\",\r\n\t\t\t\t\"deliveryInstructions\": \"\"\r\n\t\t\t},\r\n\t\t\t\"title\": \"\",\r\n\t\t\t\"appointmentDate\": \"2014-03-30\",\r\n\t\t\t\"cessationDate\": null\r\n\t\t\t\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"officer\": {\r\n\t\t\t\t\"firstName\": \"Mickey\",\r\n\t\t\t\t\"middleInitial\": \"M\",\r\n\t\t\t\t\"lastName\": \"Mouse\"\r\n\t\t\t},\r\n\t\t\t\"deliveryAddress\": {\r\n\t\t\t\t\"streetAddress\": \"3456 West Seattle Drive\",\r\n\t\t\t\t\"additionalStreetAddress\": \"West Seattle\",\r\n\t\t\t\t\"addressCity\": \"Seattle\",\r\n\t\t\t\t\"addressCountry\": \"US\",\r\n\t\t\t\t\"postalCode\": \"90120-1234\",\r\n\t\t\t\t\"addressRegion\": \"WA\"\r\n\t\t\t},\r\n\t\t\t\"title\": \"Treasurer\",\r\n\t\t\t\"appointmentDate\": \"2014-03-30\",\r\n\t\t\t\"cessationDate\": null\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"officer\": {\r\n\t\t\t\t\"firstName\": \"Sharene\",\r\n\t\t\t\t\"lastName\": \"Foord\"\r\n\t\t\t},\r\n\t\t\t\"deliveryAddress\": {\r\n\t\t\t\t\"streetAddress\": \"567 Alpha Street\",\r\n\t\t\t\t\"additionalStreetAddress\": \"Bsmt Suite\",\r\n\t\t\t\t\"addressCity\": \"Bangalore\",\r\n\t\t\t\t\"addressCountry\": \"IN\",\r\n\t\t\t\t\"postalCode\": \"123456\",\r\n\t\t\t\t\"addressRegion\": \"KA\"\r\n\t\t\t},\r\n\t\t\t\"appointmentDate\": \"2014-03-30\",\r\n\t\t\t\"cessationDate\": null\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"officer\": {\r\n\t\t\t\t\"firstName\": \"Tom\",\r\n\t\t\t\t\"middleInitial\": \"F.\",\r\n\t\t\t\t\"lastName\": \"Jerry\"\r\n\t\t\t},\r\n\t\t\t\"deliveryAddress\": {\r\n\t\t\t\t\"streetAddress\": \"1127 McBriar Ave\",\r\n\t\t\t\t\"addressCity\": \"Victoria\",\r\n\t\t\t\t\"addressCountry\": \"CA\",\r\n\t\t\t\t\"postalCode\": \"V8X3M7\",\r\n\t\t\t\t\"addressRegion\": \"BC\"\r\n\t\t\t},\r\n\t\t\t\"title\": \"President\",\r\n\t\t\t\"appointmentDate\": \"2014-03-30\",\r\n\t\t\t\"cessationDate\": null\r\n\t\t}\t\t\r\n\t]\r\n}"
+					"body": "{\n    \"directors\": [\n        {\n            \"officer\": {\n                \"firstName\": \"Scott\",\n                \"lastName\": \"Johnson\"\n            },\n            \"deliveryAddress\": {\n                \"streetAddress\": \"3950 Helen Road\",\n                \"addressCity\": \"Edmonton\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"V8Z 5C5\",\n                \"addressRegion\": \"AB\"\n            },\n            \"appointmentDate\": \"2015-10-12\",\n            \"cessationDate\": null\n        }\n    ]\n}"
 				}
 			]
 		}
