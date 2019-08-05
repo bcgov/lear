@@ -41,6 +41,9 @@ export default {
   entityFoundingDate (state, entityFoundingDate) {
     state.entityFoundingDate = entityFoundingDate
   },
+  lastPreLoadFilingDate (state, lastPreLoadFilingDate) {
+    state.lastPreLoadFilingDate = lastPreLoadFilingDate
+  },
   currentARStatus (state, currentARStatus) {
     state.currentARStatus = currentARStatus
   },
@@ -52,5 +55,8 @@ export default {
   },
   agmDateValid (state, agmDateValid) {
     state.agmDateValid = agmDateValid
+  },
+  filingHistory (state, filingHistory) {
+    state.filingHistory = filingHistory
   }
 }

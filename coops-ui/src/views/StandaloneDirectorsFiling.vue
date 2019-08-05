@@ -1,35 +1,85 @@
 <template>
   <div>
-    <!-- TODO - get in line with more up-to-date alerting in AR -->
-    <v-dialog  v-model="dialog" width="50rem">
+    <v-dialog v-model="resumeErrorDialog" width="50rem" persistent>
       <v-card>
-        <v-card-title>Error</v-card-title>
-
+        <v-card-title>Unable to Resume Filing</v-card-title>
         <v-card-text>
-          An error occurred during processing. Please try later.
+          <p class="genErr">We were unable to resume your filing. You can return to your dashboard
+            and try again.</p>
+          <p class="genErr">If this error persists, please contact us.</p>
+          <p class="genErr">
+            <v-icon small>phone</v-icon>
+            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
+          </p>
+          <p class="genErr">
+            <v-icon small>email</v-icon>
+            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
+              >SBC_ITOperationsSupport@gov.bc.ca</a>
+          </p>
         </v-card-text>
-
         <v-divider></v-divider>
-
         <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" flat @click="navigateToDashboard">
-           Back to My Dashboard
-          </v-btn>
+          <v-btn color="primary" flat @click="navigateToDashboard">Return to dashboard</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <!-- Transition to Payment -->
-    <!-- TODO - this should be on Payment page -->
-    <v-fade-transition>
-      <div class="loading-container" v-show="showLoading">
-        <div class="loading__content">
-          <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-          <div class="loading-msg">{{this.loadingMsg}}</div>
-        </div>
-      </div>
-    </v-fade-transition>
+    <v-dialog v-model="saveErrorDialog" width="50rem">
+      <v-card>
+        <v-card-title>Unable to Save Filing</v-card-title>
+        <v-card-text>
+          <p class="genErr">We were unable to save your filing. You can continue to try to save this
+             filing or you can exit without saving and re-create this filing at another time.</p>
+          <p  class="genErr">If you exit this filing, any changes you've made will not be saved.</p>
+          <p class="genErr">
+            <v-icon small>phone</v-icon>
+            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
+          </p>
+          <p class="genErr">
+            <v-icon small>email</v-icon>
+            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
+              >SBC_ITOperationsSupport@gov.bc.ca</a>
+          </p>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-btn color="primary" flat @click="navigateToDashboard">Exit without saving</v-btn>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" flat @click="onClickFilePay">Retry</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="paymentErrorDialog" width="60rem">
+      <v-card>
+        <v-card-title>Unable to Process Payment</v-card-title>
+        <v-card-text>
+          <p class="genErr">PayBC is unable to process payments at this time.</p>
+          <p class="genErr">Your filing has been saved as a DRAFT and you can resume your filing from your Dashboard
+            at a later time.</p>
+          <p class="genErr">PayBC is normally available:</p>
+          <p class="genErr">
+            Monday to Friday: 6:00am to 9:00pm
+            <br />Saturday: 12:00am to 7:00pm
+            <br />Sunday: 12:00pm to 12:00am
+          </p>
+          <p class="genErr">
+            <v-icon small>phone</v-icon>
+            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
+          </p>
+          <p class="genErr">
+            <v-icon small>email</v-icon>
+            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
+              >SBC_ITOperationsSupport@gov.bc.ca</a>
+          </p>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" flat @click="navigateToDashboard">Back to My Dashboard</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <div id="standalone-directors" ref="standaloneDirectors">
       <!-- Initial Page Load Transition -->
@@ -43,17 +93,34 @@
       <v-container id="standalone-directors-container" class="view-container">
         <article id="standalone-directors-article">
           <header>
-            <h1 id="AR-header">Directors - As of {{ lastFilingDate }}</h1>
+            <h1 id="filing-header">Change of Directors</h1>
+
+            <v-alert type="info" :value="true" icon="info" outline style="background-color: white;">
+              Director changes can be made as far back as {{ lastFilingDate }}.
+            </v-alert>
           </header>
 
           <div>
+
             <!-- Director Information -->
             <section>
-              <header>
-                <h2 id="AR-step-3-header">xxx</h2>
-              </header>
-                <Directors @directorsChange="directorsChange" ref="directorsList" :asOfDate="currentDate" />
+              <Directors ref="directorsList"
+                @directorsChange="directorsChange"
+                @lastFilingDate="lastFilingDate=$event"
+                @directorFormValid="directorFormValid=$event"
+                :asOfDate="currentDate"
+                />
             </section>
+
+            <!--Certify -->
+            <section>
+              <header>
+                <h2 id="AR-step-4-header">4. Certify Correct</h2>
+                <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+              </header>
+              <Certify @certifyChange="changeCertifyData" @certifiedBy="certifiedBy=$event" ref="certifyClause"/>
+            </section>
+
           </div>
         </article>
 
@@ -64,15 +131,34 @@
         </aside>
       </v-container>
 
-      <v-container id="submit-container" class="pt-0">
-        <div class="filing-buttons">
-          <v-btn
-            id="cod-pay-btn"
-            color="primary"
-            large
-            @click="submit">
-            File &amp; Pay
+      <v-container id="buttons-container" class="list-item">
+        <div class="buttons-left">
+          <v-btn id="cod-save-btn" large
+            :disabled="!validated"
+            @click="onClickSave">
+            Save
           </v-btn>
+          <v-btn id="cod-save-resume-btn" large
+            :disabled="!validated"
+            @click="onClickSaveResume">
+            Save &amp; Resume Later
+          </v-btn>
+        </div>
+
+        <div class="buttons-right">
+          <v-tooltip bottom>
+            <v-btn
+              slot="activator"
+              id="cod-file-pay-btn"
+              color="primary"
+              large
+              :disabled="!validated"
+              @click="onClickFilePay">
+              File &amp; Pay
+            </v-btn>
+            <span>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
+              There is no opportunity to change information beyond this point.</span>
+          </v-tooltip>
           <v-btn
             id="cod-cancel-btn"
             large
@@ -88,9 +174,11 @@
 <script lang="ts">
 import axios from '@/axios-auth'
 import Directors from '@/components/AnnualReport/Directors.vue'
+import Certify from '@/components/AnnualReport/Certify.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapActions } from 'vuex'
+import { PAYMENT_REQUIRED } from 'http-status-codes'
 
 export default {
   name: 'StandaloneDirectorsFiling',
@@ -98,24 +186,31 @@ export default {
   components: {
     Directors,
     SbcFeeSummary,
-    Affix
+    Affix,
+    Certify
   },
 
   data () {
     return {
-      showLoading: false,
       loadingMsg: 'Redirecting to PayBC to Process Your Payment',
       filingData: [],
-      dialog: false,
-      lastFilingDate: 'something' // TODO
+      resumeErrorDialog: false,
+      saveErrorDialog: false,
+      paymentErrorDialog: false,
+      lastFilingDate: 'your last filing',
+      certifyChange: false,
+      certifiedBy: null,
+      directorFormValid: true
     }
   },
 
   computed: {
-    ...mapState(['noAGM', 'regOffAddrChange',
-      'validated', 'currentDate', 'corpNum',
-      'entityName', 'entityIncNo', 'entityFoundingDate', 'currentARStatus',
-      'addressesFormValid', 'directorFormValid'])
+    ...mapState(['currentDate', 'corpNum']),
+
+    validated () {
+      if (this.certifyChange && this.directorFormValid) return true
+      else return false
+    }
 
   },
 
@@ -123,15 +218,10 @@ export default {
     // if tombstone data isn't set, redirect to home
     if (!this.corpNum) {
       this.$router.push('/')
-    } else {
-      // load initial data
-      // TODO - anything here?
     }
   },
 
   methods: {
-    ...mapActions(['setDirectorFormValid', 'setValidated']),
-
     directorsChange (val) {
       // when directors change, update filing data
       console.log('Standalone Directors, directorsChange =', val)
@@ -142,12 +232,53 @@ export default {
       }
     },
 
-    submit () {
+    async onClickSave () {
+      const filing = await this.saveFiling(true)
+      if (!filing) {
+        console.log('onClickSave() error - invalid filing =', filing)
+      }
+    },
+
+    async onClickSaveResume () {
+      const filing = await this.saveFiling(true)
+      // on success, redirect to Home URL
+      if (filing) {
+        const homeURL = window.location.origin || ''
+        window.location.assign(homeURL)
+      } else {
+        console.log('onClickSaveResume() error - invalid filing =', filing)
+      }
+    },
+
+    async onClickFilePay () {
+      const filing = await this.saveFiling(false)
+      // on success, redirect to Pay URL
+      if (filing && filing.header) {
+        const origin = window.location.origin || ''
+        const filingId = filing.header.filingId
+        const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
+        let authStub: string = this.authURL || ''
+        if (!(authStub.endsWith('/'))) { authStub += '/' }
+        const paymentToken = filing.header.paymentToken
+        const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
+        // TODO: first check if pay UI is reachable, else display modal dialog
+        window.location.assign(payURL)
+      } else {
+        console.log('onClickFilePay() error - invalid filing =', filing)
+      }
+    },
+
+    async saveFiling (isDraft) {
+      this.saveErrorDialog = false
       let changeOfDirectors = null
 
       const header = {
-        header: { name: 'changeOfDirectors', date: this.currentDate }
+        header: {
+          name: 'changeOfDirectors',
+          date: this.currentDate
+        }
       }
+
       const business = {
         business: {
           foundingDate: this.entityFoundingDate,
@@ -159,7 +290,7 @@ export default {
       if (this.isDataChanged('OTCDR')) {
         changeOfDirectors = {
           changeOfDirectors: {
-            certifiedBy: 'Full Name',
+            certifiedBy: this.certifiedBy,
             email: 'no_one@never.get',
             directors: this.$refs.directorsList.getAllDirectors()
           }
@@ -175,29 +306,41 @@ export default {
         )
       }
 
-      // Temp fix Added to remove cors error while invoking mock endpoint.
-      // To be removed when the API is in place
-      let config = {
-        headers: {
-          'Content-Type': 'text/plain'
-        }
+      if (this.filingId) {
+        // we have a filing id, so we are updating an existing filing
+        let url = this.corpNum + '/filings/' + this.filingId
+        if (isDraft) { url += '?draft=true' }
+        let filing = null
+        await axios.put(url, filingData).then(res => {
+          if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
+          filing = res.data.filing
+        }).catch(error => {
+          console.error('saveFiling() error =', error)
+          if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
+            this.paymentErrorDialog = true
+          } else {
+            this.saveErrorDialog = true
+          }
+        })
+        return filing
+      } else {
+        // filing id is 0, so we are saving a new filing
+        let url = this.corpNum + '/filings'
+        if (isDraft) { url += '?draft=true' }
+        let filing = null
+        await axios.post(url, filingData).then(res => {
+          if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
+          filing = res.data.filing
+        }).catch(error => {
+          console.error('saveFiling() error =', error)
+          if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
+            this.paymentErrorDialog = true
+          } else {
+            this.saveErrorDialog = true
+          }
+        })
+        return filing
       }
-
-      axios.post(this.corpNum + '/filings', filingData, config).then(res => {
-        const payRequestId:string = res.data.filing.header.paymentToken
-
-        const returnURL:string = window.location.origin + '/standalone-directors?pay_id=' + payRequestId
-        let authStub:string = this.authURL
-        if (!(authStub.endsWith('/'))) {
-          authStub = authStub + '/'
-        }
-        const payURL:string = authStub + 'makepayment/' + payRequestId + '/' + encodeURIComponent(returnURL)
-        window.location.href = payURL
-      }).catch((error) => {
-        // TODO : To Decide how and where to display the error message from API
-        console.log(error)
-        this.dialog = true
-      })
     },
 
     toggleFiling (setting, filing) {
@@ -226,17 +369,13 @@ export default {
       this.$router.push('/')
     },
 
-    setValidateFlag () {
-      // compute the AR page's valid state
-      this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid)
+    changeCertifyData (val) {
+      this.certifyChange = val
     }
+
   },
 
   watch: {
-
-    directorFormValid (val) {
-      this.setValidateFlag()
-    },
 
     filingData: function (val) {
       console.log('StandaloneDirectorsFiling, filingData =', val)
@@ -263,21 +402,12 @@ section + section
 h2
   margin-bottom: 0.25rem;
 
-#AR-header
+#filing-header
   margin-bottom: 1.25rem;
   line-height: 2rem;
   letter-spacing: -0.01rem;
   font-size: 2rem;
   font-weight: 500;
-
-#AR-step-1-header, #AR-step-2-header, #AR-step-3-header
-  margin-bottom: 0.25rem;
-  margin-top: 3rem;
-  font-size: 1.125rem;
-  font-weight: 500;
-
-#AR-step-1-container, #AR-step-2-container, #AR-step-3-container
-  margin-top: 1rem;
 
 .title-container
   margin-bottom: 0.5rem;
@@ -286,11 +416,16 @@ h2
   margin-left: 0.25rem;
   font-weight: 300;
 
-// Filing Buttons
-.filing-buttons
+// Save & Filing Buttons
+#buttons-container
   padding-top: 2rem;
   border-top: 1px solid $gray5;
-  text-align: right;
+
+  .buttons-left
+    width: 50%;
+
+  .buttons-right
+    margin-left auto
 
   .v-btn + .v-btn
     margin-left: 0.5rem;

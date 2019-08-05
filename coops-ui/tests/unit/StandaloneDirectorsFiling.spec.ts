@@ -6,125 +6,61 @@ import sinon from 'sinon'
 
 import axios from '@/axios-auth'
 import store from '@/store/store'
-import AnnualReport from '@/views/AnnualReport.vue'
-import AGMDate from '@/components/AnnualReport/AGMDate.vue'
-import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
+import StandaloneDirectorsFiling from '@/views/StandaloneDirectorsFiling.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('AnnualReport - Part 1', () => {
+describe('Standalone Directors Filing - Part 1', () => {
   beforeEach(() => {
     // init store
     store.state.corpNum = 'CP0001191'
-    store.state.ARFilingYear = 2017
-    store.state.currentARStatus = 'NEW'
-    store.state.filedDate = null
   })
 
-  it('renders the Annual Report sub-components properly', () => {
+  it('renders the filing sub-components properly', () => {
     const $route = { params: { id: 0 } }
-    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
 
-    expect(wrapper.find(AGMDate).exists()).toBe(true)
-    expect(wrapper.find(RegisteredOfficeAddress).exists()).toBe(true)
     expect(wrapper.find(Directors).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)
   })
 
-  it('initializes the store variables properly', () => {
-    const $route = { params: { id: 0 } }
-    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
-    const vm: any = wrapper.vm
-
-    expect(vm.$store.state.corpNum).toEqual('CP0001191')
-    expect(vm.$store.state.ARFilingYear).toEqual(2017)
-    expect(vm.$store.state.currentARStatus).toEqual('NEW')
-    expect(vm.$store.state.filedDate).toBeNull()
-
-    // check titles and sub-titles
-    expect(vm.$el.querySelector('#AR-header').textContent).toContain('2017')
-    expect(vm.$el.querySelector('#AR-step-2-header span').textContent).toContain('2017')
-    expect(vm.$el.querySelector('#AR-step-3-header + p').textContent).toContain('2017')
-  })
-
   it('enables Validated flag when sub-component flags are valid', () => {
     const $route = { params: { id: 0 } }
-    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
     // set flags
-    vm.setAgmDateValid(true)
-    vm.setAddressesFormValid(true)
-    vm.setDirectorFormValid(true)
+    vm.directorFormValid = true
     vm.changeCertifyData(true)
-    vm.setValidateFlag()
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(true)
   })
 
-  it('disables Validated flag when AGM Date is invalid', () => {
+  it('disables Validated flag when Directors form is invalid', () => {
     const $route = { params: { id: 0 } }
-    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
     // set flags
-    vm.setAgmDateValid(false)
-    vm.setAddressesFormValid(true)
-    vm.setDirectorFormValid(true)
+    vm.directorFormValid = false
     vm.changeCertifyData(true)
-    vm.setValidateFlag()
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
   })
 
-  it('disables Validated flag when Addresses Form is invalid', () => {
+  it('disables Validated flag when Certify form is invalid', () => {
     const $route = { params: { id: 0 } }
-    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
     // set flags
-    vm.setAgmDateValid(true)
-    vm.setAddressesFormValid(false)
-    vm.setDirectorFormValid(true)
-    vm.changeCertifyData(true)
-    vm.setValidateFlag()
-
-    // confirm that flag is set correctly
-    expect(vm.validated).toEqual(false)
-  })
-
-  it('disables Validated flag when Director Form is invalid', () => {
-    const $route = { params: { id: 0 } }
-    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
-    const vm: any = wrapper.vm
-
-    // set flags
-    vm.setAgmDateValid(true)
-    vm.setAddressesFormValid(true)
-    vm.setDirectorFormValid(false)
-    vm.changeCertifyData(true)
-    vm.setValidateFlag()
-
-    // confirm that flag is set correctly
-    expect(vm.validated).toEqual(false)
-  })
-
-  it('disables Validated flag when Certify Form is invalid', () => {
-    const $route = { params: { id: 0 } }
-    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
-    const vm: any = wrapper.vm
-
-    // set flags
-    vm.setAgmDateValid(true)
-    vm.setAddressesFormValid(true)
-    vm.setDirectorFormValid(true)
+    vm.directorFormValid = true
     vm.changeCertifyData(false)
-    vm.setValidateFlag()
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
@@ -132,35 +68,32 @@ describe('AnnualReport - Part 1', () => {
 
   it('enables File & Pay button when Validated is true', () => {
     const $route = { params: { id: 0 } }
-    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route }, stubs: {
-        'Directors': true,
-        'RegisteredOfficeAddress': true,
-        'AGMDate': true,
-        'Certify': true
-      }})
+    const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
     // set flag
-    vm.setValidated(true)
+    vm.directorFormValid = true
+    vm.changeCertifyData(true)
 
     // confirm that button is enabled
-    expect(wrapper.find('#ar-file-pay-btn').attributes('disabled')).not.toBe('true')
+    expect(wrapper.find('#cod-file-pay-btn').attributes('disabled')).not.toBe('true')
   })
 
   it('disables File & Pay button when Validated is false', () => {
     const $route = { params: { id: 0 } }
-    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
     // set flag
-    vm.setValidated(false)
+    vm.directorFormValid = true
+    vm.changeCertifyData(false)
 
     // confirm that button is disabled
-    expect(wrapper.find('#ar-file-pay-btn').attributes('disabled')).toBe('true')
+    expect(wrapper.find('#cod-file-pay-btn').attributes('disabled')).toBe('true')
   })
 })
 
-describe('AnnualReport - Part 2', () => {
+describe('Standalone Directors Filing - Part 2', () => {
   const { assign } = window.location
 
   beforeAll(() => {
@@ -178,9 +111,47 @@ describe('AnnualReport - Part 2', () => {
     store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
-    store.state.ARFilingYear = 2017
-    store.state.currentARStatus = 'NEW'
-    store.state.filedDate = null
+
+    const sampleDirectors = [
+      {
+        'officer': {
+          'firstName': 'Peter',
+          'middleInitial': null,
+          'lastName': 'Griffin'
+        },
+        'deliveryAddress': {
+          'streetAddress': 'mailing_address - address line one',
+          'streetAddressAdditional': null,
+          'addressCity': 'mailing_address city',
+          'addressCountry': 'mailing_address country',
+          'postalCode': 'H0H0H0',
+          'addressRegion': 'BC',
+          'deliveryInstructions': null
+        },
+        'title': null,
+        'appointmentDate': '2015-10-11',
+        'cessationDate': null
+      },
+      {
+        'officer': {
+          'firstName': 'Joe',
+          'middleInitial': 'P',
+          'lastName': 'Swanson'
+        },
+        'deliveryAddress': {
+          'streetAddress': 'mailing_address - address line #1',
+          'streetAddressAdditional': 'Kirkintiloch',
+          'addressCity': 'Glasgow',
+          'addressCountry': 'UK',
+          'postalCode': 'H0H 0H0',
+          'addressRegion': 'Scotland',
+          'deliveryInstructions': 'go to the back'
+        },
+        'title': 'Treasurer',
+        'appointmentDate': '2015-10-11',
+        'cessationDate': '2019-07-22'
+      }
+    ]
 
     // mock "fetch a draft filing" endpoint
     sinon.stub(axios, 'get').withArgs('CP0001191/filings/123')
@@ -188,8 +159,8 @@ describe('AnnualReport - Part 2', () => {
         data:
           {
             'filing': {
-              'annualReport': {
-                'annualGeneralMeetingDate': '2018-07-15',
+              'changeOfDirectors': {
+                'directors': sampleDirectors,
                 'certifiedBy': 'Full Name',
                 'email': 'no_one@never.get'
               },
@@ -201,7 +172,7 @@ describe('AnnualReport - Part 2', () => {
                 'legalName': 'Legal Name - CP0001191'
               },
               'header': {
-                'name': 'annualReport',
+                'name': 'changeOfDirectors',
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
@@ -217,8 +188,8 @@ describe('AnnualReport - Part 2', () => {
         data:
           {
             'filing': {
-              'annualReport': {
-                'annualGeneralMeetingDate': '2018-07-15',
+              'changeOfDirectors': {
+                'directors': sampleDirectors,
                 'certifiedBy': 'Full Name',
                 'email': 'no_one@never.get'
               },
@@ -230,7 +201,7 @@ describe('AnnualReport - Part 2', () => {
                 'legalName': 'Legal Name - CP0001191'
               },
               'header': {
-                'name': 'annualReport',
+                'name': 'changeOfDirectors',
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'PENDING',
@@ -247,8 +218,8 @@ describe('AnnualReport - Part 2', () => {
         data:
           {
             'filing': {
-              'annualReport': {
-                'annualGeneralMeetingDate': '2018-07-15',
+              'changeOfDirectors': {
+                'directors': sampleDirectors,
                 'certifiedBy': 'Full Name',
                 'email': 'no_one@never.get'
               },
@@ -260,7 +231,7 @@ describe('AnnualReport - Part 2', () => {
                 'legalName': 'Legal Name - CP0001191'
               },
               'header': {
-                'name': 'annualReport',
+                'name': 'changeOfDirectors',
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'PENDING',
@@ -279,11 +250,12 @@ describe('AnnualReport - Part 2', () => {
   it('saves a new filing and redirects to Pay URL when this is a new AR and the File & Pay button is clicked',
     async () => {
       const $route = { params: { id: 0 } } // new filing id
-      const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+      const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
       const vm = wrapper.vm as any
 
       // make sure form is validated
-      vm.setValidated(true)
+      vm.directorFormValid = true
+      vm.changeCertifyData(true)
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -291,7 +263,7 @@ describe('AnnualReport - Part 2', () => {
       // TODO: verify that new filing was created
 
       // click the File & Pay button
-      wrapper.find('#ar-file-pay-btn').trigger('click')
+      wrapper.find('#cod-file-pay-btn').trigger('click')
       // work-around because click trigger isn't working
       await vm.onClickFilePay()
 
@@ -301,33 +273,35 @@ describe('AnnualReport - Part 2', () => {
     }
   )
 
-  it('updates an existing filing and redirects to Pay URL when this is a draft AR and the File & Pay button is clicked',
-    async () => {
-      const $route = { params: { id: 123 } } // draft filing id
-      const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
-      const vm = wrapper.vm as any
+  it('updates an existing filing and redirects to Pay URL when this is a draft filing and the ' +
+    'File & Pay button is clicked',
+  async () => {
+    const $route = { params: { id: 123 } } // draft filing id
+    const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
+    const vm = wrapper.vm as any
 
-      // make sure form is validated
-      vm.setValidated(true)
+    // make sure form is validated
+    vm.directorFormValid = true
+    vm.changeCertifyData(true)
 
-      // sanity check
-      expect(jest.isMockFunction(window.location.assign)).toBe(true)
+    // sanity check
+    expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
-      // TODO: verify that draft filing was fetched
+    // TODO: verify that draft filing was fetched
 
-      // click the File & Pay button
-      wrapper.find('#ar-file-pay-btn').trigger('click')
-      // work-around because click trigger isn't working
-      await vm.onClickFilePay()
+    // click the File & Pay button
+    wrapper.find('#cod-file-pay-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickFilePay()
 
-      // verify redirection
-      const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
-      expect(window.location.assign).toHaveBeenCalledWith(payURL)
-    }
+    // verify redirection
+    const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
+    expect(window.location.assign).toHaveBeenCalledWith(payURL)
+  }
   )
 })
 
-describe('AnnualReport - Part 3', () => {
+describe('Standalone Directors Filing - Part 3', () => {
   const { assign } = window.location
 
   beforeAll(() => {
@@ -345,9 +319,47 @@ describe('AnnualReport - Part 3', () => {
     store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
-    store.state.ARFilingYear = 2017
-    store.state.currentARStatus = 'NEW'
-    store.state.filedDate = null
+
+    const sampleDirectors = [
+      {
+        'officer': {
+          'firstName': 'Peter',
+          'middleInitial': null,
+          'lastName': 'Griffin'
+        },
+        'deliveryAddress': {
+          'streetAddress': 'mailing_address - address line one',
+          'streetAddressAdditional': null,
+          'addressCity': 'mailing_address city',
+          'addressCountry': 'mailing_address country',
+          'postalCode': 'H0H0H0',
+          'addressRegion': 'BC',
+          'deliveryInstructions': null
+        },
+        'title': null,
+        'appointmentDate': '2015-10-11',
+        'cessationDate': null
+      },
+      {
+        'officer': {
+          'firstName': 'Joe',
+          'middleInitial': 'P',
+          'lastName': 'Swanson'
+        },
+        'deliveryAddress': {
+          'streetAddress': 'mailing_address - address line #1',
+          'streetAddressAdditional': 'Kirkintiloch',
+          'addressCity': 'Glasgow',
+          'addressCountry': 'UK',
+          'postalCode': 'H0H 0H0',
+          'addressRegion': 'Scotland',
+          'deliveryInstructions': 'go to the back'
+        },
+        'title': 'Treasurer',
+        'appointmentDate': '2015-10-11',
+        'cessationDate': '2019-07-22'
+      }
+    ]
 
     // mock "save draft" endpoint
     sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')
@@ -355,8 +367,8 @@ describe('AnnualReport - Part 3', () => {
         data:
           {
             'filing': {
-              'annualReport': {
-                'annualGeneralMeetingDate': '2018-07-15',
+              'changeOfDirectors': {
+                'directors': sampleDirectors,
                 'certifiedBy': 'Full Name',
                 'email': 'no_one@never.get'
               },
@@ -368,7 +380,7 @@ describe('AnnualReport - Part 3', () => {
                 'legalName': 'Legal Name - CP0001191'
               },
               'header': {
-                'name': 'annualReport',
+                'name': 'changeOfDirectors',
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
@@ -386,11 +398,12 @@ describe('AnnualReport - Part 3', () => {
   it('saves a new filing when this is a new AR and the Save button is clicked',
     async () => {
       const $route = { params: { id: 0 } } // new filing id
-      const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+      const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
       const vm = wrapper.vm as any
 
       // make sure form is validated
-      vm.setValidated(true)
+      vm.directorFormValid = true
+      vm.changeCertifyData(true)
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -398,7 +411,7 @@ describe('AnnualReport - Part 3', () => {
       // TODO: verify that new filing was created
 
       // click the Save button
-      wrapper.find('#ar-save-btn').trigger('click')
+      wrapper.find('#cod-save-btn').trigger('click')
       // work-around because click trigger isn't working
       await vm.onClickSave()
 
@@ -407,14 +420,15 @@ describe('AnnualReport - Part 3', () => {
     }
   )
 
-  it('saves a new filing and redirects to Home URL when this is a new AR and the Save & Resume button is clicked',
+  it('saves a new filing and redirects to Home URL when this is a new filing and the Save & Resume button is clicked',
     async () => {
       const $route = { params: { id: 0 } } // new filing id
-      const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+      const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
       const vm = wrapper.vm as any
 
       // make sure form is validated
-      vm.setValidated(true)
+      vm.directorFormValid = true
+      vm.changeCertifyData(true)
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -422,7 +436,7 @@ describe('AnnualReport - Part 3', () => {
       // TODO: verify that new filing was created
 
       // click the Save & Resume Later button
-      wrapper.find('#ar-save-resume-btn').trigger('click')
+      wrapper.find('#cod-save-resume-btn').trigger('click')
       // work-around because click trigger isn't working
       await vm.onClickSaveResume()
 

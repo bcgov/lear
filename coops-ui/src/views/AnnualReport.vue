@@ -143,7 +143,11 @@
                 <p>Tell us who was elected or appointed and who ceased to be a director at your
                   {{ ARFilingYear }} AGM.</p>
               </header>
-              <Directors @directorsChange="directorsChange" ref="directorsList" :asOfDate="agmDate" />
+              <Directors ref="directorsList"
+                @directorsChange="directorsChange"
+                :asOfDate="agmDate"
+                :componentEnabled="agmDateValid"
+              />
             </section>
 
             <!--Certify -->
@@ -152,7 +156,7 @@
                 <h2 id="AR-step-4-header">4. Certify Correct</h2>
                 <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
               </header>
-              <Certify @certifyChange="changeCertifyData" ref="certifyClause"/>
+              <Certify @certifyChange="changeCertifyData" @certifiedBy="certifiedBy=$event" ref="certifyClause"/>
             </section>
           </div>
           <div v-else>
@@ -215,7 +219,6 @@ import axios from '@/axios-auth'
 import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
-// import ARComplete from '@/components/AnnualReport/ARComplete.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapActions, mapGetters } from 'vuex'
@@ -245,7 +248,8 @@ export default {
       resumeErrorDialog: false,
       saveErrorDialog: false,
       paymentErrorDialog: false,
-      certifyChange: false
+      certifyChange: false,
+      certifiedBy: null
     }
   },
 
@@ -436,7 +440,7 @@ export default {
       const annualReport = {
         annualReport: {
           annualGeneralMeetingDate: this.agmDate,
-          certifiedBy: this.$refs.certifyClause.getLegalName(),
+          certifiedBy: this.certifiedBy,
           email: 'no_one@never.get'
         }
       }
@@ -444,7 +448,7 @@ export default {
       if (this.isDataChanged('OTCDR')) {
         changeOfDirectors = {
           changeOfDirectors: {
-            certifiedBy: this.$refs.certifyClause.getLegalName(),
+            certifiedBy: this.certifiedBy,
             email: 'no_one@never.get',
             directors: this.$refs.directorsList.getAllDirectors()
           }
@@ -454,7 +458,7 @@ export default {
       if (this.isDataChanged('OTADD') && this.addresses) {
         changeOfAddress = {
           changeOfAddress: {
-            certifiedBy: this.$refs.certifyClause.getLegalName(),
+            certifiedBy: this.certifiedBy,
             email: 'no_one@never.get',
             deliveryAddress: this.addresses['deliveryAddress'],
             mailingAddress: this.addresses['mailingAddress']

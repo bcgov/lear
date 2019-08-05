@@ -18,9 +18,12 @@ import EntityInfo from '@/components/EntityInfo.vue'
 import { mapActions } from 'vuex'
 import SbcHeader from 'sbc-common-components/src/components/SbcHeader.vue'
 import SbcFooter from 'sbc-common-components/src/components/SbcFooter.vue'
+import DateUtils from '@/DateUtils'
 
 export default {
   name: 'App',
+
+  mixins: [DateUtils],
 
   components: {
     SbcHeader,
@@ -61,13 +64,10 @@ export default {
     },
 
     saveCurrentDate () {
+      // save current date as YYYY-MM-DD string
       // this logic works because Date() returns local time (plus offset which we ignore)
       // TODO: need some sort of event to update Current Date at midnight
-      const today = new Date()
-      const year = today.getFullYear().toString()
-      const month = (today.getMonth() + 1).toString().padStart(2, '0')
-      const date = today.getDate().toString().padStart(2, '0')
-      this.setCurrentDate(`${year}-${month}-${date}`)
+      this.setCurrentDate(this.dateToUsableString(new Date()))
     }
   }
 }
