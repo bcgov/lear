@@ -232,7 +232,6 @@ export default {
     AGMDate,
     RegisteredOfficeAddress,
     Directors,
-    // ARComplete,
     SbcFeeSummary,
     Affix,
     Certify

@@ -1,6 +1,8 @@
 const DateUtils = {
   methods: {
     dateToUsableString: function (dateObj) {
+      if (dateObj === null || dateObj === undefined || dateObj == 'Invalid Date') return null
+
       const year = dateObj.getFullYear().toString()
       const month = (dateObj.getMonth() + 1).toString().padStart(2, '0')
       const date = dateObj.getDate().toString().padStart(2, '0')
