@@ -204,7 +204,8 @@ export default {
             ARFilingYear,
             status: filing.header.status || 'NEW',
             enabled: Boolean(task.enabled),
-            order: task.order
+            order: task.order,
+            paymentToken: filing.header.paymentToken ? filing.header.paymentToken : null
           })
         } else {
           console.log('ERROR - invalid date in filing =', filing)
@@ -223,7 +224,8 @@ export default {
           title: `File Director Change`,
           status: filing.header.status || 'NEW',
           enabled: Boolean(task.enabled),
-          order: task.order
+          order: task.order,
+          paymentToken: filing.header.paymentToken ? filing.header.paymentToken : null
         })
       } else {
         console.log('ERROR - invalid filing or header or changeOfDirectors in task =', task)
@@ -239,7 +241,8 @@ export default {
           title: `File Address Change`,
           status: filing.header.status || 'NEW',
           enabled: Boolean(task.enabled),
-          order: task.order
+          order: task.order,
+          paymentToken: filing.header.paymentToken ? filing.header.paymentToken : null
         })
       } else {
         console.log('ERROR - invalid filing or header or changeOfAddress in task =', task)
@@ -286,12 +289,16 @@ export default {
       }
     },
 
-    // this is called to either Resume Payment or Retry Payment
-    doResumePayment (item) {
-      // TODO
-      // 1. check if pay UI is reachable, else display modal dialog
-      // 2. redirect to pay URL
-      // see submit() in AnnualReport.vue
+    // this is called to either Resume Payment or Retry Payment.     
+    doResumePayment (item) {       
+        const origin = window.location.origin || ''
+        const filingId = item.id
+        const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
+        let authStub: string = this.authURL || ''
+        if (!(authStub.endsWith('/'))) { authStub += '/' }
+        const paymentToken = item.paymentToken
+        const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL  
+        window.location.assign(payURL)
     },
 
     resetStore (item) {
