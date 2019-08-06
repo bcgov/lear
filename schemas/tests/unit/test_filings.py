@@ -61,7 +61,7 @@ CHANGE_OF_DIRECTORS = {
             },
             'appointmentDate': '2018-01-01',
             'cessationDate': '2019-04-03',
-            'actions': ['ceased', 'nameChanged']
+            'actions': ['addressChanged', 'nameChanged']
         },
         {
             'officer': {
