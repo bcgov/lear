@@ -136,6 +136,15 @@ export default {
             this.errorMessage = 'Oops, could not parse data from server'
           }
           this.$emit('todo-count', this.taskItems.length)
+
+          // if this is a draft or pending item, emit the has-blocker-filings event to parent component
+          // - this indicates that a new filing cannot be started because this one has to be completed first
+          this.$emit('has-blocker-filing',
+            this.taskItems.filter(elem => {
+              return this.isDraft(elem) || this.isPending(elem)
+            }).length > 0
+          )
+
         }).catch(error => {
           console.error('getTasks() error =', error)
           this.errorMessage = 'Oops, could not load data from server'
