@@ -224,7 +224,6 @@ export default {
   methods: {
     directorsChange (val) {
       // when directors change, update filing data
-      console.log('Standalone Directors, directorsChange =', val)
       if (val) {
         this.toggleFiling('add', 'OTCDR')
       } else {

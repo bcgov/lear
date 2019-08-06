@@ -322,7 +322,6 @@ describe('Standalone Office Address Filing - Part 3', () => {
       'deliveryInstructions': 'go to the back'
     }
 
-
     // mock "save draft" endpoint
     sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')
       .returns(new Promise((resolve) => resolve({

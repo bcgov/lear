@@ -1,7 +1,7 @@
 const DateUtils = {
   methods: {
     dateToUsableString: function (dateObj) {
-      if (dateObj === null || dateObj === undefined || dateObj == 'Invalid Date') return null
+      if (dateObj === null || dateObj === undefined || dateObj === 'Invalid Date') return null
 
       const year = dateObj.getFullYear().toString()
       const month = (dateObj.getMonth() + 1).toString().padStart(2, '0')
@@ -16,8 +16,6 @@ const DateUtils = {
       // convert dates to numbers YYYYMMDD
       date1 = date1.split('-').join('')
       date2 = date2.split('-').join('')
-
-      console.log(date1 + operator + date2)
 
       return eval(date1 + operator + date2) // eslint-disable-line no-eval
     }

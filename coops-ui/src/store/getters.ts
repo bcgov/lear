@@ -15,12 +15,9 @@ export default {
 
     for (let i = 0; i < state.filingHistory.length; i++) {
       let filing = state.filingHistory[i].filing
-      console.log('got here ' + i)
-      console.log(lastCOD)
       if (filing.hasOwnProperty('changeOfDirectors')) {
         lastCOD = lastCOD === null || filing.header.date.split('-').join('') > lastCOD.split('-').join('')
           ? filing.header.date : lastCOD
-        console.log(lastCOD)
       }
     }
     return lastCOD

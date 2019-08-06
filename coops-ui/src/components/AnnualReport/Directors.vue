@@ -458,7 +458,6 @@ export default {
     },
 
     directorAppointmentDateRules () {
-      console.log('got to directorAppointmentDateRules computed')
       const rules = []
       let cessationDate = null
 
@@ -506,7 +505,6 @@ export default {
     },
 
     directorCessationDateRules () {
-      console.log('got to directorCessationDateRules computed')
       const rules = []
       let appointmentDate = null
 

@@ -218,7 +218,7 @@ export default {
   computed: {
     ...mapState(['currentDate', 'corpNum', 'entityName', 'entityIncNo', 'entityFoundingDate']),
 
-     validated () {
+    validated () {
       if (this.certifyChange && this.officeAddressFormValid) return true
       else return false
     }
