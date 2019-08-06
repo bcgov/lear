@@ -57,7 +57,10 @@
                     "format": "date"
                 },
                 "cessationDate": {
-                    "type": ["string", "null"],
+                    "type": [
+                        "string",
+                        "null"
+                    ],
                     "format": "date"
                 }
             },
@@ -67,25 +70,6 @@
                 "appointmentDate",
                 "cessationDate"
             ]
-        },
-        "actions": {
-            "type": "object",
-            "properties": {
-                "actions": {
-                    "type": "array",
-                    "title": "List of actions taken on this director - required only for filings",
-                    "items": {
-                        "type": "string",
-                        "enum": [
-                            "appointed",
-                            "ceased",
-                            "nameChanged",
-                            "addressChanged"
-                        ]
-                    }
-                }
-            },
-            "required": ["actions"]
         }
     },
     "properties": {
