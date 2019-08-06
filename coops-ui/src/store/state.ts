@@ -11,8 +11,10 @@ export default {
   lastAgmDate: null,
   ARFilingYear: null, /* Number */
   filedDate: null,
+  lastPreLoadFilingDate: null,
   agmDate: null,
   noAGM: false,
+  filingHistory: [],
   regOffAddrChange: false,
   validated: false,
 

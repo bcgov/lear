@@ -41,6 +41,9 @@ export default {
   setEntityFoundingDate ({ commit }, entityFoundingDate) {
     commit('entityFoundingDate', entityFoundingDate)
   },
+  setLastPreLoadFilingDate ({ commit }, lastPreLoadFilingDate) {
+    commit('lastPreLoadFilingDate', lastPreLoadFilingDate)
+  },
   setCurrentARStatus ({ commit }, currentARStatus) {
     commit('currentARStatus', currentARStatus)
   },
@@ -52,5 +55,8 @@ export default {
   },
   setAgmDateValid ({ commit }, agmDateValid) {
     commit('agmDateValid', agmDateValid)
+  },
+  setFilingHistory ({ commit }, filingHistory) {
+    commit('filingHistory', filingHistory)
   }
 }

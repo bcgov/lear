@@ -28,7 +28,7 @@
 
     <v-expand-transition>
       <div v-show="!showNewDirectorForm">
-        <v-btn class="new-director-btn" outline color="primary" :disabled="!agmDateValid"
+        <v-btn class="new-director-btn" outline color="primary" :disabled="!componentEnabled"
           @click="addNewDirector">
           <v-icon>add</v-icon>
           <span>Appoint New Director</span>
@@ -88,7 +88,8 @@
                       <v-date-picker
                         id="new-director__appointment-date__datepicker"
                         v-model="director.appointmentDate"
-                        :max="today"
+                        :min="earliestDateToSet"
+                        :max="currentDate"
                         no-title>
                       </v-date-picker>
                     </v-menu>
@@ -115,7 +116,8 @@
                       <v-date-picker
                         id="new-director__cessation-date__datepicker"
                         v-model="director.cessationDate"
-                        :max="today"
+                        :min="earliestDateToSet"
+                        :max="currentDate"
                         no-title>
                       </v-date-picker>
                     </v-menu>
@@ -180,7 +182,7 @@
 
                     <!-- Edit menu -->
                     <span v-show="director.isNew">
-                      <v-btn small flat color="primary" :disabled="!agmDateValid"
+                      <v-btn small flat color="primary" :disabled="!componentEnabled"
                         :id="'director-' + director.id + '-change-btn'"
                         @click="editDirector(index)">
                         <v-icon small>edit</v-icon>
@@ -204,7 +206,7 @@
 
                     <!-- Cease menu -->
                     <span v-show="!director.isNew">
-                      <v-btn small flat color="primary" :disabled="!agmDateValid"
+                      <v-btn small flat color="primary" :disabled="!componentEnabled"
                         class="cease-btn"
                         :id="'director-' + director.id + '-cease-btn'"
                         @click="ceaseDirector(director)">
@@ -242,8 +244,8 @@
                     v-model="cessationDateTemp"
                     v-show="activeIndexCustomCease == index"
                     no-title
-                    :min="director.appointmentDate"
-                    :max="today"
+                    :min="earliestStandaloneCeaseDateToSet(director)"
+                    :max="currentDate"
                   >
                     <v-btn text color="primary" @click="activeIndexCustomCease = null">Cancel</v-btn>
                     <v-btn text color="primary" @click="ceaseDirector(director)">OK</v-btn>
@@ -302,7 +304,8 @@
                       <v-date-picker
                         class="edit-director__appointment-date__datepicker"
                         v-model="director.appointmentDate"
-                        :max="today"
+                        :min="earliestDateToSet"
+                        :max="currentDate"
                         no-title>
                       </v-date-picker>
                     </v-menu>
@@ -328,7 +331,8 @@
                       <v-date-picker
                         class="edit-director__cessation-date__datepicker"
                         v-model="director.cessationDate"
-                        :max="today"
+                        :min="earliestDateToSet"
+                        :max="currentDate"
                         no-title>
                       </v-date-picker>
                     </v-menu>
@@ -360,19 +364,24 @@
 <script>
 import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapActions, mapGetters } from 'vuex'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress'
+import DateUtils from '@/DateUtils'
 
 export default {
   name: 'Directors',
 
-  mixins: [Vue2Filters.mixin],
+  mixins: [Vue2Filters.mixin, DateUtils],
 
   components: {
     BaseAddress
   },
   props: {
-    asOfDate: String
+    asOfDate: String,
+    componentEnabled: {
+      type: Boolean,
+      default: true
+    }
   },
   data () {
     return {
@@ -438,17 +447,9 @@ export default {
   },
 
   computed: {
-    ...mapState(['corpNum', 'agmDateValid']),
+    ...mapState(['corpNum', 'lastPreLoadFilingDate', 'currentDate', 'filingHistory']),
 
-    // today's date as YYYY-MM-DD, current timezone
-    today () {
-      let today = new Date()
-      today = '' +
-        today.getFullYear() + '-' +
-        (today.getMonth() * 1 + 1).toString().padStart(2, '0') + '-' +
-        today.getDate().toString().padStart(2, '0')
-      return today
-    },
+    ...mapGetters(['lastCODFilingDate']),
 
     directorsChange () {
       // One or more actions taken on directors (add, cease) require a single fee, so check how many directors in the
@@ -457,7 +458,6 @@ export default {
     },
 
     directorAppointmentDateRules () {
-      console.log('got to directorAppointmentDateRules computed')
       const rules = []
       let cessationDate = null
 
@@ -487,8 +487,24 @@ export default {
       return rules
     },
 
+    earliestDateToSet () {
+      // return the latest of the most recent COD filing and the last pre-load Cobrs filing
+      let earliestDateToSet = null
+
+      if (this.lastCODFilingDate === null) {
+        earliestDateToSet = this.lastPreLoadFilingDate
+      } else if (this.compareDates(this.lastCODFilingDate, this.lastPreLoadFilingDate, '>')) {
+        earliestDateToSet = this.lastCODFilingDate
+      } else {
+        earliestDateToSet = this.lastPreLoadFilingDate
+      }
+
+      // when earliest date is calculated, emit it back up for display
+      this.$emit('lastFilingDate', earliestDateToSet)
+      return earliestDateToSet
+    },
+
     directorCessationDateRules () {
-      console.log('got to directorCessationDateRules computed')
       const rules = []
       let appointmentDate = null
 
@@ -515,7 +531,6 @@ export default {
 
       return rules
     }
-
   },
 
   mounted () {
@@ -722,20 +737,17 @@ export default {
       this.directors = directors
     },
 
-    // util function to compare simple date strings YYYY-MM-DD
-    compareDates (date1, date2, operator) {
-      if (!date1 || !date2 || !operator) return true
-
-      // convert dates to numbers YYYYMMDD
-      date1 = date1.split('-').join('')
-      date2 = date2.split('-').join('')
-
-      return eval(date1 + operator + date2) // eslint-disable-line no-eval
-    },
-
     // util function to check whether a date is in the future
     dateIsNotFuture (thedate) {
-      return this.compareDates(thedate, this.today, '<=')
+      return this.compareDates(thedate, this.currentDate, '<=')
+    },
+
+    earliestStandaloneCeaseDateToSet (director) {
+      if (this.compareDates(director.appointmentDate, this.earliestDateToSet, '>')) {
+        return director.appointmentDate
+      } else {
+        return this.earliestDateToSet
+      }
     }
   },
 
@@ -748,6 +760,7 @@ export default {
     },
     directorFormValid (val) {
       this.setDirectorFormValid(val)
+      this.$emit('directorFormValid', val)
     },
     // when as-of date changes (from parent component) refresh list of directors
     asOfDate (val) {

@@ -2,6 +2,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import AnnualReport from '@/views/AnnualReport.vue'
 import StandaloneDirectorsFiling from '@/views/StandaloneDirectorsFiling.vue'
+import StandaloneOfficeAddressFiling from '@/views/StandaloneOfficeAddressFiling.vue'
 import Dashboard from '@/views/Dashboard.vue'
 import axios from '@/axios-auth'
 
@@ -90,6 +91,14 @@ let router = new VueRouter({
       path: '/standalone-directors',
       name: 'standalone-directors',
       component: StandaloneDirectorsFiling,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/standalone-addresses',
+      name: 'standalone-addresses',
+      component: StandaloneOfficeAddressFiling,
       meta: {
         requiresAuth: true
       }

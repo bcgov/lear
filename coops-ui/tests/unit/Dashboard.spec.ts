@@ -35,4 +35,24 @@ describe('Dashboard.vue', () => {
     expect(wrapper.vm.todoCount).toEqual(2)
     expect(wrapper.vm.filedCount).toEqual(3)
   })
+
+  it('enables standalone filing buttons when there are are no drafts/pending in the to-do list', () => {
+    wrapper.find(TodoList).vm.$emit('has-blocker-filing', false)
+
+    expect(wrapper.vm.hasBlockerFiling).toEqual(false)
+    expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
+      .getAttribute('disabled')).toBeFalsy()
+    expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
+      .getAttribute('disabled')).toBeFalsy()
+  })
+
+  it('disables standalone filing buttons when there is a draft/pending in the to-do list', () => {
+    wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
+
+    expect(wrapper.vm.hasBlockerFiling).toEqual(true)
+    expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
+      .getAttribute('disabled')).toBeTruthy()
+    expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
+      .getAttribute('disabled')).toBeTruthy()
+  })
 })

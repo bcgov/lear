@@ -70,7 +70,7 @@
 <script lang="ts">
 import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
-import { mapState } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 
 export default {
   name: 'FilingHistoryList',
@@ -95,6 +95,8 @@ export default {
   },
 
   methods: {
+    ...mapActions(['setFilingHistory']),
+
     getFilings () {
       this.filedItems = []
       this.errorMessage = null
@@ -106,6 +108,10 @@ export default {
             const filings = response.data.filings.sort(
               (a, b) => (b.filing.header.filingId - a.filing.header.filingId)
             )
+
+            // store the list of filing history to be used elsewhere
+            this.setFilingHistory(filings)
+
             // create filed items
             for (let i = 0; i < filings.length; i++) {
               const filing = filings[i].filing

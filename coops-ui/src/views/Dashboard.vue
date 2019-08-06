@@ -21,7 +21,7 @@
               <header>
                 <h2>To Do <span class="text-muted">({{todoCount}})</span></h2>
               </header>
-              <todo-list @todo-count="todoCount = $event"/>
+              <todo-list @todo-count="todoCount = $event" @has-blocker-filing="hasBlockerFiling = $event" />
             </section>
 
             <section>
@@ -36,7 +36,8 @@
             <section>
               <header>
                 <h2>Office Addresses</h2>
-                <v-btn flat small color="primary" @click.native.stop="goToStandaloneAddresses()">
+                <v-btn id="btn-standalone-addresses" flat small color="primary" :disabled="hasBlockerFiling"
+                       @click.native.stop="goToStandaloneAddresses()">
                   <v-icon small>edit</v-icon>
                   <span>EDIT</span>
                 </v-btn>
@@ -49,7 +50,8 @@
             <section>
               <header>
                 <h2>Current Directors</h2>
-                <v-btn flat small color="primary" @click.native.stop="goToStandaloneDirectors()">
+                <v-btn id="btn-standalone-directors" flat small color="primary" :disabled="hasBlockerFiling"
+                       @click.native.stop="goToStandaloneDirectors()">
                   <v-icon small>edit</v-icon>
                   <span>EDIT</span>
                 </v-btn>
@@ -86,6 +88,7 @@ export default {
   data () {
     return {
       todoCount: 0,
+      hasBlockerFiling: false,
       filedCount: 0
     }
   },

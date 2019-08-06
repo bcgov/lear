@@ -81,7 +81,18 @@
       </v-card>
     </v-dialog>
 
-    <div id="standalone-directors" ref="standaloneDirectors">
+    <!-- Transition to Payment -->
+    <!-- TODO - this should be on Payment page -->
+    <v-fade-transition>
+      <div class="loading-container" v-show="showLoading">
+        <div class="loading__content">
+          <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
+          <div class="loading-msg">Redirecting to PayBC to Process Your Payment</div>
+        </div>
+      </div>
+    </v-fade-transition>
+
+    <div id="standalone-office-address" ref="standaloneOfficeAddress">
       <!-- Initial Page Load Transition -->
       <div class="loading-container fade-out">
         <div class="loading__content">
@@ -90,26 +101,23 @@
         </div>
       </div>
 
-      <v-container id="standalone-directors-container" class="view-container">
-        <article id="standalone-directors-article">
+      <v-container id="standalone-office-address-container" class="view-container">
+        <article id="standalone-office-address-article">
           <header>
-            <h1 id="filing-header">Change of Directors</h1>
-
-            <v-alert type="info" :value="true" icon="info" outline style="background-color: white;">
-              Director changes can be made as far back as {{ lastFilingDate }}.
-            </v-alert>
+            <h1 id="filing-header">Change of Office Addresses</h1>
           </header>
 
           <div>
 
-            <!-- Director Information -->
+            <!-- Registered Office Addresses -->
             <section>
-              <Directors ref="directorsList"
-                @directorsChange="directorsChange"
-                @lastFilingDate="lastFilingDate=$event"
-                @directorFormValid="directorFormValid=$event"
-                :asOfDate="currentDate"
-                />
+
+              <RegisteredOfficeAddress
+                :changeButtonDisabled="false"
+                :legalEntityNumber="corpNum"
+                :addresses.sync="addresses"
+                @modified="officeModifiedEventHandler($event)"
+                @valid="officeAddressFormValid = $event" />
             </section>
 
             <!--Certify -->
@@ -125,7 +133,7 @@
         </article>
 
         <aside>
-          <affix relative-element-selector="#standalone-directors-article" :offset="{ top: 120, bottom: 40 }">
+          <affix relative-element-selector="#standalone-office-address-article" :offset="{ top: 120, bottom: 40 }">
             <sbc-fee-summary v-bind:filingData="[...filingData]" v-bind:payURL="payAPIURL"/>
           </affix>
         </aside>
@@ -133,12 +141,12 @@
 
       <v-container id="buttons-container" class="list-item">
         <div class="buttons-left">
-          <v-btn id="cod-save-btn" large
+          <v-btn id="coa-save-btn" large
             :disabled="!validated"
             @click="onClickSave">
             Save
           </v-btn>
-          <v-btn id="cod-save-resume-btn" large
+          <v-btn id="coa-save-resume-btn" large
             :disabled="!validated"
             @click="onClickSaveResume">
             Save &amp; Resume Later
@@ -149,7 +157,7 @@
           <v-tooltip bottom>
             <v-btn
               slot="activator"
-              id="cod-file-pay-btn"
+              id="coa-file-pay-btn"
               color="primary"
               large
               :disabled="!validated"
@@ -160,7 +168,7 @@
               There is no opportunity to change information beyond this point.</span>
           </v-tooltip>
           <v-btn
-            id="cod-cancel-btn"
+            id="coa-cancel-btn"
             large
             to="/dashboard">
             Cancel
@@ -173,18 +181,20 @@
 
 <script lang="ts">
 import axios from '@/axios-auth'
+import AGMDate from '@/components/AnnualReport/AGMDate.vue'
+import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
-import Certify from '@/components/AnnualReport/Certify.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapActions, mapGetters } from 'vuex'
 import { PAYMENT_REQUIRED } from 'http-status-codes'
+import Certify from '@/components/AnnualReport/Certify.vue'
 
 export default {
-  name: 'StandaloneDirectorsFiling',
+  name: 'AnnualReport',
 
   components: {
-    Directors,
+    RegisteredOfficeAddress,
     SbcFeeSummary,
     Affix,
     Certify
@@ -192,15 +202,16 @@ export default {
 
   data () {
     return {
-      loadingMsg: 'Redirecting to PayBC to Process Your Payment',
+      addresses: null,
+      filingId: null,
+      showLoading: false,
       filingData: [],
       resumeErrorDialog: false,
       saveErrorDialog: false,
       paymentErrorDialog: false,
-      lastFilingDate: 'your last filing',
       certifyChange: false,
       certifiedBy: null,
-      directorFormValid: true
+      officeAddressFormValid: true
     }
   },
 
@@ -208,13 +219,12 @@ export default {
     ...mapState(['currentDate', 'corpNum', 'entityName', 'entityIncNo', 'entityFoundingDate']),
 
     validated () {
-      if (this.certifyChange && this.directorFormValid) return true
+      if (this.certifyChange && this.officeAddressFormValid) return true
       else return false
     }
-
   },
 
-  mounted () {
+  created () {
     // if tombstone data isn't set, redirect to home
     if (!this.corpNum) {
       this.$router.push('/')
@@ -222,13 +232,19 @@ export default {
   },
 
   methods: {
-    directorsChange (val) {
-      // when directors change, update filing data
-      if (val) {
-        this.toggleFiling('add', 'OTCDR')
-      } else {
-        this.toggleFiling('remove', 'OTCDR')
-      }
+    /**
+     * Callback method for the "modified" event from RegisteredOfficeAddress.
+     *
+     * @param modified a boolean indicating whether or not the office address(es) have been modified from their
+     * original values.
+     */
+    officeModifiedEventHandler (modified: boolean): void {
+      // when addresses change, update filing data
+      this.toggleFiling(modified ? 'add' : 'remove', 'OTADD')
+    },
+
+    changeCertifyData (val) {
+      this.certifyChange = val
     },
 
     async onClickSave () {
@@ -269,11 +285,11 @@ export default {
 
     async saveFiling (isDraft) {
       this.saveErrorDialog = false
-      let changeOfDirectors = null
+      let changeOfAddress = null
 
       const header = {
         header: {
-          name: 'changeOfDirectors',
+          name: 'changeOfAddress',
           date: this.currentDate
         }
       }
@@ -286,12 +302,13 @@ export default {
         }
       }
 
-      if (this.isDataChanged('OTCDR')) {
-        changeOfDirectors = {
-          changeOfDirectors: {
+      if (this.isDataChanged('OTADD') && this.addresses) {
+        changeOfAddress = {
+          changeOfAddress: {
             certifiedBy: this.certifiedBy,
             email: 'no_one@never.get',
-            directors: this.$refs.directorsList.getAllDirectors()
+            deliveryAddress: this.addresses['deliveryAddress'],
+            mailingAddress: this.addresses['mailingAddress']
           }
         }
       }
@@ -301,7 +318,7 @@ export default {
           {},
           header,
           business,
-          changeOfDirectors
+          changeOfAddress
         )
       }
 
@@ -366,12 +383,7 @@ export default {
     navigateToDashboard () {
       this.dialog = false
       this.$router.push('/')
-    },
-
-    changeCertifyData (val) {
-      this.certifyChange = val
     }
-
   },
 
   watch: {
@@ -408,10 +420,6 @@ h2
 .title-container
   margin-bottom: 0.5rem;
 
-.agm-date
-  margin-left: 0.25rem;
-  font-weight: 300;
-
 // Save & Filing Buttons
 #buttons-container
   padding-top: 2rem;
@@ -425,4 +433,10 @@ h2
 
   .v-btn + .v-btn
     margin-left: 0.5rem;
+
+.genErr
+  font-size: 0.9rem;
+
+.error-dialog-padding
+  margin-left: 1rem;
 </style>
