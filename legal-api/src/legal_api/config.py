@@ -64,6 +64,8 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', '')
 
+    REPORT_SVC_URL = os.getenv('REPORT_SVC_URL', '')
+
     SENTRY_DSN = os.getenv('SENTRY_DSN', None)
 
     SECRET_KEY = 'a secret'
@@ -98,7 +100,7 @@ class _Config():  # pylint: disable=too-few-public-methods
         JWT_OIDC_JWKS_CACHE_TIMEOUT = int(os.getenv('JWT_OIDC_JWKS_CACHE_TIMEOUT'))
         if not JWT_OIDC_JWKS_CACHE_TIMEOUT:
             JWT_OIDC_JWKS_CACHE_TIMEOUT = 300
-    except ValueError:
+    except (TypeError, ValueError):
         JWT_OIDC_JWKS_CACHE_TIMEOUT = 300
 
     TESTING = False
