@@ -107,8 +107,6 @@ CHANGE_OF_ADDRESS = {
 }
 
 
-
-
 def test_valid_ar_filing():
     """Assert that the schema is performing as expected."""
     is_valid, errors = validate(AR, 'filing')
@@ -176,9 +174,9 @@ def test_valid_coa_filing():
 
     assert is_valid
 
+
 def test_valid_cod_filing():
     """Assert that the Change of Directors filing schema is performing as expected."""
-
     filing = {
         'filing': {
             'header': {
@@ -196,7 +194,6 @@ def test_valid_cod_filing():
         }
     }
 
-
     is_valid, errors = validate(filing, 'filing')
 
     if errors:
@@ -206,9 +203,9 @@ def test_valid_cod_filing():
 
     assert is_valid
 
+
 def test_invalid_cod_filing():
     """Assert that the Change of Directors filing schema is catching invalid data."""
-
     filing = {
         'filing': {
             'header': {
@@ -228,7 +225,7 @@ def test_invalid_cod_filing():
                 'directors': [
                     {
                         'officer': {
-                            'firstName': False, # should be string
+                            'firstName': False,  # should be string
                             'lastName': 'Griffin'
                         },
                         'deliveryAddress': {
@@ -238,13 +235,12 @@ def test_invalid_cod_filing():
                             'postalCode': 'H0H0H0',
                             'addressRegion': 'BC'
                         },
-                        'title': 2 # should be string
+                        'title': 2  # should be string
                     }
                 ]
             }
         }
     }
-
 
     is_valid, errors = validate(filing, 'filing')
 
@@ -255,9 +251,9 @@ def test_invalid_cod_filing():
 
     assert not is_valid
 
+
 def test_valid_multi_filing():
     """Assert that the filing schema is performing as expected with multiple filings included."""
-
     filing = {
         'filing': {
             'header': {
