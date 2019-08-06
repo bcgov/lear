@@ -52,7 +52,6 @@
                         "allOf": [
                             { "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/directors#/definitions/director" },
                             { "$ref": "#definitions/actions" }
-
                         ]
                     }
                 }
