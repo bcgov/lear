@@ -26,7 +26,10 @@
                 "directors": {
                     "type": "array",
                     "items": {
-                        "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/directors#/definitions/director"
+                        "allOf": [
+                            { "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/directors#/definitions/director" },
+                            { "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/directors#/definitions/actions" }
+                        ]
                     }
                 }
             }

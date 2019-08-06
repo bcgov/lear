@@ -4,6 +4,24 @@
     "$id": "https://bcrs.gov.bc.ca/.well_known/schemas/address",
     "type": "object",
     "title": "The Address Schema",
+    "definitions": {
+        "actions": {
+            "type": "object",
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "title": "List of actions taken on this director - required only for filings",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "addressChanged"
+                        ]
+                    }
+                }
+            },
+            "required": ["actions"]
+        }
+    },
     "properties": {
         "streetAddress": {
             "type": "string",

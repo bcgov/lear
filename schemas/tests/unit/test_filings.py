@@ -47,7 +47,10 @@ CHANGE_OF_DIRECTORS = {
         {
             'officer': {
                 'firstName': 'Peter',
-                'lastName': 'Griffin'
+                'lastName': 'Griffin',
+                'prevFirstName': 'Peter',
+                'prevMiddleName': 'G',
+                'prevLastName': 'Griffin'
             },
             'deliveryAddress': {
                 'streetAddress': 'mailing_address - address line one',
@@ -57,7 +60,8 @@ CHANGE_OF_DIRECTORS = {
                 'addressRegion': 'BC'
             },
             'appointmentDate': '2018-01-01',
-            'cessationDate': '2019-04-03'
+            'cessationDate': '2019-04-03',
+            'actions': ['ceased', 'nameChanged']
         },
         {
             'officer': {
@@ -75,7 +79,8 @@ CHANGE_OF_DIRECTORS = {
             },
             'title': 'Treasurer',
             'cessationDate': None,
-            'appointmentDate': '2018-01-01'
+            'appointmentDate': '2018-01-01',
+            'actions': []
         }
     ]
 }
@@ -88,14 +93,16 @@ CHANGE_OF_ADDRESS = {
         'addressCity': 'delivery_address city',
         'addressCountry': 'delivery_address country',
         'postalCode': 'H0H0H0',
-        'addressRegion': 'BC'
+        'addressRegion': 'BC',
+        'actions': []
     },
     'mailingAddress': {
         'streetAddress': 'mailing_address - address line one',
         'addressCity': 'mailing_address city',
         'addressCountry': 'mailing_address country',
         'postalCode': 'H0H0H0',
-        'addressRegion': 'BC'
+        'addressRegion': 'BC',
+        'actions': ['addressChanged']
     }
 }
 

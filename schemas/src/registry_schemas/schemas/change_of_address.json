@@ -25,10 +25,16 @@
                     "format": "email"
                 },
                 "deliveryAddress": {
-                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
+                    "allOf": [
+                        { "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address" },
+                        { "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address#/definitions/actions" }
+                    ]
                 },
                 "mailingAddress": {
-                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
+                    "allOf": [
+                        { "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address" },
+                        { "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address#/definitions/actions" }
+                    ]
                 }
             }
         }
