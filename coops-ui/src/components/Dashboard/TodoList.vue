@@ -289,16 +289,16 @@ export default {
       }
     },
 
-    // this is called to either Resume Payment or Retry Payment.     
-    doResumePayment (item) {       
-        const origin = window.location.origin || ''
-        const filingId = item.id
-        const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
-        let authStub: string = this.authURL || ''
-        if (!(authStub.endsWith('/'))) { authStub += '/' }
-        const paymentToken = item.paymentToken
-        const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL  
-        window.location.assign(payURL)
+    // this is called to either Resume Payment or Retry Payment.
+    doResumePayment (item) {
+      const origin = window.location.origin || ''
+      const filingId = item.id
+      const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
+      let authStub: string = this.authURL || ''
+      if (!(authStub.endsWith('/'))) { authStub += '/' }
+      const paymentToken = item.paymentToken
+      const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
+      window.location.assign(payURL)
     },
 
     resetStore (item) {
