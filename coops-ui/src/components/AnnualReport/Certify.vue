@@ -70,6 +70,9 @@ export default {
   watch: {
     isCertifyValid: function (val) {
       this.$emit('certifyChange', val)
+    },
+    certifiedBy: function (val) {
+      this.$emit('certifiedBy', this.getLegalName())
     }
   }
 }

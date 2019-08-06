@@ -136,6 +136,15 @@ export default {
             this.errorMessage = 'Oops, could not parse data from server'
           }
           this.$emit('todo-count', this.taskItems.length)
+
+          // if this is a draft or pending item, emit the has-blocker-filings event to parent component
+          // - this indicates that a new filing cannot be started because this one has to be completed first
+          this.$emit('has-blocker-filing',
+            this.taskItems.filter(elem => {
+              return this.isDraft(elem) || this.isPending(elem)
+            }).length > 0
+          )
+
         }).catch(error => {
           console.error('getTasks() error =', error)
           this.errorMessage = 'Oops, could not load data from server'
@@ -253,14 +262,6 @@ export default {
           this.resetStore(item)
           this.$router.push({ name: 'annual-report', params: { id: 0 } }) // 0 means "new AR"
           break
-        case 'changeOfDirectors':
-          // TODO - file the subject Change of Directors
-          console.log('doFileNow(), Director Change item =', item)
-          break
-        case 'changeOfAddress':
-          // TODO - file the subject Change Of Address
-          console.log('doFileNow(), Address Change item =', item)
-          break
         default:
           console.log('doFileNow(), invalid type for item =', item)
       }
@@ -274,8 +275,8 @@ export default {
           this.$router.push({ name: 'annual-report', params: { id: item.id } })
           break
         case 'changeOfDirectors':
-          // TODO - resume the subject Change of Directors
-          console.log('doFileNow(), Director Change item =', item)
+          this.resetStore(item)
+          this.$router.push({ name: 'standalone-directors', params: { id: item.id } })
           break
         case 'changeOfAddress':
           // TODO - resume the subject Change Of Address

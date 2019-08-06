@@ -145,13 +145,13 @@ describe('Directors.vue', () => {
     expect(directorListUI[1].innerHTML).toContain('<span>Cease</span>')
   })
 
-  it('disables buttons/actions when AGM Date is invalid', done => {
+  it('disables buttons/actions when instructed by parent component', done => {
     // invalidate AGM Date
-    vm.$store.state.agmDateValid = false
+    vm.componentEnabled = false
 
     Vue.nextTick(() => {
       // confirm that flag is set correctly
-      expect(vm.agmDateValid).toEqual(false)
+      expect(vm.componentEnabled).toEqual(false)
 
       const directorListUI = vm.$el.querySelectorAll('.director-list .container')
 
@@ -163,13 +163,13 @@ describe('Directors.vue', () => {
     })
   })
 
-  it('enables buttons/actions when AGM Date is valid', done => {
+  it('enables buttons/actions when instructed by parent component', done => {
     // validate AGM Date
-    vm.$store.state.agmDateValid = true
+    vm.componentEnabled = true
 
     Vue.nextTick(() => {
       // confirm that flag is set correctly
-      expect(vm.agmDateValid).toEqual(true)
+      expect(vm.componentEnabled).toEqual(true)
 
       const directorListUI = vm.$el.querySelectorAll('.director-list .container')
 
@@ -183,11 +183,11 @@ describe('Directors.vue', () => {
 
   it('displays Add New Director form when button clicked', done => {
     // validate AGM Date
-    vm.$store.state.agmDateValid = true
+    vm.componentEnabled = true
 
     Vue.nextTick(() => {
       // confirm that flag is set correctly
-      expect(vm.agmDateValid).toEqual(true)
+      expect(vm.componentEnabled).toEqual(true)
 
       // check that Add New Director button is enabled
       expect(vm.$el.querySelector('.new-director-btn').disabled).toBe(false)

@@ -28,10 +28,13 @@
 
 <script>
 import axios from '@/axios-auth'
+import DateUtils from '@/DateUtils'
 import { mapState, mapActions } from 'vuex'
 
 export default {
   name: 'EntityInfo',
+
+  mixins: [DateUtils],
 
   computed: {
     ...mapState(['entityName', 'entityStatus', 'entityBusinessNo', 'entityIncNo', 'corpNum'])
@@ -43,7 +46,7 @@ export default {
 
   methods: {
     ...mapActions(['setEntityName', 'setEntityStatus', 'setEntityBusinessNo', 'setEntityIncNo',
-      'setLastAgmDate', 'setEntityFoundingDate']),
+      'setLastAgmDate', 'setEntityFoundingDate', 'setLastPreLoadFilingDate']),
 
     getEntityInfo () {
       if (this.corpNum) {
@@ -55,6 +58,8 @@ export default {
               this.setEntityStatus(response.data.business.status)
               this.setEntityBusinessNo(response.data.business.taxId)
               this.setEntityIncNo(response.data.business.identifier)
+              this.setLastPreLoadFilingDate(
+                this.dateToUsableString(new Date(response.data.business.lastPreBobFilingDatetime)))
               this.setEntityFoundingDate(response.data.business.foundingDate
                 ? response.data.business.foundingDate.split('T')[0] : null)
               const date = response.data.business.lastAnnualGeneralMeetingDate
