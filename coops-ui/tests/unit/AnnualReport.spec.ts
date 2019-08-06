@@ -132,12 +132,14 @@ describe('AnnualReport - Part 1', () => {
 
   it('enables File & Pay button when Validated is true', () => {
     const $route = { params: { id: 0 } }
-    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route }, stubs: {
+    const wrapper = shallowMount(AnnualReport, { store,
+      mocks: { $route },
+      stubs: {
         'Directors': true,
         'RegisteredOfficeAddress': true,
         'AGMDate': true,
         'Certify': true
-      }})
+      } })
     const vm: any = wrapper.vm
 
     // set flag

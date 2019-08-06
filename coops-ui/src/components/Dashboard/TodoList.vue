@@ -144,7 +144,6 @@ export default {
               return this.isDraft(elem) || this.isPending(elem)
             }).length > 0
           )
-
         }).catch(error => {
           console.error('getTasks() error =', error)
           this.errorMessage = 'Oops, could not load data from server'
