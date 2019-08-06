@@ -7,6 +7,29 @@
     ],
     "type": "object",
     "title": "Change of Directors Filing",
+    "definitions": {
+        "actions": {
+            "type": "object",
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "title": "List of actions taken on a director",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "appointed",
+                            "ceased",
+                            "nameChanged",
+                            "addressChanged"
+                        ]
+                    }
+                }
+            },
+            "required": [
+                "actions"
+            ]
+        }
+    },
     "properties": {
         "changeOfDirectors": {
             "type": "object",
@@ -26,7 +49,10 @@
                 "directors": {
                     "type": "array",
                     "items": {
-                        "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/directors#/definitions/director"
+                        "allOf": [
+                            { "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/directors#/definitions/director" },
+                            { "$ref": "#definitions/actions" }
+                        ]
                     }
                 }
             }

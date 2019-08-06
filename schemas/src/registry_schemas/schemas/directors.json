@@ -18,6 +18,21 @@
                 "middleInitial": {
                     "type": "string",
                     "maxLength": 30
+                },
+                "prevFirstName": {
+                    "title": "previous first name, in the case of a legal name change in a filing",
+                    "type": "string",
+                    "maxLength": 30
+                },
+                "prevLastName": {
+                    "title": "previous last name, in the case of a legal name change in a filing",
+                    "type": "string",
+                    "maxLength": 30
+                },
+                "prevMiddleInitial": {
+                    "title": "previous middle name, in the case of a legal name change in a filing",
+                    "type": "string",
+                    "maxLength": 30
                 }
             },
             "required": [

@@ -47,7 +47,10 @@ CHANGE_OF_DIRECTORS = {
         {
             'officer': {
                 'firstName': 'Peter',
-                'lastName': 'Griffin'
+                'lastName': 'Griffin',
+                'prevFirstName': 'Peter',
+                'prevMiddleInitial': 'G',
+                'prevLastName': 'Griffin'
             },
             'deliveryAddress': {
                 'streetAddress': 'mailing_address - address line one',
@@ -57,7 +60,8 @@ CHANGE_OF_DIRECTORS = {
                 'addressRegion': 'BC'
             },
             'appointmentDate': '2018-01-01',
-            'cessationDate': '2019-04-03'
+            'cessationDate': '2019-04-03',
+            'actions': ['addressChanged', 'nameChanged']
         },
         {
             'officer': {
@@ -75,7 +79,8 @@ CHANGE_OF_DIRECTORS = {
             },
             'title': 'Treasurer',
             'cessationDate': None,
-            'appointmentDate': '2018-01-01'
+            'appointmentDate': '2018-01-01',
+            'actions': []
         }
     ]
 }
@@ -88,18 +93,18 @@ CHANGE_OF_ADDRESS = {
         'addressCity': 'delivery_address city',
         'addressCountry': 'delivery_address country',
         'postalCode': 'H0H0H0',
-        'addressRegion': 'BC'
+        'addressRegion': 'BC',
+        'actions': []
     },
     'mailingAddress': {
         'streetAddress': 'mailing_address - address line one',
         'addressCity': 'mailing_address city',
         'addressCountry': 'mailing_address country',
         'postalCode': 'H0H0H0',
-        'addressRegion': 'BC'
+        'addressRegion': 'BC',
+        'actions': ['addressChanged']
     }
 }
-
-
 
 
 def test_valid_ar_filing():
@@ -169,9 +174,9 @@ def test_valid_coa_filing():
 
     assert is_valid
 
+
 def test_valid_cod_filing():
     """Assert that the Change of Directors filing schema is performing as expected."""
-
     filing = {
         'filing': {
             'header': {
@@ -189,7 +194,6 @@ def test_valid_cod_filing():
         }
     }
 
-
     is_valid, errors = validate(filing, 'filing')
 
     if errors:
@@ -199,9 +203,9 @@ def test_valid_cod_filing():
 
     assert is_valid
 
+
 def test_invalid_cod_filing():
     """Assert that the Change of Directors filing schema is catching invalid data."""
-
     filing = {
         'filing': {
             'header': {
@@ -221,7 +225,7 @@ def test_invalid_cod_filing():
                 'directors': [
                     {
                         'officer': {
-                            'firstName': False, # should be string
+                            'firstName': False,  # should be string
                             'lastName': 'Griffin'
                         },
                         'deliveryAddress': {
@@ -231,13 +235,12 @@ def test_invalid_cod_filing():
                             'postalCode': 'H0H0H0',
                             'addressRegion': 'BC'
                         },
-                        'title': 2 # should be string
+                        'title': 2  # should be string
                     }
                 ]
             }
         }
     }
-
 
     is_valid, errors = validate(filing, 'filing')
 
@@ -248,9 +251,9 @@ def test_invalid_cod_filing():
 
     assert not is_valid
 
+
 def test_valid_multi_filing():
     """Assert that the filing schema is performing as expected with multiple filings included."""
-
     filing = {
         'filing': {
             'header': {
