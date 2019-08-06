@@ -49,7 +49,7 @@ CHANGE_OF_DIRECTORS = {
                 'firstName': 'Peter',
                 'lastName': 'Griffin',
                 'prevFirstName': 'Peter',
-                'prevMiddleName': 'G',
+                'prevMiddleInitial': 'G',
                 'prevLastName': 'Griffin'
             },
             'deliveryAddress': {
