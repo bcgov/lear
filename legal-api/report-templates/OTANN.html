@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html xmlns:mso="urn:schemas-microsoft-com:office:office" xmlns:msdt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882">
+  <head lang="en">
+    <meta charset="UTF-8">
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 12px;
+      }
+
+      table {
+        border-collapse: collapse;
+      }
+
+      td {
+        vertical-align: top
+      }
+
+      hr {
+        margin-top: 5px;
+        margin-bottom: 10px;
+        height: 1px;
+        border: none;
+        background-color: #fcba19;
+      }
+
+      .main-table {
+        width: 700px;
+        height: 900px;
+        border: 1px solid #fcba19;
+      }
+
+      .wordmark {
+        font-family: Georgia, 'Times New Roman', Times, serif;
+      }
+
+      .bcgov-header-row {
+        padding: 6px 20px
+      }
+
+      .bcgov-footer-row td {
+        padding: 6px 20px;
+        font-size: 12px;
+      }
+
+      .bcgov-blue-bg {
+        color: #ffffff;
+        background-color: #003366;
+      }
+
+      .bcgov-gold-bg {
+        color: #003366;
+        background-color: #fcba19;
+      }
+
+      .bcgov-logo-column {
+        width: 120px;
+        padding-top: 20px;
+        text-align: center;
+      }
+
+      .bcgov-receipt-column {
+        padding-top: 30px;
+        padding-right: 0;
+        padding-left: 0;
+        border-left: 1px solid #fcba19;
+        background-image: url('REGI_BC_stamp.jpg');
+        background-repeat: no-repeat;
+        background-size: 300px;
+        background-position: center bottom 30px;
+      }
+
+      .entity-name {
+        font-size: 14px;
+      }
+
+      .certified-copy {
+        margin-top: 20px;
+        padding-right: 10px;
+        padding-left: 10px;
+        font-size: 9px;
+      }
+
+      .receipt-details {
+        width: 100%;
+        color: #003366;
+        border: none;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+
+      .receipt-details td {
+        padding: 2px 20px;
+      }
+
+      .receipt-details td.section-title {
+        padding-top: 20px;
+      }
+
+      td.name,
+      td.value {
+        width: 50%;
+      }
+
+      .receipt-details td.watermark-cell {
+        padding-top: 30px;
+        padding-bottom: 30px;
+        text-align: center;
+      }
+
+      .receipt-items {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        border: none;
+        list-style-type: none;
+      }
+
+      .receipt-items td {
+        width: 50%;
+      }
+
+      .receipt-item__name {
+        width: 50%;
+      }
+
+      .address-title {
+        margin-bottom: 5px;
+      }
+
+      .director-info {
+        width: 100%;
+      }
+
+      .director-info td {
+        padding-right: 0;
+        padding-left: 0;
+      }
+
+      .director-info + .director-info {
+        margin-top: 10px;
+        border-top: 1px solid #fcba19;
+      }
+
+      .director-info + .director-info .director-info__name {
+        padding-top: 10px;
+      }
+
+      .director-info__name {
+        margin-bottom: 10px;
+      }
+
+      .watermark-img {
+        width: 300px;
+      }
+
+      .align-right {
+        text-align: right;
+      }
+
+      .no-padding {
+        padding: 0 !important;
+      }
+    </style>
+
+<!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">S52QENDTEJAE-1724982671-1626</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">52699a34-ecba-441a-b650-fc2fe3c57386</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://citz.sp.gov.bc.ca/sites/SBC/REG/Projects/MVSM/_layouts/15/DocIdRedir.aspx?ID=S52QENDTEJAE-1724982671-1626, S52QENDTEJAE-1724982671-1626</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+  <body>
+    <table class="main-table" align="center">
+      <tbody>
+        <tr>
+          <td class="bcgov-logo-column">
+            <img src="bcgov-logo-vert.jpg" />
+          </td>
+          <td class="bcgov-receipt-column" colspan="3">
+            <div class="bcgov-header-row bcgov-blue-bg">
+              <strong>{{ annualReportYear }} BC COOPERATIVE ANNUAL REPORT</strong>
+            </div>
+            <div class="bcgov-header-row bcgov-gold-bg">
+              <span style="font-size: 12px; font-weight: bold;">BC Cooperative&nbsp;&nbsp;•&nbsp;&nbsp;Cooperative Act</span>
+            </div>
+            <table class="receipt-details">
+              <tr>
+                <td style="padding-top: 25px; padding-bottom: 20px;" colspan="2">
+                  <strong class="entity-name">{{ cooperativeName }}</strong>
+                </td>
+              </tr>
+              <tr>
+                <td class="name">Incorporation Number:</td>
+                <td class="value">{{ incorporationNumber }}</td>
+              </tr>
+              <tr>
+                <td class="name">Business Number:</td>
+                <td class="value">{{ businessNumber }}</td>
+              </tr>
+              <tr>
+                <td class="name">Filing Date and Time:</td>
+                <td class="value">{{ filingDateTime }}</td>
+              </tr>
+              <tr>
+                <td class="name">Annual General Meeting (AGM) Date:</td>
+                <td class="value">{{ agmDate }}</td>
+              </tr>
+              <tr>
+                <td class="spacer" colspan="2"></td>
+              </tr>
+              <tr>
+                <td class="section-title" colspan="2">
+                  <strong>REGISTERED OFFICE ADDRESS INFORMATION</strong>
+                  <hr>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="address-title"><strong>Delivery Address</strong></div>
+                  <div>{{ street }}</div>
+                  <div>{{ city }} {{ region }} {{ postalCode }}</div>
+                </td>
+                <td>
+                  <div class="address-title"><strong>Mailing Address</strong></div>
+                  <div>{{ street }}</div>
+                  <div>{{ city }} {{ region }} {{ postalCode }}</div>
+                </td>
+              </tr>
+              <tr>
+                <td class="spacer" colspan="2"></td>
+              </tr>
+              <tr>
+                <td class="section-title" colspan="2">
+                  <strong>DIRECTOR INFORMATION AS OF {{ directorsAsOfDate }}</strong>
+                  <hr>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  {% for item in line_items %}
+                  <table class="director-info">
+                    <tr>
+                      <td colspan="2">
+                        <div class="director-info__name"><strong>{{ directorLastName }} {{ directorMiddleName }}, {{ directorFirstName }}</strong></div>
+                        <div class="delivery-title"><strong>Delivery Address</strong></div>
+                        <div>{{ street }}</div>
+                        <div>{{ city }} {{ region }} {{ postalCode }}</div>
+                      </td>
+                    </tr>
+                  </table>
+                  {% endfor %}
+                </td>
+              </tr>
+              <tr>
+                <td class="section-title" colspan="2">
+                  <strong>CERTIFICATION</strong>
+                  <hr>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  I, {{ certifyingAuthor }}, certify that I have relevant knowledge of the cooperative, and that I am authorized to make this filing.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="bcgov-footer-row bcgov-blue-bg">
+          <td></td>
+          <td colspan="2">
+            <span class="wordmark">BC Registries and Online Services</span>
+          </td>
+          <td class="align-right">
+            TST: 111362712
+          </td>
+        </tr>
+        <tr class="bcgov-footer-row bcgov-gold-bg">
+          <td></td>
+          <td colspan="2">
+            Incorporation Number {{ incorporationNumber }}
+          </td>
+          <td class="align-right">
+            Page 1 of 1
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </body>
+</html>
