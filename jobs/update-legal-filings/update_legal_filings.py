@@ -70,7 +70,7 @@ def check_for_manual_filings(application: Flask = None):
     # get max colin event_id from legal
     r = requests.get(f'{application.config["LEGAL_URL"]}/internal/filings/colin_id')
     if r.status_code != 200:
-        application.logger.error('Error last updated colin id from legal.')
+        application.logger.error(f'Error getting last updated colin id from legal: {r.status_code} {r.json()}')
     else:
         last_event_id = dict(r.json())['maxId']
         if last_event_id:
@@ -176,7 +176,7 @@ def run():
                         application.logger.debug(f'Successfully updated colin id in legal db.')
 
             else:
-                application.logger.debug('Not updating colin_last_update in legal db.')
+                application.logger.debug('colin_last_update not updated in legal db.')
 
         except Exception as err:
             application.logger.error(err)
