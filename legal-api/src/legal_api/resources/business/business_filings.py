@@ -346,11 +346,11 @@ class ColinLastUpdate(Resource):
             order by id desc
             """
         )
-        last_event_id = query.fetchone()[0]
-        if not last_event_id:
+        last_event_id = query.fetchone()
+        if not last_event_id or not last_event_id[0]:
             return {'message': f'No colin ids found'}, HTTPStatus.NOT_FOUND
 
-        return {'maxId': last_event_id}, HTTPStatus.OK if request.method == 'GET' else HTTPStatus.CREATED
+        return {'maxId': last_event_id[0]}, HTTPStatus.OK if request.method == 'GET' else HTTPStatus.CREATED
 
     @staticmethod
     @cors.crossdomain(origin='*')
