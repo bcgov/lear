@@ -184,28 +184,29 @@ class Filing:
                 filing_type_cd = 'OTCDR'
                 cls._create_filing(cursor, event_id, corp_num, date, filing_type_cd)
 
-                # end all current directors - each one in filing added as a new director afterwards
-                # Director.end_current(cursor=cursor, event_id=event_id, corp_num=corp_num)
-
-                # find changed directors + new directors + ceased directors
-                ceased_dirs = []
+                # create, cease, change directors
                 changed_dirs = []
                 for director in filing.body['directors']:
                     if 'appointed' in director['actions']:
                         Director.create_new_director(cursor=cursor, event_id=event_id, director=director,
                                                      business=filing.business.as_dict())
 
-                    elif 'ceased' in director['actions']:
-                        ceased_dirs.append(director)
+                    if 'ceased' in director['actions'] and not any(elem in ['nameChanged', 'addressChanged']
+                                                                   for elem in director['actions']):
+                        Director.end_by_name(cursor=cursor, director=director, event_id=event_id, corp_num=corp_num)
 
                     elif 'nameChanged' in director['actions'] or 'addressChanged' in director['actions']:
+                        if 'appointed' in director['actions']:
+                            current_app.logger.error(f'Director appointed with name/address change: {director}')
                         changed_dirs.append(director)
+                        # end tmp copy of director with no cessation date (will be recreated with changes and cessation
+                        # date - otherwise end up with two copies of ended director)
+                        tmp = director.copy()
+                        tmp['cessationDate'] = ''
+                        Director.end_by_name(cursor=cursor, director=tmp, event_id=event_id, corp_num=corp_num)
 
-                # end ceased + changed directors
-                for director in ceased_dirs + changed_dirs:
-                    Director.end_by_name(cursor=cursor, director=director, event_id=event_id, corp_num=corp_num)
-
-                # add back changed directors as new row
+                # add back changed directors as new row - if ceased director with changes this will add them with
+                # cessation date + end event id filled
                 for director in changed_dirs:
                     Director.create_new_director(cursor=cursor, event_id=event_id, director=director,
                                                  business=filing.business.as_dict())
