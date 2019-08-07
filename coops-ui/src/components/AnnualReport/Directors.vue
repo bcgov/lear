@@ -556,6 +556,8 @@ export default {
                 directors[i].isDirectorActive = true
                 directors[i].isFeeApplied = false
                 directors[i].isDirectorActionable = directors[i].cessationDate == null
+
+                directors[i].actions = []
               }
 
               // save to component data now that extra attributes are added
