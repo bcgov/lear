@@ -17,13 +17,14 @@ This module is the API for the Legal Entity system.
 """
 import os
 
-from flask import Flask, jsonify
+from flask import Flask
 from flask_jwt_oidc import JwtManager
-from registry_schemas import validate
-import requests
+
 import config
+import requests
+
+from registry_schemas import validate
 from utils.logging import setup_logging
-import psycopg2
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
@@ -127,8 +128,6 @@ def run():
             #     raise Exception
             # token = dict(auth.json())['access_token']
 
-            # filing_params = check_completed_filings()
-            # for params in filing_params:
             filings = get_filings(app=application)
             if not filings:
                 application.logger.debug(f'No completed filings to send to colin.')
