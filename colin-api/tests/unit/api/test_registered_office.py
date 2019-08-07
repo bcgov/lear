@@ -60,6 +60,7 @@ def test_post_coa(client):
             "changeOfAddress": {
                 "certifiedBy": "Joe Smith",
                 "deliveryAddress": {
+                    "actions": ["addressChanged"],
                     "addressCity": "WILLIAMS LAKE",
                     "addressCountry": "CANADA",
                     "addressRegion": "BC",
@@ -68,6 +69,7 @@ def test_post_coa(client):
                 },
                 "email": "nobody@nothing.com",
                 "mailingAddress": {
+                    "actions": ["addressChanged"],
                     "addressCity": "WILLIAMS LAKE",
                     "addressCountry": "CANADA",
                     "addressRegion": "BC",
@@ -196,6 +198,7 @@ def test_post_coa_with_mismatched_identifer(client):
             "changeOfAddress": {
                 "certifiedBy": "Joe Smith",
                 "deliveryAddress": {
+                    "actions": ["addressChanged"],
                     "addressCity": "WILLIAMS LAKE",
                     "addressCountry": "CANADA",
                     "addressRegion": "BC",
@@ -204,6 +207,7 @@ def test_post_coa_with_mismatched_identifer(client):
                 },
                 "email": "nobody@nothing.com",
                 "mailingAddress": {
+                    "actions": ["addressChanged"],
                     "addressCity": "WILLIAMS LAKE",
                     "addressCountry": "CANADA",
                     "addressRegion": "BC",

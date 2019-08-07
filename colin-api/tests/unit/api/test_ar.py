@@ -112,6 +112,7 @@ def test_post_ar_with_coa_cod(client):
             "changeOfAddress": {
                 "certifiedBy": "Joe Smith",
                 "deliveryAddress": {
+                    "actions": ["addressChanged"],
                     "addressCity": "WILLIAMS LAKE",
                     "addressCountry": "CANADA",
                     "addressRegion": "BC",
@@ -120,6 +121,7 @@ def test_post_ar_with_coa_cod(client):
                 },
                 "email": "nobody@nothing.com",
                 "mailingAddress": {
+                    "actions": ["addressChanged"],
                     "addressCity": "WILLIAMS LAKE",
                     "addressCountry": "CANADA",
                     "addressRegion": "BC",
@@ -132,6 +134,7 @@ def test_post_ar_with_coa_cod(client):
                 "email": "nobody@nothing.com",
                 "directors": [
                     {
+                        "actions": [],
                         "appointmentDate": "2012-05-08",
                         "cessationDate": None,
                         "deliveryAddress": {
@@ -152,6 +155,7 @@ def test_post_ar_with_coa_cod(client):
                         "title": ""
                     },
                     {
+                        "actions": [],
                         "appointmentDate": "2015-10-14",
                         "cessationDate": "",
                         "deliveryAddress": {
@@ -171,6 +175,7 @@ def test_post_ar_with_coa_cod(client):
                         "title": ""
                     },
                     {
+                        "actions": [],
                         "appointmentDate": "2017-12-21",
                         "cessationDate": None,
                         "deliveryAddress": {
@@ -190,6 +195,7 @@ def test_post_ar_with_coa_cod(client):
                         "title": ""
                     },
                     {
+                        "actions": ["appointed"],
                         "appointmentDate": "2019-07-15",
                         "cessationDate": None,
                         "deliveryAddress": {

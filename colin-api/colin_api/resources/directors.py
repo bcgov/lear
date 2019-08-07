@@ -32,7 +32,7 @@ class DirectorsInfo(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     def get(identifier):
-        """Return the complete business info."""
+        """Return the current directors for a business."""
         if not identifier:
             return jsonify({'message': 'Identifier required'}), 404
 

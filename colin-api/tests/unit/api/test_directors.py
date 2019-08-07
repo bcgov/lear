@@ -52,6 +52,7 @@ def test_post_cod(client):
                 "email": "nobody@nothing.com",
                 "directors": [
                     {
+                        "actions": ["ceased"],
                         "appointmentDate": "2012-05-08",
                         "cessationDate": "2019-05-14",
                         "deliveryAddress": {
@@ -72,6 +73,7 @@ def test_post_cod(client):
                         "title": ""
                     },
                     {
+                        "actions": [],
                         "appointmentDate": "2015-10-14",
                         "cessationDate": None,
                         "deliveryAddress": {
@@ -91,6 +93,7 @@ def test_post_cod(client):
                         "title": ""
                     },
                     {
+                        "actions": [],
                         "appointmentDate": "2017-12-21",
                         "cessationDate": None,
                         "deliveryAddress": {
@@ -110,6 +113,7 @@ def test_post_cod(client):
                         "title": ""
                     },
                     {
+                        "actions": [],
                         "appointmentDate": "2019-07-15",
                         "cessationDate": None,
                         "deliveryAddress": {

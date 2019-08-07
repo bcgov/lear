@@ -50,7 +50,8 @@ class Director:
             'appointmentDate': self.appointment_date,
             'cessationDate': self.cessation_date,
             'startEventId': self.start_event_id,
-            'endEventId': self.end_event_id
+            'endEventId': self.end_event_id,
+            'actions': []
         }
 
     @classmethod
@@ -66,7 +67,7 @@ class Director:
                 select first_nme, middle_nme, last_nme, delivery_addr_id, appointment_dt, cessation_dt, start_event_id,
                 end_event_id
                 from corp_party
-                where end_event_id is NULL and corp_party.corp_num=:identifier and corp_party.party_typ_cd='DIR'
+                where end_event_id is NULL and corp_num=:identifier and party_typ_cd='DIR'
                 """,
                 identifier=identifier
             )
@@ -82,21 +83,27 @@ class Director:
         return directors_list
 
     @classmethod
-    def get_by_event(cls, event_id: int = None):
-        """Get all directors added/deleted during this event."""
+    def get_by_event(cls, identifier: str = None, event_id: int = None):
+        """Get all directors active or deleted during this event."""
         if not event_id:
             return None
 
         try:
             cursor = DB.connection.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 select first_nme, middle_nme, last_nme, delivery_addr_id, appointment_dt, cessation_dt, start_event_id,
                 end_event_id
                 from corp_party
-                where start_event_id=:event_id and party_typ_cd='DIR'
-                """, event_id=event_id)
+                where ((start_event_id<=:event_id and end_event_id is null) or (start_event_id<=:event_id and
+                cessation_dt is not null and end_event_id>=:event_id) or (start_event_id<:event_id and
+                end_event_id>:event_id)) and party_typ_cd='DIR' and corp_num=:identifier
+                """,
+                event_id=event_id,
+                identifier=identifier
+            )
 
-            directors_list = cls._build_directors_list(cursor)
+            directors_list = cls._build_directors_list(cursor, event_id)
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error('error getting directors info for event {}'.format(event_id))
@@ -122,6 +129,40 @@ class Director:
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error(f'Error in director: Failed to end current directors for event {event_id}')
+            raise err
+
+    @classmethod
+    def end_by_name(cls, cursor, director: dict = None, event_id: int = None, corp_num: str = None):
+        """Set all end_event_ids for given directors."""
+        if not director:
+            current_app.logger.error('Error in director: No director given to end.')
+
+        if not event_id:
+            current_app.logger.error('Error in director: No event id given to end director.')
+
+        officer = director['officer']
+        first_name = officer['prevFirstName'] if 'nameChanged' in director['actions'] else officer['firstName']
+        last_name = officer['prevLastName'] if 'nameChanged' in director['actions'] else officer['lastName']
+        middle_initial = officer.get('prevMiddleInitial', '') if 'nameChanged' in director['actions'] \
+            else officer.get('middleInitial', '')
+
+        try:
+            cursor.execute(
+                """
+                update corp_party set end_event_id=:event_id, cessation_dt=TO_DATE(:cessation_date, 'YYYY-mm-dd') where
+                corp_num=:corp_num and trim(first_nme)=:first_name and trim(last_nme)=:last_name and
+                (trim(middle_nme)=:middle_initial or middle_nme is null)
+                """,
+                event_id=event_id,
+                cessation_date=director.get('cessationDate', ''),
+                corp_num=corp_num,
+                first_name=first_name.strip(),
+                last_name=last_name.strip(),
+                middle_initial=middle_initial.strip()
+            )
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            current_app.logger.error(f'Error in director: Failed to end director: {director}')
             raise err
 
     @classmethod
@@ -177,7 +218,7 @@ class Director:
         return corp_party_id
 
     @classmethod
-    def _build_directors_list(cls, cursor):
+    def _build_directors_list(cls, cursor, event_id: int = None):
 
         directors = cursor.fetchall()
         if not directors:
@@ -197,6 +238,10 @@ class Director:
             director.cessation_date = convert_to_json_date(row['cessation_dt']) if row['cessation_dt'] else None
             director.start_event_id = row['start_event_id'] if row['start_event_id'] else ''
             director.end_event_id = row['end_event_id'] if row['end_event_id'] else ''
+
+            # this is in case the director was not ceased during this event
+            if event_id and director.end_event_id and director.end_event_id > event_id:
+                director.cessation_date = None
 
             directors_list.append(director)
 

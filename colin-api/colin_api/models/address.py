@@ -46,7 +46,8 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
             'addressCountry': self.address_country,
             'postalCode': self.postal_code,
             'deliveryInstructions': self.delivery_instructions,
-            'addressId': self.address_id
+            'addressId': self.address_id,
+            'actions': []
         }
 
     @classmethod

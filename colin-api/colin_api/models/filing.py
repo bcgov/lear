@@ -105,7 +105,7 @@ class Filing:
             raise err
 
     @classmethod
-    def add_filing(cls, filing):  # pylint: disable=too-many-locals,too-many-statements;
+    def add_filing(cls, filing):  # pylint: disable=too-many-locals,too-many-statements,too-many-branches;
         """Add new filing to COLIN tables.
 
         :param filing: Filing dict.
@@ -185,21 +185,31 @@ class Filing:
                 cls._create_filing(cursor, event_id, corp_num, date, filing_type_cd)
 
                 # end all current directors - each one in filing added as a new director afterwards
-                Director.end_current(cursor=cursor, event_id=event_id, corp_num=corp_num)
+                # Director.end_current(cursor=cursor, event_id=event_id, corp_num=corp_num)
 
-                # create new director for each one in filing
+                # find changed directors + new directors + ceased directors
+                ceased_dirs = []
+                changed_dirs = []
                 for director in filing.body['directors']:
+                    if 'appointed' in director['actions']:
+                        Director.create_new_director(cursor=cursor, event_id=event_id, director=director,
+                                                     business=filing.business.as_dict())
+
+                    elif 'ceased' in director['actions']:
+                        ceased_dirs.append(director)
+
+                    elif 'nameChanged' in director['actions'] or 'addressChanged' in director['actions']:
+                        changed_dirs.append(director)
+
+                # end ceased + changed directors
+                for director in ceased_dirs + changed_dirs:
+                    Director.end_by_name(cursor=cursor, director=director, event_id=event_id, corp_num=corp_num)
+
+                # add back changed directors as new row
+                for director in changed_dirs:
                     Director.create_new_director(cursor=cursor, event_id=event_id, director=director,
                                                  business=filing.business.as_dict())
-                # TODO: add ledger text - nice to have (can't use same event id for each entry)
-                # if director['cessationDate']:
-                #     cls._add_ledger_text(cursor, event_id, f'Director {director["officer"]["firstName"]} '
-                #                          f'{director["officer"]["middleInitial"]} {director["officer"]["lastName"]} '
-                #                          f'ceased for {corp_num}.')
-                # else:
-                #     cls._add_ledger_text(cursor, event_id, f'Director {director["officer"]["firstName"]} '
-                #                          f'{director["officer"]["middleInitial"]} {director["officer"]["lastName"]} '
-                #                          f'appointed/continued for {corp_num}.')
+
             else:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
@@ -482,7 +492,7 @@ class Filing:
             filing_event_info = cls._find_filing_event_info(identifier=identifier, filing_type_cd1='OTCDR',
                                                             filing_type_cd2='OTADR')
 
-        director_objs = Director.get_by_event(filing_event_info['event_id'])
+        director_objs = Director.get_by_event(identifier, filing_event_info['event_id'])
         if len(director_objs) < 3:
             current_app.logger.error('Less than 3 directors for {}'.format(identifier))
 
