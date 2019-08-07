@@ -17,13 +17,14 @@ This module is the API for the Legal Entity system.
 """
 import os
 
-from flask import Flask, jsonify
+from flask import Flask
 from flask_jwt_oidc import JwtManager
-from registry_schemas import validate
+
 import requests
 import config
+
+from registry_schemas import validate
 from utils.logging import setup_logging
-import psycopg2
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
