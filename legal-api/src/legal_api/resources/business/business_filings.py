@@ -26,6 +26,7 @@ from flask_jwt_oidc import JwtManager
 from flask_restplus import Resource, cors
 from werkzeug.local import LocalProxy
 
+import legal_api.reports
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business, Filing, User, db
 from legal_api.schemas import rsbc_schemas
@@ -60,7 +61,15 @@ class ListFilingResource(Resource):
                 one_or_none()
             if not rv:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
+
+            if str(request.accept_mimetypes) == 'application/pdf':
+                return legal_api.reports.get_pdf(rv[1])
+
             return jsonify(rv[1].json)
+
+        # Does it make sense to get a PDF of all filings?
+        if str(request.accept_mimetypes) == 'application/pdf':
+            return 'Please specify a single filing', HTTPStatus.NOT_ACCEPTABLE
 
         rv = []
         filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
@@ -337,11 +346,11 @@ class ColinLastUpdate(Resource):
             order by id desc
             """
         )
-        last_event_id = query.fetchone()[0]
-        if not last_event_id:
+        last_event_id = query.fetchone()
+        if not last_event_id or not last_event_id[0]:
             return {'message': f'No colin ids found'}, HTTPStatus.NOT_FOUND
 
-        return {'maxId': last_event_id}, HTTPStatus.OK if request.method == 'GET' else HTTPStatus.CREATED
+        return {'maxId': last_event_id[0]}, HTTPStatus.OK if request.method == 'GET' else HTTPStatus.CREATED
 
     @staticmethod
     @cors.crossdomain(origin='*')

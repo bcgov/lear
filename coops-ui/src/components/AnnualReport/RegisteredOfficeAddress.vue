@@ -321,6 +321,8 @@ export default class RegisteredOfficeAddress extends Vue {
           if (response && response.data) {
             const deliveryAddress = response.data.deliveryAddress
             if (deliveryAddress) {
+              deliveryAddress.actions = []
+
               this.deliveryAddressOriginal = { ...deliveryAddress }
               // If parent page loaded draft before this API call, don't overwrite draft delivery address.
               // Otherwise this API call finished before parent page loaded draft, or parent page won't
@@ -332,6 +334,8 @@ export default class RegisteredOfficeAddress extends Vue {
 
             const mailingAddress = response.data.mailingAddress
             if (mailingAddress) {
+              mailingAddress.actions = []
+
               this.mailingAddressOriginal = { ...mailingAddress }
               // If parent page loaded draft before this API call, don't overwrite draft mailng address
               // Otherwise this API call finished before parent page loaded draft, or parent page won't

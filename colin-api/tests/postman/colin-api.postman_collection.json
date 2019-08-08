@@ -1223,8 +1223,8 @@
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
-									"pm.test(\"Response time is less than 10000ms\", function () {",
-									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"pm.test(\"Response time is less than 20000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(20000);",
 									"});",
 									"",
 									"pm.test(\"Status code is 201\", function () {",
@@ -2149,7 +2149,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7c650d1c-6de3-4a36-b69b-4bdde06680d9",
+								"id": "c3f4299c-200e-4e41-87ea-73c75d2915bc",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -2173,7 +2173,7 @@
 									"        pm.expect(jsonData.directors[i].deliveryAddress).to.exist",
 									"        pm.expect(jsonData.directors[i].endEventId).to.exist",
 									"        pm.expect(jsonData.directors[i].officer).to.exist",
-									"        pm.expect(jsonData.directors[i].startEventId).to.eql(pm.environment.get(\"codExtraEventId\"))",
+									"        pm.expect(jsonData.directors[i].startEventId).to.be.below(pm.environment.get(\"codExtraEventId\")+1)",
 									"        pm.expect(jsonData.directors[i].title).to.exist",
 									"    }",
 									"});",
@@ -2312,8 +2312,8 @@
 									"",
 									"pm.test(\"Returns the required fields for COD filing\", () => {",
 									"    var directors = jsonData.filing.changeOfDirectors.directors",
-									"    var ceased = [\"CANDICE M\", \"BEATE\", \"LORNA\"]",
-									"    var current = [\"PAULA\", \"KELLY\", \"TESTER\"]",
+									"    var ceased = [\"LORNA\", \"TESTER2\"]",
+									"    var current = [\"TEST\", \"KELLY\", \"TESTER\", \"TESTER3\"]",
 									"    for (var i=0; i<directors.length; i++) {",
 									"        pm.expect(directors[i].appointmentDate).to.exist",
 									"        pm.expect(directors[i].deliveryAddress).to.exist",
@@ -2387,7 +2387,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n        \"changeOfDirectors\": {\n        \t\"certifiedBy\": \"Tester Testing\",\n            \"email\": \"tester@testing.com\",\n\t\t\t\"directors\": [\n\t\t\t    {\n\t\t\t      \"actions\":[\"ceased\"],\n\t\t\t      \"appointmentDate\": \"2012-05-08\",\n\t\t\t      \"cessationDate\": \"{{today}}\",\n\t\t\t      \"deliveryAddress\": {\n\t\t\t        \"addressCity\": \"BURNS LAKE\",\n\t\t\t        \"addressCountry\": \"CANADA\",\n\t\t\t        \"addressRegion\": \"BC\",\n\t\t\t        \"deliveryInstructions\": \"\",\n\t\t\t        \"postalCode\": \"\",\n\t\t\t        \"streetAddress\": \"1723 SIDAR ROAD\",\n\t\t\t        \"streetAddressAdditional\": \"\"\n\t\t\t      },\n\t\t\t      \"endEventId\": \"\",\n\t\t\t      \"officer\": {\n\t\t\t        \"firstName\": \"LORNA\",\n\t\t\t        \"lastName\": \"HANNETT\",\n\t\t\t        \"middleInitial\": \"\"\n\t\t\t      },\n\t\t\t      \"startEventId\": 103219412,\n\t\t\t      \"title\": \"\"\n\t\t\t    },\n\t\t\t    {\n\t\t\t      \"actions\":[\"nameChanged\"],\n\t\t\t      \"appointmentDate\": \"2015-10-14\",\n\t\t\t      \"cessationDate\": null,\n\t\t\t      \"deliveryAddress\": {\n\t\t\t        \"addressCity\": \"BURNS LAKE\",\n\t\t\t        \"addressCountry\": \"CANADA\",\n\t\t\t        \"addressRegion\": \"BC\",\n\t\t\t        \"deliveryInstructions\": \"\",\n\t\t\t        \"postalCode\": \"\",\n\t\t\t        \"streetAddress\": \"173 8TH AVE\",\n\t\t\t        \"streetAddressAdditional\": \"\"\n\t\t\t      },\n\t\t\t      \"endEventId\": \"\",\n\t\t\t      \"officer\": {\n\t\t\t      \t\"firstName\": \"TEST\",\n\t\t\t        \"lastName\": \"CHANGE\",\n\t\t\t        \"middleInitial\": \"NAME\",\n\t\t\t        \"prevFirstName\": \"PAULA\",\n\t\t\t        \"prevLastName\": \"LAURIE\",\n\t\t\t        \"prevMiddleInitial\": \"\"\n\t\t\t      },\n\t\t\t      \"startEventId\": 103219412,\n\t\t\t      \"title\": \"\"\n\t\t\t    },\n\t\t\t    {\n\t\t\t      \"actions\":[\"addressChanged\"],\n\t\t\t      \"appointmentDate\": \"2017-12-21\",\n\t\t\t      \"cessationDate\": null,\n\t\t\t      \"deliveryAddress\": {\n\t\t\t        \"addressCity\": \"TEST\",\n\t\t\t        \"addressCountry\": \"CANADA\",\n\t\t\t        \"addressId\": 102555540,\n\t\t\t        \"addressRegion\": \"BC\",\n\t\t\t        \"deliveryInstructions\": \"\",\n\t\t\t        \"postalCode\": \"\",\n\t\t\t        \"streetAddress\": \"ADDRESS CHANGE\",\n\t\t\t        \"streetAddressAdditional\": \"\"\n\t\t\t      },\n\t\t\t      \"endEventId\": \"\",\n\t\t\t      \"officer\": {\n\t\t\t        \"firstName\": \"KELLY\",\n\t\t\t        \"lastName\": \"TURFORD\",\n\t\t\t        \"middleInitial\": \"\"\n\t\t\t      },\n\t\t\t      \"startEventId\": 103219412,\n\t\t\t      \"title\": \"\"\n\t\t\t    },\n\t\t\t    {\n\t\t\t      \"actions\":[],\n\t\t\t      \"appointmentDate\": \"{{today}}\",\n\t\t\t      \"cessationDate\": null,\n\t\t\t      \"deliveryAddress\": {\n\t\t\t        \"addressCity\": \"TEST CITY\",\n\t\t\t        \"addressCountry\": \"CANADA\",\n\t\t\t        \"addressId\": 102555540,\n\t\t\t        \"addressRegion\": \"BC\",\n\t\t\t        \"deliveryInstructions\": \"\",\n\t\t\t        \"postalCode\": \"\",\n\t\t\t        \"streetAddress\": \"TESTING TESTS STREET\",\n\t\t\t        \"streetAddressAdditional\": \"\"\n\t\t\t      },\n\t\t\t      \"endEventId\": \"\",\n\t\t\t      \"officer\": {\n\t\t\t        \"firstName\": \"TESTER\",\n\t\t\t        \"lastName\": \"TESTING\",\n\t\t\t        \"middleInitial\": \"\"\n\t\t\t      },\n\t\t\t      \"title\": \"\"\n\t\t\t    },\n\t\t\t    {\n\t\t\t      \"actions\":[\"appointed\"],\n\t\t\t      \"appointmentDate\": \"{{today}}\",\n\t\t\t      \"cessationDate\": null,\n\t\t\t      \"deliveryAddress\": {\n\t\t\t        \"addressCity\": \"TEST CITY2\",\n\t\t\t        \"addressCountry\": \"CANADA\",\n\t\t\t        \"addressId\": 102555540,\n\t\t\t        \"addressRegion\": \"BC\",\n\t\t\t        \"deliveryInstructions\": \"\",\n\t\t\t        \"postalCode\": \"\",\n\t\t\t        \"streetAddress\": \"TESTING TESTS STREET2\",\n\t\t\t        \"streetAddressAdditional\": \"\"\n\t\t\t      },\n\t\t\t      \"endEventId\": \"\",\n\t\t\t      \"officer\": {\n\t\t\t        \"firstName\": \"TESTER2\",\n\t\t\t        \"lastName\": \"TESTING2\",\n\t\t\t        \"middleInitial\": \"T\"\n\t\t\t      },\n\t\t\t      \"title\": \"\"\n\t\t\t    }\n\t\t\t]\n        },\n        \"business\": {\n\t\t    \"businessNumber\": null,\n\t\t    \"cacheId\": 0,\n\t\t    \"corpState\": \"ACT\",\n\t\t    \"foundingDate\": \"2010-10-15\",\n\t\t    \"identifier\": \"CP0002098\",\n\t\t    \"jurisdiction\": \"BC\",\n\t\t    \"lastAgmDate\": \"2017-09-11\",\n\t\t    \"lastArFiledDate\": \"2017-09-11\",\n\t\t    \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n\t\t    \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n\t\t    \"status\": \"Active\",\n\t\t    \"type\": \"CP\"\n\t\t},\n        \"header\": {\n            \"date\": \"{{today}}\",\n            \"name\": \"changeOfDirectors\"\n        }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n        \"changeOfDirectors\": {\n        \t\"certifiedBy\": \"Tester Testing\",\n            \"email\": \"tester@testing.com\",\n\t\t\t\"directors\": [\n\t\t\t    {\n\t\t\t      \"actions\":[\"ceased\", \"nameChanged\", \"addressChanged\"],\n\t\t\t      \"appointmentDate\": \"2012-05-08\",\n\t\t\t      \"cessationDate\": \"{{today}}\",\n\t\t\t      \"deliveryAddress\": {\n\t\t\t        \"addressCity\": \"BURNS LAKE\",\n\t\t\t        \"addressCountry\": \"CANADA\",\n\t\t\t        \"addressRegion\": \"BC\",\n\t\t\t        \"deliveryInstructions\": \"CHANGED ADDRESS\",\n\t\t\t        \"postalCode\": \"\",\n\t\t\t        \"streetAddress\": \"1723 SIDAR ROAD\",\n\t\t\t        \"streetAddressAdditional\": \"\"\n\t\t\t      },\n\t\t\t      \"endEventId\": \"\",\n\t\t\t      \"officer\": {\n\t\t\t        \"firstName\": \"LORNA\",\n\t\t\t        \"lastName\": \"CHANGED\",\n\t\t\t        \"middleInitial\": \"N\",\n\t\t\t        \"prevFirstName\": \"LORNA\",\n\t\t\t        \"prevLastName\": \"HANNETT\",\n\t\t\t        \"prevMiddleInitial\": \"\"\n\t\t\t      },\n\t\t\t      \"startEventId\": 103219412,\n\t\t\t      \"title\": \"\"\n\t\t\t    },\n\t\t\t    {\n\t\t\t      \"actions\":[\"nameChanged\"],\n\t\t\t      \"appointmentDate\": \"2015-10-14\",\n\t\t\t      \"cessationDate\": null,\n\t\t\t      \"deliveryAddress\": {\n\t\t\t        \"addressCity\": \"BURNS LAKE\",\n\t\t\t        \"addressCountry\": \"CANADA\",\n\t\t\t        \"addressRegion\": \"BC\",\n\t\t\t        \"deliveryInstructions\": \"\",\n\t\t\t        \"postalCode\": \"\",\n\t\t\t        \"streetAddress\": \"173 8TH AVE\",\n\t\t\t        \"streetAddressAdditional\": \"\"\n\t\t\t      },\n\t\t\t      \"endEventId\": \"\",\n\t\t\t      \"officer\": {\n\t\t\t      \t\"firstName\": \"TEST\",\n\t\t\t        \"lastName\": \"CHANGE\",\n\t\t\t        \"middleInitial\": \"NAME\",\n\t\t\t        \"prevFirstName\": \"PAULA\",\n\t\t\t        \"prevLastName\": \"LAURIE\",\n\t\t\t        \"prevMiddleInitial\": \"\"\n\t\t\t      },\n\t\t\t      \"startEventId\": 103219412,\n\t\t\t      \"title\": \"\"\n\t\t\t    },\n\t\t\t    {\n\t\t\t      \"actions\":[\"addressChanged\"],\n\t\t\t      \"appointmentDate\": \"2017-12-21\",\n\t\t\t      \"cessationDate\": null,\n\t\t\t      \"deliveryAddress\": {\n\t\t\t        \"addressCity\": \"TEST\",\n\t\t\t        \"addressCountry\": \"CANADA\",\n\t\t\t        \"addressId\": 102555540,\n\t\t\t        \"addressRegion\": \"BC\",\n\t\t\t        \"deliveryInstructions\": \"\",\n\t\t\t        \"postalCode\": \"\",\n\t\t\t        \"streetAddress\": \"ADDRESS CHANGE\",\n\t\t\t        \"streetAddressAdditional\": \"\"\n\t\t\t      },\n\t\t\t      \"endEventId\": \"\",\n\t\t\t      \"officer\": {\n\t\t\t        \"firstName\": \"KELLY\",\n\t\t\t        \"lastName\": \"TURFORD\",\n\t\t\t        \"middleInitial\": \"\"\n\t\t\t      },\n\t\t\t      \"startEventId\": 103219412,\n\t\t\t      \"title\": \"\"\n\t\t\t    },\n\t\t\t    {\n\t\t\t      \"actions\":[],\n\t\t\t      \"appointmentDate\": \"{{today}}\",\n\t\t\t      \"cessationDate\": null,\n\t\t\t      \"deliveryAddress\": {\n\t\t\t        \"addressCity\": \"TEST CITY\",\n\t\t\t        \"addressCountry\": \"CANADA\",\n\t\t\t        \"addressId\": 102555540,\n\t\t\t        \"addressRegion\": \"BC\",\n\t\t\t        \"deliveryInstructions\": \"\",\n\t\t\t        \"postalCode\": \"\",\n\t\t\t        \"streetAddress\": \"TESTING TESTS STREET\",\n\t\t\t        \"streetAddressAdditional\": \"\"\n\t\t\t      },\n\t\t\t      \"endEventId\": \"\",\n\t\t\t      \"officer\": {\n\t\t\t        \"firstName\": \"TESTER\",\n\t\t\t        \"lastName\": \"TESTING\",\n\t\t\t        \"middleInitial\": \"\"\n\t\t\t      },\n\t\t\t      \"title\": \"\"\n\t\t\t    },\n\t\t\t    {\n\t\t\t      \"actions\":[\"appointed\", \"ceased\"],\n\t\t\t      \"appointmentDate\": \"{{today}}\",\n\t\t\t      \"cessationDate\": \"{{today}}\",\n\t\t\t      \"deliveryAddress\": {\n\t\t\t        \"addressCity\": \"TEST CITY2\",\n\t\t\t        \"addressCountry\": \"CANADA\",\n\t\t\t        \"addressId\": 102555540,\n\t\t\t        \"addressRegion\": \"BC\",\n\t\t\t        \"deliveryInstructions\": \"\",\n\t\t\t        \"postalCode\": \"\",\n\t\t\t        \"streetAddress\": \"TESTING TESTS STREET2\",\n\t\t\t        \"streetAddressAdditional\": \"\"\n\t\t\t      },\n\t\t\t      \"endEventId\": \"\",\n\t\t\t      \"officer\": {\n\t\t\t        \"firstName\": \"TESTER2\",\n\t\t\t        \"lastName\": \"TESTING2\",\n\t\t\t        \"middleInitial\": \"T\"\n\t\t\t      },\n\t\t\t      \"title\": \"\"\n\t\t\t    },\n\t\t\t    {\n\t\t\t      \"actions\":[\"appointed\"],\n\t\t\t      \"appointmentDate\": \"{{today}}\",\n\t\t\t      \"cessationDate\": null,\n\t\t\t      \"deliveryAddress\": {\n\t\t\t        \"addressCity\": \"TEST CITY3\",\n\t\t\t        \"addressCountry\": \"CANADA\",\n\t\t\t        \"addressId\": 102555540,\n\t\t\t        \"addressRegion\": \"BC\",\n\t\t\t        \"deliveryInstructions\": \"\",\n\t\t\t        \"postalCode\": \"\",\n\t\t\t        \"streetAddress\": \"TESTING TESTS STREET3\",\n\t\t\t        \"streetAddressAdditional\": \"\"\n\t\t\t      },\n\t\t\t      \"endEventId\": \"\",\n\t\t\t      \"officer\": {\n\t\t\t        \"firstName\": \"TESTER3\",\n\t\t\t        \"lastName\": \"TESTING3\",\n\t\t\t        \"middleInitial\": \"T3\"\n\t\t\t      },\n\t\t\t      \"title\": \"\"\n\t\t\t    }\n\t\t\t]\n        },\n        \"business\": {\n\t\t    \"businessNumber\": null,\n\t\t    \"cacheId\": 0,\n\t\t    \"corpState\": \"ACT\",\n\t\t    \"foundingDate\": \"2010-10-15\",\n\t\t    \"identifier\": \"CP0002098\",\n\t\t    \"jurisdiction\": \"BC\",\n\t\t    \"lastAgmDate\": \"2017-09-11\",\n\t\t    \"lastArFiledDate\": \"2017-09-11\",\n\t\t    \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n\t\t    \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n\t\t    \"status\": \"Active\",\n\t\t    \"type\": \"CP\"\n\t\t},\n        \"header\": {\n            \"date\": \"{{today}}\",\n            \"name\": \"changeOfDirectors\"\n        }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/CP0002098/filings/changeOfDirectors",
@@ -2507,12 +2507,10 @@
 									"    pm.expect(jsonData.filing.header).to.exist",
 									"});",
 									"",
-									"pm.environment.set(\"codEventId\", jsonData.filing.changeOfDirectors.eventId)",
-									"",
 									"pm.test(\"Returns the required fields for COD filing\", () => {",
 									"    var directors = jsonData.filing.changeOfDirectors.directors",
-									"    var ceased = [\"LORNA\"]",
-									"    var current = [\"TEST\", \"KELLY\", \"TESTER\", \"TESTER2\"]",
+									"    var ceased = [\"LORNA\", \"TESTER2\"]",
+									"    var current = [\"TEST\", \"KELLY\", \"TESTER\", \"TESTER3\"]",
 									"    for (var i=0; i<directors.length; i++) {",
 									"        pm.expect(directors[i].appointmentDate).to.exist",
 									"        pm.expect(directors[i].deliveryAddress).to.exist",
@@ -2660,7 +2658,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "540ee156-24e1-495c-85dd-c4987a9d5aec",
+								"id": "54b6a1d9-4bf2-49ef-b16a-4908d1f51b81",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -2687,8 +2685,6 @@
 									"    pm.expect(jsonData.filing.header).to.exist",
 									"});",
 									"",
-									"pm.environment.set(\"codEventId\", jsonData.filing.changeOfDirectors.eventId)",
-									"",
 									"pm.test(\"Returns the required fields for COD filing\", () => {",
 									"    var directors = jsonData.filing.changeOfDirectors.directors",
 									"    var ceased = [\"CANDICE M\", \"BEATE\"]",
@@ -2697,7 +2693,7 @@
 									"        pm.expect(directors[i].appointmentDate).to.exist",
 									"        pm.expect(directors[i].deliveryAddress).to.exist",
 									"        pm.expect(directors[i].endEventId).to.exist",
-									"        pm.expect(directors[i].startEventId).to.eql(pm.environment.get(\"codEventId\"))",
+									"        pm.expect(directors[i].startEventId).to.be.below(pm.environment.get(\"codEventId\")+1)",
 									"        pm.expect(directors[i].officer).to.exist",
 									"        pm.expect(directors[i].officer.firstName).to.exist",
 									"        pm.expect(directors[i].title).to.exist",
@@ -2754,7 +2750,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{url}}/api/v1/businesses/CP0002098/filings/changeOfDirectors?eventId={{codEventId}}",
+							"raw": "{{url}}/api/v1/businesses/CP0002098/filings/changeOfDirectors?eventId={{codExtraEventId}}",
 							"host": [
 								"{{url}}"
 							],
@@ -2769,7 +2765,7 @@
 							"query": [
 								{
 									"key": "eventId",
-									"value": "{{codEventId}}"
+									"value": "{{codExtraEventId}}"
 								}
 							]
 						}
