@@ -101,10 +101,13 @@ export default {
 
 .certify-clause
   padding-left 2rem
-  color gray
+  color black
+  font-size 0.875rem
 
 .certify-stmt
   display:inline
+  font-size: 0.875rem
+  color black
 
 #AR-step-4-container
   margin-top: 1rem;
