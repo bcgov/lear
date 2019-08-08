@@ -175,13 +175,13 @@
         <div class="buttons-left">
           <v-btn id="ar-save-btn" large
             v-if="isAnnualReportEditable"
-            :disabled="!validated"
+            :disabled="!isSaveButtonEnabled"
             @click="onClickSave">
             Save
           </v-btn>
           <v-btn id="ar-save-resume-btn" large
             v-if="isAnnualReportEditable"
-            :disabled="!validated"
+            :disabled="!isSaveButtonEnabled"
             @click="onClickSaveResume">
             Save &amp; Resume Later
           </v-btn>
@@ -248,7 +248,8 @@ export default {
       saveErrorDialog: false,
       paymentErrorDialog: false,
       certifyChange: false,
-      certifiedBy: null
+      certifiedBy: null,
+      isSaveButtonEnabled: false
     }
   },
 
@@ -303,6 +304,7 @@ export default {
             else {
               // TODO: use props instead of $refs (which cause an error in the unit tests)
               // NOTE: AR Filing Year (which is needed by agmDate component) was already set by Todo List
+              this.$refs.directorsList.setDraftDate(filing.annualReport.annualGeneralMeetingDate)
               this.$refs.agmDate.loadAgmDate(filing.annualReport.annualGeneralMeetingDate)
               this.toggleFiling('add', 'OTANN')
             }
@@ -316,6 +318,9 @@ export default {
               } else {
                 throw new Error('invalid change of directors')
               }
+            } else {
+              // To handle the condition of save as draft withouot change of director
+              this.$refs.directorsList.getDirectors()
             }
 
             // load Change of Address fields
@@ -449,7 +454,8 @@ export default {
           changeOfDirectors: {
             certifiedBy: this.certifiedBy,
             email: 'no_one@never.get',
-            directors: this.$refs.directorsList.getAllDirectors()
+            directors: isDraft ? this.$refs.directorsList.getAllDirectors()
+              : this.$refs.directorsList.getDirectorsFinal()
           }
         }
       }
@@ -542,6 +548,7 @@ export default {
     setValidateFlag () {
       // compute the AR page's valid state
       this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.certifyChange)
+      this.isSaveButtonEnabled = this.agmDateValid && this.addressesFormValid && this.directorFormValid
     }
   },
 

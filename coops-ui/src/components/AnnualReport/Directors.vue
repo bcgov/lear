@@ -386,6 +386,7 @@ export default {
   data () {
     return {
       directors: [],
+      directorsFinal: [],
       countryList: [
         'Canada'
       ],
@@ -393,6 +394,7 @@ export default {
         'BC'
       ],
       showNewDirectorForm: false,
+      draftDate: null,
       showPopup: false,
       activeIndex: undefined,
       activeIndexCustomCease: undefined,
@@ -447,7 +449,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['corpNum', 'lastPreLoadFilingDate', 'currentDate', 'filingHistory']),
+    ...mapState(['corpNum', 'lastPreLoadFilingDate', 'currentDate', 'filingHistory', 'currentARStatus']),
 
     ...mapGetters(['lastCODFilingDate']),
 
@@ -534,11 +536,17 @@ export default {
   },
 
   mounted () {
-    this.getDirectors()
+    if (this.currentARState === 'NEW') {
+      this.getDirectors()
+    }
   },
 
   methods: {
     ...mapActions(['setDirectorFormValid']),
+
+    setDraftDate: function (date) {
+      this.draftDate = date
+    },
 
     getDirectors: function () {
       if (this.corpNum && this.asOfDate) {
@@ -734,6 +742,20 @@ export default {
       return this.directors
     },
 
+    getDirectorsFinal: function () {
+      this.directors.forEach((director) => {
+        const directorFinal = {
+          'title': director['title'],
+          'officer': director['officer'],
+          'deliveryAddress': director['deliveryAddress'],
+          'appointmentDate': director['appointmentDate'],
+          'cessationDate': director['cessationDate']
+        }
+        this.directorsFinal.push(directorFinal)
+      })
+      return this.directorsFinal
+    },
+
     setAllDirectors (directors) {
       // load data from existing filing
       this.directors = directors
@@ -765,8 +787,10 @@ export default {
       this.$emit('directorFormValid', val)
     },
     // when as-of date changes (from parent component) refresh list of directors
-    asOfDate (val) {
-      this.getDirectors()
+    asOfDate (newVal, oldVal) {
+      if (!(this.currentARStatus === 'DRAFT' && (this.draftDate === newVal || oldVal == null))) {
+        this.getDirectors()
+      }
     }
   }
 }
