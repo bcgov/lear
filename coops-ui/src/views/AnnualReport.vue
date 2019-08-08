@@ -303,6 +303,7 @@ export default {
             else {
               // TODO: use props instead of $refs (which cause an error in the unit tests)
               // NOTE: AR Filing Year (which is needed by agmDate component) was already set by Todo List
+              this.$refs.directorsList.setDraftDate(filing.annualReport.annualGeneralMeetingDate)
               this.$refs.agmDate.loadAgmDate(filing.annualReport.annualGeneralMeetingDate)
               this.toggleFiling('add', 'OTANN')
             }
@@ -316,6 +317,9 @@ export default {
               } else {
                 throw new Error('invalid change of directors')
               }
+            } else {
+              // To handle the condition of save as draft withouot change of director
+              this.$refs.directorsList.getDirectors()
             }
 
             // load Change of Address fields

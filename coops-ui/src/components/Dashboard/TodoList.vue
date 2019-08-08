@@ -274,6 +274,7 @@ export default {
         case 'annualReport':
           // resume the subject Annual Report
           this.resetStore(item)
+          this.setCurrentARStatus('DRAFT')
           this.$router.push({ name: 'annual-report', params: { id: item.id } })
           break
         case 'changeOfDirectors':
