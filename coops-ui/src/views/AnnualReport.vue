@@ -249,7 +249,7 @@ export default {
       paymentErrorDialog: false,
       certifyChange: false,
       certifiedBy: null,
-      isSaveButtonEnabled: false,
+      isSaveButtonEnabled: false
     }
   },
 
