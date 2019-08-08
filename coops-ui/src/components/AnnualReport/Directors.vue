@@ -743,6 +743,7 @@ export default {
     },
 
     getDirectorsFinal: function () {
+      this.directorsFinal = []
       this.directors.forEach((director) => {
         const directorFinal = {
           'title': director['title'],
