@@ -134,12 +134,12 @@
       <v-container id="buttons-container" class="list-item">
         <div class="buttons-left">
           <v-btn id="cod-save-btn" large
-            :disabled="!validated"
+            :disabled="!saveButtonEnabled"
             @click="onClickSave">
             Save
           </v-btn>
           <v-btn id="cod-save-resume-btn" large
-            :disabled="!validated"
+            :disabled="!saveButtonEnabled"
             @click="onClickSaveResume">
             Save &amp; Resume Later
           </v-btn>
@@ -208,16 +208,23 @@ export default {
     ...mapState(['currentDate', 'corpNum', 'entityName', 'entityIncNo', 'entityFoundingDate']),
 
     validated () {
-      if (this.certifyChange && this.directorFormValid) return true
-      else return false
-    }
+      return this.certifyChange && this.directorFormValid && this.filingData.length > 0
+    },
 
+    saveButtonEnabled () {
+      return this.directorFormValid && this.filingData.length > 0
+    }
   },
 
   mounted () {
     // if tombstone data isn't set, redirect to home
     if (!this.corpNum) {
       this.$router.push('/')
+    }
+
+    this.filingId = this.$route.params.id
+    if (this.filingId) {
+      this.fetchChangeOfDirectors()
     }
   },
 
@@ -291,7 +298,8 @@ export default {
           changeOfDirectors: {
             certifiedBy: this.certifiedBy,
             email: 'no_one@never.get',
-            directors: this.$refs.directorsList.getAllDirectors()
+            directors: isDraft ? this.$refs.directorsList.getAllDirectors()
+              : this.$refs.directorsList.getDirectorsFinal()
           }
         }
       }
@@ -341,7 +349,6 @@ export default {
         return filing
       }
     },
-
     toggleFiling (setting, filing) {
       let added = false
       for (let i = 0; i < this.filingData.length; i++) {
@@ -370,12 +377,47 @@ export default {
 
     changeCertifyData (val) {
       this.certifyChange = val
-    }
+    },
 
+    fetchChangeOfDirectors () {
+      const url = this.corpNum + '/filings/' + this.filingId
+      axios.get(url).then(response => {
+        if (response && response.data) {
+          const filing = response.data.filing
+          try {
+            // verify data
+            if (!filing) throw new Error('missing filing')
+            if (!filing.header) throw new Error('missing header')
+            if (!filing.business) throw new Error('missing business')
+            if (filing.header.name !== 'changeOfDirectors') throw new Error('invalid filing type')
+            if (filing.business.identifier !== this.entityIncNo) throw new Error('invalid business identifier')
+            if (filing.business.legalName !== this.entityName) throw new Error('invalid business legal name')
+
+            const changeOfDirectors = filing.changeOfDirectors
+            if (changeOfDirectors) {
+              if (changeOfDirectors.directors && changeOfDirectors.directors.length > 0) {
+                this.$refs.directorsList.setAllDirectors(changeOfDirectors.directors)
+                this.toggleFiling('add', 'OTCDR')
+              } else {
+                throw new Error('invalid change of directors')
+              }
+            } else {
+              // To handle the condition of save as draft withouot change of director
+              this.$refs.directorsList.getDirectors()
+            }
+          } catch (err) {
+            console.log(`fetchData() error - ${err.message}, filing =`, filing)
+            this.resumeErrorDialog = true
+          }
+        }
+      }).catch(error => {
+        console.error('fetchData() error =', error)
+        this.resumeErrorDialog = true
+      })
+    }
   },
 
   watch: {
-
   }
 }
 </script>

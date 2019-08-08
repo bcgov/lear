@@ -20,7 +20,7 @@ describe('AnnualReport - Part 1', () => {
     // init store
     store.state.corpNum = 'CP0001191'
     store.state.ARFilingYear = 2017
-    store.state.currentARStatus = 'NEW'
+    store.state.currentFilingStatus = 'NEW'
     store.state.filedDate = null
   })
 
@@ -41,7 +41,7 @@ describe('AnnualReport - Part 1', () => {
 
     expect(vm.$store.state.corpNum).toEqual('CP0001191')
     expect(vm.$store.state.ARFilingYear).toEqual(2017)
-    expect(vm.$store.state.currentARStatus).toEqual('NEW')
+    expect(vm.$store.state.currentFilingStatus).toEqual('NEW')
     expect(vm.$store.state.filedDate).toBeNull()
 
     // check titles and sub-titles
@@ -181,7 +181,7 @@ describe('AnnualReport - Part 2', () => {
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
-    store.state.currentARStatus = 'NEW'
+    store.state.currentFilingStatus = 'NEW'
     store.state.filedDate = null
 
     // mock "fetch a draft filing" endpoint
@@ -348,7 +348,7 @@ describe('AnnualReport - Part 3', () => {
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
-    store.state.currentARStatus = 'NEW'
+    store.state.currentFilingStatus = 'NEW'
     store.state.filedDate = null
 
     // mock "save draft" endpoint

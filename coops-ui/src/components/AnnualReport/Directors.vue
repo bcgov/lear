@@ -449,7 +449,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['corpNum', 'lastPreLoadFilingDate', 'currentDate', 'filingHistory', 'currentARStatus']),
+    ...mapState(['corpNum', 'lastPreLoadFilingDate', 'currentDate', 'filingHistory', 'currentFilingStatus']),
 
     ...mapGetters(['lastCODFilingDate']),
 
@@ -536,7 +536,7 @@ export default {
   },
 
   mounted () {
-    if (this.currentARState === 'NEW') {
+    if (this.currentFilingStatus === 'NEW') {
       this.getDirectors()
     }
   },
@@ -749,7 +749,8 @@ export default {
           'officer': director['officer'],
           'deliveryAddress': director['deliveryAddress'],
           'appointmentDate': director['appointmentDate'],
-          'cessationDate': director['cessationDate']
+          'cessationDate': director['cessationDate'],
+          'actions': director['actions']
         }
         this.directorsFinal.push(directorFinal)
       })
@@ -788,7 +789,7 @@ export default {
     },
     // when as-of date changes (from parent component) refresh list of directors
     asOfDate (newVal, oldVal) {
-      if (!(this.currentARStatus === 'DRAFT' && (this.draftDate === newVal || oldVal == null))) {
+      if (!(this.currentFilingStatus === 'DRAFT' && (this.draftDate === newVal || oldVal == null))) {
         this.getDirectors()
       }
     }
