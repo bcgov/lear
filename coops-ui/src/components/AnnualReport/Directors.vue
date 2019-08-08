@@ -386,6 +386,7 @@ export default {
   data () {
     return {
       directors: [],
+      directorsFinal: [],
       countryList: [
         'Canada'
       ],
@@ -739,6 +740,20 @@ export default {
 
     getAllDirectors: function () {
       return this.directors
+    },
+
+    getDirectorsFinal: function () {
+      this.directors.forEach((director) => {
+        const directorFinal = {
+          'title': director['title'],
+          'officer': director['officer'],
+          'deliveryAddress': director['deliveryAddress'],
+          'appointmentDate': director['appointmentDate'],
+          'cessationDate': director['cessationDate']
+        }
+        this.directorsFinal.push(directorFinal)
+      })
+      return this.directorsFinal
     },
 
     setAllDirectors (directors) {

@@ -454,7 +454,8 @@ export default {
           changeOfDirectors: {
             certifiedBy: this.certifiedBy,
             email: 'no_one@never.get',
-            directors: this.$refs.directorsList.getAllDirectors()
+            directors: isDraft ? this.$refs.directorsList.getAllDirectors()
+              : this.$refs.directorsList.getDirectorsFinal()
           }
         }
       }
