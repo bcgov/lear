@@ -175,13 +175,13 @@
         <div class="buttons-left">
           <v-btn id="ar-save-btn" large
             v-if="isAnnualReportEditable"
-            :disabled="!validated"
+            :disabled="!isSaveButtonEnabled"
             @click="onClickSave">
             Save
           </v-btn>
           <v-btn id="ar-save-resume-btn" large
             v-if="isAnnualReportEditable"
-            :disabled="!validated"
+            :disabled="!isSaveButtonEnabled"
             @click="onClickSaveResume">
             Save &amp; Resume Later
           </v-btn>
@@ -248,7 +248,8 @@ export default {
       saveErrorDialog: false,
       paymentErrorDialog: false,
       certifyChange: false,
-      certifiedBy: null
+      certifiedBy: null,
+      isSaveButtonEnabled: false,
     }
   },
 
@@ -546,6 +547,7 @@ export default {
     setValidateFlag () {
       // compute the AR page's valid state
       this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.certifyChange)
+      this.isSaveButtonEnabled = this.agmDateValid && this.addressesFormValid && this.directorFormValid
     }
   },
 
