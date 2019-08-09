@@ -245,7 +245,7 @@ export default {
   methods: {
     formatAddress (address) {
       return {
-        'actions': address.actions || '',
+        'actions': address.actions || [],
         'addressCity': address.addressCity || '',
         'addressCountry': address.addressCountry || '',
         'addressRegion': address.addressRegion || '',
@@ -373,7 +373,7 @@ export default {
       if (this.isDataChanged('OTADD') && this.addresses) {
         changeOfAddress = {
           changeOfAddress: {
-            certifiedBy: this.certifiedBy,
+            certifiedBy: this.certifiedBy || '',
             email: 'no_one@never.get',
             deliveryAddress: this.formatAddress(this.addresses['deliveryAddress']),
             mailingAddress: this.formatAddress(this.addresses['mailingAddress'])

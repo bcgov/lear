@@ -296,7 +296,7 @@ export default {
       if (this.isDataChanged('OTCDR')) {
         changeOfDirectors = {
           changeOfDirectors: {
-            certifiedBy: this.certifiedBy,
+            certifiedBy: this.certifiedBy || '',
             email: 'no_one@never.get',
             directors: this.$refs.directorsList.getAllDirectors()
           }
