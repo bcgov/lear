@@ -444,7 +444,7 @@ export default {
       const annualReport = {
         annualReport: {
           annualGeneralMeetingDate: this.agmDate,
-          certifiedBy: this.certifiedBy,
+          certifiedBy: this.certifiedBy || '',
           email: 'no_one@never.get'
         }
       }
@@ -452,7 +452,7 @@ export default {
       if (this.isDataChanged('OTCDR')) {
         changeOfDirectors = {
           changeOfDirectors: {
-            certifiedBy: this.certifiedBy,
+            certifiedBy: this.certifiedBy || '',
             email: 'no_one@never.get',
             directors: this.$refs.directorsList.getAllDirectors()
           }
@@ -462,7 +462,7 @@ export default {
       if (this.isDataChanged('OTADD') && this.addresses) {
         changeOfAddress = {
           changeOfAddress: {
-            certifiedBy: this.certifiedBy,
+            certifiedBy: this.certifiedBy || '',
             email: 'no_one@never.get',
             deliveryAddress: this.addresses['deliveryAddress'],
             mailingAddress: this.addresses['mailingAddress']
