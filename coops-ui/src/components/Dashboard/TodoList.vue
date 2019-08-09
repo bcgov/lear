@@ -111,7 +111,7 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setARFilingYear', 'setCurrentARStatus', 'setRegOffAddrChange', 'setAgmDate',
+    ...mapActions(['setARFilingYear', 'setCurrentFilingStatus', 'setRegOffAddrChange', 'setAgmDate',
       'setFiledDate', 'setNoAGM', 'setValidated']),
 
     getTasks () {
@@ -274,11 +274,12 @@ export default {
         case 'annualReport':
           // resume the subject Annual Report
           this.resetStore(item)
-          this.setCurrentARStatus('DRAFT')
+          this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'annual-report', params: { id: item.id } })
           break
         case 'changeOfDirectors':
           this.resetStore(item)
+          this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'standalone-directors', params: { id: item.id } })
           break
         case 'changeOfAddress':
@@ -304,7 +305,7 @@ export default {
 
     resetStore (item) {
       this.setARFilingYear(item.ARFilingYear)
-      this.setCurrentARStatus('NEW')
+      this.setCurrentFilingStatus('NEW')
       this.setRegOffAddrChange(false)
       this.setAgmDate(null)
       this.setFiledDate(null)

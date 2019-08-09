@@ -44,8 +44,8 @@ export default {
   lastPreLoadFilingDate (state, lastPreLoadFilingDate) {
     state.lastPreLoadFilingDate = lastPreLoadFilingDate
   },
-  currentARStatus (state, currentARStatus) {
-    state.currentARStatus = currentARStatus
+  currentFilingStatus (state, currentFilingStatus) {
+    state.currentFilingStatus = currentFilingStatus
   },
   addressesFormValid (state, addressesFormValid) {
     state.addressesFormValid = addressesFormValid

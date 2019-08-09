@@ -1,12 +1,12 @@
 export default {
   isAnnualReportEditable: state => {
-    return (state.currentARStatus === 'NEW' || state.currentARStatus === 'DRAFT')
+    return (state.currentFilingStatus === 'NEW' || state.currentFilingStatus === 'DRAFT')
   },
   reportState: state => {
-    switch (state.currentARStatus) {
+    switch (state.currentFilingStatus) {
       case 'NEW': return ''
       case 'DRAFT': return 'Draft'
-      default: return state.currentARStatus
+      default: return state.currentFilingStatus
     }
   },
   lastCODFilingDate: state => {

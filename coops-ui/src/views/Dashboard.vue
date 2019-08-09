@@ -99,7 +99,10 @@ export default {
     // in case of error, display popup
   },
   methods: {
+    ...mapActions(['setCurrentFilingStatus']),
+
     goToStandaloneDirectors () {
+      this.setCurrentFilingStatus('NEW')
       this.$router.push('/standalone-directors')
     },
     goToStandaloneAddresses () {

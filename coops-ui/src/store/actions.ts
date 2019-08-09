@@ -44,8 +44,8 @@ export default {
   setLastPreLoadFilingDate ({ commit }, lastPreLoadFilingDate) {
     commit('lastPreLoadFilingDate', lastPreLoadFilingDate)
   },
-  setCurrentARStatus ({ commit }, currentARStatus) {
-    commit('currentARStatus', currentARStatus)
+  setCurrentFilingStatus ({ commit }, currentFilingStatus) {
+    commit('currentFilingStatus', currentFilingStatus)
   },
   setAddressesFormValid ({ commit }, addressesFormValid) {
     commit('addressesFormValid', addressesFormValid)

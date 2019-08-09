@@ -256,7 +256,7 @@ export default {
   computed: {
     ...mapState(['agmDate', 'noAGM', 'regOffAddrChange',
       'validated', 'currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate',
-      'entityName', 'entityIncNo', 'entityFoundingDate', 'currentARStatus',
+      'entityName', 'entityIncNo', 'entityFoundingDate', 'currentFilingStatus',
       'addressesFormValid', 'directorFormValid', 'agmDateValid']),
 
     ...mapGetters(['isAnnualReportEditable', 'reportState'])
