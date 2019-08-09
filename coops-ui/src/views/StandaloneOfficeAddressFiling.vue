@@ -142,12 +142,12 @@
       <v-container id="buttons-container" class="list-item">
         <div class="buttons-left">
           <v-btn id="coa-save-btn" large
-            :disabled="!validated"
+            :disabled="!saveAsDraftEnabled"
             @click="onClickSave">
             Save
           </v-btn>
           <v-btn id="coa-save-resume-btn" large
-            :disabled="!validated"
+            :disabled="!saveAsDraftEnabled"
             @click="onClickSaveResume">
             Save &amp; Resume Later
           </v-btn>
@@ -221,6 +221,11 @@ export default {
     validated () {
       if (this.certifyChange && this.officeAddressFormValid) return true
       else return false
+    },
+
+    saveAsDraftEnabled () {
+      if (this.officeAddressFormValid && this.filingData.length > 0) return true
+      else return false
     }
   },
 
@@ -229,9 +234,72 @@ export default {
     if (!this.corpNum) {
       this.$router.push('/')
     }
+
+    // If loading from draft
+    this.filingId = this.$route.params.id
+    if (this.filingId) {
+      this.fetchChangeOfAddressFiling()
+    }
   },
 
   methods: {
+    formatAddress (address) {
+      return {
+        'actions': address.actions || '',
+        'addressCity': address.addressCity || '',
+        'addressCountry': address.addressCountry || '',
+        'addressRegion': address.addressRegion || '',
+        'addressType': address.addressType || '',
+        'deliveryInstructions': address.deliveryInstructions || '',
+        'postalCode': address.postalCode || '',
+        'streetAddress': address.streetAddress || '',
+        'streetAddressAdditional': address.streetAddressAdditional || ''
+      }
+    },
+
+    fetchChangeOfAddressFiling () {
+      const url = this.corpNum + '/filings/' + this.filingId
+      axios.get(url).then(response => {
+        if (response && response.data) {
+          const filing = response.data.filing
+          try {
+            // verify data
+            if (!filing) throw new Error('missing filing')
+            if (!filing.header) throw new Error('missing header')
+            if (!filing.business) throw new Error('missing business')
+            if (filing.header.name !== 'changeOfAddress') throw new Error('invalid filing type')
+            if (filing.business.identifier !== this.entityIncNo) throw new Error('invalid business identifier')
+            if (filing.business.legalName !== this.entityName) throw new Error('invalid business legal name')
+
+            // load Annual Report fields
+            if (!filing.changeOfAddress) throw new Error('Missing change of address')
+
+            const changeOfAddress = filing.changeOfAddress
+            if (changeOfAddress) {
+              if (changeOfAddress.deliveryAddress && changeOfAddress.mailingAddress) {
+                this.addresses = {
+                  deliveryAddress: changeOfAddress.deliveryAddress,
+                  mailingAddress: changeOfAddress.mailingAddress
+                }
+                this.toggleFiling('add', 'OTADD')
+              } else {
+                throw new Error('invalid change of address')
+              }
+            }
+          } catch (err) {
+            console.log(`fetchData() error - ${err.message}, filing =`, filing)
+            this.resumeErrorDialog = true
+          }
+        } else {
+          console.log('fetchData() error - invalid response =', response)
+          this.resumeErrorDialog = true
+        }
+      }).catch(error => {
+        console.error('fetchData() error =', error)
+        this.resumeErrorDialog = true
+      })
+    },
+
     /**
      * Callback method for the "modified" event from RegisteredOfficeAddress.
      *
@@ -307,8 +375,8 @@ export default {
           changeOfAddress: {
             certifiedBy: this.certifiedBy,
             email: 'no_one@never.get',
-            deliveryAddress: this.addresses['deliveryAddress'],
-            mailingAddress: this.addresses['mailingAddress']
+            deliveryAddress: this.formatAddress(this.addresses['deliveryAddress']),
+            mailingAddress: this.formatAddress(this.addresses['mailingAddress'])
           }
         }
       }
