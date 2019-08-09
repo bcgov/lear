@@ -10,10 +10,11 @@
 # specific language governing permissions and limitations under the License.
 
 import base64
+import copy
 import json
+import os
 import requests
-
-from abc import ABC, abstractmethod
+from datetime import datetime
 from flask import current_app, jsonify
 from http import HTTPStatus
 from pathlib import Path
@@ -21,9 +22,9 @@ from pathlib import Path
 from legal_api.utils.auth import jwt
 
 
-class Report(ABC):
+class Report:
     def __init__(self, filing):
-        self.filing = filing
+        self._filing = filing
 
     def get_pdf(self):
         headers = {
@@ -42,11 +43,11 @@ class Report(ABC):
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
 
-        return response.content, 200
+        return response.content, response.status_code
 
     def _get_report_filename(self):
-        legal_entity_number = self.filing.filing_json['filing']['business']['identifier']
-        filing_date = str(self.filing.filing_date)[:19]
+        legal_entity_number = self._filing.filing_json['filing']['business']['identifier']
+        filing_date = str(self._filing.filing_date)[:19]
         filing_description = self._get_filing_description()
 
         return '{}_{}_{}.pdf'.format(legal_entity_number, filing_date, filing_description).replace(' ', '_')
@@ -55,7 +56,7 @@ class Report(ABC):
         return self._get_primary_filing()['title']
 
     def _get_primary_filing(self):
-        filings = self.filing.FILINGS
+        filings = self._filing.FILINGS
 
         if len(filings) == 1:
             return next(iter(filings))
@@ -65,10 +66,47 @@ class Report(ABC):
     def _get_template(self):
         return Path('report-templates/{}'.format(self._get_template_filename())).read_text()
 
-    @abstractmethod
-    def _get_template_filename(self):
-        pass
+    @staticmethod
+    def _get_environment():
+        namespace = os.getenv('POD_NAMESPACE', '').lower()
 
-    @abstractmethod
+        if namespace.endswith('dev'):
+            return 'DEV'
+
+        if namespace.endswith('test'):
+            return 'TEST'
+
+        return ''
+
+    def _get_template_filename(self):
+        return '{}.html'.format(self._filing.filing_type)
+
     def _get_template_data(self):
-        pass
+        filing = copy.deepcopy(self._filing.filing_json['filing'])
+
+        filing['environment'] = '{} {}'.format(self._get_environment(), self._filing.id)
+
+        # Get the string for the filing date and time - do not use a leading zero on the hour (04:30 PM) looks too much
+        # like the 24 hour 4:30 AM. We can't use "%-I" on Windows.
+        filing_datetime = self._filing.filing_date.replace(microsecond=0)
+        # TODO: convert to local time (TZ depends on time of year of the filing!) and remove the %z.
+        hour = filing_datetime.strftime('%I').lstrip('0')
+        filing['filing_date_time'] = filing_datetime.strftime('%B %d, %Y {}:%M%z %p Pacific Time'.format(hour))
+
+        # TODO: sort out some custom date/time filters, but those would have to be in the report-api. Otherwise do a
+        # subclass of this for the AR-specific data.
+        if self._filing.filing_type == 'annualReport':
+            agm_date = datetime.fromisoformat(filing['annualReport']['annualGeneralMeetingDate'])
+            filing['agm_date'] = agm_date.strftime('%B %d, %Y')
+
+        # Appears in the Description section of the PDF Document Properties as Title. TODO: change TZ as above.
+        filing['meta_title'] = '{} on {}'.format(
+            self._filing.FILINGS[self._filing.filing_type]['title'],
+            self._filing.filing_date.isoformat())
+
+        # Appears in the Description section of the PDF Document Properties as Subject.
+        filing['meta_subject'] = '{} ({})'.format(
+            self._filing.filing_json['filing']['business']['legalName'],
+            self._filing.filing_json['filing']['business']['identifier'])
+
+        return filing
