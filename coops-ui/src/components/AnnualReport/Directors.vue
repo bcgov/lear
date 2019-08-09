@@ -546,7 +546,7 @@ export default {
 
     formatAddress (address) {
       return {
-        'actions': address.actions || '',
+        'actions': address.actions || [],
         'addressCity': address.addressCity || '',
         'addressCountry': address.addressCountry || '',
         'addressRegion': address.addressRegion || '',
