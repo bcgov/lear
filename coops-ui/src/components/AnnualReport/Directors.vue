@@ -544,6 +544,20 @@ export default {
   methods: {
     ...mapActions(['setDirectorFormValid']),
 
+    formatAddress (address) {
+      return {
+        'actions': address.actions || '',
+        'addressCity': address.addressCity || '',
+        'addressCountry': address.addressCountry || '',
+        'addressRegion': address.addressRegion || '',
+        'addressType': address.addressType || '',
+        'deliveryInstructions': address.deliveryInstructions || '',
+        'postalCode': address.postalCode || '',
+        'streetAddress': address.streetAddress || '',
+        'streetAddressAdditional': address.streetAddressAdditional || ''
+      }
+    },
+
     setDraftDate: function (date) {
       this.draftDate = date
     },
@@ -739,21 +753,10 @@ export default {
     },
 
     getAllDirectors: function () {
-      return this.directors
-    },
-
-    getDirectorsFinal: function () {
       this.directorsFinal = []
       this.directors.forEach((director) => {
-        const directorFinal = {
-          'title': director['title'],
-          'officer': director['officer'],
-          'deliveryAddress': director['deliveryAddress'],
-          'appointmentDate': director['appointmentDate'],
-          'cessationDate': director['cessationDate'],
-          'actions': director['actions']
-        }
-        this.directorsFinal.push(directorFinal)
+        director['deliveryAddress'] = this.formatAddress(director['deliveryAddress'])
+        this.directorsFinal.push(director)
       })
       return this.directorsFinal
     },
