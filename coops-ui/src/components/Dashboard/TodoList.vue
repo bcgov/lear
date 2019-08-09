@@ -284,7 +284,9 @@ export default {
           break
         case 'changeOfAddress':
           // TODO - resume the subject Change Of Address
-          console.log('doFileNow(), Address Change item =', item)
+          this.resetStore(item)
+          this.setCurrentFilingStatus('DRAFT')
+          this.$router.push({ name: 'standalone-addresses', params: { id: item.id } })
           break
         default:
           console.log('doFileNow(), invalid type for item =', item)
