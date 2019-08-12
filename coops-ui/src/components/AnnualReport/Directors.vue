@@ -603,9 +603,9 @@ export default {
                 if (!directors[i].officer.hasOwnProperty('middleInitial')) directors[i].officer.middleInitial = ''
 
                 // save previous officer name data for COLIN to use when updating record
-                directors[i].officer.prevFirstName = directors.officer.firstName
-                directors[i].officer.prevLastName = directors.officer.lastName
-                directors[i].officer.prevMiddleInitial = directors.officer.middleInitial
+                directors[i].officer.prevFirstName = directors[i].officer.firstName
+                directors[i].officer.prevLastName = directors[i].officer.lastName
+                directors[i].officer.prevMiddleInitial = directors[i].officer.middleInitial
               }
 
               // save to component data now that extra attributes are added
