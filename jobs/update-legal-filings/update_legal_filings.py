@@ -85,14 +85,17 @@ def check_for_manual_filings(application: Flask = None):
                 application.logger.error('Error getting event_ids from colin')
                 raise err
 
+            loaded_coops = application.config["LOADED_COOPS"]
             # for each event_id: if not in legal db table then add event_id to list
             for info in colin_events['events']:
-                # check legal table
-                r = requests.get(f'{application.config["LEGAL_URL"]}/internal/filings/colin_id/{info["event_id"]}')
-                if r.status_code == 404:
-                    id_list.append(info)
-                elif r.status_code != 200:
-                    application.logger.error(f'Error checking for colin id {info["event_id"]} in legal')
+                # check that event is associated with one of the coops loaded into legal db
+                if info['corp_num'] in loaded_coops:
+                    # check legal table
+                    r = requests.get(f'{application.config["LEGAL_URL"]}/internal/filings/colin_id/{info["event_id"]}')
+                    if r.status_code == 404:
+                        id_list.append(info)
+                    elif r.status_code != 200:
+                        application.logger.error(f'Error checking for colin id {info["event_id"]} in legal')
 
         else:
             application.logger.error('No ids returned from colin_last_update table in legal db.')

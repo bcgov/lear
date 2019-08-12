@@ -37,6 +37,11 @@ objects:
                     configMapKeyRef:
                       key: ROUTE
                       name: legal-api-dev-config
+                - name: LOADED_COOPS
+                  valueFrom:
+                    configMapKeyRef:
+                      key: LOADED_COOPS
+                      name: legal-api-dev-config
                 - name: AUTH_URL
                   valueFrom:
                     secretKeyRef:
