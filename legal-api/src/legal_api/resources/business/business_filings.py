@@ -30,7 +30,7 @@ import legal_api.reports
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business, Filing, User, db
 from legal_api.schemas import rsbc_schemas
-from legal_api.services.authz import authorized
+from legal_api.services import COLIN_SVC_ROLE, authorized, queue
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
@@ -88,12 +88,14 @@ class ListFilingResource(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def put(identifier, filing_id):
+    def put(identifier, filing_id):  # pylint: disable=too-many-return-statements
         """Modify an incomplete filing for the business."""
         # basic checks
-        error = ListFilingResource._put_basic_checks(identifier, filing_id, request)
-        if error:
-            return jsonify(error[0]), error[1]
+        err_msg, err_code = ListFilingResource._put_basic_checks(identifier, filing_id, request)
+        if err_msg:
+            return jsonify({'errors': [err_msg, ]}), err_code
+
+        json_input = request.get_json()
 
         # check authorization
         if not authorized(identifier, jwt):
@@ -101,23 +103,36 @@ class ListFilingResource(Resource):
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED
 
-        # validate filing
-        only_validate = request.args.get('only_validate', None)
-        err_msg, err_code = ListFilingResource._validate_filing_json(request)
-        if err_code != HTTPStatus.OK \
-                or (only_validate and only_validate == 'true'):
-            msg = {'errors': err_msg} if (err_code != HTTPStatus.OK) else err_msg
-            return jsonify(msg), err_code
+        draft = (request.args.get('draft', None).lower() == 'true') \
+            if request.args.get('draft', None) else False
+        only_validate = (request.args.get('only_validate', None).lower() == 'true') \
+            if request.args.get('only_validate', None) else False
 
-        # save filing
+        # validate filing
+        if not draft:
+            err_msg, err_code = ListFilingResource._validate_filing_json(request)
+            if err_code != HTTPStatus.OK \
+                    or (only_validate):
+                msg = {'errors': err_msg} if (err_code != HTTPStatus.OK) else err_msg
+                return jsonify(msg), err_code
+
+        # save filing, if it's draft only then bail
         user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
         business, filing, err_msg, err_code = ListFilingResource._save_filing(request, identifier, user, filing_id)
-        if err_code:
+        if err_msg or draft:
+            reply = filing.json if filing else json_input
+            reply['errors'] = [err_msg, ]
+            return jsonify(reply), err_code or \
+                (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
+
+        # if filing is from COLIN, place on queue and return
+        if jwt.validate_roles([COLIN_SVC_ROLE]):
+            err_msg, err_code = ListFilingResource._process_colin_filing(identifier, json_input)
             return jsonify(err_msg), err_code
 
         # create invoice ??
         draft = request.args.get('draft', None)
-        if not draft or draft.lower() != 'true':
+        if not draft:
             err_msg, err_code = ListFilingResource._create_invoice(business, filing, jwt)
             if err_code:
                 reply = filing.json
@@ -139,17 +154,30 @@ class ListFilingResource(Resource):
 
         if filing_id and client_request.method != 'PUT':  # checked since we're overlaying routes
             return ({'message':
-                     f'Illegal to attempt to create a new filing over an existing filing for {identifier}.'},
+                     f'Illegal to attempt to create a duplicate filing for {identifier}.'},
                     HTTPStatus.FORBIDDEN)
 
-        return None
+        return None, None
+
+    @staticmethod
+    def _process_colin_filing(identifier: str, json_input: dict) -> Tuple[dict, int]:
+        try:
+            payload = {'colinFiling': {'id': json_input['filing']['header']['colinId']}}
+            queue.publish_json(payload)
+            return {}, HTTPStatus.CREATED
+        except KeyError:
+            current_app.logger.error('Business:%s missing filing/header/colinId, unable to post to queue',
+                                     identifier)
+            return {'errors': {'message': 'missing filing/header/colinId'}}, HTTPStatus.BAD_REQUEST
+        except Exception as err:  # pylint: disable=broad-except; final catch
+            current_app.logger.error('Business:%s unable to post to queue, err=%s', identifier, err)
+            return {'errors': {'message': 'unable to publish for post processing'}}, HTTPStatus.BAD_REQUEST
 
     @staticmethod
     def _save_filing(client_request: LocalProxy,
                      business_identifier: str,
                      user: User,
-                     filing_id: int) \
-            -> Tuple[Business, Filing, dict, int]:
+                     filing_id: int) -> Tuple[Business, Filing, dict, int]:
         """Save the filing to the ledger.
 
         If not successful, a dict of errors is returned.
@@ -170,8 +198,7 @@ class ListFilingResource(Resource):
         business = Business.find_by_identifier(business_identifier)
         if not business:
             return None, None, {'message':
-                                f'{business_identifier} not found'}, \
-                HTTPStatus.NOT_FOUND
+                                f'{business_identifier} not found'}, HTTPStatus.NOT_FOUND
 
         if client_request.method == 'PUT':
             rv = db.session.query(Business, Filing). \
@@ -181,8 +208,7 @@ class ListFilingResource(Resource):
                 one_or_none()
             if not rv:
                 return None, None, {'message':
-                                    f'{business_identifier} no filings found'}, \
-                    HTTPStatus.NOT_FOUND
+                                    f'{business_identifier} no filings found'}, HTTPStatus.NOT_FOUND
             filing = rv[1]
         else:
             filing = Filing()
@@ -194,7 +220,7 @@ class ListFilingResource(Resource):
             filing.filing_json = json_input
             filing.save()
         except BusinessException as err:
-            return None, None, {'message': err.error}, err.status_code
+            return None, None, {'error': err.error}, err.status_code
 
         return business, filing, None, None
 
@@ -261,15 +287,18 @@ class ListFilingResource(Resource):
             headers = {'Authorization': 'Bearer ' + token}
             rv = requests.post(url=payment_svc_url,
                                json=payload,
-                               headers=headers)
-        except exceptions.ConnectionError as err:
+                               headers=headers,
+                               timeout=5.0)
+        except (exceptions.ConnectionError, exceptions.Timeout) as err:
             current_app.logger.error(f'Payment connection failure for {business.identifier}: filing:{filing.id}', err)
             return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
-        pid = rv.json().get('id')
-        filing.payment_token = pid
-        filing.save()
-        return None, None
+        if rv.status_code == HTTPStatus.OK or rv.status_code == HTTPStatus.CREATED:
+            pid = rv.json().get('id')
+            filing.payment_token = pid
+            filing.save()
+            return None, None
+        return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
 
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')

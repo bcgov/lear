@@ -66,6 +66,8 @@
                     @update:address="baseAddressWatcher"
                   />
 
+                  <!-- removed until release 2 -->
+                  <!--
                   <div class="form__row three-column new-director__dates">
                     <v-menu
                       :nudge-right="40"
@@ -122,6 +124,7 @@
                       </v-date-picker>
                     </v-menu>
                   </div>
+                  -->
 
                   <div class="form__row form__btns">
                     <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
@@ -138,7 +141,7 @@
       <ul class="list director-list">
         <li class="container"
           :id="'director-' + director.id"
-          v-bind:class="{ 'remove' : !director.isDirectorActive  || !director.isDirectorActionable}"
+          v-bind:class="{ 'remove' : !isActive(director)  || !isActionable(director)}"
           v-for="(director, index) in orderBy(directors, 'id', -1)"
           v-bind:key="index">
           <div class="meta-container">
@@ -149,18 +152,18 @@
               <div class="director-status">
                 <v-scale-transition>
                   <v-chip small label disabled color="blue" text-color="white"
-                          v-show="director.isNew && !director.cessationDate">
+                          v-show="isNew(director) && !director.cessationDate">
                     New
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
-                  <v-chip small label disabled v-show="!director.isDirectorActive || !director.isDirectorActionable">
+                  <v-chip small label disabled v-show="!isActive(director) || !isActionable(director)">
                     Ceased
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
                   <v-chip small label disabled color="blue lighten-2" text-color="white"
-                          v-show="director.isNew && director.cessationDate">
+                          v-show="isNew(director) && director.cessationDate">
                     Appointed & Ceased
                   </v-chip>
                 </v-scale-transition>
@@ -178,16 +181,20 @@
                     <div v-if="director.cessationDate">Ceased</div>
                     <div class="director_dates__date">{{ director.cessationDate }}</div>
                   </div>
-                  <div class="actions" v-show="director.isDirectorActionable">
+                  <div class="actions" v-show="isActionable(director)">
 
                     <!-- Edit menu -->
-                    <span v-show="director.isNew">
+                    <span v-show="isNew(director)">
                       <v-btn small flat color="primary" :disabled="!componentEnabled"
                         :id="'director-' + director.id + '-change-btn'"
                         @click="editDirector(index)">
                         <v-icon small>edit</v-icon>
                         <span>Edit</span>
                       </v-btn>
+
+                      <!-- more actions menu -->
+                      <!-- removed until release 2 -->
+                      <!--
                       <v-menu offset-y>
                         <template v-slot:activator="{ on }">
                           <v-btn flat small class="actions__more-actions__btn"
@@ -202,18 +209,22 @@
                           </v-list-tile>
                         </v-list>
                       </v-menu>
+                      -->
                     </span>
 
                     <!-- Cease menu -->
-                    <span v-show="!director.isNew">
+                    <span v-show="!isNew(director)">
                       <v-btn small flat color="primary" :disabled="!componentEnabled"
                         class="cease-btn"
                         :id="'director-' + director.id + '-cease-btn'"
                         @click="ceaseDirector(director)">
-                        <v-icon small>{{director.isDirectorActive ? 'close':'undo'}}</v-icon>
-                        <span>{{director.isDirectorActive ? 'Cease':'Undo'}}</span>
+                        <v-icon small>{{isActive(director) ? 'close':'undo'}}</v-icon>
+                        <span>{{isActive(director) ? 'Cease':'Undo'}}</span>
                       </v-btn>
-                      <span v-show="director.isDirectorActive">
+                      <!-- more actions menu -->
+                      <!-- removed until release 2 -->
+                      <!--
+                      <span v-show="isActive(director)">
                         <v-menu offset-y>
                           <template v-slot:activator="{ on }">
                             <v-btn flat small class="actions__more-actions__btn"
@@ -235,6 +246,7 @@
                           </v-list>
                         </v-menu>
                       </span>
+                      -->
                     </span>
                   </div>
 
@@ -281,6 +293,8 @@
                     @update:address="baseAddressWatcher"
                   />
 
+                  <!-- removed until release 2 -->
+                  <!--
                   <div class="form__row three-column edit-director__dates" v-show="editFormShowHide.showDates">
                     <v-menu
                       :nudge-right="40"
@@ -337,10 +351,11 @@
                       </v-date-picker>
                     </v-menu>
                   </div>
+                  -->
 
                   <div class="form__row form__btns">
                     <v-btn color="error"
-                      v-show="director.isNew"
+                      v-show="isNew(director)"
                       @click="deleteDirector(director.id)">
                       <span>Remove</span>
                     </v-btn>
@@ -368,6 +383,12 @@ import { mapState, mapActions, mapGetters } from 'vuex'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress'
 import DateUtils from '@/DateUtils'
 
+// action constants
+const APPOINTED = 'appointed'
+const CEASED = 'ceased'
+const NAMECHANGED = 'nameChanged'
+const ADDRESSCHANGED = 'addressChanged'
+
 export default {
   name: 'Directors',
 
@@ -387,6 +408,7 @@ export default {
     return {
       directors: [],
       directorsFinal: [],
+      directorsOriginal: [],
       countryList: [
         'Canada'
       ],
@@ -401,7 +423,6 @@ export default {
       activeDirectorToDelete: null,
       cessationDateTemp: null,
       isEditingDirector: false,
-      isDirectorActive: true,
       director: {
         id: '',
         officer: { firstName: '', lastName: '', middleInitial: '' },
@@ -546,7 +567,6 @@ export default {
 
     formatAddress (address) {
       return {
-        'actions': address.actions || [],
         'addressCity': address.addressCity || '',
         'addressCountry': address.addressCountry || '',
         'addressRegion': address.addressRegion || '',
@@ -574,16 +594,25 @@ export default {
               var directors = response.data.directors
               for (var i = 0; i < directors.length; i++) {
                 directors[i].id = i + 1
-                directors[i].isNew = false
-                directors[i].isDirectorActive = true
-                directors[i].isFeeApplied = false
+                directors[i].isFeeApplied = directors[i].isFeeApplied !== undefined ? directors[i].isFeeApplied : false
                 directors[i].isDirectorActionable = directors[i].cessationDate == null
 
                 directors[i].actions = []
+
+                // if there is no officer middle initial field, add it with blank data
+                if (!directors[i].officer.hasOwnProperty('middleInitial')) directors[i].officer.middleInitial = ''
+
+                // save previous officer name data for COLIN to use when updating record
+                directors[i].officer.prevFirstName = directors[i].officer.firstName
+                directors[i].officer.prevLastName = directors[i].officer.lastName
+                directors[i].officer.prevMiddleInitial = directors[i].officer.middleInitial
               }
 
               // save to component data now that extra attributes are added
               this.directors = directors
+
+              // save version of directors before changes (deep copy, not reference)
+              this.directorsOriginal = JSON.parse(JSON.stringify(this.directors))
             } else {
               console.log('getDirectors() error - invalid response data')
             }
@@ -636,10 +665,9 @@ export default {
 
     pushNewDirectorData: function () {
       let newDirector = {
+        actions: [APPOINTED],
         id: this.directors.length + 1,
-        isDirectorActive: true,
         isDirectorActionable: true,
-        isNew: true,
         isFeeApplied: true,
         officer: {
           firstName: this.director.officer.firstName,
@@ -654,24 +682,27 @@ export default {
           postalCode: this.inProgressAddress.postalCode,
           addressCountry: this.inProgressAddress.addressCountry
         },
-        appointmentDate: this.director.appointmentDate,
-        cessationDate: this.director.cessationDate
+        appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
+        cessationDate: null // when implemented: this.director.cessationDate
       }
-      this.directors.push(newDirector)
 
-      // clear in-progress director data from form in BaseAddress component
-      this.inProgressAddress = null
+      // if there is also a cease date on this new director, add the ceased action
+      if (this.director.cessationDate !== null && this.director.cessationDate !== undefined) {
+        this.addAction(newDirector, CEASED)
+      }
+
+      this.directors.push(newDirector)
     },
 
     // Cease director
     ceaseDirector: function (director) {
       // if this is a Cease, apply a fee
       // otherwise it's just undoing a cease or undoing a new director, so remove fee
-      if (director.isDirectorActive) director.isFeeApplied = true
+      if (this.isActive(director)) director.isFeeApplied = true
       else director.isFeeApplied = false
 
-      // reverse state of director
-      director.isDirectorActive = !director.isDirectorActive
+      // reverse "ceased" action
+      this.toggleAction(director, CEASED)
 
       // either set or undo cessation date
       if (director.cessationDate == null) {
@@ -685,6 +716,9 @@ export default {
 
     // Modify Existing Directors
     editDirector: function (index) {
+      // clear in-progress director data from form in BaseAddress component - ie: start fresh
+      this.inProgressAddress = {}
+
       this.activeIndex = index
       this.cancelNewDirector()
     },
@@ -717,17 +751,36 @@ export default {
     },
 
     saveEditDirector: function (index, id) {
+      // get current director
+      let director = this.directors[id - 1]
+
       var mainFormIsValid = this.$refs.editDirectorForm[index].validate()
       var addressFormIsValid = this.$refs.baseAddressEdit[index].$refs.addressForm.validate()
       if (mainFormIsValid && addressFormIsValid) {
         // save data from BaseAddress component
-        if (this.inProgressAddress != null) {
-          this.directors[id - 1].deliveryAddress = this.inProgressAddress
-          this.directors[id - 1].isFeeApplied = true
+        // - only save address if a change was made, ie there is an in-progress address from the component
+        if (!Object.values(this.inProgressAddress).every(el => el === undefined)) {
+          director.deliveryAddress = this.inProgressAddress
         }
 
-        // clear in-progress director data from form in BaseAddress component
-        this.inProgressAddress = null
+        /* COMPARE changes to original director data, for existing directors */
+        if (director.actions.indexOf(APPOINTED) < 0) {
+          const origDirector = this.directorsOriginal.filter(el => el.id === id)[0]
+
+          // check whether address has changed
+          if (JSON.stringify(origDirector.deliveryAddress) !== JSON.stringify(director.deliveryAddress)) {
+            this.addAction(director, ADDRESSCHANGED)
+          } else {
+            this.removeAction(director, ADDRESSCHANGED)
+          }
+
+          // check whether name has changed
+          if (JSON.stringify(origDirector.officer) !== JSON.stringify(director.officer)) {
+            this.addAction(director, NAMECHANGED)
+          } else {
+            this.removeAction(director, NAMECHANGED)
+          }
+        }
 
         this.cancelEditDirector()
       } else {
@@ -777,6 +830,33 @@ export default {
       } else {
         return this.earliestDateToSet
       }
+    },
+    toggleAction (director, val) {
+      // add or remove action value from actions list
+      const index = director.actions.indexOf(val)
+      if (index >= 0) director.actions.splice(index)
+      else director.actions.push(val)
+    },
+    addAction (director, val) {
+      // add an action, if it doesn't already exist; ensures no multiples
+      if (director.actions.indexOf(val) < 0) director.actions.push(val)
+    },
+    removeAction (director, val) {
+      // remove an action, if it already exists
+      director.actions = director.actions.filter(el => el !== val)
+    },
+    isNew (director) {
+      // helper function - was the director added in this filing?
+      if (director.actions.indexOf(APPOINTED) >= 0) return true
+      else return false
+    },
+    isActive (director) {
+      // helper function - is the director active, ie: not ceased?
+      if (director.actions.indexOf(CEASED) < 0) return true
+      else return false
+    },
+    isActionable (director) {
+      return director.isDirectorActionable !== undefined ? director.isDirectorActionable : true
     }
   },
 
@@ -869,6 +949,7 @@ export default {
   .address
     display flex
     flex-direction column
+    width 10rem
 
   .address__row
     flex 1 1 auto

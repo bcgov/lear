@@ -29,6 +29,7 @@ def factory_business(designation: str = '001'):
     """Return a valid Business object stamped with the supplied designation."""
     return Business(legal_name=f'legal_name-{designation}',
                     founding_date=datetime.utcfromtimestamp(0),
+                    last_ledger_timestamp=datetime.utcfromtimestamp(0),
                     dissolution_date=None,
                     identifier='CP1234567',
                     tax_id=f'BN0000{designation}',
@@ -77,6 +78,7 @@ def test_business_find_by_legal_name_pass(session):
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
+                        last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
@@ -93,6 +95,7 @@ def test_business_find_by_legal_name_fail(session):
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
+                        last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=datetime.utcfromtimestamp(0),
                         identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
@@ -110,6 +113,7 @@ def test_business_find_by_legal_name_missing(session):
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
+                        last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
@@ -134,6 +138,7 @@ def test_delete_business_with_dissolution(session):
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
+                        last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=datetime.utcfromtimestamp(0),
                         identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
@@ -150,6 +155,7 @@ def test_delete_business_active(session):
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
+                        last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier='CP1234567',
                         tax_id=f'XX',
@@ -166,6 +172,7 @@ def test_business_find_by_identifier(session):
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
+                        last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier='CP1234567',
                         tax_id=f'BN0000{designation}',
@@ -182,6 +189,7 @@ def test_business_find_by_identifier_no_identifier(session):
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
+                        last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
@@ -197,6 +205,7 @@ def test_business_json():
     """Assert that the business model is saved correctly."""
     business = Business(legal_name='legal_name',
                         founding_date=EPOCH_DATETIME,
+                        last_ledger_timestamp=EPOCH_DATETIME,
                         identifier='CP1234567',
                         last_modified=EPOCH_DATETIME,
                         last_ar_date=EPOCH_DATETIME,
@@ -208,6 +217,7 @@ def test_business_json():
         'legalName': 'legal_name',
         'identifier': 'CP1234567',
         'foundingDate': EPOCH_DATETIME.isoformat(),
+        'lastLedgerTimestamp': EPOCH_DATETIME.isoformat(),
         'lastModified': EPOCH_DATETIME.isoformat(),
         'lastAnnualReport': datetime.date(EPOCH_DATETIME).isoformat(),
         'lastAnnualGeneralMeetingDate': datetime.date(EPOCH_DATETIME).isoformat(),
@@ -242,6 +252,7 @@ def test_business_relationships_json(session):
 
     business = Business(legal_name='legal_name',
                         founding_date=EPOCH_DATETIME,
+                        last_ledger_timestamp=EPOCH_DATETIME,
                         identifier='CP1234567',
                         last_modified=EPOCH_DATETIME)
 

@@ -88,6 +88,13 @@ import axios from '@/axios-auth'
 import isEmpty from 'lodash.isempty'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
+// action constants
+const ADDRESSCHANGED = 'addressChanged'
+
+interface AddressObject {
+  actions?: string[]
+}
+
 @Component({
   components: {
     'delivery-address': BaseAddress,
@@ -172,7 +179,18 @@ export default class RegisteredOfficeAddress extends Vue {
    */
   @Emit('update:addresses')
   private emitAddresses (): object {
-    return { deliveryAddress: this.deliveryAddress, mailingAddress: this.mailingAddress }
+    let deliveryAddressFinal = Object.assign({}, this.deliveryAddress)
+    let mailingAddressFinal = Object.assign({}, this.mailingAddress)
+
+    // if the address has changed from the original, set action flag
+    if (this.deliveryModified) this.addAction(deliveryAddressFinal, ADDRESSCHANGED)
+    else this.removeAction(deliveryAddressFinal, ADDRESSCHANGED)
+
+    // if the mailing address has changed from the original, set action flag
+    if (this.mailingModified) this.addAction(mailingAddressFinal, ADDRESSCHANGED)
+    else this.removeAction(mailingAddressFinal, ADDRESSCHANGED)
+
+    return { deliveryAddress: deliveryAddressFinal, mailingAddress: mailingAddressFinal }
   }
 
   /**
@@ -204,6 +222,24 @@ export default class RegisteredOfficeAddress extends Vue {
     return !(
       this.sameAddress(this.deliveryAddress, this.deliveryAddressOriginal) &&
       this.sameAddress(this.mailingAddress, this.mailingAddressOriginal))
+  }
+
+  /**
+   * Computed value of whether or not the mailing address has been modified from the original.
+   *
+   * @return a boolean that is true if the mailing address has been modified, or false otherwise.
+   */
+  private get mailingModified (): boolean {
+    return !this.sameAddress(this.mailingAddress, this.mailingAddressOriginal)
+  }
+
+  /**
+   * Computed value of whether or not the delivery address has been modified from the original.
+   *
+   * @return a boolean that is true if the delivery address has been modified, or false otherwise.
+   */
+  private get deliveryModified (): boolean {
+    return !this.sameAddress(this.deliveryAddress, this.deliveryAddressOriginal)
   }
 
   /**
@@ -258,8 +294,12 @@ export default class RegisteredOfficeAddress extends Vue {
    * @return a boolean that is true if the addresses are equivalent, or false otherwise.
    */
   private sameAddress (address1: object, address2: object): boolean {
-    const json1 = JSON.stringify(address1, (name: string, val: any) : any => { return val !== '' ? val : undefined })
-    const json2 = JSON.stringify(address2, (name: string, val: any) : any => { return val !== '' ? val : undefined })
+    const json1 = JSON.stringify(address1, (name: string, val: any) : any => {
+      return val !== '' && name !== 'actions' ? val : undefined
+    })
+    const json2 = JSON.stringify(address2, (name: string, val: any) : any => {
+      return val !== '' && name !== 'actions' ? val : undefined
+    })
 
     return json1 === json2
   }
@@ -386,6 +426,20 @@ export default class RegisteredOfficeAddress extends Vue {
     }
   }
   */
+
+  /**
+   * Add an action, if it doesn't already exist; ensures no multiples.
+   */
+  private addAction (address: AddressObject, val: string): void {
+    if (address.actions.indexOf(val) < 0) address.actions.push(val)
+  }
+
+  /**
+   * Remove an action, if it already exists.
+   */
+  private removeAction (address: AddressObject, val: string): void {
+    address.actions = address.actions.filter(el => el !== val)
+  }
 }
 
 </script>

@@ -48,6 +48,7 @@ def create_business(db, business_json):
     business = Business()
     business.identifier = business_json['business']['identifier']
     business.founding_date = business_json['business']['foundingDate']
+    business.last_ledger_timestamp = business_json['business']['lastLedgerTimestamp']
     business.legal_name = business_json['business']['legalName']
     business.founding_date = business_json['business']['foundingDate']
     business.last_agm_date = datetime.date.fromisoformat(

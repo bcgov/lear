@@ -60,7 +60,7 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    COLIN_URL = os.getenv('COLIN_URL', '')
+    # COLIN_URL = os.getenv('COLIN_URL', '')
 
     PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', '')
 
@@ -102,6 +102,13 @@ class _Config():  # pylint: disable=too-few-public-methods
             JWT_OIDC_JWKS_CACHE_TIMEOUT = 300
     except (TypeError, ValueError):
         JWT_OIDC_JWKS_CACHE_TIMEOUT = 300
+
+    # NATS / STAN
+    NATS_SERVERS = os.getenv('NATS_SERVERS')
+    NATS_CLIENT_NAME = os.getenv('NATS_CLIENT_NAME', 'entity.legal_api')
+    NATS_CLUSTER_ID = os.getenv('NATS_CLUSTER_ID', 'test-cluster')
+    NATS_COLIN_SUBJECT = os.getenv('NATS_COLIN_SUBJECT', 'entity.filing.colin.incoming')
+    NATS_QUEUE = os.getenv('NATS_QUEUE', 'colin-filing-worker')
 
     TESTING = False
     DEBUG = False
