@@ -38,8 +38,6 @@ from legal_api.utils.run_version import get_run_version
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
-loop = asyncio.get_event_loop()
-
 
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""

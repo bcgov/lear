@@ -65,7 +65,6 @@ def app_ctx(event_loop):
     _app = create_app('testing')
     with _app.app_context():
         yield _app
-    time.sleep(2)
 
 
 @pytest.fixture

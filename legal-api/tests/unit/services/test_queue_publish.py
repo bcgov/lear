@@ -122,49 +122,46 @@ async def test_async_publish_colin_filing(app_ctx, stan_server):
                                           'colinFiling/id')
 
 
-@integration_nats
-@pytest.mark.asyncio
-async def test_publish_colin_filing(app_ctx, stan_server, event_loop):
-    """Assert that payment tokens can be retrieved and decoded from the Queue."""
-    # SETUP
-    msgs = []
-    # this_loop = asyncio.get_event_loop()
-    this_loop = event_loop
-    future = asyncio.Future(loop=this_loop)
-    queue = QueueService(app_ctx, this_loop)
-    await queue.connect()
+# @integration_nats
+# @pytest.mark.asyncio
+# async def test_publish_colin_filing(app_ctx, stan_server, event_loop):
+#     """Assert that payment tokens can be retrieved and decoded from the Queue."""
+#     # SETUP
+#     msgs = []
+#     # this_loop = asyncio.get_event_loop()
+#     this_loop = event_loop
+#     future = asyncio.Future(loop=this_loop)
+#     queue = QueueService(app_ctx, this_loop)
+#     await queue.connect()
 
-    async def cb(msg):
-        nonlocal msgs
-        nonlocal future
-        msgs.append(msg)
-        if len(msgs) == 5:
-            future.set_result(True)
+#     async def cb(msg):
+#         nonlocal msgs
+#         nonlocal future
+#         msgs.append(msg)
+#         if len(msgs) == 5:
+#             future.set_result(True)
 
-    await queue.stan.subscribe(subject=queue.subject,
-                               queue='colin_queue',
-                               durable_name='colin_queue',
-                               cb=cb)
+#     await queue.stan.subscribe(subject=queue.subject,
+#                                queue='colin_queue',
+#                                durable_name='colin_queue',
+#                                cb=cb)
 
-    # TEST - add some messages to the queue
-    for i in range(0, 5):
-        payload = {'colinFiling': {'id': 1234 + i, }}
-        # await queue.async_publish_json(payload=payload)
-        # this_loop.run_until_complete(asyncio.wait(queue.async_publish_json(payload=payload)))
-        # this_loop.run_until_complete(queue.async_publish_json(payload=payload))
-        queue.publish_json(payload=payload)
-    try:
-        await asyncio.wait_for(future, 2, loop=this_loop)
-    except Exception as err:
-        print(err)
+#     # TEST - add some messages to the queue
+#     for i in range(0, 5):
+#         payload = {'colinFiling': {'id': 1234 + i, }}
+#         queue.publish_json(payload=payload)
+#     try:
+#         await asyncio.wait_for(future, 2, loop=this_loop)
+#     except Exception as err:
+#         print(err)
 
-    # CHECK the colinFilings were retrieved from the queue
-    assert len(msgs) == 5
-    for i in range(0, 5):
-        m = msgs[i]
-        assert 'colinFiling' in m.data.decode('utf-8')
-        assert 1234 + i == dpath.util.get(json.loads(m.data.decode('utf-8')),
-                                          'colinFiling/id')
+#     # CHECK the colinFilings were retrieved from the queue
+#     assert len(msgs) == 5
+#     for i in range(0, 5):
+#         m = msgs[i]
+#         assert 'colinFiling' in m.data.decode('utf-8')
+#         assert 1234 + i == dpath.util.get(json.loads(m.data.decode('utf-8')),
+#                                           'colinFiling/id')
 
 
 @pytest.mark.asyncio
@@ -215,9 +212,42 @@ async def test_on_reconnect_callback(caplog, app_ctx, stan_server):
 
 
 @integration_nats
-def test_publish_colin_filing(app_ctx, stan_server):
+# @pytest.mark.asyncio
+def test_publish_colin_filing_managed(app_ctx, stan_server):
     """Assert that payment tokens can be retrieved and decoded from the Queue."""
     # SETUP
-    queue = QueueService(app_ctx)
-    payload = {'colinFiling': {'id': 1234}}
-    queue.publish_json(payload=payload)
+    msgs = []
+    this_loop = asyncio.get_event_loop()
+    # this_loop = event_loop
+    future = asyncio.Future(loop=this_loop)
+    queue = QueueService(app_ctx, this_loop)
+    this_loop.run_until_complete(queue.connect())
+
+    async def cb(msg):
+        nonlocal msgs
+        nonlocal future
+        msgs.append(msg)
+        if len(msgs) == 5:
+            future.set_result(True)
+
+    this_loop.run_until_complete(queue.stan.subscribe(subject=queue.subject,
+                                                      queue='colin_queue',
+                                                      durable_name='colin_queue',
+                                                      cb=cb))
+
+    # TEST - add some messages to the queue
+    for i in range(0, 5):
+        payload = {'colinFiling': {'id': 1234 + i, }}
+        queue.publish_json(payload=payload)
+    try:
+        this_loop.run_until_complete(asyncio.wait_for(future, 2, loop=this_loop))
+    except Exception as err:
+        print(err)
+
+    # CHECK the colinFilings were retrieved from the queue
+    assert len(msgs) == 5
+    for i in range(0, 5):
+        m = msgs[i]
+        assert 'colinFiling' in m.data.decode('utf-8')
+        assert 1234 + i == dpath.util.get(json.loads(m.data.decode('utf-8')),
+                                          'colinFiling/id')

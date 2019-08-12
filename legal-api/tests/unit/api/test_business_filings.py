@@ -130,8 +130,8 @@ def test_post_fail_if_given_filing_id(session, client, jwt):
                      )
 
     assert rv.status_code == HTTPStatus.FORBIDDEN
-    assert rv.json == {'message':
-                       f'Illegal to attempt to create a new filing over an existing filing for {identifier}.'}
+    assert rv.json['errors'][0] == {'message':
+                                    f'Illegal to attempt to create a duplicate filing for {identifier}.'}
 
 
 def test_post_filing_no_business(session, client, jwt):
@@ -144,7 +144,7 @@ def test_post_filing_no_business(session, client, jwt):
                      )
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json == {'message': f'{identifier} not found'}
+    assert rv.json['errors'][0] == {'message': f'{identifier} not found'}
 
 
 def test_post_empty_ar_filing_to_a_business(session, client, jwt):
@@ -158,7 +158,7 @@ def test_post_empty_ar_filing_to_a_business(session, client, jwt):
                      )
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json == {'message': f'No filing json data in body of post for {identifier}.'}
+    assert rv.json['errors'][0] == {'message': f'No filing json data in body of post for {identifier}.'}
 
 
 def test_post_authorized_draft_ar(session, client, jwt):
@@ -232,7 +232,6 @@ def test_post_only_validate_error_ar(session, client, jwt):
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
     assert rv.json.get('errors')
-    assert rv.json['errors'][0]['path'] == 'filing/header'
     assert rv.json['errors'][0]['error'] == "'name' is a required property"
 
 
@@ -345,7 +344,7 @@ def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
                     )
 
     assert rv.status_code == HTTPStatus.FORBIDDEN
-    assert rv.json == {'message': 'Filings cannot be changed after the invoice is created.'}
+    assert rv.json['errors'][0] == {'error': 'Filings cannot be changed after the invoice is created.'}
 
 
 def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
@@ -363,7 +362,7 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
                     )
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json == {'message': f'{identifier} no filings found'}
+    assert rv.json['errors'][0] == {'message': f'{identifier} no filings found'}
 
 
 def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
@@ -383,7 +382,7 @@ def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
                     )
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json == {'message': f'{identifier} not found'}
+    assert rv.json['errors'][0] == {'message': f'{identifier} not found'}
 
 
 def test_update_ar_with_missing_json_body_fails(session, client, jwt):
@@ -398,7 +397,7 @@ def test_update_ar_with_missing_json_body_fails(session, client, jwt):
                     )
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json == {'message': f'No filing json data in body of post for {identifier}.'}
+    assert rv.json['errors'][0] == {'message': f'No filing json data in body of post for {identifier}.'}
 
 
 def test_update_ar_with_colin_id_set(session, client, jwt):
@@ -515,3 +514,63 @@ async def test_colin_filing_failed_to_queue(app_ctx, session, client, jwt, stan_
     # Assure that the filing was accepted
     assert rv.status_code == HTTPStatus.BAD_REQUEST
     assert 'missing filing/header/colinId' in rv.json['errors']['message']
+
+
+@integration_nats
+# @pytest.mark.asyncio
+def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server):
+    """Assert that payment tokens can be retrieved and decoded from the Queue."""
+    import copy
+    # SETUP
+    msgs = []
+    this_loop = asyncio.get_event_loop()
+    # this_loop = event_loop
+    future = asyncio.Future(loop=this_loop)
+    queue = QueueService(app_ctx, this_loop)
+    this_loop.run_until_complete(queue.connect())
+
+    async def cb(msg):
+        nonlocal msgs
+        nonlocal future
+        msgs.append(msg)
+        if len(msgs) == 5:
+            future.set_result(True)
+
+    this_loop.run_until_complete(queue.stan.subscribe(subject=queue.subject,
+                                                      queue='colin_queue',
+                                                      durable_name='colin_queue',
+                                                      cb=cb))
+
+    # TEST - add some COLIN filings to the system, check that they got placed on the Queue
+    for i in range(0, 5):
+        # Create business
+        identifier = f'CP765432{i}'
+        b = factory_business(identifier)
+        factory_business_mailing_address(b)
+        # Create anm AR filing for the business
+        ar = copy.deepcopy(AR_FILING)
+        ar['filing']['header']['colinId'] = 1230 + i
+        ar['filing']['business']['identifier'] = identifier
+
+        # POST the AR
+        rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                         json=ar,
+                         headers=create_header(jwt, [COLIN_SVC_ROLE], 'colin_service')
+                         )
+
+        # Assure that the filing was accepted
+        assert rv.status_code == HTTPStatus.CREATED
+
+    # Await all the messages were received
+    try:
+        this_loop.run_until_complete(asyncio.wait_for(future, 2, loop=this_loop))
+    except Exception as err:
+        print(err)
+
+    # CHECK the colinFilings were retrieved from the queue
+    assert len(msgs) == 5
+    for i in range(0, 5):
+        m = msgs[i]
+        assert 'colinFiling' in m.data.decode('utf-8')
+        assert 1230 + i == dpath.util.get(json.loads(m.data.decode('utf-8')),
+                                          'colinFiling/id')
