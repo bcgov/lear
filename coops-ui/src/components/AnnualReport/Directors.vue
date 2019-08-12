@@ -949,6 +949,7 @@ export default {
   .address
     display flex
     flex-direction column
+    width 10rem
 
   .address__row
     flex 1 1 auto
