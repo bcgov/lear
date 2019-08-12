@@ -16,12 +16,18 @@
 
 Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
+import asyncio
+import json
 from datetime import datetime
 from http import HTTPStatus
 
+import dpath.util
+import pytest
 from flask import current_app
 
-from legal_api.services.authz import BASIC_USER, STAFF_ROLE
+from legal_api.services import QueueService
+from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE
+from tests import integration_nats
 from tests.unit.models import AR_FILING, factory_business, factory_business_mailing_address, factory_filing
 from tests.unit.services.utils import create_header
 
@@ -417,3 +423,95 @@ def test_update_ar_with_colin_id_set(session, client, jwt):
     assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
     assert not rv.json['filing']['header'].get('colinId')
     assert rv.json['filing']['header']['filingId'] == filings.id
+
+
+# @integration_nats
+# @pytest.mark.asyncio
+# async def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server, event_loop):
+#     """Assert that payment tokens can be retrieved and decoded from the Queue."""
+#     import copy
+#     # SETUP
+#     msgs = []
+#     this_loop = asyncio.get_event_loop()
+#     # this_loop = event_loop
+#     future = asyncio.Future(loop=this_loop)
+#     queue = QueueService(app_ctx, this_loop)
+#     await queue.connect()
+
+#     async def cb(msg):
+#         nonlocal msgs
+#         nonlocal future
+#         msgs.append(msg)
+#         if len(msgs) == 5:
+#             future.set_result(True)
+
+#     await queue.stan.subscribe(subject=queue.subject,
+#                                queue='colin_queue',
+#                                durable_name='colin_queue',
+#                                cb=cb)
+
+#     # TEST - add some COLIN filings to the system, check that they got placed on the Queue
+#     for i in range(0, 5):
+#         # Create business
+#         identifier = f'CP765432{i}'
+#         b = factory_business(identifier)
+#         factory_business_mailing_address(b)
+#         # Create anm AR filing for the business
+#         ar = copy.deepcopy(AR_FILING)
+#         ar['filing']['header']['colinId'] = 1230 + i
+#         ar['filing']['business']['identifier'] = identifier
+
+#         # POST the AR
+#         rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+#                          json=ar,
+#                          headers=create_header(jwt, [COLIN_SVC_ROLE], 'colin_service')
+#                          )
+
+#         # Assure that the filing was accepted
+#         assert rv.status_code == HTTPStatus.CREATED
+
+#     # Await all the messages were received
+#     try:
+#         await asyncio.wait_for(future, 2, loop=this_loop)
+#     except Exception as err:
+#         print(err)
+
+#     # CHECK the colinFilings were retrieved from the queue
+#     assert len(msgs) == 5
+#     for i in range(0, 5):
+#         m = msgs[i]
+#         assert 'colinFiling' in m.data.decode('utf-8')
+#         assert 1230 + i == dpath.util.get(json.loads(m.data.decode('utf-8')),
+#                                           'colinFiling/id')
+
+
+@integration_nats
+@pytest.mark.asyncio
+async def test_colin_filing_failed_to_queue(app_ctx, session, client, jwt, stan_server, event_loop):
+    """Assert that payment tokens can be retrieved and decoded from the Queue."""
+    import copy
+    # SETUP
+    this_loop = asyncio.get_event_loop()
+    this_loop = event_loop
+    queue = QueueService(app_ctx, this_loop)
+    await queue.connect()
+
+    # TEST - add some COLIN filings to the system, check that they got placed on the Queue
+    # Create business
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    factory_business_mailing_address(b)
+    # Create an AR filing for the business
+    ar = copy.deepcopy(AR_FILING)
+    # ar['filing']['header']['colinId']
+    ar['filing']['business']['identifier'] = identifier
+
+    # POST the AR
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=ar,
+                     headers=create_header(jwt, [COLIN_SVC_ROLE], 'colin_service')
+                     )
+
+    # Assure that the filing was accepted
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert 'missing filing/header/colinId' in rv.json['errors']['message']

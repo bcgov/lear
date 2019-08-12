@@ -29,7 +29,7 @@ from werkzeug.local import LocalProxy
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business, Filing, User, db
 from legal_api.schemas import rsbc_schemas
-from legal_api.services.authz import authorized
+from legal_api.services import COLIN_SVC_ROLE, authorized, queue
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
@@ -106,6 +106,22 @@ class ListFilingResource(Resource):
         if err_code:
             return jsonify(err_msg), err_code
 
+        # if filing is from COLIN, place on queue and return
+        if jwt.validate_roles([COLIN_SVC_ROLE]):
+            json_input = request.get_json()
+            try:
+                payload = {'colinFiling': {'id': json_input['filing']['header']['colinId']}}
+                queue.publish_json(payload)
+            except KeyError:
+                current_app.logger.error('Business:%s missing filing/header/colinId, unable to post to queue',
+                                         identifier)
+                return jsonify({'errors': {'message': 'missing filing/header/colinId'}}), HTTPStatus.BAD_REQUEST
+            except Exception as err:  # pylint: disable=broad-except; final catch
+                current_app.logger.error('Business:%s unable to post to queue, err=%s', identifier, err)
+                return jsonify({'errors': {'message': 'unable to publish for post processing'}}), HTTPStatus.BAD_REQUEST
+
+            return jsonify({}), HTTPStatus.CREATED
+
         # create invoice ??
         draft = request.args.get('draft', None)
         if not draft or draft.lower() != 'true':
@@ -139,8 +155,7 @@ class ListFilingResource(Resource):
     def _save_filing(client_request: LocalProxy,
                      business_identifier: str,
                      user: User,
-                     filing_id: int) \
-            -> Tuple[Business, Filing, dict, int]:
+                     filing_id: int) -> Tuple[Business, Filing, dict, int]:
         """Save the filing to the ledger.
 
         If not successful, a dict of errors is returned.
@@ -161,8 +176,7 @@ class ListFilingResource(Resource):
         business = Business.find_by_identifier(business_identifier)
         if not business:
             return None, None, {'message':
-                                f'{business_identifier} not found'}, \
-                HTTPStatus.NOT_FOUND
+                                f'{business_identifier} not found'}, HTTPStatus.NOT_FOUND
 
         if client_request.method == 'PUT':
             rv = db.session.query(Business, Filing). \
@@ -172,8 +186,7 @@ class ListFilingResource(Resource):
                 one_or_none()
             if not rv:
                 return None, None, {'message':
-                                    f'{business_identifier} no filings found'}, \
-                    HTTPStatus.NOT_FOUND
+                                    f'{business_identifier} no filings found'}, HTTPStatus.NOT_FOUND
             filing = rv[1]
         else:
             filing = Filing()
@@ -252,15 +265,18 @@ class ListFilingResource(Resource):
             headers = {'Authorization': 'Bearer ' + token}
             rv = requests.post(url=payment_svc_url,
                                json=payload,
-                               headers=headers)
-        except exceptions.ConnectionError as err:
+                               headers=headers,
+                               timeout=5.0)
+        except (exceptions.ConnectionError, exceptions.Timeout) as err:
             current_app.logger.error(f'Payment connection failure for {business.identifier}: filing:{filing.id}', err)
             return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
-        pid = rv.json().get('id')
-        filing.payment_token = pid
-        filing.save()
-        return None, None
+        if rv.status_code == HTTPStatus.OK or rv.status_code == HTTPStatus.CREATED:
+            pid = rv.json().get('id')
+            filing.payment_token = pid
+            filing.save()
+            return None, None
+        return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
 
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')

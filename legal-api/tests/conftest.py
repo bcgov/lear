@@ -13,6 +13,7 @@
 # limitations under the License.
 """Common setup and fixtures for the pytest suite used by this service."""
 import datetime
+import time
 from contextlib import contextmanager
 
 import pytest
@@ -56,6 +57,15 @@ def app():
     _app = create_app('testing')
 
     return _app
+
+
+@pytest.fixture(scope='function')
+def app_ctx(event_loop):
+    """Return a session-wide application configured in TEST mode."""
+    _app = create_app('testing')
+    with _app.app_context():
+        yield _app
+    time.sleep(2)
 
 
 @pytest.fixture
@@ -169,3 +179,10 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         # This instruction rollsback any commit that were executed in the tests.
         txn.rollback()
         conn.close()
+
+
+@pytest.fixture(scope='session')
+def stan_server(docker_services):
+    """Create the nats / stan services that the integration tests will use."""
+    docker_services.start('nats')
+    time.sleep(2)
