@@ -36,6 +36,9 @@ describe('Standalone Directors Filing - Part 1', () => {
     vm.directorFormValid = true
     vm.changeCertifyData(true)
 
+    // set stub list of filings
+    vm.filingData.push({})
+
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(true)
   })
@@ -48,6 +51,9 @@ describe('Standalone Directors Filing - Part 1', () => {
     // set flags
     vm.directorFormValid = false
     vm.changeCertifyData(true)
+
+    // set stub list of filings
+    vm.filingData.push({})
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
@@ -62,6 +68,25 @@ describe('Standalone Directors Filing - Part 1', () => {
     vm.directorFormValid = true
     vm.changeCertifyData(false)
 
+    // set stub list of filings
+    vm.filingData.push({})
+
+    // confirm that flag is set correctly
+    expect(vm.validated).toEqual(false)
+  })
+
+  it('disables Validated flag when no filing changes were made (ie: nothing to file)', () => {
+    const $route = { params: { id: 0 } }
+    const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
+    const vm: any = wrapper.vm
+
+    // set flags
+    vm.directorFormValid = true
+    vm.changeCertifyData(true)
+
+    // set stub list of filings
+    vm.filingData = []
+
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
   })
@@ -75,6 +100,9 @@ describe('Standalone Directors Filing - Part 1', () => {
     vm.directorFormValid = true
     vm.changeCertifyData(true)
 
+    // set stub list of filings
+    vm.filingData.push({})
+
     // confirm that button is enabled
     expect(wrapper.find('#cod-file-pay-btn').attributes('disabled')).not.toBe('true')
   })
@@ -87,6 +115,9 @@ describe('Standalone Directors Filing - Part 1', () => {
     // set flag
     vm.directorFormValid = true
     vm.changeCertifyData(false)
+
+    // set stub list of filings
+    vm.filingData.push({})
 
     // confirm that button is disabled
     expect(wrapper.find('#cod-file-pay-btn').attributes('disabled')).toBe('true')
