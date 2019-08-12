@@ -9,6 +9,17 @@ const DateUtils = {
       return `${year}-${month}-${date}`
     },
 
+    numToUsableString: function (val) {
+      if (val === null || val === undefined || val === 0 || val.toString().length !== 8) return null
+
+      val = val.toString()
+
+      const year = val.substr(0, 4)
+      const month = val.substr(4, 2)
+      const date = val.substr(6, 2)
+      return `${year}-${month}-${date}`
+    },
+
     // util function to compare simple date strings YYYY-MM-DD
     compareDates (date1, date2, operator) {
       if (!date1 || !date2 || !operator) return true

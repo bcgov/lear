@@ -21,5 +21,17 @@ export default {
       }
     }
     return lastCOD
+  },
+  lastFilingDate: state => {
+    // get last filing (of any type) from list of past filings
+    let lastFilingDate = null
+
+    for (let i = 0; i < state.filingHistory.length; i++) {
+      let filing = state.filingHistory[i].filing
+      if (lastFilingDate === null || filing.header.date.split('-').join('') > lastFilingDate.split('-').join('')) {
+        lastFilingDate = filing.header.date
+      }
+    }
+    return lastFilingDate
   }
 }

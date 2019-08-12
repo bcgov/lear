@@ -67,10 +67,13 @@
 
 <script>
 import { isNotNull, isValidYear, isValidMonth, isValidDay, isISOFormat } from '@/validators'
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapActions, mapGetters } from 'vuex'
+import DateUtils from '@/DateUtils'
 
 export default {
   name: 'AGMDate',
+
+  mixins: [DateUtils],
 
   data () {
     return {
@@ -99,6 +102,8 @@ export default {
   computed: {
     ...mapState(['ARFilingYear', 'agmDate', 'currentDate']),
 
+    ...mapGetters(['lastFilingDate']),
+
     checkBoxLabel () {
       return 'We did not hold an Annual General Meeting in ' + this.ARFilingYear
     },
@@ -108,7 +113,22 @@ export default {
         : `${this.ARFilingYear}-12-31`
     },
     minDate () {
-      return `${this.ARFilingYear}-01-01`
+      /** return the latest of the following dates:
+       *  - the most recent filing in filing history (from the Legal DB)
+       *  - the last pre-load Cobrs filing
+       *  - the first day of the AR year
+       */
+      // first day of filing year
+      const firstDayOfYear = `${this.ARFilingYear}-01-01`.split('-').join('')
+
+      // numeric versions of filing dates:
+      const lastFilingDate = (this.lastFilingDate !== undefined && this.lastFilingDate !== null)
+        ? this.lastFilingDate.split('-').join('') : 0
+      const lastPreLoadFilingDate = (this.lastPreLoadFilingDate !== undefined && this.lastPreLoadFilingDate !== nul)
+        ? this.lastPreLoadFilingDate.split('').join('') : 0
+
+      const minAgmDate = Math.max(firstDayOfYear, lastFilingDate, lastPreLoadFilingDate)
+      return this.numToUsableString(minAgmDate)
     },
     currentYear () /* Number */ {
       return this.currentDate ? +this.currentDate.substring(0, 4) : null
