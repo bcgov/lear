@@ -601,6 +601,11 @@ export default {
 
                 // if there is no officer middle initial field, add it with blank data
                 if (!directors[i].officer.hasOwnProperty('middleInitial')) directors[i].officer.middleInitial = ''
+
+                // save previous officer name data for COLIN to use when updating record
+                directors[i].officer.prevFirstName = directors.officer.firstName
+                directors[i].officer.prevLastName = directors.officer.lastName
+                directors[i].officer.prevMiddleInitial = directors.officer.middleInitial
               }
 
               // save to component data now that extra attributes are added
