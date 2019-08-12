@@ -4,8 +4,10 @@
 # Testing
 pytest<4.1
 pytest-mock
+pytest-asyncio
 requests
 pyhamcrest
+dpath
 
 # Lint and code style
 pydocstyle<4
@@ -20,3 +22,7 @@ autopep8
 coverage
 pylint
 pylint-flask
+
+# docker
+lovely-pytest-docker
+pytest_docker

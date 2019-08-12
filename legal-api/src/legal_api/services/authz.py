@@ -18,14 +18,17 @@ from flask_jwt_oidc import JwtManager
 
 
 STAFF_ROLE = 'staff'
-
 BASIC_USER = 'basic'
+COLIN_SVC_ROLE = 'colin'
 
 
 def authorized(identifier: str, jwt: JwtManager) -> bool:
     """Assert that the user is authorized to create filings against the business identifier."""
     # if they are registry staff, they are always authorized
     if jwt.validate_roles([STAFF_ROLE]):
+        return True
+
+    if jwt.validate_roles([COLIN_SVC_ROLE]):
         return True
 
     token = g.jwt_oidc_token_info

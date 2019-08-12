@@ -20,6 +20,7 @@ from importlib import reload
 import pytest
 
 from legal_api import config
+from tests import integration_sentry
 
 
 # testdata pattern is ({str: environment}, {expected return value})
@@ -66,6 +67,7 @@ def test_prod_config_secret_key(monkeypatch):  # pylint: disable=missing-docstri
     assert config.ProdConfig().SECRET_KEY == 'SECRET_KEY'
 
 
+@integration_sentry
 def test_config_dsn_key():
     """Assert that the ProductionConfig is correct.
 

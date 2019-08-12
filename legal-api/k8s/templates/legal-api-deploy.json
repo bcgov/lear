@@ -140,6 +140,14 @@
                                 ],
                                 "env": [
                                     {
+                                        "name": "POD_NAMESPACE",
+                                        "valueFrom": {
+                                            "fieldRef": {
+                                                "fieldPath": "metadata.namespace"
+                                            }
+                                        }
+                                    },
+                                    {
                                         "name": "DATABASE_USERNAME",
                                         "valueFrom": {
                                             "secretKeyRef": {
@@ -185,11 +193,119 @@
                                         }
                                     },
                                     {
+                                        "name": "PAYMENT_SVC_URL",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "PAYMENT_SVC_URL",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "DATABASE_TEST_NAME",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "DATABASE_TEST_NAME",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "DATABASE_TEST_HOST",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "DATABASE_TEST_HOST",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "DATABASE_TEST_USERNAME",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "key": "database-user",
+                                                "name": "postgresql-${TAG_NAME}"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "DATABASE_TEST_PASSWORD",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "key": "database-password",
+                                                "name": "postgresql-${TAG_NAME}"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "DATABASE_TEST_PORT",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "DATABASE_TEST_PORT",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "JWT_OIDC_WELL_KNOWN_CONFIG",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "JWT_OIDC_WELL_KNOWN_CONFIG",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "JWT_OIDC_ALGORITHMS",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "JWT_OIDC_ALGORITHMS",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "JWT_OIDC_AUDIENCE",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "JWT_OIDC_AUDIENCE",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "JWT_OIDC_CLIENT_SECRET",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "JWT_OIDC_CLIENT_SECRET",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "JWT_OIDC_CACHING_ENABLED",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "JWT_OIDC_CACHING_ENABLED",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
                                         "name": "JWT_OIDC_JWKS_CACHE_TIMEOUT",
                                         "valueFrom": {
                                             "configMapKeyRef": {
-                                                "name": "${NAME}-${TAG_NAME}-config",
-                                                "key": "JWT_OIDC_JWKS_CACHE_TIMEOUT"
+                                                "key": "JWT_OIDC_JWKS_CACHE_TIMEOUT",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "POD_NAMESPACE",
+                                        "valueFrom": {
+                                            "fieldRef": {
+                                                "apiVersion": "v1",
+                                                "fieldPath": "metadata.namespace"
                                             }
                                         }
                                     }
@@ -244,8 +360,19 @@
             "data": {
                 "DATABASE_HOST": "postgresql-${TAG_NAME}",
                 "DATABASE_NAME": "${DATABASE_NAME}",
-                "DB_PORT": "5432",
-                "JWT_OIDC_JWKS_CACHE_TIMEOUT": "300"
+                "DB_PORT": "${DB_PORT}",
+                "DATABASE_TEST_HOST": "postgresql-${TAG_NAME}",
+                "DATABASE_TEST_NAME": "${DATABASE_NAME}_testdb",
+                "DATABASE_TEST_PASSWORD": "",
+                "DATABASE_TEST_PORT": "${DB_PORT}",
+                "DATABASE_TEST_USERNAME": "tester",
+                "PAYMENT_SVC_URL": "https://pay-api-dev.pathfinder.gov.bc.ca/api/v1/payments",
+                "JWT_OIDC_ALGORITHMS": "${JWT_OIDC_ALGORITHMS}",
+                "JWT_OIDC_AUDIENCE": "${JWT_OIDC_AUDIENCE}",
+                "JWT_OIDC_CLIENT_SECRET": "${JWT_OIDC_CLIENT_SECRET}",
+                "JWT_OIDC_WELL_KNOWN_CONFIG": "${JWT_OIDC_WELL_KNOWN_CONFIG}",
+                "JWT_OIDC_JWKS_CACHE_TIMEOUT": "${JWT_OIDC_JWKS_CACHE_TIMEOUT}",
+                "JWT_OIDC_CACHING_ENABLED": "${JWT_OIDC_CACHING_ENABLED}"
             }
         },
         {
@@ -343,6 +470,13 @@
             "value": "lear"
         },
         {
+            "name": "DB_PORT",
+            "displayName": "Database Port",
+            "description": "A valid database port used by the service.",
+            "required": true,
+            "value": "5432"
+        },
+        {
             "name": "IMAGE_NAMESPACE",
             "displayName": "Image Namespace",
             "required": true,
@@ -386,10 +520,54 @@
         },
         {
             "name": "REPLICAS",
-            "displayName": "The number of erplicas to run",
+            "displayName": "The number of replicas to run",
             "description": "The number of replicas to run in this environment.",
             "required": true,
             "value": "1"
+        },
+        {
+            "name": "JWT_OIDC_ALGORITHMS",
+            "displayName": "JWT Algorithms",
+            "description": "The supported JWT Algorithm.",
+            "required": true,
+            "value": "RS256"
+        },
+        {
+            "name": "JWT_OIDC_AUDIENCE",
+            "displayName": "JWT Audience",
+            "description": "The JWT Audience to use.",
+            "required": true,
+            "value": "my_client"
+        },
+        {
+            "name": "JWT_OIDC_CLIENT_SECRET",
+            "displayName": "JWT Client Secret",
+            "description": "The JWT Client Secret to use, provided by the OIDC server.",
+            "required": true,
+            "value": "my_shared_secret"
+        },
+        {
+            "name": "JWT_OIDC_WELL_KNOWN_CONFIG",
+            "displayName": "JWT .wellknown URI",
+            "description": "The well known URI for the meta info from the OIDC server.",
+            "required": true,
+            "value": "https://fqdn.domain/auth/realms/REALM_NAME/.well-known/openid-configuration"
+        },
+        {
+            "name": "JWT_OIDC_CACHING_ENABLED",
+            "displayName": "Enable JWT Server Key Caching?",
+            "description": "Set the JWT Server Key caching.",
+            "required": true,
+            "value": "True"
+        },
+        {
+            "name": "JWT_OIDC_JWKS_CACHE_TIMEOUT",
+            "displayName": "JWT Server Key Caching Duration",
+            "description": "Set how long to cache the OIDC Server Key.",
+            "required": true,
+            "value": "300"
         }
     ]
 }
+"PAYMENT_SVC_URL": "https://pay-api-dev.pathfinder.gov.bc.ca/api/v1/payments",
+"COLIN_URL": "http://colin-api-dev.gl2uos-dev.svc:8080",

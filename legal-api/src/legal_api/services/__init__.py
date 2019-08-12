@@ -12,3 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module wraps the calls to external services used by the API."""
+from .authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE, authorized
+from .queue import QueueService
+
+
+queue = QueueService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
