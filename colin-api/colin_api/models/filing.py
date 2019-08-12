@@ -173,8 +173,7 @@ class Filing:
                 Office.update_office(cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, 'RG')
 
                 # create new ledger text for address change
-                cls._add_ledger_text(cursor, event_id, 'Change to the Registered Office, effective on {} as filed with'
-                                                       ' {} Annual Report'.format(date, date[:4]))
+                cls._add_ledger_text(cursor, event_id, f'Change to the Registered Office, effective on {date}')
                 # update corporation record
                 Business.update_corporation(cursor, corp_num)
 
@@ -210,6 +209,11 @@ class Filing:
                 for director in changed_dirs:
                     Director.create_new_director(cursor=cursor, event_id=event_id, director=director,
                                                  business=filing.business.as_dict())
+
+                # create new ledger text for address change
+                cls._add_ledger_text(cursor=cursor, event_id=event_id, text=f'Director change.')
+                # update corporation record
+                Business.update_corporation(cursor=cursor, corp_num=corp_num)
 
             else:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
