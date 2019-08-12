@@ -140,7 +140,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'lastModified': self.last_modified.isoformat(),
             'lastAnnualReport': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
-            'lastLedgeTimestamp': self.last_ledger_timestamp.isoformat(),
+            'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
             'legalName': self.legal_name,
         }
         # if self.last_remote_ledger_timestamp:
