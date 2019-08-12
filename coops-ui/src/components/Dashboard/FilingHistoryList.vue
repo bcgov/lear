@@ -18,9 +18,9 @@
         </template>
         <ul class="list document-list">
           <li class="list-item"
-            v-for="(document, index) in orderBy(item.filingDocuments, 'name')"
+            v-for="(document, index) in item.filingDocuments"
             v-bind:key="index">
-            <a href="#">
+            <a href="#" @click="loadDocument(document)">
               <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
               <div class="list-item__title">{{document.name}}</div>
             </a>
@@ -155,15 +155,25 @@ export default {
             filingAuthor: filing.annualReport.certifiedBy,
             filingDate: filing.header.date,
             filingStatus: filing.header.status,
-            filingDocuments: [{ name: 'Annual Report', url: '' }]
+            filingDocuments: [{
+              filingId: filing.header.filingId,
+              name: 'Annual Report',
+              documentName: `Annual Report (${agmYear}) - ` + filing.header.date
+            }]
           }
           if (filing.changeOfDirectors) {
-            // TODO
-            item.filingDocuments.push({ name: 'Director Change (AGM)', url: '' })
+            item.filingDocuments.push({
+              filingId: filing.header.filingId,
+              name: 'Director Change (AGM)',
+              documentName: `Director Change (AGM ${agmYear}) - ` + filing.header.date
+            })
           }
           if (filing.changeOfAddress) {
-            // TODO
-            item.filingDocuments.push({ name: 'Address Change (AGM)', url: '' })
+            item.filingDocuments.push({
+              filingId: filing.header.filingId,
+              name: 'Address Change (AGM)',
+              documentName: `Address Change (AGM ${agmYear}) - ` + filing.header.date
+            })
           }
           this.filedItems.push(item)
         } else {
@@ -181,7 +191,11 @@ export default {
           filingAuthor: filing.changeOfDirectors.certifiedBy,
           filingDate: filing.header.date,
           filingStatus: filing.header.status,
-          filingDocuments: [{ name: 'Director Change', url: '' }]
+          filingDocuments: [{
+            filingId: filing.header.filingId,
+            name: 'Director Change',
+            documentName: 'Director Change - ' + filing.header.date
+          }]
         }
         this.filedItems.push(item)
       } else {
@@ -196,7 +210,11 @@ export default {
           filingAuthor: filing.changeOfAddress.certifiedBy,
           filingDate: filing.header.date,
           filingStatus: filing.header.status,
-          filingDocuments: [{ name: 'Address Change', url: '' }]
+          filingDocuments: [{
+            filingId: filing.header.filingId,
+            name: 'Address Change',
+            documentName: 'AddressChange - ' + filing.header.date
+          }]
         }
         this.filedItems.push(item)
       } else {
@@ -204,9 +222,45 @@ export default {
       }
     },
 
+    loadDocument (filingDocument) {
+      var url = this.corpNum + '/filings/' + filingDocument.filingId
+      let headers = { 'Accept': 'application/pdf' }
+
+      axios.get(url, { headers: headers, responseType: 'arraybuffer' }).then(response => {
+        if (response) {
+          /* solution from https://github.com/axios/axios/issues/1392 */
+
+          // It is necessary to create a new blob object with mime-type explicitly set
+          // otherwise only Chrome works like it should
+          var newBlob = new Blob([response.data], { type: 'application/pdf' })
+
+          // IE doesn't allow using a blob object directly as link href
+          // instead it is necessary to use msSaveOrOpenBlob
+          if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+            window.navigator.msSaveOrOpenBlob(newBlob)
+            return
+          }
+
+          // For other browsers:
+          // Create a link pointing to the ObjectURL containing the blob.
+          const data = window.URL.createObjectURL(newBlob)
+          var link = document.createElement('a')
+          link.href = data
+          link.download = filingDocument.documentName
+          link.click()
+        } else {
+          this.errorMessage = 'Oops, could not load data from server'
+        }
+      }).catch(error => {
+        console.error('loadDocument() error =', error)
+        this.errorMessage = 'Oops, could not load data from server'
+      })
+    },
+
     downloadAll (item) {
-      // TODO
-      console.log('downloadAll(), item =', item)
+      for (let i = 0; i < item.filingDocuments.length; i++) {
+        this.loadDocument(item.filingDocuments[i])
+      }
     }
   },
 
