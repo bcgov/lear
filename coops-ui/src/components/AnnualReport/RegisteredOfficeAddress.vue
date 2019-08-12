@@ -88,6 +88,9 @@ import axios from '@/axios-auth'
 import isEmpty from 'lodash.isempty'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
+// action constants
+const ADDRESSCHANGED = 'addressChanged'
+
 @Component({
   components: {
     'delivery-address': BaseAddress,
@@ -207,6 +210,24 @@ export default class RegisteredOfficeAddress extends Vue {
   }
 
   /**
+   * Computed value of whether or not the mailing address has been modified from the original.
+   *
+   * @return a boolean that is true if the mailing address has been modified, or false otherwise.
+   */
+  private get mailingModified (): boolean {
+    return !this.sameAddress(this.mailingAddress, this.mailingAddressOriginal)
+  }
+
+  /**
+   * Computed value of whether or not the delivery address has been modified from the original.
+   *
+   * @return a boolean that is true if the delivery address has been modified, or false otherwise.
+   */
+  private get deliveryModified (): boolean {
+    return !this.sameAddress(this.deliveryAddress, this.deliveryAddressOriginal)
+  }
+
+  /**
    * Event callback to update the delivery address when its component changes.
    *
    * @param address the object containing the new address.
@@ -215,6 +236,10 @@ export default class RegisteredOfficeAddress extends Vue {
     // Note that we do a copy of the fields (rather than change the object reference) to prevent an infinite loop with
     // the property.
     Object.assign(this.deliveryAddress, address)
+
+    // if the address has changed from the original, set action flag
+    if (this.deliveryModified) this.addAction(address, ADDRESSCHANGED)
+    else this.removeAction(address, ADDRESSCHANGED)
   }
 
   /**
@@ -236,6 +261,10 @@ export default class RegisteredOfficeAddress extends Vue {
     // Note that we do a copy of the fields (rather than change the object reference) to prevent an infinite loop with
     // the property.
     Object.assign(this.mailingAddress, address)
+
+    // if the address has changed from the original, set action flag
+    if (this.mailingModified) this.addAction(address, ADDRESSCHANGED)
+    else this.removeAction(address, ADDRESSCHANGED)
   }
 
   /**
@@ -258,8 +287,12 @@ export default class RegisteredOfficeAddress extends Vue {
    * @return a boolean that is true if the addresses are equivalent, or false otherwise.
    */
   private sameAddress (address1: object, address2: object): boolean {
-    const json1 = JSON.stringify(address1, (name: string, val: any) : any => { return val !== '' ? val : undefined })
-    const json2 = JSON.stringify(address2, (name: string, val: any) : any => { return val !== '' ? val : undefined })
+    const json1 = JSON.stringify(address1, (name: string, val: any) : any => {
+      return val !== '' && name !== 'actions' ? val : undefined
+    })
+    const json2 = JSON.stringify(address2, (name: string, val: any) : any => {
+      return val !== '' && name !== 'actions' ? val : undefined
+    })
 
     return json1 === json2
   }
@@ -386,6 +419,20 @@ export default class RegisteredOfficeAddress extends Vue {
     }
   }
   */
+
+  /**
+   * Add an action, if it doesn't already exist; ensures no multiples.
+   */
+  private addAction (address: object, val: string): void {
+    if (address.actions.indexOf(val) < 0) address.actions.push(val)
+  }
+
+  /**
+   * Remove an action, if it already exists.
+   */
+  private removeAction (address: object, val: string): void {
+    if (address.actions.indexOf(val) >= 0) address.actions.splice(val)
+  }
 }
 
 </script>

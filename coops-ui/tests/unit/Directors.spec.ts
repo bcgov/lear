@@ -36,6 +36,7 @@ describe('Directors.vue', () => {
           {
             directors: [
               {
+                'actions': [],
                 'officer': {
                   'firstName': 'Peter',
                   'middleInitial': null,
@@ -53,6 +54,7 @@ describe('Directors.vue', () => {
                 'title': null
               },
               {
+                'actions': [],
                 'officer': {
                   'firstName': 'Joe',
                   'middleInitial': 'P',
@@ -95,11 +97,7 @@ describe('Directors.vue', () => {
   it('initializes the director meta data properly', () => {
     expect(vm.directors.length).toEqual(2)
     expect(vm.directors[0].id).toEqual(1)
-    expect(vm.directors[0].isNew).toEqual(false)
-    expect(vm.directors[0].isDirectorActive).toEqual(true)
     expect(vm.directors[1].id).toEqual(2)
-    expect(vm.directors[1].isNew).toEqual(false)
-    expect(vm.directors[1].isDirectorActive).toEqual(true)
   })
 
   it('initializes the director name data properly', () => {
@@ -222,6 +220,9 @@ describe('Directors.vue', () => {
       // check that director is marked as ceased
       expect(vm.$el.querySelector('#director-1 .director-status').innerHTML).toContain('Ceased')
 
+      // check that director object has the 'CEASED' action
+      expect(vm.directors.filter(el => el.id === 1)[0].actions).toContain('ceased')
+
       done()
     })
   })
@@ -243,6 +244,9 @@ describe('Directors.vue', () => {
         // check that director is not marked as ceased
         expect(vm.$el.querySelector('#director-1 .director-status .v-chip')
           .getAttribute('style')).toContain('display: none;')
+
+        // check that director object does not have the 'CEASED' action
+        expect(vm.directors.filter(el => el.id === 1)[0].actions).not.toContain('ceased')
 
         done()
       })
