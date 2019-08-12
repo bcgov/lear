@@ -843,7 +843,7 @@ export default {
     },
     removeAction (director, val) {
       // remove an action, if it already exists
-      if (director.actions.indexOf(val) >= 0) director.actions.splice(val)
+      director.actions = director.actions.filter(el => el !== val)
     },
     isNew (director) {
       // helper function - was the director added in this filing?

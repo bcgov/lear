@@ -91,6 +91,10 @@ import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 // action constants
 const ADDRESSCHANGED = 'addressChanged'
 
+interface AddressObject {
+  actions?: string[]
+}
+
 @Component({
   components: {
     'delivery-address': BaseAddress,
@@ -175,7 +179,18 @@ export default class RegisteredOfficeAddress extends Vue {
    */
   @Emit('update:addresses')
   private emitAddresses (): object {
-    return { deliveryAddress: this.deliveryAddress, mailingAddress: this.mailingAddress }
+    let deliveryAddressFinal = Object.assign({}, this.deliveryAddress)
+    let mailingAddressFinal = Object.assign({}, this.mailingAddress)
+
+    // if the address has changed from the original, set action flag
+    if (this.deliveryModified) this.addAction(deliveryAddressFinal, ADDRESSCHANGED)
+    else this.removeAction(deliveryAddressFinal, ADDRESSCHANGED)
+
+    // if the mailing address has changed from the original, set action flag
+    if (this.mailingModified) this.addAction(mailingAddressFinal, ADDRESSCHANGED)
+    else this.removeAction(mailingAddressFinal, ADDRESSCHANGED)
+
+    return { deliveryAddress: deliveryAddressFinal, mailingAddress: mailingAddressFinal }
   }
 
   /**
@@ -236,10 +251,6 @@ export default class RegisteredOfficeAddress extends Vue {
     // Note that we do a copy of the fields (rather than change the object reference) to prevent an infinite loop with
     // the property.
     Object.assign(this.deliveryAddress, address)
-
-    // if the address has changed from the original, set action flag
-    if (this.deliveryModified) this.addAction(address, ADDRESSCHANGED)
-    else this.removeAction(address, ADDRESSCHANGED)
   }
 
   /**
@@ -261,10 +272,6 @@ export default class RegisteredOfficeAddress extends Vue {
     // Note that we do a copy of the fields (rather than change the object reference) to prevent an infinite loop with
     // the property.
     Object.assign(this.mailingAddress, address)
-
-    // if the address has changed from the original, set action flag
-    if (this.mailingModified) this.addAction(address, ADDRESSCHANGED)
-    else this.removeAction(address, ADDRESSCHANGED)
   }
 
   /**
@@ -423,15 +430,15 @@ export default class RegisteredOfficeAddress extends Vue {
   /**
    * Add an action, if it doesn't already exist; ensures no multiples.
    */
-  private addAction (address: object, val: string): void {
+  private addAction (address: AddressObject, val: string): void {
     if (address.actions.indexOf(val) < 0) address.actions.push(val)
   }
 
   /**
    * Remove an action, if it already exists.
    */
-  private removeAction (address: object, val: string): void {
-    if (address.actions.indexOf(val) >= 0) address.actions.splice(val)
+  private removeAction (address: AddressObject, val: string): void {
+    address.actions = address.actions.filter(el => el !== val)
   }
 }
 
