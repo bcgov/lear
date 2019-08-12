@@ -21,6 +21,8 @@ import json
 from http import HTTPStatus
 
 import pytest
+from flask import current_app
+from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Filing, User
@@ -274,3 +276,59 @@ def test_get_filing_by_payment_token(session):
 
     assert rv
     assert rv.payment_token == payment_token
+
+
+def test_get_filings_by_status(session):
+    """Assert that a filing can be retrieved by status."""
+    uow = versioning_manager.unit_of_work(session)
+    transaction = uow.create_transaction(session)
+    business = factory_business('CP1234567')
+    payment_token = '1000'
+    filing = Filing()
+    filing.business_id = business.id
+    filing.filing_json = AR_FILING
+    filing.payment_token = payment_token
+    filing.transaction_id = transaction.id
+    filing.payment_completion_date = datetime.datetime.utcnow()
+    filing.save()
+
+    rv = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
+
+    assert rv
+    assert rv[0].status == Filing.Status.COMPLETED.value
+
+
+# testdata pattern is ({str: environment}, {expected return value})
+TEST_FILING_GO_LIVE_DATE = [
+    ('filing returned', 10, 'rv is not None', Filing.Status.COMPLETED.value),
+    ('no filing returned', -10, 'rv == []', None),
+]
+
+
+@pytest.mark.parametrize('test_type,days,expected,status', TEST_FILING_GO_LIVE_DATE)
+def test_get_filings_by_status_before_go_live_date(session, test_type, days, expected, status):
+    """Assert that a filing can be retrieved by status."""
+    import copy
+    uow = versioning_manager.unit_of_work(session)
+    transaction = uow.create_transaction(session)
+    business = factory_business('CP1234567')
+    payment_token = '1000'
+    ar = copy.deepcopy(AR_FILING)
+
+    go_live_date = datetime.date.fromisoformat(current_app.config.get('GO_LIVE_DATE'))
+    filing_date = go_live_date + datetime.timedelta(days=days)
+
+    filing = Filing()
+    filing.filing_date = filing_date
+    filing.business_id = business.id
+    filing.filing_json = ar
+    filing.payment_token = payment_token
+    filing.transaction_id = transaction.id
+    filing.payment_completion_date = datetime.datetime.utcnow()
+    filing.save()
+
+    rv = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value], go_live_date)
+
+    assert eval(expected)  # pylint: disable=eval-used; useful for parameterized tests
+    if rv:
+        assert rv[0].status == status

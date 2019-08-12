@@ -175,6 +175,15 @@
                                         }
                                     },
                                     {
+                                        "name": "GO_LIVE_DATE",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "GO_LIVE_DATE"
+                                            }
+                                        }
+                                    },
+                                    {
                                         "name": "DATABASE_HOST",
                                         "valueFrom": {
                                             "configMapKeyRef": {
@@ -358,6 +367,7 @@
                 }
             },
             "data": {
+                "GO_LIVE_DATE": "${GO_LIVE_DATE}",
                 "DATABASE_HOST": "postgresql-${TAG_NAME}",
                 "DATABASE_NAME": "${DATABASE_NAME}",
                 "DB_PORT": "${DB_PORT}",
@@ -366,7 +376,7 @@
                 "DATABASE_TEST_PASSWORD": "",
                 "DATABASE_TEST_PORT": "${DB_PORT}",
                 "DATABASE_TEST_USERNAME": "tester",
-                "PAYMENT_SVC_URL": "https://pay-api-dev.pathfinder.gov.bc.ca/api/v1/payments",
+                "PAYMENT_SVC_URL": "${PAYMENT_SVC_URL}",
                 "JWT_OIDC_ALGORITHMS": "${JWT_OIDC_ALGORITHMS}",
                 "JWT_OIDC_AUDIENCE": "${JWT_OIDC_AUDIENCE}",
                 "JWT_OIDC_CLIENT_SECRET": "${JWT_OIDC_CLIENT_SECRET}",
@@ -470,6 +480,13 @@
             "value": "lear"
         },
         {
+            "name": "GO_LIVE_DATE",
+            "displayName": "Go Live Date",
+            "description": "Go Live Date of the system, used for MVP for things such as blocking legacy filings.",
+            "required": true,
+            "value": "2019-08-12"
+        },
+        {
             "name": "DB_PORT",
             "displayName": "Database Port",
             "description": "A valid database port used by the service.",
@@ -566,8 +583,13 @@
             "description": "Set how long to cache the OIDC Server Key.",
             "required": true,
             "value": "300"
+        },
+        {
+            "name": "PAYMENT_SVC_URL",
+            "displayName": "Payment Services URL",
+            "description": "The URL used to post invoice to the payment service.",
+            "required": true,
+            "value": "https://pay-api-dev.pathfinder.gov.bc.ca/api/v1/payments"
         }
     ]
 }
-"PAYMENT_SVC_URL": "https://pay-api-dev.pathfinder.gov.bc.ca/api/v1/payments",
-"COLIN_URL": "http://colin-api-dev.gl2uos-dev.svc:8080",

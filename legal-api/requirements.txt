@@ -22,14 +22,14 @@ chardet==3.0.4
 ecdsa==0.13.2
 flask-jwt-oidc==0.1.5
 flask-marshmallow==0.10.1
-flask-restplus==0.12.1
+flask-restplus==0.13.0
 future==0.17.1
 gunicorn==19.9.0
 idna==2.8
 itsdangerous==1.1.0
 jsonschema==3.0.2
 marshmallow-sqlalchemy==0.17.0
-marshmallow==2.19.5
+marshmallow==2.20.0
 protobuf==3.9.1
 psycopg2-binary==2.8.3
 pyasn1==0.4.6

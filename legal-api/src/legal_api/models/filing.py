@@ -13,7 +13,7 @@
 # limitations under the License
 """Filings are legal documents that alter the state of a business."""
 import copy
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from http import HTTPStatus
 from typing import List
@@ -226,13 +226,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         return filing
 
     @staticmethod
-    def get_filings_by_status(business_id: int, status: []):
+    def get_filings_by_status(business_id: int, status: [], after_date: date = None):
         """Return the filings with statuses in the status array input."""
-        filings = db.session.query(Filing). \
+        query = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
-            filter(Filing._status.in_(status)). \
-            all()
-        return filings
+            filter(Filing._status.in_(status))
+
+        if after_date:
+            query = query.filter(Filing._filing_date >= after_date)
+
+        return query.all()
 
     @staticmethod
     def get_filings_by_type(business_id: int, filing_type: str):

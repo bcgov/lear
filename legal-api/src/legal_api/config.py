@@ -60,9 +60,9 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    # COLIN_URL = os.getenv('COLIN_URL', '')
-
     PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', '')
+
+    GO_LIVE_DATE = os.getenv('GO_LIVE_DATE')
 
     REPORT_SVC_URL = os.getenv('REPORT_SVC_URL', '')
 
