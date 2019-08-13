@@ -230,7 +230,7 @@ export default {
   },
 
   created () {
-    // if tombstone data isn't set, redirect to home
+    // if tombstone data isn't set, route to home
     if (!this.corpNum) {
       this.$router.push('/')
     }

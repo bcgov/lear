@@ -278,12 +278,13 @@ export default {
           this.$router.push({ name: 'annual-report', params: { id: item.id } })
           break
         case 'changeOfDirectors':
+          // resume the subject Change Of Directors
           this.resetStore(item)
           this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'standalone-directors', params: { id: item.id } })
           break
         case 'changeOfAddress':
-          // TODO - resume the subject Change Of Address
+          // resume the subject Change Of Address
           this.resetStore(item)
           this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'standalone-addresses', params: { id: item.id } })
