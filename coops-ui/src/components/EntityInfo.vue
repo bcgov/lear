@@ -58,8 +58,8 @@ export default {
               this.setEntityStatus(response.data.business.status)
               this.setEntityBusinessNo(response.data.business.taxId)
               this.setEntityIncNo(response.data.business.identifier)
-              this.setLastPreLoadFilingDate(
-                this.dateToUsableString(new Date(response.data.business.lastPreBobFilingDatetime)))
+              this.setLastPreLoadFilingDate(response.data.business.lastLedgerTimestamp
+                ? response.data.business.lastLedgerTimestamp.split('T')[0] : null)
               this.setEntityFoundingDate(response.data.business.foundingDate
                 ? response.data.business.foundingDate.split('T')[0] : null)
               const date = response.data.business.lastAnnualGeneralMeetingDate

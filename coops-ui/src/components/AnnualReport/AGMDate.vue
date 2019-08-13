@@ -100,7 +100,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['ARFilingYear', 'agmDate', 'currentDate']),
+    ...mapState(['ARFilingYear', 'agmDate', 'currentDate', 'lastPreLoadFilingDate']),
 
     ...mapGetters(['lastFilingDate']),
 
@@ -124,9 +124,8 @@ export default {
       // numeric versions of filing dates:
       const lastFilingDate = (this.lastFilingDate !== undefined && this.lastFilingDate !== null)
         ? this.lastFilingDate.split('-').join('') : 0
-      const lastPreLoadFilingDate = (this.lastPreLoadFilingDate !== undefined && this.lastPreLoadFilingDate !== nul)
-        ? this.lastPreLoadFilingDate.split('').join('') : 0
-
+      const lastPreLoadFilingDate = (this.lastPreLoadFilingDate !== undefined && this.lastPreLoadFilingDate !== null)
+        ? this.lastPreLoadFilingDate.split('-').join('') : 0
       const minAgmDate = Math.max(firstDayOfYear, lastFilingDate, lastPreLoadFilingDate)
       return this.numToUsableString(minAgmDate)
     },
