@@ -4,6 +4,7 @@
 # Testing
 pytest
 pytest-mock
+pytest-asyncio
 requests
 pyhamcrest
 dpath
@@ -25,4 +26,3 @@ pylint-flask
 # docker
 lovely-pytest-docker
 pytest_docker
-pytest-asyncio

@@ -32,11 +32,13 @@ import nats
 from flask import Flask
 from legal_api import db
 from legal_api.models import Business, Filing
+from sentry_sdk import capture_message
+from sqlalchemy.exc import OperationalError
 from sqlalchemy_continuum import versioning_manager
 
 from entity_filer.config import get_named_config
 from entity_filer.filing_processors import annual_report, change_of_address, change_of_directors
-from entity_filer.service_utils import logger
+from entity_filer.service_utils import QueueException, logger
 
 
 def extract_payment_token(msg: nats.aio.client.Msg) -> dict:
@@ -52,10 +54,24 @@ def get_filing_by_payment_id(payment_id: int) -> Filing:
 def process_filing(payment_token, flask_app):
     """Render the filings contained in the submission."""
     if not flask_app:
-        raise Exception
+        raise QueueException('Flask App not available.')
 
     with flask_app.app_context():
         filing_submission = get_filing_by_payment_id(payment_token['paymentToken'].get('id'))
+
+        if filing_submission.status == Filing.Status.COMPLETED.value:
+            logger.warning('Queue: Attempting to reprocess business.id=%s, filing.id=%s payment=%s',
+                           filing_submission.business_id, filing_submission.id, payment_token)
+            return
+
+        if payment_token['paymentToken'].get('statusCode') == 'TRANSACTION_FAILED':
+            # TODO - need to surface TRANSACTION_FAILED, but Filings manages its own status
+            # filing_submission.status = Filing.Status.ERROR
+            filing_submission.payment_completion_date = datetime.datetime.utcnow()
+            db.session.add(filing_submission)
+            db.session.commit()
+            return
+
         legal_filings = filing_submission.legal_filings()
         # TODO: handle case where there are no legal_filings
 
@@ -65,7 +81,7 @@ def process_filing(payment_token, flask_app):
         if not payment_token['paymentToken'].get('statusCode') == 'TRANSACTION_FAILED':
             if not payment_token['paymentToken'].get('statusCode') == Filing.Status.COMPLETED.value:
                 logger.error('Unknown payment status given: %s', payment_token['paymentToken'].get('statusCode'))
-                raise Exception
+                raise QueueException
 
             business = Business.find_by_internal_id(filing_submission.business_id)
 
@@ -83,6 +99,7 @@ def process_filing(payment_token, flask_app):
         filing_submission.payment_completion_date = datetime.datetime.utcnow()
         db.session.add(filing_submission)
         db.session.commit()
+        return
 
 
 FLASK_APP = Flask(__name__)
@@ -92,7 +109,15 @@ db.init_app(FLASK_APP)
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
     """Use Callback to process Queue Msg objects."""
-    logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
-    payment_token = extract_payment_token(msg)
-    logger.debug('Extracted payment token: %s', payment_token)
-    process_filing(payment_token, FLASK_APP)
+    try:
+        logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
+        payment_token = extract_payment_token(msg)
+        logger.debug('Extracted payment token: %s', payment_token)
+        process_filing(payment_token, FLASK_APP)
+    except OperationalError as err:
+        logger.error('Queue Blocked - Database Issue: %s', json.dumps(payment_token), exc_info=True)
+        raise err  # We don't want to handle the error, as a DB down would drain the queue
+    except (QueueException, Exception):  # pylint: disable=broad-except
+        # Catch Exception so that any error is still caught and the message is removed from the queue
+        capture_message('Queue Error:' + json.dumps(payment_token), level='error')
+        logger.error('Queue Error: %s', json.dumps(payment_token), exc_info=True)

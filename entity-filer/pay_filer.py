@@ -17,9 +17,11 @@
 """s2i based launch script to run the service."""
 import asyncio
 
+from entity_filer.version import __version__
 from entity_filer.service import run
 
 if __name__ == '__main__':
+
     event_loop = asyncio.get_event_loop()
     event_loop.run_until_complete(run(event_loop))
     try:

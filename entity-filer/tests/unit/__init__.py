@@ -58,7 +58,8 @@ COA_FILING = {
                 'addressCountry': 'CA',
                 'addressRegion': 'BC',
                 'postalCode': 'T3S T3R',
-                'deliveryInstructions': 'Test address delivery'
+                'deliveryInstructions': 'Test address delivery',
+                'actions': []
             },
             'mailingAddress': {
                 'streetAddress': 'test lane',
@@ -67,7 +68,8 @@ COA_FILING = {
                 'addressCountry': 'CA',
                 'addressRegion': 'BC',
                 'postalCode': 'T3S T3R',
-                'deliveryInstructions': 'Test address mailing'
+                'deliveryInstructions': 'Test address mailing',
+                'actions': []
             },
             'certifiedBy': 'full name',
             'email': 'no_one@never.get'
@@ -108,6 +110,7 @@ COD_FILING = {
                         'postalCode': 'T3S T3R',
                         'deliveryInstructions': 'director1'
                     },
+                    'actions': []
                 },
                 {
                     'title': 'title',
@@ -127,6 +130,7 @@ COD_FILING = {
                         'postalCode': 'T3S T3R',
                         'deliveryInstructions': 'director2'
                     },
+                    'actions': []
                 },
                 {
                     'title': 'title',
@@ -146,6 +150,7 @@ COD_FILING = {
                         'postalCode': 'T3S T3R',
                         'deliveryInstructions': 'director3'
                     },
+                    'actions': []
                 },
                 {
                     'title': 'title',
@@ -165,6 +170,7 @@ COD_FILING = {
                         'postalCode': 'T3S T3R',
                         'deliveryInstructions': 'director4'
                     },
+                    'actions': []
                 }
             ],
             'certifiedBy': 'full name',
