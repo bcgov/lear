@@ -57,6 +57,11 @@ objects:
                     secretKeyRef:
                       key: PASSWORD
                       name: updater-job
+                - name: SENTRY_DSN
+                    valueFrom:
+                      configMapKeyRef:
+                        key: SENTRY_DSN
+                        name: updater-jobs-dev-config
             restartPolicy: "Never"
             concurrencyPolicy: "Forbid"
 parameters: [
