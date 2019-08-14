@@ -1,9 +1,11 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
+import VueRouter from 'vue-router'
 import Vuelidate from 'vuelidate'
-import { shallowMount } from '@vue/test-utils'
+import { shallowMount, createLocalVue } from '@vue/test-utils'
 import sinon from 'sinon'
 
+import mockRouter from './mockRouter'
 import axios from '@/axios-auth'
 import store from '@/store/store'
 import AnnualReport from '@/views/AnnualReport.vue'
@@ -25,7 +27,7 @@ describe('AnnualReport - Part 1', () => {
   })
 
   it('renders the Annual Report sub-components properly', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
 
     expect(wrapper.find(AGMDate).exists()).toBe(true)
@@ -35,7 +37,7 @@ describe('AnnualReport - Part 1', () => {
   })
 
   it('initializes the store variables properly', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -51,7 +53,7 @@ describe('AnnualReport - Part 1', () => {
   })
 
   it('enables Validated flag when sub-component flags are valid', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -67,7 +69,7 @@ describe('AnnualReport - Part 1', () => {
   })
 
   it('disables Validated flag when AGM Date is invalid', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -83,7 +85,7 @@ describe('AnnualReport - Part 1', () => {
   })
 
   it('disables Validated flag when Addresses Form is invalid', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -99,7 +101,7 @@ describe('AnnualReport - Part 1', () => {
   })
 
   it('disables Validated flag when Director Form is invalid', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -115,7 +117,7 @@ describe('AnnualReport - Part 1', () => {
   })
 
   it('disables Validated flag when Certify Form is invalid', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -131,7 +133,7 @@ describe('AnnualReport - Part 1', () => {
   })
 
   it('enables File & Pay button when Validated is true', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store,
       mocks: { $route },
       stubs: {
@@ -150,7 +152,7 @@ describe('AnnualReport - Part 1', () => {
   })
 
   it('disables File & Pay button when Validated is false', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -280,7 +282,7 @@ describe('AnnualReport - Part 2', () => {
 
   it('saves a new filing and redirects to Pay URL when this is a new AR and the File & Pay button is clicked',
     async () => {
-      const $route = { params: { id: 0 } } // new filing id
+      const $route = { params: { id: '0' } } // new filing id
       const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
       const vm = wrapper.vm as any
 
@@ -305,7 +307,7 @@ describe('AnnualReport - Part 2', () => {
 
   it('updates an existing filing and redirects to Pay URL when this is a draft AR and the File & Pay button is clicked',
     async () => {
-      const $route = { params: { id: 123 } } // draft filing id
+      const $route = { params: { id: '123' } } // draft filing id
       const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
       const vm = wrapper.vm as any
 
@@ -330,18 +332,9 @@ describe('AnnualReport - Part 2', () => {
 })
 
 describe('AnnualReport - Part 3', () => {
-  const { assign } = window.location
-
-  beforeAll(() => {
-    // mock the window.location.assign function
-    delete window.location
-    window.location = { assign: jest.fn() } as any
-  })
-
-  afterAll(() => {
-    window.location.assign = assign
-  })
-
+  let wrapper
+  let vm
+  
   beforeEach(async () => {
     // init store
     store.state.corpNum = 'CP0001191'
@@ -379,58 +372,59 @@ describe('AnnualReport - Part 3', () => {
             }
           }
       })))
+
+    // create local Vue and mock router
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'annual-report', params: { id: '0' } }) // new filing id
+
+    // mount the component without rendering its child components
+    wrapper = shallowMount(AnnualReport, { store, localVue, router })
+    vm = wrapper.vm as any
   })
 
   afterEach(() => {
     sinon.restore()
+    wrapper.destroy()
   })
 
-  it('saves a new filing when this is a new AR and the Save button is clicked',
-    async () => {
-      const $route = { params: { id: 0 } } // new filing id
-      const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
-      const vm = wrapper.vm as any
+  it('saves a filing when the Save button is clicked', async () => {
+    // make sure form is validated
+    vm.setValidated(true)
 
-      // make sure form is validated
-      vm.setValidated(true)
+    // click the Save button
+    wrapper.find('#ar-save-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickSave()
 
-      // sanity check
-      expect(jest.isMockFunction(window.location.assign)).toBe(true)
+    // verify no routing
+    expect(vm.$route.name).toBe('annual-report')
+  })
 
-      // TODO: verify that new filing was created
+  it('saves a filing and routes to Home URL when the Save & Resume button is clicked', async () => {
+    // make sure form is validated
+    vm.setValidated(true)
 
-      // click the Save button
-      wrapper.find('#ar-save-btn').trigger('click')
-      // work-around because click trigger isn't working
-      await vm.onClickSave()
+    // click the Save & Resume Later button
+    wrapper.find('#ar-save-resume-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickSaveResume()
 
-      // verify no redirection
-      expect(window.location.assign).not.toHaveBeenCalled()
-    }
-  )
+    // verify routing back to Home URL
+    expect(vm.$route.name).toBe('dashboard')
+  })
 
-  it('saves a new filing and redirects to Home URL when this is a new AR and the Save & Resume button is clicked',
-    async () => {
-      const $route = { params: { id: 0 } } // new filing id
-      const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
-      const vm = wrapper.vm as any
+  it('routes to Home URL when the Cancel button is clicked', async () => {
+    // make sure form is validated
+    vm.setValidated(true)
 
-      // make sure form is validated
-      vm.setValidated(true)
+    // click the Cancel button
+    wrapper.find('#ar-cancel-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.$router.push('/')
 
-      // sanity check
-      expect(jest.isMockFunction(window.location.assign)).toBe(true)
-
-      // TODO: verify that new filing was created
-
-      // click the Save & Resume Later button
-      wrapper.find('#ar-save-resume-btn').trigger('click')
-      // work-around because click trigger isn't working
-      await vm.onClickSaveResume()
-
-      // verify redirection
-      const homeURL = ''
-      expect(window.location.assign).toHaveBeenCalledWith(homeURL)
-    }
-  )
+    // verify routing back to Home URL
+    expect(vm.$route.name).toBe('dashboard')
+  })
 })
