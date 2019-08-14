@@ -58,9 +58,10 @@ class _Config(object):  # pylint: disable=too-few-public-methods
 
     COLIN_URL = os.getenv('COLIN_URL', '')
     LEGAL_URL = os.getenv('LEGAL_URL', '')
-    # AUTH_URL = os.getenv('AUTH_URL', '')
-    # USERNAME = os.getenv('USERNAME', '')
-    # PASSWORD = os.getenv('PASSWORD', '')
+    AUTH_URL = os.getenv('AUTH_URL', '')
+    USERNAME = os.getenv('USERNAME', '')
+    PASSWORD = os.getenv('PASSWORD', '')
+    SENTRY_DSN = os.getenv('SENTRY_DSN', '')
 
     SECRET_KEY = 'a secret'
 

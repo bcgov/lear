@@ -18,6 +18,7 @@ Currently this only provides API versioning information
 from flask import current_app, jsonify, request
 from flask_restplus import Resource, cors
 from registry_schemas import validate
+from sentry_sdk import capture_exception, capture_message
 
 from colin_api.exceptions import FilingNotFoundException, GenericException
 from colin_api.models import Business, Filing
@@ -35,7 +36,6 @@ class FilingInfo(Resource):
     def get(identifier, filing_type):
         """Return the complete filing info."""
         try:
-
             # get optional parameters (event_id / year)
             event_id = request.args.get('eventId', None)
             year = request.args.get('year', None)

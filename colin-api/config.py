@@ -60,6 +60,7 @@ class _Config(object):  # pylint: disable=too-few-public-methods
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    SENTRY_DSN = os.getenv('SENTRY_DSN', '')
 
     # ORACLE - CDEV/CTST/CPRD
     ORACLE_USER = os.getenv('ORACLE_USER', '')

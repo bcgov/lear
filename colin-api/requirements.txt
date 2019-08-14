@@ -7,10 +7,12 @@ MarkupSafe==1.1.1
 Werkzeug==0.15.5
 aniso8601==7.0.0
 attrs==19.1.0
-cx-Oracle==7.2.1
+blinker==1.4
+certifi==2019.6.16
+cx-Oracle==7.2.2
 ecdsa==0.13.2
 flask-jwt-oidc==0.1.5
-flask-restplus==0.12.1
+flask-restplus==0.13.0
 future==0.17.1
 gunicorn==19.9.0
 itsdangerous==1.1.0
@@ -22,5 +24,7 @@ python-dotenv==0.10.3
 python-jose==3.0.1
 pytz==2019.2
 rsa==4.0
+sentry-sdk==0.10.2
 six==1.12.0
+urllib3==1.25.3
 git+https://github.com/bcgov/lear.git#egg=registry_schemas&subdirectory=schemas
