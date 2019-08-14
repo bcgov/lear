@@ -81,17 +81,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- Transition to Payment -->
-    <!-- TODO - this should be on Payment page -->
-    <v-fade-transition>
-      <div class="loading-container" v-show="showLoading">
-        <div class="loading__content">
-          <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-          <div class="loading-msg">Redirecting to PayBC to Process Your Payment</div>
-        </div>
-      </div>
-    </v-fade-transition>
-
     <div id="annual-report">
       <!-- Initial Page Load Transition -->
       <div class="loading-container fade-out">
@@ -175,13 +164,15 @@
         <div class="buttons-left">
           <v-btn id="ar-save-btn" large
             v-if="isAnnualReportEditable"
-            :disabled="!isSaveButtonEnabled"
+            :disabled="!isSaveButtonEnabled || saving"
+            :loading="saving"
             @click="onClickSave">
             Save
           </v-btn>
           <v-btn id="ar-save-resume-btn" large
             v-if="isAnnualReportEditable"
-            :disabled="!isSaveButtonEnabled"
+            :disabled="!isSaveButtonEnabled || savingResuming"
+            :loading="savingResuming"
             @click="onClickSaveResume">
             Save &amp; Resume Later
           </v-btn>
@@ -241,7 +232,6 @@ export default {
     return {
       addresses: null,
       filingId: null,
-      showLoading: false,
       loadingMessage: 'Loading...', // initial generic message
       filingData: [],
       resumeErrorDialog: false,
@@ -249,7 +239,9 @@ export default {
       paymentErrorDialog: false,
       certifyChange: false,
       certifiedBy: null,
-      isSaveButtonEnabled: false
+      isSaveButtonEnabled: false,
+      saving: false,
+      savingResuming: false
     }
   },
 
@@ -267,10 +259,10 @@ export default {
     // otherwise it's a draft AR filing id
     this.filingId = this.$route.params.id
 
-    // if tombstone data isn't set, redirect to home
+    // if tombstone data isn't set, route to home
     if (!this.corpNum || !this.ARFilingYear || (this.filingId === undefined)) {
       this.$router.push('/')
-    } else if (this.filingId) {
+    } else if (this.filingId > '0') {
       // resume draft filing
       this.loadingMessage = `Resuming Your ${this.ARFilingYear} Annual Report`
       this.fetchData()
@@ -386,21 +378,24 @@ export default {
     },
 
     async onClickSave () {
+      this.saving = true
       const filing = await this.saveFiling(true)
       if (!filing) {
         console.log('onClickSave() error - invalid filing =', filing)
       }
+      this.saving = false
     },
 
     async onClickSaveResume () {
+      this.savingResuming = true
       const filing = await this.saveFiling(true)
-      // on success, redirect to Home URL
+      // on success, route to Home URL
       if (filing) {
-        const homeURL = window.location.origin || ''
-        window.location.assign(homeURL)
+        this.$router.push('/')
       } else {
         console.log('onClickSaveResume() error - invalid filing =', filing)
       }
+      this.savingResuming = false
     },
 
     async onClickFilePay () {
@@ -414,7 +409,7 @@ export default {
         if (!(authStub.endsWith('/'))) { authStub += '/' }
         const paymentToken = filing.header.paymentToken
         const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
-        // TODO: first check if pay UI is reachable, else display modal dialog
+        // assume Pay URL is always reachable
         window.location.assign(payURL)
       } else {
         console.log('onClickFilePay() error - invalid filing =', filing)
@@ -481,7 +476,7 @@ export default {
         )
       }
 
-      if (this.filingId) {
+      if (this.filingId > '0') {
         // we have a filing id, so we are updating an existing filing
         let url = this.corpNum + '/filings/' + this.filingId
         if (isDraft) { url += '?draft=true' }
