@@ -1,5 +1,28 @@
 <template>
   <div>
+    <v-dialog v-model="downloadErrorDialog" width="30rem">
+      <v-card>
+        <v-card-title>Unable to Download Document</v-card-title>
+        <v-card-text>
+          <p class="genErr">We were unable to download your filing history document(s).</p>
+          <p class="genErr">If this error persists, please contact us.</p>
+          <p class="genErr">
+            <v-icon small>phone</v-icon>
+            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
+          </p>
+          <p class="genErr">
+            <v-icon small>email</v-icon>
+            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
+              >SBC_ITOperationsSupport@gov.bc.ca</a>
+          </p>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-btn color="primary" flat @click="downloadErrorDialog = false">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-expansion-panel v-if="filedItems && filedItems.length > 0" v-model="panel">
       <v-expansion-panel-content
         class="filing-history-list"
@@ -84,6 +107,7 @@ export default {
 
   data () {
     return {
+      downloadErrorDialog: false,
       panel: null, // currently expanded panel
       filedItems: null,
       errorMessage: null,
@@ -266,11 +290,12 @@ export default {
             link.click()
           }
         } else {
-          this.errorMessage = 'Oops, could not load data from server'
+          console.log('downloadOneDocument() error - null response')
+          this.downloadErrorDialog = true
         }
       }).catch(error => {
         console.error('loadOneDocument() error =', error)
-        this.errorMessage = 'Oops, could not load data from server'
+        this.downloadErrorDialog = true
       })
     },
 
@@ -315,11 +340,12 @@ export default {
             link.click()
           }
         } else {
-          this.errorMessage = 'Oops, could not load data from server'
+          console.log('downloadOneReceipt() error - null response')
+          this.downloadErrorDialog = true
         }
       }).catch(error => {
         console.error('downloadOneReceipt() error =', error)
-        this.errorMessage = 'Oops, could not load data from server'
+        this.downloadErrorDialog = true
       })
     },
 
