@@ -315,7 +315,7 @@ export default {
       const config = {
         headers: { 'Accept': 'application/pdf' },
         responseType: 'arraybuffer',
-        baseURL: this.payAPIURL
+        baseURL: this.payAPIURL + 'payments/'
       }
 
       await axios.post(url, data, config).then(response => {

@@ -334,7 +334,7 @@ describe('AnnualReport - Part 2', () => {
 describe('AnnualReport - Part 3', () => {
   let wrapper
   let vm
-  
+
   beforeEach(async () => {
     // init store
     store.state.corpNum = 'CP0001191'
