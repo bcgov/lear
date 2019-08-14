@@ -13,7 +13,11 @@
 # limitations under the License.
 
 """The Test-Suite used to ensure that the Model objects are working correctly."""
-from legal_api.models import Address, Business, Director, Filing
+from datetime import datetime
+
+from sqlalchemy_continuum import versioning_manager
+
+from legal_api.models import Address, Business, Director, Filing, db
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
 
@@ -74,4 +78,43 @@ def factory_filing(business, data_dict):
     filing.filing_date = FROZEN_DATETIME
     filing.filing_json = data_dict
     filing.save()
+    return filing
+
+
+def factory_completed_filing(business, data_dict):
+    """Create a completed filing."""
+    filing = Filing()
+    filing.business_id = business.id
+    filing.filing_date = FROZEN_DATETIME
+    filing.filing_json = data_dict
+    filing.save()
+
+    uow = versioning_manager.unit_of_work(db.session)
+    transaction = uow.create_transaction(db.session)
+    filing.transaction_id = transaction.id
+    filing.payment_token = 1
+    filing.payment_completion_date = datetime.now()
+    return filing
+
+
+def factory_pending_filing(business, data_dict):
+    """Create a pending filing."""
+    filing = Filing()
+    filing.business_id = business.id
+    filing.filing_date = FROZEN_DATETIME
+    filing.filing_json = data_dict
+    filing.payment_token = 2
+    filing.save()
+    return filing
+
+
+def factory_error_filing(business, data_dict):
+    """Create an error filing."""
+    filing = Filing()
+    filing.business_id = business.id
+    filing.filing_date = FROZEN_DATETIME
+    filing.filing_json = data_dict
+    filing.save()
+    filing.payment_token = 5
+    filing.payment_completion_date = datetime.now()
     return filing

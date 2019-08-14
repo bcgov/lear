@@ -247,6 +247,15 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             all()
         return filings
 
+    @staticmethod
+    def get_completed_filings_for_colin():
+        """Return the filings with statuses in the status array input."""
+        filings = db.session.query(Filing). \
+            filter(Filing.colin_event_id == None,  # pylint: disable=singleton-comparison # noqa: E711;
+                   Filing._status == Filing.Status.COMPLETED.value). \
+            all()
+        return filings
+
     def save(self):
         """Save and commit immediately."""
         db.session.add(self)

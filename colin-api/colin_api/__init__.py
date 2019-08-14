@@ -17,6 +17,8 @@ This module is the API for the Legal Entity system.
 """
 import os
 
+import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
+from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 from flask import Flask
 from flask_jwt_oidc import JwtManager
 
@@ -24,7 +26,7 @@ import config
 from colin_api.resources import API_BLUEPRINT, OPS_BLUEPRINT
 from colin_api.utils.logging import setup_logging
 from colin_api.utils.run_version import get_run_version
-
+# noqa: I003; the sentry import creates a bad line count in isort
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
@@ -36,7 +38,12 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.config.from_object(config.CONFIGURATION[run_mode])
-
+    # Configure Sentry
+    if app.config.get('SENTRY_DSN', None):
+        sentry_sdk.init(
+            dsn=app.config.get('SENTRY_DSN'),
+            integrations=[FlaskIntegration()]
+        )
     app.register_blueprint(API_BLUEPRINT)
     app.register_blueprint(OPS_BLUEPRINT)
     setup_jwt_manager(app, jwt)
