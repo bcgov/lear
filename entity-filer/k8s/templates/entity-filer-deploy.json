@@ -142,6 +142,15 @@
                                         }
                                     },
                                     {
+                                        "name": "SENTRY_DSN",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "SENTRY_DSN"
+                                            }
+                                        }
+                                    },
+                                    {
                                         "name": "NATS_SERVERS",
                                         "valueFrom": {
                                             "configMapKeyRef": {
@@ -214,6 +223,7 @@
                 "DB_PORT": "5432",
                 "JWT_OIDC_JWKS_CACHE_TIMEOUT": "300",
                 "PAYMENT_SVC_URL": "${PAYMENT_SVC_URL}",
+                "SENTRY_DSN": "${SENTRY_DSN}",
                 "NATS_SERVERS": "${NATS_SERVERS}",
                 "NATS_CLUSTER_ID": "${NATS_CLUSTER_ID}",
                 "NATS_CLIENT_NAME": "${NATS_CLIENT_NAME}",
@@ -243,6 +253,13 @@
             "description": "A valid database name used by the service.",
             "required": true,
             "value": "lear"
+        },
+        {
+            "name": "SENTRY_DSN",
+            "displayName": "Sentry Init URL",
+            "description": "Sentry DSN URL to initialize the Sentry SDK",
+            "required": true,
+            "value": "https://account.sentry.ioo/project/id"
         },
         {
             "name": "PAYMENT_SVC_URL",

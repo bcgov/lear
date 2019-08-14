@@ -175,15 +175,6 @@
                                         }
                                     },
                                     {
-                                        "name": "GO_LIVE_DATE",
-                                        "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "name": "${NAME}-${TAG_NAME}-config",
-                                                "key": "GO_LIVE_DATE"
-                                            }
-                                        }
-                                    },
-                                    {
                                         "name": "DATABASE_HOST",
                                         "valueFrom": {
                                             "configMapKeyRef": {
@@ -198,6 +189,24 @@
                                             "configMapKeyRef": {
                                                 "name": "${NAME}-${TAG_NAME}-config",
                                                 "key": "DB_PORT"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "GO_LIVE_DATE",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "GO_LIVE_DATE"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "SENTRY_DSN",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "SENTRY_DSN"
                                             }
                                         }
                                     },
@@ -368,6 +377,7 @@
             },
             "data": {
                 "GO_LIVE_DATE": "${GO_LIVE_DATE}",
+                "SENTRY_DSN": "${SENTRY_DSN}",
                 "DATABASE_HOST": "postgresql-${TAG_NAME}",
                 "DATABASE_NAME": "${DATABASE_NAME}",
                 "DB_PORT": "${DB_PORT}",
@@ -485,6 +495,13 @@
             "description": "Go Live Date of the system, used for MVP for things such as blocking legacy filings.",
             "required": true,
             "value": "2019-08-12"
+        },
+        {
+            "name": "SENTRY_DSN",
+            "displayName": "Sentry Init URL",
+            "description": "Sentry DSN URL to initialize the Sentry SDK",
+            "required": true,
+            "value": "https://account.sentry.ioo/project/id"
         },
         {
             "name": "DB_PORT",
