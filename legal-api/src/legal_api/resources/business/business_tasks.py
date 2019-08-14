@@ -52,7 +52,8 @@ class TaskListResource(Resource):
         todo_start_year = 2019  # If no filings exist in legal API db this year will be used as the start year.
 
         pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
-                                                                     Filing.Status.PENDING.value])
+                                                                     Filing.Status.PENDING.value,
+                                                                     Filing.Status.ERROR.value])
         for filing in pending_filings:
             task = {'task': filing.json, 'order': order, 'enabled': True}
             tasks.append(task)

@@ -112,3 +112,22 @@ def test_get_404_filing_with_invalid_business(session, client):
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': f'{identifier} not found'}
+
+
+def test_get_tasks_error_filings(session, client, jwt):
+    """Assert that to-do list returns the error filings."""
+    from legal_api.models import Filing
+    from tests.unit.models import AR_FILING, factory_business_mailing_address, factory_error_filing
+    # setup
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    factory_business_mailing_address(b)
+    filing = factory_error_filing(b, AR_FILING)
+    filing.save()
+    assert filing.status == Filing.Status.ERROR.value
+
+    # test endpoint returned filing in tasks call
+    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+    assert rv.status_code == HTTPStatus.OK
+    assert len(rv.json['tasks']) == 1
+    assert rv.json['tasks'][0]['task']['filing']['header']['filingId'] == filing.id
