@@ -262,7 +262,7 @@ export default {
         case 'annualReport':
           // file the subject Annual Report
           this.resetStore(item)
-          this.$router.push({ name: 'annual-report', params: { id: 0 } }) // 0 means "new AR"
+          this.$router.push({ name: 'annual-report', params: { id: '0' } }) // '0' means "new AR"
           break
         default:
           console.log('doFileNow(), invalid type for item =', item)
@@ -278,12 +278,13 @@ export default {
           this.$router.push({ name: 'annual-report', params: { id: item.id } })
           break
         case 'changeOfDirectors':
+          // resume the subject Change Of Directors
           this.resetStore(item)
           this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'standalone-directors', params: { id: item.id } })
           break
         case 'changeOfAddress':
-          // TODO - resume the subject Change Of Address
+          // resume the subject Change Of Address
           this.resetStore(item)
           this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'standalone-addresses', params: { id: item.id } })

@@ -1,10 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import AnnualReport from '@/views/AnnualReport.vue'
-import StandaloneDirectorsFiling from '@/views/StandaloneDirectorsFiling.vue'
-import StandaloneOfficeAddressFiling from '@/views/StandaloneOfficeAddressFiling.vue'
-import Dashboard from '@/views/Dashboard.vue'
 import axios from '@/axios-auth'
+import routes from '@/routes'
 
 Vue.use(VueRouter)
 
@@ -44,9 +41,9 @@ req.onreadystatechange = function () {
     }
   }
 }
-
 req.send()
 
+// inject properties into global namespace
 Vue.mixin({
   data: function () {
     return {
@@ -63,61 +60,14 @@ Vue.mixin({
   }
 })
 
+// create router
 let router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
-  routes: [
-    {
-      path: '/',
-      redirect: '/dashboard'
-    },
-    {
-      path: '/dashboard',
-      name: 'dashboard',
-      component: Dashboard,
-      meta: {
-        requiresAuth: true
-      }
-    },
-    {
-      path: '/annual-report',
-      name: 'annual-report',
-      component: AnnualReport,
-      meta: {
-        requiresAuth: true
-      }
-    },
-    {
-      path: '/standalone-directors',
-      name: 'standalone-directors',
-      component: StandaloneDirectorsFiling,
-      meta: {
-        requiresAuth: true
-      }
-    },
-    {
-      path: '/standalone-addresses',
-      name: 'standalone-addresses',
-      component: StandaloneOfficeAddressFiling,
-      meta: {
-        requiresAuth: true
-      }
-    },
-    {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (about.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import(/* webpackChunkName: "about" */ './views/About.vue')
-    },
-    {
-      // default/fallback route
-      path: '*',
-      redirect: '/'
-    }
-  ]
+  routes: routes
 })
+
+// if there is no Keycloak token, redirect to Auth URL
 router.afterEach((to, from) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
     console.log('redirect check ', sessionStorage.getItem('REDIRECTED'))

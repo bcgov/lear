@@ -1,5 +1,28 @@
 <template>
   <div>
+    <v-dialog v-model="downloadErrorDialog" width="30rem">
+      <v-card>
+        <v-card-title>Unable to Download Document</v-card-title>
+        <v-card-text>
+          <p class="genErr">We were unable to download your filing history document(s).</p>
+          <p class="genErr">If this error persists, please contact us.</p>
+          <p class="genErr">
+            <v-icon small>phone</v-icon>
+            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
+          </p>
+          <p class="genErr">
+            <v-icon small>email</v-icon>
+            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
+              >SBC_ITOperationsSupport@gov.bc.ca</a>
+          </p>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-btn color="primary" flat @click="downloadErrorDialog = false">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-expansion-panel v-if="filedItems && filedItems.length > 0" v-model="panel">
       <v-expansion-panel-content
         class="filing-history-list"
@@ -20,20 +43,25 @@
           <li class="list-item"
             v-for="(document, index) in item.filingDocuments"
             v-bind:key="index">
-            <a href="#" @click="loadDocument(document)">
+            <v-btn class="list-item__btn" flat color="primary" @click="downloadDocument(document)"
+              :disabled="loadingDocument" :loading="loadingDocument">
               <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
               <div class="list-item__title">{{document.name}}</div>
-            </a>
+            </v-btn>
           </li>
           <li class="list-item">
-            <a href="#">
+            <v-btn class="list-item__btn" flat color="primary" @click="downloadReceipt(item)"
+              :disabled="loadingReceipt" :loading="loadingReceipt">
               <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
               <div class="list-item__title">Receipt</div>
-            </a>
+            </v-btn>
           </li>
         </ul>
         <div class="documents-actions-bar">
-          <v-btn class="download-all-btn" color="primary" @click="downloadAll(item)">Download All</v-btn>
+          <v-btn class="download-all-btn" color="primary" @click="downloadAll(item)"
+            :disabled="loadingAll" :loading="loadingAll">
+            Download All
+          </v-btn>
         </div>
       </v-expansion-panel-content>
     </v-expansion-panel>
@@ -79,9 +107,13 @@ export default {
 
   data () {
     return {
+      downloadErrorDialog: false,
       panel: null, // currently expanded panel
       filedItems: null,
-      errorMessage: null
+      errorMessage: null,
+      loadingDocument: false,
+      loadingReceipt: false,
+      loadingAll: false
     }
   },
 
@@ -127,9 +159,11 @@ export default {
                     this.loadChangeOfAddress(filing)
                     break
                   default:
-                    console.log('ERROR - got unknown filing =', filing)
+                    console.log('ERROR - got unknown filing name =', filing)
                     break
                 }
+              } else {
+                console.log('ERROR - invalid filing or filing header =', filing)
               }
             }
           } else {
@@ -149,30 +183,32 @@ export default {
         const date = filing.annualReport.annualGeneralMeetingDate
         if (date) {
           const agmYear = +date.substring(0, 4)
-          // TODO - finish implementation
           const item = {
             name: `Annual Report (${agmYear})`,
             filingAuthor: filing.annualReport.certifiedBy,
             filingDate: filing.header.date,
+            filingId: filing.header.filingId,
             filingStatus: filing.header.status,
             filingDocuments: [{
               filingId: filing.header.filingId,
               name: 'Annual Report',
-              documentName: `Annual Report (${agmYear}) - ` + filing.header.date
+              documentName: `Annual Report (${agmYear}) - ${filing.header.date}.pdf`
             }]
           }
+          // check if there was also a Change Of Directors
           if (filing.changeOfDirectors) {
             item.filingDocuments.push({
               filingId: filing.header.filingId,
               name: 'Director Change (AGM)',
-              documentName: `Director Change (AGM ${agmYear}) - ` + filing.header.date
+              documentName: `Director Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
             })
           }
+          // check if there was also a Change Of Address
           if (filing.changeOfAddress) {
             item.filingDocuments.push({
               filingId: filing.header.filingId,
               name: 'Address Change (AGM)',
-              documentName: `Address Change (AGM ${agmYear}) - ` + filing.header.date
+              documentName: `Address Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
             })
           }
           this.filedItems.push(item)
@@ -190,11 +226,12 @@ export default {
           name: 'Director Change',
           filingAuthor: filing.changeOfDirectors.certifiedBy,
           filingDate: filing.header.date,
+          filingId: filing.header.filingId,
           filingStatus: filing.header.status,
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: 'Director Change',
-            documentName: 'Director Change - ' + filing.header.date
+            documentName: `Director Change - ${filing.header.date}.pdf`
           }]
         }
         this.filedItems.push(item)
@@ -209,11 +246,12 @@ export default {
           name: 'Address Change',
           filingAuthor: filing.changeOfAddress.certifiedBy,
           filingDate: filing.header.date,
+          filingId: filing.header.filingId,
           filingStatus: filing.header.status,
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: 'Address Change',
-            documentName: 'AddressChange - ' + filing.header.date
+            documentName: `Address Change - ${filing.header.date}.pdf`
           }]
         }
         this.filedItems.push(item)
@@ -222,45 +260,104 @@ export default {
       }
     },
 
-    loadDocument (filingDocument) {
-      var url = this.corpNum + '/filings/' + filingDocument.filingId
-      let headers = { 'Accept': 'application/pdf' }
+    async downloadDocument (filingDocument) {
+      this.loadingDocument = true
+      await this.downloadOneDocument(filingDocument)
+      this.loadingDocument = false
+    },
 
-      axios.get(url, { headers: headers, responseType: 'arraybuffer' }).then(response => {
+    async downloadOneDocument (filingDocument) {
+      const url = this.corpNum + '/filings/' + filingDocument.filingId
+      const headers = { 'Accept': 'application/pdf' }
+
+      await axios.get(url, { headers: headers, responseType: 'arraybuffer' }).then(response => {
         if (response) {
           /* solution from https://github.com/axios/axios/issues/1392 */
 
-          // It is necessary to create a new blob object with mime-type explicitly set
+          // it is necessary to create a new blob object with mime-type explicitly set
           // otherwise only Chrome works like it should
-          var newBlob = new Blob([response.data], { type: 'application/pdf' })
+          const newBlob = new Blob([response.data], { type: 'application/pdf' })
 
           // IE doesn't allow using a blob object directly as link href
           // instead it is necessary to use msSaveOrOpenBlob
           if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-            window.navigator.msSaveOrOpenBlob(newBlob)
-            return
+            window.navigator.msSaveOrOpenBlob(newBlob, filingDocument.documentName)
+          } else {
+            // for other browsers, create a link pointing to the ObjectURL containing the blob
+            const link = document.createElement('a')
+            link.href = window.URL.createObjectURL(newBlob)
+            link.download = filingDocument.documentName
+            link.click()
           }
-
-          // For other browsers:
-          // Create a link pointing to the ObjectURL containing the blob.
-          const data = window.URL.createObjectURL(newBlob)
-          var link = document.createElement('a')
-          link.href = data
-          link.download = filingDocument.documentName
-          link.click()
         } else {
-          this.errorMessage = 'Oops, could not load data from server'
+          console.log('downloadOneDocument() error - null response')
+          this.downloadErrorDialog = true
         }
       }).catch(error => {
-        console.error('loadDocument() error =', error)
-        this.errorMessage = 'Oops, could not load data from server'
+        console.error('loadOneDocument() error =', error)
+        this.downloadErrorDialog = true
       })
     },
 
-    downloadAll (item) {
-      for (let i = 0; i < item.filingDocuments.length; i++) {
-        this.loadDocument(item.filingDocuments[i])
+    async downloadReceipt (filing) {
+      this.loadingReceipt = true
+      await this.downloadOneReceipt(filing)
+      this.loadingReceipt = false
+    },
+
+    async downloadOneReceipt (filing) {
+      const url = filing.filingId + '/receipts'
+      const data = {
+        corpName: this.corpNum,
+        filingDateTime: filing.filingDate, // TODO: format as needed
+        fileName: 'receipt' // not used
       }
+      const config = {
+        headers: { 'Accept': 'application/pdf' },
+        responseType: 'arraybuffer',
+        baseURL: this.payAPIURL
+      }
+
+      await axios.post(url, data, config).then(response => {
+        if (response) {
+          const fileName = `Receipt - ${filing.filingDate}.pdf`
+
+          /* solution from https://github.com/axios/axios/issues/1392 */
+
+          // it is necessary to create a new blob object with mime-type explicitly set
+          // otherwise only Chrome works like it should
+          const newBlob = new Blob([response.data], { type: 'application/pdf' })
+
+          // IE doesn't allow using a blob object directly as link href
+          // instead it is necessary to use msSaveOrOpenBlob
+          if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+            window.navigator.msSaveOrOpenBlob(newBlob, fileName)
+          } else {
+            // for other browsers, create a link pointing to the ObjectURL containing the blob
+            const link = document.createElement('a')
+            link.href = window.URL.createObjectURL(newBlob)
+            link.download = fileName
+            link.click()
+          }
+        } else {
+          console.log('downloadOneReceipt() error - null response')
+          this.downloadErrorDialog = true
+        }
+      }).catch(error => {
+        console.error('downloadOneReceipt() error =', error)
+        this.downloadErrorDialog = true
+      })
+    },
+
+    async downloadAll (filing) {
+      this.loadingAll = true
+      // first download document(s)
+      for (let i = 0; i < filing.filingDocuments.length; i++) {
+        await this.downloadOneDocument(filing.filingDocuments[i])
+      }
+      // finally download receipt
+      await this.downloadOneReceipt(filing)
+      this.loadingAll = false
     }
   },
 
@@ -295,15 +392,9 @@ export default {
   .document-list
     border-top 1px solid $gray3
 
-    .list-item a
-      display flex
-      flex-direction row
-      align-items center
-      padding 0.5rem
-      width 100%
-
-    .list-item-title
-      font-weight 400
+    .list-item__btn
+      margin 0.25rem 0
+      padding 0 0.5rem 0 0.25rem
 
    // Documents Actions Bar
   .documents-actions-bar
@@ -311,21 +402,19 @@ export default {
     display flex
     border-top 1px solid $gray3
 
-    .v-btn
+    .download-all-btn
+      margin-left auto
       margin-right 0
-
-  .download-all-btn
-    margin-left auto
-    min-width 8rem
+      min-width 8rem
 
   // Past Filings
   .past-filings
     border-top 1px solid $gray3
     text-align center
 
-  .past-filings__text
-    margin-top 0.25rem
-    color $gray6
-    font-size 0.875rem
-    font-weight 500
+    .past-filings__text
+      margin-top 0.25rem
+      color $gray6
+      font-size 0.875rem
+      font-weight 500
 </style>
