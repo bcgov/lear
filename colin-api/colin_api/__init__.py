@@ -26,7 +26,7 @@ import config
 from colin_api.resources import API_BLUEPRINT, OPS_BLUEPRINT
 from colin_api.utils.logging import setup_logging
 from colin_api.utils.run_version import get_run_version
-
+# noqa: I003; the sentry import creates a bad line count in isort
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
