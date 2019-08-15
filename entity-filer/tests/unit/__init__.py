@@ -55,7 +55,7 @@ COA_FILING = {
                 'streetAddress': 'test lane',
                 'streetAddressAdditional': 'test line 1',
                 'addressCity': 'testcity',
-                'addressCountry': 'CA',
+                'addressCountry': 'Canada',
                 'addressRegion': 'BC',
                 'postalCode': 'T3S T3R',
                 'deliveryInstructions': 'Test address delivery',
@@ -65,7 +65,7 @@ COA_FILING = {
                 'streetAddress': 'test lane',
                 'streetAddressAdditional': 'test line 1',
                 'addressCity': 'testcity',
-                'addressCountry': 'CA',
+                'addressCountry': 'Canada',
                 'addressRegion': 'BC',
                 'postalCode': 'T3S T3R',
                 'deliveryInstructions': 'Test address mailing',
@@ -105,7 +105,7 @@ COD_FILING = {
                         'streetAddress': 'test lane',
                         'streetAddressAdditional': 'test line 1',
                         'addressCity': 'testcity',
-                        'addressCountry': 'CA',
+                        'addressCountry': 'Canada',
                         'addressRegion': 'BC',
                         'postalCode': 'T3S T3R',
                         'deliveryInstructions': 'director1'
@@ -125,7 +125,7 @@ COD_FILING = {
                         'streetAddress': 'test lane',
                         'streetAddressAdditional': 'test line 1',
                         'addressCity': 'testcity',
-                        'addressCountry': 'CA',
+                        'addressCountry': 'Canada',
                         'addressRegion': 'BC',
                         'postalCode': 'T3S T3R',
                         'deliveryInstructions': 'director2'
@@ -145,7 +145,7 @@ COD_FILING = {
                         'streetAddress': 'test lane',
                         'streetAddressAdditional': 'test line 1',
                         'addressCity': 'testcity',
-                        'addressCountry': 'CA',
+                        'addressCountry': 'Canada',
                         'addressRegion': 'BC',
                         'postalCode': 'T3S T3R',
                         'deliveryInstructions': 'director3'
@@ -165,7 +165,7 @@ COD_FILING = {
                         'streetAddress': 'test lane',
                         'streetAddressAdditional': 'test line 1',
                         'addressCity': 'testcity',
-                        'addressCountry': 'CA',
+                        'addressCountry': 'Canada',
                         'addressRegion': 'BC',
                         'postalCode': 'T3S T3R',
                         'deliveryInstructions': 'director4'
@@ -202,7 +202,7 @@ COMBINED_FILING = {
                 'streetAddress': 'test lane',
                 'streetAddressAdditional': 'test line 1',
                 'addressCity': 'testcity',
-                'addressCountry': 'CA',
+                'addressCountry': 'Canada',
                 'addressRegion': 'BC',
                 'postalCode': 'T3S T3R',
                 'deliveryInstructions': 'Test address delivery'
@@ -211,7 +211,7 @@ COMBINED_FILING = {
                 'streetAddress': 'test lane',
                 'streetAddressAdditional': 'test line 1',
                 'addressCity': 'testcity',
-                'addressCountry': 'CA',
+                'addressCountry': 'Canada',
                 'addressRegion': 'BC',
                 'postalCode': 'T3S T3R',
                 'deliveryInstructions': 'Test address mailing'

@@ -134,12 +134,16 @@ def test_process_coa_filing(app, session):
 
     delivery_address = business.delivery_address.one_or_none().json
     for key in delivery_address.keys():
-        if key != 'addressType':
+        if key == 'addressCountry':
+            assert delivery_address[key] == 'CA'
+        elif key != 'addressType':
             assert delivery_address[key] == new_delivery_address[key]
 
     mailing_address = business.mailing_address.one_or_none().json
     for key in mailing_address.keys():
-        if key != 'addressType':
+        if key == 'addressCountry':
+            assert delivery_address[key] == 'CA'
+        elif key != 'addressType':
             assert mailing_address[key] == new_mailing_address[key]
 
 
@@ -157,7 +161,7 @@ def test_process_cod_filing(app, session):
     director_address = Address(
         street=COD_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['streetAddress'],
         city=COD_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['addressCity'],
-        country=COD_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['addressCountry'],
+        country='CA',
         postal_code=COD_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['postalCode'],
         region=COD_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['addressRegion'],
     )
@@ -242,7 +246,7 @@ def test_process_combined_filing(app, session):
     director_address = Address(
         street=COMBINED_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['streetAddress'],
         city=COMBINED_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['addressCity'],
-        country=COMBINED_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['addressCountry'],
+        country='CA',
         postal_code=COMBINED_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['postalCode'],
         region=COMBINED_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['addressRegion'],
     )
@@ -295,12 +299,16 @@ def test_process_combined_filing(app, session):
     # check address filing
     delivery_address = business.delivery_address.one_or_none().json
     for key in delivery_address.keys():
-        if key != 'addressType':
+        if key == 'addressCountry':
+            assert delivery_address[key] == 'CA'
+        elif key != 'addressType':
             assert delivery_address[key] == new_delivery_address[key]
 
     mailing_address = business.mailing_address.one_or_none().json
     for key in mailing_address.keys():
-        if key != 'addressType':
+        if key == 'addressCountry':
+            assert mailing_address[key] == 'CA'
+        elif key != 'addressType':
             assert mailing_address[key] == new_mailing_address[key]
 
     # check director filing
