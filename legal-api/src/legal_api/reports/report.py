@@ -14,7 +14,7 @@ import copy
 import json
 import os
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import current_app, jsonify
 from http import HTTPStatus
 from pathlib import Path
@@ -84,25 +84,22 @@ class Report:
     def _get_template_data(self):
         filing = copy.deepcopy(self._filing.filing_json['filing'])
 
-        filing['environment'] = '{} {}'.format(self._get_environment(), self._filing.id)
+        filing['environment'] = '{} FILING #{}'.format(self._get_environment(), self._filing.id)
 
-        # Get the string for the filing date and time - do not use a leading zero on the hour (04:30 PM) looks too much
-        # like the 24 hour 4:30 AM. We can't use "%-I" on Windows.
-        filing_datetime = self._filing.filing_date.replace(microsecond=0)
-        # TODO: convert to local time (TZ depends on time of year of the filing!) and remove the %z.
+        # Get the string for the filing date and time - do not use a leading zero on the hour (04:30 PM) as it looks
+        # too much like the 24 hour 4:30 AM. Also, we can't use "%-I" on Windows.
+        filing_datetime = self._filing.filing_date.replace(tzinfo=timezone.utc).astimezone(tz=None)
         hour = filing_datetime.strftime('%I').lstrip('0')
-        filing['filing_date_time'] = filing_datetime.strftime('%B %d, %Y {}:%M%z %p Pacific Time'.format(hour))
+        filing['filing_date_time'] = filing_datetime.strftime('%B %d, %Y {}:%M %p Pacific Time'.format(hour))
 
-        # TODO: sort out some custom date/time filters, but those would have to be in the report-api. Otherwise do a
-        # subclass of this for the AR-specific data.
+        # TODO: best: custom date/time filters in the report-api. Otherwise: a subclass for filing-specific data.
         if self._filing.filing_type == 'annualReport':
             agm_date = datetime.fromisoformat(filing['annualReport']['annualGeneralMeetingDate'])
             filing['agm_date'] = agm_date.strftime('%B %d, %Y')
 
-        # Appears in the Description section of the PDF Document Properties as Title. TODO: change TZ as above.
+        # Appears in the Description section of the PDF Document Properties as Title.
         filing['meta_title'] = '{} on {}'.format(
-            self._filing.FILINGS[self._filing.filing_type]['title'],
-            self._filing.filing_date.isoformat())
+            self._filing.FILINGS[self._filing.filing_type]['title'], filing['filing_date_time'])
 
         # Appears in the Description section of the PDF Document Properties as Subject.
         filing['meta_subject'] = '{} ({})'.format(
