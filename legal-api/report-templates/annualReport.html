@@ -10,7 +10,7 @@
       @page {
         border: 1px solid #fcba19;
         counter-increment: page;
-        margin: 0.25in;
+        margin: 0.25in 0.25in 0.6in 0.25in;
         size: Letter;
       }
 
@@ -21,10 +21,10 @@
       }
 
       footer {
-        bottom: 0;
-        margin-left: 1px;
+        bottom: -34px;
+        left: -1px;
         position: fixed;
-        width: 100%;
+        width: 768px;
       }
 
       footer table {
@@ -67,9 +67,12 @@
         background-repeat: no-repeat;
         background-size: 350px;
         border-left: 1px solid #fcba19;
-        height: 959px;
+        height: 971px;
         margin-left: 120px;
-        padding-top: 47px;
+      }
+
+      .column-report-spacer {
+        height: 47px;
       }
 
       .director-separator {
@@ -128,6 +131,7 @@
 
       .section-data {
         padding-left: 30px;
+        padding-right: 20px;
       }
 
       .section-data-table {
@@ -160,8 +164,8 @@
       </div>
 
       <div class="column-report">
-        <!-- TODO: Need something to create the page counter, but not sure where weasyprint wants it. -->
-        <div class="page-counter"></div>
+        <!-- TODO: Need something to create the "page-counter", but not sure where weasyprint wants it. -->
+        <div class="column-report-spacer page-counter"></div>
 
         <div class="header-blue">
           {{ annualReport.annualGeneralMeetingDate[:4] }} BC COOPERATIVE ANNUAL REPORT
@@ -235,6 +239,7 @@
         </div>
 {% for director in changeOfDirectors.directors %}
 {% if loop.index > 1 %}
+        <!-- TODO: handle orphans -->
         <div class="director-separator"></div>
 {% endif %}
         <div class="section-data no-page-break">
