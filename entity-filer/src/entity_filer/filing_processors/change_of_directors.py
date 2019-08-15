@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of directors."""
+import pycountry
+
 from entity_filer.filing_processors import create_address
 from legal_api.models import Address, Business, Director, Filing
 
@@ -36,13 +38,7 @@ def process(business: Business, filing: Filing):
                 director.cessation_date = new_director.get('cessationDate')
 
                 # check for address change
-                new_address = Address(street=new_director['deliveryAddress'].get('streetAddress'),
-                                      street_additional=new_director['deliveryAddress'].get('streetAddressAdditional'),
-                                      city=new_director['deliveryAddress'].get('addressCity'),
-                                      region=new_director['deliveryAddress'].get('addressRegion'),
-                                      country=new_director['deliveryAddress'].get('addressCountry'),
-                                      postal_code=new_director['deliveryAddress'].get('postalCode'),
-                                      delivery_instructions=new_director['deliveryAddress'].get('deliveryInstructions'))
+                new_address = create_address(new_director['deliveryAddress'], Address.DELIVERY)
                 for key in new_address.json:
                     # if any change in address then update the address to the new one
                     if new_address.json[key] != director.delivery_address.json[key]:
@@ -51,13 +47,7 @@ def process(business: Business, filing: Filing):
 
         if not existing_dir:
             # create address
-            address = Address(street=new_director['deliveryAddress'].get('streetAddress'),
-                              street_additional=new_director['deliveryAddress'].get('streetAddressAdditional'),
-                              city=new_director['deliveryAddress'].get('addressCity'),
-                              region=new_director['deliveryAddress'].get('addressRegion'),
-                              country=new_director['deliveryAddress'].get('addressCountry'),
-                              postal_code=new_director['deliveryAddress'].get('postalCode'),
-                              delivery_instructions=new_director['deliveryAddress'].get('deliveryInstructions'))
+            address = create_address(new_director['deliveryAddress'], Address.DELIVERY)
 
             # add new director to the list
             business.directors.append(Director(first_name=new_director['officer'].get('firstName'),
