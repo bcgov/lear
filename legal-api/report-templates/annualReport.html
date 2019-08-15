@@ -8,10 +8,18 @@
     <style>
 
       @page {
+        font-family: Arial, Helvetica, sans-serif;
         border: 1px solid #fcba19;
-        counter-increment: page;
         margin: 0.25in 0.25in 0.6in 0.25in;
         size: Letter;
+
+        @bottom-right {
+          font-size: 10px;
+          color: #003366;
+          margin-right: 5px;
+          margin-bottom: 7px;
+          content: "Page " counter(page) " of " counter(pages);
+        }
       }
 
       body {
@@ -122,14 +130,6 @@
         page-break-inside: avoid;
       }
 
-      .page-counter {
-        counter-reset: page;
-      }
-
-      .page-number::before {
-        content: "Page " counter(page) " of " counter(pages);
-      }
-
       .section-data {
         padding-left: 10px;
         padding-right: 20px;
@@ -163,8 +163,6 @@
     </div>
 
     <div class="column-report">
-      <div class="page-counter"></div>
-
       <div class="column-report-headspace"></div>
       <div class="header-blue">
         {{ annualReport.annualGeneralMeetingDate[:4] }} BC COOPERATIVE ANNUAL REPORT
@@ -276,24 +274,14 @@
     <footer>
       <table>
         <tr class="footer-blue">
-          <td class="spacer">
-          </td>
-          <td>
-            BC Registries and Online Services
-          </td>
-          <td class="align-right">
-            {{ environment }}
-          </td>
+          <td class="spacer"></td>
+          <td>BC Registries and Online Services</td>
+          <td class="align-right">{{ environment }}</td>
         </tr>
         <tr class="footer-gold">
-          <td class="spacer">
-          </td>
-          <td>
-            Incorporation Number {{ business.identifier }}
-          </td>
-          <td>
-            <div class="page-number align-right"></div>
-          </td>
+          <td class="spacer"></td>
+          <td>Incorporation Number {{ business.identifier }}</td>
+          <td></td>
         </tr>
       </table>
     </footer>
