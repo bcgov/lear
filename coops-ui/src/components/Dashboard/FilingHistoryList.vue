@@ -172,8 +172,8 @@ export default {
           }
           this.$emit('filed-count', this.filedItems.length)
           // if needed, highlight a specific filing
-          const filing_id = this.$route.query.filing_id
-          if (filing_id) { this.highlightFiling(filing_id) }
+          const highlightId = this.$route.query.filing_id
+          if (highlightId) { this.highlightFiling(highlightId) }
         }).catch(error => {
           console.error('getFilings() error =', error)
           this.errorMessage = 'Oops, could not load data from server'
@@ -184,8 +184,8 @@ export default {
     highlightFiling (filingId) {
       // expand the panel of the matching filing
       for (let i = 0; i < this.filedItems.length; i++) {
-        // NB: use '==' to allow string/integer comparisons
-        if (this.filedItems[i].filingId == filingId) {
+        // NB: use '+' to allow integer-integer comparison
+        if (this.filedItems[i].filingId === +filingId) {
           this.panel = i
           break
         }
