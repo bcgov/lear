@@ -106,7 +106,7 @@ export default {
   },
 
   mounted () {
-    // reload data for this page
+    // load data for this page
     this.getTasks()
   },
 
@@ -339,7 +339,7 @@ export default {
 
   watch: {
     corpNum (val) {
-      // when Corp Num is set or changes, get new task items
+      // if Corp Num changes, get new tasks
       this.getTasks()
     }
   }
