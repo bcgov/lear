@@ -12,29 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of address."""
+from entity_filer.filing_processors import update_address
 from legal_api.models import Address, Business, Filing
 
 
 def process(business: Business, filing: Filing):
     """Render the change_of_address onto the business model objects."""
-    address = filing['changeOfAddress'].get('deliveryAddress')
-    delivery_address = Address(street=address.get('streetAddress'),
-                               street_additional=address.get('streetAddressAdditional'),
-                               city=address.get('addressCity'),
-                               region=address.get('addressRegion'),
-                               country=address.get('addressCountry'),
-                               postal_code=address.get('postalCode'),
-                               delivery_instructions=address.get('deliveryInstructions'),
-                               address_type=Address.DELIVERY)
-    business.delivery_address.append(delivery_address)
-
-    address = filing['changeOfAddress'].get('mailingAddress')
-    mailing_address = Address(street=address.get('streetAddress'),
-                              street_additional=address.get('streetAddressAdditional'),
-                              city=address.get('addressCity'),
-                              region=address.get('addressRegion'),
-                              country=address.get('addressCountry'),
-                              postal_code=address.get('postalCode'),
-                              delivery_instructions=address.get('deliveryInstructions'),
-                              address_type=Address.MAILING)
-    business.mailing_address.append(mailing_address)
+    delivery_address = filing['changeOfAddress'].get('deliveryAddress')
+    update_address(business.delivery_address.one_or_none(), delivery_address)
+    mailing_address = filing['changeOfAddress'].get('mailingAddress')
+    update_address(business.mailing_address.one_or_none(), mailing_address)

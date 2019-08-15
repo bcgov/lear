@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of directors."""
+from entity_filer.filing_processors import create_address
 from legal_api.models import Address, Business, Director, Filing
 
 

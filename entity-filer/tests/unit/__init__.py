@@ -323,8 +323,30 @@ def create_filing(token, json_filing=None, business_id=None):
 
 def create_business(identifier):
     """Return a test business."""
-    from legal_api.models import Business
+    from legal_api.models import Address, Business
     business = Business()
     business.identifier = identifier
+    business = create_business_address(business, Address.DELIVERY)
+    business = create_business_address(business, Address.MAILING)
+    business.save()
+    return business
+
+
+def create_business_address(business, type):
+    """Create an address."""
+    from legal_api.models import Address
+    address = Address(
+        city='Test City',
+        street=f'{business.identifier}-Test Street',
+        postal_code='T3S3T3',
+        country='TA',
+        region='BC',
+    )
+    if type == 'mailing':
+        address.address_type = Address.MAILING
+        business.mailing_address.append(address)
+    else:
+        address.address_type = Address.DELIVERY
+        business.delivery_address.append(address)
     business.save()
     return business
