@@ -98,11 +98,8 @@ class Report:
             filing['agm_date'] = agm_date.strftime('%B %d, %Y')
 
         # Appears in the Description section of the PDF Document Properties as Title.
-        title_date = self._filing.filing_date.replace(tzinfo=timezone.utc).astimezone(tz=None)
-        hour = title_date.strftime('%I').lstrip('0')
         filing['meta_title'] = '{} on {}'.format(
-            self._filing.FILINGS[self._filing.filing_type]['title'],
-            title_date.strftime('%B %d, %Y {}:%M %p Pacific Time'.format(hour)))
+            self._filing.FILINGS[self._filing.filing_type]['title'], filing['filing_date_time'])
 
         # Appears in the Description section of the PDF Document Properties as Subject.
         filing['meta_subject'] = '{} ({})'.format(
