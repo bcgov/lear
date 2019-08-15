@@ -130,14 +130,6 @@
         page-break-inside: avoid;
       }
 
-      .page-counter {
-        counter-reset: page;
-      }
-
-      .page-number::before {
-        content: "Page " counter(page) " of " counter(pages);
-      }
-
       .section-data {
         padding-left: 10px;
         padding-right: 20px;
@@ -171,8 +163,6 @@
     </div>
 
     <div class="column-report">
-      <div class="page-counter"></div>
-
       <div class="column-report-headspace"></div>
       <div class="header-blue">
         {{ annualReport.annualGeneralMeetingDate[:4] }} BC COOPERATIVE ANNUAL REPORT
