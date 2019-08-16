@@ -26,7 +26,7 @@
     <v-expansion-panel v-if="filedItems && filedItems.length > 0" v-model="panel">
       <v-expansion-panel-content
         class="filing-history-list"
-        v-for="(item, index) in orderBy(filedItems, 'filingDate', -1)"
+        v-for="(item, index) in filedItems"
         v-bind:key="index">
         <template v-slot:header>
           <div class="list-item">
@@ -122,7 +122,7 @@ export default {
   },
 
   mounted () {
-    // reload data for this page
+    // load data for this page
     this.getFilings()
   },
 
@@ -136,9 +136,9 @@ export default {
         var url = this.corpNum + '/filings'
         axios.get(url).then(response => {
           if (response && response.data && response.data.filings) {
-            // sort by id descending (ie, latest to earliest)
+            // sort by date descending (ie, latest to earliest)
             const filings = response.data.filings.sort(
-              (a, b) => (b.filing.header.filingId - a.filing.header.filingId)
+              (a, b) => (b.filing.header.date - a.filing.header.date)
             )
 
             // store the list of filing history to be used elsewhere
@@ -171,10 +171,24 @@ export default {
             this.errorMessage = 'Oops, could not parse data from server'
           }
           this.$emit('filed-count', this.filedItems.length)
+          // if needed, highlight a specific filing
+          const highlightId = this.$route.query.filing_id
+          if (highlightId) { this.highlightFiling(highlightId) }
         }).catch(error => {
           console.error('getFilings() error =', error)
           this.errorMessage = 'Oops, could not load data from server'
         })
+      }
+    },
+
+    highlightFiling (filingId) {
+      // expand the panel of the matching filing
+      for (let i = 0; i < this.filedItems.length; i++) {
+        // NB: use '+' to allow integer-integer comparison
+        if (this.filedItems[i].filingId === +filingId) {
+          this.panel = i
+          break
+        }
       }
     },
 
@@ -363,7 +377,7 @@ export default {
 
   watch: {
     corpNum (val) {
-      // when Corp Num is set or changes, get new filed items
+      // if Corp Num changes, get new filings
       this.getFilings()
     }
   }
