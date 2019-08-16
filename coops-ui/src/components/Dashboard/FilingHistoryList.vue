@@ -192,7 +192,7 @@ export default {
             filingDocuments: [{
               filingId: filing.header.filingId,
               name: 'Annual Report',
-              documentName: `Annual Report (${agmYear}) - ${filing.header.date}.pdf`
+              documentName: `${this.corpNum} - Annual Report (${agmYear}) - ${filing.header.date}.pdf`
             }]
           }
           // check if there was also a Change Of Directors
@@ -200,7 +200,7 @@ export default {
             item.filingDocuments.push({
               filingId: filing.header.filingId,
               name: 'Director Change (AGM)',
-              documentName: `Director Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
+              documentName: `${this.corpNum} - Director Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
             })
           }
           // check if there was also a Change Of Address
@@ -208,7 +208,7 @@ export default {
             item.filingDocuments.push({
               filingId: filing.header.filingId,
               name: 'Address Change (AGM)',
-              documentName: `Address Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
+              documentName: `${this.corpNum} - Address Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
             })
           }
           this.filedItems.push(item)
@@ -231,7 +231,7 @@ export default {
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: 'Director Change',
-            documentName: `Director Change - ${filing.header.date}.pdf`
+            documentName: `${this.corpNum} - Director Change - ${filing.header.date}.pdf`
           }]
         }
         this.filedItems.push(item)
@@ -251,7 +251,7 @@ export default {
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: 'Address Change',
-            documentName: `Address Change - ${filing.header.date}.pdf`
+            documentName: `${this.corpNum} - Address Change - ${filing.header.date}.pdf`
           }]
         }
         this.filedItems.push(item)
@@ -320,7 +320,7 @@ export default {
 
       await axios.post(url, data, config).then(response => {
         if (response) {
-          const fileName = `Receipt - ${filing.filingDate}.pdf`
+          const fileName = `${this.corpNum} - Receipt - ${filing.filingDate}.pdf`
 
           /* solution from https://github.com/axios/axios/issues/1392 */
 
