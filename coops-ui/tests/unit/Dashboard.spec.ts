@@ -36,7 +36,7 @@ describe('Dashboard.vue', () => {
     expect(wrapper.vm.filedCount).toEqual(3)
   })
 
-  it('enables standalone filing buttons when there are are no drafts/pending in the to-do list', () => {
+  it('enables standalone filing buttons when there are no blocker filings in the to-do list', () => {
     wrapper.find(TodoList).vm.$emit('has-blocker-filing', false)
 
     expect(wrapper.vm.hasBlockerFiling).toEqual(false)
@@ -46,7 +46,7 @@ describe('Dashboard.vue', () => {
       .getAttribute('disabled')).toBeFalsy()
   })
 
-  it('disables standalone filing buttons when there is a draft/pending in the to-do list', () => {
+  it('disables standalone filing buttons when there is a blocker filing in the to-do list', () => {
     wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
 
     expect(wrapper.vm.hasBlockerFiling).toEqual(true)
