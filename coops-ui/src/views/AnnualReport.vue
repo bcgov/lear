@@ -384,6 +384,8 @@ export default {
       const filing = await this.saveFiling(true)
       if (!filing) {
         console.log('onClickSave() error - invalid filing =', filing)
+      } else {
+        this.filingId = filing.header.filingId
       }
       this.saving = false
     },
