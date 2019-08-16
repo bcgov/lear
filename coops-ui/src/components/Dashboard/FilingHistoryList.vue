@@ -187,7 +187,7 @@ export default {
             name: `Annual Report (${agmYear})`,
             filingAuthor: filing.annualReport.certifiedBy,
             filingDate: filing.header.date,
-            filingId: filing.header.filingId,
+            paymentToken: filing.header.paymentToken,
             filingStatus: filing.header.status,
             filingDocuments: [{
               filingId: filing.header.filingId,
@@ -226,7 +226,7 @@ export default {
           name: 'Director Change',
           filingAuthor: filing.changeOfDirectors.certifiedBy,
           filingDate: filing.header.date,
-          filingId: filing.header.filingId,
+          paymentToken: filing.header.paymentToken,
           filingStatus: filing.header.status,
           filingDocuments: [{
             filingId: filing.header.filingId,
@@ -246,7 +246,7 @@ export default {
           name: 'Address Change',
           filingAuthor: filing.changeOfAddress.certifiedBy,
           filingDate: filing.header.date,
-          filingId: filing.header.filingId,
+          paymentToken: filing.header.paymentToken,
           filingStatus: filing.header.status,
           filingDocuments: [{
             filingId: filing.header.filingId,
@@ -306,7 +306,7 @@ export default {
     },
 
     async downloadOneReceipt (filing) {
-      const url = filing.filingId + '/receipts'
+      const url = filing.paymentToken + '/receipts'
       const data = {
         corpName: this.corpNum,
         filingDateTime: filing.filingDate, // TODO: format as needed
