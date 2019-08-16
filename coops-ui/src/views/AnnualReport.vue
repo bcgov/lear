@@ -45,7 +45,7 @@
         <v-card-actions>
           <v-btn color="primary" flat @click="navigateToDashboard">Exit without saving</v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="primary" flat @click="onClickFilePay">Retry</v-btn>
+          <v-btn color="primary" flat @click="onClickFilePay" :disabled="filingPaying">Retry</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -139,7 +139,7 @@
               />
             </section>
 
-            <!--Certify -->
+            <!-- Certify -->
             <section>
               <header>
                 <h2 id="AR-step-4-header">4. Certify Correct</h2>
@@ -148,9 +148,9 @@
               <Certify @certifyChange="changeCertifyData" @certifiedBy="certifiedBy=$event" ref="certifyClause"/>
             </section>
           </div>
-          <div v-else>
-           <!-- <ARComplete/> -->
-          </div>
+          <!-- <div v-else>
+            <ARComplete/>
+          </div> -->
         </article>
 
         <aside>
@@ -186,7 +186,8 @@
               id="ar-file-pay-btn"
               color="primary"
               large
-              :disabled="!validated"
+              :disabled="!validated || filingPaying"
+              :loading="filingPaying"
               @click="onClickFilePay">
               File &amp; Pay
             </v-btn>
@@ -241,7 +242,8 @@ export default {
       certifiedBy: null,
       isSaveButtonEnabled: false,
       saving: false,
-      savingResuming: false
+      savingResuming: false,
+      filingPaying: false
     }
   },
 
@@ -399,6 +401,7 @@ export default {
     },
 
     async onClickFilePay () {
+      this.filingPaying = true
       const filing = await this.saveFiling(false)
       // on success, redirect to Pay URL
       if (filing && filing.header) {
@@ -414,6 +417,7 @@ export default {
       } else {
         console.log('onClickFilePay() error - invalid filing =', filing)
       }
+      this.filingPaying = false
     },
 
     async saveFiling (isDraft) {
@@ -494,7 +498,7 @@ export default {
         })
         return filing
       } else {
-        // filing id is 0, so we are saving a new filing
+        // filing id is '0', so we are saving a new filing
         let url = this.corpNum + '/filings'
         if (isDraft) { url += '?draft=true' }
         let filing = null
@@ -536,7 +540,7 @@ export default {
 
     navigateToDashboard () {
       this.dialog = false
-      this.$router.push('/')
+      this.$router.push('/dashboard')
     },
 
     setValidateFlag () {
