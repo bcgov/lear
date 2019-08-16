@@ -142,6 +142,15 @@
                                         }
                                     },
                                     {
+                                        "name": "APP_FILE",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "APP_FILE"
+                                            }
+                                        }
+                                    },
+                                    {
                                         "name": "SENTRY_DSN",
                                         "valueFrom": {
                                             "configMapKeyRef": {
@@ -218,6 +227,7 @@
                 }
             },
             "data": {
+                "APP_FILE": "${APP_FILE}",
                 "DATABASE_HOST": "postgresql-${TAG_NAME}",
                 "DATABASE_NAME": "${DATABASE_NAME}",
                 "DB_PORT": "5432",
@@ -246,6 +256,13 @@
             "description": "The name assigned to all of the deployments in this project.",
             "required": true,
             "value": "entity-filer"
+        },
+        {
+            "name": "APP_FILE",
+            "displayName": "APP_FILE",
+            "description": "APP_FILE to run the service.",
+            "required": true,
+            "value": "pay_filer.py"
         },
         {
             "name": "DATABASE_NAME",
