@@ -220,6 +220,15 @@
                                         }
                                     },
                                     {
+                                        "name": "REPORT_SVC_URL",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "REPORT_SVC_URL",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
                                         "name": "DATABASE_TEST_NAME",
                                         "valueFrom": {
                                             "configMapKeyRef": {
@@ -432,6 +441,7 @@
                 "DATABASE_TEST_PORT": "${DB_PORT}",
                 "DATABASE_TEST_USERNAME": "tester",
                 "PAYMENT_SVC_URL": "${PAYMENT_SVC_URL}",
+                "REPORT_SVC_URL": "${REPORT_SVC_URL}",
                 "JWT_OIDC_ALGORITHMS": "${JWT_OIDC_ALGORITHMS}",
                 "JWT_OIDC_AUDIENCE": "${JWT_OIDC_AUDIENCE}",
                 "JWT_OIDC_CLIENT_SECRET": "${JWT_OIDC_CLIENT_SECRET}",
@@ -657,6 +667,13 @@
             "description": "The URL used to post invoice to the payment service.",
             "required": true,
             "value": "https://pay-api-dev.pathfinder.gov.bc.ca/api/v1/payments"
+        },
+        {
+            "name": "REPORT_SVC_URL",
+            "displayName": "Report Services URL",
+            "description": "The URL used to get PDF outputs.",
+            "required": true,
+            "value": "https://report-api-dev.pathfinder.gov.bc.ca/api/v1/reports"
         },
         {
             "name": "NATS_SERVERS",
