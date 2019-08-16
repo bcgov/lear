@@ -1,5 +1,7 @@
 <template>
   <div>
+    <ConfirmDialog ref="confirm" />
+
     <v-dialog v-model="resumeErrorDialog" width="50rem" persistent>
       <v-card>
         <v-card-title>Unable to Resume Filing</v-card-title>
@@ -17,7 +19,7 @@
               >SBC_ITOperationsSupport@gov.bc.ca</a>
           </p>
         </v-card-text>
-        <v-divider></v-divider>
+        <v-divider class="my-0"></v-divider>
         <v-card-actions>
           <v-btn color="primary" flat @click="navigateToDashboard">Return to dashboard</v-btn>
         </v-card-actions>
@@ -41,7 +43,7 @@
               >SBC_ITOperationsSupport@gov.bc.ca</a>
           </p>
         </v-card-text>
-        <v-divider></v-divider>
+        <v-divider class="my-0"></v-divider>
         <v-card-actions>
           <v-btn color="primary" flat @click="navigateToDashboard">Exit without saving</v-btn>
           <v-spacer></v-spacer>
@@ -73,7 +75,7 @@
               >SBC_ITOperationsSupport@gov.bc.ca</a>
           </p>
         </v-card-text>
-        <v-divider></v-divider>
+        <v-divider class="my-0"></v-divider>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="primary" flat @click="navigateToDashboard">Back to My Dashboard</v-btn>
@@ -216,6 +218,7 @@ import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vu
 import { mapState, mapActions, mapGetters } from 'vuex'
 import { PAYMENT_REQUIRED } from 'http-status-codes'
 import Certify from '@/components/AnnualReport/Certify.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 export default {
   name: 'AnnualReport',
@@ -226,7 +229,8 @@ export default {
     Directors,
     SbcFeeSummary,
     Affix,
-    Certify
+    Certify,
+    ConfirmDialog
   },
 
   data () {
@@ -243,7 +247,8 @@ export default {
       isSaveButtonEnabled: false,
       saving: false,
       savingResuming: false,
-      filingPaying: false
+      filingPaying: false,
+      haveChanges: false
     }
   },
 
@@ -261,6 +266,15 @@ export default {
   },
 
   created () {
+    // before unloading this page, if there are changes then prompt user
+    window.onbeforeunload = (event) => {
+      if (this.haveChanges) {
+        event.preventDefault()
+        // NB: custom text is not supported in all browsers
+        event.returnValue = 'You have unsaved changes. Are you sure you want to leave?'
+      }
+    }
+
     // NB: filing id of 0 means "new AR"
     // otherwise it's a draft AR filing id
     this.filingId = this.$route.params.id
@@ -276,6 +290,32 @@ export default {
       // else just load new page
       this.loadingMessage = `Preparing Your ${this.ARFilingYear} Annual Report`
     }
+  },
+
+  beforeRouteLeave (to, from, next) {
+    if (!this.haveChanges) {
+      // no changes -- resolve promise right away
+      next()
+      return
+    }
+
+    // open confirmation dialog and wait for response
+    this.$refs.confirm.open(
+      'Save Your Changes to Your Annual Report?',
+      'You have unsaved changes in your Annual Report. Do you want to save your changes?',
+      { width: '40rem', persistent: true, yes: 'Save', no: 'Don\'t save' }
+    ).then(async (confirm) => {
+      // if we get here, Yes or No was clicked
+      if (confirm) {
+        await this.onClickSave()
+      } else {
+        this.haveChanges = false
+      }
+      next()
+    }).catch(() => {
+      // if we get here, Cancel was clicked
+      next(false)
+    })
   },
 
   methods: {
@@ -355,6 +395,7 @@ export default {
      * original values.
      */
     officeModifiedEventHandler (modified: boolean): void {
+      this.haveChanges = true
       // when addresses change, update filing data
       this.setRegOffAddrChange(modified)
       this.toggleFiling(modified ? 'add' : 'remove', 'OTADD')
@@ -370,16 +411,14 @@ export default {
       this.setValidateFlag()
     },
 
-    directorsChange (val) {
+    directorsChange (modified: boolean) {
+      this.haveChanges = true
       // when directors change, update filing data
-      if (val) {
-        this.toggleFiling('add', 'OTCDR')
-      } else {
-        this.toggleFiling('remove', 'OTCDR')
-      }
+      this.toggleFiling(modified ? 'add' : 'remove', 'OTCDR')
     },
 
     changeCertifyData (val) {
+      this.haveChanges = true
       this.certifyChange = val
     },
 
@@ -475,7 +514,7 @@ export default {
         }
       }
 
-      const filingData = {
+      const data = {
         filing: Object.assign(
           {},
           header,
@@ -491,9 +530,10 @@ export default {
         let url = this.corpNum + '/filings/' + this.filingId
         if (isDraft) { url += '?draft=true' }
         let filing = null
-        await axios.put(url, filingData).then(res => {
+        await axios.put(url, data).then(res => {
           if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
           filing = res.data.filing
+          this.haveChanges = false
         }).catch(error => {
           console.error('saveFiling() error =', error)
           if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
@@ -508,9 +548,10 @@ export default {
         let url = this.corpNum + '/filings'
         if (isDraft) { url += '?draft=true' }
         let filing = null
-        await axios.post(url, filingData).then(res => {
+        await axios.post(url, data).then(res => {
           if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
           filing = res.data.filing
+          this.haveChanges = false
         }).catch(error => {
           console.error('saveFiling() error =', error)
           if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
@@ -545,6 +586,7 @@ export default {
     },
 
     navigateToDashboard () {
+      this.haveChanges = false
       this.dialog = false
       this.$router.push('/dashboard')
     },
@@ -557,22 +599,16 @@ export default {
   },
 
   watch: {
-    agmDate (val) {
+    agmDate (modified: boolean) {
+      this.haveChanges = true
       // when AGM Date changes, update filing data
-      if (val) {
-        this.toggleFiling('add', 'OTANN')
-      } else {
-        if (!this.noAGM) this.toggleFiling('remove', 'OTANN')
-      }
+      this.toggleFiling(modified ? 'add' : 'remove', 'OTANN')
     },
 
-    noAGM (val) {
+    noAGM (modified: boolean) {
+      this.haveChanges = true
       // when No AGM changes, update filing data
-      if (val) {
-        this.toggleFiling('add', 'OTANN')
-      } else {
-        this.toggleFiling('remove', 'OTANN')
-      }
+      this.toggleFiling(modified ? 'add' : 'remove', 'OTANN')
     },
 
     agmDateValid (val) {

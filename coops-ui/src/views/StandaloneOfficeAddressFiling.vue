@@ -1,5 +1,7 @@
 <template>
   <div>
+    <ConfirmDialog ref="confirm" />
+
     <v-dialog v-model="resumeErrorDialog" width="50rem" persistent>
       <v-card>
         <v-card-title>Unable to Resume Filing</v-card-title>
@@ -17,7 +19,7 @@
               >SBC_ITOperationsSupport@gov.bc.ca</a>
           </p>
         </v-card-text>
-        <v-divider></v-divider>
+        <v-divider class="my-0"></v-divider>
         <v-card-actions>
           <v-btn color="primary" flat @click="navigateToDashboard">Return to dashboard</v-btn>
         </v-card-actions>
@@ -41,7 +43,7 @@
               >SBC_ITOperationsSupport@gov.bc.ca</a>
           </p>
         </v-card-text>
-        <v-divider></v-divider>
+        <v-divider class="my-0"></v-divider>
         <v-card-actions>
           <v-btn color="primary" flat @click="navigateToDashboard">Exit without saving</v-btn>
           <v-spacer></v-spacer>
@@ -73,24 +75,13 @@
               >SBC_ITOperationsSupport@gov.bc.ca</a>
           </p>
         </v-card-text>
-        <v-divider></v-divider>
+        <v-divider class="my-0"></v-divider>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="primary" flat @click="navigateToDashboard">Back to My Dashboard</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <!-- Transition to Payment -->
-    <!-- TODO - this should be on Payment page -->
-    <v-fade-transition>
-      <div class="loading-container" v-show="showLoading">
-        <div class="loading__content">
-          <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-          <div class="loading-msg">Redirecting to PayBC to Process Your Payment</div>
-        </div>
-      </div>
-    </v-fade-transition>
 
     <div id="standalone-office-address" ref="standaloneOfficeAddress">
       <!-- Initial Page Load Transition -->
@@ -181,14 +172,13 @@
 
 <script lang="ts">
 import axios from '@/axios-auth'
-import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
-import Directors from '@/components/AnnualReport/Directors.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapActions, mapGetters } from 'vuex'
 import { PAYMENT_REQUIRED } from 'http-status-codes'
 import Certify from '@/components/AnnualReport/Certify.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 export default {
   name: 'StandaloneOfficeAddressFiling',
@@ -197,7 +187,8 @@ export default {
     RegisteredOfficeAddress,
     SbcFeeSummary,
     Affix,
-    Certify
+    Certify,
+    ConfirmDialog
   },
 
   data () {
@@ -214,7 +205,8 @@ export default {
       officeAddressFormValid: true,
       saving: false,
       savingResuming: false,
-      filingPaying: false
+      filingPaying: false,
+      haveChanges: false
     }
   },
 
@@ -222,13 +214,11 @@ export default {
     ...mapState(['currentDate', 'corpNum', 'entityName', 'entityIncNo', 'entityFoundingDate']),
 
     validated () {
-      if (this.certifyChange && this.officeAddressFormValid) return true
-      else return false
+      return (this.certifyChange && this.officeAddressFormValid && this.filingData.length > 0)
     },
 
     saveAsDraftEnabled () {
-      if (this.officeAddressFormValid && this.filingData.length > 0) return true
-      else return false
+      return (this.officeAddressFormValid && this.filingData.length > 0)
     },
 
     payAPIURL () {
@@ -237,6 +227,15 @@ export default {
   },
 
   created () {
+    // before unloading this page, if there are changes then prompt user
+    window.onbeforeunload = (event) => {
+      if (this.haveChanges) {
+        event.preventDefault()
+        // NB: custom text is not supported in all browsers
+        event.returnValue = 'You have unsaved changes. Are you sure you want to leave?'
+      }
+    }
+
     // if tombstone data isn't set, route to home
     if (!this.corpNum) {
       this.$router.push('/')
@@ -247,6 +246,32 @@ export default {
     if (this.filingId > '0') {
       this.fetchChangeOfAddressFiling()
     }
+  },
+
+  beforeRouteLeave (to, from, next) {
+    if (!this.haveChanges) {
+      // no changes -- resolve promise right away
+      next()
+      return
+    }
+
+    // open confirmation dialog and wait for response
+    this.$refs.confirm.open(
+      'Save Your Changes to Your Change of Office Addresses?',
+      'You have unsaved changes in your Change of Office Addresses. Do you want to save your changes?',
+      { width: '40rem', persistent: true, yes: 'Save', no: 'Don\'t save' }
+    ).then(async (confirm) => {
+      // if we get here, Yes or No was clicked
+      if (confirm) {
+        await this.onClickSave()
+      } else {
+        this.haveChanges = false
+      }
+      next()
+    }).catch(() => {
+      // if we get here, Cancel was clicked
+      next(false)
+    })
   },
 
   methods: {
@@ -314,11 +339,13 @@ export default {
      * original values.
      */
     officeModifiedEventHandler (modified: boolean): void {
+      this.haveChanges = true
       // when addresses change, update filing data
       this.toggleFiling(modified ? 'add' : 'remove', 'OTADD')
     },
 
     changeCertifyData (val) {
+      this.haveChanges = true
       this.certifyChange = val
     },
 
@@ -413,6 +440,7 @@ export default {
         await axios.put(url, filingData).then(res => {
           if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
           filing = res.data.filing
+          this.haveChanges = false
         }).catch(error => {
           console.error('saveFiling() error =', error)
           if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
@@ -430,6 +458,7 @@ export default {
         await axios.post(url, filingData).then(res => {
           if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
           filing = res.data.filing
+          this.haveChanges = false
         }).catch(error => {
           console.error('saveFiling() error =', error)
           if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
@@ -464,6 +493,7 @@ export default {
     },
 
     navigateToDashboard () {
+      this.haveChanges = false
       this.dialog = false
       this.$router.push('/dashboard')
     }

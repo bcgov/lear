@@ -7,7 +7,11 @@ Vue.use(VueRouter)
 const router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
-  routes
+  routes,
+  scrollBehavior (to, from, savedPosition) {
+    // see https://router.vuejs.org/guide/advanced/scroll-behavior.html
+    return { x: 0, y: 0 }
+  }
 })
 
 // if there is no saved Keycloak token, redirect to Auth URL
