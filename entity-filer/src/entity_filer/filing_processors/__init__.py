@@ -15,3 +15,32 @@
 
 Processors hold the business logic for how a filing is interpreted and saved to the legal database.
 """
+import pycountry
+
+from legal_api.models import Address
+
+
+def create_address(address_info, address_type):
+    """Create an address."""
+    address = Address(street=address_info.get('streetAddress'),
+                      street_additional=address_info.get('streetAddressAdditional'),
+                      city=address_info.get('addressCity'),
+                      region=address_info.get('addressRegion'),
+                      country=pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2,
+                      postal_code=address_info.get('postalCode'),
+                      delivery_instructions=address_info.get('deliveryInstructions'),
+                      address_type=address_type
+                      )
+    return address
+
+
+def update_address(address: Address, new_info: dict, ):
+    address.street = new_info.get('streetAddress')
+    address.street_additional = new_info.get('streetAddressAdditional')
+    address.city = new_info.get('addressCity')
+    address.region = new_info.get('addressRegion')
+    address.country = pycountry.countries.search_fuzzy(new_info.get('addressCountry'))[0].alpha_2
+    address.postal_code = new_info.get('postalCode')
+    address.delivery_instructions = new_info.get('deliveryInstructions')
+
+    return address

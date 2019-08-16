@@ -5,6 +5,7 @@ Flask-Script
 Flask-Moment
 Flask-RESTplus
 flask-jwt-oidc>=0.1.5
+jsonschema
 python-dotenv
 psycopg2-binary
-jsonschema
+sentry-sdk[flask]

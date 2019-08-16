@@ -311,13 +311,9 @@ class InternalFilings(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     def get():
-        """Get the filings ready for colin."""
-        pending_filings = db.session.query(Filing). \
-            filter(Filing.colin_event_id == None,  # pylint: disable=singleton-comparison # noqa: E711;
-                   Filing.status == 'COMPLETED').all()
-
+        """Get filings to send to colin."""
+        pending_filings = Filing.get_completed_filings_for_colin()
         filings = [x.json for x in pending_filings]
-
         return jsonify(filings), HTTPStatus.OK
 
     @staticmethod
@@ -325,18 +321,19 @@ class InternalFilings(Resource):
     @jwt.requires_auth
     def patch(filing_id):
         """Patch the colin_event_id for a filing."""
+        # check authorization
+        if not jwt.validate_roles([COLIN_SVC_ROLE]):
+            return jsonify({'message': 'You are not authorized to update the colin id'}), HTTPStatus.UNAUTHORIZED
+
         json_input = request.get_json()
         if not json_input:
             return None, None, {'message': f'No filing json data in body of patch for {filing_id}.'}, \
                 HTTPStatus.BAD_REQUEST
 
         colin_id = json_input['colinId']
-        rv = db.session.query(Filing). \
-            filter(Filing.id == filing_id). \
-            one_or_none()
-        if not rv:
+        filing = Filing.find_by_id(filing_id)
+        if not filing:
             return {'message': f'{filing_id} no filings found'}, HTTPStatus.NOT_FOUND
-        filing = rv
         try:
             filing.colin_event_id = colin_id
             filing.save()
@@ -389,7 +386,7 @@ class ColinLastUpdate(Resource):
         """Add a row to the colin_last_update table."""
         try:
             # check authorization
-            if not jwt.validate_roles(['colin']):
+            if not jwt.validate_roles([COLIN_SVC_ROLE]):
                 return jsonify({'message': 'You are not authorized to update this table'}), HTTPStatus.UNAUTHORIZED
             db.session.execute(
                 f"""

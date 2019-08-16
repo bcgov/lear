@@ -334,7 +334,7 @@ describe('AnnualReport - Part 2', () => {
 describe('AnnualReport - Part 3', () => {
   let wrapper
   let vm
-  
+
   beforeEach(async () => {
     // init store
     store.state.corpNum = 'CP0001191'
@@ -422,7 +422,7 @@ describe('AnnualReport - Part 3', () => {
     // click the Cancel button
     wrapper.find('#ar-cancel-btn').trigger('click')
     // work-around because click trigger isn't working
-    await vm.$router.push('/')
+    await vm.$router.push('/dashboard')
 
     // verify routing back to Home URL
     expect(vm.$route.name).toBe('dashboard')

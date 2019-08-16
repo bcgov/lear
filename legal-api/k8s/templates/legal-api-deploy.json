@@ -175,15 +175,6 @@
                                         }
                                     },
                                     {
-                                        "name": "GO_LIVE_DATE",
-                                        "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "name": "${NAME}-${TAG_NAME}-config",
-                                                "key": "GO_LIVE_DATE"
-                                            }
-                                        }
-                                    },
-                                    {
                                         "name": "DATABASE_HOST",
                                         "valueFrom": {
                                             "configMapKeyRef": {
@@ -198,6 +189,24 @@
                                             "configMapKeyRef": {
                                                 "name": "${NAME}-${TAG_NAME}-config",
                                                 "key": "DB_PORT"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "GO_LIVE_DATE",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "GO_LIVE_DATE"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "SENTRY_DSN",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "SENTRY_DSN"
                                             }
                                         }
                                     },
@@ -310,6 +319,51 @@
                                         }
                                     },
                                     {
+                                        "name": "NATS_SERVERS",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NATS_SERVERS",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_CLIENT_NAME",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NATS_CLIENT_NAME",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_CLUSTER_ID",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NATS_CLUSTER_ID",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_SUBJECT",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NATS_SUBJECT",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_QUEUE",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NATS_QUEUE",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
                                         "name": "POD_NAMESPACE",
                                         "valueFrom": {
                                             "fieldRef": {
@@ -368,6 +422,7 @@
             },
             "data": {
                 "GO_LIVE_DATE": "${GO_LIVE_DATE}",
+                "SENTRY_DSN": "${SENTRY_DSN}",
                 "DATABASE_HOST": "postgresql-${TAG_NAME}",
                 "DATABASE_NAME": "${DATABASE_NAME}",
                 "DB_PORT": "${DB_PORT}",
@@ -382,7 +437,12 @@
                 "JWT_OIDC_CLIENT_SECRET": "${JWT_OIDC_CLIENT_SECRET}",
                 "JWT_OIDC_WELL_KNOWN_CONFIG": "${JWT_OIDC_WELL_KNOWN_CONFIG}",
                 "JWT_OIDC_JWKS_CACHE_TIMEOUT": "${JWT_OIDC_JWKS_CACHE_TIMEOUT}",
-                "JWT_OIDC_CACHING_ENABLED": "${JWT_OIDC_CACHING_ENABLED}"
+                "JWT_OIDC_CACHING_ENABLED": "${JWT_OIDC_CACHING_ENABLED}",
+                "NATS_SERVERS": "${NATS_SERVERS}",
+                "NATS_CLIENT_NAME": "${NATS_CLIENT_NAME}",
+                "NATS_CLUSTER_ID": "${NATS_CLUSTER_ID}",
+                "NATS_SUBJECT": "${NATS_SUBJECT}",
+                "NATS_QUEUE": "${NATS_QUEUE}"
             }
         },
         {
@@ -485,6 +545,13 @@
             "description": "Go Live Date of the system, used for MVP for things such as blocking legacy filings.",
             "required": true,
             "value": "2019-08-12"
+        },
+        {
+            "name": "SENTRY_DSN",
+            "displayName": "Sentry Init URL",
+            "description": "Sentry DSN URL to initialize the Sentry SDK",
+            "required": true,
+            "value": "https://account.sentry.ioo/project/id"
         },
         {
             "name": "DB_PORT",
@@ -590,6 +657,41 @@
             "description": "The URL used to post invoice to the payment service.",
             "required": true,
             "value": "https://pay-api-dev.pathfinder.gov.bc.ca/api/v1/payments"
+        },
+        {
+            "name": "NATS_SERVERS",
+            "displayName": "List of NATS Servers",
+            "description": "The list of NATS Servers in the Cluster.",
+            "required": true,
+            "value": "nats://nats-streaming.hak2zo-dev.svc:4222"
+        },
+        {
+            "name": "NATS_CLIENT_NAME",
+            "displayName": "NATS Client Name",
+            "description": "The name of this service connecting into NATS.",
+            "required": true,
+            "value": "entity.filing.payment.worker"
+        },
+        {
+            "name": "NATS_CLUSTER_ID",
+            "displayName": "Name of the NATS Cluster",
+            "description": "Name of the NATS cluster being used.",
+            "required": true,
+            "value": "test-cluster"
+        },
+        {
+            "name": "NATS_SUBJECT",
+            "displayName": "Publish to NATS Subject",
+            "description": "The subject this service is publishing to.",
+            "required": true,
+            "value": "entity.filing.payment"
+        },
+        {
+            "name": "NATS_QUEUE",
+            "displayName": "Queue being used",
+            "description": "The Queue being used.",
+            "required": true,
+            "value": "filing-worker"
         }
     ]
 }

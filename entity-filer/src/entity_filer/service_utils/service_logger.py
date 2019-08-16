@@ -16,7 +16,29 @@
 # TODO: logging format should be moved to an external config file
 """
 import logging
+import os
 
+import sentry_sdk
+from sentry_sdk.integrations.logging import LoggingIntegration
+
+
+def before_breadcrumb(crumb, hint):  # pylint: disable=unused-argument; callback function signature from sentry
+    """Render nothing for the breadcrumb history."""
+    return None
+
+
+# Configure Sentry
+SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+if SENTRY_DSN:
+
+    SENTRY_LOGGING = LoggingIntegration(
+        event_level=logging.ERROR  # Send errors as events
+    )
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[SENTRY_LOGGING],
+        before_breadcrumb=before_breadcrumb
+    )
 
 logging.basicConfig(
     level=logging.INFO,

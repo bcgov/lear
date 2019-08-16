@@ -106,7 +106,7 @@ export default {
   },
 
   mounted () {
-    // reload data for this page
+    // load data for this page
     this.getTasks()
   },
 
@@ -137,11 +137,11 @@ export default {
           }
           this.$emit('todo-count', this.taskItems.length)
 
-          // if this is a draft or pending item, emit the has-blocker-filings event to parent component
-          // - this indicates that a new filing cannot be started because this one has to be completed first
+          // if this is a draft/pending/error item, emit the has-blocker-filings event to the parent component
+          // this indicates that a new filing cannot be started because this one has to be completed first
           this.$emit('has-blocker-filing',
             this.taskItems.filter(elem => {
-              return this.isDraft(elem) || this.isPending(elem)
+              return this.isDraft(elem) || this.isPending(elem) || this.isError(elem)
             }).length > 0
           )
         }).catch(error => {
@@ -339,7 +339,7 @@ export default {
 
   watch: {
     corpNum (val) {
-      // when Corp Num is set or changes, get new task items
+      // if Corp Num changes, get new tasks
       this.getTasks()
     }
   }

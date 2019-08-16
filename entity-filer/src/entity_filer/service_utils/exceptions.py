@@ -11,14 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""File processing rules and actions for the change of address."""
-from entity_filer.filing_processors import update_address
-from legal_api.models import Address, Business, Filing
+"""Exceptions defined for the Queue Service."""
 
 
-def process(business: Business, filing: Filing):
-    """Render the change_of_address onto the business model objects."""
-    delivery_address = filing['changeOfAddress'].get('deliveryAddress')
-    update_address(business.delivery_address.one_or_none(), delivery_address)
-    mailing_address = filing['changeOfAddress'].get('mailingAddress')
-    update_address(business.mailing_address.one_or_none(), mailing_address)
+class QueueException(Exception):
+    """Base exception for the Queue Services."""

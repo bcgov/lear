@@ -400,30 +400,6 @@ def test_update_ar_with_missing_json_body_fails(session, client, jwt):
     assert rv.json['errors'][0] == {'message': f'No filing json data in body of post for {identifier}.'}
 
 
-def test_update_ar_with_colin_id_set(session, client, jwt):
-    """Assert that when a filing with colinId set (as when colin updates legal api) that colin_event_id is set."""
-    import copy
-    identifier = 'CP7654321'
-    b = factory_business(identifier)
-    factory_business_mailing_address(b)
-
-    filings = factory_filing(b, AR_FILING)
-
-    ar = copy.deepcopy(AR_FILING)
-    ar['filing']['header']['colinId'] = 1234
-
-    rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
-                    json=ar,
-                    headers=create_header(jwt, [STAFF_ROLE], identifier)
-                    )
-
-    assert rv.status_code == HTTPStatus.ACCEPTED
-    assert rv.json['filing']['business'] == ar['filing']['business']
-    assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
-    assert not rv.json['filing']['header'].get('colinId')
-    assert rv.json['filing']['header']['filingId'] == filings.id
-
-
 # @integration_nats
 # @pytest.mark.asyncio
 # async def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server, event_loop):
@@ -574,3 +550,134 @@ def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server):
         assert 'colinFiling' in m.data.decode('utf-8')
         assert 1230 + i == dpath.util.get(json.loads(m.data.decode('utf-8')),
                                           'colinFiling/id')
+
+
+def test_update_ar_with_colin_id_set(session, client, jwt):
+    """Assert that when a filing with colinId set (as when colin updates legal api) that colin_event_id is set."""
+    import copy
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    factory_business_mailing_address(b)
+
+    filings = factory_filing(b, AR_FILING)
+
+    ar = copy.deepcopy(AR_FILING)
+    ar['filing']['header']['colinId'] = 1234
+
+    rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
+                    json=ar,
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+
+    assert rv.status_code == HTTPStatus.ACCEPTED
+    assert rv.json['filing']['business'] == ar['filing']['business']
+    assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
+    assert not rv.json['filing']['header'].get('colinId')
+    assert rv.json['filing']['header']['filingId'] == filings.id
+
+
+def test_get_internal_filings(session, client, jwt):
+    """Assert that the internal filings get endpoint returns all completed filings without colin ids."""
+    from legal_api.models import Filing
+    from tests.unit.models import factory_completed_filing, factory_error_filing, factory_pending_filing
+    # setup
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    factory_business_mailing_address(b)
+
+    filing1 = factory_completed_filing(b, AR_FILING)
+    filing2 = factory_completed_filing(b, AR_FILING)
+    filing3 = factory_pending_filing(b, AR_FILING)
+    filing4 = factory_filing(b, AR_FILING)
+    filing5 = factory_error_filing(b, AR_FILING)
+
+    assert filing1.status == Filing.Status.COMPLETED.value
+    # completed with colin_event_id
+    filing2.colin_event_id = 1234
+    filing2.save()
+    assert filing2.status == Filing.Status.COMPLETED.value
+    assert filing2.colin_event_id is not None
+    # pending with no colin_event_id
+    assert filing3.status == Filing.Status.PENDING.value
+    # draft with no colin_event_id
+    assert filing4.status == Filing.Status.DRAFT.value
+    # error with no colin_event_id
+    assert filing5.status == Filing.Status.ERROR.value
+
+    # test endpoint returned filing1 only (completed with no colin id set)
+    rv = client.get(f'/api/v1/businesses/internal/filings')
+    assert rv.status_code == HTTPStatus.OK
+    assert len(rv.json) == 1
+    assert rv.json[0]['filing']['header']['filingId'] == filing1.id
+
+
+def test_patch_internal_filings(session, client, jwt):
+    """Assert that the internal filings patch endpoint updates the colin_event_id."""
+    from legal_api.models import Filing
+    from tests.unit.models import factory_completed_filing
+    # setup
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    factory_business_mailing_address(b)
+    filing = factory_completed_filing(b, AR_FILING)
+    colin_id = 1234
+
+    # make request
+    rv = client.patch(f'/api/v1/businesses/internal/filings/{filing.id}',
+                      json={'colinId': colin_id},
+                      headers=create_header(jwt, [COLIN_SVC_ROLE])
+                      )
+
+    # test result
+    filing = Filing.find_by_id(filing.id)
+    assert rv.status_code == HTTPStatus.ACCEPTED
+    assert filing.colin_event_id == colin_id
+    assert rv.json['filing']['header']['filingId'] == filing.id
+    assert rv.json['filing']['header']['colinId'] == colin_id
+
+
+def test_get_colin_id(session, client, jwt):
+    """Assert the internal/filings/colin_id get endpoint returns properly."""
+    from tests.unit.models import factory_completed_filing
+    # setup
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    factory_business_mailing_address(b)
+    filing = factory_completed_filing(b, AR_FILING)
+    colin_event_id = 1234
+    filing.colin_event_id = colin_event_id
+    filing.save()
+
+    rv = client.get(f'/api/v1/businesses/internal/filings/colin_id/{colin_event_id}')
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json == {'colinId': colin_event_id}
+
+    rv = client.get(f'/api/v1/businesses/internal/filings/colin_id/{1}')
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_get_colin_last_update(session, client, jwt):
+    """Assert the get endpoint for ColinLastUpdate returns last updated colin id."""
+    from tests.unit.models import db
+    # setup
+    colin_id = 1234
+    db.session.execute(
+        f"""
+        insert into colin_last_update (last_update, last_event_id)
+        values (current_timestamp, {colin_id})
+        """
+    )
+
+    rv = client.get(f'/api/v1/businesses/internal/filings/colin_id')
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json == {'maxId': colin_id}
+
+
+def test_post_colin_last_update(session, client, jwt):
+    """Assert the internal/filings/colin_id post endpoint updates the colin_last_update table."""
+    colin_id = 1234
+    rv = client.post(f'/api/v1/businesses/internal/filings/colin_id/{colin_id}',
+                     headers=create_header(jwt, [COLIN_SVC_ROLE])
+                     )
+    assert rv.status_code == HTTPStatus.CREATED
+    assert rv.json == {'maxId': colin_id}

@@ -332,3 +332,34 @@ def test_get_filings_by_status_before_go_live_date(session, test_type, days, exp
     assert eval(expected)  # pylint: disable=eval-used; useful for parameterized tests
     if rv:
         assert rv[0].status == status
+
+
+def test_get_internal_filings(session, client, jwt):
+    """Assert that the get_completed_filings_for_colin returns completed filings with no colin ids set."""
+    from legal_api.models import Filing
+    from tests.unit.models import factory_completed_filing
+    # setup
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    filing = factory_completed_filing(b, AR_FILING)
+    assert filing.status == Filing.Status.COMPLETED.value
+    filing.colin_event_id = 1234
+    filing.save()
+    filings = Filing.get_completed_filings_for_colin()
+
+    # test method
+    # assert doesn't return completed filing with colin_event_ids set
+    assert len(filings) == 0
+    # assert returns completed filings with colin_event_id not set
+    filing.colin_event_id = None
+    filing.save()
+    filings = Filing.get_completed_filings_for_colin()
+    assert len(filings) == 1
+    assert filing.id == filings[0].json['filing']['header']['filingId']
+    assert filings[0].json['filing']['header']['colinId'] is None
+    # assert doesn't return non completed filings
+    filing.transaction_id = None
+    filing.save()
+    assert filing.status != Filing.Status.COMPLETED.value
+    filings = Filing.get_completed_filings_for_colin()
+    assert len(filings) == 0

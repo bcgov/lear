@@ -26,7 +26,7 @@
     <v-expansion-panel v-if="filedItems && filedItems.length > 0" v-model="panel">
       <v-expansion-panel-content
         class="filing-history-list"
-        v-for="(item, index) in orderBy(filedItems, 'filingDate', -1)"
+        v-for="(item, index) in filedItems"
         v-bind:key="index">
         <template v-slot:header>
           <div class="list-item">
@@ -122,7 +122,7 @@ export default {
   },
 
   mounted () {
-    // reload data for this page
+    // load data for this page
     this.getFilings()
   },
 
@@ -136,9 +136,9 @@ export default {
         var url = this.corpNum + '/filings'
         axios.get(url).then(response => {
           if (response && response.data && response.data.filings) {
-            // sort by id descending (ie, latest to earliest)
+            // sort by date descending (ie, latest to earliest)
             const filings = response.data.filings.sort(
-              (a, b) => (b.filing.header.filingId - a.filing.header.filingId)
+              (a, b) => (b.filing.header.date - a.filing.header.date)
             )
 
             // store the list of filing history to be used elsewhere
@@ -171,10 +171,24 @@ export default {
             this.errorMessage = 'Oops, could not parse data from server'
           }
           this.$emit('filed-count', this.filedItems.length)
+          // if needed, highlight a specific filing
+          const highlightId = this.$route.query.filing_id
+          if (highlightId) { this.highlightFiling(highlightId) }
         }).catch(error => {
           console.error('getFilings() error =', error)
           this.errorMessage = 'Oops, could not load data from server'
         })
+      }
+    },
+
+    highlightFiling (filingId) {
+      // expand the panel of the matching filing
+      for (let i = 0; i < this.filedItems.length; i++) {
+        // NB: use '+' to allow integer-integer comparison
+        if (this.filedItems[i].filingId === +filingId) {
+          this.panel = i
+          break
+        }
       }
     },
 
@@ -187,12 +201,12 @@ export default {
             name: `Annual Report (${agmYear})`,
             filingAuthor: filing.annualReport.certifiedBy,
             filingDate: filing.header.date,
-            filingId: filing.header.filingId,
+            paymentToken: filing.header.paymentToken,
             filingStatus: filing.header.status,
             filingDocuments: [{
               filingId: filing.header.filingId,
               name: 'Annual Report',
-              documentName: `Annual Report (${agmYear}) - ${filing.header.date}.pdf`
+              documentName: `${this.corpNum} - Annual Report (${agmYear}) - ${filing.header.date}.pdf`
             }]
           }
           // check if there was also a Change Of Directors
@@ -200,7 +214,7 @@ export default {
             item.filingDocuments.push({
               filingId: filing.header.filingId,
               name: 'Director Change (AGM)',
-              documentName: `Director Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
+              documentName: `${this.corpNum} - Director Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
             })
           }
           // check if there was also a Change Of Address
@@ -208,7 +222,7 @@ export default {
             item.filingDocuments.push({
               filingId: filing.header.filingId,
               name: 'Address Change (AGM)',
-              documentName: `Address Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
+              documentName: `${this.corpNum} - Address Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
             })
           }
           this.filedItems.push(item)
@@ -226,12 +240,12 @@ export default {
           name: 'Director Change',
           filingAuthor: filing.changeOfDirectors.certifiedBy,
           filingDate: filing.header.date,
-          filingId: filing.header.filingId,
+          paymentToken: filing.header.paymentToken,
           filingStatus: filing.header.status,
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: 'Director Change',
-            documentName: `Director Change - ${filing.header.date}.pdf`
+            documentName: `${this.corpNum} - Director Change - ${filing.header.date}.pdf`
           }]
         }
         this.filedItems.push(item)
@@ -246,12 +260,12 @@ export default {
           name: 'Address Change',
           filingAuthor: filing.changeOfAddress.certifiedBy,
           filingDate: filing.header.date,
-          filingId: filing.header.filingId,
+          paymentToken: filing.header.paymentToken,
           filingStatus: filing.header.status,
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: 'Address Change',
-            documentName: `Address Change - ${filing.header.date}.pdf`
+            documentName: `${this.corpNum} - Address Change - ${filing.header.date}.pdf`
           }]
         }
         this.filedItems.push(item)
@@ -306,7 +320,7 @@ export default {
     },
 
     async downloadOneReceipt (filing) {
-      const url = filing.filingId + '/receipts'
+      const url = filing.paymentToken + '/receipts'
       const data = {
         corpName: this.corpNum,
         filingDateTime: filing.filingDate, // TODO: format as needed
@@ -315,12 +329,12 @@ export default {
       const config = {
         headers: { 'Accept': 'application/pdf' },
         responseType: 'arraybuffer',
-        baseURL: this.payAPIURL
+        baseURL: this.payAPIURL + 'payments/'
       }
 
       await axios.post(url, data, config).then(response => {
         if (response) {
-          const fileName = `Receipt - ${filing.filingDate}.pdf`
+          const fileName = `${this.corpNum} - Receipt - ${filing.filingDate}.pdf`
 
           /* solution from https://github.com/axios/axios/issues/1392 */
 
@@ -363,7 +377,7 @@ export default {
 
   watch: {
     corpNum (val) {
-      // when Corp Num is set or changes, get new filed items
+      // if Corp Num changes, get new filings
       this.getFilings()
     }
   }

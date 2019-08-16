@@ -35,7 +35,6 @@ class FilingInfo(Resource):
     def get(identifier, filing_type):
         """Return the complete filing info."""
         try:
-
             # get optional parameters (event_id / year)
             event_id = request.args.get('eventId', None)
             year = request.args.get('year', None)

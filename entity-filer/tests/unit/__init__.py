@@ -55,19 +55,21 @@ COA_FILING = {
                 'streetAddress': 'test lane',
                 'streetAddressAdditional': 'test line 1',
                 'addressCity': 'testcity',
-                'addressCountry': 'CA',
+                'addressCountry': 'Canada',
                 'addressRegion': 'BC',
                 'postalCode': 'T3S T3R',
-                'deliveryInstructions': 'Test address delivery'
+                'deliveryInstructions': 'Test address delivery',
+                'actions': []
             },
             'mailingAddress': {
                 'streetAddress': 'test lane',
                 'streetAddressAdditional': 'test line 1',
                 'addressCity': 'testcity',
-                'addressCountry': 'CA',
+                'addressCountry': 'Canada',
                 'addressRegion': 'BC',
                 'postalCode': 'T3S T3R',
-                'deliveryInstructions': 'Test address mailing'
+                'deliveryInstructions': 'Test address mailing',
+                'actions': []
             },
             'certifiedBy': 'full name',
             'email': 'no_one@never.get'
@@ -103,11 +105,12 @@ COD_FILING = {
                         'streetAddress': 'test lane',
                         'streetAddressAdditional': 'test line 1',
                         'addressCity': 'testcity',
-                        'addressCountry': 'CA',
+                        'addressCountry': 'Canada',
                         'addressRegion': 'BC',
                         'postalCode': 'T3S T3R',
                         'deliveryInstructions': 'director1'
                     },
+                    'actions': []
                 },
                 {
                     'title': 'title',
@@ -122,11 +125,12 @@ COD_FILING = {
                         'streetAddress': 'test lane',
                         'streetAddressAdditional': 'test line 1',
                         'addressCity': 'testcity',
-                        'addressCountry': 'CA',
+                        'addressCountry': 'Canada',
                         'addressRegion': 'BC',
                         'postalCode': 'T3S T3R',
                         'deliveryInstructions': 'director2'
                     },
+                    'actions': []
                 },
                 {
                     'title': 'title',
@@ -141,11 +145,12 @@ COD_FILING = {
                         'streetAddress': 'test lane',
                         'streetAddressAdditional': 'test line 1',
                         'addressCity': 'testcity',
-                        'addressCountry': 'CA',
+                        'addressCountry': 'Canada',
                         'addressRegion': 'BC',
                         'postalCode': 'T3S T3R',
                         'deliveryInstructions': 'director3'
                     },
+                    'actions': []
                 },
                 {
                     'title': 'title',
@@ -160,11 +165,12 @@ COD_FILING = {
                         'streetAddress': 'test lane',
                         'streetAddressAdditional': 'test line 1',
                         'addressCity': 'testcity',
-                        'addressCountry': 'CA',
+                        'addressCountry': 'Canada',
                         'addressRegion': 'BC',
                         'postalCode': 'T3S T3R',
                         'deliveryInstructions': 'director4'
                     },
+                    'actions': []
                 }
             ],
             'certifiedBy': 'full name',
@@ -196,7 +202,7 @@ COMBINED_FILING = {
                 'streetAddress': 'test lane',
                 'streetAddressAdditional': 'test line 1',
                 'addressCity': 'testcity',
-                'addressCountry': 'CA',
+                'addressCountry': 'Canada',
                 'addressRegion': 'BC',
                 'postalCode': 'T3S T3R',
                 'deliveryInstructions': 'Test address delivery'
@@ -205,7 +211,7 @@ COMBINED_FILING = {
                 'streetAddress': 'test lane',
                 'streetAddressAdditional': 'test line 1',
                 'addressCity': 'testcity',
-                'addressCountry': 'CA',
+                'addressCountry': 'Canada',
                 'addressRegion': 'BC',
                 'postalCode': 'T3S T3R',
                 'deliveryInstructions': 'Test address mailing'
@@ -317,8 +323,30 @@ def create_filing(token, json_filing=None, business_id=None):
 
 def create_business(identifier):
     """Return a test business."""
-    from legal_api.models import Business
+    from legal_api.models import Address, Business
     business = Business()
     business.identifier = identifier
+    business = create_business_address(business, Address.DELIVERY)
+    business = create_business_address(business, Address.MAILING)
+    business.save()
+    return business
+
+
+def create_business_address(business, type):
+    """Create an address."""
+    from legal_api.models import Address
+    address = Address(
+        city='Test City',
+        street=f'{business.identifier}-Test Street',
+        postal_code='T3S3T3',
+        country='TA',
+        region='BC',
+    )
+    if type == 'mailing':
+        address.address_type = Address.MAILING
+        business.mailing_address.append(address)
+    else:
+        address.address_type = Address.DELIVERY
+        business.delivery_address.append(address)
     business.save()
     return business

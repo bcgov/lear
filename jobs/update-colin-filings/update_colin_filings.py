@@ -15,8 +15,11 @@
 
 This module is the API for the Legal Entity system.
 """
+import logging
 import os
 
+import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
+from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 from flask import Flask
 from flask_jwt_oidc import JwtManager
 
@@ -31,11 +34,21 @@ setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.
 # lower case name as used by convention in most Flask apps
 jwt = JwtManager()  # pylint: disable=invalid-name
 
+SENTRY_LOGGING = LoggingIntegration(
+    event_level=logging.ERROR  # send errors as events
+)
+
 
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.config.from_object(config.CONFIGURATION[run_mode])
+    # Configure Sentry
+    if app.config.get('SENTRY_DSN', None):
+        sentry_sdk.init(
+            dsn=app.config.get('SENTRY_DSN'),
+            integrations=[SENTRY_LOGGING]
+        )
 
     setup_jwt_manager(app, jwt)
 
@@ -87,7 +100,7 @@ def send_filing(app: Flask = None, filing: dict = None):
         filing_id = filing["filing"]["header"]["filingId"]
         app.logger.debug(f'Filing {filing_id} in colin for {filing["filing"]["business"]["identifier"]}.')
         r = requests.post(f'{app.config["COLIN_URL"]}/{filing["filing"]["business"]["identifier"]}/filings/'
-                          f'{filing_type}', json={'filing': filing['filing']})
+                          f'{filing_type}', json=filing)
         if not r or r.status_code != 201:
             app.logger.error(f'Filing {filing_id} not created in colin {filing["filing"]["business"]["identifier"]}.')
             raise Exception
@@ -95,9 +108,12 @@ def send_filing(app: Flask = None, filing: dict = None):
         return r.json()['filing'][filing_type]['eventId']
 
 
-def update_colin_id(app: Flask = None, filing_id: str = None, colin_id: str = None):
+def update_colin_id(app: Flask = None, filing_id: str = None, colin_id: str = None, token: jwt = None):
     """Update the colin_id in the filings table."""
-    r = requests.patch(f'{app.config["LEGAL_URL"]}/internal/filings/{filing_id}', json={'colinId': colin_id})
+    r = requests.patch(f'{app.config["LEGAL_URL"]}/internal/filings/{filing_id}',
+                       json={'colinId': colin_id},
+                       headers={'Authorization': f'Bearer {token}'}
+                       )
     if not r or r.status_code != 202:
         app.logger.error(f'Failed to update colin id in legal db for filing {filing_id} {r.status_code}')
         return False
@@ -120,13 +136,13 @@ def run():
     with application.app_context():
         try:
             # get updater-job token
-            # creds = {'username': application.config['USERNAME'], 'password': application.config['PASSWORD']}
-            # auth = requests.post(application.config['AUTH_URL'], json=creds, headers={
-            #     'Content-Type': 'application/json'})
-            # if auth.status_code != 200:
-            #     application.logger.error(f'legal-updater failed to authenticate {auth.json()} {auth.status_code}')
-            #     raise Exception
-            # token = dict(auth.json())['access_token']
+            creds = {'username': application.config['USERNAME'], 'password': application.config['PASSWORD']}
+            auth = requests.post(application.config['AUTH_URL'], json=creds, headers={
+                'Content-Type': 'application/json'})
+            if auth.status_code != 200:
+                application.logger.error(f'colin-updater failed to authenticate {auth.json()} {auth.status_code}')
+                raise Exception
+            token = dict(auth.json())['access_token']
 
             filings = get_filings(app=application)
             if not filings:
@@ -134,7 +150,7 @@ def run():
             for filing in filings:
                 filing_id = filing["filing"]["header"]["filingId"]
                 colin_id = send_filing(app=application, filing=filing)
-                update = update_colin_id(app=application, filing_id=filing_id, colin_id=colin_id)
+                update = update_colin_id(app=application, filing_id=filing_id, colin_id=colin_id, token=token)
                 if update:
                     application.logger.error(f'Successfully updated filing {filing_id}')
                 else:
