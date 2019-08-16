@@ -172,7 +172,8 @@ export default {
           }
           this.$emit('filed-count', this.filedItems.length)
           // if needed, highlight a specific filing
-          const highlightId = this.$route.query.filing_id
+          // NB: use unary plus operator to cast string to number
+          const highlightId = +this.$route.query.filing_id // may be NaN (which is false)
           if (highlightId) { this.highlightFiling(highlightId) }
         }).catch(error => {
           console.error('getFilings() error =', error)
@@ -181,11 +182,11 @@ export default {
       }
     },
 
-    highlightFiling (filingId) {
+    highlightFiling (highlightId) {
       // expand the panel of the matching filing
       for (let i = 0; i < this.filedItems.length; i++) {
-        // NB: use '+' to allow integer-integer comparison
-        if (this.filedItems[i].filingId === +filingId) {
+        // assume there is always a filing document
+        if (this.filedItems[i].filingDocuments[0].filingId === highlightId) {
           this.panel = i
           break
         }
