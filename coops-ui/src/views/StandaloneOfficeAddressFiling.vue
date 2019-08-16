@@ -45,7 +45,7 @@
         <v-card-actions>
           <v-btn color="primary" flat @click="navigateToDashboard">Exit without saving</v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="primary" flat @click="onClickFilePay">Retry</v-btn>
+          <v-btn color="primary" flat @click="onClickFilePay" :disabled="filingPaying">Retry</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -108,10 +108,8 @@
           </header>
 
           <div>
-
             <!-- Registered Office Addresses -->
             <section>
-
               <RegisteredOfficeAddress
                 :changeButtonDisabled="false"
                 :legalEntityNumber="corpNum"
@@ -120,7 +118,7 @@
                 @valid="officeAddressFormValid = $event" />
             </section>
 
-            <!--Certify -->
+            <!-- Certify -->
             <section>
               <header>
                 <h2 id="AR-step-4-header">Certify Correct</h2>
@@ -128,7 +126,6 @@
               </header>
               <Certify @certifyChange="changeCertifyData" @certifiedBy="certifiedBy=$event" ref="certifyClause"/>
             </section>
-
           </div>
         </article>
 
@@ -142,12 +139,14 @@
       <v-container id="buttons-container" class="list-item">
         <div class="buttons-left">
           <v-btn id="coa-save-btn" large
-            :disabled="!saveAsDraftEnabled"
+            :disabled="!saveAsDraftEnabled || saving"
+            :loading="saving"
             @click="onClickSave">
             Save
           </v-btn>
           <v-btn id="coa-save-resume-btn" large
-            :disabled="!saveAsDraftEnabled"
+            :disabled="!saveAsDraftEnabled || savingResuming"
+            :loading="savingResuming"
             @click="onClickSaveResume">
             Save &amp; Resume Later
           </v-btn>
@@ -160,7 +159,8 @@
               id="coa-file-pay-btn"
               color="primary"
               large
-              :disabled="!validated"
+              :disabled="!validated || filingPaying"
+              :loading="filingPaying"
               @click="onClickFilePay">
               File &amp; Pay
             </v-btn>
@@ -191,7 +191,7 @@ import { PAYMENT_REQUIRED } from 'http-status-codes'
 import Certify from '@/components/AnnualReport/Certify.vue'
 
 export default {
-  name: 'AnnualReport',
+  name: 'StandaloneOfficeAddressFiling',
 
   components: {
     RegisteredOfficeAddress,
@@ -211,7 +211,10 @@ export default {
       paymentErrorDialog: false,
       certifyChange: false,
       certifiedBy: null,
-      officeAddressFormValid: true
+      officeAddressFormValid: true,
+      saving: false,
+      savingResuming: false,
+      filingPaying: false
     }
   },
 
@@ -235,9 +238,9 @@ export default {
       this.$router.push('/')
     }
 
-    // If loading from draft
+    // if loading from draft...
     this.filingId = this.$route.params.id
-    if (this.filingId) {
+    if (this.filingId > '0') {
       this.fetchChangeOfAddressFiling()
     }
   },
@@ -316,13 +319,16 @@ export default {
     },
 
     async onClickSave () {
+      this.saving = true
       const filing = await this.saveFiling(true)
       if (!filing) {
         console.log('onClickSave() error - invalid filing =', filing)
       }
+      this.saving = false
     },
 
     async onClickSaveResume () {
+      this.savingResuming = true
       const filing = await this.saveFiling(true)
       // on success, redirect to Home URL
       if (filing) {
@@ -331,9 +337,11 @@ export default {
       } else {
         console.log('onClickSaveResume() error - invalid filing =', filing)
       }
+      this.savingResuming = false
     },
 
     async onClickFilePay () {
+      this.filingPaying = true
       const filing = await this.saveFiling(false)
       // on success, redirect to Pay URL
       if (filing && filing.header) {
@@ -349,6 +357,7 @@ export default {
       } else {
         console.log('onClickFilePay() error - invalid filing =', filing)
       }
+      this.filingPaying = false
     },
 
     async saveFiling (isDraft) {
@@ -390,7 +399,7 @@ export default {
         )
       }
 
-      if (this.filingId) {
+      if (this.filingId > '0') {
         // we have a filing id, so we are updating an existing filing
         let url = this.corpNum + '/filings/' + this.filingId
         if (isDraft) { url += '?draft=true' }
@@ -408,7 +417,7 @@ export default {
         })
         return filing
       } else {
-        // filing id is 0, so we are saving a new filing
+        // filing id is '0', so we are saving a new filing
         let url = this.corpNum + '/filings'
         if (isDraft) { url += '?draft=true' }
         let filing = null
@@ -450,12 +459,8 @@ export default {
 
     navigateToDashboard () {
       this.dialog = false
-      this.$router.push('/')
+      this.$router.push('/dashboard')
     }
-  },
-
-  watch: {
-
   }
 }
 </script>
