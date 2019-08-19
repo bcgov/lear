@@ -5,3 +5,9 @@ services:
     container_name: "legal_api_postgres"
     ports:
       - "5432:5432"
+    environment:
+      - LC_ALL=C.UTF-8
+      - POSTGRES_DB=legal
+      - POSTGRES_USER=legal
+      - POSTGRES_PASSWORD=
+      - POSTGRES_PORT=5432
