@@ -7,7 +7,7 @@ services:
       - "5432:5432"
     environment:
       - LC_ALL=C.UTF-8
-      - POSTGRES_DB=legal
+      - POSTGRES_DB=legal_test
       - POSTGRES_USER=legal
       - POSTGRES_PASSWORD=
       - POSTGRES_PORT=5432
