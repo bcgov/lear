@@ -35,3 +35,6 @@ integration_nats = pytest.mark.skipif((os.getenv('RUN_NATS_TESTS', False) is Fal
 
 integration_sentry = pytest.mark.skipif((os.getenv('SENTRY_DSN', False) is False),
                                         reason='SENTRY tests run when SENTRY_DSN is set.')
+
+integration_payment = pytest.mark.skipif((os.getenv('RUN_PAYMENT_TESTS', False) is False),
+                                         reason='Test requiring payment service run when RUN_PAYMENT_TESTS is set.')
