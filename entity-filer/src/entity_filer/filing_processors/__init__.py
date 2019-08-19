@@ -16,8 +16,7 @@
 Processors hold the business logic for how a filing is interpreted and saved to the legal database.
 """
 import pycountry
-
-from legal_api.models import Address
+from legal_api.models import Address, Director
 
 
 def create_address(address_info, address_type):
@@ -34,7 +33,8 @@ def create_address(address_info, address_type):
     return address
 
 
-def update_address(address: Address, new_info: dict, ):
+def update_address(address: Address, new_info: dict):
+    """Update address with new info."""
     address.street = new_info.get('streetAddress')
     address.street_additional = new_info.get('streetAddressAdditional')
     address.city = new_info.get('addressCity')
@@ -44,3 +44,16 @@ def update_address(address: Address, new_info: dict, ):
     address.delivery_instructions = new_info.get('deliveryInstructions')
 
     return address
+
+
+def update_director(director: Director, new_info: dict):
+    """Update director with new info."""
+    director.first_name = new_info['officer'].get('firstName').upper()
+    director.middle_initial = new_info['officer'].get('middleInitial').upper()
+    director.last_name = new_info['officer'].get('lastName').upper()
+    director.title = new_info.get('title').upper()
+    # director.appointment_date = new_info.get('appointmentDate')
+    director.cessation_date = new_info.get('cessationDate')
+    director.delivery_address = update_address(director.delivery_address, new_info['deliveryAddress'])
+
+    return director

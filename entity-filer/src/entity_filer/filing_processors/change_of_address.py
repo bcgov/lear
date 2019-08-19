@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of address."""
+from legal_api.models import Business, Filing
+
 from entity_filer.filing_processors import update_address
-from legal_api.models import Address, Business, Filing
 
 
 def process(business: Business, filing: Filing):
