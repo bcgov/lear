@@ -32,7 +32,7 @@ from tests.unit.models import AR_FILING, factory_business, factory_business_mail
 from tests.unit.services.utils import create_header
 
 
-def test_get_all_business_filings_only_one_in_ledger(session, client):
+def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):
     """Assert that the business info can be received in a valid JSONSchema format."""
     import copy
     identifier = 'CP7654321'
@@ -45,13 +45,14 @@ def test_get_all_business_filings_only_one_in_ledger(session, client):
 
     print('test_get_all_business_filings - filing:', filings)
 
-    rv = client.get(f'/api/v1/businesses/{identifier}/filings')
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('filings')) == 0  # The endpoint will return only completed filings
 
 
-def test_get_all_business_filings_multi_in_ledger(session, client):
+def test_get_all_business_filings_multi_in_ledger(session, client, jwt):
     """Assert that the business info can be received in a valid JSONSchema format."""
     import copy
     from tests import add_years
@@ -68,13 +69,14 @@ def test_get_all_business_filings_multi_in_ledger(session, client):
             datetime.date(add_years(datetime(2001, 8, 5, 7, 7, 58, 272362), i)).isoformat()
         factory_filing(b, ar)
 
-    rv = client.get(f'/api/v1/businesses/{identifier}/filings')
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('filings')) == 0
 
 
-def test_get_one_business_filing_by_id(session, client):
+def test_get_one_business_filing_by_id(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     import copy
     identifier = 'CP7654321'
@@ -84,14 +86,15 @@ def test_get_one_business_filing_by_id(session, client):
     ar['filing']['header']['filingId'] = filings.id
     ar['filing']['header']['colinId'] = None
 
-    rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings.id}')
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
     assert rv.json['filing']['business'] == ar['filing']['business']
 
 
-def test_get_404_when_business_invalid_filing_id(session, client):
+def test_get_404_when_business_invalid_filing_id(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     identifier = 'CP7654321'
     b = factory_business(identifier)
@@ -101,18 +104,20 @@ def test_get_404_when_business_invalid_filing_id(session, client):
 
     print(f'/api/v1/businesses/{identifier}/filings/{filings.id}')
 
-    rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings.id + 1}')
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings.id + 1}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': f'{identifier} no filings found'}
 
 
-def test_get_404_filing_with_invalid_business(session, client):
+def test_get_404_filing_with_invalid_business(session, client, jwt):
     """Assert that a filing cannot be created against non-existent business."""
     identifier = 'CP7654321'
     filings_id = 1
 
-    rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings_id}')
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings_id}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': f'{identifier} not found'}

@@ -46,6 +46,7 @@ class ListFilingResource(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @jwt.requires_auth
     def get(identifier, filing_id=None):
         """Return a JSON object with meta information about the Service."""
         business = Business.find_by_identifier(identifier)
