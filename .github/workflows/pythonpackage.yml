@@ -24,9 +24,12 @@ jobs:
         pip install -r requirements.txt
         pip install .
     - name: Run Postgres
-      run: docker-compose up -d
+      run: |
+        cd legal-api
+        docker-compose up -d
     - name: Test with pytest
       run: |
+        cd legal-api
         pip install -r requirements/dev.txt
         pip install pytest
         pytest
