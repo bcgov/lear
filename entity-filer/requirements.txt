@@ -20,7 +20,7 @@ jsonschema==3.0.2
 protobuf==3.9.1
 psycopg2-binary==2.8.3
 pyasn1==0.4.6
-pycountry==19.7.15
+pycountry==19.8.18
 pyrsistent==0.15.4
 python-dotenv==0.10.3
 python-jose==3.0.1
