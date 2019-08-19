@@ -1,5 +1,3 @@
-name: Python package
-
 on: [push]
   paths:       # Push events containing matching files
   - legal-api/*
