@@ -14,7 +14,8 @@
 """File processing rules and actions for the change of directors."""
 import pycountry
 
-from entity_filer.filing_processors import create_address
+from entity_filer.filing_processors import create_address, update_director
+from entity_filer.service_utils import QueueException, logger
 from legal_api.models import Address, Business, Director, Filing
 
 
@@ -23,37 +24,34 @@ def process(business: Business, filing: Filing):
     new_directors = filing['changeOfDirectors'].get('directors')
 
     for new_director in new_directors:
-        existing_dir = False
-        for director in business.directors:
-            director_name = director.first_name + director.middle_initial + director.last_name
-            new_director_name = \
-                new_director['officer'].get('firstName') + new_director['officer'].get('middleInitial') +\
-                new_director['officer'].get('lastName')
-
-            if director_name == new_director_name:
-                # mark director as existing from before
-                existing_dir = True
-
-                # set cessation date if given
-                director.cessation_date = new_director.get('cessationDate')
-
-                # check for address change
-                new_address = create_address(new_director['deliveryAddress'], Address.DELIVERY)
-                for key in new_address.json:
-                    # if any change in address then update the address to the new one
-                    if new_address.json[key] != director.delivery_address.json[key]:
-                        director.delivery_address = new_address
-                        break
-
-        if not existing_dir:
+        if 'appointed' in new_director['actions']:
             # create address
             address = create_address(new_director['deliveryAddress'], Address.DELIVERY)
 
             # add new director to the list
-            business.directors.append(Director(first_name=new_director['officer'].get('firstName'),
-                                               middle_initial=new_director['officer'].get('middleInitial'),
-                                               last_name=new_director['officer'].get('lastName'),
+            business.directors.append(Director(first_name=new_director['officer'].get('firstName', '').upper(),
+                                               middle_initial=new_director['officer'].get('middleInitial', '').upper(),
+                                               last_name=new_director['officer'].get('lastName', '').upper(),
                                                title=new_director.get('title'),
                                                appointment_date=new_director.get('appointmentDate'),
                                                cessation_date=new_director.get('cessationDate'),
                                                delivery_address=address))
+
+        if any([action != 'appointed' for action in new_director['actions']]):
+            # get name of director in json for comparison *
+            new_director_name = \
+                new_director['officer'].get('firstName') + new_director['officer'].get('middleInitial') + \
+                new_director['officer'].get('lastName') \
+                if 'nameChanged' not in new_director['actions'] \
+                else new_director['officer'].get('prevFirstName') + \
+                new_director['officer'].get('prevMiddleInitial') + new_director['officer'].get('prevLastName')
+            if not new_director_name:
+                logger.error(f'Could not resolve director name from json {new_director}.')
+                raise QueueException
+
+            for director in business.directors:
+                # get name of director in database for comparison *
+                director_name = director.first_name + director.middle_initial + director.last_name
+                if director_name.upper() == new_director_name.upper():
+                    update_director(director, new_director)
+                    break
