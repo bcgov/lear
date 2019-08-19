@@ -27,7 +27,7 @@ from flask import current_app
 
 from legal_api.services import QueueService
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE
-from tests import integration_nats
+from tests import integration_nats, integration_payment
 from tests.unit.models import AR_FILING, factory_business, factory_business_mailing_address, factory_filing
 from tests.unit.services.utils import create_header
 
@@ -235,6 +235,7 @@ def test_post_only_validate_error_ar(session, client, jwt):
     assert rv.json['errors'][0]['error'] == "'name' is a required property"
 
 
+@integration_payment
 def test_post_valid_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     from legal_api.models import Address, Filing
@@ -282,6 +283,7 @@ def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
     assert rv.json['errors'][0]['message'] == 'unable to create invoice for payment.'
 
 
+@integration_payment
 def test_update_ar_filing_to_a_business(session, client, jwt):
     """Assert that a filing can be updated if not paid."""
     import copy
@@ -552,6 +554,7 @@ def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server):
                                           'colinFiling/id')
 
 
+@integration_payment
 def test_update_ar_with_colin_id_set(session, client, jwt):
     """Assert that when a filing with colinId set (as when colin updates legal api) that colin_event_id is set."""
     import copy
