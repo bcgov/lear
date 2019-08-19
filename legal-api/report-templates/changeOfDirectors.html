@@ -199,9 +199,7 @@
           DIRECTOR CHANGE OF ADDRESS
         </div>
 {% for director in changeOfDirectors.directors %}
-{% if loop.index > 1 %}
-        <div class="director-separator"></div>
-{% endif %}
+{% if not director.cessationDate%}
         <div class="section-data no-page-break">
           <div class="title">
             {{ director.officer.lastName }}{% if director.officer.middleName is defined %}
@@ -216,6 +214,10 @@
           <div>{{ director.deliveryAddress.addressCountry }}</div>
           <div>{{ director.deliveryAddress.deliveryInstructions }}</div>
         </div>
+        {% if not loop.last %}
+        <div class="director-separator"></div>
+        {% endif %}
+{% endif %}
 {% endfor %}
 
         <div  class="no-page-break">
