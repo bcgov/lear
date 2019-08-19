@@ -450,7 +450,7 @@ export default {
         }
       }
 
-      if (this.isDataChanged('OTCDR')) {
+      if (this.$refs.directorsList.getAllDirectors !== undefined) { // fails in unit tests without this check
         changeOfDirectors = {
           changeOfDirectors: {
             certifiedBy: this.certifiedBy || '',
@@ -460,7 +460,7 @@ export default {
         }
       }
 
-      if (this.isDataChanged('OTADD') && this.addresses) {
+      if (this.addresses) {
         changeOfAddress = {
           changeOfAddress: {
             certifiedBy: this.certifiedBy || '',
