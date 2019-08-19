@@ -285,24 +285,29 @@ export default {
       const url = this.corpNum + '/filings/' + filingDocument.filingId
       const headers = { 'Accept': 'application/pdf' }
 
-      await axios.get(url, { headers: headers, responseType: 'arraybuffer' }).then(response => {
+      await axios.get(url, { headers: headers, responseType: 'blob' as 'json' }).then(response => {
         if (response) {
           /* solution from https://github.com/axios/axios/issues/1392 */
 
           // it is necessary to create a new blob object with mime-type explicitly set
           // otherwise only Chrome works like it should
-          const newBlob = new Blob([response.data], { type: 'application/pdf' })
+          const blob = new Blob([response.data], { type: 'application/pdf' })
 
           // IE doesn't allow using a blob object directly as link href
           // instead it is necessary to use msSaveOrOpenBlob
           if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-            window.navigator.msSaveOrOpenBlob(newBlob, filingDocument.documentName)
+            window.navigator.msSaveOrOpenBlob(blob, filingDocument.documentName)
           } else {
             // for other browsers, create a link pointing to the ObjectURL containing the blob
-            const link = document.createElement('a')
-            link.href = window.URL.createObjectURL(newBlob)
-            link.download = filingDocument.documentName
-            link.click()
+            const url = window.URL.createObjectURL(blob)
+            const a = window.document.createElement('a')
+            window.document.body.appendChild(a)
+            a.setAttribute('style', 'display: none')
+            a.href = url
+            a.download = filingDocument.documentName
+            a.click()
+            window.URL.revokeObjectURL(url)
+            a.remove()
           }
         } else {
           console.log('downloadOneDocument() error - null response')
@@ -329,7 +334,7 @@ export default {
       }
       const config = {
         headers: { 'Accept': 'application/pdf' },
-        responseType: 'arraybuffer',
+        responseType: 'blob' as 'json',
         baseURL: this.payAPIURL + 'payments/'
       }
 
@@ -341,18 +346,23 @@ export default {
 
           // it is necessary to create a new blob object with mime-type explicitly set
           // otherwise only Chrome works like it should
-          const newBlob = new Blob([response.data], { type: 'application/pdf' })
+          const blob = new Blob([response.data], { type: 'application/pdf' })
 
           // IE doesn't allow using a blob object directly as link href
           // instead it is necessary to use msSaveOrOpenBlob
           if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-            window.navigator.msSaveOrOpenBlob(newBlob, fileName)
+            window.navigator.msSaveOrOpenBlob(blob, fileName)
           } else {
             // for other browsers, create a link pointing to the ObjectURL containing the blob
-            const link = document.createElement('a')
-            link.href = window.URL.createObjectURL(newBlob)
-            link.download = fileName
-            link.click()
+            const url = window.URL.createObjectURL(blob)
+            const a = window.document.createElement('a')
+            window.document.body.appendChild(a)
+            a.setAttribute('style', 'display: none')
+            a.href = url
+            a.download = fileName
+            a.click()
+            window.URL.revokeObjectURL(url)
+            a.remove()
           }
         } else {
           console.log('downloadOneReceipt() error - null response')
