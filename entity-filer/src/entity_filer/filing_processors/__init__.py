@@ -16,7 +16,6 @@
 Processors hold the business logic for how a filing is interpreted and saved to the legal database.
 """
 import pycountry
-
 from legal_api.models import Address, Director
 
 

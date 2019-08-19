@@ -19,11 +19,11 @@ import random
 import pytest
 
 from tests import EPOCH_DATETIME
-from tests.unit import AR_FILING, COA_FILING, COD_FILING, COMBINED_FILING, create_business, create_filing, \
-    create_director
+from tests.unit import AR_FILING, COA_FILING, COD_FILING, COMBINED_FILING, create_business, create_director, create_filing  # noqa I001, E501;
 
 
 def compare_addresses(business_address: dict, filing_address: dict):
+    """Compare two address dicts."""
     for key in business_address.keys():
         if key == 'addressCountry':
             assert business_address[key] == 'CA'
@@ -32,6 +32,7 @@ def compare_addresses(business_address: dict, filing_address: dict):
 
 
 def active_ceased_lists(filing):
+    """Create active/ceased director lists based on a filing json."""
     ceased_directors = []
     active_directors = []
     for filed_director in filing['filing']['changeOfDirectors']['directors']:
@@ -43,6 +44,7 @@ def active_ceased_lists(filing):
 
 
 def check_directors(business, directors, director_ceased_id, ceased_directors, active_directors):
+    """Assert basic checks on directors."""
     from legal_api.resources.business import DirectorResource
     assert len(directors) == len(active_directors)
     for director in directors:
@@ -182,11 +184,10 @@ def test_process_coa_filing(app, session):
 def test_process_cod_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
     import copy
+    from legal_api.models import Business, Director, Filing
 
     from entity_filer.worker import process_filing
     from entity_filer.worker import get_filing_by_payment_id
-    from legal_api.models import Address, Business, Director, Filing
-    from legal_api.resources.business import DirectorResource
 
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -246,11 +247,10 @@ def test_process_cod_filing(app, session):
 def test_process_combined_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
     import copy
+    from legal_api.models import Business, Director, Filing
 
     from entity_filer.worker import process_filing
     from entity_filer.worker import get_filing_by_payment_id
-    from legal_api.models import Address, Business, Director, Filing
-    from legal_api.resources.business import DirectorResource
 
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))

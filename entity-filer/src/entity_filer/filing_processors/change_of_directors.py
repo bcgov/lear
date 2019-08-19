@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of directors."""
-import pycountry
+from legal_api.models import Address, Business, Director, Filing
 
 from entity_filer.filing_processors import create_address, update_director
 from entity_filer.service_utils import QueueException, logger
-from legal_api.models import Address, Business, Director, Filing
 
 
 def process(business: Business, filing: Filing):
@@ -46,7 +45,7 @@ def process(business: Business, filing: Filing):
                 else new_director['officer'].get('prevFirstName') + \
                 new_director['officer'].get('prevMiddleInitial') + new_director['officer'].get('prevLastName')
             if not new_director_name:
-                logger.error(f'Could not resolve director name from json {new_director}.')
+                logger.error('Could not resolve director name from json %s.', new_director)
                 raise QueueException
 
             for director in business.directors:

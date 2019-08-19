@@ -274,6 +274,7 @@ def create_business_address(business, type):
 
 
 def create_director(director):
+    """Create a director."""
     from legal_api.models import Address, Director
     new_address = Address(
         street=director['deliveryAddress']['streetAddress'],
