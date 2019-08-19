@@ -26,7 +26,7 @@
   </v-dialog>
 </template>
 
-<script>
+<script lang="ts">
 /**
  * Vuetify Confirm Dialog component
  * ref: https://gist.github.com/eolant/ba0f8a5c9135d1a146e1db575276177d
@@ -57,48 +57,82 @@
  *   this.$root.$confirm = this.$refs.confirm.open
  * }
  */
-export default {
-  name: 'ConfirmDialog',
+import { Component, Vue } from 'vue-property-decorator'
 
-  data: () => ({
-    dialog: false,
-    resolve: null,
-    reject: null,
-    message: null,
-    title: null,
-    options: {
-      width: 300,
-      zIndex: 200,
-      persistent: false,
-      yes: 'Yes',
-      no: 'No',
-      cancel: 'Cancel'
-    }
-  }),
+interface OptionsObject {
+  width?: number | string,
+  zIndex?: number,
+  persistent?: boolean,
+  yes?: string,
+  no?: string,
+  cancel?: string
+}
 
-  methods: {
-    open (title, message, options) {
-      this.dialog = true
-      this.title = title
-      this.message = message
-      this.options = Object.assign(this.options, options)
-      return new Promise((resolve, reject) => {
-        this.resolve = resolve
-        this.reject = reject
-      })
-    },
-    onClickYes () {
-      this.resolve(true)
-      this.dialog = false
-    },
-    onClickNo () {
-      this.resolve(false)
-      this.dialog = false
-    },
-    onClickCancel () {
-      this.reject()
-      this.dialog = false
-    }
+@Component
+export default class ConfirmDialog extends Vue {
+  // Whether the subject dialog is currently displayed
+  private dialog: boolean = false
+
+  // The two handlers for the returned promise
+  private resolve: Function = null
+  private reject: Function = null
+
+  // The dialog's title
+  private title: string = null
+
+  // The dialog's message
+  private message: string = null
+
+  // The dialog's options
+  private options: OptionsObject = {
+    width: 300,
+    zIndex: 200,
+    persistent: false,
+    yes: 'Yes',
+    no: 'No',
+    cancel: 'Cancel'
+  }
+
+  /**
+   * Opens the modal with the specified parameters.
+   * @param title   The dialog's title to display.
+   * @param message The dialog's message to display.
+   * @param options The dialog's options to use.
+   * @returns       A promise to subscribe to.
+   */
+  open (title: string, message: string, options: OptionsObject): Promise<{}> {
+    this.dialog = true
+    this.title = title
+    this.message = message
+    this.options = Object.assign(this.options, options)
+    return new Promise((resolve, reject) => {
+      this.resolve = resolve
+      this.reject = reject
+    })
+  }
+
+  /**
+   * Handler for Yes button.
+   */
+  private onClickYes (): void {
+    this.resolve(true)
+    this.dialog = false
+  }
+
+  /**
+   * Handler for No button.
+   */
+  private onClickNo (): void {
+    this.resolve(false)
+    this.dialog = false
+  }
+
+  /**
+   * Handler for Cancel button.
+   */
+  private onClickCancel (): void {
+    this.reject()
+    this.dialog = false
   }
 }
 </script>
