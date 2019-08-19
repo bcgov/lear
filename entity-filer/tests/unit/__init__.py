@@ -93,7 +93,7 @@ COD_FILING = {
         'changeOfDirectors': {
             'directors': [
                 {
-                    'title': 'title',
+                    'title': '',
                     'appointmentDate': '2017-01-01',
                     'cessationDate': None,
                     'officer': {
