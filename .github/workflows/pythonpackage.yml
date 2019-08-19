@@ -30,6 +30,7 @@ jobs:
     - name: Create database
       run: |
         cd legal-api
+        while read -r line; do [[ "$line" =~ ^#.*$ ]] && continue; export $line; done < env-wf
         python pre_hook_create_database.py
     - name: Test with pytest
       run: |
