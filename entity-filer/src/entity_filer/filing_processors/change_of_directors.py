@@ -31,7 +31,7 @@ def process(business: Business, filing: Filing):
             business.directors.append(Director(first_name=new_director['officer'].get('firstName', '').upper(),
                                                middle_initial=new_director['officer'].get('middleInitial', '').upper(),
                                                last_name=new_director['officer'].get('lastName', '').upper(),
-                                               title=new_director.get('title'),
+                                               title=new_director.get('title', '').upper(),
                                                appointment_date=new_director.get('appointmentDate'),
                                                cessation_date=new_director.get('cessationDate'),
                                                delivery_address=address))

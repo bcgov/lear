@@ -48,10 +48,10 @@ def update_address(address: Address, new_info: dict):
 
 def update_director(director: Director, new_info: dict):
     """Update director with new info."""
-    director.first_name = new_info['officer'].get('firstName').upper()
-    director.middle_initial = new_info['officer'].get('middleInitial').upper()
-    director.last_name = new_info['officer'].get('lastName').upper()
-    director.title = new_info.get('title').upper()
+    director.first_name = new_info['officer'].get('firstName', '').upper()
+    director.middle_initial = new_info['officer'].get('middleInitial', '').upper()
+    director.last_name = new_info['officer'].get('lastName', '').upper()
+    director.title = new_info.get('title', '').upper()
     # director.appointment_date = new_info.get('appointmentDate')
     director.cessation_date = new_info.get('cessationDate')
     director.delivery_address = update_address(director.delivery_address, new_info['deliveryAddress'])
