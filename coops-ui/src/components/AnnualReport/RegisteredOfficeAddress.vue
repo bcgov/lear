@@ -384,6 +384,9 @@ export default class RegisteredOfficeAddress extends Vue {
             } else {
               console.log('loadAddressesFromApi() error - invalid Mailing Address =', mailingAddress)
             }
+
+            // emit address data back up so that parent data has data (needed for AR filing specifically)
+            this.emitAddresses()
           } else {
             console.log('loadAddressesFromApi() error - invalid response =', response)
           }
