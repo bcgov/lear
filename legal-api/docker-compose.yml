@@ -1,0 +1,7 @@
+version: "3"
+services:
+  db:
+    image: "postgres:11"
+    container_name: "legal_api_postgres"
+    ports:
+      - "5432:5432"
