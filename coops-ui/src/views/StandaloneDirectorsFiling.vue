@@ -217,6 +217,10 @@ export default {
 
     saveButtonEnabled () {
       return this.directorFormValid && this.filingData.length > 0
+    },
+
+    payAPIURL () {
+      return sessionStorage.getItem('PAY_API_URL')
     }
   },
 
@@ -275,7 +279,7 @@ export default {
         const origin = window.location.origin || ''
         const filingId = filing.header.filingId
         const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
-        let authStub: string = this.authURL || ''
+        let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
         if (!(authStub.endsWith('/'))) { authStub += '/' }
         const paymentToken = filing.header.paymentToken
         const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL

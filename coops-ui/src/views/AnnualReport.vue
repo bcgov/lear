@@ -253,7 +253,11 @@ export default {
       'entityName', 'entityIncNo', 'entityFoundingDate', 'currentFilingStatus',
       'addressesFormValid', 'directorFormValid', 'agmDateValid']),
 
-    ...mapGetters(['isAnnualReportEditable', 'reportState'])
+    ...mapGetters(['isAnnualReportEditable', 'reportState']),
+
+    payAPIURL () {
+      return sessionStorage.getItem('PAY_API_URL')
+    }
   },
 
   created () {
@@ -410,7 +414,7 @@ export default {
         const origin = window.location.origin || ''
         const filingId = filing.header.filingId
         const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
-        let authStub: string = this.authURL || ''
+        let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
         if (!(authStub.endsWith('/'))) { authStub += '/' }
         const paymentToken = filing.header.paymentToken
         const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL

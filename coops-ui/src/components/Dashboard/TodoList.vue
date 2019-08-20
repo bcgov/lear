@@ -299,7 +299,7 @@ export default {
       const origin = window.location.origin || ''
       const filingId = item.id
       const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
-      let authStub: string = this.authURL || ''
+      let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
       if (!(authStub.endsWith('/'))) { authStub += '/' }
       const paymentToken = item.paymentToken
       const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL

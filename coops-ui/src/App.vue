@@ -31,6 +31,12 @@ export default {
     EntityInfo
   },
 
+  computed: {
+    authAPIURL () {
+      return sessionStorage.getItem('AUTH_API_URL')
+    }
+  },
+
   created () {
     // get Keycloak Token
     const token = sessionStorage.getItem('KEYCLOAK_TOKEN')
