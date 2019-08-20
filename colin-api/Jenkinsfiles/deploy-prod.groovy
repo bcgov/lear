@@ -111,8 +111,11 @@ node {
             echo("Rolling back deployment ${COMPONENT_NAME}-${TAG_NAME}.")
             def deploy = openshift.selector("dc", "${COMPONENT_NAME}-${TAG_NAME}")
             try {
+                echo "here ${deploy}"
                 deploy.rollback()
             } catch (Exception e) {
+                echo e.getMessage()
+                echo "here2 ${deploy}"
                 deploy.rollout().undo()
             }
         }
