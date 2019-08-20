@@ -21,7 +21,7 @@
 // define constants
 def NAMESPACE = 'gl2uos'
 def COMPONENT_NAME = 'colin-api'
-def TAG_NAME = 'dev'
+def TAG_NAME = 'prod'
 def SOURCE_TAG = 'test'
 
 // define groovy functions
