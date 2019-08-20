@@ -99,16 +99,22 @@ node {
         }
     }
     stage("Rollback?") {
+        def rollback = true
         try {
             timeout(time: 1, unit: 'DAYS') {
                 input message: "Rollback ${COMPONENT_NAME}-${TAG_NAME}?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin'
             }
+        } catch (Exception e) {
+            rollback = false
+        }
+        if (rollback) {
             echo("Rolling back deployment ${COMPONENT_NAME}-${TAG_NAME}.")
             def deploy = openshift.selector("dc", "${COMPONENT_NAME}-${TAG_NAME}")
-            deploy.rollout().undo()
-        } catch (Exception e) {
-            currentBuild.result = 'SUCCESS'
-            return
+            try {
+                deploy.rollback()
+            } catch (Exception e) {
+                deploy.rollout().undo()
+            }
         }
     }
 }//end node
