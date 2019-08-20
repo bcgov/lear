@@ -21,7 +21,7 @@
 // define constants
 def NAMESPACE = 'gl2uos'
 def COMPONENT_NAME = 'colin-api'
-def TAG_NAME = 'prod'
+def TAG_NAME = 'dev'
 def SOURCE_TAG = 'test'
 
 // define groovy functions
@@ -112,7 +112,7 @@ node {
             def deploy = openshift.selector("dc", "${COMPONENT_NAME}-${TAG_NAME}")
             try {
                 echo "here ${deploy}"
-                deploy.rollback()
+                openshift.rollback(deploy)
             } catch (Exception e) {
                 echo e.getMessage()
                 echo "here2 ${deploy}"
