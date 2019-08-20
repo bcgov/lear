@@ -110,7 +110,7 @@ node {
         if (rollback) {
             echo("Rolling back deployment ${COMPONENT_NAME}-${TAG_NAME}.")
             def deploy = openshift.selector("dc", "${COMPONENT_NAME}-${TAG_NAME}")
-            deploy.rollout().undo()
+            deploy.rollback()
         }
     }
 }//end node
