@@ -21,10 +21,15 @@ Vue.config.productionTip = false
 /**
  * first fetch config from server, then load Vue
  */
-configHelper.fetchConfig().then(() => {
-  new Vue({
-    router,
-    store,
-    render: h => h(App)
-  }).$mount('#app')
-})
+configHelper.fetchConfig()
+  .then(() => {
+    new Vue({
+      router,
+      store,
+      render: h => h(App)
+    }).$mount('#app')
+  })
+  .catch(error => {
+    console.error('error fetching config -', error)
+    alert('Fatal error loading app')
+  })

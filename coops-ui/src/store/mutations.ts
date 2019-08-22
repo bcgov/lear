@@ -56,7 +56,19 @@ export default {
   agmDateValid (state, agmDateValid) {
     state.agmDateValid = agmDateValid
   },
-  filingHistory (state, filingHistory) {
-    state.filingHistory = filingHistory
+  tasks (state, tasks) {
+    state.tasks = tasks
+  },
+  filings (state, filings) {
+    state.filings = filings
+  },
+  mailingAddress (state, mailingAddress) {
+    state.mailingAddress = mailingAddress
+  },
+  deliveryAddress (state, deliveryAddress) {
+    state.deliveryAddress = deliveryAddress
+  },
+  directors (state, directors) {
+    state.directors = directors
   }
 }

@@ -98,7 +98,7 @@
 <script lang="ts">
 import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
-import { mapState, mapActions } from 'vuex'
+import { mapState } from 'vuex'
 
 export default {
   name: 'FilingHistoryList',
@@ -118,81 +118,46 @@ export default {
   },
 
   computed: {
-    ...mapState(['corpNum'])
+    ...mapState(['corpNum', 'filings'])
   },
 
   mounted () {
     // load data for this page
-    this.getFilings()
+    this.filedItems = []
+    this.errorMessage = null
+
+    // create filed items
+    for (let i = 0; i < this.filings.length; i++) {
+      const filing = this.filings[i].filing
+      if (filing && filing.header) {
+        switch (filing.header.name) {
+          case 'annualReport':
+            this.loadAnnualReport(filing)
+            break
+          case 'changeOfDirectors':
+            this.loadChangeOfDirectors(filing)
+            break
+          case 'changeOfAddress':
+            this.loadChangeOfAddress(filing)
+            break
+          default:
+            console.log('ERROR - got unknown filing name =', filing)
+            break
+        }
+      } else {
+        console.log('ERROR - invalid filing or filing header =', filing)
+      }
+    }
+
+    this.$emit('filed-count', this.filedItems.length)
+
+    // if needed, highlight a specific filing
+    // NB: use unary plus operator to cast string to number
+    const highlightId = +this.$route.query.filing_id // may be NaN (which is false)
+    if (highlightId) { this.highlightFiling(highlightId) }
   },
 
   methods: {
-    ...mapActions(['setFilingHistory']),
-
-    getFilings () {
-      this.filedItems = []
-      this.errorMessage = null
-      if (this.corpNum) {
-        var url = this.corpNum + '/filings'
-        axios.get(url).then(response => {
-          if (response && response.data && response.data.filings) {
-            // sort by date descending (ie, latest to earliest)
-            const filings = response.data.filings.sort(
-              (a, b) => (b.filing.header.date - a.filing.header.date)
-            )
-
-            // store the list of filing history to be used elsewhere
-            this.setFilingHistory(filings)
-
-            // create filed items
-            for (let i = 0; i < filings.length; i++) {
-              const filing = filings[i].filing
-              if (filing && filing.header) {
-                switch (filing.header.name) {
-                  case 'annualReport':
-                    this.loadAnnualReport(filing)
-                    break
-                  case 'changeOfDirectors':
-                    this.loadChangeOfDirectors(filing)
-                    break
-                  case 'changeOfAddress':
-                    this.loadChangeOfAddress(filing)
-                    break
-                  default:
-                    console.log('ERROR - got unknown filing name =', filing)
-                    break
-                }
-              } else {
-                console.log('ERROR - invalid filing or filing header =', filing)
-              }
-            }
-          } else {
-            console.log('getFilings() error - invalid Filings')
-            this.errorMessage = 'Oops, could not parse data from server'
-          }
-          this.$emit('filed-count', this.filedItems.length)
-          // if needed, highlight a specific filing
-          // NB: use unary plus operator to cast string to number
-          const highlightId = +this.$route.query.filing_id // may be NaN (which is false)
-          if (highlightId) { this.highlightFiling(highlightId) }
-        }).catch(error => {
-          console.error('getFilings() error =', error)
-          this.errorMessage = 'Oops, could not load data from server'
-        })
-      }
-    },
-
-    highlightFiling (highlightId) {
-      // expand the panel of the matching filing
-      for (let i = 0; i < this.filedItems.length; i++) {
-        // assume there is always a filing document
-        if (this.filedItems[i].filingDocuments[0].filingId === highlightId) {
-          this.panel = i
-          break
-        }
-      }
-    },
-
     loadAnnualReport (filing) {
       if (filing.annualReport) {
         const date = filing.annualReport.annualGeneralMeetingDate
@@ -272,6 +237,17 @@ export default {
         this.filedItems.push(item)
       } else {
         console.log('ERROR - invalid changeOfAddress in filing =', filing)
+      }
+    },
+
+    highlightFiling (highlightId) {
+      // expand the panel of the matching filing
+      for (let i = 0; i < this.filedItems.length; i++) {
+        // assume there is always a filing document
+        if (this.filedItems[i].filingDocuments[0].filingId === highlightId) {
+          this.panel = i
+          break
+        }
       }
     },
 
@@ -383,13 +359,6 @@ export default {
       // finally download receipt
       await this.downloadOneReceipt(filing)
       this.loadingAll = false
-    }
-  },
-
-  watch: {
-    corpNum (val) {
-      // if Corp Num changes, get new filings
-      this.getFilings()
     }
   }
 }

@@ -13,8 +13,8 @@ export default {
     // get last Change of Directors filing from list of past filings
     let lastCOD = null
 
-    for (let i = 0; i < state.filingHistory.length; i++) {
-      let filing = state.filingHistory[i].filing
+    for (let i = 0; i < state.filings.length; i++) {
+      let filing = state.filings[i].filing
       if (filing.hasOwnProperty('changeOfDirectors')) {
         lastCOD = lastCOD === null || filing.header.date.split('-').join('') > lastCOD.split('-').join('')
           ? filing.header.date : lastCOD
@@ -26,8 +26,8 @@ export default {
     // get last filing (of any type) from list of past filings
     let lastFilingDate = null
 
-    for (let i = 0; i < state.filingHistory.length; i++) {
-      let filing = state.filingHistory[i].filing
+    for (let i = 0; i < state.filings.length; i++) {
+      let filing = state.filings[i].filing
       if (lastFilingDate === null || filing.header.date.split('-').join('') > lastFilingDate.split('-').join('')) {
         lastFilingDate = filing.header.date
       }

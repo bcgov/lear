@@ -35,8 +35,5 @@ export default {
         window['addressCompleteKey'] = addressCompleteKey
         console.log('Set addressCompleteKey')
       })
-      .catch(err => {
-        throw err
-      })
   }
 }

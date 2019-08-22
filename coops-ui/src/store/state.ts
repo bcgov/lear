@@ -14,7 +14,11 @@ export default {
   lastPreLoadFilingDate: null,
   agmDate: null,
   noAGM: false,
-  filingHistory: [],
+  tasks: [],
+  filings: [],
+  mailingAddress: null,
+  deliveryAddress: null,
+  directors: [],
   regOffAddrChange: false,
   validated: false,
 
