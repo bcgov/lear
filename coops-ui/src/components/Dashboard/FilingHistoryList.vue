@@ -16,7 +16,7 @@
               >SBC_ITOperationsSupport@gov.bc.ca</a>
           </p>
         </v-card-text>
-        <v-divider></v-divider>
+        <v-divider class="my-0"></v-divider>
         <v-card-actions>
           <v-btn color="primary" flat @click="downloadErrorDialog = false">Close</v-btn>
         </v-card-actions>

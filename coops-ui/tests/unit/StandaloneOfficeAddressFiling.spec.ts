@@ -27,14 +27,15 @@ describe('Standalone Office Address Filing - Part 1', () => {
     expect(wrapper.find(Certify).exists()).toBe(true)
   })
 
-  it('enables Validated flag when sub-component flags are valid', () => {
+  it('enables Validated flag when properties are valid', () => {
     const $route = { params: { id: 0 } }
     const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
-    // set flags
-    vm.officeAddressFormValid = true
+    // set properties
     vm.changeCertifyData(true)
+    vm.officeAddressFormValid = true
+    vm.filingData = [{}] // dummy data
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(true)
@@ -45,9 +46,10 @@ describe('Standalone Office Address Filing - Part 1', () => {
     const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
-    // set flags
-    vm.officeAddressFormValid = false
+    // set properties
     vm.changeCertifyData(true)
+    vm.officeAddressFormValid = false
+    vm.filingData = [{}] // dummy data
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
@@ -58,9 +60,24 @@ describe('Standalone Office Address Filing - Part 1', () => {
     const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
-    // set flags
-    vm.officeAddressFormValid = true
+    // set properties
     vm.changeCertifyData(false)
+    vm.officeAddressFormValid = true
+    vm.filingData = [{}] // dummy data
+
+    // confirm that flag is set correctly
+    expect(vm.validated).toEqual(false)
+  })
+
+  it('disables Validated flag when Certify form is invalid', () => {
+    const $route = { params: { id: 0 } }
+    const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
+    const vm: any = wrapper.vm
+
+    // set properties
+    vm.changeCertifyData(true)
+    vm.officeAddressFormValid = true
+    vm.filingData = []
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
@@ -71,9 +88,10 @@ describe('Standalone Office Address Filing - Part 1', () => {
     const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
-    // set flag
-    vm.officeAddressFormValid = true
+    // set all properties truthy
     vm.changeCertifyData(true)
+    vm.officeAddressFormValid = true
+    vm.filingData = [{}] // dummy data
 
     // confirm that button is enabled
     expect(wrapper.find('#coa-file-pay-btn').attributes('disabled')).not.toBe('true')
@@ -84,9 +102,10 @@ describe('Standalone Office Address Filing - Part 1', () => {
     const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
-    // set flag
-    vm.officeAddressFormValid = true
+    // set all properties falsy
     vm.changeCertifyData(false)
+    vm.officeAddressFormValid = false
+    vm.filingData = [] // dummy data
 
     // confirm that button is disabled
     expect(wrapper.find('#coa-file-pay-btn').attributes('disabled')).toBe('true')
@@ -279,8 +298,7 @@ describe('Standalone Office Address Filing - Part 2', () => {
     // verify redirection
     const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
-  }
-  )
+  })
 })
 
 describe('Standalone Office Address Filing - Part 3', () => {
