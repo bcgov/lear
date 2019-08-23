@@ -1,8 +1,8 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
-import { shallowMount } from '@vue/test-utils'
 import sinon from 'sinon'
+import { shallowMount } from '@vue/test-utils'
 
 import axios from '@/axios-auth'
 import store from '@/store/store'
@@ -25,6 +25,8 @@ describe('Standalone Office Address Filing - Part 1', () => {
 
     expect(wrapper.find(RegisteredOfficeAddress).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)
+
+    wrapper.destroy()
   })
 
   it('enables Validated flag when properties are valid', () => {
@@ -39,6 +41,8 @@ describe('Standalone Office Address Filing - Part 1', () => {
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(true)
+
+    wrapper.destroy()
   })
 
   it('disables Validated flag when Office Address form is invalid', () => {
@@ -53,6 +57,8 @@ describe('Standalone Office Address Filing - Part 1', () => {
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
+
+    wrapper.destroy()
   })
 
   it('disables Validated flag when Certify form is invalid', () => {
@@ -67,6 +73,8 @@ describe('Standalone Office Address Filing - Part 1', () => {
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
+
+    wrapper.destroy()
   })
 
   it('disables Validated flag when Certify form is invalid', () => {
@@ -95,6 +103,8 @@ describe('Standalone Office Address Filing - Part 1', () => {
 
     // confirm that button is enabled
     expect(wrapper.find('#coa-file-pay-btn').attributes('disabled')).not.toBe('true')
+
+    wrapper.destroy()
   })
 
   it('disables File & Pay button when Validated is false', () => {
@@ -109,6 +119,8 @@ describe('Standalone Office Address Filing - Part 1', () => {
 
     // confirm that button is disabled
     expect(wrapper.find('#coa-file-pay-btn').attributes('disabled')).toBe('true')
+
+    wrapper.destroy()
   })
 })
 
@@ -271,6 +283,8 @@ describe('Standalone Office Address Filing - Part 2', () => {
       // verify redirection
       const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+      wrapper.destroy()
     }
   )
 
@@ -298,6 +312,8 @@ describe('Standalone Office Address Filing - Part 2', () => {
     // verify redirection
     const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+    wrapper.destroy()
   })
 })
 
@@ -397,6 +413,8 @@ describe('Standalone Office Address Filing - Part 3', () => {
 
       // verify no redirection
       expect(window.location.assign).not.toHaveBeenCalled()
+
+      wrapper.destroy()
     }
   )
 
@@ -423,6 +441,8 @@ describe('Standalone Office Address Filing - Part 3', () => {
       // verify redirection
       const homeURL = ''
       expect(window.location.assign).toHaveBeenCalledWith(homeURL)
+
+      wrapper.destroy()
     }
   )
 })

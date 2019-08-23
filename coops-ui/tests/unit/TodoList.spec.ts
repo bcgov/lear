@@ -1,209 +1,396 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
-import sinon from 'sinon'
+import { mount } from '@vue/test-utils'
 
-import axios from '@/axios-auth'
 import store from '@/store/store'
 import TodoList from '@/components/Dashboard/TodoList.vue'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('TodoList.vue', () => {
-  let vm
-
-  beforeEach(done => {
+describe('TodoList', () => {
+  it('handles empty data', done => {
     // init store
-    store.state.corpNum = 'CP0001191'
-    store.state.currentDate = '2019-07-12'
-    store.state.lastAgmDate = '2017-04-08'
+    store.state.tasks = []
 
-    // GET tasks
-    sinon.stub(axios, 'get').withArgs('CP0001191/tasks')
-      .returns(new Promise((resolve) => resolve({
-        data:
-          {
-            'tasks': [
-              {
-                'task': {
-                  'filing': {
-                    'annualReport': {
-                      'annualGeneralMeetingDate': '2018-07-15',
-                      'certifiedBy': 'full1 name1',
-                      'email': 'no_one@never.get'
-                    },
-                    'changeOfAddress': {
-                      'certifiedBy': 'full2 name2',
-                      'email': 'no_one@never.get'
-                    },
-                    'changeOfDirectors': {
-                      'certifiedBy': 'full3 name3',
-                      'email': 'no_one@never.get'
-                    },
-                    'business': {
-                      'cacheId': 1,
-                      'foundingDate': '2007-04-08',
-                      'identifier': 'CP0002098',
-                      'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                      'legalName': 'Legal Name - CP0002098'
-                    },
-                    'header': {
-                      'date': '2017-06-06',
-                      'filingId': 123,
-                      'name': 'annualReport',
-                      'status': 'DRAFT'
-                    }
-                  }
-                },
-                'order': 2,
-                'enabled': false
-              },
-              {
-                'task': {
-                  'todo': {
-                    'business': {
-                      'cacheId': 1,
-                      'foundingDate': '2007-04-08',
-                      'identifier': 'CP0002098',
-                      'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                      'legalName': 'Legal Name - CP0002098'
-                    },
-                    'header': {
-                      'name': 'annualReport',
-                      'ARFilingYear': 2019,
-                      'status': 'NEW'
-                    }
-                  }
-                },
-                'order': 1,
-                'enabled': true
-              },
-              {
-                'task': {
-                  'filing': {
-                    'changeOfAddress': {
-                      'certifiedBy': 'full2 name2',
-                      'email': 'no_one@never.get'
-                    },
-                    'business': {
-                      'cacheId': 1,
-                      'foundingDate': '2007-04-08',
-                      'identifier': 'CP0002098',
-                      'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                      'legalName': 'Legal Name - CP0002098'
-                    },
-                    'header': {
-                      'date': '2017-06-06',
-                      'filingId': 456,
-                      'name': 'changeOfAddress',
-                      'status': 'ERROR'
-                    }
-                  }
-                },
-                'order': 4,
-                'enabled': false
-              },
-              {
-                'task': {
-                  'filing': {
-                    'changeOfDirectors': {
-                      'certifiedBy': 'full3 name3',
-                      'email': 'no_one@never.get'
-                    },
-                    'business': {
-                      'cacheId': 1,
-                      'foundingDate': '2007-04-08',
-                      'identifier': 'CP0002098',
-                      'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                      'legalName': 'Legal Name - CP0002098'
-                    },
-                    'header': {
-                      'date': '2017-06-06',
-                      'filingId': 789,
-                      'name': 'changeOfDirectors',
-                      'status': 'PENDING'
-                    }
-                  }
-                },
-                'order': 3,
-                'enabled': false
-              }
-            ]
-          }
-      })))
-
-    const constructor = Vue.extend(TodoList)
-    const instance = new constructor({ store: store })
-    vm = instance.$mount()
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
+      expect(vm.taskItems.length).toEqual(0)
+      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(0)
+      expect(wrapper.emitted('todo-count')).toEqual([[0]])
+      expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
+      expect(vm.$el.querySelector('.no-results')).not.toBeNull()
+      expect(vm.$el.querySelector('.no-results').textContent).toContain('You don\'t have anything to do yet')
+
+      wrapper.destroy()
       done()
     })
   })
 
-  afterEach(() => {
-    sinon.restore()
+  it('displays multiple task items', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'todo': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2017,
+              'status': 'NEW'
+            }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      },
+      {
+        'task': {
+          'todo': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2018,
+              'status': 'NEW'
+            }
+          }
+        },
+        'enabled': false,
+        'order': 2
+      },
+      {
+        'task': {
+          'todo': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'NEW'
+            }
+          }
+        },
+        'enabled': false,
+        'order': 3
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(() => {
+      expect(vm.taskItems.length).toEqual(3)
+      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(3)
+      expect(wrapper.emitted('todo-count')).toEqual([[3]])
+      expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
+      expect(vm.$el.querySelector('.no-results')).toBeNull()
+
+      // verify that first task is enabled and other 2 are disabled
+      const item1 = vm.$el.querySelectorAll('.todo-list')[0]
+      const item2 = vm.$el.querySelectorAll('.todo-list')[1]
+      const item3 = vm.$el.querySelectorAll('.todo-list')[2]
+
+      // check list items
+      expect(item1.classList.contains('disabled')).toBe(false)
+      expect(item2.classList.contains('disabled')).toBe(true)
+      expect(item3.classList.contains('disabled')).toBe(true)
+
+      // check action buttons
+      expect(item1.querySelector('.list-item__actions .v-btn').disabled).toBe(false)
+      expect(item2.querySelector('.list-item__actions .v-btn').disabled).toBe(true)
+      expect(item3.querySelector('.list-item__actions .v-btn').disabled).toBe(true)
+
+      wrapper.destroy()
+      done()
+    })
   })
 
-  it('loads and displays the Task Items properly', () => {
-    expect(vm.taskItems).not.toBeNull()
-    expect(vm.taskItems.length).toEqual(4)
+  it('displays a NEW \'Annual Report\' task', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'todo': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'NEW'
+            }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(() => {
+      expect(vm.taskItems.length).toEqual(1)
+      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+      expect(wrapper.emitted('todo-count')).toEqual([[1]])
+      expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
+      expect(vm.$el.querySelector('.no-results')).toBeNull()
+
+      const item = vm.$el.querySelector('.list-item')
+      expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
+      expect(item.querySelector('.list-item__subtitle').textContent).toBe('(including Address and/or Director Change)')
+      expect(item.querySelector('.list-item__status1')).toBeNull()
+      expect(item.querySelector('.list-item__status2')).toBeNull()
+
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.disabled).toBe(false)
+      expect(button.querySelector('.v-btn__content').textContent).toEqual('File Now')
+
+      wrapper.destroy()
+      done()
+    })
   })
 
-  it('loads the \'New\' task properly', () => {
-    // find first item
-    const item = vm.$el.querySelectorAll('.list-item')[0]
+  it('displays a DRAFT \'Annual Report\' task', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'DRAFT'
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
 
-    expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
-    expect(item.querySelector('.list-item__subtitle').textContent).toBe('(including Address and/or Director Change)')
-    expect(item.querySelector('.list-item__status1')).toBeNull()
-    expect(item.querySelector('.list-item__status2')).toBeNull()
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
 
-    const button = item.querySelector('.list-item__actions .v-btn')
-    expect(button.disabled).toBe(false)
-    expect(button.querySelector('.v-btn__content').textContent).toEqual('File Now')
+    Vue.nextTick(() => {
+      expect(vm.taskItems.length).toEqual(1)
+      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+      expect(wrapper.emitted('todo-count')).toEqual([[1]])
+      expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+      expect(vm.$el.querySelector('.no-results')).toBeNull()
+
+      const item = vm.$el.querySelector('.list-item')
+
+      expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
+      expect(item.querySelector('.list-item__subtitle')).toBeNull()
+      expect(item.querySelector('.list-item__status1').textContent).toContain('DRAFT')
+      expect(item.querySelector('.list-item__status2').textContent).toEqual('')
+
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.disabled).toBe(false)
+      expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume')
+
+      wrapper.destroy()
+      done()
+    })
   })
 
-  it('loads the \'Draft\' task properly', () => {
-    // find second item
-    const item = vm.$el.querySelectorAll('.list-item')[1]
+  it('displays a DRAFT \'Address Change\' task', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'changeOfAddress',
+              'ARFilingYear': 2019,
+              'status': 'DRAFT'
+            },
+            'changeOfAddress': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
 
-    expect(item.querySelector('.list-item__title').textContent).toEqual('File 2018 Annual Report')
-    expect(item.querySelector('.list-item__subtitle')).toBeNull()
-    expect(item.querySelector('.list-item__status1').textContent).toContain('DRAFT')
-    expect(item.querySelector('.list-item__status2').textContent).toEqual('')
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
 
-    const button = item.querySelector('.list-item__actions .v-btn')
-    expect(button.disabled).toBe(true)
-    expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume')
+    Vue.nextTick(() => {
+      expect(vm.taskItems.length).toEqual(1)
+      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+      expect(wrapper.emitted('todo-count')).toEqual([[1]])
+      expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+      expect(vm.$el.querySelector('.no-results')).toBeNull()
+
+      const item = vm.$el.querySelector('.list-item')
+
+      expect(item.querySelector('.list-item__title').textContent).toEqual('File Address Change')
+      expect(item.querySelector('.list-item__subtitle')).toBeNull()
+      expect(item.querySelector('.list-item__status1').textContent).toContain('DRAFT')
+      expect(item.querySelector('.list-item__status2').textContent).toEqual('')
+
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.disabled).toBe(false)
+      expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume')
+
+      wrapper.destroy()
+      done()
+    })
   })
 
-  it('loads the \'Filing Pending - Payment Incomplete\' task properly', () => {
-    // find third item
-    const item = vm.$el.querySelectorAll('.list-item')[2]
+  it('displays a DRAFT \'Director Change\' task', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'changeOfDirectors',
+              'ARFilingYear': 2019,
+              'status': 'DRAFT'
+            },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
 
-    expect(item.querySelector('.list-item__title').textContent).toEqual('File Director Change')
-    expect(item.querySelector('.list-item__subtitle')).toBeNull()
-    expect(item.querySelector('.list-item__status1').textContent).toContain('FILING PENDING')
-    expect(item.querySelector('.list-item__status2').textContent).toContain('PAYMENT INCOMPLETE')
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
 
-    const button = item.querySelector('.list-item__actions .v-btn')
-    expect(button.disabled).toBe(true)
-    expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume Payment')
+    Vue.nextTick(() => {
+      expect(vm.taskItems.length).toEqual(1)
+      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+      expect(wrapper.emitted('todo-count')).toEqual([[1]])
+      expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+      expect(vm.$el.querySelector('.no-results')).toBeNull()
+
+      const item = vm.$el.querySelector('.list-item')
+
+      expect(item.querySelector('.list-item__title').textContent).toEqual('File Director Change')
+      expect(item.querySelector('.list-item__subtitle')).toBeNull()
+      expect(item.querySelector('.list-item__status1').textContent).toContain('DRAFT')
+      expect(item.querySelector('.list-item__status2').textContent).toEqual('')
+
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.disabled).toBe(false)
+      expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume')
+
+      wrapper.destroy()
+      done()
+    })
   })
 
-  it('loads the \'Filing Pending - Payment Unsuccessful\' task properly', () => {
-    // find fourth item
-    const item = vm.$el.querySelectorAll('.list-item')[3]
+  it('displays a FILING PENDING - PAYMENT INCOMPLETE task', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'PENDING',
+              'paymentToken': 12345678
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
 
-    expect(item.querySelector('.list-item__title').textContent).toEqual('File Address Change')
-    expect(item.querySelector('.list-item__subtitle')).toBeNull()
-    expect(item.querySelector('.list-item__status1').textContent).toContain('FILING PENDING')
-    expect(item.querySelector('.list-item__status2').textContent).toContain('PAYMENT UNSUCCESSFUL')
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
 
-    const button = item.querySelector('.list-item__actions .v-btn')
-    expect(button.disabled).toBe(true)
-    expect(button.querySelector('.v-btn__content').textContent).toEqual('Retry Payment')
+    Vue.nextTick(() => {
+      expect(vm.taskItems.length).toEqual(1)
+      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+      expect(wrapper.emitted('todo-count')).toEqual([[1]])
+      expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+      expect(vm.$el.querySelector('.no-results')).toBeNull()
+
+      const item = vm.$el.querySelector('.list-item')
+
+      expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
+      expect(item.querySelector('.list-item__subtitle')).toBeNull()
+      expect(item.querySelector('.list-item__status1').textContent).toContain('FILING PENDING')
+      expect(item.querySelector('.list-item__status2').textContent).toContain('PAYMENT INCOMPLETE')
+
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.disabled).toBe(false)
+      expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume Payment')
+
+      wrapper.destroy()
+      done()
+    })
   })
+
+  it('displays a FILING PENDING - PAYMENT UNSUCCESSFUL task', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'ERROR',
+              'paymentToken': 12345678
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(() => {
+      expect(vm.taskItems.length).toEqual(1)
+      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+      expect(wrapper.emitted('todo-count')).toEqual([[1]])
+      expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+      expect(vm.$el.querySelector('.no-results')).toBeNull()
+
+      const item = vm.$el.querySelector('.list-item')
+
+      expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
+      expect(item.querySelector('.list-item__subtitle')).toBeNull()
+      expect(item.querySelector('.list-item__status1').textContent).toContain('FILING PENDING')
+      expect(item.querySelector('.list-item__status2').textContent).toContain('PAYMENT UNSUCCESSFUL')
+
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.disabled).toBe(false)
+      expect(button.querySelector('.v-btn__content').textContent).toEqual('Retry Payment')
+
+      wrapper.destroy()
+      done()
+    })
+  })
+
+  // FUTURE - test "Resume" routing
+
+  // FUTURE - test "Resume Payment" redirection
+
+  // FUTURE - test "Retry Payment" redirection
+
+  // FUTURE - test "File Now" routing
 })

@@ -3,13 +3,11 @@
     <v-container>
       <div class="title-container">
         <div class="entity-name">{{ entityName || 'Not Available' }}</div>
-        <!-- TODO: Discuss/decide how we are handling entity statuses (e.g. 'GOODSTANDING' etc.) -->
         <v-chip class="entity-status" label small disabled text-color="white" v-if="entityStatus"
           :class="{
             'blue' : entityStatus === 'GOODSTANDING',
             'red' : entityStatus === 'PENDINGDISSOLUTION' | 'NOTINCOMPLIANCE',
           }">
-          <!-- TODO: These strings should be pulled out into a globally accessible file -->
           <span v-if="entityStatus === 'GOODSTANDING'">In Good Standing</span>
           <span v-else-if="entityStatus === 'PENDINGDISSOLUTION'">Pending Dissolution</span>
           <span v-else-if="entityStatus === 'NOTINCOMPLIANCE'">Not in Compliance</span>
@@ -17,7 +15,6 @@
       </div>
       <dl class="meta-container">
         <dt>Business No:</dt>
-        <!-- TODO: These strings should be pulled out into a globally accessible file (e.g. 'Not Available') -->
         <dd class="business-number">{{ entityBusinessNo || 'Not Available' }}</dd>
         <dt>Incorporation No:</dt>
         <dd class="incorp-number">{{ entityIncNo || 'Not Available' }}</dd>

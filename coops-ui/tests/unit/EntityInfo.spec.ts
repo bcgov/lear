@@ -1,39 +1,18 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
-import sinon from 'sinon'
-
-import axios from '@/axios-auth'
-import store from '@/store/store'
 import EntityInfo from '@/components/EntityInfo.vue'
+import store from '@/store/store'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('EntityInfo.vue', () => {
+describe('EntityInfo', () => {
   let vm
 
   beforeEach(done => {
-    // init store
-    store.state.corpNum = 'CP0001191'
-
-    // GET entity info
-    sinon.stub(axios, 'get').withArgs('CP0001191')
-      .returns(new Promise((resolve) => resolve({
-        data:
-          {
-            business: {
-              foundingDate: '2001-08-05',
-              identifier: 'CP0001191',
-              legalName: 'test name - CP0001191',
-              status: 'GOODSTANDING',
-              taxId: '123456789'
-            }
-          }
-      })))
-
-    const constructor = Vue.extend(EntityInfo)
-    let instance = new constructor({ store: store })
+    const Constructor = Vue.extend(EntityInfo)
+    const instance = new Constructor({ store: store })
     vm = instance.$mount()
 
     Vue.nextTick(() => {
@@ -41,15 +20,19 @@ describe('EntityInfo.vue', () => {
     })
   })
 
-  afterEach(() => {
-    sinon.restore()
-  })
+  it('displays entity info properly', done => {
+    vm.$store.state.entityName = 'test name - CP0001191'
+    vm.$store.state.entityStatus = 'GOODSTANDING'
+    vm.$store.state.entityBusinessNo = '123456789'
+    vm.$store.state.entityIncNo = 'CP0001191'
 
-  it('gets and displays entity info properly', () => {
-    expect(vm.$el.querySelector('.entity-name').textContent).toEqual('test name - CP0001191')
-    expect(vm.$el.querySelector('.entity-status').textContent).toContain('In Good Standing')
-    expect(vm.$el.querySelector('.business-number').textContent).toEqual('123456789')
-    expect(vm.$el.querySelector('.incorp-number').textContent).toEqual('CP0001191')
+    Vue.nextTick(() => {
+      expect(vm.$el.querySelector('.entity-name').textContent).toEqual('test name - CP0001191')
+      expect(vm.$el.querySelector('.entity-status').textContent).toContain('In Good Standing')
+      expect(vm.$el.querySelector('.business-number').textContent).toEqual('123456789')
+      expect(vm.$el.querySelector('.incorp-number').textContent).toEqual('CP0001191')
+      done()
+    })
   })
 
   it('handles empty data', done => {

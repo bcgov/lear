@@ -168,7 +168,6 @@ export default {
             filingAuthor: filing.annualReport.certifiedBy,
             filingDate: filing.header.date,
             paymentToken: filing.header.paymentToken,
-            filingStatus: filing.header.status,
             filingDocuments: [{
               filingId: filing.header.filingId,
               name: 'Annual Report',
@@ -207,7 +206,6 @@ export default {
           filingAuthor: filing.changeOfDirectors.certifiedBy,
           filingDate: filing.header.date,
           paymentToken: filing.header.paymentToken,
-          filingStatus: filing.header.status,
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: 'Director Change',
@@ -227,7 +225,6 @@ export default {
           filingAuthor: filing.changeOfAddress.certifiedBy,
           filingDate: filing.header.date,
           paymentToken: filing.header.paymentToken,
-          filingStatus: filing.header.status,
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: 'Address Change',

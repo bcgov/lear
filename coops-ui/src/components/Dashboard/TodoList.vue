@@ -197,7 +197,7 @@ export default {
             status: filing.header.status || 'NEW',
             enabled: Boolean(task.enabled),
             order: task.order,
-            paymentToken: filing.header.paymentToken ? filing.header.paymentToken : null
+            paymentToken: filing.header.paymentToken || null
           })
         } else {
           console.log('ERROR - invalid date in filing =', filing)
@@ -217,7 +217,7 @@ export default {
           status: filing.header.status || 'NEW',
           enabled: Boolean(task.enabled),
           order: task.order,
-          paymentToken: filing.header.paymentToken ? filing.header.paymentToken : null
+          paymentToken: filing.header.paymentToken || null
         })
       } else {
         console.log('ERROR - invalid filing or header or changeOfDirectors in task =', task)
@@ -234,7 +234,7 @@ export default {
           status: filing.header.status || 'NEW',
           enabled: Boolean(task.enabled),
           order: task.order,
-          paymentToken: filing.header.paymentToken ? filing.header.paymentToken : null
+          paymentToken: filing.header.paymentToken || null
         })
       } else {
         console.log('ERROR - invalid filing or header or changeOfAddress in task =', task)

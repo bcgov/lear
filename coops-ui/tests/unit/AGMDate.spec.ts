@@ -9,7 +9,7 @@ import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('AGMDate.vue', () => {
+describe('AGMDate', () => {
   let vm
 
   beforeEach(async () => {
