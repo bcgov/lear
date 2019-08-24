@@ -12,13 +12,17 @@ import DirectorListSm from '@/components/Dashboard/DirectorListSm.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('Dashboard.vue', () => {
+describe('Dashboard', () => {
   let wrapper
 
   beforeEach(() => {
     // create wrapper for Dashboard
     // this stubs out the 4 sub-components
     wrapper = shallowMount(Dashboard)
+  })
+
+  afterEach(() => {
+    wrapper.destroy()
   })
 
   it('renders the dashboard sub-components properly', () => {

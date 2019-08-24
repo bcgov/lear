@@ -67,26 +67,17 @@
     </v-expansion-panel>
 
     <!-- No Results Message -->
-    <v-card class="no-results" flat v-if="taskItems && taskItems.length === 0 && !errorMessage">
+    <v-card class="no-results" flat v-if="taskItems && taskItems.length === 0">
       <v-card-text>
         <div class="no-results__title">You don't have anything to do yet</div>
         <div class="no-results__subtitle">Filings that require your attention will appear here</div>
       </v-card-text>
     </v-card>
-
-    <!-- Error Message -->
-    <v-card class="network-error" flat v-if="taskItems && taskItems.length === 0 && errorMessage">
-      <v-card-text>
-        <div class="network-error__title">{{errorMessage}}</div>
-        <div class="network-error__subtitle">Filings that require your attention will normally appear here</div>
-      </v-card-text>
-    </v-card>
   </div>
 </template>
 
-<script lang="ts">
+<script>
 import Vue2Filters from 'vue2-filters'
-import axios from '@/axios-auth'
 import { mapState, mapActions } from 'vuex'
 
 export default {
@@ -96,60 +87,43 @@ export default {
 
   data () {
     return {
-      taskItems: null,
-      errorMessage: null
+      taskItems: null
     }
   },
 
   computed: {
-    ...mapState(['corpNum'])
+    ...mapState(['tasks'])
   },
 
   mounted () {
     // load data for this page
-    this.getTasks()
+    this.taskItems = []
+
+    // create task items
+    this.tasks.forEach(task => {
+      if (task && task.task && task.task.todo) {
+        this.loadTodoItem(task)
+      } else if (task && task.task && task.task.filing) {
+        this.loadFilingItem(task)
+      } else {
+        console.log('ERROR - got unknown task =', task)
+      }
+    })
+
+    this.$emit('todo-count', this.taskItems.length)
+
+    // if this is a draft/pending/error item, emit the has-blocker-filings event to the parent component
+    // this indicates that a new filing cannot be started because this one has to be completed first
+    this.$emit('has-blocker-filing',
+      this.taskItems.filter(elem => {
+        return this.isDraft(elem) || this.isPending(elem) || this.isError(elem)
+      }).length > 0
+    )
   },
 
   methods: {
     ...mapActions(['setARFilingYear', 'setCurrentFilingStatus', 'setRegOffAddrChange', 'setAgmDate',
       'setFiledDate', 'setNoAGM', 'setValidated']),
-
-    getTasks () {
-      this.taskItems = []
-      this.errorMessage = null
-      if (this.corpNum) {
-        const url = this.corpNum + '/tasks'
-        axios.get(url).then(response => {
-          if (response && response.data && response.data.tasks) {
-            // create task items
-            response.data.tasks.forEach(task => {
-              if (task && task.task && task.task.todo) {
-                this.loadTodoItem(task)
-              } else if (task && task.task && task.task.filing) {
-                this.loadFilingItem(task)
-              } else {
-                console.log('ERROR - got unknown task =', task)
-              }
-            })
-          } else {
-            console.log('getTasks() error - invalid response =', response)
-            this.errorMessage = 'Oops, could not parse data from server'
-          }
-          this.$emit('todo-count', this.taskItems.length)
-
-          // if this is a draft/pending/error item, emit the has-blocker-filings event to the parent component
-          // this indicates that a new filing cannot be started because this one has to be completed first
-          this.$emit('has-blocker-filing',
-            this.taskItems.filter(elem => {
-              return this.isDraft(elem) || this.isPending(elem) || this.isError(elem)
-            }).length > 0
-          )
-        }).catch(error => {
-          console.error('getTasks() error =', error)
-          this.errorMessage = 'Oops, could not load data from server'
-        })
-      }
-    },
 
     loadTodoItem (task) {
       const todo = task.task.todo
@@ -213,7 +187,7 @@ export default {
             status: filing.header.status || 'NEW',
             enabled: Boolean(task.enabled),
             order: task.order,
-            paymentToken: filing.header.paymentToken ? filing.header.paymentToken : null
+            paymentToken: filing.header.paymentToken || null
           })
         } else {
           console.log('ERROR - invalid date in filing =', filing)
@@ -233,7 +207,7 @@ export default {
           status: filing.header.status || 'NEW',
           enabled: Boolean(task.enabled),
           order: task.order,
-          paymentToken: filing.header.paymentToken ? filing.header.paymentToken : null
+          paymentToken: filing.header.paymentToken || null
         })
       } else {
         console.log('ERROR - invalid filing or header or changeOfDirectors in task =', task)
@@ -250,7 +224,7 @@ export default {
           status: filing.header.status || 'NEW',
           enabled: Boolean(task.enabled),
           order: task.order,
-          paymentToken: filing.header.paymentToken ? filing.header.paymentToken : null
+          paymentToken: filing.header.paymentToken || null
         })
       } else {
         console.log('ERROR - invalid filing or header or changeOfAddress in task =', task)
@@ -299,7 +273,7 @@ export default {
       const origin = window.location.origin || ''
       const filingId = item.id
       const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
-      let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
+      let authStub = sessionStorage.getItem('AUTH_URL') || ''
       if (!(authStub.endsWith('/'))) { authStub += '/' }
       const paymentToken = item.paymentToken
       const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
@@ -334,13 +308,6 @@ export default {
 
     isCompleted (item) {
       return item.status === 'COMPLETED'
-    }
-  },
-
-  watch: {
-    corpNum (val) {
-      // if Corp Num changes, get new tasks
-      this.getTasks()
     }
   }
 }

@@ -2,15 +2,17 @@ import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
 import VueRouter from 'vue-router'
+import sinon from 'sinon'
 import { createLocalVue, shallowMount } from '@vue/test-utils'
 
+import axios from '@/axios-auth'
 import store from '@/store/store'
 import App from '@/App.vue'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('App.vue', () => {
+describe('App', () => {
   // just need a token that can get parsed properly (will be expired but doesn't matter for tests)
   // note - the corp num in this token is CP0001191
   sessionStorage.setItem('KEYCLOAK_TOKEN', 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUbWdtZUk0MnVsdUZ0N' +
@@ -27,19 +29,201 @@ describe('App.vue', () => {
     'yBv90XzDgZ-To-6_jMjSjBX6Dtq7icdZYLWWDdrhjCpJA5CKS0PlSgeH1Yq4rHd8Ztp5cvVdJFxt87gIopIOQvcy4ji0gtaovgUhiyg07gXGl8' +
     'dGZwn1tpLA')
 
+  let wrapper
   let vm
 
   beforeEach(done => {
+    const get = sinon.stub(axios, 'get')
+
+    // GET entity info
+    get.withArgs('CP0001191')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            business: {
+              legalName: 'TEST NAME',
+              status: 'GOODSTANDING',
+              taxId: '123456789',
+              identifier: 'CP0001191',
+              lastLedgerTimestamp: '2019-08-14T22:27:12+00:00',
+              foundingDate: '2000-07-13T00:00:00+00:00',
+              lastAnnualGeneralMeetingDate: '2019-08-16'
+            }
+          }
+      })))
+
+    // GET tasks
+    get.withArgs('CP0001191/tasks')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'tasks': [
+              {
+                'task': {
+                  'todo': {
+                    'header': {
+                      'name': 'annualReport',
+                      'ARFilingYear': 2017,
+                      'status': 'NEW'
+                    }
+                  }
+                },
+                'enabled': true,
+                'order': 1
+              },
+              {
+                'task': {
+                  'todo': {
+                    'header': {
+                      'name': 'annualReport',
+                      'ARFilingYear': 2018,
+                      'status': 'NEW'
+                    }
+                  }
+                },
+                'enabled': false,
+                'order': 2
+              },
+              {
+                'task': {
+                  'todo': {
+                    'header': {
+                      'name': 'annualReport',
+                      'ARFilingYear': 2019,
+                      'status': 'NEW'
+                    }
+                  }
+                },
+                'enabled': false,
+                'order': 3
+              }
+            ]
+          }
+      })))
+
+    // GET filings
+    get.withArgs('CP0001191/filings')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filings': [
+              {
+                'filing': {
+                  'header': {
+                    'name': 'annualReport',
+                    'date': '2019-01-02',
+                    'paymentToken': 123,
+                    'filingId': 321
+                  },
+                  'annualReport': {
+                    'annualGeneralMeetingDate': '2019-12-31',
+                    'certifiedBy': 'Full Name 1'
+                  }
+                }
+              },
+              {
+                'filing': {
+                  'header': {
+                    'name': 'changeOfDirectors',
+                    'date': '2019-03-04',
+                    'paymentToken': 456,
+                    'filingId': 654
+                  },
+                  'changeOfDirectors': {
+                    'certifiedBy': 'Full Name 2'
+                  }
+                }
+              },
+              {
+                'filing': {
+                  'header': {
+                    'name': 'changeOfAddress',
+                    'date': '2019-05-06',
+                    'paymentToken': 789,
+                    'filingId': 987
+                  },
+                  'changeOfAddress': {
+                    'certifiedBy': 'Full Name 3'
+                  }
+                }
+              }
+            ]
+          }
+      })))
+
+    // GET addresses
+    get.withArgs('CP0001191/addresses')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'mailingAddress': {
+              'streetAddress': '1012 Douglas St',
+              'addressCity': 'Victoria',
+              'addressRegion': 'BC',
+              'postalCode': 'V8W 2C3',
+              'addressCountry': 'CA'
+            },
+            'deliveryAddress': {
+              'streetAddress': '220 Buchanan St',
+              'addressCity': 'Glasgow',
+              'addressRegion': 'Scotland',
+              'postalCode': 'G1 2FFF',
+              'addressCountry': 'UK'
+            }
+          }
+      })))
+
+    // GET directors
+    get.withArgs('CP0001191/directors')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            directors: [
+              {
+                'officer': {
+                  'firstName': 'Peter',
+                  'lastName': 'Griffin'
+                },
+                'deliveryAddress': {
+                  'streetAddress': '1012 Douglas St',
+                  'addressCity': 'Victoria',
+                  'addressRegion': 'BC',
+                  'postalCode': 'V8W 2C3',
+                  'addressCountry': 'CA'
+                }
+              },
+              {
+                'officer': {
+                  'firstName': 'Joe',
+                  'lastName': 'Swanson'
+                },
+                'deliveryAddress': {
+                  'streetAddress': '220 Buchanan St',
+                  'addressCity': 'Glasgow',
+                  'addressRegion': 'Scotland',
+                  'postalCode': 'G1 2FFF',
+                  'addressCountry': 'UK'
+                }
+              }
+            ]
+          }
+      })))
+
     // create a Local Vue and install router (and store) on it
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = new VueRouter()
-    const wrapper = shallowMount(App, { localVue, router, store })
+    wrapper = shallowMount(App, { localVue, router, store })
     vm = wrapper.vm
 
     vm.$nextTick(() => {
       done()
     })
+  })
+
+  afterEach(() => {
+    sinon.restore()
+    wrapper.destroy()
   })
 
   it('decodes Corp Num properly', () => {
@@ -53,5 +237,40 @@ describe('App.vue', () => {
     const date = today.getDate().toString().padStart(2, '0')
     const currentDate = `${year}-${month}-${date}`
     expect(vm.$store.state.currentDate).toEqual(currentDate)
+  })
+
+  it('fetches the entity info properly', () => {
+    expect(vm.$store.state.entityName).toBe('TEST NAME')
+    expect(vm.$store.state.entityStatus).toBe('GOODSTANDING')
+    expect(vm.$store.state.entityBusinessNo).toBe('123456789')
+    expect(vm.$store.state.entityIncNo).toBe('CP0001191')
+    expect(vm.$store.state.lastPreLoadFilingDate).toBe('2019-08-14')
+    expect(vm.$store.state.entityFoundingDate).toBe('2000-07-13')
+    expect(vm.$store.state.lastAgmDate).toBe('2019-08-16')
+  })
+
+  it('fetches the tasks properly', () => {
+    expect(vm.$store.state.tasks.length).toBe(3)
+    expect(vm.$store.state.tasks[0].task.todo.header.ARFilingYear).toBe(2017)
+    expect(vm.$store.state.tasks[1].task.todo.header.ARFilingYear).toBe(2018)
+    expect(vm.$store.state.tasks[2].task.todo.header.ARFilingYear).toBe(2019)
+  })
+
+  it('fetches the filings properly', () => {
+    expect(vm.$store.state.filings.length).toBe(3)
+    expect(vm.$store.state.filings[0].filing.header.name).toBe('annualReport')
+    expect(vm.$store.state.filings[1].filing.header.name).toBe('changeOfDirectors')
+    expect(vm.$store.state.filings[2].filing.header.name).toBe('changeOfAddress')
+  })
+
+  it('fetches the addresses properly', () => {
+    expect(vm.$store.state.mailingAddress.addressCity).toBe('Victoria')
+    expect(vm.$store.state.deliveryAddress.addressCity).toBe('Glasgow')
+  })
+
+  it('fetches the directors properly', () => {
+    expect(vm.$store.state.directors.length).toBe(2)
+    expect(vm.$store.state.directors[0].officer.lastName).toBe('Griffin')
+    expect(vm.$store.state.directors[1].officer.lastName).toBe('Swanson')
   })
 })

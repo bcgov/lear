@@ -1,14 +1,5 @@
 <template>
   <div id="dashboard">
-
-    <!-- Initial Page Load Transition -->
-    <div class="loading-container fade-out">
-      <div class="loading__content">
-        <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-        <div class="loading-msg">Loading Your Dashboard</div>
-      </div>
-    </div>
-
     <v-container id="dashboardContainer" class="view-container">
       <article id="dashboardArticle">
         <header>
@@ -37,7 +28,7 @@
               <header>
                 <h2>Office Addresses</h2>
                 <v-btn id="btn-standalone-addresses" flat small color="primary" :disabled="hasBlockerFiling"
-                       @click.native.stop="goToStandaloneAddresses()">
+                      @click.native.stop="goToStandaloneAddresses()">
                   <v-icon small>edit</v-icon>
                   <span>EDIT</span>
                 </v-btn>
@@ -51,7 +42,7 @@
               <header>
                 <h2>Current Directors</h2>
                 <v-btn id="btn-standalone-directors" flat small color="primary" :disabled="hasBlockerFiling"
-                       @click.native.stop="goToStandaloneDirectors()">
+                      @click.native.stop="goToStandaloneDirectors()">
                   <v-icon small>edit</v-icon>
                   <span>EDIT</span>
                 </v-btn>
@@ -67,8 +58,7 @@
   </div>
 </template>
 
-<script lang="ts">
-import { Vue } from 'vue-property-decorator'
+<script>
 import TodoList from '@/components/Dashboard/TodoList.vue'
 import FilingHistoryList from '@/components/Dashboard/FilingHistoryList.vue'
 import AddressListSm from '@/components/Dashboard/AddressListSm.vue'
@@ -93,11 +83,6 @@ export default {
     }
   },
 
-  created () {
-    // TODO: load data for all subcomponents here
-    // see axios.all()
-    // in case of error, display popup
-  },
   methods: {
     ...mapActions(['setCurrentFilingStatus']),
 
@@ -105,6 +90,7 @@ export default {
       this.setCurrentFilingStatus('NEW')
       this.$router.push('/standalone-directors')
     },
+
     goToStandaloneAddresses () {
       this.$router.push('/standalone-addresses')
     }

@@ -82,8 +82,7 @@
 
 <script lang="ts">
 
-import Vue from 'vue'
-import { Component, Emit, Prop, Watch } from 'vue-property-decorator'
+import { Component, Vue, Emit, Prop, Watch } from 'vue-property-decorator'
 import axios from '@/axios-auth'
 import isEmpty from 'lodash.isempty'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'

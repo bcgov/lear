@@ -1,8 +1,8 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
-import { shallowMount } from '@vue/test-utils'
 import sinon from 'sinon'
+import { shallowMount } from '@vue/test-utils'
 
 import axios from '@/axios-auth'
 import store from '@/store/store'
@@ -19,12 +19,18 @@ describe('Standalone Directors Filing - Part 1', () => {
     store.state.corpNum = 'CP0001191'
   })
 
+  afterEach(() => {
+    sinon.restore()
+  })
+
   it('renders the filing sub-components properly', () => {
     const $route = { params: { id: 0 } }
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
 
     expect(wrapper.find(Directors).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)
+
+    wrapper.destroy()
   })
 
   it('enables Validated flag when sub-component flags are valid', () => {
@@ -41,6 +47,8 @@ describe('Standalone Directors Filing - Part 1', () => {
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(true)
+
+    wrapper.destroy()
   })
 
   it('disables Validated flag when Directors form is invalid', () => {
@@ -57,6 +65,8 @@ describe('Standalone Directors Filing - Part 1', () => {
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
+
+    wrapper.destroy()
   })
 
   it('disables Validated flag when Certify form is invalid', () => {
@@ -73,6 +83,8 @@ describe('Standalone Directors Filing - Part 1', () => {
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
+
+    wrapper.destroy()
   })
 
   it('disables Validated flag when no filing changes were made (ie: nothing to file)', () => {
@@ -89,6 +101,8 @@ describe('Standalone Directors Filing - Part 1', () => {
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
+
+    wrapper.destroy()
   })
 
   it('enables File & Pay button when Validated is true', () => {
@@ -105,6 +119,8 @@ describe('Standalone Directors Filing - Part 1', () => {
 
     // confirm that button is enabled
     expect(wrapper.find('#cod-file-pay-btn').attributes('disabled')).not.toBe('true')
+
+    wrapper.destroy()
   })
 
   it('disables File & Pay button when Validated is false', () => {
@@ -121,6 +137,8 @@ describe('Standalone Directors Filing - Part 1', () => {
 
     // confirm that button is disabled
     expect(wrapper.find('#cod-file-pay-btn').attributes('disabled')).toBe('true')
+
+    wrapper.destroy()
   })
 })
 
@@ -301,6 +319,8 @@ describe('Standalone Directors Filing - Part 2', () => {
       // verify redirection
       const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+      wrapper.destroy()
     }
   )
 
@@ -328,8 +348,9 @@ describe('Standalone Directors Filing - Part 2', () => {
     // verify redirection
     const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
-  }
-  )
+
+    wrapper.destroy()
+  })
 })
 
 describe('Standalone Directors Filing - Part 3', () => {
@@ -448,6 +469,8 @@ describe('Standalone Directors Filing - Part 3', () => {
 
       // verify no redirection
       expect(window.location.assign).not.toHaveBeenCalled()
+
+      wrapper.destroy()
     }
   )
 
@@ -474,6 +497,8 @@ describe('Standalone Directors Filing - Part 3', () => {
       // verify redirection
       const homeURL = ''
       expect(window.location.assign).toHaveBeenCalledWith(homeURL)
+
+      wrapper.destroy()
     }
   )
 })

@@ -2,12 +2,11 @@
 import Vue from 'vue'
 import Vuelidate from 'vuelidate'
 import Vuetify from 'vuetify'
+import flushPromises from 'flush-promises'
+import sinon from 'sinon'
 import { mount, Wrapper } from '@vue/test-utils'
 
 import axios from '@/axios-auth'
-import flushPromises from 'flush-promises'
-import sinon from 'sinon'
-
 import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 
 Vue.use(Vuetify)
@@ -18,7 +17,7 @@ const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
 document.body.append(app)
 
-describe('RegisteredOfficeAddress.vue', () => {
+describe('RegisteredOfficeAddress', () => {
   beforeAll(() => {
     // API call to get current addresses
     sinon.stub(axios, 'get').withArgs('CP0001191/addresses')

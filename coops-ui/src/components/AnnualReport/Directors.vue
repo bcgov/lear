@@ -470,7 +470,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['corpNum', 'lastPreLoadFilingDate', 'currentDate', 'filingHistory', 'currentFilingStatus']),
+    ...mapState(['corpNum', 'lastPreLoadFilingDate', 'currentDate', 'currentFilingStatus']),
 
     ...mapGetters(['lastCODFilingDate']),
 

@@ -15,7 +15,7 @@ const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
 document.body.append(app)
 
-describe('Directors.vue', () => {
+describe('Directors', () => {
   let vm
 
   function click (id) {
@@ -75,8 +75,8 @@ describe('Directors.vue', () => {
           }
       })))
 
-    const constructor = Vue.extend(Directors)
-    const instance = new constructor({ store: store })
+    const Constructor = Vue.extend(Directors)
+    const instance = new Constructor({ store: store })
     vm = instance.$mount()
 
     // set as-of date

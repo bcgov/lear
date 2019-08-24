@@ -2,8 +2,8 @@ import Vue from 'vue'
 import Vuetify from 'vuetify'
 import VueRouter from 'vue-router'
 import Vuelidate from 'vuelidate'
-import { shallowMount, createLocalVue } from '@vue/test-utils'
 import sinon from 'sinon'
+import { shallowMount, createLocalVue } from '@vue/test-utils'
 
 import mockRouter from './mockRouter'
 import axios from '@/axios-auth'
@@ -34,6 +34,8 @@ describe('AnnualReport - Part 1', () => {
     expect(wrapper.find(RegisteredOfficeAddress).exists()).toBe(true)
     expect(wrapper.find(Directors).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)
+
+    wrapper.destroy()
   })
 
   it('initializes the store variables properly', () => {
@@ -50,6 +52,8 @@ describe('AnnualReport - Part 1', () => {
     expect(vm.$el.querySelector('#AR-header').textContent).toContain('2017')
     expect(vm.$el.querySelector('#AR-step-2-header span').textContent).toContain('2017')
     expect(vm.$el.querySelector('#AR-step-3-header + p').textContent).toContain('2017')
+
+    wrapper.destroy()
   })
 
   it('enables Validated flag when sub-component flags are valid', () => {
@@ -66,6 +70,8 @@ describe('AnnualReport - Part 1', () => {
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(true)
+
+    wrapper.destroy()
   })
 
   it('disables Validated flag when AGM Date is invalid', () => {
@@ -82,6 +88,8 @@ describe('AnnualReport - Part 1', () => {
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
+
+    wrapper.destroy()
   })
 
   it('disables Validated flag when Addresses Form is invalid', () => {
@@ -98,6 +106,8 @@ describe('AnnualReport - Part 1', () => {
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
+
+    wrapper.destroy()
   })
 
   it('disables Validated flag when Director Form is invalid', () => {
@@ -114,6 +124,8 @@ describe('AnnualReport - Part 1', () => {
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
+
+    wrapper.destroy()
   })
 
   it('disables Validated flag when Certify Form is invalid', () => {
@@ -130,6 +142,8 @@ describe('AnnualReport - Part 1', () => {
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
+
+    wrapper.destroy()
   })
 
   it('enables File & Pay button when Validated is true', () => {
@@ -149,6 +163,8 @@ describe('AnnualReport - Part 1', () => {
 
     // confirm that button is enabled
     expect(wrapper.find('#ar-file-pay-btn').attributes('disabled')).not.toBe('true')
+
+    wrapper.destroy()
   })
 
   it('disables File & Pay button when Validated is false', () => {
@@ -161,6 +177,8 @@ describe('AnnualReport - Part 1', () => {
 
     // confirm that button is disabled
     expect(wrapper.find('#ar-file-pay-btn').attributes('disabled')).toBe('true')
+
+    wrapper.destroy()
   })
 })
 
@@ -302,6 +320,8 @@ describe('AnnualReport - Part 2', () => {
       // verify redirection
       const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+      wrapper.destroy()
     }
   )
 
@@ -327,6 +347,8 @@ describe('AnnualReport - Part 2', () => {
       // verify redirection
       const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+      wrapper.destroy()
     }
   )
 })
@@ -379,7 +401,6 @@ describe('AnnualReport - Part 3', () => {
     const router = mockRouter.mock()
     router.push({ name: 'annual-report', params: { id: '0' } }) // new filing id
 
-    // mount the component without rendering its child components
     wrapper = shallowMount(AnnualReport, { store, localVue, router })
     vm = wrapper.vm as any
   })

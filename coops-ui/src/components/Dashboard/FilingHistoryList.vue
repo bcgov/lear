@@ -67,18 +67,10 @@
     </v-expansion-panel>
 
     <!-- No Results Message -->
-    <v-card class="no-results" flat v-if="filedItems && filedItems.length === 0 && !errorMessage">
+    <v-card class="no-results" flat v-if="filedItems && filedItems.length === 0">
       <v-card-text>
         <div class="no-results__title">You have no filing history</div>
         <div class="no-results__subtitle">Your completed filings and transactions will appear here</div>
-      </v-card-text>
-    </v-card>
-
-    <!-- Error Message -->
-    <v-card class="network-error" flat v-if="filedItems && filedItems.length === 0 && errorMessage">
-      <v-card-text>
-        <div class="network-error__title">{{errorMessage}}</div>
-        <div class="no-results__subtitle">Your completed filings and transactions will normally appear here</div>
       </v-card-text>
     </v-card>
 
@@ -98,7 +90,7 @@
 <script lang="ts">
 import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
-import { mapState, mapActions } from 'vuex'
+import { mapState } from 'vuex'
 
 export default {
   name: 'FilingHistoryList',
@@ -110,7 +102,6 @@ export default {
       downloadErrorDialog: false,
       panel: null, // currently expanded panel
       filedItems: null,
-      errorMessage: null,
       loadingDocument: false,
       loadingReceipt: false,
       loadingAll: false
@@ -118,81 +109,45 @@ export default {
   },
 
   computed: {
-    ...mapState(['corpNum'])
+    ...mapState(['corpNum', 'filings'])
   },
 
   mounted () {
     // load data for this page
-    this.getFilings()
+    this.filedItems = []
+
+    // create filed items
+    for (let i = 0; i < this.filings.length; i++) {
+      const filing = this.filings[i].filing
+      if (filing && filing.header) {
+        switch (filing.header.name) {
+          case 'annualReport':
+            this.loadAnnualReport(filing)
+            break
+          case 'changeOfDirectors':
+            this.loadChangeOfDirectors(filing)
+            break
+          case 'changeOfAddress':
+            this.loadChangeOfAddress(filing)
+            break
+          default:
+            console.log('ERROR - got unknown filing name =', filing)
+            break
+        }
+      } else {
+        console.log('ERROR - invalid filing or filing header =', filing)
+      }
+    }
+
+    this.$emit('filed-count', this.filedItems.length)
+
+    // if needed, highlight a specific filing
+    // NB: use unary plus operator to cast string to number
+    const highlightId = +this.$route.query.filing_id // may be NaN (which is false)
+    if (highlightId) { this.highlightFiling(highlightId) }
   },
 
   methods: {
-    ...mapActions(['setFilingHistory']),
-
-    getFilings () {
-      this.filedItems = []
-      this.errorMessage = null
-      if (this.corpNum) {
-        var url = this.corpNum + '/filings'
-        axios.get(url).then(response => {
-          if (response && response.data && response.data.filings) {
-            // sort by date descending (ie, latest to earliest)
-            const filings = response.data.filings.sort(
-              (a, b) => (b.filing.header.date - a.filing.header.date)
-            )
-
-            // store the list of filing history to be used elsewhere
-            this.setFilingHistory(filings)
-
-            // create filed items
-            for (let i = 0; i < filings.length; i++) {
-              const filing = filings[i].filing
-              if (filing && filing.header) {
-                switch (filing.header.name) {
-                  case 'annualReport':
-                    this.loadAnnualReport(filing)
-                    break
-                  case 'changeOfDirectors':
-                    this.loadChangeOfDirectors(filing)
-                    break
-                  case 'changeOfAddress':
-                    this.loadChangeOfAddress(filing)
-                    break
-                  default:
-                    console.log('ERROR - got unknown filing name =', filing)
-                    break
-                }
-              } else {
-                console.log('ERROR - invalid filing or filing header =', filing)
-              }
-            }
-          } else {
-            console.log('getFilings() error - invalid Filings')
-            this.errorMessage = 'Oops, could not parse data from server'
-          }
-          this.$emit('filed-count', this.filedItems.length)
-          // if needed, highlight a specific filing
-          // NB: use unary plus operator to cast string to number
-          const highlightId = +this.$route.query.filing_id // may be NaN (which is false)
-          if (highlightId) { this.highlightFiling(highlightId) }
-        }).catch(error => {
-          console.error('getFilings() error =', error)
-          this.errorMessage = 'Oops, could not load data from server'
-        })
-      }
-    },
-
-    highlightFiling (highlightId) {
-      // expand the panel of the matching filing
-      for (let i = 0; i < this.filedItems.length; i++) {
-        // assume there is always a filing document
-        if (this.filedItems[i].filingDocuments[0].filingId === highlightId) {
-          this.panel = i
-          break
-        }
-      }
-    },
-
     loadAnnualReport (filing) {
       if (filing.annualReport) {
         const date = filing.annualReport.annualGeneralMeetingDate
@@ -203,7 +158,6 @@ export default {
             filingAuthor: filing.annualReport.certifiedBy,
             filingDate: filing.header.date,
             paymentToken: filing.header.paymentToken,
-            filingStatus: filing.header.status,
             filingDocuments: [{
               filingId: filing.header.filingId,
               name: 'Annual Report',
@@ -242,7 +196,6 @@ export default {
           filingAuthor: filing.changeOfDirectors.certifiedBy,
           filingDate: filing.header.date,
           paymentToken: filing.header.paymentToken,
-          filingStatus: filing.header.status,
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: 'Director Change',
@@ -262,7 +215,6 @@ export default {
           filingAuthor: filing.changeOfAddress.certifiedBy,
           filingDate: filing.header.date,
           paymentToken: filing.header.paymentToken,
-          filingStatus: filing.header.status,
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: 'Address Change',
@@ -272,6 +224,17 @@ export default {
         this.filedItems.push(item)
       } else {
         console.log('ERROR - invalid changeOfAddress in filing =', filing)
+      }
+    },
+
+    highlightFiling (highlightId) {
+      // expand the panel of the matching filing
+      for (let i = 0; i < this.filedItems.length; i++) {
+        // assume there is always a filing document
+        if (this.filedItems[i].filingDocuments[0].filingId === highlightId) {
+          this.panel = i
+          break
+        }
       }
     },
 
@@ -383,13 +346,6 @@ export default {
       // finally download receipt
       await this.downloadOneReceipt(filing)
       this.loadingAll = false
-    }
-  },
-
-  watch: {
-    corpNum (val) {
-      // if Corp Num changes, get new filings
-      this.getFilings()
     }
   }
 }

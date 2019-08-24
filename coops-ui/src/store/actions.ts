@@ -56,7 +56,19 @@ export default {
   setAgmDateValid ({ commit }, agmDateValid) {
     commit('agmDateValid', agmDateValid)
   },
-  setFilingHistory ({ commit }, filingHistory) {
-    commit('filingHistory', filingHistory)
+  setTasks ({ commit }, tasks) {
+    commit('tasks', tasks)
+  },
+  setFilings ({ commit }, filings) {
+    commit('filings', filings)
+  },
+  setMailingAddress ({ commit }, mailingAddress) {
+    commit('mailingAddress', mailingAddress)
+  },
+  setDeliveryAddress ({ commit }, deliveryAddress) {
+    commit('deliveryAddress', deliveryAddress)
+  },
+  setDirectors ({ commit }, directors) {
+    commit('directors', directors)
   }
 }
