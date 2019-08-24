@@ -67,18 +67,10 @@
     </v-expansion-panel>
 
     <!-- No Results Message -->
-    <v-card class="no-results" flat v-if="filedItems && filedItems.length === 0 && !errorMessage">
+    <v-card class="no-results" flat v-if="filedItems && filedItems.length === 0">
       <v-card-text>
         <div class="no-results__title">You have no filing history</div>
         <div class="no-results__subtitle">Your completed filings and transactions will appear here</div>
-      </v-card-text>
-    </v-card>
-
-    <!-- Error Message -->
-    <v-card class="network-error" flat v-if="filedItems && filedItems.length === 0 && errorMessage">
-      <v-card-text>
-        <div class="network-error__title">{{errorMessage}}</div>
-        <div class="no-results__subtitle">Your completed filings and transactions will normally appear here</div>
       </v-card-text>
     </v-card>
 
@@ -110,7 +102,6 @@ export default {
       downloadErrorDialog: false,
       panel: null, // currently expanded panel
       filedItems: null,
-      errorMessage: null,
       loadingDocument: false,
       loadingReceipt: false,
       loadingAll: false
@@ -124,7 +115,6 @@ export default {
   mounted () {
     // load data for this page
     this.filedItems = []
-    this.errorMessage = null
 
     // create filed items
     for (let i = 0; i < this.filings.length; i++) {

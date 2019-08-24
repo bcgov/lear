@@ -67,18 +67,10 @@
     </v-expansion-panel>
 
     <!-- No Results Message -->
-    <v-card class="no-results" flat v-if="taskItems && taskItems.length === 0 && !errorMessage">
+    <v-card class="no-results" flat v-if="taskItems && taskItems.length === 0">
       <v-card-text>
         <div class="no-results__title">You don't have anything to do yet</div>
         <div class="no-results__subtitle">Filings that require your attention will appear here</div>
-      </v-card-text>
-    </v-card>
-
-    <!-- Error Message -->
-    <v-card class="network-error" flat v-if="taskItems && taskItems.length === 0 && errorMessage">
-      <v-card-text>
-        <div class="network-error__title">{{errorMessage}}</div>
-        <div class="network-error__subtitle">Filings that require your attention will normally appear here</div>
       </v-card-text>
     </v-card>
   </div>
@@ -95,8 +87,7 @@ export default {
 
   data () {
     return {
-      taskItems: null,
-      errorMessage: null
+      taskItems: null
     }
   },
 
@@ -107,7 +98,6 @@ export default {
   mounted () {
     // load data for this page
     this.taskItems = []
-    this.errorMessage = null
 
     // create task items
     this.tasks.forEach(task => {
