@@ -136,6 +136,7 @@
               </header>
               <Directors ref="directorsList"
                 @directorsChange="directorsChange"
+                @allDirectors="allDirectors=$event"
                 :asOfDate="agmDate"
                 :componentEnabled="agmDateValid"
               />
@@ -236,6 +237,7 @@ export default {
   data () {
     return {
       addresses: null,
+      allDirectors: [],
       filingId: null,
       loadingMessage: 'Loading...', // initial generic message
       filingData: [],
@@ -489,7 +491,10 @@ export default {
         annualReport: {
           annualGeneralMeetingDate: this.agmDate,
           certifiedBy: this.certifiedBy || '',
-          email: 'no_one@never.get'
+          email: 'no_one@never.get',
+          deliveryAddress: this.addresses['deliveryAddress'],
+          mailingAddress: this.addresses['mailingAddress'],
+          directors: this.allDirectors.filter(el => el.cessationDate === null)
         }
       }
 
@@ -498,7 +503,7 @@ export default {
           changeOfDirectors: {
             certifiedBy: this.certifiedBy || '',
             email: 'no_one@never.get',
-            directors: this.$refs.directorsList.getAllDirectors()
+            directors: this.allDirectors
           }
         }
       }

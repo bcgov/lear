@@ -17,7 +17,7 @@ import Certify from '@/components/AnnualReport/Certify.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('AnnualReport - Part 1', () => {
+describe('AnnualReport - Part 1 - UI', () => {
   beforeEach(() => {
     // init store
     store.state.corpNum = 'CP0001191'
@@ -182,7 +182,7 @@ describe('AnnualReport - Part 1', () => {
   })
 })
 
-describe('AnnualReport - Part 2', () => {
+describe('AnnualReport - Part 2 - Submitting', () => {
   const { assign } = window.location
 
   beforeAll(() => {
@@ -307,10 +307,14 @@ describe('AnnualReport - Part 2', () => {
       // make sure form is validated
       vm.setValidated(true)
 
+      // stub address data
+      vm.addresses = {
+        'deliveryAddress': {},
+        'mailingAddress': {}
+      }
+
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
-
-      // TODO: verify that new filing was created
 
       // click the File & Pay button
       wrapper.find('#ar-file-pay-btn').trigger('click')
@@ -334,10 +338,14 @@ describe('AnnualReport - Part 2', () => {
       // make sure form is validated
       vm.setValidated(true)
 
+      // stub address data
+      vm.addresses = {
+        'deliveryAddress': {},
+        'mailingAddress': {}
+      }
+
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
-
-      // TODO: verify that draft filing was fetched
 
       // click the File & Pay button
       wrapper.find('#ar-file-pay-btn').trigger('click')
@@ -353,7 +361,7 @@ describe('AnnualReport - Part 2', () => {
   )
 })
 
-describe('AnnualReport - Part 3', () => {
+describe('AnnualReport - Part 3 - Saving', () => {
   let wrapper
   let vm
 
@@ -414,6 +422,12 @@ describe('AnnualReport - Part 3', () => {
     // make sure form is validated
     vm.setValidated(true)
 
+    // stub address data
+    vm.addresses = {
+      'deliveryAddress': {},
+      'mailingAddress': {}
+    }
+
     // click the Save button
     wrapper.find('#ar-save-btn').trigger('click')
     // work-around because click trigger isn't working
@@ -426,6 +440,12 @@ describe('AnnualReport - Part 3', () => {
   it('saves a filing and routes to Home URL when the Save & Resume button is clicked', async () => {
     // make sure form is validated
     vm.setValidated(true)
+
+    // stub address data
+    vm.addresses = {
+      'deliveryAddress': {},
+      'mailingAddress': {}
+    }
 
     // click the Save & Resume Later button
     wrapper.find('#ar-save-resume-btn').trigger('click')
@@ -447,5 +467,75 @@ describe('AnnualReport - Part 3', () => {
 
     // verify routing back to Home URL
     expect(vm.$route.name).toBe('dashboard')
+  })
+})
+
+describe('AnnualReport - Part 4 - Filing Data', () => {
+  let wrapper
+  let vm
+
+  beforeEach(async () => {
+    // init store
+    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
+    store.state.entityName = 'Legal Name - CP0001191'
+    store.state.ARFilingYear = 2017
+    store.state.currentFilingStatus = 'NEW'
+    store.state.filedDate = null
+
+    // mock "save draft" endpoint
+    sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filing': {
+              'annualReport': {
+                'annualGeneralMeetingDate': '2018-07-15',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get'
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'annualReport',
+                'date': '2017-06-06',
+                'submitter': 'cp0001191',
+                'status': 'DRAFT',
+                'filingId': 123
+              }
+            }
+          }
+      })))
+
+    // create local Vue and mock router
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'annual-report', params: { id: '0' } }) // new filing id
+
+    wrapper = shallowMount(AnnualReport, { store, localVue, router })
+    vm = wrapper.vm as any
+  })
+
+  afterEach(() => {
+    sinon.restore()
+    wrapper.destroy()
+  })
+
+  it.skip('Includes Directors, Office Mailing Address, and Office Delivery Address in AR filing data', async () => {
+  })
+
+  it.skip('Includes unchanged directors in AR filing data', async () => {
+  })
+
+  it.skip('Includes appointed directors in AR filing data', async () => {
+  })
+
+  it.skip('Does NOT include ceased directors in AR filing data', async () => {
   })
 })

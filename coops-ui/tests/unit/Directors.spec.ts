@@ -116,12 +116,12 @@ describe('Directors', () => {
     // check complete first address
     expect(vm.directors.length).toEqual(2)
     expect(vm.directors[0].deliveryAddress.streetAddress).toEqual('mailing_address - address line one')
-    expect(vm.directors[0].deliveryAddress.streetAddressAdditional).toBeNull()
+    expect(vm.directors[0].deliveryAddress.streetAddressAdditional).toEqual('')
     expect(vm.directors[0].deliveryAddress.addressCity).toEqual('mailing_address city')
     expect(vm.directors[0].deliveryAddress.addressRegion).toEqual('BC')
     expect(vm.directors[0].deliveryAddress.addressCountry).toEqual('mailing_address country')
     expect(vm.directors[0].deliveryAddress.postalCode).toEqual('H0H0H0')
-    expect(vm.directors[0].deliveryAddress.deliveryInstructions).toBeNull()
+    expect(vm.directors[0].deliveryAddress.deliveryInstructions).toEqual('')
 
     // spot-check second address
     expect(vm.directors[1].deliveryAddress.streetAddressAdditional).toEqual('Kirkintiloch')
