@@ -878,7 +878,6 @@ export default {
     },
     directors_json () {
       // emit data to two events - allDirectors and activeDirectors (no ceased directors)
-      console.log('emiting directors changes from Directors component')
       this.$emit('allDirectors', this.directors)
       this.$emit('activeDirectors', this.directors.filter(el => el.cessationDate === null))
     }
