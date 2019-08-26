@@ -142,11 +142,15 @@ export default {
     },
 
     parseJwt (token) {
-      var base64Url = token.split('.')[1]
-      var base64 = decodeURIComponent(atob(base64Url).split('').map(function (c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-      }).join(''))
-      return JSON.parse(base64)
+      try {
+        var base64Url = token.split('.')[1]
+        var base64 = decodeURIComponent(window.atob(base64Url).split('').map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+        }).join(''))
+        return JSON.parse(base64)
+      } catch (error) {
+        throw new Error('error parsing JWT - ' + error)
+      }
     },
 
     storeEntityInfo (response) {

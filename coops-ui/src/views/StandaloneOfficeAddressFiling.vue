@@ -161,7 +161,7 @@
           <v-btn
             id="coa-cancel-btn"
             large
-            to="/dashboard">
+            to="/">
             Cancel
           </v-btn>
         </div>
@@ -380,7 +380,7 @@ export default {
       if (filing && filing.header) {
         const origin = window.location.origin || ''
         const filingId = filing.header.filingId
-        const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
+        const returnURL = encodeURIComponent(origin + '/?filing_id=' + filingId)
         let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
         if (!(authStub.endsWith('/'))) { authStub += '/' }
         const paymentToken = filing.header.paymentToken
@@ -495,7 +495,7 @@ export default {
     navigateToDashboard () {
       this.haveChanges = false
       this.dialog = false
-      this.$router.push('/dashboard')
+      this.$router.push('/')
     }
   }
 }
