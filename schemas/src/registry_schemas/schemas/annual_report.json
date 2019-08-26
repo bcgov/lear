@@ -13,7 +13,10 @@
             "required": [
                 "annualGeneralMeetingDate",
                 "certifiedBy",
-                "email"
+                "email",
+                "directors",
+                "mailingAddress",
+                "deliveryAddress"
             ],
             "properties": {
                 "annualGeneralMeetingDate": {
@@ -26,6 +29,18 @@
                 "email": {
                     "type": "string",
                     "format": "email"
+                },
+                "directors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/directors#/definitions/director"
+                    }
+                },
+                "deliveryAddress": {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
+                },
+                "mailingAddress": {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
                 }
             }
         }

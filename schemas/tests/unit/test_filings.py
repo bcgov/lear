@@ -35,7 +35,59 @@ AR = {
         'annualReport': {
             'annualGeneralMeetingDate': '2019-04-08',
             'certifiedBy': 'full name',
-            'email': 'no_one@never.get'
+            'email': 'no_one@never.get',
+            'directors': [
+                {
+                    'officer': {
+                        'firstName': 'Peter',
+                        'lastName': 'Griffin',
+                        'prevFirstName': 'Peter',
+                        'prevMiddleInitial': 'G',
+                        'prevLastName': 'Griffin'
+                    },
+                    'deliveryAddress': {
+                        'streetAddress': 'mailing_address - address line one',
+                        'addressCity': 'mailing_address city',
+                        'addressCountry': 'mailing_address country',
+                        'postalCode': 'H0H0H0',
+                        'addressRegion': 'BC'
+                    },
+                    'appointmentDate': '2018-01-01',
+                    'cessationDate': None
+                },
+                {
+                    'officer': {
+                        'firstName': 'Joe',
+                        'middleInitial': 'P',
+                        'lastName': 'Swanson'
+                    },
+                    'deliveryAddress': {
+                        'streetAddress': 'mailing_address - address line #1',
+                        'additionalStreetAddress': 'Kirkintiloch',
+                        'addressCity': 'Glasgow',
+                        'addressCountry': 'UK',
+                        'postalCode': 'H0H 0H0',
+                        'addressRegion': 'SC'
+                    },
+                    'title': 'Treasurer',
+                    'cessationDate': None,
+                    'appointmentDate': '2018-01-01'
+                }
+            ],
+            'deliveryAddress': {
+                'streetAddress': 'delivery_address - address line one',
+                'addressCity': 'delivery_address city',
+                'addressCountry': 'delivery_address country',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line one',
+                'addressCity': 'mailing_address city',
+                'addressCountry': 'mailing_address country',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            }
         }
     }
 }
