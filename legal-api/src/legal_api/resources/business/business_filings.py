@@ -263,24 +263,24 @@ class ListFilingResource(Resource):
         filing_types = []
         for k in filing.filing_json['filing'].keys():
             if Filing.FILINGS.get(k, None):
-                filing_types.append({'filing_type_code': Filing.FILINGS[k].get('code')})
+                filing_types.append({'filingTypeCode': Filing.FILINGS[k].get('code')})
 
         mailing_address = business.mailing_address.one_or_none()
 
         payload = {
-            'payment_info': {'method_of_payment': 'CC'},
-            'business_info': {
-                'business_identifier': f'{business.identifier}',
-                'corp_type': f'{business.identifier[:-7]}',
-                'business_name': f'{business.legal_name}',
-                'contact_info': {'city': mailing_address.city,
-                                 'postal_code': mailing_address.postal_code,
-                                 'province': mailing_address.region,
-                                 'address_line_1': mailing_address.street,
-                                 'country': mailing_address.country}
+            'paymentInfo': {'methodOfPayment': 'CC'},
+            'businessInfo': {
+                'businessIdentifier': f'{business.identifier}',
+                'corpType': f'{business.identifier[:-7]}',
+                'businessName': f'{business.legal_name}',
+                'contactInfo': {'city': mailing_address.city,
+                                'postalCode': mailing_address.postal_code,
+                                'province': mailing_address.region,
+                                'addressLine1': mailing_address.street,
+                                'country': mailing_address.country}
             },
-            'filing_info': {
-                'filing_types': filing_types
+            'filingInfo': {
+                'filingTypes': filing_types
             }
         }
 

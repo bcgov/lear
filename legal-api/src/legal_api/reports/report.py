@@ -33,9 +33,9 @@ class Report:
         }
 
         data = {
-            'report_name': self._get_report_filename(),
+            'reportName': self._get_report_filename(),
             'template': '\'' + base64.b64encode(bytes(self._get_template(), 'utf-8')).decode() + '\'',
-            'template_vars': self._get_template_data()
+            'templateVars': self._get_template_data()
         }
 
         response = requests.post(current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
