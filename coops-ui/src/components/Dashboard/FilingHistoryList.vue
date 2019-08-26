@@ -298,7 +298,7 @@ export default {
       const config = {
         headers: { 'Accept': 'application/pdf' },
         responseType: 'blob' as 'json',
-        baseURL: sessionStorage.getItem('PAY_API_URL') + 'payments/'
+        baseURL: sessionStorage.getItem('PAY_API_URL') + 'payment-requests/'
       }
 
       await axios.post(url, data, config).then(response => {
