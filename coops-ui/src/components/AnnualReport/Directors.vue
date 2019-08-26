@@ -474,6 +474,11 @@ export default {
 
     ...mapGetters(['lastCODFilingDate']),
 
+    directors_json () {
+      // json representation of directors data to use as watch trigger for changes to directors
+      return JSON.stringify(this.directors)
+    },
+
     directorsChange () {
       // One or more actions taken on directors (add, cease) require a single fee, so check how many directors in the
       // list are marked as requiring a fee.
@@ -606,6 +611,9 @@ export default {
                 directors[i].officer.prevFirstName = directors[i].officer.firstName
                 directors[i].officer.prevLastName = directors[i].officer.lastName
                 directors[i].officer.prevMiddleInitial = directors[i].officer.middleInitial
+
+                // ensure there is complete address data including missing/blank fields
+                directors[i].deliveryAddress = this.formatAddress(directors[i].deliveryAddress)
               }
 
               // save to component data now that extra attributes are added
@@ -805,15 +813,6 @@ export default {
       this.inProgressAddress = val
     },
 
-    getAllDirectors: function () {
-      this.directorsFinal = []
-      this.directors.forEach((director) => {
-        director['deliveryAddress'] = this.formatAddress(director['deliveryAddress'])
-        this.directorsFinal.push(director)
-      })
-      return this.directorsFinal
-    },
-
     setAllDirectors (directors) {
       // load data from existing filing
       this.directors = directors
@@ -876,6 +875,11 @@ export default {
       if (!(this.currentFilingStatus === 'DRAFT' && (this.draftDate === newVal || oldVal == null))) {
         this.getDirectors()
       }
+    },
+    directors_json () {
+      // emit data to two events - allDirectors and activeDirectors (no ceased directors)
+      this.$emit('allDirectors', this.directors)
+      this.$emit('activeDirectors', this.directors.filter(el => el.cessationDate === null))
     }
   }
 }
