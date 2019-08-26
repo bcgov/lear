@@ -112,42 +112,46 @@ export default {
     ...mapState(['corpNum', 'filings'])
   },
 
-  mounted () {
-    // load data for this page
-    this.filedItems = []
-
-    // create filed items
-    for (let i = 0; i < this.filings.length; i++) {
-      const filing = this.filings[i].filing
-      if (filing && filing.header) {
-        switch (filing.header.name) {
-          case 'annualReport':
-            this.loadAnnualReport(filing)
-            break
-          case 'changeOfDirectors':
-            this.loadChangeOfDirectors(filing)
-            break
-          case 'changeOfAddress':
-            this.loadChangeOfAddress(filing)
-            break
-          default:
-            console.log('ERROR - got unknown filing name =', filing)
-            break
-        }
-      } else {
-        console.log('ERROR - invalid filing or filing header =', filing)
-      }
-    }
-
-    this.$emit('filed-count', this.filedItems.length)
-
-    // if needed, highlight a specific filing
-    // NB: use unary plus operator to cast string to number
-    const highlightId = +this.$route.query.filing_id // may be NaN (which is false)
-    if (highlightId) { this.highlightFiling(highlightId) }
+  created () {
+    // load data into this page
+    this.loadData()
   },
 
   methods: {
+    loadData () {
+      this.filedItems = []
+
+      // create filed items
+      for (let i = 0; i < this.filings.length; i++) {
+        const filing = this.filings[i].filing
+        if (filing && filing.header) {
+          switch (filing.header.name) {
+            case 'annualReport':
+              this.loadAnnualReport(filing)
+              break
+            case 'changeOfDirectors':
+              this.loadChangeOfDirectors(filing)
+              break
+            case 'changeOfAddress':
+              this.loadChangeOfAddress(filing)
+              break
+            default:
+              console.log('ERROR - got unknown filing name =', filing)
+              break
+          }
+        } else {
+          console.log('ERROR - invalid filing or filing header =', filing)
+        }
+      }
+
+      this.$emit('filed-count', this.filedItems.length)
+
+      // if needed, highlight a specific filing
+      // NB: use unary plus operator to cast string to number
+      const highlightId = +this.$route.query.filing_id // may be NaN (which is false)
+      if (highlightId) { this.highlightFiling(highlightId) }
+    },
+
     loadAnnualReport (filing) {
       if (filing.annualReport) {
         const date = filing.annualReport.annualGeneralMeetingDate
@@ -346,6 +350,14 @@ export default {
       // finally download receipt
       await this.downloadOneReceipt(filing)
       this.loadingAll = false
+    }
+  },
+
+  watch: {
+    filings () {
+      // if filings changes, reload them
+      // (does not fire on initial page load)
+      this.loadData()
     }
   }
 }

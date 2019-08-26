@@ -318,7 +318,7 @@ describe('AnnualReport - Part 2', () => {
       await vm.onClickFilePay()
 
       // verify redirection
-      const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
+      const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
@@ -345,7 +345,7 @@ describe('AnnualReport - Part 2', () => {
       await vm.onClickFilePay()
 
       // verify redirection
-      const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
+      const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
@@ -432,7 +432,7 @@ describe('AnnualReport - Part 3', () => {
     // work-around because click trigger isn't working
     await vm.onClickSaveResume()
 
-    // verify routing back to Home URL
+    // verify routing back to Dashboard URL
     expect(vm.$route.name).toBe('dashboard')
   })
 
@@ -443,9 +443,9 @@ describe('AnnualReport - Part 3', () => {
     // click the Cancel button
     wrapper.find('#ar-cancel-btn').trigger('click')
     // work-around because click trigger isn't working
-    await vm.$router.push('/dashboard')
+    await vm.$router.push('/')
 
-    // verify routing back to Home URL
+    // verify routing back to Dashboard URL
     expect(vm.$route.name).toBe('dashboard')
   })
 })

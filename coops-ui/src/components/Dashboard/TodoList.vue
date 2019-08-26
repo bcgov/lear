@@ -95,35 +95,39 @@ export default {
     ...mapState(['tasks'])
   },
 
-  mounted () {
-    // load data for this page
-    this.taskItems = []
-
-    // create task items
-    this.tasks.forEach(task => {
-      if (task && task.task && task.task.todo) {
-        this.loadTodoItem(task)
-      } else if (task && task.task && task.task.filing) {
-        this.loadFilingItem(task)
-      } else {
-        console.log('ERROR - got unknown task =', task)
-      }
-    })
-
-    this.$emit('todo-count', this.taskItems.length)
-
-    // if this is a draft/pending/error item, emit the has-blocker-filings event to the parent component
-    // this indicates that a new filing cannot be started because this one has to be completed first
-    this.$emit('has-blocker-filing',
-      this.taskItems.filter(elem => {
-        return this.isDraft(elem) || this.isPending(elem) || this.isError(elem)
-      }).length > 0
-    )
+  created () {
+    // load data into this page
+    this.loadData()
   },
 
   methods: {
     ...mapActions(['setARFilingYear', 'setCurrentFilingStatus', 'setRegOffAddrChange', 'setAgmDate',
       'setFiledDate', 'setNoAGM', 'setValidated']),
+
+    loadData () {
+      this.taskItems = []
+
+      // create task items
+      this.tasks.forEach(task => {
+        if (task && task.task && task.task.todo) {
+          this.loadTodoItem(task)
+        } else if (task && task.task && task.task.filing) {
+          this.loadFilingItem(task)
+        } else {
+          console.log('ERROR - got unknown task =', task)
+        }
+      })
+
+      this.$emit('todo-count', this.taskItems.length)
+
+      // if this is a draft/pending/error item, emit the has-blocker-filings event to the parent component
+      // this indicates that a new filing cannot be started because this one has to be completed first
+      this.$emit('has-blocker-filing',
+        this.taskItems.filter(elem => {
+          return this.isDraft(elem) || this.isPending(elem) || this.isError(elem)
+        }).length > 0
+      )
+    },
 
     loadTodoItem (task) {
       const todo = task.task.todo
@@ -268,11 +272,11 @@ export default {
       }
     },
 
-    // this is called to either Resume Payment or Retry Payment.
+    // this is called to either Resume Payment or Retry Payment
     doResumePayment (item) {
       const origin = window.location.origin || ''
       const filingId = item.id
-      const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
+      const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
       let authStub = sessionStorage.getItem('AUTH_URL') || ''
       if (!(authStub.endsWith('/'))) { authStub += '/' }
       const paymentToken = item.paymentToken
@@ -308,6 +312,14 @@ export default {
 
     isCompleted (item) {
       return item.status === 'COMPLETED'
+    }
+  },
+
+  watch: {
+    tasks () {
+      // if tasks changes, reload them
+      // (does not fire on initial page load)
+      this.loadData()
     }
   }
 }
