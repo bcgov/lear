@@ -284,7 +284,7 @@ export default {
     // if tombstone data isn't set, route to home
     if (!this.corpNum || !this.ARFilingYear || (this.filingId === undefined)) {
       this.$router.push('/')
-    } else if (this.filingId > '0') {
+    } else if (this.filingId > 0) {
       // resume draft filing
       this.loadingMessage = `Resuming Your ${this.ARFilingYear} Annual Report`
       this.fetchData()
@@ -530,7 +530,7 @@ export default {
         )
       }
 
-      if (this.filingId > '0') {
+      if (this.filingId > 0) {
         // we have a filing id, so we are updating an existing filing
         let url = this.corpNum + '/filings/' + this.filingId
         if (isDraft) { url += '?draft=true' }
@@ -549,7 +549,7 @@ export default {
         })
         return filing
       } else {
-        // filing id is '0', so we are saving a new filing
+        // filing id is 0, so we are saving a new filing
         let url = this.corpNum + '/filings'
         if (isDraft) { url += '?draft=true' }
         let filing = null

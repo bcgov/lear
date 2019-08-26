@@ -243,7 +243,7 @@ export default {
 
     // if loading from draft...
     this.filingId = this.$route.params.id
-    if (this.filingId > '0') {
+    if (this.filingId > 0) {
       this.fetchChangeOfAddressFiling()
     }
   },
@@ -432,7 +432,7 @@ export default {
         )
       }
 
-      if (this.filingId > '0') {
+      if (this.filingId > 0) {
         // we have a filing id, so we are updating an existing filing
         let url = this.corpNum + '/filings/' + this.filingId
         if (isDraft) { url += '?draft=true' }
@@ -451,7 +451,7 @@ export default {
         })
         return filing
       } else {
-        // filing id is '0', so we are saving a new filing
+        // filing id is 0, so we are saving a new filing
         let url = this.corpNum + '/filings'
         if (isDraft) { url += '?draft=true' }
         let filing = null
