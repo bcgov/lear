@@ -5,4 +5,4 @@ export PATH=/opt/app-root/bin:/opt/rh/rh-python35/root/usr/bin::/opt/rh/httpd24/
 
 cd /opt/app-root/src
 echo 'run load_coop_2019.py'
-/opt/app-root/bin/python update_colin_filings.py
+/opt/app-root/bin/python load_coop_2019.py
