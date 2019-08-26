@@ -813,15 +813,6 @@ export default {
       this.inProgressAddress = val
     },
 
-    getAllDirectors: function () {
-      this.directorsFinal = []
-      this.directors.forEach((director) => {
-        director['deliveryAddress'] = this.formatAddress(director['deliveryAddress'])
-        this.directorsFinal.push(director)
-      })
-      return this.directorsFinal
-    },
-
     setAllDirectors (directors) {
       // load data from existing filing
       this.directors = directors
