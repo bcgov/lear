@@ -570,8 +570,11 @@ describe('AnnualReport - Part 4 - Filing Data', () => {
     // click the Save button
     wrapper.find('#ar-save-btn').trigger('click')
     // work-around because click trigger isn't working
-    await vm.onClickSaveResume()
+    await vm.onClickSave()
 
+    // get the payload of the ajax call
+    // - the first index (0) is to get the first call, where there could be many calls to the stubbed function
+    // - the second index (1) is to get the second param - data - where the call is axios.post(url, data)
     const payload = spy.args[0][1]
 
     // basic tests to pass ensuring structure of payload is as expected
@@ -587,7 +590,7 @@ describe('AnnualReport - Part 4 - Filing Data', () => {
     // click the Save button
     wrapper.find('#ar-save-btn').trigger('click')
     // work-around because click trigger isn't working
-    await vm.onClickSaveResume()
+    await vm.onClickSave()
 
     const payload = spy.args[0][1]
 
@@ -601,11 +604,10 @@ describe('AnnualReport - Part 4 - Filing Data', () => {
   })
 
   it('Includes appointed directors in AR filing data', async () => {
-
     // click the Save button
     wrapper.find('#ar-save-btn').trigger('click')
     // work-around because click trigger isn't working
-    await vm.onClickSaveResume()
+    await vm.onClickSave()
 
     const payload = spy.args[0][1]
 
