@@ -57,7 +57,10 @@
                     "format": "date"
                 },
                 "cessationDate": {
-                    "type": ["string", "null"],
+                    "type": [
+                        "string",
+                        "null"
+                    ],
                     "format": "date"
                 }
             },
