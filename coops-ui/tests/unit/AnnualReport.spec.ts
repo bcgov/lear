@@ -322,7 +322,7 @@ describe('AnnualReport - Part 2 - Submitting', () => {
       await vm.onClickFilePay()
 
       // verify redirection
-      const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
+      const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
@@ -353,7 +353,7 @@ describe('AnnualReport - Part 2 - Submitting', () => {
       await vm.onClickFilePay()
 
       // verify redirection
-      const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
+      const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
@@ -437,7 +437,7 @@ describe('AnnualReport - Part 3 - Saving', () => {
     expect(vm.$route.name).toBe('annual-report')
   })
 
-  it('saves a filing and routes to Home URL when the Save & Resume button is clicked', async () => {
+  it('saves a filing and routes to Dashboard URL when the Save & Resume button is clicked', async () => {
     // make sure form is validated
     vm.setValidated(true)
 
@@ -452,11 +452,11 @@ describe('AnnualReport - Part 3 - Saving', () => {
     // work-around because click trigger isn't working
     await vm.onClickSaveResume()
 
-    // verify routing back to Home URL
+    // verify routing back to Dashboard URL
     expect(vm.$route.name).toBe('dashboard')
   })
 
-  it('routes to Home URL when the Cancel button is clicked', async () => {
+  it('routes to Dashboard URL when the Cancel button is clicked', async () => {
     // make sure form is validated
     vm.setValidated(true)
 
@@ -465,7 +465,7 @@ describe('AnnualReport - Part 3 - Saving', () => {
     // work-around because click trigger isn't working
     await vm.$router.push('/dashboard')
 
-    // verify routing back to Home URL
+    // verify routing back to Dashboard URL
     expect(vm.$route.name).toBe('dashboard')
   })
 })
