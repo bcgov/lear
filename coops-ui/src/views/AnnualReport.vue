@@ -148,7 +148,9 @@
                 <h2 id="AR-step-4-header">4. Certify Correct</h2>
                 <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
               </header>
-              <Certify @certifyChange="changeCertifyData" @certifiedBy="certifiedBy=$event" ref="certifyClause"/>
+              <Certify
+                :isCertified.sync="isCertified"
+                :certifiedBy.sync="certifiedBy" />
             </section>
           </div>
           <!-- <div v-else>
@@ -244,8 +246,8 @@ export default {
       resumeErrorDialog: false,
       saveErrorDialog: false,
       paymentErrorDialog: false,
-      certifyChange: false,
-      certifiedBy: null,
+      isCertified: false,
+      certifiedBy: '',
       isSaveButtonEnabled: false,
       saving: false,
       savingResuming: false,
@@ -340,27 +342,38 @@ export default {
             if (filing.business.legalName !== this.entityName) throw new Error('invalid business legal name')
 
             // load Annual Report fields
-            if (!filing.annualReport) throw new Error('missing annual report')
-            else {
+            const annualReport = filing.annualReport
+            if (annualReport) {
               // TODO: use props instead of $refs (which cause an error in the unit tests)
               // NOTE: AR Filing Year (which is needed by agmDate component) was already set by Todo List
-              this.$refs.directorsList.setDraftDate(filing.annualReport.annualGeneralMeetingDate)
-              this.$refs.agmDate.loadAgmDate(filing.annualReport.annualGeneralMeetingDate)
+              if (this.$refs.directorsList.setDraftDate) {
+                this.$refs.directorsList.setDraftDate(annualReport.annualGeneralMeetingDate)
+              }
+              if (this.$refs.agmDate.loadAgmDate) {
+                this.$refs.agmDate.loadAgmDate(annualReport.annualGeneralMeetingDate)
+              }
+              this.certifiedBy = annualReport.certifiedBy
               this.toggleFiling('add', 'OTANN')
+            } else {
+              throw new Error('missing annual report')
             }
 
             // load Change of Directors fields
             const changeOfDirectors = filing.changeOfDirectors
             if (changeOfDirectors) {
               if (changeOfDirectors.directors && changeOfDirectors.directors.length > 0) {
-                this.$refs.directorsList.setAllDirectors(changeOfDirectors.directors)
+                if (this.$refs.directorsList.setAllDirectors) {
+                  this.$refs.directorsList.setAllDirectors(changeOfDirectors.directors)
+                }
                 this.toggleFiling('add', 'OTCDR')
               } else {
                 throw new Error('invalid change of directors')
               }
             } else {
-              // To handle the condition of save as draft withouot change of director
-              this.$refs.directorsList.getDirectors()
+              // To handle the condition of save as draft without change of director
+              if (this.$refs.directorsList.getDirectors) {
+                this.$refs.directorsList.getDirectors()
+              }
             }
 
             // load Change of Address fields
@@ -417,11 +430,6 @@ export default {
       this.haveChanges = true
       // when directors change, update filing data
       this.toggleFiling(modified ? 'add' : 'remove', 'OTCDR')
-    },
-
-    changeCertifyData (val) {
-      this.haveChanges = true
-      this.certifyChange = val
     },
 
     async onClickSave () {
@@ -598,7 +606,7 @@ export default {
 
     setValidateFlag () {
       // compute the AR page's valid state
-      this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.certifyChange)
+      this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.isCertified)
       this.isSaveButtonEnabled = this.agmDateValid && this.addressesFormValid && this.directorFormValid
     }
   },
@@ -624,7 +632,13 @@ export default {
       this.setValidateFlag()
     },
 
-    certifyChange: function (val) {
+    isCertified (val) {
+      this.haveChanges = true
+      this.setValidateFlag()
+    },
+
+    certifiedBy (val) {
+      this.haveChanges = true
       this.setValidateFlag()
     }
   }

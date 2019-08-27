@@ -13,7 +13,48 @@ import Certify from '@/components/AnnualReport/Certify.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('Standalone Directors Filing - Part 1', () => {
+const sampleDirectors = [
+  {
+    'officer': {
+      'firstName': 'Peter',
+      'middleInitial': null,
+      'lastName': 'Griffin'
+    },
+    'deliveryAddress': {
+      'streetAddress': 'Peter Griffin delivery street address',
+      'streetAddressAdditional': null,
+      'addressCity': 'deliv address city',
+      'addressCountry': 'deliv country',
+      'postalCode': 'H0H0H0',
+      'addressRegion': 'BC',
+      'deliveryInstructions': null
+    },
+    'title': null,
+    'appointmentDate': '2015-10-11',
+    'cessationDate': null
+  },
+  {
+    'officer': {
+      'firstName': 'Joe',
+      'middleInitial': 'P',
+      'lastName': 'Swanson'
+    },
+    'deliveryAddress': {
+      'streetAddress': 'Joe Swanson delivery street address',
+      'streetAddressAdditional': 'Kirkintiloch',
+      'addressCity': 'Glasgow',
+      'addressCountry': 'UK',
+      'postalCode': 'H0H 0H0',
+      'addressRegion': 'Scotland',
+      'deliveryInstructions': 'go to the back'
+    },
+    'title': 'Treasurer',
+    'appointmentDate': '2015-10-11',
+    'cessationDate': '2019-07-22'
+  }
+]
+
+describe('Standalone Directors Filing - Part 1 - UI', () => {
   beforeEach(() => {
     // init store
     store.state.corpNum = 'CP0001191'
@@ -40,7 +81,7 @@ describe('Standalone Directors Filing - Part 1', () => {
 
     // set flags
     vm.directorFormValid = true
-    vm.changeCertifyData(true)
+    vm.isCertified = true
 
     // set stub list of filings
     vm.filingData.push({})
@@ -58,7 +99,7 @@ describe('Standalone Directors Filing - Part 1', () => {
 
     // set flags
     vm.directorFormValid = false
-    vm.changeCertifyData(true)
+    vm.isCertified = true
 
     // set stub list of filings
     vm.filingData.push({})
@@ -76,7 +117,7 @@ describe('Standalone Directors Filing - Part 1', () => {
 
     // set flags
     vm.directorFormValid = true
-    vm.changeCertifyData(false)
+    vm.isCertified = false
 
     // set stub list of filings
     vm.filingData.push({})
@@ -94,7 +135,7 @@ describe('Standalone Directors Filing - Part 1', () => {
 
     // set flags
     vm.directorFormValid = true
-    vm.changeCertifyData(true)
+    vm.isCertified = true
 
     // set stub list of filings
     vm.filingData = []
@@ -112,7 +153,7 @@ describe('Standalone Directors Filing - Part 1', () => {
 
     // set flag
     vm.directorFormValid = true
-    vm.changeCertifyData(true)
+    vm.isCertified = true
 
     // set stub list of filings
     vm.filingData.push({})
@@ -130,7 +171,7 @@ describe('Standalone Directors Filing - Part 1', () => {
 
     // set flag
     vm.directorFormValid = true
-    vm.changeCertifyData(false)
+    vm.isCertified = false
 
     // set stub list of filings
     vm.filingData.push({})
@@ -142,7 +183,66 @@ describe('Standalone Directors Filing - Part 1', () => {
   })
 })
 
-describe('Standalone Directors Filing - Part 2', () => {
+describe('Standalone Directors Filing - Part 2 - Resuming', () => {
+  beforeEach(async () => {
+    // init store
+    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
+    store.state.entityName = 'Legal Name - CP0001191'
+
+    // mock "fetch a draft filing" endpoint
+    sinon.stub(axios, 'get').withArgs('CP0001191/filings/123')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filing': {
+              'changeOfDirectors': {
+                'directors': sampleDirectors,
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get'
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'changeOfDirectors',
+                'date': '2017-06-06',
+                'submitter': 'cp0001191',
+                'status': 'DRAFT',
+                'filingId': 123
+              }
+            }
+          }
+      })))
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  it('fetches a draft AR filing', done => {
+    const $route = { params: { id: '123' } } // draft filing id
+    const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(() => {
+      // verify that Certified By was restored
+      expect(vm.certifiedBy).toBe('Full Name')
+      expect(vm.isCertified).toBe(false)
+
+      // FUTURE - verify that changed directors were restored
+
+      wrapper.destroy()
+      done()
+    })
+  })
+})
+
+describe('Standalone Directors Filing - Part 3 - Submitting', () => {
   const { assign } = window.location
 
   beforeAll(() => {
@@ -160,47 +260,6 @@ describe('Standalone Directors Filing - Part 2', () => {
     store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
-
-    const sampleDirectors = [
-      {
-        'officer': {
-          'firstName': 'Peter',
-          'middleInitial': null,
-          'lastName': 'Griffin'
-        },
-        'deliveryAddress': {
-          'streetAddress': 'mailing_address - address line one',
-          'streetAddressAdditional': null,
-          'addressCity': 'mailing_address city',
-          'addressCountry': 'mailing_address country',
-          'postalCode': 'H0H0H0',
-          'addressRegion': 'BC',
-          'deliveryInstructions': null
-        },
-        'title': null,
-        'appointmentDate': '2015-10-11',
-        'cessationDate': null
-      },
-      {
-        'officer': {
-          'firstName': 'Joe',
-          'middleInitial': 'P',
-          'lastName': 'Swanson'
-        },
-        'deliveryAddress': {
-          'streetAddress': 'mailing_address - address line #1',
-          'streetAddressAdditional': 'Kirkintiloch',
-          'addressCity': 'Glasgow',
-          'addressCountry': 'UK',
-          'postalCode': 'H0H 0H0',
-          'addressRegion': 'Scotland',
-          'deliveryInstructions': 'go to the back'
-        },
-        'title': 'Treasurer',
-        'appointmentDate': '2015-10-11',
-        'cessationDate': '2019-07-22'
-      }
-    ]
 
     // mock "fetch a draft filing" endpoint
     sinon.stub(axios, 'get').withArgs('CP0001191/filings/123')
@@ -304,7 +363,7 @@ describe('Standalone Directors Filing - Part 2', () => {
 
       // make sure form is validated
       vm.directorFormValid = true
-      vm.changeCertifyData(true)
+      vm.isCertified = true
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -333,7 +392,7 @@ describe('Standalone Directors Filing - Part 2', () => {
 
     // make sure form is validated
     vm.directorFormValid = true
-    vm.changeCertifyData(true)
+    vm.isCertified = true
 
     // sanity check
     expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -353,7 +412,7 @@ describe('Standalone Directors Filing - Part 2', () => {
   })
 })
 
-describe('Standalone Directors Filing - Part 3', () => {
+describe('Standalone Directors Filing - Part 4 - Saving', () => {
   const { assign } = window.location
 
   beforeAll(() => {
@@ -371,47 +430,6 @@ describe('Standalone Directors Filing - Part 3', () => {
     store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
-
-    const sampleDirectors = [
-      {
-        'officer': {
-          'firstName': 'Peter',
-          'middleInitial': null,
-          'lastName': 'Griffin'
-        },
-        'deliveryAddress': {
-          'streetAddress': 'mailing_address - address line one',
-          'streetAddressAdditional': null,
-          'addressCity': 'mailing_address city',
-          'addressCountry': 'mailing_address country',
-          'postalCode': 'H0H0H0',
-          'addressRegion': 'BC',
-          'deliveryInstructions': null
-        },
-        'title': null,
-        'appointmentDate': '2015-10-11',
-        'cessationDate': null
-      },
-      {
-        'officer': {
-          'firstName': 'Joe',
-          'middleInitial': 'P',
-          'lastName': 'Swanson'
-        },
-        'deliveryAddress': {
-          'streetAddress': 'mailing_address - address line #1',
-          'streetAddressAdditional': 'Kirkintiloch',
-          'addressCity': 'Glasgow',
-          'addressCountry': 'UK',
-          'postalCode': 'H0H 0H0',
-          'addressRegion': 'Scotland',
-          'deliveryInstructions': 'go to the back'
-        },
-        'title': 'Treasurer',
-        'appointmentDate': '2015-10-11',
-        'cessationDate': '2019-07-22'
-      }
-    ]
 
     // mock "save draft" endpoint
     sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')
@@ -455,7 +473,7 @@ describe('Standalone Directors Filing - Part 3', () => {
 
       // make sure form is validated
       vm.directorFormValid = true
-      vm.changeCertifyData(true)
+      vm.isCertified = true
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -482,7 +500,7 @@ describe('Standalone Directors Filing - Part 3', () => {
 
       // make sure form is validated
       vm.directorFormValid = true
-      vm.changeCertifyData(true)
+      vm.isCertified = true
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)

@@ -65,7 +65,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.setAgmDateValid(true)
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(true)
-    vm.changeCertifyData(true)
+    vm.isCertified = true
     vm.setValidateFlag()
 
     // confirm that flag is set correctly
@@ -83,7 +83,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.setAgmDateValid(false)
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(true)
-    vm.changeCertifyData(true)
+    vm.isCertified = true
     vm.setValidateFlag()
 
     // confirm that flag is set correctly
@@ -101,7 +101,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.setAgmDateValid(true)
     vm.setAddressesFormValid(false)
     vm.setDirectorFormValid(true)
-    vm.changeCertifyData(true)
+    vm.isCertified = true
     vm.setValidateFlag()
 
     // confirm that flag is set correctly
@@ -119,7 +119,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.setAgmDateValid(true)
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(false)
-    vm.changeCertifyData(true)
+    vm.isCertified = true
     vm.setValidateFlag()
 
     // confirm that flag is set correctly
@@ -137,7 +137,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.setAgmDateValid(true)
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(true)
-    vm.changeCertifyData(false)
+    vm.isCertified = false
     vm.setValidateFlag()
 
     // confirm that flag is set correctly
@@ -182,7 +182,76 @@ describe('AnnualReport - Part 1 - UI', () => {
   })
 })
 
-describe('AnnualReport - Part 2 - Submitting', () => {
+describe('AnnualReport - Part 2 - Resuming', () => {
+  beforeEach(async () => {
+    // init store
+    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
+    store.state.entityName = 'Legal Name - CP0001191'
+    store.state.ARFilingYear = 2017
+    store.state.currentFilingStatus = 'DRAFT'
+    store.state.filedDate = null
+
+    // mock "fetch a draft filing" endpoint
+    sinon.stub(axios, 'get').withArgs('CP0001191/filings/123')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filing': {
+              'annualReport': {
+                'annualGeneralMeetingDate': '2018-07-15',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get'
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'annualReport',
+                'date': '2017-06-06',
+                'submitter': 'cp0001191',
+                'status': 'DRAFT',
+                'filingId': 123
+              }
+            }
+          }
+      })))
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  it('fetches a draft AR filing', done => {
+    const $route = { params: { id: '123' } } // draft filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(() => {
+      // FUTURE: verify that Draft Date (for directors) was restored
+      // (should be '2018-07-15')
+
+      // FUTURE: verify that AGM Date was restored
+      // (should be '2018/07/15')
+
+      // verify that Certified By was restored
+      expect(vm.certifiedBy).toBe('Full Name')
+      expect(vm.isCertified).toBe(false)
+
+      // FUTURE: verify that changed addresses and directors were restored
+      // (need to include in data above)
+
+      wrapper.destroy()
+      done()
+    })
+  })
+})
+
+describe('AnnualReport - Part 3 - Submitting', () => {
   const { assign } = window.location
 
   beforeAll(() => {
@@ -329,39 +398,39 @@ describe('AnnualReport - Part 2 - Submitting', () => {
     }
   )
 
-  it('updates an existing filing and redirects to Pay URL when this is a draft AR and the File & Pay button is clicked',
-    async () => {
-      const $route = { params: { id: '123' } } // draft filing id
-      const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
-      const vm = wrapper.vm as any
+  it('updates an existing filing and redirects to Pay URL when this is a draft AR and the ' +
+    'File & Pay button is clicked',
+  async () => {
+    const $route = { params: { id: '123' } } // draft filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm = wrapper.vm as any
 
-      // make sure form is validated
-      vm.setValidated(true)
+    // make sure form is validated
+    vm.setValidated(true)
 
-      // stub address data
-      vm.addresses = {
-        'deliveryAddress': {},
-        'mailingAddress': {}
-      }
-
-      // sanity check
-      expect(jest.isMockFunction(window.location.assign)).toBe(true)
-
-      // click the File & Pay button
-      wrapper.find('#ar-file-pay-btn').trigger('click')
-      // work-around because click trigger isn't working
-      await vm.onClickFilePay()
-
-      // verify redirection
-      const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
-      expect(window.location.assign).toHaveBeenCalledWith(payURL)
-
-      wrapper.destroy()
+    // stub address data
+    vm.addresses = {
+      'deliveryAddress': {},
+      'mailingAddress': {}
     }
-  )
+
+    // sanity check
+    expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+    // click the File & Pay button
+    wrapper.find('#ar-file-pay-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickFilePay()
+
+    // verify redirection
+    const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
+    expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+    wrapper.destroy()
+  })
 })
 
-describe('AnnualReport - Part 3 - Saving', () => {
+describe('AnnualReport - Part 4 - Saving', () => {
   let wrapper
   let vm
 
@@ -418,7 +487,7 @@ describe('AnnualReport - Part 3 - Saving', () => {
     wrapper.destroy()
   })
 
-  it('saves a filing when the Save button is clicked', async () => {
+  it('saves a new filing when the Save button is clicked', async () => {
     // make sure form is validated
     vm.setValidated(true)
 
@@ -470,7 +539,7 @@ describe('AnnualReport - Part 3 - Saving', () => {
   })
 })
 
-describe('AnnualReport - Part 4 - Filing Data', () => {
+describe('AnnualReport - Part 5 - Filing Data', () => {
   let wrapper
   let vm
   let spy

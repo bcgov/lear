@@ -13,7 +13,27 @@ import Certify from '@/components/AnnualReport/Certify.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('Standalone Office Address Filing - Part 1', () => {
+const sampleDeliveryAddress = {
+  'streetAddress': 'delivery street address',
+  'streetAddressAdditional': null,
+  'addressCity': 'deliv address city',
+  'addressCountry': 'deliv country',
+  'postalCode': 'H0H0H0',
+  'addressRegion': 'BC',
+  'deliveryInstructions': null
+}
+
+const sampleMailingAddress = {
+  'streetAddress': 'mailing street address',
+  'streetAddressAdditional': 'Kirkintiloch',
+  'addressCity': 'Glasgow',
+  'addressCountry': 'UK',
+  'postalCode': 'H0H 0H0',
+  'addressRegion': 'Scotland',
+  'deliveryInstructions': 'go to the back'
+}
+
+describe('Standalone Office Address Filing - Part 1 - UI', () => {
   beforeEach(() => {
     // init store
     store.state.corpNum = 'CP0001191'
@@ -35,7 +55,7 @@ describe('Standalone Office Address Filing - Part 1', () => {
     const vm: any = wrapper.vm
 
     // set properties
-    vm.changeCertifyData(true)
+    vm.isCertified = true
     vm.officeAddressFormValid = true
     vm.filingData = [{}] // dummy data
 
@@ -51,7 +71,7 @@ describe('Standalone Office Address Filing - Part 1', () => {
     const vm: any = wrapper.vm
 
     // set properties
-    vm.changeCertifyData(true)
+    vm.isCertified = true
     vm.officeAddressFormValid = false
     vm.filingData = [{}] // dummy data
 
@@ -67,7 +87,7 @@ describe('Standalone Office Address Filing - Part 1', () => {
     const vm: any = wrapper.vm
 
     // set properties
-    vm.changeCertifyData(false)
+    vm.isCertified = false
     vm.officeAddressFormValid = true
     vm.filingData = [{}] // dummy data
 
@@ -83,7 +103,7 @@ describe('Standalone Office Address Filing - Part 1', () => {
     const vm: any = wrapper.vm
 
     // set properties
-    vm.changeCertifyData(true)
+    vm.isCertified = true
     vm.officeAddressFormValid = true
     vm.filingData = []
 
@@ -97,7 +117,7 @@ describe('Standalone Office Address Filing - Part 1', () => {
     const vm: any = wrapper.vm
 
     // set all properties truthy
-    vm.changeCertifyData(true)
+    vm.isCertified = true
     vm.officeAddressFormValid = true
     vm.filingData = [{}] // dummy data
 
@@ -113,7 +133,7 @@ describe('Standalone Office Address Filing - Part 1', () => {
     const vm: any = wrapper.vm
 
     // set all properties falsy
-    vm.changeCertifyData(false)
+    vm.isCertified = false
     vm.officeAddressFormValid = false
     vm.filingData = [] // dummy data
 
@@ -124,7 +144,69 @@ describe('Standalone Office Address Filing - Part 1', () => {
   })
 })
 
-describe('Standalone Office Address Filing - Part 2', () => {
+describe('Standalone Office Address Filing - Part 2 - Resuming', () => {
+  beforeEach(async () => {
+    // init store
+    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
+    store.state.entityName = 'Legal Name - CP0001191'
+
+    // mock "fetch a draft filing" endpoint
+    sinon.stub(axios, 'get').withArgs('CP0001191/filings/123')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filing': {
+              'changeOfAddress': {
+                'deliveryAddress': sampleDeliveryAddress,
+                'mailingAddress': sampleMailingAddress,
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get'
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'changeOfAddress',
+                'date': '2017-06-06',
+                'submitter': 'cp0001191',
+                'status': 'DRAFT',
+                'filingId': 123
+              }
+            }
+          }
+      })))
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  it('fetches a draft AR filing', done => {
+    const $route = { params: { id: '123' } } // draft filing id
+    const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(() => {
+      // verify that Certified By was restored
+      expect(vm.certifiedBy).toBe('Full Name')
+      expect(vm.isCertified).toBe(false)
+
+      // verify that changed addresses were restored
+      expect(vm.addresses.deliveryAddress.streetAddress).toBe('delivery street address')
+      expect(vm.addresses.mailingAddress.streetAddress).toBe('mailing street address')
+
+      wrapper.destroy()
+      done()
+    })
+  })
+})
+
+describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
   const { assign } = window.location
 
   beforeAll(() => {
@@ -142,26 +224,6 @@ describe('Standalone Office Address Filing - Part 2', () => {
     store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
-
-    const sampleDeliveryAddress = {
-      'streetAddress': 'deliv - address line one',
-      'streetAddressAdditional': null,
-      'addressCity': 'deliv address city',
-      'addressCountry': 'deliv country',
-      'postalCode': 'H0H0H0',
-      'addressRegion': 'BC',
-      'deliveryInstructions': null
-    }
-
-    const sampleMailingAddress = {
-      'streetAddress': 'mailing_address - address line #1',
-      'streetAddressAdditional': 'Kirkintiloch',
-      'addressCity': 'Glasgow',
-      'addressCountry': 'UK',
-      'postalCode': 'H0H 0H0',
-      'addressRegion': 'Scotland',
-      'deliveryInstructions': 'go to the back'
-    }
 
     // mock "fetch a draft filing" endpoint
     sinon.stub(axios, 'get').withArgs('CP0001191/filings/123')
@@ -268,7 +330,7 @@ describe('Standalone Office Address Filing - Part 2', () => {
 
       // make sure form is validated
       vm.officeAddressFormValid = true
-      vm.changeCertifyData(true)
+      vm.isCertified = true
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -297,7 +359,7 @@ describe('Standalone Office Address Filing - Part 2', () => {
 
     // make sure form is validated
     vm.officeAddressFormValid = true
-    vm.changeCertifyData(true)
+    vm.isCertified = true
 
     // sanity check
     expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -317,7 +379,7 @@ describe('Standalone Office Address Filing - Part 2', () => {
   })
 })
 
-describe('Standalone Office Address Filing - Part 3', () => {
+describe('Standalone Office Address Filing - Part 4 - Saving', () => {
   const { assign } = window.location
 
   beforeAll(() => {
@@ -335,26 +397,6 @@ describe('Standalone Office Address Filing - Part 3', () => {
     store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
-
-    const sampleDeliveryAddress = {
-      'streetAddress': 'deliv - address line one',
-      'streetAddressAdditional': null,
-      'addressCity': 'deliv address city',
-      'addressCountry': 'deliv country',
-      'postalCode': 'H0H0H0',
-      'addressRegion': 'BC',
-      'deliveryInstructions': null
-    }
-
-    const sampleMailingAddress = {
-      'streetAddress': 'mailing_address - address line #1',
-      'streetAddressAdditional': 'Kirkintiloch',
-      'addressCity': 'Glasgow',
-      'addressCountry': 'UK',
-      'postalCode': 'H0H 0H0',
-      'addressRegion': 'Scotland',
-      'deliveryInstructions': 'go to the back'
-    }
 
     // mock "save draft" endpoint
     sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')
@@ -399,7 +441,7 @@ describe('Standalone Office Address Filing - Part 3', () => {
 
       // make sure form is validated
       vm.officeAddressFormValid = true
-      vm.changeCertifyData(true)
+      vm.isCertified = true
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -426,7 +468,7 @@ describe('Standalone Office Address Filing - Part 3', () => {
 
       // make sure form is validated
       vm.officeAddressFormValid = true
-      vm.changeCertifyData(true)
+      vm.isCertified = true
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)

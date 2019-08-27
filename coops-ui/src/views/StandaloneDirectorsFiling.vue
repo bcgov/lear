@@ -119,7 +119,9 @@
                 <h2 id="AR-step-4-header">Certify Correct</h2>
                 <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
               </header>
-              <Certify @certifyChange="changeCertifyData" @certifiedBy="certifiedBy=$event" ref="certifyClause"/>
+              <Certify
+                :isCertified.sync="isCertified"
+                :certifiedBy.sync="certifiedBy" />
             </section>
           </div>
         </article>
@@ -203,8 +205,8 @@ export default {
       saveErrorDialog: false,
       paymentErrorDialog: false,
       lastFilingDate: 'your last filing',
-      certifyChange: false,
-      certifiedBy: null,
+      isCertified: false,
+      certifiedBy: '',
       directorFormValid: true,
       filingId: null,
       saving: false,
@@ -218,7 +220,7 @@ export default {
     ...mapState(['currentDate', 'corpNum', 'entityName', 'entityIncNo', 'entityFoundingDate']),
 
     validated () {
-      return (this.certifyChange && this.directorFormValid && this.filingData.length > 0)
+      return (this.isCertified && this.directorFormValid && this.filingData.length > 0)
     },
 
     saveButtonEnabled () {
@@ -283,11 +285,6 @@ export default {
       this.haveChanges = true
       // when directors change, update filing data
       this.toggleFiling(modified ? 'add' : 'remove', 'OTCDR')
-    },
-
-    changeCertifyData (val) {
-      this.haveChanges = true
-      this.certifyChange = val
     },
 
     async onClickSave () {
@@ -358,6 +355,7 @@ export default {
           changeOfDirectors: {
             certifiedBy: this.certifiedBy || '',
             email: 'no_one@never.get',
+            // TODO: change this to a local property
             directors: this.$refs.directorsList.getAllDirectors()
           }
         }
@@ -455,14 +453,19 @@ export default {
             const changeOfDirectors = filing.changeOfDirectors
             if (changeOfDirectors) {
               if (changeOfDirectors.directors && changeOfDirectors.directors.length > 0) {
-                this.$refs.directorsList.setAllDirectors(changeOfDirectors.directors)
+                if (this.$refs.directorsList.setAllDirectors) {
+                  this.$refs.directorsList.setAllDirectors(changeOfDirectors.directors)
+                }
+                this.certifiedBy = changeOfDirectors.certifiedBy
                 this.toggleFiling('add', 'OTCDR')
               } else {
                 throw new Error('invalid change of directors')
               }
             } else {
-              // To handle the condition of save as draft withouot change of director
-              this.$refs.directorsList.getDirectors()
+              // To handle the condition of save as draft without change of director
+              if (this.$refs.directorsList.getDirectors) {
+                this.$refs.directorsList.getDirectors()
+              }
             }
           } catch (err) {
             console.log(`fetchData() error - ${err.message}, filing =`, filing)
@@ -473,6 +476,16 @@ export default {
         console.error('fetchData() error =', error)
         this.resumeErrorDialog = true
       })
+    }
+  },
+
+  watch: {
+    isCertified (val) {
+      this.haveChanges = true
+    },
+
+    certifiedBy (val) {
+      this.haveChanges = true
     }
   }
 }
