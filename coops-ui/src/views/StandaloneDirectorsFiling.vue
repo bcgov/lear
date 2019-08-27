@@ -206,6 +206,7 @@ export default {
       certifyChange: false,
       certifiedBy: null,
       directorFormValid: true,
+      filingId: null,
       saving: false,
       savingResuming: false,
       filingPaying: false,
@@ -295,7 +296,7 @@ export default {
       if (!filing) {
         console.log('onClickSave() error - invalid filing =', filing)
       } else {
-        this.filingId = filing.header.filingId
+        this.filingId = +filing.header.filingId
       }
       this.saving = false
     },
@@ -319,7 +320,7 @@ export default {
       // on success, redirect to Pay URL
       if (filing && filing.header) {
         const origin = window.location.origin || ''
-        const filingId = filing.header.filingId
+        const filingId = +filing.header.filingId
         const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
         let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
         if (!(authStub.endsWith('/'))) { authStub += '/' }
