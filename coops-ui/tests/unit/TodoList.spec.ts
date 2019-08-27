@@ -1,15 +1,17 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
-import { mount } from '@vue/test-utils'
+import VueRouter from 'vue-router'
+import { mount, createLocalVue } from '@vue/test-utils'
 
+import mockRouter from './mockRouter'
 import store from '@/store/store'
 import TodoList from '@/components/Dashboard/TodoList.vue'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('TodoList', () => {
+describe('TodoList - Display Tests', () => {
   it('handles empty data', done => {
     // init store
     store.state.tasks = []
@@ -181,7 +183,6 @@ describe('TodoList', () => {
       expect(vm.$el.querySelector('.no-results')).toBeNull()
 
       const item = vm.$el.querySelector('.list-item')
-
       expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
       expect(item.querySelector('.list-item__subtitle')).toBeNull()
       expect(item.querySelector('.list-item__status1').textContent).toContain('DRAFT')
@@ -226,7 +227,6 @@ describe('TodoList', () => {
       expect(vm.$el.querySelector('.no-results')).toBeNull()
 
       const item = vm.$el.querySelector('.list-item')
-
       expect(item.querySelector('.list-item__title').textContent).toEqual('File Address Change')
       expect(item.querySelector('.list-item__subtitle')).toBeNull()
       expect(item.querySelector('.list-item__status1').textContent).toContain('DRAFT')
@@ -271,7 +271,6 @@ describe('TodoList', () => {
       expect(vm.$el.querySelector('.no-results')).toBeNull()
 
       const item = vm.$el.querySelector('.list-item')
-
       expect(item.querySelector('.list-item__title').textContent).toEqual('File Director Change')
       expect(item.querySelector('.list-item__subtitle')).toBeNull()
       expect(item.querySelector('.list-item__status1').textContent).toContain('DRAFT')
@@ -321,7 +320,6 @@ describe('TodoList', () => {
       expect(vm.$el.querySelector('.no-results')).toBeNull()
 
       const item = vm.$el.querySelector('.list-item')
-
       expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
       expect(item.querySelector('.list-item__subtitle')).toBeNull()
       expect(item.querySelector('.list-item__status1').textContent).toContain('FILING PENDING')
@@ -371,7 +369,6 @@ describe('TodoList', () => {
       expect(vm.$el.querySelector('.no-results')).toBeNull()
 
       const item = vm.$el.querySelector('.list-item')
-
       expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
       expect(item.querySelector('.list-item__subtitle')).toBeNull()
       expect(item.querySelector('.list-item__status1').textContent).toContain('FILING PENDING')
@@ -385,12 +382,206 @@ describe('TodoList', () => {
       done()
     })
   })
+})
 
-  // FUTURE - test "Resume" routing
+describe('TodoList - Click Tests', () => {
+  const { assign } = window.location
 
-  // FUTURE - test "Resume Payment" redirection
+  beforeAll(() => {
+    // mock the window.location.assign function
+    delete window.location
+    window.location = { assign: jest.fn() } as any
+  })
 
-  // FUTURE - test "Retry Payment" redirection
+  afterAll(() => {
+    window.location.assign = assign
+  })
 
-  // FUTURE - test "File Now" routing
+  it('routes to Annual Report page when \'File Now\' clicked', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'todo': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'NEW'
+            }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    // create a Local Vue and install router on it
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    const wrapper = mount(TodoList, { localVue, store, router })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(async () => {
+      expect(vm.taskItems.length).toEqual(1)
+
+      const item = vm.$el.querySelector('.list-item')
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.querySelector('.v-btn__content').textContent).toEqual('File Now')
+
+      await button.click()
+
+      // verify that filing status was set
+      expect(vm.$store.state.currentFilingStatus).toBe('NEW')
+
+      // verify routing to Annual Report page with id=0
+      expect(vm.$route.name).toBe('annual-report')
+      expect(vm.$route.params.id).toBe(0)
+
+      wrapper.destroy()
+      done()
+    })
+  })
+
+  it('routes to Annual Report page when \'Resume\' is clicked', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'DRAFT',
+              'filingId': 123
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    // create a Local Vue and install router on it
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    const wrapper = mount(TodoList, { localVue, store, router })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(async () => {
+      expect(vm.taskItems.length).toEqual(1)
+
+      const item = vm.$el.querySelector('.list-item')
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume')
+
+      await button.click()
+
+      // verify that filing status was set
+      expect(vm.$store.state.currentFilingStatus).toBe('DRAFT')
+
+      // verify routing to Annual Report page with id=123
+      expect(vm.$route.name).toBe('annual-report')
+      expect(vm.$route.params.id).toBe(123)
+
+      wrapper.destroy()
+      done()
+    })
+  })
+
+  it('redirects to Pay URL when \'Resume Payment\' is clicked', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'PENDING',
+              'filingId': 456,
+              'paymentToken': 654
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(async () => {
+      expect(vm.taskItems.length).toEqual(1)
+
+      const item = vm.$el.querySelector('.list-item')
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume Payment')
+
+      await button.click()
+
+      // verify redirection
+      const payURL = '/makepayment/654/' + encodeURIComponent('/dashboard?filing_id=456')
+      expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+      wrapper.destroy()
+      done()
+    })
+  })
+
+  it('redirects to Pay URL when \'Retry Payment\' is clicked', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'ERROR',
+              'filingId': 789,
+              'paymentToken': 987
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(async () => {
+      const item = vm.$el.querySelector('.list-item')
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.querySelector('.v-btn__content').textContent).toEqual('Retry Payment')
+
+      await button.click()
+
+      // verify redirection
+      const payURL = '/makepayment/987/' + encodeURIComponent('/dashboard?filing_id=789')
+      expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+      wrapper.destroy()
+      done()
+    })
+  })
 })

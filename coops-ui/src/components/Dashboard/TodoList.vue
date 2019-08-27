@@ -240,7 +240,7 @@ export default {
         case 'annualReport':
           // file the subject Annual Report
           this.resetStore(item)
-          this.$router.push({ name: 'annual-report', params: { id: '0' } }) // '0' means "new AR"
+          this.$router.push({ name: 'annual-report', params: { id: 0 } }) // 0 means "new AR"
           break
         default:
           console.log('doFileNow(), invalid type for item =', item)
