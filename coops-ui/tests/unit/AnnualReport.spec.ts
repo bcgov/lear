@@ -636,4 +636,16 @@ describe('AnnualReport - Part 4 - Filing Data', () => {
     let names = payload.filing.annualReport.directors.map(el => el.officer.firstName)
     expect(names).not.toContain('Ceased')
   })
+
+  it('Accepts the response from the POST call', async () => {
+    // click the Save button
+    wrapper.find('#ar-save-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickSave()
+
+    // verify that we got a filing ID back from the POST
+    // TODO: pick one of these
+    expect(+vm.filingId).toBeGreaterThan(0)
+    expect(+vm.filingId).toBe(123)
+  })
 })
