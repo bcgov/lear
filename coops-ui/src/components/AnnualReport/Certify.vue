@@ -1,35 +1,33 @@
 <template>
   <v-card flat id="AR-step-4-container">
     <div class="container">
-        <div class="certifiedby-container">
-            <label>
-            <span>Legal Name</span>
-            </label>
-            <div class="value certifiedby">
-            <v-text-field
-                id="certified-by-textfield"
-                v-model="certifiedBy"
-                label="Name of current director, officer, or lawyer of the association"
-                box
-            />
-            </div>
+      <div class="certifiedby-container">
+        <label>
+          <span>Legal Name</span>
+        </label>
+        <div class="value certifiedby">
+          <v-text-field
+            id="certified-by-textfield"
+            v-model="certifyTextField"
+            label="Name of current director, officer, or lawyer of the association"
+            box
+          />
         </div>
-        <v-checkbox v-model="certifyCheckbox">
-            <template slot="label">
-            <div class="certify-stmt">
-                I,
-                <b>{{displayCertifyName}}</b>, certify
-                that I have relevant knowledge of the association and that I am authorized to make
-                this filing.
-            </div>
-            </template>
-        </v-checkbox>
-        <p class="certify-clause">{{currentDate}}</p>
-        <p class="certify-clause">
-            Note: It is an offence to make a false or misleading statement in
-            respect of a material fact in a record submitted to the Corporate Registry for filing.
-            See section 200 of the Cooperatives Association Act.
-        </p>
+      </div>
+      <v-checkbox v-model="certifyCheckbox">
+        <template slot="label">
+          <div class="certify-stmt">
+            I, <b>{{trimmedCertifiedTextField || '[Legal Name]'}}</b>, certify that I have relevant knowledge of the
+            association and that I am authorized to make this filing.
+          </div>
+        </template>
+      </v-checkbox>
+      <p class="certify-clause">{{currentDate}}</p>
+      <p class="certify-clause">
+        Note: It is an offence to make a false or misleading statement in
+        respect of a material fact in a record submitted to the Corporate Registry for filing.
+        See section 200 of the Cooperatives Association Act.
+      </p>
     </div>
   </v-card>
 </template>
@@ -40,39 +38,45 @@ import { mapState } from 'vuex'
 export default {
   name: 'Certify',
 
+  props: {
+    certifiedBy: String,
+    isCertified: Boolean
+  },
+
   data () {
     return {
-      certifyCheckbox: false,
-      certifiedBy: ''
+      certifyTextField: '',
+      certifyCheckbox: false
     }
   },
 
   computed: {
     ...mapState(['currentDate']),
 
-    isCertifyValid () {
-      return this.certifyCheckbox && this.certifiedBy.trim() !== ''
+    trimmedCertifiedTextField () /* string */ {
+      return this.certifyTextField && this.certifyTextField.trim()
     },
 
-    displayCertifyName () {
-      return this.certifiedBy.trim() === ''
-        ? '[Legal Name]'
-        : this.certifiedBy.trim()
-    }
-  },
-
-  methods: {
-    getLegalName () {
-      return this.certifiedBy
+    isCertifyValid () /* boolean */ {
+      return !!(this.certifyCheckbox && this.trimmedCertifiedTextField)
     }
   },
 
   watch: {
-    isCertifyValid: function (val) {
-      this.$emit('certifyChange', val)
+    certifiedBy (val) {
+      this.certifyTextField = val
     },
-    certifiedBy: function (val) {
-      this.$emit('certifiedBy', this.getLegalName())
+
+    isCertified (val) {
+      this.certifyCheckbox = val
+    },
+
+    trimmedCertifiedTextField: function (val) {
+      this.$emit('update:certifiedBy', val)
+    },
+
+    isCertifyValid: function (val) {
+      this.$emit('update:isCertified', val)
     }
   }
 }

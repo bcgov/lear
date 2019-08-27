@@ -115,7 +115,9 @@
                 <h2 id="AR-step-4-header">Certify Correct</h2>
                 <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
               </header>
-              <Certify @certifyChange="changeCertifyData" @certifiedBy="certifiedBy=$event" ref="certifyClause"/>
+              <Certify
+                :isCertified.sync="isCertified"
+                :certifiedBy.sync="certifiedBy" />
             </section>
           </div>
         </article>
@@ -200,8 +202,8 @@ export default {
       resumeErrorDialog: false,
       saveErrorDialog: false,
       paymentErrorDialog: false,
-      certifyChange: false,
-      certifiedBy: null,
+      isCertified: false,
+      certifiedBy: '',
       officeAddressFormValid: true,
       saving: false,
       savingResuming: false,
@@ -214,7 +216,7 @@ export default {
     ...mapState(['currentDate', 'corpNum', 'entityName', 'entityIncNo', 'entityFoundingDate']),
 
     validated () {
-      return (this.certifyChange && this.officeAddressFormValid && this.filingData.length > 0)
+      return (this.isCertified && this.officeAddressFormValid && this.filingData.length > 0)
     },
 
     saveAsDraftEnabled () {
@@ -313,6 +315,7 @@ export default {
                   deliveryAddress: changeOfAddress.deliveryAddress,
                   mailingAddress: changeOfAddress.mailingAddress
                 }
+                this.certifiedBy = changeOfAddress.certifiedBy
                 this.toggleFiling('add', 'OTADD')
               } else {
                 throw new Error('invalid change of address')
@@ -342,11 +345,6 @@ export default {
       this.haveChanges = true
       // when addresses change, update filing data
       this.toggleFiling(modified ? 'add' : 'remove', 'OTADD')
-    },
-
-    changeCertifyData (val) {
-      this.haveChanges = true
-      this.certifyChange = val
     },
 
     async onClickSave () {
@@ -496,6 +494,16 @@ export default {
       this.haveChanges = false
       this.dialog = false
       this.$router.push('/dashboard')
+    }
+  },
+
+  watch: {
+    isCertified (val) {
+      this.haveChanges = true
+    },
+
+    certifiedBy (val) {
+      this.haveChanges = true
     }
   }
 }
