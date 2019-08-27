@@ -423,7 +423,7 @@ describe('AnnualReport - Part 3', () => {
     expect(vm.$route.name).toBe('annual-report')
   })
 
-  it('saves a filing and routes to Home URL when the Save & Resume button is clicked', async () => {
+  it('saves a filing and routes to Dashboard URL when the Save & Resume button is clicked', async () => {
     // make sure form is validated
     vm.setValidated(true)
 
@@ -436,14 +436,14 @@ describe('AnnualReport - Part 3', () => {
     expect(vm.$route.name).toBe('dashboard')
   })
 
-  it('routes to Home URL when the Cancel button is clicked', async () => {
+  it('routes to Dashboard URL when the Cancel button is clicked', async () => {
     // make sure form is validated
     vm.setValidated(true)
 
     // click the Cancel button
     wrapper.find('#ar-cancel-btn').trigger('click')
     // work-around because click trigger isn't working
-    await vm.$router.push('/')
+    await vm.$router.push('/dashboard')
 
     // verify routing back to Dashboard URL
     expect(vm.$route.name).toBe('dashboard')
