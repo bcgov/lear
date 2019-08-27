@@ -624,7 +624,7 @@ describe('AnnualReport - Part 4 - Filing Data', () => {
     // click the Save button
     wrapper.find('#ar-save-btn').trigger('click')
     // work-around because click trigger isn't working
-    await vm.onClickSaveResume()
+    await vm.onClickSave()
 
     const payload = spy.args[0][1]
 
