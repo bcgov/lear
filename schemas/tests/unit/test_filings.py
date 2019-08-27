@@ -64,7 +64,9 @@ def test_valid_coa_filing():
         'filing': {
             'header': {
                 'name': 'changeOfAddress',
-                'date': '2019-04-08'
+                'date': '2019-04-08',
+                'certifiedBy': 'full legal name',
+                'email': 'no_one@never.get'
             },
             'business': {
                 'cacheId': 1,
@@ -93,7 +95,9 @@ def test_valid_cod_filing():
         'filing': {
             'header': {
                 'name': 'changeOfDirectors',
-                'date': '2019-04-08'
+                'date': '2019-04-08',
+                'certifiedBy': 'full legal name',
+                'email': 'no_one@never.get'
             },
             'business': {
                 'cacheId': 1,
@@ -170,7 +174,9 @@ def test_valid_multi_filing():
         'filing': {
             'header': {
                 'name': 'annualReport',
-                'date': '2019-04-08'
+                'date': '2019-04-08',
+                'certifiedBy': 'full legal name',
+                'email': 'no_one@never.get'
             },
             'business': {
                 'cacheId': 1,
