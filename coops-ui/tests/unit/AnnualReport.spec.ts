@@ -473,6 +473,7 @@ describe('AnnualReport - Part 3 - Saving', () => {
 describe('AnnualReport - Part 4 - Filing Data', () => {
   let wrapper
   let vm
+  let spy
 
   beforeEach(async () => {
     // init store
@@ -484,33 +485,7 @@ describe('AnnualReport - Part 4 - Filing Data', () => {
     store.state.filedDate = null
 
     // mock "save draft" endpoint
-    sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')
-      .returns(new Promise((resolve) => resolve({
-        data:
-          {
-            'filing': {
-              'annualReport': {
-                'annualGeneralMeetingDate': '2018-07-15',
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
-              },
-              'business': {
-                'cacheId': 1,
-                'foundingDate': '2007-04-08',
-                'identifier': 'CP0001191',
-                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                'legalName': 'Legal Name - CP0001191'
-              },
-              'header': {
-                'name': 'annualReport',
-                'date': '2017-06-06',
-                'submitter': 'cp0001191',
-                'status': 'DRAFT',
-                'filingId': 123
-              }
-            }
-          }
-      })))
+    spy = sinon.spy(axios, 'post').withArgs('CP0001191/filings?draft=true')
 
     // create local Vue and mock router
     const localVue = createLocalVue()
@@ -520,6 +495,70 @@ describe('AnnualReport - Part 4 - Filing Data', () => {
 
     wrapper = shallowMount(AnnualReport, { store, localVue, router })
     vm = wrapper.vm as any
+
+    // set up director data
+    vm.allDirectors = [
+      // unchanged director
+      {
+        officer: {
+          firstName: 'Unchanged',
+          lastName: 'lastname'
+        },
+        deliveryAddress: {
+          streetAddress: 'a1',
+          addressCity: 'city',
+          addressCountry: 'country',
+          postalCode: 'H0H0H0',
+          addressRegion: 'BC'
+        },
+        appointmentDate: '2019-01-01',
+        cessationDate: null,
+        actions: []
+      },
+      // appointed director
+      {
+        officer: {
+          firstName: 'Appointed',
+          lastName: 'lastname'
+        },
+        deliveryAddress: {
+          streetAddress: 'a1',
+          addressCity: 'city',
+          addressCountry: 'country',
+          postalCode: 'H0H0H0',
+          addressRegion: 'BC'
+        },
+        appointmentDate: '2019-01-01',
+        cessationDate: null,
+        actions: ['appointed']
+      },
+      // ceased director
+      {
+        officer: {
+          firstName: 'Ceased',
+          lastName: 'lastname'
+        },
+        deliveryAddress: {
+          streetAddress: 'a1',
+          addressCity: 'city',
+          addressCountry: 'country',
+          postalCode: 'H0H0H0',
+          addressRegion: 'BC'
+        },
+        appointmentDate: '2019-01-01',
+        cessationDate: '2019-03-25',
+        actions: ['ceased']
+      }
+    ]
+
+    // stub address data
+    vm.addresses = {
+      'deliveryAddress': {},
+      'mailingAddress': {}
+    }
+
+    // make sure form is validated
+    vm.setValidated(true)
   })
 
   afterEach(() => {
@@ -527,15 +566,72 @@ describe('AnnualReport - Part 4 - Filing Data', () => {
     wrapper.destroy()
   })
 
-  it.skip('Includes Directors, Office Mailing Address, and Office Delivery Address in AR filing data', async () => {
+  it('Includes Directors, Office Mailing Address, and Office Delivery Address in AR filing data', async () => {
+    // click the Save button
+    wrapper.find('#ar-save-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickSaveResume()
+
+    const payload = spy.args[0][1]
+
+    // basic tests to pass ensuring structure of payload is as expected
+    expect(payload.filing).toBeDefined()
+    expect(payload.filing.annualReport).toBeDefined()
+
+    expect(payload.filing.annualReport.directors).toBeDefined()
+    expect(payload.filing.annualReport.mailingAddress).toBeDefined()
+    expect(payload.filing.annualReport.deliveryAddress).toBeDefined()
   })
 
-  it.skip('Includes unchanged directors in AR filing data', async () => {
+  it('Includes unchanged directors in AR filing data', async () => {
+    // click the Save button
+    wrapper.find('#ar-save-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickSaveResume()
+
+    const payload = spy.args[0][1]
+
+    // basic tests to pass ensuring structure of payload is as expected
+    expect(payload.filing).toBeDefined()
+    expect(payload.filing.annualReport).toBeDefined()
+    expect(payload.filing.annualReport.directors).toBeDefined()
+
+    let names = payload.filing.annualReport.directors.map(el => el.officer.firstName)
+    expect(names).toContain('Unchanged')
   })
 
-  it.skip('Includes appointed directors in AR filing data', async () => {
+  it('Includes appointed directors in AR filing data', async () => {
+
+    // click the Save button
+    wrapper.find('#ar-save-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickSaveResume()
+
+    const payload = spy.args[0][1]
+
+    // basic tests to pass ensuring structure of payload is as expected
+    expect(payload.filing).toBeDefined()
+    expect(payload.filing.annualReport).toBeDefined()
+    expect(payload.filing.annualReport.directors).toBeDefined()
+
+    let names = payload.filing.annualReport.directors.map(el => el.officer.firstName)
+    expect(names).toContain('Appointed')
   })
 
-  it.skip('Does NOT include ceased directors in AR filing data', async () => {
+  it('Does NOT include ceased directors in AR filing data', async () => {
+    // click the Save button
+    wrapper.find('#ar-save-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickSaveResume()
+
+    const payload = spy.args[0][1]
+
+    // basic tests to pass ensuring structure of payload is as expected
+    expect(payload.filing).toBeDefined()
+    expect(payload.filing.annualReport).toBeDefined()
+    expect(payload.filing.annualReport.directors).toBeDefined()
+
+    let names = payload.filing.annualReport.directors.map(el => el.officer.firstName)
+    expect(names).not.toContain('Ceased')
   })
 })
