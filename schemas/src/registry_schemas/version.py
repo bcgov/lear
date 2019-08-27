@@ -11,19 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test Suite data used across many tests.
 
-Test array used in multiple pytests, and several filings that can be used in tests.
+"""Version of this service in PEP440.
+
+[N!]N(.N)*[{a|b|rc}N][.postN][.devN]
+Epoch segment: N!
+Release segment: N(.N)*
+Pre-release segment: {a|b|rc}N
+Post-release segment: .postN
+Development release segment: .devN
 """
-# testdata pattern is ({str: environment}, {expected return value})
-TEST_SCHEMAS_DATA = [
-    ('address.json'),
-    ('annual_report.json'),
-    ('business.json'),
-    ('change_of_address.json'),
-    ('filing.json'),
-    ('directors.json'),
-    ('change_of_directors.json'),
-    ('task.json'),
-    ('todo.json'),
-]
+
+__version__ = '1.1.0'  # pylint: disable=invalid-name

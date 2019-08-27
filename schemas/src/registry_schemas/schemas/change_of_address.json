@@ -31,29 +31,28 @@
         "changeOfAddress": {
             "type": "object",
             "required": [
-                "certifiedBy",
-                "email",
                 "deliveryAddress",
                 "mailingAddress"
             ],
             "properties": {
-                "certifiedBy": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string",
-                    "format": "email"
-                },
                 "deliveryAddress": {
                     "allOf": [
-                        { "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address" },
-                        { "$ref": "#/definitions/actions" }
+                        {
+                            "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
+                        },
+                        {
+                            "$ref": "#/definitions/actions"
+                        }
                     ]
                 },
                 "mailingAddress": {
                     "allOf": [
-                        { "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address" },
-                        { "$ref": "#/definitions/actions" }
+                        {
+                            "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
+                        },
+                        {
+                            "$ref": "#/definitions/actions"
+                        }
                     ]
                 }
             }

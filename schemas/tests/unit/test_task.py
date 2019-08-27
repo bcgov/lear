@@ -59,8 +59,7 @@ def test_valid_task_filing():
             'filing': {
                 'annualReport': {
                     'annualGeneralMeetingDate': '2018-07-15',
-                    'certifiedBy': 'full1 name1',
-                    'email': 'no_one@never.get',
+                    'annualReportDate': '2018-07-15',
                     'directors': [],
                     'deliveryAddress': {
                         'streetAddress': 'delivery_address - address line one',
@@ -86,6 +85,8 @@ def test_valid_task_filing():
                 },
                 'header': {
                     'date': '2017-06-06',
+                    'certifiedBy': 'full1 name1',
+                    'email': 'no_one@never.get',
                     'filingId': 1,
                     'name': 'annualReport',
                     'status': 'DRAFT'

@@ -13,10 +13,18 @@
 # limitations under the License.
 """Installer and setup for this module
 """
+import ast
+import re
 from glob import glob
 from os.path import basename, splitext
 
 from setuptools import setup, find_packages
+
+_version_re = re.compile(r'__version__\s+=\s+(.*)')  # pylint: disable=invalid-name
+
+with open('src/registry_schemas/version.py', 'rb') as f:
+    version = str(ast.literal_eval(_version_re.search(  # pylint: disable=invalid-name
+        f.read().decode('utf-8')).group(1)))
 
 
 def read_requirements(filename):
@@ -37,7 +45,6 @@ def read(filepath):
     Read the contents from a file.
     :param str filepath: path to the file to be read
     :return: file contents
-    :rtype: str
     """
     with open(filepath, 'r') as file_handle:
         content = file_handle.read()
@@ -48,6 +55,7 @@ REQUIREMENTS = read_requirements('requirements.txt')
 
 setup(
     name="registry_schemas",
+    version=version,
     packages=find_packages('src'),
     package_dir={'': 'src'},
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],

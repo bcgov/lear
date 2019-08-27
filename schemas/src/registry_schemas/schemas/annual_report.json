@@ -12,23 +12,22 @@
             "type": "object",
             "required": [
                 "annualGeneralMeetingDate",
-                "certifiedBy",
-                "email",
+                "annualReportDate",
                 "directors",
                 "mailingAddress",
                 "deliveryAddress"
             ],
             "properties": {
                 "annualGeneralMeetingDate": {
-                    "type": "string",
+                    "type": [
+                        "string",
+                        "null"
+                    ],
                     "format": "date"
                 },
-                "certifiedBy": {
-                    "type": "string"
-                },
-                "email": {
+                "annualReportDate": {
                     "type": "string",
-                    "format": "email"
+                    "format": "date"
                 },
                 "directors": {
                     "type": "array",
