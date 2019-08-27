@@ -272,7 +272,7 @@ export default {
     doResumePayment (item) {
       const origin = window.location.origin || ''
       const filingId = item.id
-      const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
+      const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
       let authStub = sessionStorage.getItem('AUTH_URL') || ''
       if (!(authStub.endsWith('/'))) { authStub += '/' }
       const paymentToken = item.paymentToken

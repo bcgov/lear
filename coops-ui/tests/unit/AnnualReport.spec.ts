@@ -322,7 +322,7 @@ describe('AnnualReport - Part 2 - Submitting', () => {
       await vm.onClickFilePay()
 
       // verify redirection
-      const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
+      const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
@@ -353,7 +353,7 @@ describe('AnnualReport - Part 2 - Submitting', () => {
       await vm.onClickFilePay()
 
       // verify redirection
-      const payURL = '/makepayment/321/' + encodeURIComponent('/Dashboard?filing_id=123')
+      const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
