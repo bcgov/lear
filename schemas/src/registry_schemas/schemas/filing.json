@@ -48,6 +48,8 @@
                     "type": "object",
                     "required": [
                         "name",
+                        "certifiedBy",
+                        "email",
                         "date"
                     ],
                     "properties": {
@@ -64,6 +66,13 @@
                             "type": "string",
                             "format": "date",
                             "title": "The submission date of the final version of the filing."
+                        },
+                        "certifiedBy": {
+                            "type": "string"
+                        },
+                        "email": {
+                            "type": "string",
+                            "format": "email"
                         },
                         "filingId": {
                             "type": "integer",
@@ -90,7 +99,7 @@
                                 "COMPLETED",
                                 "ERROR"
                             ]
-                      }
+                        }
                     }
                 }
             }
