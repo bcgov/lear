@@ -222,9 +222,12 @@ import { mapState, mapActions, mapGetters } from 'vuex'
 import { PAYMENT_REQUIRED } from 'http-status-codes'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import DateUtils from '@/DateUtils'
 
 export default {
   name: 'AnnualReport',
+
+  mixins: [DateUtils],
 
   components: {
     AGMDate,
@@ -263,6 +266,13 @@ export default {
       'addressesFormValid', 'directorFormValid', 'agmDateValid']),
 
     ...mapGetters(['isAnnualReportEditable', 'reportState']),
+
+    annualReportDate () {
+      // AR Filing Year, but as a date field with today's month and day
+      let thedate = new Date()
+      thedate.setFullYear(this.ARFilingYear)
+      return this.dateToUsableString(thedate)
+    },
 
     payAPIURL () {
       return sessionStorage.getItem('PAY_API_URL')
@@ -483,6 +493,8 @@ export default {
       const header = {
         header: {
           name: 'annualReport',
+          certifiedBy: this.certifiedBy || '',
+          email: 'no_one@never.get',
           date: this.currentDate
         }
       }
@@ -498,8 +510,7 @@ export default {
       const annualReport = {
         annualReport: {
           annualGeneralMeetingDate: this.agmDate,
-          certifiedBy: this.certifiedBy || '',
-          email: 'no_one@never.get',
+          annualReportDate: this.annualReportDate,
           deliveryAddress: this.addresses['deliveryAddress'],
           mailingAddress: this.addresses['mailingAddress'],
           directors: this.allDirectors.filter(el => el.cessationDate === null)
@@ -509,8 +520,6 @@ export default {
       if (this.isDataChanged('OTCDR')) {
         changeOfDirectors = {
           changeOfDirectors: {
-            certifiedBy: this.certifiedBy || '',
-            email: 'no_one@never.get',
             directors: this.allDirectors
           }
         }
@@ -519,8 +528,6 @@ export default {
       if (this.isDataChanged('OTADD') && this.addresses) {
         changeOfAddress = {
           changeOfAddress: {
-            certifiedBy: this.certifiedBy || '',
-            email: 'no_one@never.get',
             deliveryAddress: this.addresses['deliveryAddress'],
             mailingAddress: this.addresses['mailingAddress']
           }

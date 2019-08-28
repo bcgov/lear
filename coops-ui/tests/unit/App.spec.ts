@@ -113,11 +113,11 @@ describe('App', () => {
                     'name': 'annualReport',
                     'date': '2019-01-02',
                     'paymentToken': 123,
+                    'certifiedBy': 'Full Name 1',
                     'filingId': 321
                   },
                   'annualReport': {
-                    'annualGeneralMeetingDate': '2019-12-31',
-                    'certifiedBy': 'Full Name 1'
+                    'annualGeneralMeetingDate': '2019-12-31'
                   }
                 }
               },
@@ -127,10 +127,10 @@ describe('App', () => {
                     'name': 'changeOfDirectors',
                     'date': '2019-03-04',
                     'paymentToken': 456,
+                    'certifiedBy': 'Full Name 2',
                     'filingId': 654
                   },
                   'changeOfDirectors': {
-                    'certifiedBy': 'Full Name 2'
                   }
                 }
               },
@@ -140,10 +140,10 @@ describe('App', () => {
                     'name': 'changeOfAddress',
                     'date': '2019-05-06',
                     'paymentToken': 789,
+                    'certifiedBy': 'Full Name 3',
                     'filingId': 987
                   },
                   'changeOfAddress': {
-                    'certifiedBy': 'Full Name 3'
                   }
                 }
               }

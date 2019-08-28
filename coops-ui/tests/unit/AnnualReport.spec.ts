@@ -280,9 +280,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
           {
             'filing': {
               'annualReport': {
-                'annualGeneralMeetingDate': '2018-07-15',
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'annualGeneralMeetingDate': '2018-07-15'
               },
               'business': {
                 'cacheId': 1,
@@ -296,6 +294,8 @@ describe('AnnualReport - Part 3 - Submitting', () => {
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'filingId': 123
               }
             }
@@ -309,9 +309,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
           {
             'filing': {
               'annualReport': {
-                'annualGeneralMeetingDate': '2018-07-15',
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'annualGeneralMeetingDate': '2018-07-15'
               },
               'business': {
                 'cacheId': 1,
@@ -326,6 +324,8 @@ describe('AnnualReport - Part 3 - Submitting', () => {
                 'submitter': 'cp0001191',
                 'status': 'PENDING',
                 'filingId': 123,
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'paymentToken': '321'
               }
             }
@@ -339,9 +339,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
           {
             'filing': {
               'annualReport': {
-                'annualGeneralMeetingDate': '2018-07-15',
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'annualGeneralMeetingDate': '2018-07-15'
               },
               'business': {
                 'cacheId': 1,
@@ -356,6 +354,8 @@ describe('AnnualReport - Part 3 - Submitting', () => {
                 'submitter': 'cp0001191',
                 'status': 'PENDING',
                 'filingId': 123,
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'paymentToken': '321'
               }
             }
@@ -450,9 +450,7 @@ describe('AnnualReport - Part 4 - Saving', () => {
           {
             'filing': {
               'annualReport': {
-                'annualGeneralMeetingDate': '2018-07-15',
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'annualGeneralMeetingDate': '2018-07-15'
               },
               'business': {
                 'cacheId': 1,
@@ -466,6 +464,8 @@ describe('AnnualReport - Part 4 - Saving', () => {
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'filingId': 123
               }
             }
@@ -539,22 +539,38 @@ describe('AnnualReport - Part 4 - Saving', () => {
   })
 })
 
-describe('AnnualReport - Part 5 - Filing Data', () => {
+describe('AnnualReport - Part 5 - Data', () => {
   let wrapper
   let vm
   let spy
+
+  const currentFilingYear = 2017
 
   beforeEach(async () => {
     // init store
     store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
-    store.state.ARFilingYear = 2017
+    store.state.ARFilingYear = currentFilingYear
     store.state.currentFilingStatus = 'NEW'
     store.state.filedDate = null
 
-    // mock "save draft" endpoint
-    spy = sinon.spy(axios, 'post').withArgs('CP0001191/filings?draft=true')
+    // mock "save draft" endpoint - garbage response data, we aren't testing that
+    spy = sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filing': {
+              'annualReport': {
+              },
+              'business': {
+              },
+              'header': {
+                'filingId': 123
+              }
+            }
+          }
+      })))
 
     // create local Vue and mock router
     const localVue = createLocalVue()
@@ -706,6 +722,42 @@ describe('AnnualReport - Part 5 - Filing Data', () => {
     expect(names).not.toContain('Ceased')
   })
 
+  it('Includes certification data in the header', async () => {
+    // click the Save button
+    wrapper.find('#ar-save-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickSave()
+
+    const payload = spy.args[0][1]
+
+    // basic tests to pass ensuring structure of payload is as expected
+    expect(payload.filing).toBeDefined()
+    expect(payload.filing.annualReport).toBeDefined()
+    expect(payload.filing.header).toBeDefined()
+
+    expect(payload.filing.header.certifiedBy).toBeDefined()
+    expect(payload.filing.header.email).toBeDefined()
+  })
+
+  it('Includes the AR Date for the current filing year', async () => {
+    // set current date in store, since it's normally set in a different component
+    store.state.currentDate = '2019-03-03'
+
+    // click the Save button
+    wrapper.find('#ar-save-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickSave()
+
+    const payload = spy.args[0][1]
+
+    // basic tests to pass ensuring structure of payload is as expected
+    expect(payload.filing).toBeDefined()
+    expect(payload.filing.annualReport).toBeDefined()
+    expect(payload.filing.annualReport.annualReportDate).toBeDefined()
+
+    expect(payload.filing.annualReport.annualReportDate.substr(0, 4)).toBe(currentFilingYear.toString())
+  })
+
   it('Accepts the response from the POST call', async () => {
     // click the Save button
     wrapper.find('#ar-save-btn').trigger('click')
@@ -713,8 +765,6 @@ describe('AnnualReport - Part 5 - Filing Data', () => {
     await vm.onClickSave()
 
     // verify that we got a filing ID back from the POST
-    // TODO: pick one of these
-    expect(+vm.filingId).toBeGreaterThan(0)
     expect(+vm.filingId).toBe(123)
   })
 })

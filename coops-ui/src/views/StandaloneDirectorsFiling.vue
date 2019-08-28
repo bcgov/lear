@@ -109,6 +109,7 @@
                 @directorsChange="directorsChange"
                 @lastFilingDate="lastFilingDate=$event"
                 @directorFormValid="directorFormValid=$event"
+                @allDirectors="allDirectors=$event"
                 :asOfDate="currentDate"
                 />
             </section>
@@ -199,6 +200,7 @@ export default {
 
   data () {
     return {
+      allDirectors: [],
       loadingMsg: 'Redirecting to PayBC to Process Your Payment',
       filingData: [],
       resumeErrorDialog: false,
@@ -338,6 +340,8 @@ export default {
       const header = {
         header: {
           name: 'changeOfDirectors',
+          certifiedBy: this.certifiedBy || '',
+          email: 'no_one@never.get',
           date: this.currentDate
         }
       }
@@ -353,10 +357,7 @@ export default {
       if (this.isDataChanged('OTCDR')) {
         changeOfDirectors = {
           changeOfDirectors: {
-            certifiedBy: this.certifiedBy || '',
-            email: 'no_one@never.get',
-            // TODO: change this to a local property
-            directors: this.$refs.directorsList.getAllDirectors()
+            directors: this.allDirectors
           }
         }
       }

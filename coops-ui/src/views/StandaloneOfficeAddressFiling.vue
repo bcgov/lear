@@ -398,6 +398,8 @@ export default {
       const header = {
         header: {
           name: 'changeOfAddress',
+          certifiedBy: this.certifiedBy || '',
+          email: 'no_one@never.get',
           date: this.currentDate
         }
       }
@@ -413,8 +415,6 @@ export default {
       if (this.isDataChanged('OTADD') && this.addresses) {
         changeOfAddress = {
           changeOfAddress: {
-            certifiedBy: this.certifiedBy || '',
-            email: 'no_one@never.get',
             deliveryAddress: this.formatAddress(this.addresses['deliveryAddress']),
             mailingAddress: this.formatAddress(this.addresses['mailingAddress'])
           }
