@@ -305,6 +305,8 @@ export default {
             if (filing.business.identifier !== this.entityIncNo) throw new Error('invalid business identifier')
             if (filing.business.legalName !== this.entityName) throw new Error('invalid business legal name')
 
+            this.certifiedBy = filing.header.certifiedBy
+
             // load Annual Report fields
             if (!filing.changeOfAddress) throw new Error('Missing change of address')
 
@@ -315,7 +317,6 @@ export default {
                   deliveryAddress: changeOfAddress.deliveryAddress,
                   mailingAddress: changeOfAddress.mailingAddress
                 }
-                this.certifiedBy = changeOfAddress.certifiedBy
                 this.toggleFiling('add', 'OTADD')
               } else {
                 throw new Error('invalid change of address')

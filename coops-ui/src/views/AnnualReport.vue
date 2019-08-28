@@ -351,6 +351,8 @@ export default {
             if (filing.business.identifier !== this.entityIncNo) throw new Error('invalid business identifier')
             if (filing.business.legalName !== this.entityName) throw new Error('invalid business legal name')
 
+            this.certifiedBy = filing.header.certifiedBy
+
             // load Annual Report fields
             const annualReport = filing.annualReport
             if (annualReport) {
@@ -362,7 +364,6 @@ export default {
               if (this.$refs.agmDate.loadAgmDate) {
                 this.$refs.agmDate.loadAgmDate(annualReport.annualGeneralMeetingDate)
               }
-              this.certifiedBy = annualReport.certifiedBy
               this.toggleFiling('add', 'OTANN')
             } else {
               throw new Error('missing annual report')

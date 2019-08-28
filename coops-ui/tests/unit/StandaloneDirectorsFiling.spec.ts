@@ -199,9 +199,7 @@ describe('Standalone Directors Filing - Part 2 - Resuming', () => {
           {
             'filing': {
               'changeOfDirectors': {
-                'directors': sampleDirectors,
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'directors': sampleDirectors
               },
               'business': {
                 'cacheId': 1,
@@ -215,6 +213,8 @@ describe('Standalone Directors Filing - Part 2 - Resuming', () => {
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'filingId': 123
               }
             }
@@ -235,6 +235,9 @@ describe('Standalone Directors Filing - Part 2 - Resuming', () => {
       // verify that Certified By was restored
       expect(vm.certifiedBy).toBe('Full Name')
       expect(vm.isCertified).toBe(false)
+
+      // verify that we stored the Filing ID
+      expect(+vm.filingId).toBe(123)
 
       // FUTURE - verify that changed directors were restored
 

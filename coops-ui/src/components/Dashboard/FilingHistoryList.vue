@@ -159,7 +159,7 @@ export default {
           const agmYear = +date.substring(0, 4)
           const item = {
             name: `Annual Report (${agmYear})`,
-            filingAuthor: filing.annualReport.certifiedBy,
+            filingAuthor: filing.header.certifiedBy,
             filingDate: filing.header.date,
             paymentToken: filing.header.paymentToken,
             filingDocuments: [{
@@ -197,7 +197,7 @@ export default {
       if (filing.changeOfDirectors) {
         const item = {
           name: 'Director Change',
-          filingAuthor: filing.changeOfDirectors.certifiedBy,
+          filingAuthor: filing.header.certifiedBy,
           filingDate: filing.header.date,
           paymentToken: filing.header.paymentToken,
           filingDocuments: [{
@@ -216,7 +216,7 @@ export default {
       if (filing.changeOfAddress) {
         const item = {
           name: 'Address Change',
-          filingAuthor: filing.changeOfAddress.certifiedBy,
+          filingAuthor: filing.header.certifiedBy,
           filingDate: filing.header.date,
           paymentToken: filing.header.paymentToken,
           filingDocuments: [{

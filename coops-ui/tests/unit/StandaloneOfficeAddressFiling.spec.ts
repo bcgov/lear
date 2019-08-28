@@ -161,9 +161,7 @@ describe('Standalone Office Address Filing - Part 2 - Resuming', () => {
             'filing': {
               'changeOfAddress': {
                 'deliveryAddress': sampleDeliveryAddress,
-                'mailingAddress': sampleMailingAddress,
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'mailingAddress': sampleMailingAddress
               },
               'business': {
                 'cacheId': 1,
@@ -177,6 +175,8 @@ describe('Standalone Office Address Filing - Part 2 - Resuming', () => {
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'filingId': 123
               }
             }
@@ -197,6 +197,9 @@ describe('Standalone Office Address Filing - Part 2 - Resuming', () => {
       // verify that Certified By was restored
       expect(vm.certifiedBy).toBe('Full Name')
       expect(vm.isCertified).toBe(false)
+
+      // verify that we stored the Filing ID
+      expect(+vm.filingId).toBe(123)
 
       // verify that changed addresses were restored
       expect(vm.addresses.deliveryAddress.streetAddress).toBe('delivery street address')

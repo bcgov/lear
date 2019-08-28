@@ -451,13 +451,14 @@ export default {
             if (filing.business.identifier !== this.entityIncNo) throw new Error('invalid business identifier')
             if (filing.business.legalName !== this.entityName) throw new Error('invalid business legal name')
 
+            this.certifiedBy = filing.header.certifiedBy
+
             const changeOfDirectors = filing.changeOfDirectors
             if (changeOfDirectors) {
               if (changeOfDirectors.directors && changeOfDirectors.directors.length > 0) {
                 if (this.$refs.directorsList.setAllDirectors) {
                   this.$refs.directorsList.setAllDirectors(changeOfDirectors.directors)
                 }
-                this.certifiedBy = changeOfDirectors.certifiedBy
                 this.toggleFiling('add', 'OTCDR')
               } else {
                 throw new Error('invalid change of directors')

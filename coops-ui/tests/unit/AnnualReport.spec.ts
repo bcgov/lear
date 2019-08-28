@@ -199,9 +199,7 @@ describe('AnnualReport - Part 2 - Resuming', () => {
           {
             'filing': {
               'annualReport': {
-                'annualGeneralMeetingDate': '2018-07-15',
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'annualGeneralMeetingDate': '2018-07-15'
               },
               'business': {
                 'cacheId': 1,
@@ -215,6 +213,8 @@ describe('AnnualReport - Part 2 - Resuming', () => {
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'filingId': 123
               }
             }
@@ -241,6 +241,9 @@ describe('AnnualReport - Part 2 - Resuming', () => {
       // verify that Certified By was restored
       expect(vm.certifiedBy).toBe('Full Name')
       expect(vm.isCertified).toBe(false)
+
+      // verify that we stored the Filing ID
+      expect(+vm.filingId).toBe(123)
 
       // FUTURE: verify that changed addresses and directors were restored
       // (need to include in data above)
@@ -756,16 +759,6 @@ describe('AnnualReport - Part 5 - Data', () => {
     expect(payload.filing.annualReport.annualReportDate).toBeDefined()
 
     expect(payload.filing.annualReport.annualReportDate.substr(0, 4)).toBe(currentFilingYear.toString())
-  })
-
-  it('Accepts the response from the POST call', async () => {
-    // click the Save button
-    wrapper.find('#ar-save-btn').trigger('click')
-    // work-around because click trigger isn't working
-    await vm.onClickSave()
-
-    // verify that we got a filing ID back from the POST
-    expect(+vm.filingId).toBe(123)
   })
 
   it('Sets the AGM Date and AR Date correctly for "No AGM" filing', async () => {
