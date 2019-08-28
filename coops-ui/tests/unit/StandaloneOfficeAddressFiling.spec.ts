@@ -42,7 +42,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
   })
 
   it('renders the filing sub-components properly', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
 
     expect(wrapper.find(RegisteredOfficeAddress).exists()).toBe(true)
@@ -52,7 +52,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
   })
 
   it('enables Validated flag when properties are valid', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -68,7 +68,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
   })
 
   it('disables Validated flag when Office Address form is invalid', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -84,7 +84,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
   })
 
   it('disables Validated flag when Certify form is invalid', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -100,7 +100,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
   })
 
   it('disables Validated flag when Certify form is invalid', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -114,7 +114,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
   })
 
   it('enables File & Pay button when Validated is true', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -130,7 +130,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
   })
 
   it('disables File & Pay button when Validated is false', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 

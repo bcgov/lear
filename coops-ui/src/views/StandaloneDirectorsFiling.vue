@@ -244,14 +244,17 @@ export default {
       }
     }
 
+    // NB: filing id of 0 means "new"
+    // otherwise it's a draft filing id
+    this.filingId = this.$route.params.id
+
     // if tombstone data isn't set, route to home
-    if (!this.corpNum) {
+    if (!this.corpNum || (this.filingId === undefined)) {
       this.$router.push('/')
     }
 
-    // if loading from draft...
-    this.filingId = this.$route.params.id
     if (this.filingId > 0) {
+      // resume draft filing
       this.fetchChangeOfDirectors()
     }
   },
