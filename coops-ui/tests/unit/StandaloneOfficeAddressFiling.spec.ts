@@ -186,7 +186,7 @@ describe('Standalone Office Address Filing - Part 2 - Resuming', () => {
     sinon.restore()
   })
 
-  it('fetches a draft AR filing', done => {
+  it('fetches a draft Standalone Office Address filing', done => {
     const $route = { params: { id: '123' } } // draft filing id
     const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
     const vm = wrapper.vm as any

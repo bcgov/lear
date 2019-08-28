@@ -224,7 +224,7 @@ describe('Standalone Directors Filing - Part 2 - Resuming', () => {
     sinon.restore()
   })
 
-  it('fetches a draft AR filing', done => {
+  it('fetches a draft Standalone Directors filing', done => {
     const $route = { params: { id: '123' } } // draft filing id
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
     const vm = wrapper.vm as any
