@@ -62,12 +62,8 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     store.state.corpNum = 'CP0001191'
   })
 
-  afterEach(() => {
-    sinon.restore()
-  })
-
   it('renders the filing sub-components properly', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
 
     expect(wrapper.find(Directors).exists()).toBe(true)
@@ -77,7 +73,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
   })
 
   it('enables Validated flag when sub-component flags are valid', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -95,7 +91,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
   })
 
   it('disables Validated flag when Directors form is invalid', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -113,7 +109,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
   })
 
   it('disables Validated flag when Certify form is invalid', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -131,7 +127,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
   })
 
   it('disables Validated flag when no filing changes were made (ie: nothing to file)', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -149,7 +145,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
   })
 
   it('enables File & Pay button when Validated is true', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
@@ -167,7 +163,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
   })
 
   it('disables File & Pay button when Validated is false', () => {
-    const $route = { params: { id: 0 } }
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 

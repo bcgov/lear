@@ -88,11 +88,12 @@ export default {
 
     goToStandaloneDirectors () {
       this.setCurrentFilingStatus('NEW')
-      this.$router.push('/standalone-directors')
+      this.$router.push({ name: 'standalone-directors', params: { id: 0 } }) // 0 means "new COD filing"
     },
 
     goToStandaloneAddresses () {
-      this.$router.push('/standalone-addresses')
+      this.setCurrentFilingStatus('NEW')
+      this.$router.push({ name: 'standalone-addresses', params: { id: 0 } }) // 0 means "new COA filing"
     }
   }
 }
