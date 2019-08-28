@@ -767,4 +767,31 @@ describe('AnnualReport - Part 5 - Data', () => {
     // verify that we got a filing ID back from the POST
     expect(+vm.filingId).toBe(123)
   })
+
+  it('Sets the AGM Date and AR Date correctly for "No AGM" filing', async () => {
+    // set current date in store, since it's normally set in a different component
+    store.state.currentDate = '2019-03-03'
+
+    // set No AGM
+    store.state.noAGM = true
+    store.state.agmDate = null
+
+    // click the Save button
+    wrapper.find('#ar-save-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickSave()
+
+    const payload = spy.args[0][1]
+
+    // basic tests to pass ensuring structure of payload is as expected
+    expect(payload.filing).toBeDefined()
+    expect(payload.filing.annualReport).toBeDefined()
+    expect(payload.filing.annualReport.annualReportDate).toBeDefined()
+
+    // AGM Date should be null
+    expect(payload.filing.annualReport.annualGeneralMeetingDate).toBeNull()
+
+    // AR Date (year) should be filing year (ie: AR owed)
+    expect(payload.filing.annualReport.annualReportDate.substr(0, 4)).toBe(currentFilingYear.toString())
+  })
 })
