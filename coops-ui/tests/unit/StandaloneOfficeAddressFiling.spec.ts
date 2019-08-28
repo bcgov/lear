@@ -2,13 +2,15 @@ import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
 import sinon from 'sinon'
-import { shallowMount } from '@vue/test-utils'
+import { createLocalVue, shallowMount } from '@vue/test-utils'
 
 import axios from '@/axios-auth'
 import store from '@/store/store'
 import StandaloneOfficeAddressFiling from '@/views/StandaloneOfficeAddressFiling.vue'
 import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
+import VueRouter from 'vue-router'
+import mockRouter from './mockRouter'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -159,9 +161,7 @@ describe('Standalone Office Address Filing - Part 2 - Resuming', () => {
             'filing': {
               'changeOfAddress': {
                 'deliveryAddress': sampleDeliveryAddress,
-                'mailingAddress': sampleMailingAddress,
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'mailingAddress': sampleMailingAddress
               },
               'business': {
                 'cacheId': 1,
@@ -175,6 +175,8 @@ describe('Standalone Office Address Filing - Part 2 - Resuming', () => {
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'filingId': 123
               }
             }
@@ -195,6 +197,9 @@ describe('Standalone Office Address Filing - Part 2 - Resuming', () => {
       // verify that Certified By was restored
       expect(vm.certifiedBy).toBe('Full Name')
       expect(vm.isCertified).toBe(false)
+
+      // verify that we stored the Filing ID
+      expect(+vm.filingId).toBe(123)
 
       // verify that changed addresses were restored
       expect(vm.addresses.deliveryAddress.streetAddress).toBe('delivery street address')
@@ -233,9 +238,7 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
             'filing': {
               'changeOfAddress': {
                 'deliveryAddress': sampleDeliveryAddress,
-                'mailingAddress': sampleMailingAddress,
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'mailingAddress': sampleMailingAddress
               },
               'business': {
                 'cacheId': 1,
@@ -249,6 +252,8 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'filingId': 123
               }
             }
@@ -263,9 +268,7 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
             'filing': {
               'changeOfAddress': {
                 'deliveryAddress': sampleDeliveryAddress,
-                'mailingAddress': sampleMailingAddress,
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'mailingAddress': sampleMailingAddress
               },
               'business': {
                 'cacheId': 1,
@@ -280,6 +283,8 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
                 'submitter': 'cp0001191',
                 'status': 'PENDING',
                 'filingId': 123,
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'paymentToken': '321'
               }
             }
@@ -294,9 +299,7 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
             'filing': {
               'changeOfAddress': {
                 'deliveryAddress': sampleDeliveryAddress,
-                'mailingAddress': sampleMailingAddress,
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'mailingAddress': sampleMailingAddress
               },
               'business': {
                 'cacheId': 1,
@@ -310,6 +313,8 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'PENDING',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'filingId': 123,
                 'paymentToken': '321'
               }
@@ -406,9 +411,7 @@ describe('Standalone Office Address Filing - Part 4 - Saving', () => {
             'filing': {
               'changeOfAddress': {
                 'deliveryAddress': sampleDeliveryAddress,
-                'mailingAddress': sampleMailingAddress,
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'mailingAddress': sampleMailingAddress
               },
               'business': {
                 'cacheId': 1,
@@ -422,6 +425,8 @@ describe('Standalone Office Address Filing - Part 4 - Saving', () => {
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'filingId': 123
               }
             }
@@ -487,4 +492,78 @@ describe('Standalone Office Address Filing - Part 4 - Saving', () => {
       wrapper.destroy()
     }
   )
+})
+
+describe('Standalone Office Address Filing - Part 5 - Data', () => {
+  let wrapper
+  let vm
+  let spy
+
+  beforeEach(async () => {
+    // init store
+    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
+    store.state.entityName = 'Legal Name - CP0001191'
+
+    // mock "save draft" endpoint - garbage response data, we aren't testing that
+    spy = sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filing': {
+              'changeOfAddress': {
+                'deliveryAddress': {},
+                'mailingAddress': {}
+              },
+              'business': {
+              },
+              'header': {
+                'filingId': 123
+              }
+            }
+          }
+      })))
+
+    // create local Vue and mock router
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'standalone-addresses', params: { id: '0' } }) // new filing id
+
+    wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, localVue, router })
+    vm = wrapper.vm as any
+
+    // stub address data
+    vm.addresses = {
+      'deliveryAddress': {},
+      'mailingAddress': {}
+    }
+
+    // make sure form is validated
+    vm.officeAddressFormValid = true
+    vm.isCertified = true
+    vm.officeModifiedEventHandler(true)
+  })
+
+  afterEach(() => {
+    sinon.restore()
+    wrapper.destroy()
+  })
+
+  it('Includes certification data in the header', async () => {
+    // click the Save button
+    wrapper.find('#coa-save-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickSave()
+
+    const payload = spy.args[0][1]
+
+    // basic tests to pass ensuring structure of payload is as expected
+    expect(payload.filing).toBeDefined()
+    expect(payload.filing.changeOfAddress).toBeDefined()
+    expect(payload.filing.header).toBeDefined()
+
+    expect(payload.filing.header.certifiedBy).toBeDefined()
+    expect(payload.filing.header.email).toBeDefined()
+  })
 })

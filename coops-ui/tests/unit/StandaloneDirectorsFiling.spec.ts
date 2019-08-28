@@ -2,13 +2,15 @@ import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
 import sinon from 'sinon'
-import { shallowMount } from '@vue/test-utils'
+import { createLocalVue, shallowMount } from '@vue/test-utils'
 
 import axios from '@/axios-auth'
 import store from '@/store/store'
 import StandaloneDirectorsFiling from '@/views/StandaloneDirectorsFiling.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
+import VueRouter from 'vue-router'
+import mockRouter from './mockRouter'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -197,9 +199,7 @@ describe('Standalone Directors Filing - Part 2 - Resuming', () => {
           {
             'filing': {
               'changeOfDirectors': {
-                'directors': sampleDirectors,
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'directors': sampleDirectors
               },
               'business': {
                 'cacheId': 1,
@@ -213,6 +213,8 @@ describe('Standalone Directors Filing - Part 2 - Resuming', () => {
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'filingId': 123
               }
             }
@@ -233,6 +235,9 @@ describe('Standalone Directors Filing - Part 2 - Resuming', () => {
       // verify that Certified By was restored
       expect(vm.certifiedBy).toBe('Full Name')
       expect(vm.isCertified).toBe(false)
+
+      // verify that we stored the Filing ID
+      expect(+vm.filingId).toBe(123)
 
       // FUTURE - verify that changed directors were restored
 
@@ -268,9 +273,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
           {
             'filing': {
               'changeOfDirectors': {
-                'directors': sampleDirectors,
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'directors': sampleDirectors
               },
               'business': {
                 'cacheId': 1,
@@ -284,6 +287,8 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'filingId': 123
               }
             }
@@ -297,9 +302,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
           {
             'filing': {
               'changeOfDirectors': {
-                'directors': sampleDirectors,
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'directors': sampleDirectors
               },
               'business': {
                 'cacheId': 1,
@@ -314,6 +317,8 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
                 'submitter': 'cp0001191',
                 'status': 'PENDING',
                 'filingId': 123,
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'paymentToken': '321'
               }
             }
@@ -327,9 +332,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
           {
             'filing': {
               'changeOfDirectors': {
-                'directors': sampleDirectors,
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'directors': sampleDirectors
               },
               'business': {
                 'cacheId': 1,
@@ -344,6 +347,8 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
                 'submitter': 'cp0001191',
                 'status': 'PENDING',
                 'filingId': 123,
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'paymentToken': '321'
               }
             }
@@ -438,9 +443,7 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
           {
             'filing': {
               'changeOfDirectors': {
-                'directors': sampleDirectors,
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get'
+                'directors': sampleDirectors
               },
               'business': {
                 'cacheId': 1,
@@ -454,6 +457,8 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
                 'filingId': 123
               }
             }
@@ -519,4 +524,144 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
       wrapper.destroy()
     }
   )
+})
+
+describe('Standalone Directors Filing - Part 5 - Data', () => {
+  let wrapper
+  let vm
+  let spy
+
+  beforeEach(async () => {
+    // init store
+    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
+    store.state.entityName = 'Legal Name - CP0001191'
+
+    // mock "save draft" endpoint - garbage response data, we aren't testing that
+    spy = sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filing': {
+              'changeOfDirectors': {
+                'directors': []
+              },
+              'business': {
+              },
+              'header': {
+                'filingId': 123
+              }
+            }
+          }
+      })))
+
+    // create local Vue and mock router
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
+
+    wrapper = shallowMount(StandaloneDirectorsFiling, { store, localVue, router })
+    vm = wrapper.vm as any
+
+    // set up director data
+    vm.allDirectors = [
+      // unchanged director
+      {
+        officer: {
+          firstName: 'Unchanged',
+          lastName: 'lastname'
+        },
+        deliveryAddress: {
+          streetAddress: 'a1',
+          addressCity: 'city',
+          addressCountry: 'country',
+          postalCode: 'H0H0H0',
+          addressRegion: 'BC'
+        },
+        appointmentDate: '2019-01-01',
+        cessationDate: null,
+        actions: []
+      },
+      // appointed director
+      {
+        officer: {
+          firstName: 'Appointed',
+          lastName: 'lastname'
+        },
+        deliveryAddress: {
+          streetAddress: 'a1',
+          addressCity: 'city',
+          addressCountry: 'country',
+          postalCode: 'H0H0H0',
+          addressRegion: 'BC'
+        },
+        appointmentDate: '2019-01-01',
+        cessationDate: null,
+        actions: ['appointed']
+      },
+      // ceased director
+      {
+        officer: {
+          firstName: 'Ceased',
+          lastName: 'lastname'
+        },
+        deliveryAddress: {
+          streetAddress: 'a1',
+          addressCity: 'city',
+          addressCountry: 'country',
+          postalCode: 'H0H0H0',
+          addressRegion: 'BC'
+        },
+        appointmentDate: '2019-01-01',
+        cessationDate: '2019-03-25',
+        actions: ['ceased']
+      }
+    ]
+
+    // make sure form is validated
+    vm.directorFormValid = true
+    vm.isCertified = true
+    vm.directorsChange(true)
+  })
+
+  afterEach(() => {
+    sinon.restore()
+    wrapper.destroy()
+  })
+
+  it('Includes complete list of directors in the filing data', async () => {
+    // click the Save button
+    wrapper.find('#cod-save-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickSave()
+
+    const payload = spy.args[0][1]
+
+    // basic tests to pass ensuring structure of payload is as expected
+    expect(payload.filing).toBeDefined()
+    expect(payload.filing.changeOfDirectors).toBeDefined()
+
+    let names = payload.filing.changeOfDirectors.directors.map(el => el.officer.firstName)
+    expect(names).toContain('Unchanged')
+    expect(names).toContain('Appointed')
+    expect(names).toContain('Ceased')
+  })
+
+  it('Includes certification data in the header', async () => {
+    // click the Save button
+    wrapper.find('#cod-save-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickSave()
+
+    const payload = spy.args[0][1]
+
+    // basic tests to pass ensuring structure of payload is as expected
+    expect(payload.filing).toBeDefined()
+    expect(payload.filing.changeOfDirectors).toBeDefined()
+    expect(payload.filing.header).toBeDefined()
+
+    expect(payload.filing.header.certifiedBy).toBeDefined()
+    expect(payload.filing.header.email).toBeDefined()
+  })
 })
