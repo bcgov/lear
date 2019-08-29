@@ -54,7 +54,7 @@ node {
         script {
             openshift.withCluster() {
                 openshift.withProject() {
-                    echo "Tagging ${COMPONENT_NAME} to ${E2E_TAG}-prev ..."
+                    echo "Tagging ${COMPONENT_NAME}:${E2E_TAG}-prev with ${E2E_TAG}..."
 
                     def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${E2E_TAG}")
                     echo "IMAGE_HASH: ${IMAGE_HASH}"
