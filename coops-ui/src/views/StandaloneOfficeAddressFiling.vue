@@ -98,28 +98,26 @@
             <h1 id="filing-header">Change of Office Addresses</h1>
           </header>
 
-          <div>
-            <!-- Registered Office Addresses -->
-            <section>
-              <RegisteredOfficeAddress
-                :changeButtonDisabled="false"
-                :legalEntityNumber="corpNum"
-                :addresses.sync="addresses"
-                @modified="officeModifiedEventHandler($event)"
-                @valid="officeAddressFormValid = $event" />
-            </section>
+          <!-- Registered Office Addresses -->
+          <section>
+            <RegisteredOfficeAddress
+              :changeButtonDisabled="false"
+              :legalEntityNumber="corpNum"
+              :addresses.sync="addresses"
+              @modified="officeModifiedEventHandler($event)"
+              @valid="officeAddressFormValid = $event" />
+          </section>
 
-            <!-- Certify -->
-            <section>
-              <header>
-                <h2 id="AR-step-4-header">Certify Correct</h2>
-                <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
-              </header>
-              <Certify
-                :isCertified.sync="isCertified"
-                :certifiedBy.sync="certifiedBy" />
-            </section>
-          </div>
+          <!-- Certify -->
+          <section>
+            <header>
+              <h2 id="AR-step-4-header">Certify Correct</h2>
+              <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+            </header>
+            <Certify
+              :isCertified.sync="isCertified"
+              :certifiedBy.sync="certifiedBy" />
+          </section>
         </article>
 
         <aside>
