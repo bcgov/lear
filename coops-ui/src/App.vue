@@ -36,7 +36,7 @@
       </v-card>
     </v-dialog>
 
-    <sbc-header ref="sbcHeader" v-bind:authURL="authAPIURL" />
+    <sbc-header ref="sbcHeader" :authURL="authAPIURL" />
 
     <div class="app-body">
       <main v-if="dataLoaded">
