@@ -93,7 +93,7 @@ node {
                         }
                     } finally {
                         currentBuild.result = 'FAILURE'
-                        end_pipeline = false
+                        end_pipeline = true
                         return
                     }
                 }
