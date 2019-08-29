@@ -7,6 +7,28 @@ def E2E_TAG = 'e2e'
 def E2E_NAMESPACE = 'd7eovc'
 def E2E_PROJ = 'tools'
 
+// define groovy functions
+import groovy.json.JsonOutput
+
+// Get an image's hash tag
+String getImageTagHash(String imageName, String tag = "") {
+
+  if(!tag?.trim()) {
+    tag = "latest"
+  }
+
+  def istag = openshift.raw("get istag ${imageName}:${tag} -o template --template='{{.image.dockerImageReference}}'")
+  return istag.out.tokenize('@')[1].trim()
+}
+
+// pipeline
+// define job properties - keep 10 builds only
+properties([
+    [$class: 'BuildDiscarderProperty', strategy: [$class: 'LogRotator', artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '10'
+        ]
+    ]
+])
+
 node {
     stage("Tag image for E2E") {
         script {
