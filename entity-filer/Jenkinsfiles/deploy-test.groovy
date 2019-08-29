@@ -110,9 +110,10 @@ node {
                                 openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${E2E_TAG}")
                             }
                         }
+                    } finally {
+                        currentBuild.result = 'FAILURE'
+                        return
                     }
-                    currentBuild.result = 'FAILURE'
-                    return
                 }
             }
         }
