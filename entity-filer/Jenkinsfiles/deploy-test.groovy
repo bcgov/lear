@@ -76,6 +76,7 @@ node {
                 openshift.withProject("${E2E_NAMESPACE}-${E2E_PROJ}") {
                     def e2e_pipeline = openshift.selector('bc', 'e2e-pipeline')
                     try {
+                        echo "Running e2e pipeline (check ${E2E_NAMESPACE}-${E2E_PROJ} to view progress)..."
                         e2e_pipeline.startBuild('--wait=true').logs('-f')
                         echo "E2E tests passed!"
                     } catch (Exception e) {
