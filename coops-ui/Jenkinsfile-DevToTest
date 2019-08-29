@@ -20,7 +20,7 @@ node {
 
                     echo "Tagging ${COMPONENT_NAME} to ${E2E_TAG} ..."
 
-                    def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${SOURCE_TAG}")
+                    IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${SOURCE_TAG}")
                     echo "IMAGE_HASH: ${IMAGE_HASH}"
                     openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${E2E_TAG}")
                 }
