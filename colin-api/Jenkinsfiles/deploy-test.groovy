@@ -23,6 +23,9 @@ def NAMESPACE = 'gl2uos'
 def COMPONENT_NAME = 'colin-api'
 def TAG_NAME = 'test'
 def SOURCE_TAG = 'dev'
+def E2E_TAG = 'e2e'
+def E2E_NAMESPACE = 'd7eovc'
+def E2E_PROJ = 'tools'
 
 // define groovy functions
 import groovy.json.JsonOutput
@@ -47,6 +50,72 @@ properties([
 ])
 
 node {
+    stage("Tag image for E2E") {
+        script {
+            openshift.withCluster() {
+                openshift.withProject() {
+                    echo "Tagging ${COMPONENT_NAME} to ${E2E_TAG}-prev ..."
+
+                    def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${E2E_TAG}")
+                    echo "IMAGE_HASH: ${IMAGE_HASH}"
+                    openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${E2E_TAG}-prev")
+
+                    echo "Tagging ${COMPONENT_NAME} to ${E2E_TAG} ..."
+
+                    def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${SOURCE_TAG}")
+                    echo "IMAGE_HASH: ${IMAGE_HASH}"
+                    openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${E2E_TAG}")
+                }
+            }
+        }
+    }
+    def passed = true
+    stage("Run E2E Tests") {
+        script {
+            openshift.withCluster() {
+                openshift.withProject("${E2E_NAMESPACE}-${E2E_PROJ}") {
+                    def e2e_pipeline = openshift.selector('bc', 'e2e-pipeline')
+                    try {
+                        e2e_pipeline.startBuild('--wait=true').logs('-f')
+                        echo "E2E tests passed!"
+                    } catch (Exception e) {
+                        echo "E2E tests failed: ${e.getMessage()}"
+                        passed = false
+                    }
+                }
+            }
+        }
+    }
+    stage("Verify E2E Tests") {
+        script {
+            if (!passed) {
+                try {
+                    timeout(time: 1, unit: 'DAYS') {
+                        input message: "E2E failed. Proceed to test?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin,JohnamLane-edit'
+                    }
+                } catch (Exception e1) {
+                    try {
+                        timeout(time: 1, unit: 'DAYS') {
+                            input message: "Keep failed E2E image?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin,JohnamLane-edit'
+                        }
+                    } catch (Exception e2) {
+                        echo "Reverting E2E image back to previous image..."
+                        openshift.withCluster() {
+                            openshift.withProject() {
+                                echo "Tagging ${COMPONENT_NAME}:${E2E_TAG} with ${E2E_TAG}-prev ..."
+
+                                def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${E2E_TAG}-prev")
+                                echo "IMAGE_HASH: ${IMAGE_HASH}"
+                                openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${E2E_TAG}")
+                            }
+                        }
+                    }
+                    currentBuild.result = 'FAILURE'
+                    return
+                }
+            }
+        }
+    }
     def old_version
     stage("Deploy ${COMPONENT_NAME}:${TAG_NAME}") {
         script {
