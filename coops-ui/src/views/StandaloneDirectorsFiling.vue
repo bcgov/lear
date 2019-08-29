@@ -102,29 +102,27 @@
             </v-alert>
           </header>
 
-          <div>
-            <!-- Director Information -->
-            <section>
-              <Directors ref="directorsList"
-                @directorsChange="directorsChange"
-                @lastFilingDate="lastFilingDate=$event"
-                @directorFormValid="directorFormValid=$event"
-                @allDirectors="allDirectors=$event"
-                :asOfDate="currentDate"
-                />
-            </section>
+          <!-- Director Information -->
+          <section>
+            <Directors ref="directorsList"
+              @directorsChange="directorsChange"
+              @lastFilingDate="lastFilingDate=$event"
+              @directorFormValid="directorFormValid=$event"
+              @allDirectors="allDirectors=$event"
+              :asOfDate="currentDate"
+              />
+          </section>
 
-            <!-- Certify -->
-            <section>
-              <header>
-                <h2 id="AR-step-4-header">Certify Correct</h2>
-                <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
-              </header>
-              <Certify
-                :isCertified.sync="isCertified"
-                :certifiedBy.sync="certifiedBy" />
-            </section>
-          </div>
+          <!-- Certify -->
+          <section>
+            <header>
+              <h2 id="AR-step-4-header">Certify Correct</h2>
+              <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+            </header>
+            <Certify
+              :isCertified.sync="isCertified"
+              :certifiedBy.sync="certifiedBy" />
+          </section>
         </article>
 
         <aside>
