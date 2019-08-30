@@ -75,13 +75,14 @@ export default {
 
   mixins: [DateUtils],
 
+  props: { initialAgmDate: String },
+
   data () {
     return {
       date: '', // bound to date picker
       dateFormatted: '', // bound to text field
       menu: false, // bound to calendar menu
       didNotHoldAGM: false, // bound to checkbox
-      agmDateValid: true,
       agmDateRules: [
         v => this.didNotHoldAGM || isNotNull(v) || 'An Annual General Meeting date is required.'
       ]
@@ -114,18 +115,13 @@ export default {
     },
     minDate () {
       /** return the latest of the following dates:
-       *  - the most recent filing in filing history (from the Legal DB)
+       *  - the first day of the AR filing year
+       *  - the last filing in filing history (from the Legal DB)
        *  - the last pre-load Cobrs filing
-       *  - the first day of the AR year
        */
-      // first day of filing year
-      const firstDayOfYear = `${this.ARFilingYear}-01-01`.split('-').join('')
-
-      // numeric versions of filing dates:
-      const lastFilingDate = (this.lastFilingDate !== undefined && this.lastFilingDate !== null)
-        ? this.lastFilingDate.split('-').join('') : 0
-      const lastPreLoadFilingDate = (this.lastPreLoadFilingDate !== undefined && this.lastPreLoadFilingDate !== null)
-        ? this.lastPreLoadFilingDate.split('-').join('') : 0
+      const firstDayOfYear = +`${this.ARFilingYear}-01-01`.split('-').join('')
+      const lastFilingDate = this.lastFilingDate ? +this.lastFilingDate.split('-').join('') : 0
+      const lastPreLoadFilingDate = this.lastPreLoadFilingDate ? +this.lastPreLoadFilingDate.split('-').join('') : 0
       const minAgmDate = Math.max(firstDayOfYear, lastFilingDate, lastPreLoadFilingDate)
       return this.numToUsableString(minAgmDate)
     },
@@ -141,7 +137,7 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setAgmDate', 'setNoAGM', 'setAgmDateValid']),
+    ...mapActions(['setAgmDate', 'setNoAGM']),
 
     formatDate (date) {
       // changes date from YYYY-MM-DD to YYYY/MM/DD
@@ -174,18 +170,18 @@ export default {
         +date.substring(8, 10) === (new Date(date)).getUTCDate() &&
         +date.substring(8, 10) > 0 &&
         date.split(separator).join('') <= this.maxDate.split('-').join(''))
-    },
-    loadAgmDate (date) {
-      // load data from existing filing
-      if (!date) {
-        this.didNotHoldAGM = true
-      } else {
-        this.dateFormatted = this.formatDate(date)
-      }
     }
   },
 
   watch: {
+    initialAgmDate (val) {
+      // load data from existing filing
+      if (!val) {
+        this.didNotHoldAGM = true
+      } else {
+        this.dateFormatted = this.formatDate(val)
+      }
+    },
     dateFormatted (val) {
       // when text field changes, update date picker
       this.date = this.parseDate(val)
@@ -199,7 +195,7 @@ export default {
       }
       // also update value in store
       this.setAgmDate(val || null)
-      this.setAgmDateValid(Boolean(this.didNotHoldAGM || this.agmDate))
+      this.$emit('valid', Boolean(this.didNotHoldAGM || this.agmDate))
     },
     didNotHoldAGM (val) {
       // when checkbox changes, update text field and store
@@ -213,7 +209,7 @@ export default {
         this.setAgmDate(this.minDate)
         this.dateFormatted = this.formatDate(this.agmDate)
       }
-      this.setAgmDateValid(Boolean(this.didNotHoldAGM || this.agmDate))
+      this.$emit('valid', Boolean(this.didNotHoldAGM || this.agmDate))
     }
   }
 }

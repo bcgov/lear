@@ -53,9 +53,6 @@ export default {
   setDirectorFormValid ({ commit }, directorFormValid) {
     commit('directorFormValid', directorFormValid)
   },
-  setAgmDateValid ({ commit }, agmDateValid) {
-    commit('agmDateValid', agmDateValid)
-  },
   setTasks ({ commit }, tasks) {
     commit('tasks', tasks)
   },

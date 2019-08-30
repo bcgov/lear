@@ -27,6 +27,5 @@ export default {
   currentFilingStatus: null,
 
   addressesFormValid: true,
-  directorFormValid: true,
-  agmDateValid: true
+  directorFormValid: true
 }

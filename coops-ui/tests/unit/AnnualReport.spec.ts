@@ -62,7 +62,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set flags
-    vm.setAgmDateValid(true)
+    vm.agmDateValid = true
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(true)
     vm.isCertified = true
@@ -80,7 +80,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set flags
-    vm.setAgmDateValid(false)
+    vm.agmDateValid = false
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(true)
     vm.isCertified = true
@@ -98,7 +98,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set flags
-    vm.setAgmDateValid(true)
+    vm.agmDateValid = true
     vm.setAddressesFormValid(false)
     vm.setDirectorFormValid(true)
     vm.isCertified = true
@@ -116,7 +116,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set flags
-    vm.setAgmDateValid(true)
+    vm.agmDateValid = true
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(false)
     vm.isCertified = true
@@ -134,7 +134,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set flags
-    vm.setAgmDateValid(true)
+    vm.agmDateValid = true
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(true)
     vm.isCertified = false

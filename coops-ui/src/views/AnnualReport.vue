@@ -44,7 +44,7 @@
               <header>
                 <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
               </header>
-              <AGMDate ref="agmDate" />
+              <AGMDate :initialAgmDate="initialAgmDate" @valid="agmDateValid=$event" />
             </section>
 
             <!-- Registered Office Addresses -->
@@ -185,6 +185,7 @@ export default {
 
   data () {
     return {
+      initialAgmDate: null,
       addresses: null,
       allDirectors: [],
       filingId: null,
@@ -200,7 +201,8 @@ export default {
       saving: false,
       savingResuming: false,
       filingPaying: false,
-      haveChanges: false
+      haveChanges: false,
+      agmDateValid: false
     }
   },
 
@@ -208,7 +210,7 @@ export default {
     ...mapState(['agmDate', 'noAGM', 'regOffAddrChange',
       'validated', 'currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate',
       'entityName', 'entityIncNo', 'entityFoundingDate', 'currentFilingStatus',
-      'addressesFormValid', 'directorFormValid', 'agmDateValid']),
+      'addressesFormValid', 'directorFormValid']),
 
     ...mapGetters(['isAnnualReportEditable', 'reportState']),
 
@@ -279,7 +281,7 @@ export default {
 
   methods: {
     ...mapActions(['setARFilingYear', 'setRegOffAddrChange', 'setValidated',
-      'setAddressesFormValid', 'setDirectorFormValid', 'setAgmDateValid']),
+      'setAddressesFormValid', 'setDirectorFormValid']),
 
     fetchData () {
       const url = this.corpNum + '/filings/' + this.filingId
@@ -306,9 +308,8 @@ export default {
               if (this.$refs.directorsList.setDraftDate) {
                 this.$refs.directorsList.setDraftDate(annualReport.annualGeneralMeetingDate)
               }
-              if (this.$refs.agmDate.loadAgmDate) {
-                this.$refs.agmDate.loadAgmDate(annualReport.annualGeneralMeetingDate)
-              }
+              // set the AGM date properties in the AGMDate component
+              this.initialAgmDate = annualReport.annualGeneralMeetingDate
               this.toggleFiling('add', 'OTANN')
             } else {
               throw new Error('missing annual report')

@@ -53,9 +53,6 @@ export default {
   directorFormValid (state, directorFormValid) {
     state.directorFormValid = directorFormValid
   },
-  agmDateValid (state, agmDateValid) {
-    state.agmDateValid = agmDateValid
-  },
   tasks (state, tasks) {
     state.tasks = tasks
   },
