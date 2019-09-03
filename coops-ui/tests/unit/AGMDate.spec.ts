@@ -32,11 +32,6 @@ describe('AGMDate', () => {
     wrapper.destroy()
   })
 
-  // TODO - set initialAgmDate to various values and verify:
-  //   agmDate
-  //   noAGM
-  //   valid
-
   it('initializes the local variables properly', () => {
     expect(vm.date).toBe('2019-01-01')
     expect(vm.dateFormatted).toBe('2019/01/01')
@@ -45,6 +40,52 @@ describe('AGMDate', () => {
 
     // verify checkbox
     expect(vm.$el.querySelector('#agm-checkbox')).toBeDefined()
+  })
+
+  it('loads variables properly when Initial AGM Date is set', async () => {
+    wrapper.setProps({ initialAgmDate: '2019-05-10' })
+    expect(wrapper.props('initialAgmDate')).toBe('2019-05-10') // sanity check
+
+    // check local variables
+    expect(vm.$data.didNotHoldAGM).toBe(false)
+    expect(vm.$data.dateFormatted).toBe('2019/05/10')
+    expect(vm.$data.date).toBe('2019-05-10')
+
+    // check global variables
+    expect(vm.$store.state.noAGM).toBe(false)
+    expect(vm.$store.state.agmDate).toBe('2019-05-10')
+
+    // check emits:
+    // first emit is from init
+    // second emit is from 'date' watcher
+    const emits = wrapper.emitted('valid')
+    expect(emits.length).toBe(2)
+    expect(emits[0]).toEqual([true])
+    expect(emits[1]).toEqual([true])
+  })
+
+  it('loads variables properly when Initial AGM Date is cleared', async () => {
+    wrapper.setProps({ initialAgmDate: null })
+    expect(wrapper.props('initialAgmDate')).toBeNull() // sanity check
+
+    // check local variables
+    expect(vm.$data.didNotHoldAGM).toBe(true)
+    expect(vm.$data.dateFormatted).toBeNull()
+    expect(vm.$data.date).toBe('')
+
+    // check global variables
+    expect(vm.$store.state.noAGM).toBe(true)
+    expect(vm.$store.state.agmDate).toBeNull()
+
+    // check emits:
+    // first emit is from init
+    // second emit is from 'date' watcher
+    // third emit is from 'didNotHoldAGM' watcher
+    const emits = wrapper.emitted('valid')
+    expect(emits.length).toBe(3)
+    expect(emits[0]).toEqual([true])
+    expect(emits[1]).toEqual([true])
+    expect(emits[2]).toEqual([true])
   })
 
   it('sets date picker when text field is set', async () => {

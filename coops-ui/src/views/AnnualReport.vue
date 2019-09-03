@@ -303,12 +303,13 @@ export default {
             // load Annual Report fields
             const annualReport = filing.annualReport
             if (annualReport) {
+              // set the Draft Date in the Directors List component
               // TODO: use props instead of $refs (which cause an error in the unit tests)
-              // NOTE: AR Filing Year (which is needed by agmDate component) was already set by Todo List
               if (this.$refs.directorsList.setDraftDate) {
                 this.$refs.directorsList.setDraftDate(annualReport.annualGeneralMeetingDate)
               }
-              // set the AGM date properties in the AGMDate component
+              // set the Initial AGM Date in the AGM Date component
+              // NOTE: AR Filing Year (which is needed by agmDate component) was already set by Todo List
               this.initialAgmDate = annualReport.annualGeneralMeetingDate
               this.toggleFiling('add', 'OTANN')
             } else {
