@@ -17,9 +17,6 @@ export default {
   noAGM (state, noAGM) {
     state.noAGM = noAGM
   },
-  regOffAddrChange (state, regOffAddrChange) {
-    state.regOffAddrChange = regOffAddrChange
-  },
   validated (state, validated) {
     state.validated = validated
   },

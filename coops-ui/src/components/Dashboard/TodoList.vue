@@ -101,7 +101,7 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setARFilingYear', 'setCurrentFilingStatus', 'setRegOffAddrChange', 'setAgmDate',
+    ...mapActions(['setARFilingYear', 'setCurrentFilingStatus', 'setAgmDate',
       'setNoAGM', 'setValidated']),
 
     loadData () {
@@ -240,6 +240,8 @@ export default {
         case 'annualReport':
           // file the subject Annual Report
           this.resetStore(item)
+          this.setARFilingYear(item.ARFilingYear)
+          this.setCurrentFilingStatus('NEW')
           this.$router.push({ name: 'annual-report', params: { id: 0 } }) // 0 means "new AR"
           break
         default:
@@ -252,18 +254,21 @@ export default {
         case 'annualReport':
           // resume the subject Annual Report
           this.resetStore(item)
+          this.setARFilingYear(item.ARFilingYear)
           this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'annual-report', params: { id: item.id } })
           break
         case 'changeOfDirectors':
           // resume the subject Change Of Directors
           this.resetStore(item)
+          this.setARFilingYear(item.ARFilingYear)
           this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'standalone-directors', params: { id: item.id } })
           break
         case 'changeOfAddress':
           // resume the subject Change Of Address
           this.resetStore(item)
+          this.setARFilingYear(item.ARFilingYear)
           this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'standalone-addresses', params: { id: item.id } })
           break
@@ -285,9 +290,6 @@ export default {
     },
 
     resetStore (item) {
-      this.setARFilingYear(item.ARFilingYear)
-      this.setCurrentFilingStatus('NEW')
-      this.setRegOffAddrChange(false)
       this.setAgmDate(null)
       this.setNoAGM(false)
       this.setValidated(false)

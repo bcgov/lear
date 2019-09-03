@@ -207,7 +207,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['agmDate', 'noAGM', 'regOffAddrChange',
+    ...mapState(['agmDate', 'noAGM',
       'validated', 'currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate',
       'entityName', 'entityIncNo', 'entityFoundingDate', 'currentFilingStatus',
       'addressesFormValid', 'directorFormValid']),
@@ -280,7 +280,7 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setARFilingYear', 'setRegOffAddrChange', 'setValidated',
+    ...mapActions(['setARFilingYear', 'setValidated',
       'setAddressesFormValid', 'setDirectorFormValid']),
 
     fetchData () {
@@ -370,7 +370,6 @@ export default {
     officeModifiedEventHandler (modified: boolean): void {
       this.haveChanges = true
       // when addresses change, update filing data
-      this.setRegOffAddrChange(modified)
       this.toggleFiling(modified ? 'add' : 'remove', 'OTADD')
     },
 

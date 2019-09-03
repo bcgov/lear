@@ -20,7 +20,6 @@ export default {
   mailingAddress: null,
   deliveryAddress: null,
   directors: [],
-  regOffAddrChange: false,
   validated: false,
 
   currentFilingStatus: null,

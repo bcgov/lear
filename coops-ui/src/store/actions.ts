@@ -17,9 +17,6 @@ export default {
   setNoAGM ({ commit }, noAGM) {
     commit('noAGM', noAGM)
   },
-  setRegOffAddrChange ({ commit }, regOffAddrChange) {
-    commit('regOffAddrChange', regOffAddrChange)
-  },
   setValidated ({ commit }, validated) {
     commit('validated', validated)
   },
