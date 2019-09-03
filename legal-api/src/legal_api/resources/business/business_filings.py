@@ -27,11 +27,11 @@ from flask_restplus import Resource, cors
 from werkzeug.local import LocalProxy
 
 import legal_api.reports
-from legal_api.services.filings import validate
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business, Filing, User, db
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import COLIN_SVC_ROLE, authorized, queue
+from legal_api.services.filings import validate
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 

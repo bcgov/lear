@@ -19,7 +19,6 @@ from http import HTTPStatus
 import pytest
 from hypothesis import given
 from hypothesis.strategies import dates, just, text
-
 from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.models import Business

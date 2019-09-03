@@ -18,7 +18,6 @@ from http import HTTPStatus
 
 import datedelta
 import pytest
-
 from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.models import Business

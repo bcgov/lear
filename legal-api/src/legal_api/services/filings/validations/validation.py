@@ -17,15 +17,14 @@ from typing import Dict
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
 
-from .schemas import validate_against_schema
 from .annual_report import validate as annual_report_validate
 from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
+from .schemas import validate_against_schema
 
 
 def validate(business: Business, filing_json: Dict) -> Error:
     """Validate the annual report JSON."""
-
     err = validate_against_schema(filing_json)
     if err:
         return err

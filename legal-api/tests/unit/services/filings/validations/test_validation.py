@@ -120,7 +120,8 @@ def test_validate_coa_basic(session, test_name, now, delivery_region, delivery_c
              {'error': 'addressCountry must resolve to a valid ISO-2 country.',
               'path': '/filing/changeOfDirectors/directors/1/deliveryAddress/addressCountry'}]),
     ])
-def test_validate_cod_basic(session, test_name, now, delivery_country_1, delivery_country_2, expected_code, expected_msg):  # pylint: disable=too-many-arguments
+def test_validate_cod_basic(session, test_name, now, delivery_country_1, delivery_country_2,
+                            expected_code, expected_msg):  # pylint: disable=too-many-arguments
     """Assert that a basic COD can be validated."""
     # setup
     identifier = 'CP1234567'

@@ -14,4 +14,5 @@
 """Service to manage the filing verification."""
 from .validations.validation import validate
 
+
 __all__ = ('validate')

@@ -31,11 +31,8 @@ from registry_schemas.example_data import ANNUAL_REPORT
 from legal_api.services import QueueService
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE
 from tests import integration_nats, integration_payment
-from tests.unit.models import(factory_business,
-                              factory_business_mailing_address,
-                              factory_filing,
-                              factory_completed_filing)
 from tests.unit.services.utils import create_header
+from tests.unit.models import factory_business_mailing_address, factory_business, factory_completed_filing, factory_filing  # noqa:E501,I001
 
 
 def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):
