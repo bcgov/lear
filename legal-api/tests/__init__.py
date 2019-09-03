@@ -14,7 +14,7 @@
 """The Test Suites to ensure that the service is built and operating correctly."""
 import datetime
 
-from .pytest_marks import integration_nats, integration_payment, integration_sentry
+from .pytest_marks import integration_nats, integration_payment, integration_sentry, not_github_ci
 
 
 EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0)

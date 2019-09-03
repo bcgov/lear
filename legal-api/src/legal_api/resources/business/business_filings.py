@@ -27,6 +27,7 @@ from flask_restplus import Resource, cors
 from werkzeug.local import LocalProxy
 
 import legal_api.reports
+from legal_api.services.filings import validate
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business, Filing, User, db
 from legal_api.schemas import rsbc_schemas
@@ -112,11 +113,14 @@ class ListFilingResource(Resource):
 
         # validate filing
         if not draft:
-            err_msg, err_code = ListFilingResource._validate_filing_json(request)
-            if err_code != HTTPStatus.OK \
-                    or (only_validate):
-                msg = {'errors': err_msg} if (err_code != HTTPStatus.OK) else err_msg
-                return jsonify(msg), err_code
+            business = Business.find_by_identifier(identifier)
+            err = validate(business, json_input)
+            # err_msg, err_code = ListFilingResource._validate_filing_json(request)
+            if err or only_validate:
+                if err:
+                    json_input['errors'] = err.msg
+                    return jsonify(json_input), err.code
+                return jsonify(json_input), HTTPStatus.OK
 
         # save filing, if it's draft only then bail
         user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
@@ -133,7 +137,6 @@ class ListFilingResource(Resource):
             return jsonify(err_msg), err_code
 
         # create invoice ??
-        draft = request.args.get('draft', None)
         if not draft:
             err_msg, err_code = ListFilingResource._create_invoice(business, filing, jwt)
             if err_code:

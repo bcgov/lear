@@ -248,12 +248,26 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         return filings
 
     @staticmethod
+    def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str):
+        """Return the filings of a particular type."""
+        max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
+            filter(Filing._filing_type == filing_type). \
+            filter(Filing.business_id == business_id). \
+            subquery()
+
+        filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._filing_type == filing_type). \
+            filter(Filing._status == Filing.Status.COMPLETED.value)
+
+        return filing.one_or_none()
+
+    @staticmethod
     def get_completed_filings_for_colin():
         """Return the filings with statuses in the status array input."""
         filings = db.session.query(Filing). \
             filter(Filing.colin_event_id == None,  # pylint: disable=singleton-comparison # noqa: E711;
-                   Filing._status == Filing.Status.COMPLETED.value). \
-            all()
+                   Filing._status == Filing.Status.COMPLETED.value).all()
         return filings
 
     def save(self):

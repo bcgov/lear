@@ -94,12 +94,12 @@ AR_FILING = {
 }
 
 
-def factory_business(identifier):
+def factory_business(identifier, founding_date=EPOCH_DATETIME):
     """Create a business entity."""
     business = Business(legal_name=f'legal_name-{identifier}',
-                        founding_date=EPOCH_DATETIME,
+                        founding_date=founding_date,
                         last_ledger_timestamp=EPOCH_DATETIME,
-                        dissolution_date=EPOCH_DATETIME,
+                        # dissolution_date=EPOCH_DATETIME,
                         identifier=identifier,
                         tax_id='BN123456789',
                         fiscal_year_end_date=FROZEN_DATETIME)
@@ -133,11 +133,11 @@ def factory_filing(business, data_dict):
     return filing
 
 
-def factory_completed_filing(business, data_dict):
+def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME):
     """Create a completed filing."""
     filing = Filing()
     filing.business_id = business.id
-    filing.filing_date = FROZEN_DATETIME
+    filing.filing_date = filing_date
     filing.filing_json = data_dict
     filing.save()
 

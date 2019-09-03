@@ -2,15 +2,16 @@
 -r prod.txt
 
 # Testing
+coverage
+freezegun
+hypothesis
+pyhamcrest
 pytest<4.1
 pytest-mock
 pytest-asyncio
-requests
-pyhamcrest
-dpath
 
 # Lint and code style
-pydocstyle<4
+autopep8
 flake8
 flake8-blind-except
 flake8-debugger
@@ -18,8 +19,7 @@ flake8-docstrings
 flake8-isort
 flake8-quotes
 pep8-naming
-autopep8
-coverage
+pydocstyle<4
 pylint
 pylint-flask
 

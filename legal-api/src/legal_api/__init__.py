@@ -31,6 +31,7 @@ from legal_api.models import db, ma
 from legal_api.resources import API_BLUEPRINT, OPS_BLUEPRINT
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import queue
+from legal_api.translations import babel
 from legal_api.utils.auth import jwt
 from legal_api.utils.logging import setup_logging
 from legal_api.utils.run_version import get_run_version
@@ -56,6 +57,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     ma.init_app(app)
     rsbc_schemas.init_app(app)
     queue.init_app(app)
+    babel.init_app(app)
 
     app.register_blueprint(API_BLUEPRINT)
     app.register_blueprint(OPS_BLUEPRINT)

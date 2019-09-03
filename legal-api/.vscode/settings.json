@@ -1,8 +1,13 @@
 {
+    "editor.rulers": [
+        80,
+        120
+    ],
     "workbench.colorCustomizations": {
         "activityBar.background": "#3B107B",
         "titleBar.activeBackground": "#5216AC",
-        "titleBar.activeForeground": "#FDFCFF"
+        "titleBar.activeForeground": "#FDFCFF",
+        "editorRuler.foreground": "#ff4081"
     },
     "python.testing.autoTestDiscoverOnSaveEnabled": true,
     "python.envFile": "${workspaceFolder}/.env",
