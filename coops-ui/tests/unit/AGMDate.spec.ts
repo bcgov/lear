@@ -19,8 +19,6 @@ describe('AGMDate', () => {
     store.state.corpNum = 'CP0001191'
     store.state.currentDate = '2019/07/15'
     store.state.ARFilingYear = 2019
-    // store.state.lastFilingDate = '2019/01/01' // TODO: test this
-    // store.state.lastPreLoadFilingDate = '2019/01/01' // TODO: test this
 
     wrapper = mount(AGMDate, { store })
     vm = wrapper.vm as any
@@ -86,6 +84,27 @@ describe('AGMDate', () => {
     expect(emits[0]).toEqual([true])
     expect(emits[1]).toEqual([true])
     expect(emits[2]).toEqual([true])
+  })
+
+  it('sets Min Date properly based on global properties', async () => {
+    // verify initial state
+    expect(vm.$store.state.ARFilingYear).toBe(2019)
+    expect(vm.$store.state.filings).toEqual([])
+    expect(vm.$store.state.lastPreLoadFilingDate).toBeNull()
+
+    // verify default Min Date
+    expect(vm.minDate).toBe('2019-01-01')
+
+    // set Last Filing Date and verify new Min Date
+    vm.$store.state.filings = [
+      { filing: { header: { date: '2019-02-01' } } },
+      { filing: { header: { date: '2019-03-01' } } }
+    ]
+    expect(vm.minDate).toBe('2019-03-01')
+
+    // set Last Pre-Load Filing Date and verify new date
+    vm.$store.state.lastPreLoadFilingDate = '2019-04-01'
+    expect(vm.minDate).toBe('2019-04-01')
   })
 
   it('sets date picker when text field is set', async () => {
