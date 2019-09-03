@@ -528,7 +528,7 @@ export default {
       }
 
       // when earliest date is calculated, emit it back up for display
-      this.$emit('lastFilingDate', earliestDateToSet)
+      this.$emit('earliestDateToSet', earliestDateToSet)
       return earliestDateToSet
     },
 

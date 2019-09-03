@@ -34,7 +34,7 @@
             <h1 id="filing-header">Change of Directors</h1>
 
             <v-alert type="info" :value="true" icon="info" outline style="background-color: white;">
-              Director changes can be made as far back as {{ lastFilingDate }}.
+              Director changes can be made as far back as {{ earliestDateToSet }}.
             </v-alert>
           </header>
 
@@ -42,7 +42,7 @@
           <section>
             <Directors ref="directorsList"
               @directorsChange="directorsChange"
-              @lastFilingDate="lastFilingDate=$event"
+              @earliestDateToSet="earliestDateToSet=$event"
               @directorFormValid="directorFormValid=$event"
               @allDirectors="allDirectors=$event"
               :asOfDate="currentDate"
@@ -146,7 +146,7 @@ export default {
       resumeErrorDialog: false,
       saveErrorDialog: false,
       paymentErrorDialog: false,
-      lastFilingDate: 'your last filing',
+      earliestDateToSet: 'your last filing',
       isCertified: false,
       certifiedBy: '',
       directorFormValid: true,
