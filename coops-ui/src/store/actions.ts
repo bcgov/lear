@@ -11,9 +11,6 @@ export default {
   setARFilingYear ({ commit }, ARFilingYear) {
     commit('ARFilingYear', ARFilingYear)
   },
-  setFiledDate ({ commit }, filedDate) {
-    commit('filedDate', filedDate)
-  },
   setAgmDate ({ commit }, agmDate) {
     commit('agmDate', agmDate)
   },

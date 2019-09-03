@@ -13,7 +13,6 @@ export default {
   lastAgmDate: null,
 
   ARFilingYear: null, /* Number */
-  filedDate: null,
   agmDate: null,
   noAGM: false,
   tasks: [],

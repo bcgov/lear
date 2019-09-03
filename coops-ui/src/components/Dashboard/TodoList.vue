@@ -102,7 +102,7 @@ export default {
 
   methods: {
     ...mapActions(['setARFilingYear', 'setCurrentFilingStatus', 'setRegOffAddrChange', 'setAgmDate',
-      'setFiledDate', 'setNoAGM', 'setValidated']),
+      'setNoAGM', 'setValidated']),
 
     loadData () {
       this.taskItems = []
@@ -289,7 +289,6 @@ export default {
       this.setCurrentFilingStatus('NEW')
       this.setRegOffAddrChange(false)
       this.setAgmDate(null)
-      this.setFiledDate(null)
       this.setNoAGM(false)
       this.setValidated(false)
     },

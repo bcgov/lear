@@ -23,7 +23,6 @@ describe('AnnualReport - Part 1 - UI', () => {
     store.state.corpNum = 'CP0001191'
     store.state.ARFilingYear = 2017
     store.state.currentFilingStatus = 'NEW'
-    store.state.filedDate = null
   })
 
   it('renders the Annual Report sub-components properly', () => {
@@ -46,7 +45,6 @@ describe('AnnualReport - Part 1 - UI', () => {
     expect(vm.$store.state.corpNum).toEqual('CP0001191')
     expect(vm.$store.state.ARFilingYear).toEqual(2017)
     expect(vm.$store.state.currentFilingStatus).toEqual('NEW')
-    expect(vm.$store.state.filedDate).toBeNull()
 
     // check titles and sub-titles
     expect(vm.$el.querySelector('#AR-header').textContent).toContain('2017')
@@ -190,7 +188,6 @@ describe('AnnualReport - Part 2 - Resuming', () => {
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
     store.state.currentFilingStatus = 'DRAFT'
-    store.state.filedDate = null
 
     // mock "fetch a draft filing" endpoint
     sinon.stub(axios, 'get').withArgs('CP0001191/filings/123')
@@ -274,7 +271,6 @@ describe('AnnualReport - Part 3 - Submitting', () => {
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
     store.state.currentFilingStatus = 'NEW'
-    store.state.filedDate = null
 
     // mock "fetch a draft filing" endpoint
     sinon.stub(axios, 'get').withArgs('CP0001191/filings/123')
@@ -444,7 +440,6 @@ describe('AnnualReport - Part 4 - Saving', () => {
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
     store.state.currentFilingStatus = 'NEW'
-    store.state.filedDate = null
 
     // mock "save draft" endpoint
     sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')
@@ -556,7 +551,6 @@ describe('AnnualReport - Part 5 - Data', () => {
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = currentFilingYear
     store.state.currentFilingStatus = 'NEW'
-    store.state.filedDate = null
 
     // mock "save draft" endpoint - garbage response data, we aren't testing that
     spy = sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')

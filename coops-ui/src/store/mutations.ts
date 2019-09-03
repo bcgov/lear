@@ -11,9 +11,6 @@ export default {
   ARFilingYear (state, ARFilingYear) {
     state.ARFilingYear = ARFilingYear
   },
-  filedDate (state, filedDate) {
-    state.filedDate = filedDate
-  },
   agmDate (state, agmDate) {
     state.agmDate = agmDate
   },
