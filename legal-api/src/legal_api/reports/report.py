@@ -8,25 +8,31 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
 # an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
-
+"""Produces a PDF output based on templates and JSON messages."""
 import base64
 import copy
 import json
 import os
-import requests
 from datetime import datetime, timezone
-from flask import current_app, jsonify
 from http import HTTPStatus
 from pathlib import Path
+
+import requests
+from flask import current_app, jsonify
 
 from legal_api.utils.auth import jwt
 
 
-class Report:
+class Report:  # pylint: disable=too-few-public-methods
+    # TODO review pylint warning and alter as required
+    """Service to create report outputs."""
+
     def __init__(self, filing):
+        """Create the Report instance."""
         self._filing = filing
 
     def get_pdf(self):
+        """Render a pdf for the report."""
         headers = {
             'Authorization': 'Bearer {}'.format(jwt.get_token_auth_header()),
             'Content-Type': 'application/json'
@@ -34,7 +40,7 @@ class Report:
 
         data = {
             'reportName': self._get_report_filename(),
-            'template': '\'' + base64.b64encode(bytes(self._get_template(), 'utf-8')).decode() + '\'',
+            'template': "'" + base64.b64encode(bytes(self._get_template(), 'utf-8')).decode() + "'",
             'templateVars': self._get_template_data()
         }
 

@@ -104,6 +104,11 @@ flake8:
 license:
 	./scripts/verify_license_headers.sh src/$(project_name) tests
 
+.PHONY: test-ratio
+test-ratio:
+	./scripts/test_ratio.sh
+
+
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################

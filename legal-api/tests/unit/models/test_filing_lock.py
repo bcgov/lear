@@ -17,11 +17,11 @@
 Test-Suite to ensure that the file locking is working as expected.
 """
 import pytest
+from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Filing
 from tests import EPOCH_DATETIME
-from tests.unit.models import AR_FILING
 
 
 def test_unsaved_filing_lock(session):
@@ -66,7 +66,7 @@ def test_changing_unsaved_filing_is_unlocked(session):
     filing = Filing()
     filing.payment_token = 'payment_token'
     filing.filing_date = EPOCH_DATETIME
-    filing.filing_json = AR_FILING
+    filing.filing_json = ANNUAL_REPORT
     assert not filing.locked
     filing.save()
     assert filing.locked
@@ -77,7 +77,7 @@ def test_changing_uninvoiced_saved_filing_is_unlocked(session):
     # should succeed
     filing = Filing()
     filing.filing_date = EPOCH_DATETIME
-    filing.filing_json = AR_FILING
+    filing.filing_json = ANNUAL_REPORT
     assert not filing.locked
     filing.save()
     assert not filing.locked

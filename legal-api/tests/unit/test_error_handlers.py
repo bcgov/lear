@@ -48,7 +48,7 @@ def test_handle_uncaught_error(app, caplog):
     Unhandled exceptions should get ticketed and managed.
     """
     with app.app_context():
-        logger = errorhandlers.logger
+        # logger = errorhandlers.logger
         caplog.set_level(errorhandlers.logging.ERROR, logger=errorhandlers.logger.name)
         resp = errorhandlers.handle_uncaught_error(Exception())
 

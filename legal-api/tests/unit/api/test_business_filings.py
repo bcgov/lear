@@ -17,19 +17,22 @@
 Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import asyncio
+import copy
 import json
 from datetime import datetime
 from http import HTTPStatus
 
+import datedelta
 import dpath.util
 import pytest
 from flask import current_app
+from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.services import QueueService
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE
 from tests import integration_nats, integration_payment
-from tests.unit.models import AR_FILING, factory_business, factory_business_mailing_address, factory_filing
 from tests.unit.services.utils import create_header
+from tests.unit.models import factory_business_mailing_address, factory_business, factory_completed_filing, factory_filing  # noqa:E501,I001
 
 
 def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):
@@ -37,9 +40,9 @@ def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):
     import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)
-    filings = factory_filing(b, AR_FILING)
+    filings = factory_filing(b, ANNUAL_REPORT)
 
-    ar = copy.deepcopy(AR_FILING)
+    ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['header']['filingId'] = filings.id
     ar['filing']['header']['colinId'] = None
 
@@ -57,7 +60,7 @@ def test_get_all_business_filings_multi_in_ledger(session, client, jwt):
     import copy
     from tests import add_years
 
-    ar = copy.deepcopy(AR_FILING)
+    ar = copy.deepcopy(ANNUAL_REPORT)
     identifier = 'CP7654321'
 
     # create business
@@ -81,8 +84,8 @@ def test_get_one_business_filing_by_id(session, client, jwt):
     import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)
-    filings = factory_filing(b, AR_FILING)
-    ar = copy.deepcopy(AR_FILING)
+    filings = factory_filing(b, ANNUAL_REPORT)
+    ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['header']['filingId'] = filings.id
     ar['filing']['header']['colinId'] = None
 
@@ -98,7 +101,7 @@ def test_get_404_when_business_invalid_filing_id(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     identifier = 'CP7654321'
     b = factory_business(identifier)
-    filings = factory_filing(b, AR_FILING)
+    filings = factory_filing(b, ANNUAL_REPORT)
 
     print('test_get_one_business_filing - filing:', filings)
 
@@ -127,10 +130,10 @@ def test_post_fail_if_given_filing_id(session, client, jwt):
     """Assert that a filing cannot be created against a given filing_id."""
     identifier = 'CP7654321'
     b = factory_business(identifier)
-    filings = factory_filing(b, AR_FILING)
+    filings = factory_filing(b, ANNUAL_REPORT)
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
-                     json=AR_FILING,
+                     json=ANNUAL_REPORT,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
@@ -144,15 +147,15 @@ def test_post_filing_no_business(session, client, jwt):
     identifier = 'CP7654321'
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
-                     json=AR_FILING,
+                     json=ANNUAL_REPORT,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
-    assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json['errors'][0] == {'message': f'{identifier} not found'}
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json['errors'][0] == {'error': 'A valid business and filing are required.'}
 
 
-def test_post_empty_ar_filing_to_a_business(session, client, jwt):
+def test_post_empty_annual_report_to_a_business(session, client, jwt):
     """Assert that an empty filing cannot be posted."""
     identifier = 'CP7654321'
     factory_business(identifier)
@@ -172,7 +175,7 @@ def test_post_authorized_draft_ar(session, client, jwt):
     factory_business(identifier)
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings?draft=true',
-                     json=AR_FILING,
+                     json=ANNUAL_REPORT,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
@@ -185,7 +188,7 @@ def test_post_not_authorized_draft_ar(session, client, jwt):
     factory_business(identifier)
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings?draft=true',
-                     json=AR_FILING,
+                     json=ANNUAL_REPORT,
                      headers=create_header(jwt, [BASIC_USER], 'WRONGUSER')
                      )
 
@@ -198,7 +201,7 @@ def test_post_draft_ar(session, client, jwt):
     factory_business(identifier)
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings?draft=true',
-                     json=AR_FILING,
+                     json=ANNUAL_REPORT,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
@@ -210,10 +213,15 @@ def test_post_draft_ar(session, client, jwt):
 def test_post_only_validate_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_business(identifier,
+                     founding_date=(datetime.utcnow() - datedelta.YEAR)
+                     )
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings?only_validate=true',
-                     json=AR_FILING,
+                     json=ar,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
@@ -227,7 +235,7 @@ def test_post_only_validate_error_ar(session, client, jwt):
     identifier = 'CP7654321'
     factory_business(identifier)
 
-    ar = copy.deepcopy(AR_FILING)
+    ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['header'].pop('name')
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings?only_validate=true',
@@ -235,7 +243,7 @@ def test_post_only_validate_error_ar(session, client, jwt):
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     assert rv.json.get('errors')
     assert rv.json['errors'][0]['error'] == "'name' is a required property"
 
@@ -243,15 +251,18 @@ def test_post_only_validate_error_ar(session, client, jwt):
 @integration_payment
 def test_post_valid_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
-    from legal_api.models import Address, Filing
+    from legal_api.models import Filing
     identifier = 'CP7654321'
-    business = factory_business(identifier)
-    mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
-    business.mailing_address.append(mailing_address)
-    business.save()
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
-                     json=AR_FILING,
+                     json=ar,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
@@ -271,14 +282,19 @@ def test_post_valid_ar(session, client, jwt):
 def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
     factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
     old_svc = current_app.config.get('PAYMENT_SVC_URL')
     current_app.config['PAYMENT_SVC_URL'] = 'http://nowhere.localdomain'
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
-                     json=AR_FILING,
+                     json=ar,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
@@ -289,15 +305,19 @@ def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
 
 
 @integration_payment
-def test_update_ar_filing_to_a_business(session, client, jwt):
+def test_update_annual_report_to_a_business(session, client, jwt):
     """Assert that a filing can be updated if not paid."""
-    import copy
     identifier = 'CP7654321'
-    b = factory_business(identifier)
-    factory_business_mailing_address(b)
-    filings = factory_filing(b, AR_FILING)
-    ar = copy.deepcopy(AR_FILING)
-    ar['filing']['header']['date'] = '2001-08-05'
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['header']['date'] = (datetime.utcnow().date() - datedelta.MONTH).isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    filings = factory_filing(business, ar)
+    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
 
     rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
                     json=ar,
@@ -319,8 +339,8 @@ def test_update_draft_ar(session, client, jwt):
     import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)
-    filings = factory_filing(b, AR_FILING)
-    ar = copy.deepcopy(AR_FILING)
+    filings = factory_filing(b, ANNUAL_REPORT)
+    ar = copy.deepcopy(ANNUAL_REPORT)
 
     rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id}?draft=true',
                     json=ar,
@@ -338,12 +358,15 @@ def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
     """Assert that a valid filing can NOT be updated once it has been paid."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(identifier)
-    ar = copy.deepcopy(AR_FILING)
-    filings = factory_filing(b, ar)
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    filings.payment_token = 'token'
-    filings.save()
+    filings = factory_completed_filing(business, ar)
 
     rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
                     json=ar,
@@ -358,10 +381,15 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
     """Assert that updating a missing filing fails."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(identifier)
-    filings = factory_filing(b, AR_FILING)
-    ar = copy.deepcopy(AR_FILING)
-    ar['filing']['header']['paymentToken'] = 'token'
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+
+    filings = factory_filing(business, ar)
 
     rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id+1}',
                     json=ar,
@@ -376,11 +404,15 @@ def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
     """Assert that updating to a non-existant business fails."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(identifier)
-    filings = factory_filing(b, AR_FILING)
-    ar = copy.deepcopy(AR_FILING)
-    ar['filing']['header']['paymentToken'] = 'token'
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
+    filings = factory_completed_filing(business, ar)
     identifier = 'CP0000001'
 
     rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id+1}',
@@ -388,15 +420,15 @@ def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
                     )
 
-    assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json['errors'][0] == {'message': f'{identifier} not found'}
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json['errors'][0] == {'error': 'A valid business and filing are required.'}
 
 
 def test_update_ar_with_missing_json_body_fails(session, client, jwt):
     """Assert that updating a filing with no JSON body fails."""
     identifier = 'CP7654321'
     b = factory_business(identifier)
-    filings = factory_filing(b, AR_FILING)
+    filings = factory_filing(b, ANNUAL_REPORT)
 
     rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id+1}',
                     json=None,
@@ -439,7 +471,7 @@ def test_update_ar_with_missing_json_body_fails(session, client, jwt):
 #         b = factory_business(identifier)
 #         factory_business_mailing_address(b)
 #         # Create anm AR filing for the business
-#         ar = copy.deepcopy(AR_FILING)
+#         ar = copy.deepcopy(ANNUAL_REPORT)
 #         ar['filing']['header']['colinId'] = 1230 + i
 #         ar['filing']['business']['identifier'] = identifier
 
@@ -481,12 +513,13 @@ async def test_colin_filing_failed_to_queue(app_ctx, session, client, jwt, stan_
     # TEST - add some COLIN filings to the system, check that they got placed on the Queue
     # Create business
     identifier = 'CP7654321'
-    b = factory_business(identifier)
-    factory_business_mailing_address(b)
-    # Create an AR filing for the business
-    ar = copy.deepcopy(AR_FILING)
-    # ar['filing']['header']['colinId']
-    ar['filing']['business']['identifier'] = identifier
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
     # POST the AR
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
@@ -528,10 +561,14 @@ def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server):
     for i in range(0, 5):
         # Create business
         identifier = f'CP765432{i}'
-        b = factory_business(identifier)
-        factory_business_mailing_address(b)
+        business = factory_business(identifier,
+                                    founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                    )
+        factory_business_mailing_address(business)
         # Create anm AR filing for the business
-        ar = copy.deepcopy(AR_FILING)
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
         ar['filing']['header']['colinId'] = 1230 + i
         ar['filing']['business']['identifier'] = identifier
 
@@ -564,12 +601,17 @@ def test_update_ar_with_colin_id_set(session, client, jwt):
     """Assert that when a filing with colinId set (as when colin updates legal api) that colin_event_id is set."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(identifier)
-    factory_business_mailing_address(b)
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
 
-    filings = factory_filing(b, AR_FILING)
+    filings = factory_filing(business, ar)
 
-    ar = copy.deepcopy(AR_FILING)
     ar['filing']['header']['colinId'] = 1234
 
     rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
@@ -593,11 +635,11 @@ def test_get_internal_filings(session, client, jwt):
     b = factory_business(identifier)
     factory_business_mailing_address(b)
 
-    filing1 = factory_completed_filing(b, AR_FILING)
-    filing2 = factory_completed_filing(b, AR_FILING)
-    filing3 = factory_pending_filing(b, AR_FILING)
-    filing4 = factory_filing(b, AR_FILING)
-    filing5 = factory_error_filing(b, AR_FILING)
+    filing1 = factory_completed_filing(b, ANNUAL_REPORT)
+    filing2 = factory_completed_filing(b, ANNUAL_REPORT)
+    filing3 = factory_pending_filing(b, ANNUAL_REPORT)
+    filing4 = factory_filing(b, ANNUAL_REPORT)
+    filing5 = factory_error_filing(b, ANNUAL_REPORT)
 
     assert filing1.status == Filing.Status.COMPLETED.value
     # completed with colin_event_id
@@ -627,7 +669,7 @@ def test_patch_internal_filings(session, client, jwt):
     identifier = 'CP7654321'
     b = factory_business(identifier)
     factory_business_mailing_address(b)
-    filing = factory_completed_filing(b, AR_FILING)
+    filing = factory_completed_filing(b, ANNUAL_REPORT)
     colin_id = 1234
 
     # make request
@@ -651,7 +693,7 @@ def test_get_colin_id(session, client, jwt):
     identifier = 'CP7654321'
     b = factory_business(identifier)
     factory_business_mailing_address(b)
-    filing = factory_completed_filing(b, AR_FILING)
+    filing = factory_completed_filing(b, ANNUAL_REPORT)
     colin_event_id = 1234
     filing.colin_event_id = colin_event_id
     filing.save()

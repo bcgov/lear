@@ -22,6 +22,7 @@ import pytest
 from flask import jsonify
 
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE, authorized
+from tests import not_github_ci
 
 from .utils import helper_create_jwt
 
@@ -31,7 +32,7 @@ def test_jwt_manager_initialized(jwt):
     assert jwt
 
 
-@pytest.mark.skip(reason="doe not pass on github ci")
+@not_github_ci
 def test_jwt_manager_correct_test_config(app_request, jwt):
     """Assert that the test configuration for the JWT is working as expected."""
     message = 'This is a protected end-point'
@@ -64,7 +65,7 @@ TEST_AUTHZ_DATA = [
     ('authorized_user', 'CP1234567', 'CP1234567', [BASIC_USER], HTTPStatus.OK),
     ('unauthorized_user', 'CP1234567', 'Not-Match-Identifier', [BASIC_USER], HTTPStatus.METHOD_NOT_ALLOWED)
 ]
-@pytest.mark.skip(reason="doe not pass on github ci")
+@not_github_ci
 @pytest.mark.parametrize('test_name,identifier,username,roles,expected', TEST_AUTHZ_DATA)
 def test_authorized_user(app_request, jwt, test_name, identifier, username, roles, expected):
     """Assert that the type of user authorization is correct, based on the expected outcome."""
