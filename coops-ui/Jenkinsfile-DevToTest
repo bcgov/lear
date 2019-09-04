@@ -71,6 +71,7 @@ node {
                 }
             } catch (Exception e0) {
                 echo "Did not run E2E pipeline."
+                passed = false
             }
         }
     }
@@ -113,7 +114,7 @@ node {
             script {
                 openshift.withCluster() {
                     openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
-                        old_version = openshift.selector('dc', "${COMPONENT_NAME}-${TAG_NAME}").object().status.latestVersion
+                        old_version = openshift.selector('dc', "${COMPONENT_NAME}").object().status.latestVersion
                     }
                 }
                 openshift.withCluster() {
@@ -135,7 +136,7 @@ node {
             script {
                 openshift.withCluster() {
                     openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
-                        def new_version = openshift.selector('dc', "${COMPONENT_NAME}-${TAG_NAME}").object().status.latestVersion
+                        def new_version = openshift.selector('dc', "${COMPONENT_NAME}").object().status.latestVersion
                         if (new_version == old_version) {
                             echo "New deployment was not triggered."
                             currentBuild.result = "FAILURE"
