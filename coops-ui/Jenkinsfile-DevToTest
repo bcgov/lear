@@ -52,33 +52,40 @@ node {
     def passed = true
     stage("Run E2E Tests") {
         script {
-            openshift.withCluster() {
-                openshift.withProject("${E2E_NAMESPACE}-${E2E_PROJ}") {
-                    def e2e_pipeline = openshift.selector('bc', 'e2e-pipeline')
-                    try {
-                        echo "Running e2e pipeline (check ${E2E_NAMESPACE}-${E2E_PROJ} to view progress)..."
-                        e2e_pipeline.startBuild('--wait=true').logs('-f')
-                        echo "E2E tests passed!"
-                    } catch (Exception e) {
-                        echo "E2E tests failed: ${e.getMessage()}"
-                        passed = false
+            try {
+                timeout(time: 1, unit: 'DAYS') {
+                    input message: "Run E2E pipeline?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin,JohnamLane-edit'
+                }
+                openshift.withCluster() {
+                    openshift.withProject("${E2E_NAMESPACE}-${E2E_PROJ}") {
+                        def e2e_pipeline = openshift.selector('bc', 'e2e-pipeline')
+                        try {
+                            echo "Running e2e pipeline (check ${E2E_NAMESPACE}-${E2E_PROJ} to view progress)..."
+                            e2e_pipeline.startBuild('--wait=true').logs('-f')
+                            echo "E2E tests passed!"
+                        } catch (Exception e) {
+                            echo "E2E tests failed: ${e.getMessage()}"
+                            passed = false
+                        }
                     }
                 }
+            } catch (Exception e0) {
+                echo "Did not run E2E pipeline."
             }
         }
     }
-    def enf_pipeline = false
+    def end_pipeline = false
     stage("Verify E2E Tests") {
         script {
             if (!passed) {
                 try {
                     timeout(time: 1, unit: 'DAYS') {
-                        input message: "E2E failed. Proceed to test?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin,JohnamLane-edit'
+                        input message: "E2E failed or were not run. Proceed to test?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin,JohnamLane-edit'
                     }
                 } catch (Exception e1) {
                     try {
                         timeout(time: 1, unit: 'DAYS') {
-                            input message: "Keep failed E2E image?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin,JohnamLane-edit'
+                            input message: "Keep E2E image?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin,JohnamLane-edit'
                         }
                     } catch (Exception e2) {
                         echo "Reverting E2E image back to previous image..."
