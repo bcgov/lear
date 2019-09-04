@@ -150,7 +150,9 @@
               </header>
               <Certify
                 :isCertified.sync="isCertified"
-                :certifiedBy.sync="certifiedBy" />
+                :certifiedBy.sync="certifiedBy"
+                :currentDate="currentDate"
+                @valid="certifyValidEventHandler"/>
             </section>
           </div>
           <!-- <div v-else>
@@ -251,6 +253,7 @@ export default {
       paymentErrorDialog: false,
       isCertified: false,
       certifiedBy: '',
+      certifyFormValid: null,
       isSaveButtonEnabled: false,
       saving: false,
       savingResuming: false,
@@ -443,6 +446,15 @@ export default {
       this.toggleFiling(modified ? 'add' : 'remove', 'OTCDR')
     },
 
+    /**
+     * Callback method for the "valid" event from Certify.
+     *
+     * @param valid a boolean that is true if the certify form contains valid data.
+     */
+    certifyValidEventHandler (valid): void {
+      this.certifyFormValid = valid
+    },
+
     async onClickSave () {
       this.saving = true
       const filing = await this.saveFiling(true)
@@ -614,7 +626,7 @@ export default {
 
     setValidateFlag () {
       // compute the AR page's valid state
-      this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.isCertified)
+      this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.certifyFormValid)
       this.isSaveButtonEnabled = this.agmDateValid && this.addressesFormValid && this.directorFormValid
     }
   },
