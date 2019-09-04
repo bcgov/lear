@@ -146,6 +146,7 @@ node {
                         if (new_version == old_version) {
                             echo "New deployment was not triggered."
                             currentBuild.result = "FAILURE"
+                            return
                         }
                         def pod_selector = openshift.selector('pod', [ app:"${COMPONENT_NAME}-${TAG_NAME}" ])
                         pod_selector.untilEach {
