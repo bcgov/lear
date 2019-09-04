@@ -120,11 +120,17 @@ node {
                 openshift.withCluster() {
                     openshift.withProject() {
 
-                        echo "Tagging ${COMPONENT_NAME} for deployment to ${TAG_NAME} ..."
+                        echo "Tagging ${COMPONENT_NAME}:${TAG_NAME} to ${TAG_NAME}-previous ..."
 
                         // Don't tag with BUILD_ID so the pruner can do it's job; it won't delete tagged images.
                         // Tag the images for deployment based on the image's hash
-                        def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${SOURCE_TAG}")
+                        def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${TAG_NAME}")
+                        echo "IMAGE_HASH: ${IMAGE_HASH}"
+                        openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${TAG_NAME}-previous")
+
+                        echo "Tagging ${COMPONENT_NAME} for deployment to ${TAG_NAME} ..."
+
+                        IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${SOURCE_TAG}")
                         echo "IMAGE_HASH: ${IMAGE_HASH}"
                         openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${TAG_NAME}")
                     }
