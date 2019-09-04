@@ -23,6 +23,9 @@ def NAMESPACE = 'gl2uos'
 def COMPONENT_NAME = 'legal-api'
 def TAG_NAME = 'test'
 def SOURCE_TAG = 'dev'
+def E2E_TAG = 'e2e'
+def E2E_NAMESPACE = 'd7eovc'
+def E2E_PROJ = 'tools'
 
 // define groovy functions
 import groovy.json.JsonOutput
@@ -47,66 +50,147 @@ properties([
 ])
 
 node {
-    def old_version
-    stage("Deploy ${COMPONENT_NAME}:${TAG_NAME}") {
+    stage("Tag image for E2E") {
         script {
             openshift.withCluster() {
-                openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
-                    old_version = openshift.selector('dc', "${COMPONENT_NAME}-${TAG_NAME}").object().status.latestVersion
-                }
-            }
-            openshift.withCluster() {
                 openshift.withProject() {
+                    echo "Tagging ${COMPONENT_NAME}:${E2E_TAG}-prev with ${E2E_TAG}..."
 
-                    echo "Tagging ${COMPONENT_NAME} for deployment to ${TAG_NAME} ..."
-
-                    // Don't tag with BUILD_ID so the pruner can do it's job; it won't delete tagged images.
-                    // Tag the images for deployment based on the image's hash
-                    def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${SOURCE_TAG}")
+                    def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${E2E_TAG}")
                     echo "IMAGE_HASH: ${IMAGE_HASH}"
-                    openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${TAG_NAME}")
+                    openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${E2E_TAG}-prev")
+
+                    echo "Tagging ${COMPONENT_NAME} to ${E2E_TAG} ..."
+
+                    IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${SOURCE_TAG}")
+                    echo "IMAGE_HASH: ${IMAGE_HASH}"
+                    openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${E2E_TAG}")
                 }
             }
         }
     }
-    stage("Verify deployment") {
-        sleep 10
+    def passed = true
+    stage("Run E2E Tests") {
         script {
-            openshift.withCluster() {
-                openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
-                    def new_version = openshift.selector('dc', "${COMPONENT_NAME}-${TAG_NAME}").object().status.latestVersion
-                    if (new_version == old_version) {
-                        echo "New deployment was not triggered."
-                        currentBuild.result = "FAILURE"
+            try {
+                timeout(time: 1, unit: 'DAYS') {
+                    input message: "Run E2E pipeline?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin,JohnamLane-edit'
+                }
+                openshift.withCluster() {
+                    openshift.withProject("${E2E_NAMESPACE}-${E2E_PROJ}") {
+                        def e2e_pipeline = openshift.selector('bc', 'e2e-pipeline')
+                        try {
+                            echo "Running e2e pipeline (check ${E2E_NAMESPACE}-${E2E_PROJ} to view progress)..."
+                            e2e_pipeline.startBuild('--wait=true').logs('-f')
+                            echo "E2E tests passed!"
+                        } catch (Exception e) {
+                            echo "E2E tests failed: ${e.getMessage()}"
+                            passed = false
+                        }
                     }
-                    def pod_selector = openshift.selector('pod', [ app:"${COMPONENT_NAME}-${TAG_NAME}" ])
-                    pod_selector.untilEach {
-                        deployment = it.objects()[0].metadata.labels.deployment
-                        echo deployment
-                        if (deployment ==  "${COMPONENT_NAME}-${TAG_NAME}-${new_version}" && it.objects()[0].status.phase == 'Running' && it.objects()[0].status.containerStatuses[0].ready) {
-                            return true
-                        } else {
-                            echo "Pod for new deployment not ready"
-                            sleep 5
-                            return false
+                }
+            } catch (Exception e0) {
+                echo "Did not run E2E pipeline."
+                passed = false
+            }
+        }
+    }
+    def end_pipeline = false
+    stage("Verify E2E Tests") {
+        script {
+            if (!passed) {
+                try {
+                    timeout(time: 1, unit: 'DAYS') {
+                        input message: "E2E failed or were not run. Proceed to test?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin,JohnamLane-edit'
+                    }
+                } catch (Exception e1) {
+                    try {
+                        timeout(time: 1, unit: 'DAYS') {
+                            input message: "Keep E2E image?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin,JohnamLane-edit'
+                        }
+                    } catch (Exception e2) {
+                        echo "Reverting E2E image back to previous image..."
+                        openshift.withCluster() {
+                            openshift.withProject() {
+                                echo "Tagging ${COMPONENT_NAME}:${E2E_TAG} with ${E2E_TAG}-prev ..."
+
+                                def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${E2E_TAG}-prev")
+                                echo "IMAGE_HASH: ${IMAGE_HASH}"
+                                openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${E2E_TAG}")
+                            }
+                        }
+                    } finally {
+                        currentBuild.result = 'FAILURE'
+                        end_pipeline = true
+                        return
+                    }
+                }
+            }
+        }
+    }
+    if (!end_pipeline) {
+        def old_version
+        stage("Deploy ${COMPONENT_NAME}:${TAG_NAME}") {
+            script {
+                openshift.withCluster() {
+                    openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
+                        old_version = openshift.selector('dc', "${COMPONENT_NAME}-${TAG_NAME}").object().status.latestVersion
+                    }
+                }
+                openshift.withCluster() {
+                    openshift.withProject() {
+
+                        echo "Tagging ${COMPONENT_NAME} for deployment to ${TAG_NAME} ..."
+
+                        // Don't tag with BUILD_ID so the pruner can do it's job; it won't delete tagged images.
+                        // Tag the images for deployment based on the image's hash
+                        def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${SOURCE_TAG}")
+                        echo "IMAGE_HASH: ${IMAGE_HASH}"
+                        openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${TAG_NAME}")
+                    }
+                }
+            }
+        }
+        stage("Verify deployment") {
+            sleep 10
+            script {
+                openshift.withCluster() {
+                    openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
+                        def new_version = openshift.selector('dc', "${COMPONENT_NAME}-${TAG_NAME}").object().status.latestVersion
+                        if (new_version == old_version) {
+                            echo "New deployment was not triggered."
+                            currentBuild.result = "FAILURE"
+                            return
+                        }
+                        def pod_selector = openshift.selector('pod', [ app:"${COMPONENT_NAME}-${TAG_NAME}" ])
+                        pod_selector.untilEach {
+                            deployment = it.objects()[0].metadata.labels.deployment
+                            echo deployment
+                            if (deployment ==  "${COMPONENT_NAME}-${TAG_NAME}-${new_version}" && it.objects()[0].status.phase == 'Running' && it.objects()[0].status.containerStatuses[0].ready) {
+                                return true
+                            } else {
+                                echo "Pod for new deployment not ready"
+                                sleep 5
+                                return false
+                            }
                         }
                     }
                 }
             }
         }
-    }
-    stage("Run pytests for ${COMPONENT_NAME}:${TAG_NAME}") {
-        script {
-            openshift.withCluster() {
-                openshift.withProject() {
-                    def test_pipeline = openshift.selector('bc', 'pytest-pipeline')
-                    try {
-                        test_pipeline.startBuild('--wait=true', "-e=component=${COMPONENT_NAME}", "-e=component_tag=${TAG_NAME}", "-e=tag=${TAG_NAME}", "-e=namespace=${NAMESPACE}", "-e=db_type=PG").logs('-f')
-                        echo "All tests passed"
-                    } catch (Exception e) {
-                        echo e.getMessage()
-                        echo "Not all tests passed."
-                        currentBuild.result = 'FAILURE'
+        stage("Run pytests for ${COMPONENT_NAME}:${TAG_NAME}") {
+            script {
+                openshift.withCluster() {
+                    openshift.withProject() {
+                        def test_pipeline = openshift.selector('bc', 'pytest-pipeline')
+                        try {
+                            test_pipeline.startBuild('--wait=true', "-e=component=${COMPONENT_NAME}", "-e=component_tag=${TAG_NAME}", "-e=tag=${TAG_NAME}", "-e=namespace=${NAMESPACE}", "-e=db_type=PG").logs('-f')
+                            echo "All tests passed"
+                        } catch (Exception e) {
+                            echo e.getMessage()
+                            echo "Not all tests passed."
+                            currentBuild.result = 'FAILURE'
+                        }
                     }
                 }
             }

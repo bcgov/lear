@@ -119,7 +119,7 @@ def add_business_directors(business, directors_json):
 rowcount = 0
 TIMEOUT = 5
 
-with open('test_data/coop_2019_test_data.csv', 'r') as csvfile:
+with open('coop_2019_test_data.csv', 'r') as csvfile:
     reader = csv.DictReader(csvfile)
     with FLASK_APP.app_context():
         for row in reader:
