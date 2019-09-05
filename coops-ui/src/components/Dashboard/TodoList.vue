@@ -101,8 +101,7 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setARFilingYear', 'setCurrentFilingStatus', 'setAgmDate',
-      'setNoAGM', 'setValidated']),
+    ...mapActions(['setARFilingYear', 'setCurrentFilingStatus']),
 
     loadData () {
       this.taskItems = []
@@ -239,7 +238,6 @@ export default {
       switch (item.type) {
         case 'annualReport':
           // file the subject Annual Report
-          this.resetStore(item)
           this.setARFilingYear(item.ARFilingYear)
           this.setCurrentFilingStatus('NEW')
           this.$router.push({ name: 'annual-report', params: { id: 0 } }) // 0 means "new AR"
@@ -253,21 +251,18 @@ export default {
       switch (item.type) {
         case 'annualReport':
           // resume the subject Annual Report
-          this.resetStore(item)
           this.setARFilingYear(item.ARFilingYear)
           this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'annual-report', params: { id: item.id } })
           break
         case 'changeOfDirectors':
           // resume the subject Change Of Directors
-          this.resetStore(item)
           this.setARFilingYear(item.ARFilingYear)
           this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'standalone-directors', params: { id: item.id } })
           break
         case 'changeOfAddress':
           // resume the subject Change Of Address
-          this.resetStore(item)
           this.setARFilingYear(item.ARFilingYear)
           this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'standalone-addresses', params: { id: item.id } })
@@ -287,12 +282,6 @@ export default {
       const paymentToken = item.paymentToken
       const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
       window.location.assign(payURL)
-    },
-
-    resetStore (item) {
-      this.setAgmDate(null)
-      this.setNoAGM(false)
-      this.setValidated(false)
     },
 
     isNew (item) {

@@ -38,19 +38,19 @@
           </v-date-picker>
         </v-menu>
 
-        <div class="validationErrorInfo">
-          <span v-if="!$v.dateFormatted.isISOFormat">
+        <div class="validationErrorInfo" v-if="$v.dateFormatted.isNotNull">
+          <span v-if="!$v.dateFormatted.isValidFormat">
             Date must be in format YYYY/MM/DD.
           </span>
           <span v-else-if="!$v.dateFormatted.isValidYear">
-            Please enter a date within {{this.ARFilingYear}}.
+            Please enter a year within {{ARFilingYear}}.
           </span>
-          <span v-else-if="$v.dateFormatted.isValidYear && !$v.dateFormatted.isValidMonth">
-            Please enter a valid month in the past.
+          <span v-else-if="!$v.dateFormatted.isValidMonth">
+            Please enter a month between {{formatDate(minDate)}} and {{formatDate(maxDate)}}.
           </span>
           <!-- eslint-disable-next-line -->
-          <span v-else-if="$v.dateFormatted.isValidYear && $v.dateFormatted.isValidMonth && !$v.dateFormatted.isValidDay">
-            Please enter a valid day in the past.
+          <span v-else-if="!$v.dateFormatted.isValidDay">
+            Please enter a day between {{formatDate(minDate)}} and {{formatDate(maxDate)}}.
           </span>
         </div>
       </div>
@@ -66,7 +66,7 @@
 </template>
 
 <script>
-import { isNotNull, isValidYear, isValidMonth, isValidDay, isISOFormat } from '@/validators'
+import { isNotNull, isValidFormat, isValidYear, isValidMonth, isValidDay } from '@/validators'
 import { mapState, mapActions, mapGetters } from 'vuex'
 import DateUtils from '@/DateUtils'
 
@@ -75,7 +75,7 @@ export default {
 
   mixins: [DateUtils],
 
-  props: { initialAgmDate: String },
+  props: { initialAgmDate: { type: String, default: '' } },
 
   data () {
     return {
@@ -92,7 +92,8 @@ export default {
   validations () {
     return {
       dateFormatted: {
-        isISOFormat,
+        isNotNull,
+        isValidFormat,
         isValidYear,
         isValidMonth,
         isValidDay
@@ -101,23 +102,26 @@ export default {
   },
 
   computed: {
-    ...mapState(['ARFilingYear', 'agmDate', 'currentDate', 'lastPreLoadFilingDate']),
+    ...mapState(['ARFilingYear', 'currentDate', 'lastPreLoadFilingDate']),
 
     ...mapGetters(['lastFilingDate']),
 
     checkBoxLabel () {
       return 'We did not hold an Annual General Meeting in ' + this.ARFilingYear
     },
+
     maxDate () {
       return (this.ARFilingYear === this.currentYear)
         ? this.currentDate.split('/').join('-')
         : `${this.ARFilingYear}-12-31`
     },
+
     minDate () {
-      /** return the latest of the following dates:
-       *  - the first day of the AR filing year
-       *  - the last filing in filing history (from the Legal DB)
-       *  - the last pre-load Cobrs filing
+      /**
+       * Return the latest of the following dates:
+       * - the first day of the AR filing year
+       * - the last filing in filing history (from the Legal DB)
+       * - the last pre-load Cobrs filing
        */
       const firstDayOfYear = +`${this.ARFilingYear}-01-01`.split('-').join('')
       const lastFilingDate = this.lastFilingDate ? +this.lastFilingDate.split('-').join('') : 0
@@ -125,6 +129,7 @@ export default {
       const minAgmDate = Math.max(firstDayOfYear, lastFilingDate, lastPreLoadFilingDate)
       return this.numToUsableString(minAgmDate)
     },
+
     currentYear () /* Number */ {
       return this.currentDate ? +this.currentDate.substring(0, 4) : null
     }
@@ -132,84 +137,72 @@ export default {
 
   mounted () {
     // load initial data
-    this.setAgmDate(this.minDate)
-    this.dateFormatted = this.formatDate(this.agmDate)
+    this.dateFormatted = this.formatDate(this.minDate)
   },
 
   methods: {
-    ...mapActions(['setAgmDate', 'setNoAGM']),
-
     formatDate (date) {
       // changes date from YYYY-MM-DD to YYYY/MM/DD
-      if (!this.isValidDateFormat(date, '-')) return ''
+      if (!this.isValidDate(date, '-')) return ''
       const [year, month, day] = date.split('-')
       return `${year}/${month}/${day}`
     },
+
     parseDate (date) {
       // changes date from YYYY/MM/DD to YYYY-MM-DD
-      if (!this.isValidDateFormat(date, '/')) return ''
+      if (!this.isValidDate(date, '/')) return ''
       const [year, month, day] = date.split('/')
       return `${year}-${month}-${day}`
     },
-    isValidDateFormat (date, separator) {
-      // validates that date is:
-      //    not empty or null
-      //    in iso format
-      //    is within the year of the ar
-      //    the month is valid and in the past
-      //    the day is valid and in the past
-      // NB: use getUTCDate() to ignore local time (we only care about date part)
-      return (date &&
-        date.length === 10 &&
-        date.indexOf(separator) === 4 &&
-        date.indexOf(separator, 5) === 7 &&
-        date.indexOf(separator, 8) === -1 &&
-        +date.substring(0, 4) === this.ARFilingYear &&
-        +date.substring(5, 7) > 0 &&
-        +date.substring(5, 7) <= +this.maxDate.substring(5, 7) &&
-        +date.substring(8, 10) === (new Date(date)).getUTCDate() &&
-        +date.substring(8, 10) > 0 &&
-        date.split(separator).join('') <= this.maxDate.split('-').join(''))
+
+    isValidDate (date, separator) {
+      return (isNotNull.call(this, date) &&
+        isValidFormat.call(this, date, separator) &&
+        isValidYear.call(this, date) &&
+        isValidMonth.call(this, date) &&
+        isValidDay.call(this, date))
     }
   },
 
   watch: {
+    // when prop changes, load (initial) data
     initialAgmDate (val) {
-      // load data from existing filing
-      if (!val) {
-        this.didNotHoldAGM = true
+      if (val) {
+        this.dateFormatted = this.formatDate(val)
       } else {
+        this.didNotHoldAGM = true
+      }
+    },
+
+    // when text field changes, update date picker
+    dateFormatted (val) {
+      this.date = this.parseDate(val)
+      // NB: let date watcher update parent
+    },
+
+    // when date picker changes, update text field etc
+    date (val) {
+      const agmDate = this.isValidDate(val, '-') ? val : null
+      // only update text field if date is valid
+      // this is to retain previous invalid values
+      if (agmDate) {
         this.dateFormatted = this.formatDate(val)
       }
+      this.$emit('agmDate', agmDate)
+      this.$emit('valid', Boolean(this.didNotHoldAGM || agmDate))
     },
-    dateFormatted (val) {
-      // when text field changes, update date picker
-      this.date = this.parseDate(val)
-    },
-    date (val) {
-      // when date picker changes, update text field and store
-      if (this.didNotHoldAGM || val) {
-        if (this.isValidDateFormat(val, '-')) {
-          this.dateFormatted = this.formatDate(val)
-        }
-      }
-      // also update value in store
-      this.setAgmDate(val || null)
-      this.$emit('valid', Boolean(this.didNotHoldAGM || this.agmDate))
-    },
+
+    // when checkbox changes, update text field etc
     didNotHoldAGM (val) {
-      // when checkbox changes, update text field and store
       if (val) {
-        this.setNoAGM(true)
         // clear text field value
         this.dateFormatted = null
       } else {
-        this.setNoAGM(false)
         // reset text field value
-        this.setAgmDate(this.minDate)
-        this.dateFormatted = this.formatDate(this.agmDate)
+        this.dateFormatted = this.formatDate(this.initialAgmDate || this.minDate)
       }
-      this.$emit('valid', Boolean(this.didNotHoldAGM || this.agmDate))
+      this.$emit('noAGM', val)
+      this.$emit('valid', Boolean(this.didNotHoldAGM || this.dateFormatted))
     }
   }
 }

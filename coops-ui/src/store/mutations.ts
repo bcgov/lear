@@ -11,15 +11,6 @@ export default {
   ARFilingYear (state, ARFilingYear) {
     state.ARFilingYear = ARFilingYear
   },
-  agmDate (state, agmDate) {
-    state.agmDate = agmDate
-  },
-  noAGM (state, noAGM) {
-    state.noAGM = noAGM
-  },
-  validated (state, validated) {
-    state.validated = validated
-  },
   entityBusinessNo (state, entityBusinessNo) {
     state.entityBusinessNo = entityBusinessNo
   },

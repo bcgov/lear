@@ -19,14 +19,26 @@ import DateUtils from '@/DateUtils'
 export default {
   name: 'ARComplete',
   computed: {
-    ...mapState(['ARFilingYear', 'agmDate']),
+    ...mapState(['ARFilingYear']),
 
     // dummy value for now
     // TODO: where to get Filed Date?
     filedDate () {
-      var today = this.dateToUsableString(new Date())
-      var date = new Date(today + 'T12:00:00')
+      const today = this.dateToUsableString(new Date())
+      const date = new Date(today + 'T12:00:00')
       return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+    },
+
+    // dummy value for now
+    // TODO: where to get AGM Date?
+    agmDate () {
+      return +`${this.ARFilingYear}-01-01`.split('-').join('')
+    },
+
+    // dummy value for now
+    // TODO: where to get No AGM?
+    noAGM () {
+      return false
     }
   }
 }

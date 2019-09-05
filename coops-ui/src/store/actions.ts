@@ -11,15 +11,6 @@ export default {
   setARFilingYear ({ commit }, ARFilingYear) {
     commit('ARFilingYear', ARFilingYear)
   },
-  setAgmDate ({ commit }, agmDate) {
-    commit('agmDate', agmDate)
-  },
-  setNoAGM ({ commit }, noAGM) {
-    commit('noAGM', noAGM)
-  },
-  setValidated ({ commit }, validated) {
-    commit('validated', validated)
-  },
   setEntityBusinessNo ({ commit }, entityBusinessNo) {
     commit('entityBusinessNo', entityBusinessNo)
   },

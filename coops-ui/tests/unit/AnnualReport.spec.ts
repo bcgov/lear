@@ -63,11 +63,11 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.agmDateValid = true
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(true)
-    vm.isCertified = true
-    vm.setValidateFlag()
+    vm.certifyFormValid = true
 
-    // confirm that flag is set correctly
+    // confirm that flags are set correctly
     expect(vm.validated).toEqual(true)
+    expect(vm.isSaveButtonEnabled).toEqual(true)
 
     wrapper.destroy()
   })
@@ -81,11 +81,11 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.agmDateValid = false
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(true)
-    vm.isCertified = true
-    vm.setValidateFlag()
+    vm.certifyFormValid = true
 
-    // confirm that flag is set correctly
+    // confirm that flags are set correctly
     expect(vm.validated).toEqual(false)
+    expect(vm.isSaveButtonEnabled).toEqual(false)
 
     wrapper.destroy()
   })
@@ -99,11 +99,11 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.agmDateValid = true
     vm.setAddressesFormValid(false)
     vm.setDirectorFormValid(true)
-    vm.isCertified = true
-    vm.setValidateFlag()
+    vm.certifyFormValid = true
 
-    // confirm that flag is set correctly
+    // confirm that flags are set correctly
     expect(vm.validated).toEqual(false)
+    expect(vm.isSaveButtonEnabled).toEqual(false)
 
     wrapper.destroy()
   })
@@ -117,11 +117,11 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.agmDateValid = true
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(false)
-    vm.isCertified = true
-    vm.setValidateFlag()
+    vm.certifyFormValid = true
 
-    // confirm that flag is set correctly
+    // confirm that flags are set correctly
     expect(vm.validated).toEqual(false)
+    expect(vm.isSaveButtonEnabled).toEqual(false)
 
     wrapper.destroy()
   })
@@ -135,16 +135,16 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.agmDateValid = true
     vm.setAddressesFormValid(true)
     vm.setDirectorFormValid(true)
-    vm.isCertified = false
-    vm.setValidateFlag()
+    vm.certifyFormValid = false
 
-    // confirm that flag is set correctly
+    // confirm that flags are set correctly
     expect(vm.validated).toEqual(false)
+    expect(vm.isSaveButtonEnabled).toEqual(true)
 
     wrapper.destroy()
   })
 
-  it('enables File & Pay button when Validated is true', () => {
+  it('enables File & Pay button when form is validated', () => {
     const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store,
       mocks: { $route },
@@ -156,8 +156,11 @@ describe('AnnualReport - Part 1 - UI', () => {
       } })
     const vm: any = wrapper.vm
 
-    // set flag
-    vm.setValidated(true)
+    // make sure form is validated
+    vm.agmDateValid = true
+    vm.setAddressesFormValid(true)
+    vm.setDirectorFormValid(true)
+    vm.certifyFormValid = true
 
     // confirm that button is enabled
     expect(wrapper.find('#ar-file-pay-btn').attributes('disabled')).not.toBe('true')
@@ -165,13 +168,16 @@ describe('AnnualReport - Part 1 - UI', () => {
     wrapper.destroy()
   })
 
-  it('disables File & Pay button when Validated is false', () => {
+  it('disables File & Pay button when form is not validated', () => {
     const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
-    // set flag
-    vm.setValidated(false)
+    // set flags
+    vm.agmDateValid = false
+    vm.setAddressesFormValid(false)
+    vm.setDirectorFormValid(false)
+    vm.certifyFormValid = false
 
     // confirm that button is disabled
     expect(wrapper.find('#ar-file-pay-btn').attributes('disabled')).toBe('true')
@@ -373,7 +379,10 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       const vm = wrapper.vm as any
 
       // make sure form is validated
-      vm.setValidated(true)
+      vm.agmDateValid = true
+      vm.setAddressesFormValid(true)
+      vm.setDirectorFormValid(true)
+      vm.certifyFormValid = true
 
       // stub address data
       vm.addresses = {
@@ -405,7 +414,10 @@ describe('AnnualReport - Part 3 - Submitting', () => {
     const vm = wrapper.vm as any
 
     // make sure form is validated
-    vm.setValidated(true)
+    vm.agmDateValid = true
+    vm.setAddressesFormValid(true)
+    vm.setDirectorFormValid(true)
+    vm.certifyFormValid = true
 
     // stub address data
     vm.addresses = {
@@ -487,7 +499,10 @@ describe('AnnualReport - Part 4 - Saving', () => {
 
   it('saves a new filing when the Save button is clicked', async () => {
     // make sure form is validated
-    vm.setValidated(true)
+    vm.agmDateValid = true
+    vm.setAddressesFormValid(true)
+    vm.setDirectorFormValid(true)
+    vm.certifyFormValid = true
 
     // stub address data
     vm.addresses = {
@@ -506,7 +521,10 @@ describe('AnnualReport - Part 4 - Saving', () => {
 
   it('saves a filing and routes to Dashboard URL when the Save & Resume button is clicked', async () => {
     // make sure form is validated
-    vm.setValidated(true)
+    vm.agmDateValid = true
+    vm.setAddressesFormValid(true)
+    vm.setDirectorFormValid(true)
+    vm.certifyFormValid = true
 
     // stub address data
     vm.addresses = {
@@ -525,7 +543,10 @@ describe('AnnualReport - Part 4 - Saving', () => {
 
   it('routes to Dashboard URL when the Cancel button is clicked', async () => {
     // make sure form is validated
-    vm.setValidated(true)
+    vm.agmDateValid = true
+    vm.setAddressesFormValid(true)
+    vm.setDirectorFormValid(true)
+    vm.certifyFormValid = true
 
     // click the Cancel button
     wrapper.find('#ar-cancel-btn').trigger('click')
@@ -640,7 +661,10 @@ describe('AnnualReport - Part 5 - Data', () => {
     }
 
     // make sure form is validated
-    vm.setValidated(true)
+    vm.agmDateValid = true
+    vm.setAddressesFormValid(true)
+    vm.setDirectorFormValid(true)
+    vm.certifyFormValid = true
   })
 
   afterEach(() => {
@@ -760,8 +784,8 @@ describe('AnnualReport - Part 5 - Data', () => {
     store.state.currentDate = '2019-03-03'
 
     // set No AGM
-    store.state.noAGM = true
-    store.state.agmDate = null
+    vm.noAGM = true
+    vm.agmDate = null
 
     // click the Save button
     wrapper.find('#ar-save-btn').trigger('click')

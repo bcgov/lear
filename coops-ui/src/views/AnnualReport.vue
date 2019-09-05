@@ -44,7 +44,12 @@
               <header>
                 <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
               </header>
-              <AGMDate :initialAgmDate="initialAgmDate" @valid="agmDateValid=$event" />
+              <AGMDate
+                :initialAgmDate="initialAgmDate"
+                @agmDate="agmDate=$event"
+                @noAGM="noAGM=$event"
+                @valid="agmDateValid=$event"
+              />
             </section>
 
             <!-- Registered Office Addresses -->
@@ -60,7 +65,8 @@
                 :legalEntityNumber="corpNum"
                 :addresses.sync="addresses"
                 @modified="officeModifiedEventHandler($event)"
-                @valid="officeValidEventHandler($event)" />
+                @valid="officeValidEventHandler($event)"
+              />
             </section>
 
             <!-- Directors -->
@@ -88,7 +94,8 @@
                 :isCertified.sync="isCertified"
                 :certifiedBy.sync="certifiedBy"
                 :currentDate="currentDate"
-                @valid="certifyValidEventHandler"/>
+                @valid="certifyFormValid=$event"
+              />
             </section>
           </div>
           <!-- <div v-else>
@@ -174,9 +181,9 @@ export default {
     AGMDate,
     RegisteredOfficeAddress,
     Directors,
-    SbcFeeSummary,
-    Affix,
     Certify,
+    Affix,
+    SbcFeeSummary,
     ConfirmDialog,
     PaymentErrorDialog,
     ResumeErrorDialog,
@@ -185,31 +192,42 @@ export default {
 
   data () {
     return {
+      // properties for AGMDate component
       initialAgmDate: null,
+      agmDate: null,
+      noAGM: false,
+      agmDateValid: false,
+
+      // properties for RegisteredOfficeAddress component
       addresses: null,
+
+      // properties for Directors component
       allDirectors: [],
-      filingId: null,
-      loadingMessage: 'Loading...', // initial generic message
-      filingData: [],
+
+      // properties for Certify component
+      certifiedBy: '',
+      isCertified: false,
+      certifyFormValid: null,
+
+      // flags for displaying dialogs
       resumeErrorDialog: false,
       saveErrorDialog: false,
       paymentErrorDialog: false,
-      isCertified: false,
-      certifiedBy: '',
-      certifyFormValid: null,
-      isSaveButtonEnabled: false,
+
+      // other local properties
+      filingId: null,
+      loadingMessage: 'Loading...', // initial generic message
+      filingData: [],
       saving: false,
       savingResuming: false,
       filingPaying: false,
-      haveChanges: false,
-      agmDateValid: false
+      haveChanges: false
     }
   },
 
   computed: {
-    ...mapState(['agmDate', 'noAGM',
-      'validated', 'currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate',
-      'entityName', 'entityIncNo', 'entityFoundingDate', 'currentFilingStatus',
+    ...mapState(['currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate',
+      'entityName', 'entityIncNo', 'entityFoundingDate',
       'addressesFormValid', 'directorFormValid']),
 
     ...mapGetters(['isAnnualReportEditable', 'reportState']),
@@ -223,6 +241,14 @@ export default {
 
     payAPIURL () {
       return sessionStorage.getItem('PAY_API_URL')
+    },
+
+    validated () {
+      return this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.certifyFormValid
+    },
+
+    isSaveButtonEnabled () {
+      return this.agmDateValid && this.addressesFormValid && this.directorFormValid
     }
   },
 
@@ -280,8 +306,7 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setARFilingYear', 'setValidated',
-      'setAddressesFormValid', 'setDirectorFormValid']),
+    ...mapActions(['setARFilingYear', 'setAddressesFormValid', 'setDirectorFormValid']),
 
     fetchData () {
       const url = this.corpNum + '/filings/' + this.filingId
@@ -380,22 +405,12 @@ export default {
      */
     officeValidEventHandler (valid: boolean): void {
       this.setAddressesFormValid(valid)
-      this.setValidateFlag()
     },
 
     directorsChange (modified: boolean) {
       this.haveChanges = true
       // when directors change, update filing data
       this.toggleFiling(modified ? 'add' : 'remove', 'OTCDR')
-    },
-
-    /**
-     * Callback method for the "valid" event from Certify.
-     *
-     * @param valid a boolean that is true if the certify form contains valid data.
-     */
-    certifyValidEventHandler (valid): void {
-      this.certifyFormValid = valid
     },
 
     async onClickSave () {
@@ -465,7 +480,7 @@ export default {
 
       const annualReport = {
         annualReport: {
-          annualGeneralMeetingDate: this.agmDate,
+          annualGeneralMeetingDate: this.noAGM ? null : this.agmDate,
           annualReportDate: this.annualReportDate,
           deliveryAddress: this.addresses['deliveryAddress'],
           mailingAddress: this.addresses['mailingAddress'],
@@ -565,44 +580,28 @@ export default {
       this.haveChanges = false
       this.dialog = false
       this.$router.push('/dashboard')
-    },
-
-    setValidateFlag () {
-      // compute the AR page's valid state
-      this.setValidated(this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.certifyFormValid)
-      this.isSaveButtonEnabled = this.agmDateValid && this.addressesFormValid && this.directorFormValid
     }
   },
 
   watch: {
-    agmDate (modified: boolean) {
+    agmDate (val: string) {
       this.haveChanges = true
       // when AGM Date changes, update filing data
-      this.toggleFiling(modified ? 'add' : 'remove', 'OTANN')
+      this.toggleFiling(val ? 'add' : 'remove', 'OTANN')
     },
 
-    noAGM (modified: boolean) {
+    noAGM (val: boolean) {
       this.haveChanges = true
       // when No AGM changes, update filing data
-      this.toggleFiling(modified ? 'add' : 'remove', 'OTANN')
+      this.toggleFiling(val ? 'add' : 'remove', 'OTANN')
     },
 
-    agmDateValid (val) {
-      this.setValidateFlag()
-    },
-
-    directorFormValid (val) {
-      this.setValidateFlag()
-    },
-
-    isCertified (val) {
+    isCertified (val: boolean) {
       this.haveChanges = true
-      this.setValidateFlag()
     },
 
-    certifiedBy (val) {
+    certifiedBy (val: string) {
       this.haveChanges = true
-      this.setValidateFlag()
     }
   }
 }
