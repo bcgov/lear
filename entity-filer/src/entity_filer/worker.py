@@ -87,7 +87,7 @@ def process_filing(payment_token, flask_app):
 
             for filing in legal_filings:
                 if filing.get('annualReport'):
-                    annual_report.process(business, filing, filing_submission.filing_date)
+                    annual_report.process(business, filing)
                 if filing.get('changeOfAddress'):
                     change_of_address.process(business, filing)
                 if filing.get('changeOfDirectors'):

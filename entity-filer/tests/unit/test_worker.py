@@ -18,7 +18,6 @@ import random
 
 import pytest
 
-from tests import EPOCH_DATETIME
 from tests.unit import AR_FILING, COA_FILING, COD_FILING, COMBINED_FILING, create_business, create_director, create_filing  # noqa I001, E501;
 
 
@@ -123,6 +122,7 @@ def test_process_ar_filing(app, session):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
     agm_date = datetime.date.fromisoformat(AR_FILING['filing']['annualReport'].get('annualGeneralMeetingDate'))
+    ar_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualReportDate'))
 
     # setup
     business = create_business(identifier)
@@ -142,7 +142,7 @@ def test_process_ar_filing(app, session):
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
     assert datetime.datetime.date(business.last_agm_date) == agm_date
-    assert business.last_ar_date.replace(tzinfo=None) == EPOCH_DATETIME
+    assert datetime.datetime.date(business.last_ar_date) == ar_date
 
 
 def test_process_coa_filing(app, session):
@@ -256,6 +256,7 @@ def test_process_combined_filing(app, session):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
     agm_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualGeneralMeetingDate'))
+    ar_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualReportDate'))
     new_delivery_address = COMBINED_FILING['filing']['changeOfAddress']['deliveryAddress']
     new_mailing_address = COMBINED_FILING['filing']['changeOfAddress']['mailingAddress']
     end_date = datetime.datetime.utcnow().date()
@@ -305,7 +306,7 @@ def test_process_combined_filing(app, session):
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
     assert datetime.datetime.date(business.last_agm_date) == agm_date
-    assert business.last_ar_date.replace(tzinfo=None) == EPOCH_DATETIME
+    assert datetime.datetime.date(business.last_ar_date) == ar_date
 
     # check address filing
     delivery_address = business.delivery_address.one_or_none().json
