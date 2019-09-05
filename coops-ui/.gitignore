@@ -9,6 +9,9 @@ selenium-debug.log
 .env.local
 .env.*.local
 
+# Configuration files
+/public/config/configuration.json
+
 # Log files
 npm-debug.log*
 yarn-debug.log*
