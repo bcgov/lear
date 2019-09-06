@@ -28,12 +28,13 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
     from entity_filer.worker import cb_subscription_handler
     from entity_filer.worker import get_filing_by_payment_id
     from legal_api.models import Business
-    from tests.unit import create_filing, AR_FILING, create_business, EPOCH_DATETIME
+    from tests.unit import create_filing, AR_FILING, create_business
 
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
     agm_date = datetime.date.fromisoformat(AR_FILING['filing']['annualReport'].get('annualGeneralMeetingDate'))
+    ar_date = datetime.date.fromisoformat(AR_FILING['filing']['annualReport'].get('annualReportDate'))
 
     # setup
     business = create_business(identifier)
@@ -60,4 +61,4 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
     assert filing.transaction_id
     assert filing.business_id == business_id
     assert datetime.datetime.date(business.last_agm_date) == agm_date
-    assert business.last_ar_date.replace(tzinfo=None) == EPOCH_DATETIME
+    assert datetime.datetime.date(business.last_ar_date) == ar_date

@@ -20,7 +20,9 @@ AR_FILING = {
     'filing': {
         'header': {
             'name': 'annualReport',
-            'date': '2001-08-05'
+            'date': '2001-08-05',
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get'
         },
         'business': {
             'cacheId': 1,
@@ -31,8 +33,7 @@ AR_FILING = {
         },
         'annualReport': {
             'annualGeneralMeetingDate': '2018-04-08',
-            'certifiedBy': 'full name',
-            'email': 'no_one@never.get',
+            'annualReportDate': '2018-04-08',
             'directors': [
                 {
                     'officer': {
@@ -93,7 +94,9 @@ COA_FILING = {
     'filing': {
         'header': {
             'name': 'changeOfAddress',
-            'date': '2019-07-30'
+            'date': '2019-07-30',
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get'
         },
         'business': {
             'cacheId': 1,
@@ -123,8 +126,6 @@ COA_FILING = {
                 'deliveryInstructions': 'Test address mailing',
                 'actions': ['addressChanged']
             },
-            'certifiedBy': 'full name',
-            'email': 'no_one@never.get'
         }
     }
 }
@@ -133,7 +134,9 @@ COD_FILING = {
     'filing': {
         'header': {
             'name': 'changeOfDirectors',
-            'date': '2019-07-29'
+            'date': '2019-07-29',
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get'
         },
         'business': {
             'cacheId': 1,
@@ -248,8 +251,6 @@ COD_FILING = {
                     'actions': ['appointed']
                 }
             ],
-            'certifiedBy': 'full name',
-            'email': 'no_one@never.get'
         }
     }
 }
@@ -258,7 +259,9 @@ COMBINED_FILING = {
     'filing': {
         'header': {
             'name': 'annualReport',
-            'date': '2019-07-28'
+            'date': '2019-07-28',
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get',
         },
         'business': {
             'cacheId': 1,
@@ -269,8 +272,10 @@ COMBINED_FILING = {
         },
         'annualReport': {
             'annualGeneralMeetingDate': '2019-04-08',
-            'certifiedBy': 'full name',
-            'email': 'no_one@never.get'
+            'annualReportDate': '2018-04-08',
+            'directors': COD_FILING['filing']['changeOfDirectors']['directors'],
+            'deliveryAddress': COA_FILING['filing']['changeOfAddress']['deliveryAddress'],
+            'mailingAddress': COA_FILING['filing']['changeOfAddress']['mailingAddress']
         },
         'changeOfAddress': COA_FILING['filing']['changeOfAddress'],
         'changeOfDirectors': COD_FILING['filing']['changeOfDirectors']
