@@ -90,6 +90,35 @@ class Report:  # pylint: disable=too-few-public-methods
     def _get_template_data(self):
         filing = copy.deepcopy(self._filing.filing_json['filing'])
 
+        # set registered office address from either the COA filing or status quo data in AR filing
+        try:
+            if filing.get('changeOfAddress'):
+                filing['registeredOfficeAddress'] = filing['changeOfAddress']
+            else:
+                filing['registeredOfficeAddress'] = {
+                    'deliveryAddress': filing['annualReport']['deliveryAddress'],
+                    'mailingAddress': filing['annualReport']['mailingAddress']
+                }
+
+        except KeyError:
+            pass
+
+        # set director list from either the COD filing or status quo data in AR filing
+        try:
+            if filing.get('changeOfDirectors'):
+                filing['listOfDirectors'] = filing['changeOfDirectors']
+            else:
+                filing['listOfDirectors'] = {
+                    'directors': filing['annualReport']['directors']
+                }
+
+            # create helper lists of appointed and ceased directors
+            directors = filing['listOfDirectors']['directors']
+            filing['listOfDirectors']['directorsAppointed'] = [el for el in directors if 'appointed' in el['actions']]
+            filing['listOfDirectors']['directorsCeased'] = [el for el in directors if 'ceased' in el['actions']]
+        except KeyError:
+            pass
+
         filing['environment'] = '{} FILING #{}'.format(self._get_environment(), self._filing.id)
 
         # Get the string for the filing date and time - do not use a leading zero on the hour (04:30 PM) as it looks

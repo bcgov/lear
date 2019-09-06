@@ -202,8 +202,8 @@
 {% if not director.cessationDate%}
         <div class="section-data no-page-break">
           <div class="title">
-            {{ director.officer.lastName }}{% if director.officer.middleName is defined %}
-            {{ director.officer.middleName }}{% endif %}, {{ director.officer.firstName }}
+            {{ director.officer.lastName }}{% if director.officer.middleInitial is defined %}
+            {{ director.officer.middleInitial }}{% endif %}, {{ director.officer.firstName }}
           </div>
           <div class="title">Delivery Address</div>
           <div>{{ director.deliveryAddress.streetAddress }}</div>
