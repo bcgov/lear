@@ -78,15 +78,15 @@ export default class Certify extends Vue {
   // Emit an update event.
   @Emit('update:isCertified')
   private emitIsCertified (val: boolean): boolean {
-    this.emitValid(this.certifiedBy && !!val)
+    this.emitValid(this.trimmedCertifiedBy && !!val)
 
-    return !!val
+    return val
   }
 
   // Emit an event indicating whether or not the form is valid.
   @Emit('valid')
   private emitValid (val: boolean): boolean {
-    return !!val
+    return val
   }
 }
 
