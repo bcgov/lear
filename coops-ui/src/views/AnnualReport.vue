@@ -174,7 +174,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
-import DateUtils from '@/DateUtils'
+import DateUtils from '@/date-utils'
 
 export default {
   name: 'AnnualReport',

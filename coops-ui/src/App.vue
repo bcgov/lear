@@ -52,7 +52,7 @@
 
 <script>
 import { mapActions } from 'vuex'
-import DateUtils from '@/DateUtils'
+import DateUtils from '@/date-utils'
 import axios from '@/axios-auth'
 import SbcHeader from 'sbc-common-components/src/components/SbcHeader.vue'
 import SbcFooter from 'sbc-common-components/src/components/SbcFooter.vue'

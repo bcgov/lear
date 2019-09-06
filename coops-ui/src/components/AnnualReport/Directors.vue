@@ -381,7 +381,7 @@ import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
 import { mapState, mapGetters } from 'vuex'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress'
-import DateUtils from '@/DateUtils'
+import DateUtils from '@/date-utils'
 
 // action constants
 const APPOINTED = 'appointed'

@@ -69,7 +69,7 @@
 import { Component, Mixins, Vue, Prop, Watch, Emit } from 'vue-property-decorator'
 import { isNotNull, isValidFormat, isValidYear, isValidMonth, isValidDay } from '@/validators'
 import { mapState, mapGetters } from 'vuex'
-import DateUtils from '@/DateUtils'
+import DateUtils from '@/date-utils'
 
 @Component({
   computed: {
