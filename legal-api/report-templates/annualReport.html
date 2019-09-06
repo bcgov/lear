@@ -1,3 +1,9 @@
+{# MACROS ie: reusable snippets of code #}
+{% macro labelNew() -%}
+    <span class="chip">New</span>
+{%- endmacro %}
+
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -154,6 +160,19 @@
         padding-top: 10px;
       }
 
+      .chip {
+        font-size: 8px;
+        padding: 3px 8px;
+        background-color: #222;
+        color: white;
+        border-radius: 2px;
+        margin: 0 3px;
+      }
+
+      .director-former-name {
+        font-weight: normal;
+      }
+
     </style>
   </head>
 
@@ -198,7 +217,7 @@
           </table>
         </div>
 
-{% if changeOfAddress is defined %}
+{% if registeredOfficeAddress is defined %}
         <div class="no-page-break">
           <div class="section-title">
             REGISTERED OFFICE ADDRESS INFORMATION
@@ -208,24 +227,24 @@
             <table class="section-data-table">
               <tr>
                 <td>
-                  <div class="title">Delivery Address</div>
-                  <div>{{ changeOfAddress.deliveryAddress.streetAddress }}</div>
-                  <div>{{ changeOfAddress.deliveryAddress.streetAddressAdditional }}</div>
-                  <div>{{ changeOfAddress.deliveryAddress.addressCity }}
-                    {{ changeOfAddress.deliveryAddress.addressRegion }}
-                    &nbsp;{{ changeOfAddress.deliveryAddress.postalCode }}</div>
-                  <div>{{ changeOfAddress.deliveryAddress.addressCountry }}</div>
-                  <div>{{ changeOfAddress.deliveryAddress.deliveryInstructions }}</div>
+                  <div class="title">Delivery Address {% if 'addressChanged' in registeredOfficeAddress.deliveryAddress.actions %}{{ labelNew() }}{% endif %}</div>
+                  <div>{{ registeredOfficeAddress.deliveryAddress.streetAddress }}</div>
+                  <div>{{ registeredOfficeAddress.deliveryAddress.streetAddressAdditional }}</div>
+                  <div>{{ registeredOfficeAddress.deliveryAddress.addressCity }}
+                    {{ registeredOfficeAddress.deliveryAddress.addressRegion }}
+                    &nbsp;{{ registeredOfficeAddress.deliveryAddress.postalCode }}</div>
+                  <div>{{ registeredOfficeAddress.deliveryAddress.addressCountry }}</div>
+                  <div>{{ registeredOfficeAddress.deliveryAddress.deliveryInstructions }}</div>
                 </td>
                 <td>
-                  <div class="title">Mailing Address</div>
-                  <div>{{ changeOfAddress.mailingAddress.streetAddress }}</div>
-                  <div>{{ changeOfAddress.mailingAddress.streetAddressAdditional }}</div>
-                  <div>{{ changeOfAddress.mailingAddress.addressCity }}
-                    {{ changeOfAddress.mailingAddress.addressRegion }}
-                    &nbsp;{{ changeOfAddress.mailingAddress.postalCode }}</div>
-                  <div>{{ changeOfAddress.mailingAddress.addressCountry }}</div>
-                  <div>{{ changeOfAddress.mailingAddress.deliveryInstructions }}</div>
+                  <div class="title">Mailing Address {% if 'addressChanged' in registeredOfficeAddress.mailingAddress.actions %}{{ labelNew() }}{% endif %}</div>
+                  <div>{{ registeredOfficeAddress.mailingAddress.streetAddress }}</div>
+                  <div>{{ registeredOfficeAddress.mailingAddress.streetAddressAdditional }}</div>
+                  <div>{{ registeredOfficeAddress.mailingAddress.addressCity }}
+                    {{ registeredOfficeAddress.mailingAddress.addressRegion }}
+                    &nbsp;{{ registeredOfficeAddress.mailingAddress.postalCode }}</div>
+                  <div>{{ registeredOfficeAddress.mailingAddress.addressCountry }}</div>
+                  <div>{{ registeredOfficeAddress.mailingAddress.deliveryInstructions }}</div>
                 </td>
               </tr>
             </table>
@@ -233,18 +252,87 @@
         </div>
 {% endif %}
 
-{% if changeOfDirectors is defined %}
+
+{% if listOfDirectors is defined %}
+
+    {# APPOINTED #}
+
         <div class="section-title">
-          DIRECTOR INFORMATION AS OF {{ agm_date.upper() }}
+          NEW DIRECTORS APPOINTED OR ELECTED
         </div>
-{% for director in changeOfDirectors.directors %}
+{% for director in listOfDirectors.directorsAppointed %}
+        <div class="section-data no-page-break">
+          <div class="title">
+            {{ director.officer.lastName }},
+            {{ director.officer.firstName }}
+            {% if director.officer.middleInitial is defined %}{{ director.officer.middleInitial }}{% endif %}
+          </div>
+          <div class="title">Address</div>
+          <div>{{ director.deliveryAddress.streetAddress }}</div>
+          <div>{{ director.deliveryAddress.streetAddressAdditional }}</div>
+          <div>{{ director.deliveryAddress.addressCity }}
+            {{ director.deliveryAddress.addressRegion }}
+            &nbsp;{{ director.deliveryAddress.postalCode }}</div>
+          <div>{{ director.deliveryAddress.addressCountry }}</div>
+          <div>{{ director.deliveryAddress.deliveryInstructions }}</div>
+        </div>
+        {% if not loop.last %}
+        <div class="director-separator"></div>
+        {% endif %}
+{% else %}
+      None.
+{% endfor %}
+
+    {# CEASED #}
+
+        <div class="section-title">
+          CEASED DIRECTORS
+        </div>
+{% for director in listOfDirectors.directorsCeased %}
+        <div class="section-data no-page-break">
+          <div class="title">
+            {{ director.officer.lastName }},
+            {{ director.officer.firstName }}
+            {% if director.officer.middleInitial is defined %}{{ director.officer.middleInitial }}{% endif %}
+          </div>
+          <div class="title">Address</div>
+          <div>{{ director.deliveryAddress.streetAddress }}</div>
+          <div>{{ director.deliveryAddress.streetAddressAdditional }}</div>
+          <div>{{ director.deliveryAddress.addressCity }}
+            {{ director.deliveryAddress.addressRegion }}
+            &nbsp;{{ director.deliveryAddress.postalCode }}</div>
+          <div>{{ director.deliveryAddress.addressCountry }}</div>
+          <div>{{ director.deliveryAddress.deliveryInstructions }}</div>
+        </div>
+        {% if not loop.last %}
+        <div class="director-separator"></div>
+        {% endif %}
+{% else %}
+      None.
+{% endfor %}
+
+    {# ALL CURRENT #}
+
+        <div class="section-title">
+          ALL DIRECTORS AS OF {{ agm_date.upper() }}
+        </div>
+{% for director in listOfDirectors.directors %}
 {% if not director.cessationDate%}
         <div class="section-data no-page-break">
           <div class="title">
-            {{ director.officer.lastName }}{% if director.officer.middleName is defined %}
-            {{ director.officer.middleName }}{% endif %}, {{ director.officer.firstName }}
+            {{ director.officer.lastName }},
+            {{ director.officer.firstName }}
+            {% if director.officer.middleInitial is defined %}{{ director.officer.middleInitial }}{% endif %}
+            {% if 'appointed' in director.actions %}{{ labelNew() }}{% endif %}
+            {% if 'nameChanged' in director.actions %}
+                <span class="director-former-name">
+                    (Formerly {{ director.officer.prevLastName }},
+                    {{ director.officer.prevFirstName }} {{ director.officer.prevMiddleInitial }}
+                    )
+                </span>
+            {% endif %}
           </div>
-          <div class="title">Delivery Address</div>
+          <div class="title">Address {% if 'addressChanged' in director.actions %}{{ labelNew() }}{% endif %}</div>
           <div>{{ director.deliveryAddress.streetAddress }}</div>
           <div>{{ director.deliveryAddress.streetAddressAdditional }}</div>
           <div>{{ director.deliveryAddress.addressCity }}
@@ -257,6 +345,8 @@
         <div class="director-separator"></div>
         {% endif %}
 {% endif %}
+{% else %}
+      None.
 {% endfor %}
 {% endif %}
 
