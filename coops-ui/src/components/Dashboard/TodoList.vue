@@ -35,9 +35,9 @@
             <div class="list-item__actions">
               <v-btn color="primary" v-if="isDraft(item)" :disabled="!item.enabled"
                 @click.native.stop="doResumeFiling(item)">Resume</v-btn>
-              <v-btn color="primary" v-else-if="isPending(item)" :disabled="!item.enabled"
+              <v-btn color="primary" v-else-if="isPending(item)" :disabled="!item.enabled || isRoleStaff"
                 @click.native.stop="doResumePayment(item)">Resume Payment</v-btn>
-              <v-btn color="primary" v-else-if="isError(item)" :disabled="!item.enabled"
+              <v-btn color="primary" v-else-if="isError(item)" :disabled="!item.enabled || isRoleStaff"
                 @click.native.stop="doResumePayment(item)">Retry Payment</v-btn>
               <v-btn color="primary" v-else-if="!isCompleted(item)" :disabled="!item.enabled"
                 @click.native.stop="doFileNow(item)">File Now</v-btn>
@@ -78,7 +78,7 @@
 
 <script>
 import Vue2Filters from 'vue2-filters'
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapActions, mapGetters } from 'vuex'
 
 export default {
   name: 'TodoList',
@@ -92,7 +92,9 @@ export default {
   },
 
   computed: {
-    ...mapState(['tasks'])
+    ...mapState(['tasks']),
+
+    ...mapGetters(['isRoleStaff'])
   },
 
   created () {

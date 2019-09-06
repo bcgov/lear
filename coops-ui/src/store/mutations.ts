@@ -1,4 +1,7 @@
 export default {
+  roles (state, roles) {
+    state.roles = roles
+  },
   corpNum (state, corpNum) {
     state.corpNum = corpNum
   },

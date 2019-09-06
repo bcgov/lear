@@ -89,7 +89,7 @@
               id="coa-file-pay-btn"
               color="primary"
               large
-              :disabled="!validated || filingPaying"
+              :disabled="!validated || filingPaying || isRoleStaff"
               :loading="filingPaying"
               @click="onClickFilePay">
               File &amp; Pay
@@ -114,7 +114,7 @@ import axios from '@/axios-auth'
 import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
-import { mapState, mapActions, mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import { PAYMENT_REQUIRED, BAD_REQUEST } from 'http-status-codes'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -159,6 +159,8 @@ export default {
 
   computed: {
     ...mapState(['currentDate', 'corpNum', 'entityName', 'entityIncNo', 'entityFoundingDate']),
+
+    ...mapGetters(['isRoleStaff']),
 
     validated () {
       return (this.isCertified && this.officeAddressFormValid && this.filingData.length > 0)

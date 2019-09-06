@@ -1,6 +1,8 @@
 <template>
   <v-app class="app-container theme--light" id="app">
 
+    <div id="staffView" v-if="isRoleStaff">*** STAFF VIEW ***</div>
+
     <!-- Initial Page Load Transition -->
     <div class="loading-container fade-out">
       <div class="loading__content">
@@ -51,7 +53,7 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex'
+import { mapGetters, mapActions } from 'vuex'
 import DateUtils from '@/date-utils'
 import axios from '@/axios-auth'
 import SbcHeader from 'sbc-common-components/src/components/SbcHeader.vue'
@@ -77,6 +79,8 @@ export default {
   },
 
   computed: {
+    ...mapGetters(['isRoleStaff']),
+
     authAPIURL () {
       return sessionStorage.getItem('AUTH_API_URL')
     }
@@ -90,32 +94,46 @@ export default {
   methods: {
     ...mapActions(['setCorpNum', 'setCurrentDate', 'setEntityName', 'setEntityStatus', 'setEntityBusinessNo',
       'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate', 'setTasks',
-      'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors']),
+      'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors', 'setRoles']),
 
     fetchData () {
       let corpNum = null
 
       // first try synchronous operations
       try {
-        // get Keycloak Token
+        // get and parse Keycloak Token
         const token = sessionStorage.getItem('KEYCLOAK_TOKEN')
         if (!token) {
           throw new Error('Keycloak Token is null')
         }
+        const jwt = this.parseJwt(token)
+        // console.log('JWT =', jwt)
 
-        // decode Username
-        const username = this.parseJwt(token).preferred_username
-        if (!username) {
-          throw new Error('Username is null')
+        // get Username
+        // const username = jwt.preferred_username
+        // if (!username) {
+        //   throw new Error('Username is null')
+        // }
+        // sessionStorage.setItem('USERNAME', username)
+        // this.setUsername(username) // TODO: implement this if needed
+
+        // get Roles
+        const roles = jwt.roles
+        if (!roles || !roles.length) {
+          throw new Error('Roles is null')
         }
+        this.setRoles(roles)
+
+        // get Corp Num
+        // corpNum = sessionStorage.getItem('CORP_NUM') // FUTURE
+        corpNum = jwt.preferred_username && jwt.preferred_username.toUpperCase()
+        if (!corpNum) {
+          throw new Error('Corp Num is null')
+        }
+        this.setCorpNum(corpNum)
 
         // set current date
         this.updateCurrentDate()
-
-        // save tombstone data
-        sessionStorage.setItem('USERNAME', username)
-        corpNum = username.toUpperCase()
-        this.setCorpNum(corpNum)
       } catch (error) {
         console.error(error)
         this.dashboardUnavailableDialog = true
@@ -266,4 +284,14 @@ export default {
   @import "./assets/styles/base.styl"
   @import "./assets/styles/layout.styl"
   @import "./assets/styles/overrides.styl"
+
+  #staffView
+    position fixed
+    top 22px
+    right 185px
+    font-weight bold
+    letter-spacing 2px
+    color white
+    opacity 0.5
+    z-index 99
 </style>

@@ -14,20 +14,21 @@ Vue.use(Vuelidate)
 
 describe('App', () => {
   // just need a token that can get parsed properly (will be expired but doesn't matter for tests)
-  // note - the corp num in this token is CP0001191
-  sessionStorage.setItem('KEYCLOAK_TOKEN', 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUbWdtZUk0MnVsdUZ0N' +
-    '3FQbmUtcTEzdDUwa0JDbjF3bHF6dHN0UGdUM1dFIn0.eyJqdGkiOiIxYzQ2YjIzOS02ZWY0LTQxYTQtYThmMy05N2M5M2IyNmNlMjAiLCJle' +
-    'HAiOjE1NTcxNzMyNTYsIm5iZiI6MCwiaWF0IjoxNTU3MTY5NjU2LCJpc3MiOiJodHRwczovL3Nzby1kZXYucGF0aGZpbmRlci5nb3YuYmMuY2' +
-    'EvYXV0aC9yZWFsbXMvZmNmMGtwcXIiLCJhdWQiOiJzYmMtYXV0aC13ZWIiLCJzdWIiOiIwMzZlN2I4Ny0zZTQxLTQ2MTMtYjFiYy04NWU5OTA' +
-    'xNTgzNzAiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJzYmMtYXV0aC13ZWIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiJkOGZmYjk4' +
-    'OS0zNzRlLTRhYTktODc4OS03YTRkODA1ZjNkOTAiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly8xOTIuMTY4LjAuMTM6O' +
-    'DA4MC8iLCIxOTIuMTY4LjAuMTMiLCIqIiwiaHR0cDovLzE5Mi4xNjguMC4xMzo4MDgwIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJlZGl' +
-    '0IiwidW1hX2F1dGhvcml6YXRpb24iLCJiYXNpYyJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY' +
-    '291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInByZWZlcnJlZF91c2VybmFtZSI6ImNwMDAwMTE5MSJ9.Ou' +
-    'JLtzYCnkp5KXSiudGFJY6hTSvdE3KokhkEzqU-icxAzQwZSTYbzZQdGsIScy4-DIWHahIGp9L-e6mYlQSQta2rK2Kte85MxThubyw0096UOtAE' +
-    'wnS9VURHXPUm4ZUyI4ECkyLlFywOPxAftNdeSYeJx26GHBCvo6uR9Zv6A3yTlJy3B1HJxBWk_6xTAzGPPDCLoyKGeIxGidGujKCKCAfXRMrjhX' +
-    'yBv90XzDgZ-To-6_jMjSjBX6Dtq7icdZYLWWDdrhjCpJA5CKS0PlSgeH1Yq4rHd8Ztp5cvVdJFxt87gIopIOQvcy4ji0gtaovgUhiyg07gXGl8' +
-    'dGZwn1tpLA')
+  // note - the corp num in this token is CP0001364
+  sessionStorage.setItem('KEYCLOAK_TOKEN', 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUbWdtZUk0MnVsdUZ0N3' +
+    'FQbmUtcTEzdDUwa0JDbjF3bHF6dHN0UGdUM1dFIn0.eyJqdGkiOiJlMmJlNDc5Yi0zYTkzLTRhNjAtYmZhNi1hZjM4MWE2YTBmNGMiLCJleHA' +
+    'iOjE1Njc4ODQ4NjMsIm5iZiI6MCwiaWF0IjoxNTY3Nzk4NDYzLCJpc3MiOiJodHRwczovL3Nzby1kZXYucGF0aGZpbmRlci5nb3YuYmMuY2Ev' +
+    'YXV0aC9yZWFsbXMvZmNmMGtwcXIiLCJhdWQiOlsic2JjLWF1dGgtd2ViIiwiYWNjb3VudCJdLCJzdWIiOiIwMmNiNjhiNC00M2UyLTRmYmEtY' +
+    'TI2Yi1hZWNiMGRhOTlhYzciLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJzYmMtYXV0aC13ZWIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdG' +
+    'UiOiI5NGU2N2ZjNy0xMDg3LTRmZjItYTNlOC1mMWU5ZjkzMzIxNjciLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly8xOTI' +
+    'uMTY4LjAuMTM6ODA4MC8iLCIxOTIuMTY4LjAuMTMiLCIqIiwiaHR0cDovLzE5Mi4xNjguMC4xMzo4MDgwIl0sInJlYWxtX2FjY2VzcyI6eyJy' +
+    'b2xlcyI6WyJlZGl0Iiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImJhc2ljIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiY' +
+    'WNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcG' +
+    'UiOiIiLCJyb2xlcyI6WyJlZGl0Iiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImJhc2ljIl0sInByZWZlcnJlZF91c2V' +
+    'ybmFtZSI6ImNwMDAwMTM2NCIsImxvZ2luU291cmNlIjoiUEFTU0NPREUiLCJ1c2VybmFtZSI6ImNwMDAwMTM2NCJ9.VfTdZ2ZnZyUjkFiztA8' +
+    'LRkaijPbHAddm0QmMGgEIDv9Z3EGHaYtTs2L3cSH_bYdUjjclwGwt0GIz3DOHviS8yXuwkzRVHI8W3mdY1dionkqU26_miA10Yxl1ZnFmQpZc' +
+    'MHmS4dMcb-_CU6ysgemiO8wonalqLb7Lz01Zd1h2NCyTC4Twk3BFuZNHlXiaXWVaF2UgtQI1Gf7XfRCPQhdLLYPt6mzL_nEnRveCOdqXVM6XK' +
+    'OPjpHUIMONexFGbojmRsCg5w-qQrXYY8m-lA17GLdlCCAtrJXlS0mLbFr1jQL0eroqtrFm9WoQByVaso5Kx_n7wXx4h3BjunSJuqsJCmA')
 
   let wrapper
   let vm
@@ -36,7 +37,7 @@ describe('App', () => {
     const get = sinon.stub(axios, 'get')
 
     // GET entity info
-    get.withArgs('CP0001191')
+    get.withArgs('CP0001364')
       .returns(new Promise((resolve) => resolve({
         data:
           {
@@ -44,7 +45,7 @@ describe('App', () => {
               legalName: 'TEST NAME',
               status: 'GOODSTANDING',
               taxId: '123456789',
-              identifier: 'CP0001191',
+              identifier: 'CP0001364',
               lastLedgerTimestamp: '2019-08-14T22:27:12+00:00',
               foundingDate: '2000-07-13T00:00:00+00:00',
               lastAnnualGeneralMeetingDate: '2019-08-16'
@@ -53,7 +54,7 @@ describe('App', () => {
       })))
 
     // GET tasks
-    get.withArgs('CP0001191/tasks')
+    get.withArgs('CP0001364/tasks')
       .returns(new Promise((resolve) => resolve({
         data:
           {
@@ -102,7 +103,7 @@ describe('App', () => {
       })))
 
     // GET filings
-    get.withArgs('CP0001191/filings')
+    get.withArgs('CP0001364/filings')
       .returns(new Promise((resolve) => resolve({
         data:
           {
@@ -152,7 +153,7 @@ describe('App', () => {
       })))
 
     // GET addresses
-    get.withArgs('CP0001191/addresses')
+    get.withArgs('CP0001364/addresses')
       .returns(new Promise((resolve) => resolve({
         data:
           {
@@ -174,7 +175,7 @@ describe('App', () => {
       })))
 
     // GET directors
-    get.withArgs('CP0001191/directors')
+    get.withArgs('CP0001364/directors')
       .returns(new Promise((resolve) => resolve({
         data:
           {
@@ -226,8 +227,17 @@ describe('App', () => {
     wrapper.destroy()
   })
 
+  it('decodes Roles properly', () => {
+    expect(vm.$store.state.roles).toEqual([
+      'edit',
+      'offline_access',
+      'uma_authorization',
+      'basic'
+    ])
+  })
+
   it('decodes Corp Num properly', () => {
-    expect(vm.$store.state.corpNum).toEqual('CP0001191')
+    expect(vm.$store.state.corpNum).toEqual('CP0001364')
   })
 
   it('initializes Current Date properly', () => {
@@ -243,7 +253,7 @@ describe('App', () => {
     expect(vm.$store.state.entityName).toBe('TEST NAME')
     expect(vm.$store.state.entityStatus).toBe('GOODSTANDING')
     expect(vm.$store.state.entityBusinessNo).toBe('123456789')
-    expect(vm.$store.state.entityIncNo).toBe('CP0001191')
+    expect(vm.$store.state.entityIncNo).toBe('CP0001364')
     expect(vm.$store.state.lastPreLoadFilingDate).toBe('2019-08-14')
     expect(vm.$store.state.entityFoundingDate).toBe('2000-07-13')
     expect(vm.$store.state.lastAgmDate).toBe('2019-08-16')

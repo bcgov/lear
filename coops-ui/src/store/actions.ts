@@ -1,4 +1,7 @@
 export default {
+  setRoles ({ commit }, roles) {
+    commit('roles', roles)
+  },
   setCorpNum ({ commit }, corpNum) {
     commit('corpNum', corpNum)
   },

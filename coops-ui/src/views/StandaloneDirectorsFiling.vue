@@ -94,7 +94,7 @@
               id="cod-file-pay-btn"
               color="primary"
               large
-              :disabled="!validated || filingPaying"
+              :disabled="!validated || filingPaying || isRoleStaff"
               :loading="filingPaying"
               @click="onClickFilePay">
               File &amp; Pay
@@ -119,7 +119,7 @@ import axios from '@/axios-auth'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import { BAD_REQUEST, PAYMENT_REQUIRED } from 'http-status-codes'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -165,6 +165,8 @@ export default {
 
   computed: {
     ...mapState(['currentDate', 'corpNum', 'entityName', 'entityIncNo', 'entityFoundingDate']),
+
+    ...mapGetters(['isRoleStaff']),
 
     validated () {
       return (this.isCertified && this.directorFormValid && this.filingData.length > 0)

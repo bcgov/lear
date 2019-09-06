@@ -140,7 +140,7 @@
               id="ar-file-pay-btn"
               color="primary"
               large
-              :disabled="!validated || filingPaying"
+              :disabled="!validated || filingPaying || isRoleStaff"
               :loading="filingPaying"
               @click="onClickFilePay">
               File &amp; Pay
@@ -237,7 +237,7 @@ export default {
     ...mapState(['currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate',
       'entityName', 'entityIncNo', 'entityFoundingDate']),
 
-    ...mapGetters(['isAnnualReportEditable', 'reportState']),
+    ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState']),
 
     annualReportDate () {
       // AR Filing Year, but as a date field with today's month and day

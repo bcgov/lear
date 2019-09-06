@@ -1,4 +1,8 @@
 export default {
+  isRoleStaff: state => {
+    return state.roles.includes('staff')
+  },
+
   isAnnualReportEditable: state => {
     return (state.currentFilingStatus === 'NEW' || state.currentFilingStatus === 'DRAFT')
   },
