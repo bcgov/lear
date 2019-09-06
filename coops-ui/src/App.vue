@@ -109,11 +109,13 @@ export default {
           throw new Error('Username is null')
         }
 
+        // set current date
+        this.updateCurrentDate()
+
         // save tombstone data
         sessionStorage.setItem('USERNAME', username)
         corpNum = username.toUpperCase()
         this.setCorpNum(corpNum)
-        this.setCurrentDate(this.dateToUsableString(new Date()))
       } catch (error) {
         console.error(error)
         this.dashboardUnavailableDialog = true
@@ -151,6 +153,17 @@ export default {
       } catch (error) {
         throw new Error('error parsing JWT - ' + error)
       }
+    },
+
+    updateCurrentDate () {
+      const now = new Date()
+      this.setCurrentDate(this.dateToUsableString(now))
+      // set timeout to run this again at midnight
+      const hoursToMidnight = 23 - now.getHours()
+      const minutesToMidnight = 59 - now.getMinutes()
+      const secondsToMidnight = 59 - now.getSeconds()
+      const timeout = ((((hoursToMidnight * 60) + minutesToMidnight) * 60) + secondsToMidnight) * 1000
+      setTimeout(this.updateCurrentDate, timeout)
     },
 
     storeEntityInfo (response) {
