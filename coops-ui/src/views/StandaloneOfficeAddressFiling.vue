@@ -83,18 +83,21 @@
         </div>
 
         <div class="buttons-right">
-          <v-tooltip bottom>
+          <v-tooltip top color="#3b6cff">
             <v-btn
               slot="activator"
               id="coa-file-pay-btn"
               color="primary"
               large
-              :disabled="!validated || filingPaying || isRoleStaff"
+              :depressed="isRoleStaff"
+              :ripple="!isRoleStaff"
+              :disabled="!validated || filingPaying"
               :loading="filingPaying"
               @click="onClickFilePay">
               File &amp; Pay
             </v-btn>
-            <span>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
+            <span v-if="isRoleStaff">Staff are not allowed to File.</span>
+            <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
               There is no opportunity to change information beyond this point.</span>
           </v-tooltip>
           <v-btn
@@ -323,6 +326,9 @@ export default {
     },
 
     async onClickFilePay () {
+      // staff are not allowed to file
+      if (this.isRoleStaff) return
+
       this.filingPaying = true
       const filing = await this.saveFiling(false)
       // on success, redirect to Pay URL
