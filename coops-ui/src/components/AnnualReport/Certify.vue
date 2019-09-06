@@ -7,14 +7,18 @@
         </label>
         <div class="value certifiedby">
           <v-text-field
-            id="certified-by-textfield"
-            v-model="certifyTextField"
-            label="Name of current director, officer, or lawyer of the association"
             box
+            id="certified-by-textfield"
+            label="Name of current director, officer, or lawyer of the association"
+            :value="certifiedBy"
+            @input="emitCertifiedBy"
           />
         </div>
       </div>
-      <v-checkbox v-model="certifyCheckbox">
+      <v-checkbox
+        :value="isCertified"
+        @change="emitIsCertified"
+      >
         <template slot="label">
           <div class="certify-stmt">
             I, <b>{{trimmedCertifiedBy || '[Legal Name]'}}</b>, certify that I have relevant knowledge of the
@@ -33,24 +37,11 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Watch, Emit } from 'vue-property-decorator'
-import { mapState } from 'vuex'
 
-@Component({
-  computed: {
-    // Property definition for runtime environment.
-    ...mapState({ currentDate: 'currentDate' })
-  }
-})
+import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
+
+@Component
 export default class Certify extends Vue {
-  // Local definition of computed property for static type checking.
-  // Use non-null assertion operator to allow use before assignment.
-  readonly currentDate!: string
-
-  // Model properties for the Text Field and Checkbox controls.
-  private certifyTextField: string = ''
-  private certifyCheckbox: boolean = false
-
   // Props passed into this component.
   @Prop({ default: '' })
   private certifiedBy: string
@@ -58,58 +49,47 @@ export default class Certify extends Vue {
   @Prop({ default: false })
   private isCertified: boolean
 
+  @Prop({ default: '' })
+  private currentDate: string
+
+  /**
+   * Lifecycle callback to always give the parent a "valid" event for its property values.
+   */
+  private created (): void {
+    this.emitValid(this.trimmedCertifiedBy && this.isCertified)
+  }
+
   /**
    * Computed value.
    * @return The trimmed "Certified By" string (may be '').
    */
   private get trimmedCertifiedBy (): string {
-    return this.certifyTextField && this.certifyTextField.trim()
-  }
-
-  /**
-   * Computed value.
-   * @return Whether or not this component (form) is valid.
-   */
-  private get isCertifyValid (): boolean {
-    return !!(this.certifyCheckbox && this.trimmedCertifiedBy)
-  }
-
-  // When prop changes, update text field.
-  @Watch('certifiedBy')
-  private onCertifiedByChanged (val): void {
-    this.certifyTextField = val
-  }
-
-  // When prop changes, update checkbox.
-  @Watch('isCertified')
-  private onIsCertifiedChanged (val): void {
-    this.certifyCheckbox = val
-  }
-
-  // When the trimmed "Certified By" string changes, signal the parent.
-  @Watch('trimmedCertifiedBy')
-  private ontrimmedCertifiedByChanged (val): void {
-    this.emitCertifiedBy(val)
-  }
-
-  // When this form's validity changes, signal the parent.
-  @Watch('isCertifyValid')
-  private onIsCertifyValidChanged (val): void {
-    this.emitIsCertified(val)
+    return this.certifiedBy && this.certifiedBy.trim()
   }
 
   // Emit an update event.
   @Emit('update:certifiedBy')
-  private emitCertifiedBy (val) {
+  private emitCertifiedBy (val: string): string {
+    this.emitValid(val && val.trim() && this.isCertified)
+
     return val
   }
 
   // Emit an update event.
   @Emit('update:isCertified')
-  private emitIsCertified (val) {
+  private emitIsCertified (val: boolean): boolean {
+    this.emitValid(this.trimmedCertifiedBy && !!val)
+
+    return val
+  }
+
+  // Emit an event indicating whether or not the form is valid.
+  @Emit('valid')
+  private emitValid (val: boolean): boolean {
     return val
   }
 }
+
 </script>
 
 <style lang="stylus" scoped>
