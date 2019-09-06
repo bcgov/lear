@@ -395,8 +395,11 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
+      const button = wrapper.find('#ar-file-pay-btn')
+      expect(button.attributes('disabled')).toBeUndefined()
+
       // click the File & Pay button
-      wrapper.find('#ar-file-pay-btn').trigger('click')
+      button.trigger('click')
       // work-around because click trigger isn't working
       await vm.onClickFilePay()
 
@@ -430,14 +433,39 @@ describe('AnnualReport - Part 3 - Submitting', () => {
     // sanity check
     expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
+    const button = wrapper.find('#ar-file-pay-btn')
+    expect(button.attributes('disabled')).toBeUndefined()
+
     // click the File & Pay button
-    wrapper.find('#ar-file-pay-btn').trigger('click')
+    button.trigger('click')
     // work-around because click trigger isn't working
     await vm.onClickFilePay()
 
     // verify redirection
     const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+    wrapper.destroy()
+  })
+
+  it('disables File & Pay button if user has \'staff\' role', async () => {
+    // init store
+    store.state.roles = ['staff']
+
+    const $route = { params: { id: '123' } } // draft filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm = wrapper.vm as any
+
+    // make sure form is validated
+    vm.setValidated(true)
+
+    // stub address data
+    vm.addresses = {
+      'deliveryAddress': {},
+      'mailingAddress': {}
+    }
+
+    expect(wrapper.find('#ar-file-pay-btn').attributes('disabled')).toBe('true')
 
     wrapper.destroy()
   })

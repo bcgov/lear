@@ -338,14 +338,19 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
       // make sure form is validated
       vm.officeAddressFormValid = true
       vm.isCertified = true
+      vm.filingData = [{}] // dummy data
+      expect(vm.validated).toEqual(true)
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
       // TODO: verify that new filing was created
 
+      const button = wrapper.find('#coa-file-pay-btn')
+      expect(button.attributes('disabled')).toBeUndefined()
+
       // click the File & Pay button
-      wrapper.find('#coa-file-pay-btn').trigger('click')
+      button.trigger('click')
       // work-around because click trigger isn't working
       await vm.onClickFilePay()
 
@@ -367,20 +372,44 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
     // make sure form is validated
     vm.officeAddressFormValid = true
     vm.isCertified = true
+    vm.filingData = [{}] // dummy data
+    expect(vm.validated).toEqual(true)
 
     // sanity check
     expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
     // TODO: verify that draft filing was fetched
 
+    const button = wrapper.find('#coa-file-pay-btn')
+    expect(button.attributes('disabled')).toBeUndefined()
+
     // click the File & Pay button
-    wrapper.find('#coa-file-pay-btn').trigger('click')
+    button.trigger('click')
     // work-around because click trigger isn't working
     await vm.onClickFilePay()
 
     // verify redirection
     const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+    wrapper.destroy()
+  })
+
+  it('disables File & Pay button if user has \'staff\' role', async () => {
+    // init store
+    store.state.roles = ['staff']
+
+    const $route = { params: { id: '123' } } // draft filing id
+    const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
+    const vm = wrapper.vm as any
+
+    // make sure form is validated
+    vm.officeAddressFormValid = true
+    vm.isCertified = true
+    vm.filingData = [{}] // dummy data
+    expect(vm.validated).toEqual(true)
+
+    expect(wrapper.find('#coa-file-pay-btn').attributes('disabled')).toBe('true')
 
     wrapper.destroy()
   })

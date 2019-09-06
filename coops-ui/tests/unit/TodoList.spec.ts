@@ -528,6 +528,7 @@ describe('TodoList - Click Tests', () => {
 
       const item = vm.$el.querySelector('.list-item')
       const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.getAttribute('disabled')).toBeNull()
       expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume Payment')
 
       await button.click()
@@ -572,6 +573,7 @@ describe('TodoList - Click Tests', () => {
     Vue.nextTick(async () => {
       const item = vm.$el.querySelector('.list-item')
       const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.getAttribute('disabled')).toBeNull()
       expect(button.querySelector('.v-btn__content').textContent).toEqual('Retry Payment')
 
       await button.click()
@@ -579,6 +581,89 @@ describe('TodoList - Click Tests', () => {
       // verify redirection
       const payURL = '/makepayment/987/' + encodeURIComponent('/dashboard?filing_id=789')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+      wrapper.destroy()
+      done()
+    })
+  })
+
+  it('disables Resume Payment button if user has \'staff\' role', done => {
+    // init store
+    store.state.roles = ['staff']
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'PENDING',
+              'filingId': 456,
+              'paymentToken': 654
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(async () => {
+      expect(vm.taskItems.length).toEqual(1)
+
+      const item = vm.$el.querySelector('.list-item')
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button)
+      expect(button.getAttribute('disabled')).toBe('disabled')
+      expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume Payment')
+
+      wrapper.destroy()
+      done()
+    })
+  })
+
+  it('disables Retry Payment button if user has \'staff\' role', done => {
+    // init store
+    store.state.roles = ['staff']
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'ERROR',
+              'filingId': 789,
+              'paymentToken': 987
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(async () => {
+      const item = vm.$el.querySelector('.list-item')
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.getAttribute('disabled')).toBe('disabled')
+      expect(button.querySelector('.v-btn__content').textContent).toEqual('Retry Payment')
 
       wrapper.destroy()
       done()

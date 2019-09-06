@@ -335,7 +335,7 @@ export default {
             if (annualReport) {
               // set the Draft Date in the Directors List component
               // TODO: use props instead of $refs (which cause an error in the unit tests)
-              if (this.$refs.directorsList.setDraftDate) {
+              if (this.$refs.directorsList && this.$refs.directorsList.setDraftDate) {
                 this.$refs.directorsList.setDraftDate(annualReport.annualGeneralMeetingDate)
               }
               // set the Initial AGM Date in the AGM Date component
@@ -350,7 +350,7 @@ export default {
             const changeOfDirectors = filing.changeOfDirectors
             if (changeOfDirectors) {
               if (changeOfDirectors.directors && changeOfDirectors.directors.length > 0) {
-                if (this.$refs.directorsList.setAllDirectors) {
+                if (this.$refs.directorsList && this.$refs.directorsList.setAllDirectors) {
                   this.$refs.directorsList.setAllDirectors(changeOfDirectors.directors)
                 }
                 this.toggleFiling('add', 'OTCDR')
@@ -359,7 +359,7 @@ export default {
               }
             } else {
               // To handle the condition of save as draft without change of director
-              if (this.$refs.directorsList.getDirectors) {
+              if (this.$refs.directorsList && this.$refs.directorsList.getDirectors) {
                 this.$refs.directorsList.getDirectors()
               }
             }

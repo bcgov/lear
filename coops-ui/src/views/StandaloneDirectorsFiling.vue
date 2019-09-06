@@ -420,7 +420,7 @@ export default {
             const changeOfDirectors = filing.changeOfDirectors
             if (changeOfDirectors) {
               if (changeOfDirectors.directors && changeOfDirectors.directors.length > 0) {
-                if (this.$refs.directorsList.setAllDirectors) {
+                if (this.$refs.directorsList && this.$refs.directorsList.setAllDirectors) {
                   this.$refs.directorsList.setAllDirectors(changeOfDirectors.directors)
                 }
                 this.toggleFiling('add', 'OTCDR')
@@ -429,7 +429,7 @@ export default {
               }
             } else {
               // To handle the condition of save as draft without change of director
-              if (this.$refs.directorsList.getDirectors) {
+              if (this.$refs.directorsList && this.$refs.directorsList.getDirectors) {
                 this.$refs.directorsList.getDirectors()
               }
             }
