@@ -61,8 +61,8 @@ describe('AnnualReport - Part 1 - UI', () => {
 
     // set flags
     vm.agmDateValid = true
-    vm.setAddressesFormValid(true)
-    vm.setDirectorFormValid(true)
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
     vm.certifyFormValid = true
 
     // confirm that flags are set correctly
@@ -79,8 +79,8 @@ describe('AnnualReport - Part 1 - UI', () => {
 
     // set flags
     vm.agmDateValid = false
-    vm.setAddressesFormValid(true)
-    vm.setDirectorFormValid(true)
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
     vm.certifyFormValid = true
 
     // confirm that flags are set correctly
@@ -97,8 +97,8 @@ describe('AnnualReport - Part 1 - UI', () => {
 
     // set flags
     vm.agmDateValid = true
-    vm.setAddressesFormValid(false)
-    vm.setDirectorFormValid(true)
+    vm.addressesFormValid = false
+    vm.directorFormValid = true
     vm.certifyFormValid = true
 
     // confirm that flags are set correctly
@@ -115,8 +115,8 @@ describe('AnnualReport - Part 1 - UI', () => {
 
     // set flags
     vm.agmDateValid = true
-    vm.setAddressesFormValid(true)
-    vm.setDirectorFormValid(false)
+    vm.addressesFormValid = true
+    vm.directorFormValid = false
     vm.certifyFormValid = true
 
     // confirm that flags are set correctly
@@ -133,8 +133,8 @@ describe('AnnualReport - Part 1 - UI', () => {
 
     // set flags
     vm.agmDateValid = true
-    vm.setAddressesFormValid(true)
-    vm.setDirectorFormValid(true)
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
     vm.certifyFormValid = false
 
     // confirm that flags are set correctly
@@ -158,8 +158,8 @@ describe('AnnualReport - Part 1 - UI', () => {
 
     // make sure form is validated
     vm.agmDateValid = true
-    vm.setAddressesFormValid(true)
-    vm.setDirectorFormValid(true)
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
     vm.certifyFormValid = true
 
     // confirm that button is enabled
@@ -175,8 +175,8 @@ describe('AnnualReport - Part 1 - UI', () => {
 
     // set flags
     vm.agmDateValid = false
-    vm.setAddressesFormValid(false)
-    vm.setDirectorFormValid(false)
+    vm.addressesFormValid = false
+    vm.directorFormValid = false
     vm.certifyFormValid = false
 
     // confirm that button is disabled
@@ -380,8 +380,8 @@ describe('AnnualReport - Part 3 - Submitting', () => {
 
       // make sure form is validated
       vm.agmDateValid = true
-      vm.setAddressesFormValid(true)
-      vm.setDirectorFormValid(true)
+      vm.addressesFormValid = true
+      vm.directorFormValid = true
       vm.certifyFormValid = true
 
       // stub address data
@@ -415,8 +415,8 @@ describe('AnnualReport - Part 3 - Submitting', () => {
 
     // make sure form is validated
     vm.agmDateValid = true
-    vm.setAddressesFormValid(true)
-    vm.setDirectorFormValid(true)
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
     vm.certifyFormValid = true
 
     // stub address data
@@ -500,8 +500,8 @@ describe('AnnualReport - Part 4 - Saving', () => {
   it('saves a new filing when the Save button is clicked', async () => {
     // make sure form is validated
     vm.agmDateValid = true
-    vm.setAddressesFormValid(true)
-    vm.setDirectorFormValid(true)
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
     vm.certifyFormValid = true
 
     // stub address data
@@ -522,8 +522,8 @@ describe('AnnualReport - Part 4 - Saving', () => {
   it('saves a filing and routes to Dashboard URL when the Save & Resume button is clicked', async () => {
     // make sure form is validated
     vm.agmDateValid = true
-    vm.setAddressesFormValid(true)
-    vm.setDirectorFormValid(true)
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
     vm.certifyFormValid = true
 
     // stub address data
@@ -544,8 +544,8 @@ describe('AnnualReport - Part 4 - Saving', () => {
   it('routes to Dashboard URL when the Cancel button is clicked', async () => {
     // make sure form is validated
     vm.agmDateValid = true
-    vm.setAddressesFormValid(true)
-    vm.setDirectorFormValid(true)
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
     vm.certifyFormValid = true
 
     // click the Cancel button
@@ -662,8 +662,8 @@ describe('AnnualReport - Part 5 - Data', () => {
 
     // make sure form is validated
     vm.agmDateValid = true
-    vm.setAddressesFormValid(true)
-    vm.setDirectorFormValid(true)
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
     vm.certifyFormValid = true
   })
 

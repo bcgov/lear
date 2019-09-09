@@ -19,8 +19,5 @@ export default {
   deliveryAddress: null,
   directors: [],
 
-  currentFilingStatus: null,
-
-  addressesFormValid: true,
-  directorFormValid: true
+  currentFilingStatus: null
 }

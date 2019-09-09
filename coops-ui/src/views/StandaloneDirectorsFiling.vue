@@ -71,13 +71,13 @@
       <v-container id="buttons-container" class="list-item">
         <div class="buttons-left">
           <v-btn id="cod-save-btn" large
-            :disabled="!saveButtonEnabled || saving"
+            :disabled="!isSaveButtonEnabled || saving"
             :loading="saving"
             @click="onClickSave">
             Save
           </v-btn>
           <v-btn id="cod-save-resume-btn" large
-            :disabled="!saveButtonEnabled || savingResuming"
+            :disabled="!isSaveButtonEnabled || savingResuming"
             :loading="savingResuming"
             @click="onClickSaveResume">
             Save &amp; Resume Later
@@ -165,7 +165,7 @@ export default {
       return (this.isCertified && this.directorFormValid && this.filingData.length > 0)
     },
 
-    saveButtonEnabled () {
+    isSaveButtonEnabled () {
       return (this.directorFormValid && this.filingData.length > 0)
     },
 

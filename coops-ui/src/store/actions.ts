@@ -32,12 +32,6 @@ export default {
   setCurrentFilingStatus ({ commit }, currentFilingStatus) {
     commit('currentFilingStatus', currentFilingStatus)
   },
-  setAddressesFormValid ({ commit }, addressesFormValid) {
-    commit('addressesFormValid', addressesFormValid)
-  },
-  setDirectorFormValid ({ commit }, directorFormValid) {
-    commit('directorFormValid', directorFormValid)
-  },
   setTasks ({ commit }, tasks) {
     commit('tasks', tasks)
   },

@@ -379,7 +379,7 @@
 <script>
 import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
-import { mapState, mapActions, mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress'
 import DateUtils from '@/DateUtils'
 
@@ -568,8 +568,6 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setDirectorFormValid']),
-
     formatAddress (address) {
       return {
         'addressCity': address.addressCity || '',
@@ -867,7 +865,6 @@ export default {
       this.$emit('directorsChange', val)
     },
     directorFormValid (val) {
-      this.setDirectorFormValid(val)
       this.$emit('directorFormValid', val)
     },
     // when as-of date changes (from parent component) refresh list of directors

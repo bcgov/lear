@@ -65,7 +65,7 @@
                 :legalEntityNumber="corpNum"
                 :addresses.sync="addresses"
                 @modified="officeModifiedEventHandler($event)"
-                @valid="officeValidEventHandler($event)"
+                @valid="addressesFormValid=$event"
               />
             </section>
 
@@ -79,6 +79,7 @@
               <Directors ref="directorsList"
                 @directorsChange="directorsChange"
                 @allDirectors="allDirectors=$event"
+                @directorFormValid="directorFormValid=$event"
                 :asOfDate="agmDate"
                 :componentEnabled="agmDateValid"
               />
@@ -163,7 +164,7 @@ import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeA
 import Directors from '@/components/AnnualReport/Directors.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
-import { mapState, mapActions, mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import { PAYMENT_REQUIRED } from 'http-status-codes'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -200,9 +201,11 @@ export default {
 
       // properties for RegisteredOfficeAddress component
       addresses: null,
+      addressesFormValid: true,
 
       // properties for Directors component
       allDirectors: [],
+      directorFormValid: true,
 
       // properties for Certify component
       certifiedBy: '',
@@ -227,8 +230,7 @@ export default {
 
   computed: {
     ...mapState(['currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate',
-      'entityName', 'entityIncNo', 'entityFoundingDate',
-      'addressesFormValid', 'directorFormValid']),
+      'entityName', 'entityIncNo', 'entityFoundingDate']),
 
     ...mapGetters(['isAnnualReportEditable', 'reportState']),
 
@@ -306,8 +308,6 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setARFilingYear', 'setAddressesFormValid', 'setDirectorFormValid']),
-
     fetchData () {
       const url = this.corpNum + '/filings/' + this.filingId
       axios.get(url).then(response => {
@@ -396,15 +396,6 @@ export default {
       this.haveChanges = true
       // when addresses change, update filing data
       this.toggleFiling(modified ? 'add' : 'remove', 'OTADD')
-    },
-
-    /**
-     * Callback method for the "valid" event from RegisteredOfficeAddress.
-     *
-     * @param valid a boolean that is true if the office addresses form contains valid data.
-     */
-    officeValidEventHandler (valid: boolean): void {
-      this.setAddressesFormValid(valid)
     },
 
     directorsChange (modified: boolean) {

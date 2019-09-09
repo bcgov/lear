@@ -32,12 +32,6 @@ export default {
   currentFilingStatus (state, currentFilingStatus) {
     state.currentFilingStatus = currentFilingStatus
   },
-  addressesFormValid (state, addressesFormValid) {
-    state.addressesFormValid = addressesFormValid
-  },
-  directorFormValid (state, directorFormValid) {
-    state.directorFormValid = directorFormValid
-  },
   tasks (state, tasks) {
     state.tasks = tasks
   },
