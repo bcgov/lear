@@ -465,7 +465,15 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       'mailingAddress': {}
     }
 
-    expect(wrapper.find('#ar-file-pay-btn').attributes('disabled')).toBe('true')
+    // verify that onClickFilePay() does nothing
+    expect(await vm.onClickFilePay()).toBe(false)
+
+    // verify v-tooltip text
+    expect(wrapper.find('#ar-file-pay-btn + span').text()).toBe('Staff are not allowed to file.')
+
+    // TODO: fix 2 tests above accordingly
+
+    // TODO: fix other 3 component similarly
 
     wrapper.destroy()
   })

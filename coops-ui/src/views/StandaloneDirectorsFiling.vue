@@ -101,7 +101,7 @@
               @click="onClickFilePay">
               File &amp; Pay
             </v-btn>
-            <span v-if="isRoleStaff">Staff are not allowed to File.</span>
+            <span v-if="isRoleStaff">Staff are not allowed to file.</span>
             <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
               There is no opportunity to change information beyond this point.</span>
           </v-tooltip>
@@ -268,7 +268,7 @@ export default {
 
     async onClickFilePay () {
       // staff are not allowed to file
-      if (this.isRoleStaff) return
+      if (this.isRoleStaff) return false
 
       this.filingPaying = true
       const filing = await this.saveFiling(false)
@@ -287,6 +287,7 @@ export default {
         console.log('onClickFilePay() error - invalid filing =', filing)
       }
       this.filingPaying = false
+      return true
     },
 
     async saveFiling (isDraft) {
