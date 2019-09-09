@@ -39,7 +39,7 @@ describe('AGMDate', () => {
     // verify local variables
     expect(vm.$data.date).toBe('2019-01-01')
     expect(vm.$data.dateFormatted).toBe('2019/01/01')
-    expect(vm.$data.didNotHoldAGM).toBe(false)
+    expect(vm.$data.didNotHoldAgm).toBe(false)
 
     // verify emitted AGM Dates
     const agmDates = wrapper.emitted('agmDate')
@@ -74,7 +74,7 @@ describe('AGMDate', () => {
     // verify local variables
     expect(vm.$data.date).toBe('2019-05-10')
     expect(vm.$data.dateFormatted).toBe('2019/05/10')
-    expect(vm.$data.didNotHoldAGM).toBe(false)
+    expect(vm.$data.didNotHoldAgm).toBe(false)
 
     // verify emitted AGM Dates
     // first emit is from init
@@ -102,7 +102,7 @@ describe('AGMDate', () => {
     // verify local variables
     expect(vm.$data.date).toBe('')
     expect(vm.$data.dateFormatted).toBeNull()
-    expect(vm.$data.didNotHoldAGM).toBe(true)
+    expect(vm.$data.didNotHoldAgm).toBe(true)
 
     // verify emitted AGM Dates
     // first emit is from init
@@ -158,7 +158,7 @@ describe('AGMDate', () => {
 
     // verify local variables
     expect(vm.$data.date).toBe('2019-05-10')
-    expect(vm.$data.didNotHoldAGM).toBe(false)
+    expect(vm.$data.didNotHoldAgm).toBe(false)
 
     // verify emitted AGM Dates
     // first emit is from init
@@ -185,7 +185,7 @@ describe('AGMDate', () => {
 
     // verify local variables
     expect(vm.$data.dateFormatted).toBe('2019/05/10')
-    expect(vm.$data.didNotHoldAGM).toBe(false)
+    expect(vm.$data.didNotHoldAgm).toBe(false)
 
     // verify emitted AGM Dates
     // first emit is from init
@@ -566,7 +566,7 @@ describe('AGMDate', () => {
   })
 
   it('validates the component when Did Not Hold AGM is checked', () => {
-    wrapper.setData({ didNotHoldAGM: true })
+    wrapper.setData({ didNotHoldAgm: true })
 
     // verify emitted AGM Dates
     // first emit is from init

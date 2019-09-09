@@ -1,27 +1,42 @@
-const DateUtils = {
-  methods: {
-    dateToUsableString: function (dateObj) {
-      if (dateObj === null || dateObj === undefined || dateObj.toString() === 'Invalid Date') return null
+import Vue from 'vue'
 
-      const year = dateObj.getFullYear().toString()
-      const month = (dateObj.getMonth() + 1).toString().padStart(2, '0')
-      const date = dateObj.getDate().toString().padStart(2, '0')
-      return `${year}-${month}-${date}`
+const DateUtils = Vue.extend({
+  methods: {
+    /**
+     * Converts a JavaScript date object to a simple date string (YYYY-MM-DD).
+     * @param date The date to convert.
+     */
+    dateToUsableString: function (date: Date): string {
+      if (!date || date.toString() === 'Invalid Date') return null
+
+      const yyyy = date.getFullYear().toString()
+      const mm = (date.getMonth() + 1).toString().padStart(2, '0')
+      const dd = date.getDate().toString().padStart(2, '0')
+      return `${yyyy}-${mm}-${dd}`
     },
 
-    numToUsableString: function (val) {
-      if (val === null || val === undefined || val === 0 || val.toString().length !== 8) return null
+    /**
+     * Converts a number (YYYYMMDD) to a simple date string (YYYY-MM-DD).
+     * @param n The number to convert.
+     */
+    numToUsableString: function (val: number | string): string {
+      if (!val || val.toString().length !== 8) return null
 
       val = val.toString()
 
-      const year = val.substr(0, 4)
-      const month = val.substr(4, 2)
-      const date = val.substr(6, 2)
-      return `${year}-${month}-${date}`
+      const yyyy = val.substr(0, 4)
+      const mm = val.substr(4, 2)
+      const dd = val.substr(6, 2)
+      return `${yyyy}-${mm}-${dd}`
     },
 
-    // util function to compare simple date strings YYYY-MM-DD
-    compareDates (date1, date2, operator) {
+    /**
+     * Compare simple date strings (YYYY-MM-DD)..
+     * @param date1 The first date to compare.
+     * @param date2 The second date to compare.
+     * @param operator The operator to use for comparison.
+     */
+    compareDates (date1: string, date2: string, operator: string): boolean {
       if (!date1 || !date2 || !operator) return true
 
       // convert dates to numbers YYYYMMDD
@@ -31,6 +46,6 @@ const DateUtils = {
       return eval(date1 + operator + date2) // eslint-disable-line no-eval
     }
   }
-}
+})
 
 export default DateUtils
