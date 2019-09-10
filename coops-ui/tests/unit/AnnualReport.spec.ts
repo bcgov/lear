@@ -1,3 +1,4 @@
+/* eslint promise/param-names: 0, prefer-promise-reject-errors: 0 */
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import VueRouter from 'vue-router'
@@ -13,6 +14,7 @@ import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
+import { BAD_REQUEST } from 'http-status-codes'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -804,5 +806,192 @@ describe('AnnualReport - Part 5 - Data', () => {
 
     // AR Date (year) should be filing year (ie: AR owed)
     expect(payload.filing.annualReport.annualReportDate.substr(0, 4)).toBe(currentFilingYear.toString())
+  })
+})
+
+describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
+  let wrapper
+  let vm
+  const request = require('request')
+  const { assign } = window.location
+
+  beforeAll(() => {
+    // mock the window.location.assign function
+    delete window.location
+    window.location = { assign: jest.fn() } as any
+  })
+
+  afterAll(() => {
+    window.location.assign = assign
+  })
+
+  beforeEach(async () => {
+    // init store
+    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
+    store.state.entityName = 'Legal Name - CP0001191'
+    store.state.ARFilingYear = 2017
+    store.state.currentFilingStatus = 'NEW'
+    store.state.filedDate = null
+    sinon.stub(axios, 'post').withArgs('CP0001191/filings')
+      .returns(new Promise((resolves, rejects) => rejects({
+        response: {
+          status: BAD_REQUEST,
+          data: {
+            'errors': [
+              {
+                'error': 'err msg post',
+                'path': 'swkmc/sckmr'
+              }
+            ],
+            'warnings': [
+              {
+                'warning': 'warn msg post',
+                'path': 'swkmc/sckmr'
+              }
+            ],
+            'filing': {
+              'annualReport': {
+                'annualGeneralMeetingDate': '2018-07-15'
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'annualReport',
+                'date': '2017-06-06',
+                'submitter': 'cp0001191',
+                'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
+                'filingId': 123
+              }
+            }
+          }
+        }
+      })))
+
+    sinon.stub(axios, 'put').withArgs('CP0001191/filings/123')
+      .returns(new Promise((resolves, rejects) => rejects({
+        response: {
+          status: BAD_REQUEST,
+          data: {
+            'errors': [
+              {
+                'error': 'err msg put',
+                'path': 'swkmc/sckmr'
+              }
+            ],
+            'warnings': [
+              {
+                'warning': 'warn msg put',
+                'path': 'swkmc/sckmr'
+              }
+            ],
+            'filing': {
+              'annualReport': {
+                'annualGeneralMeetingDate': '2018-07-15'
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'annualReport',
+                'date': '2017-06-06',
+                'submitter': 'cp0001191',
+                'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
+                'filingId': 123
+              }
+            }
+          }
+        }
+      })))
+
+    // create local Vue and mock router
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'annual-report', params: { id: '0' } }) // new filing id
+
+    wrapper = shallowMount(AnnualReport, { store, localVue, router })
+    vm = wrapper.vm as any
+  })
+
+  afterEach(() => {
+    sinon.restore()
+    wrapper.destroy()
+  })
+
+  it('sets the required fields to display errors from the api after a post call', async () => {
+    // make sure form is validated
+    vm.agmDateValid = true
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
+
+    // confirm that flags are set correctly
+    expect(vm.validated).toEqual(true)
+
+    // sanity check
+    expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+    // stub address data
+    vm.addresses = {
+      'deliveryAddress': {},
+      'mailingAddress': {}
+    }
+
+    // click the Save button
+    wrapper.find('#ar-file-pay-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickFilePay()
+
+    expect(vm.saveErrorDialog).toBe(true)
+    expect(vm.saveErrors.length).toBe(1)
+    expect(vm.saveErrors[0].error).toBe('err msg post')
+    expect(vm.saveWarnings.length).toBe(1)
+    expect(vm.saveWarnings[0].warning).toBe('warn msg post')
+  })
+
+  it('sets the required fields to display errors from the api after a put call', async () => {
+    // make sure form is validated
+    vm.agmDateValid = true
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
+
+    // confirm that flags are set correctly
+    expect(vm.validated).toEqual(true)
+
+    // sanity check
+    expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+    // stub address data
+    vm.addresses = {
+      'deliveryAddress': {},
+      'mailingAddress': {}
+    }
+    // set the filingId
+    vm.filingId = 123
+    // click the Save button
+    wrapper.find('#ar-file-pay-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickFilePay()
+
+    expect(vm.saveErrorDialog).toBe(true)
+    expect(vm.saveErrors.length).toBe(1)
+    expect(vm.saveErrors[0].error).toBe('err msg put')
+    expect(vm.saveWarnings.length).toBe(1)
+    expect(vm.saveWarnings[0].warning).toBe('warn msg put')
   })
 })
