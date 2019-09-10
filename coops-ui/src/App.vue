@@ -1,7 +1,9 @@
 <template>
   <v-app class="app-container theme--light" id="app">
 
-    <div id="staffView" v-if="isRoleStaff">*** STAFF VIEW ***</div>
+    <!-- FOR DEBUGGING ONLY -->
+    <div id="staffView" v-if="isRoleOwner">*** OWNER VIEW ***</div>
+    <div id="staffView" v-else-if="isRoleStaff">*** STAFF VIEW ***</div>
 
     <!-- Initial Page Load Transition -->
     <div class="loading-container fade-out">
@@ -79,7 +81,7 @@ export default {
   },
 
   computed: {
-    ...mapGetters(['isRoleStaff']),
+    ...mapGetters(['isRoleOwner', 'isRoleStaff']),
 
     authAPIURL () {
       return sessionStorage.getItem('AUTH_API_URL')
@@ -97,39 +99,16 @@ export default {
       'setLastAgmDate', 'setTasks', 'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors']),
 
     async fetchData () {
-      let corpNum = null
+      let jwt, username, corpNum, role, date
 
       // first try synchronous operations
       try {
-        // get and parse Keycloak Token
-        const token = sessionStorage.getItem('KEYCLOAK_TOKEN')
-        if (!token) {
-          throw new Error('Keycloak Token is null')
-        }
-        const jwt = this.parseJwt(token)
-        console.log('JWT =', jwt)
-
-        // get Username
-        const username = jwt.name || jwt.username
-        if (!username) {
-          throw new Error('Username is null')
-        }
-        this.setUsername(username)
-
-        // get Corp Num
-        // corpNum = sessionStorage.getItem('CORP_NUM') // FUTURE
-        corpNum = username.toUpperCase() // FOR NOW
-        if (!corpNum) {
-          throw new Error('Corp Num is null')
-        }
-        this.setCorpNum(corpNum)
-
-        // get Role
-        // TODO: make a GET call to ${AUTH_API_URL}/api/v1/entities/${corpNum}/authorizations
-        this.setRole('STAFF')
-
-        // set current date
-        this.updateCurrentDate()
+        jwt = this.getJWT()
+        console.log('JWT =', jwt) // FOR DEBUGGING
+        username = this.getUsername(jwt)
+        corpNum = this.getCorpNum(username)
+        role = await this.getRole(corpNum)
+        date = this.updateCurrentDate()
       } catch (error) {
         console.error(error)
         this.dashboardUnavailableDialog = true
@@ -157,27 +136,74 @@ export default {
       })
     },
 
+    getJWT () {
+      const token = sessionStorage.getItem('KEYCLOAK_TOKEN')
+      if (!token) {
+        throw new Error('Keycloak Token is null')
+      }
+      return this.parseJwt(token)
+    },
+
     parseJwt (token) {
       try {
-        var base64Url = token.split('.')[1]
-        var base64 = decodeURIComponent(window.atob(base64Url).split('').map(function (c) {
+        const base64Url = token.split('.')[1]
+        const base64 = decodeURIComponent(window.atob(base64Url).split('').map(function (c) {
           return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
         }).join(''))
         return JSON.parse(base64)
       } catch (error) {
-        throw new Error('error parsing JWT - ' + error)
+        throw new Error('Error parsing JWT - ' + error)
       }
+    },
+
+    getUsername (jwt) {
+      const username = jwt.name || jwt.username
+      if (!username) {
+        throw new Error('Username is null')
+      }
+      this.setUsername(username)
+      return username
+    },
+
+    getCorpNum (username) {
+      // corpNum = sessionStorage.getItem('CORP_NUM') // FUTURE
+      const corpNum = username.toUpperCase() // FOR NOW
+      if (!corpNum) {
+        throw new Error('Corp Num is null')
+      }
+      this.setCorpNum(corpNum)
+      return corpNum
+    },
+
+    async getRole (corpNum) {
+      // NB: need to pass lower case Business Identifier for now
+      const url = corpNum.toLowerCase() + '/authorizations'
+      const config = {
+        baseURL: sessionStorage.getItem('AUTH_API_URL') + 'api/v1/entities/'
+      }
+      await axios.get(url, config).then(response => {
+        const role = response && response.data && response.data.role
+        if (role) {
+          this.setRole(role)
+          return role
+        } else {
+          // TODO: should handle this differently?
+          throw new Error('Role is null')
+        }
+      })
     },
 
     updateCurrentDate () {
       const now = new Date()
-      this.setCurrentDate(this.dateToUsableString(now))
+      const date = this.dateToUsableString(now)
+      this.setCurrentDate(date)
       // set timeout to run this again at midnight
       const hoursToMidnight = 23 - now.getHours()
       const minutesToMidnight = 59 - now.getMinutes()
       const secondsToMidnight = 59 - now.getSeconds()
       const timeout = ((((hoursToMidnight * 60) + minutesToMidnight) * 60) + secondsToMidnight) * 1000
       setTimeout(this.updateCurrentDate, timeout)
+      return date
     },
 
     storeEntityInfo (response) {
