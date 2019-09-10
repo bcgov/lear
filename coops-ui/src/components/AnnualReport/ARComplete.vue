@@ -13,22 +13,32 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+import DateUtils from '@/DateUtils'
+
 export default {
   name: 'ARComplete',
   computed: {
+    ...mapState(['ARFilingYear']),
+
+    // dummy value for now
+    // TODO: where to get Filed Date?
     filedDate () {
-      var date = new Date(this.$store.state.filedDate + 'T12:00:00')
+      const today = this.dateToUsableString(new Date())
+      const date = new Date(today + 'T12:00:00')
       return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
     },
-    ARFilingYear () {
-      return this.$store.state.ARFilingYear
-    },
+
+    // dummy value for now
+    // TODO: where to get AGM Date?
     agmDate () {
-      var date = new Date(this.$store.state.agmDate + 'T12:00:00')
-      return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+      return +`${this.ARFilingYear}-01-01`.split('-').join('')
     },
+
+    // dummy value for now
+    // TODO: where to get No AGM?
     noAGM () {
-      return !!this.$store.state.noAGM
+      return false
     }
   }
 }

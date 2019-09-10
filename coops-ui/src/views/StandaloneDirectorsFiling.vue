@@ -34,7 +34,7 @@
             <h1 id="filing-header">Change of Directors</h1>
 
             <v-alert type="info" :value="true" icon="info" outline style="background-color: white;">
-              Director changes can be made as far back as {{ lastFilingDate }}.
+              Director changes can be made as far back as {{ earliestDateToSet }}.
             </v-alert>
           </header>
 
@@ -42,7 +42,7 @@
           <section>
             <Directors ref="directorsList"
               @directorsChange="directorsChange"
-              @lastFilingDate="lastFilingDate=$event"
+              @earliestDateToSet="earliestDateToSet=$event"
               @directorFormValid="directorFormValid=$event"
               @allDirectors="allDirectors=$event"
               :asOfDate="currentDate"
@@ -71,13 +71,13 @@
       <v-container id="buttons-container" class="list-item">
         <div class="buttons-left">
           <v-btn id="cod-save-btn" large
-            :disabled="!saveButtonEnabled || saving"
+            :disabled="!isSaveButtonEnabled || saving"
             :loading="saving"
             @click="onClickSave">
             Save
           </v-btn>
           <v-btn id="cod-save-resume-btn" large
-            :disabled="!saveButtonEnabled || savingResuming"
+            :disabled="!isSaveButtonEnabled || savingResuming"
             :loading="savingResuming"
             @click="onClickSaveResume">
             Save &amp; Resume Later
@@ -146,7 +146,7 @@ export default {
       resumeErrorDialog: false,
       saveErrorDialog: false,
       paymentErrorDialog: false,
-      lastFilingDate: 'your last filing',
+      earliestDateToSet: 'your last filing',
       isCertified: false,
       certifiedBy: '',
       directorFormValid: true,
@@ -165,7 +165,7 @@ export default {
       return (this.isCertified && this.directorFormValid && this.filingData.length > 0)
     },
 
-    saveButtonEnabled () {
+    isSaveButtonEnabled () {
       return (this.directorFormValid && this.filingData.length > 0)
     },
 

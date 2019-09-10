@@ -11,21 +11,6 @@ export default {
   ARFilingYear (state, ARFilingYear) {
     state.ARFilingYear = ARFilingYear
   },
-  filedDate (state, filedDate) {
-    state.filedDate = filedDate
-  },
-  agmDate (state, agmDate) {
-    state.agmDate = agmDate
-  },
-  noAGM (state, noAGM) {
-    state.noAGM = noAGM
-  },
-  regOffAddrChange (state, regOffAddrChange) {
-    state.regOffAddrChange = regOffAddrChange
-  },
-  validated (state, validated) {
-    state.validated = validated
-  },
   entityBusinessNo (state, entityBusinessNo) {
     state.entityBusinessNo = entityBusinessNo
   },
@@ -46,15 +31,6 @@ export default {
   },
   currentFilingStatus (state, currentFilingStatus) {
     state.currentFilingStatus = currentFilingStatus
-  },
-  addressesFormValid (state, addressesFormValid) {
-    state.addressesFormValid = addressesFormValid
-  },
-  directorFormValid (state, directorFormValid) {
-    state.directorFormValid = directorFormValid
-  },
-  agmDateValid (state, agmDateValid) {
-    state.agmDateValid = agmDateValid
   },
   tasks (state, tasks) {
     state.tasks = tasks

@@ -13,20 +13,11 @@ export default {
   lastAgmDate: null,
 
   ARFilingYear: null, /* Number */
-  filedDate: null,
-  agmDate: null,
-  noAGM: false,
   tasks: [],
   filings: [],
   mailingAddress: null,
   deliveryAddress: null,
   directors: [],
-  regOffAddrChange: false,
-  validated: false,
 
-  currentFilingStatus: null,
-
-  addressesFormValid: true,
-  directorFormValid: true,
-  agmDateValid: true
+  currentFilingStatus: null
 }
