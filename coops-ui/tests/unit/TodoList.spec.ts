@@ -589,7 +589,7 @@ describe('TodoList - Click Tests', () => {
 
   it('disables Resume Payment button if user has \'staff\' role', done => {
     // init store
-    store.state.roles = ['staff']
+    store.state.role = 'STAFF'
     store.state.tasks = [
       {
         'task': {
@@ -632,7 +632,7 @@ describe('TodoList - Click Tests', () => {
 
   it('disables Retry Payment button if user has \'staff\' role', done => {
     // init store
-    store.state.roles = ['staff']
+    store.state.role = 'STAFF'
     store.state.tasks = [
       {
         'task': {

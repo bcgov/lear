@@ -397,7 +397,7 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
 
   it('disables File & Pay button if user has \'staff\' role', async () => {
     // init store
-    store.state.roles = ['staff']
+    store.state.role = 'STAFF'
 
     const $route = { params: { id: '123' } } // draft filing id
     const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })

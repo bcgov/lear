@@ -1,6 +1,7 @@
 export default {
   // tombstone data
-  roles: [],
+  role: null,
+  username: null,
   corpNum: null,
   currentDate: null,
 

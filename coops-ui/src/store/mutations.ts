@@ -1,6 +1,9 @@
 export default {
-  roles (state, roles) {
-    state.roles = roles
+  role (state, role) {
+    state.role = role
+  },
+  username (state, username) {
+    state.username = username
   },
   corpNum (state, corpNum) {
     state.corpNum = corpNum

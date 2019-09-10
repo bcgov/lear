@@ -92,11 +92,11 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setCorpNum', 'setCurrentDate', 'setEntityName', 'setEntityStatus', 'setEntityBusinessNo',
-      'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate', 'setTasks',
-      'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors', 'setRoles']),
+    ...mapActions(['setUsername', 'setCorpNum', 'setRole', 'setCurrentDate', 'setEntityName', 'setEntityStatus',
+      'setEntityBusinessNo', 'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate',
+      'setLastAgmDate', 'setTasks', 'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors']),
 
-    fetchData () {
+    async fetchData () {
       let corpNum = null
 
       // first try synchronous operations
@@ -107,30 +107,26 @@ export default {
           throw new Error('Keycloak Token is null')
         }
         const jwt = this.parseJwt(token)
-        // console.log('JWT =', jwt)
+        console.log('JWT =', jwt)
 
         // get Username
-        // const username = jwt.preferred_username
-        // if (!username) {
-        //   throw new Error('Username is null')
-        // }
-        // sessionStorage.setItem('USERNAME', username)
-        // this.setUsername(username) // TODO: implement this if needed
-
-        // get Roles
-        const roles = jwt.roles
-        if (!roles || !roles.length) {
-          throw new Error('Roles is null')
+        const username = jwt.name || jwt.username
+        if (!username) {
+          throw new Error('Username is null')
         }
-        this.setRoles(roles)
+        this.setUsername(username)
 
         // get Corp Num
         // corpNum = sessionStorage.getItem('CORP_NUM') // FUTURE
-        corpNum = jwt.preferred_username && jwt.preferred_username.toUpperCase()
+        corpNum = username.toUpperCase() // FOR NOW
         if (!corpNum) {
           throw new Error('Corp Num is null')
         }
         this.setCorpNum(corpNum)
+
+        // get Role
+        // TODO: make a GET call to ${AUTH_API_URL}/api/v1/entities/${corpNum}/authorizations
+        this.setRole('STAFF')
 
         // set current date
         this.updateCurrentDate()
@@ -288,7 +284,7 @@ export default {
   #staffView
     position fixed
     top 22px
-    right 185px
+    right 280px
     font-weight bold
     letter-spacing 2px
     color white
