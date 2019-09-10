@@ -33,7 +33,7 @@ def validate(business: Business, cod: Dict) -> Error:
     # Check Delivery Address
     da_region_path = '/filing/changeOfAddress/deliveryAddress/addressRegion'
     if get_str(cod, da_region_path) != 'BC':
-        msg.append({'error': _("addressRegion must be 'BC'."),
+        msg.append({'error': _("Address Region must be 'BC'."),
                     'path': da_region_path})
 
     da_country_path = '/filing/changeOfAddress/deliveryAddress/addressCountry'
@@ -43,12 +43,12 @@ def validate(business: Business, cod: Dict) -> Error:
         if da_country != 'CA':
             raise LookupError
     except LookupError:
-        msg.append({'error': _("addressCountry must be 'CA'."),
+        msg.append({'error': _("Address Country must be 'CA'."),
                     'path': da_country_path})
 
     ma_region_path = '/filing/changeOfAddress/mailingAddress/addressRegion'
     if get_str(cod, ma_region_path) != 'BC':
-        msg.append({'error': _("addressRegion must be 'BC'."),
+        msg.append({'error': _("Address Region must be 'BC'."),
                     'path': ma_region_path})
 
     ma_country_path = '/filing/changeOfAddress/mailingAddress/addressCountry'
@@ -58,7 +58,7 @@ def validate(business: Business, cod: Dict) -> Error:
         if ma_country != 'CA':
             raise LookupError
     except LookupError:
-        msg.append({'error': _("addressCountry must be 'CA'."),
+        msg.append({'error': _("Address Country must be 'CA'."),
                     'path': ma_country_path})
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
