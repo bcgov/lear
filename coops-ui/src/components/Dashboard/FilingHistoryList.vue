@@ -168,22 +168,6 @@ export default {
               documentName: `${this.corpNum} - Annual Report (${agmYear}) - ${filing.header.date}.pdf`
             }]
           }
-          // check if there was also a Change Of Directors
-          if (filing.changeOfDirectors) {
-            item.filingDocuments.push({
-              filingId: filing.header.filingId,
-              name: 'Director Change (AGM)',
-              documentName: `${this.corpNum} - Director Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
-            })
-          }
-          // check if there was also a Change Of Address
-          if (filing.changeOfAddress) {
-            item.filingDocuments.push({
-              filingId: filing.header.filingId,
-              name: 'Address Change (AGM)',
-              documentName: `${this.corpNum} - Address Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
-            })
-          }
           this.filedItems.push(item)
         } else {
           console.log('ERROR - invalid date in filing =', filing)
