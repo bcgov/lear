@@ -1,10 +1,6 @@
 <template>
   <v-app class="app-container theme--light" id="app">
 
-    <!-- FOR DEBUGGING ONLY -->
-    <div id="staffView" v-if="isRoleOwner">*** OWNER VIEW ***</div>
-    <div id="staffView" v-else-if="isRoleStaff">*** STAFF VIEW ***</div>
-
     <!-- Initial Page Load Transition -->
     <div class="loading-container fade-out">
       <div class="loading__content">
@@ -55,7 +51,7 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex'
+import { mapActions } from 'vuex'
 import DateUtils from '@/date-utils'
 import axios from '@/axios-auth'
 import SbcHeader from 'sbc-common-components/src/components/SbcHeader.vue'
@@ -81,8 +77,6 @@ export default {
   },
 
   computed: {
-    ...mapGetters(['isRoleOwner', 'isRoleStaff']),
-
     authAPIURL () {
       return sessionStorage.getItem('AUTH_API_URL')
     }
@@ -104,7 +98,7 @@ export default {
       // first try synchronous operations
       try {
         jwt = this.getJWT()
-        console.log('JWT =', jwt) // FOR DEBUGGING
+        // console.log('JWT =', jwt)
         username = this.getUsername(jwt)
         corpNum = this.getCorpNum(username)
         role = await this.getRole(corpNum)
@@ -306,14 +300,4 @@ export default {
   @import "./assets/styles/base.styl"
   @import "./assets/styles/layout.styl"
   @import "./assets/styles/overrides.styl"
-
-  #staffView
-    position fixed
-    top 22px
-    right 280px
-    font-weight bold
-    letter-spacing 2px
-    color white
-    opacity 0.5
-    z-index 99
 </style>
