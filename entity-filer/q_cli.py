@@ -30,7 +30,7 @@ import sys
 from nats.aio.client import Client as NATS  # noqa N814; by convention the name is NATS
 from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 
-from entity_filer.service_utils import error_cb, logger, closed_cb, signal_handler
+from entity_filer.service_utils import error_cb, logger, signal_handler
 
 
 async def run(loop, token):  # pylint: disable=too-many-locals
@@ -53,7 +53,6 @@ async def run(loop, token):  # pylint: disable=too-many-locals
             'servers': os.getenv('NATS_SERVERS', 'nats://127.0.0.1:4222').split(','),
             'io_loop': loop,
             'error_cb': error_cb,
-            'closed_cb': closed_cb,
             'name': os.getenv('NATS_CLIENT_NAME', 'entity.filing.tester')
         }
 
