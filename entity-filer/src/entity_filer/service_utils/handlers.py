@@ -25,8 +25,5 @@ def signal_handler(sig_loop, task):
 
     Note: This works on *nix systems only, which is fine for deployment target.
     """
-    # if sig_nc.is_closed:
-    # logger.info('Signal: NATS connection is closed.')
-    # return
     logger.info('Signal to Shutdown received, disconnecting ...')
     sig_loop.create_task(task())
