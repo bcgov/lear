@@ -170,6 +170,7 @@ export default {
 
     async getRole (businessId) {
       // NB: need to pass lower case Business Identifier for now
+      // TODO: also fix respective unit test
       const url = businessId.toLowerCase() + '/authorizations'
       const config = {
         baseURL: sessionStorage.getItem('AUTH_API_URL') + 'api/v1/entities/'

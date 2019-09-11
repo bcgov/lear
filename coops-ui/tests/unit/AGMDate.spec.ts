@@ -19,7 +19,7 @@ describe('AGMDate', () => {
   let vm
 
   beforeEach(async () => {
-    // init/reset store
+    // init store
     store.state.entityIncNo = 'CP0001191'
     store.state.currentDate = '2019/07/15'
     store.state.ARFilingYear = 2019

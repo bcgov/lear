@@ -11,7 +11,12 @@ import TodoList from '@/components/Dashboard/TodoList.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('TodoList - Display Tests', () => {
+// Boilerplate to prevent the complaint "[Vuetify] Unable to locate target [data-app]"
+const app: HTMLDivElement = document.createElement('div')
+app.setAttribute('data-app', 'true')
+document.body.append(app)
+
+describe('TodoList - UI', () => {
   it('handles empty data', done => {
     // init store
     store.state.tasks = []
@@ -142,7 +147,7 @@ describe('TodoList - Display Tests', () => {
 
       const button = item.querySelector('.list-item__actions .v-btn')
       expect(button.disabled).toBe(false)
-      expect(button.querySelector('.v-btn__content').textContent).toEqual('File Now')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('File Now')
 
       wrapper.destroy()
       done()
@@ -190,7 +195,7 @@ describe('TodoList - Display Tests', () => {
 
       const button = item.querySelector('.list-item__actions .v-btn')
       expect(button.disabled).toBe(false)
-      expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Resume')
 
       wrapper.destroy()
       done()
@@ -234,7 +239,7 @@ describe('TodoList - Display Tests', () => {
 
       const button = item.querySelector('.list-item__actions .v-btn')
       expect(button.disabled).toBe(false)
-      expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Resume')
 
       wrapper.destroy()
       done()
@@ -278,7 +283,7 @@ describe('TodoList - Display Tests', () => {
 
       const button = item.querySelector('.list-item__actions .v-btn')
       expect(button.disabled).toBe(false)
-      expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Resume')
 
       wrapper.destroy()
       done()
@@ -327,7 +332,7 @@ describe('TodoList - Display Tests', () => {
 
       const button = item.querySelector('.list-item__actions .v-btn')
       expect(button.disabled).toBe(false)
-      expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume Payment')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Resume Payment')
 
       wrapper.destroy()
       done()
@@ -376,7 +381,107 @@ describe('TodoList - Display Tests', () => {
 
       const button = item.querySelector('.list-item__actions .v-btn')
       expect(button.disabled).toBe(false)
-      expect(button.querySelector('.v-btn__content').textContent).toEqual('Retry Payment')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Retry Payment')
+
+      wrapper.destroy()
+      done()
+    })
+  })
+
+  it('disables Resume Payment button if user has \'staff\' role', done => {
+    // init store
+    store.state.role = 'STAFF'
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'PENDING',
+              'filingId': 456,
+              'paymentToken': 654
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(async () => {
+      expect(vm.isRoleStaff).toBe(true)
+
+      // sanity checks
+      expect(vm.taskItems.length).toEqual(1)
+      const item = vm.$el.querySelector('.list-item')
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Resume Payment')
+
+      // verify that doResumePayment() does nothing
+      expect(await vm.doResumePayment()).toBe(false)
+
+      // NB: cannot verify v-tooltip text as Vue puts it in a div outside this component
+
+      store.state.role = 'OWNER' // cleanup
+
+      wrapper.destroy()
+      done()
+    })
+  })
+
+  it('disables Retry Payment button if user has \'staff\' role', done => {
+    // init store
+    store.state.role = 'STAFF'
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'ERROR',
+              'filingId': 789,
+              'paymentToken': 987
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(async () => {
+      expect(vm.isRoleStaff).toBe(true)
+
+      // sanity checks
+      expect(vm.taskItems.length).toEqual(1)
+      const item = vm.$el.querySelector('.list-item')
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Retry Payment')
+
+      // verify that doResumePayment() does nothing
+      expect(await vm.doResumePayment()).toBe(false)
+
+      // NB: cannot verify v-tooltip text as Vue puts it in a div outside this component
+
+      store.state.role = 'OWNER' // cleanup
 
       wrapper.destroy()
       done()
@@ -427,7 +532,7 @@ describe('TodoList - Click Tests', () => {
 
       const item = vm.$el.querySelector('.list-item')
       const button = item.querySelector('.list-item__actions .v-btn')
-      expect(button.querySelector('.v-btn__content').textContent).toEqual('File Now')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('File Now')
 
       await button.click()
 
@@ -479,7 +584,7 @@ describe('TodoList - Click Tests', () => {
 
       const item = vm.$el.querySelector('.list-item')
       const button = item.querySelector('.list-item__actions .v-btn')
-      expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Resume')
 
       await button.click()
 
@@ -529,7 +634,7 @@ describe('TodoList - Click Tests', () => {
       const item = vm.$el.querySelector('.list-item')
       const button = item.querySelector('.list-item__actions .v-btn')
       expect(button.getAttribute('disabled')).toBeNull()
-      expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume Payment')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Resume Payment')
 
       await button.click()
 
@@ -574,96 +679,13 @@ describe('TodoList - Click Tests', () => {
       const item = vm.$el.querySelector('.list-item')
       const button = item.querySelector('.list-item__actions .v-btn')
       expect(button.getAttribute('disabled')).toBeNull()
-      expect(button.querySelector('.v-btn__content').textContent).toEqual('Retry Payment')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Retry Payment')
 
       await button.click()
 
       // verify redirection
       const payURL = '/makepayment/987/' + encodeURIComponent('/dashboard?filing_id=789')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
-
-      wrapper.destroy()
-      done()
-    })
-  })
-
-  it('disables Resume Payment button if user has \'staff\' role', done => {
-    // init store
-    store.state.role = 'STAFF'
-    store.state.tasks = [
-      {
-        'task': {
-          'filing': {
-            'header': {
-              'name': 'annualReport',
-              'ARFilingYear': 2019,
-              'status': 'PENDING',
-              'filingId': 456,
-              'paymentToken': 654
-            },
-            'annualReport': {
-              'annualGeneralMeetingDate': '2019-07-15'
-            },
-            'changeOfAddress': { },
-            'changeOfDirectors': { }
-          }
-        },
-        'enabled': true,
-        'order': 1
-      }
-    ]
-
-    const wrapper = mount(TodoList, { store })
-    const vm = wrapper.vm as any
-
-    Vue.nextTick(async () => {
-      expect(vm.taskItems.length).toEqual(1)
-
-      const item = vm.$el.querySelector('.list-item')
-      const button = item.querySelector('.list-item__actions .v-btn')
-      expect(button)
-      expect(button.getAttribute('disabled')).toBe('disabled')
-      expect(button.querySelector('.v-btn__content').textContent).toEqual('Resume Payment')
-
-      wrapper.destroy()
-      done()
-    })
-  })
-
-  it('disables Retry Payment button if user has \'staff\' role', done => {
-    // init store
-    store.state.role = 'STAFF'
-    store.state.tasks = [
-      {
-        'task': {
-          'filing': {
-            'header': {
-              'name': 'annualReport',
-              'ARFilingYear': 2019,
-              'status': 'ERROR',
-              'filingId': 789,
-              'paymentToken': 987
-            },
-            'annualReport': {
-              'annualGeneralMeetingDate': '2019-07-15'
-            },
-            'changeOfAddress': { },
-            'changeOfDirectors': { }
-          }
-        },
-        'enabled': true,
-        'order': 1
-      }
-    ]
-
-    const wrapper = mount(TodoList, { store })
-    const vm = wrapper.vm as any
-
-    Vue.nextTick(async () => {
-      const item = vm.$el.querySelector('.list-item')
-      const button = item.querySelector('.list-item__actions .v-btn')
-      expect(button.getAttribute('disabled')).toBe('disabled')
-      expect(button.querySelector('.v-btn__content').textContent).toEqual('Retry Payment')
 
       wrapper.destroy()
       done()

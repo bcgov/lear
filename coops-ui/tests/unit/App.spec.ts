@@ -36,6 +36,17 @@ describe('App', () => {
   beforeEach(done => {
     const get = sinon.stub(axios, 'get')
 
+    // GET role
+    // NB: need to pass lower case Business Identifier for now
+    // TODO: also fix respective code
+    get.withArgs('cp0001364/authorizations')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            role: 'OWNER'
+          }
+      })))
+
     // GET entity info
     get.withArgs('CP0001364')
       .returns(new Promise((resolve) => resolve({
@@ -227,18 +238,8 @@ describe('App', () => {
     wrapper.destroy()
   })
 
-  // TODO: fix this
-  xit('fetches Role properly', () => {
-    expect(vm.$store.state.role).toEqual([
-      'edit',
-      'offline_access',
-      'uma_authorization',
-      'basic'
-    ])
-  })
-
-  it('decodes Corp Num properly', () => {
-    expect(vm.$store.state.entityIncNo).toEqual('CP0001364')
+  it('fetches Role properly', () => {
+    expect(vm.$store.state.role).toEqual('OWNER')
   })
 
   it('initializes Current Date properly', () => {
@@ -250,7 +251,7 @@ describe('App', () => {
     expect(vm.$store.state.currentDate).toEqual(currentDate)
   })
 
-  it('fetches the entity info properly', () => {
+  it('fetches Entity Info properly', () => {
     expect(vm.$store.state.entityName).toBe('TEST NAME')
     expect(vm.$store.state.entityStatus).toBe('GOODSTANDING')
     expect(vm.$store.state.entityBusinessNo).toBe('123456789')
@@ -260,26 +261,26 @@ describe('App', () => {
     expect(vm.$store.state.lastAgmDate).toBe('2019-08-16')
   })
 
-  it('fetches the tasks properly', () => {
+  it('fetches Tasks properly', () => {
     expect(vm.$store.state.tasks.length).toBe(3)
     expect(vm.$store.state.tasks[0].task.todo.header.ARFilingYear).toBe(2017)
     expect(vm.$store.state.tasks[1].task.todo.header.ARFilingYear).toBe(2018)
     expect(vm.$store.state.tasks[2].task.todo.header.ARFilingYear).toBe(2019)
   })
 
-  it('fetches the filings properly', () => {
+  it('fetches Filings properly', () => {
     expect(vm.$store.state.filings.length).toBe(3)
     expect(vm.$store.state.filings[0].filing.header.name).toBe('annualReport')
     expect(vm.$store.state.filings[1].filing.header.name).toBe('changeOfDirectors')
     expect(vm.$store.state.filings[2].filing.header.name).toBe('changeOfAddress')
   })
 
-  it('fetches the addresses properly', () => {
+  it('fetches Addresses properly', () => {
     expect(vm.$store.state.mailingAddress.addressCity).toBe('Victoria')
     expect(vm.$store.state.deliveryAddress.addressCity).toBe('Glasgow')
   })
 
-  it('fetches the directors properly', () => {
+  it('fetches Directors properly', () => {
     expect(vm.$store.state.directors.length).toBe(2)
     expect(vm.$store.state.directors[0].officer.lastName).toBe('Griffin')
     expect(vm.$store.state.directors[1].officer.lastName).toBe('Swanson')

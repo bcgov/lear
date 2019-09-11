@@ -16,7 +16,6 @@ describe('SaveErrorDialogue - Part 1 - Displays Error/Warning messages', () => {
     store.state.entityIncNo = 'CP0001191'
     store.state.ARFilingYear = 2017
     store.state.currentFilingStatus = 'NEW'
-    store.state.filedDate = null
   })
 
   it('Displays errors', () => {

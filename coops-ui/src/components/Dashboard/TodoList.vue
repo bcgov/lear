@@ -305,7 +305,7 @@ export default {
     // this is called to either Resume Payment or Retry Payment
     doResumePayment (item) {
       // staff are not allowed to resume or retry payment
-      if (this.isRoleStaff) return
+      if (this.isRoleStaff) return false
 
       const origin = window.location.origin || ''
       const filingId = item.id
@@ -315,6 +315,7 @@ export default {
       const paymentToken = item.paymentToken
       const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
       window.location.assign(payURL)
+      return true
     },
 
     isNew (item) {
