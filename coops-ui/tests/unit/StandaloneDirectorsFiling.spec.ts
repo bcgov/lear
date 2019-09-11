@@ -61,7 +61,7 @@ const sampleDirectors = [
 describe('Standalone Directors Filing - Part 1 - UI', () => {
   beforeEach(() => {
     // init store
-    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
   })
 
   it('renders the filing sub-components properly', () => {
@@ -186,7 +186,6 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
 describe('Standalone Directors Filing - Part 2 - Resuming', () => {
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
 
@@ -260,7 +259,6 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
 
@@ -459,7 +457,6 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
 
@@ -560,7 +557,6 @@ describe('Standalone Directors Filing - Part 5 - Data', () => {
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
 
@@ -708,7 +704,6 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
 

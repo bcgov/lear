@@ -109,7 +109,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['corpNum', 'filings'])
+    ...mapState(['entityIncNo', 'filings'])
   },
 
   created () {
@@ -165,7 +165,7 @@ export default {
             filingDocuments: [{
               filingId: filing.header.filingId,
               name: 'Annual Report',
-              documentName: `${this.corpNum} - Annual Report (${agmYear}) - ${filing.header.date}.pdf`
+              documentName: `${this.entityIncNo} - Annual Report (${agmYear}) - ${filing.header.date}.pdf`
             }]
           }
           // check if there was also a Change Of Directors
@@ -173,7 +173,7 @@ export default {
             item.filingDocuments.push({
               filingId: filing.header.filingId,
               name: 'Director Change (AGM)',
-              documentName: `${this.corpNum} - Director Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
+              documentName: `${this.entityIncNo} - Director Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
             })
           }
           // check if there was also a Change Of Address
@@ -181,7 +181,7 @@ export default {
             item.filingDocuments.push({
               filingId: filing.header.filingId,
               name: 'Address Change (AGM)',
-              documentName: `${this.corpNum} - Address Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
+              documentName: `${this.entityIncNo} - Address Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
             })
           }
           this.filedItems.push(item)
@@ -203,7 +203,7 @@ export default {
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: 'Director Change',
-            documentName: `${this.corpNum} - Director Change - ${filing.header.date}.pdf`
+            documentName: `${this.entityIncNo} - Director Change - ${filing.header.date}.pdf`
           }]
         }
         this.filedItems.push(item)
@@ -222,7 +222,7 @@ export default {
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: 'Address Change',
-            documentName: `${this.corpNum} - Address Change - ${filing.header.date}.pdf`
+            documentName: `${this.entityIncNo} - Address Change - ${filing.header.date}.pdf`
           }]
         }
         this.filedItems.push(item)
@@ -249,7 +249,7 @@ export default {
     },
 
     async downloadOneDocument (filingDocument) {
-      const url = this.corpNum + '/filings/' + filingDocument.filingId
+      const url = this.entityIncNo + '/filings/' + filingDocument.filingId
       const headers = { 'Accept': 'application/pdf' }
 
       await axios.get(url, { headers: headers, responseType: 'blob' as 'json' }).then(response => {
@@ -295,7 +295,7 @@ export default {
     async downloadOneReceipt (filing) {
       const url = filing.paymentToken + '/receipts'
       const data = {
-        corpName: this.corpNum,
+        corpName: this.entityIncNo,
         filingDateTime: filing.filingDate, // TODO: format as needed
         fileName: 'receipt' // not used
       }
@@ -307,7 +307,7 @@ export default {
 
       await axios.post(url, data, config).then(response => {
         if (response) {
-          const fileName = `${this.corpNum} - Receipt - ${filing.filingDate}.pdf`
+          const fileName = `${this.entityIncNo} - Receipt - ${filing.filingDate}.pdf`
 
           /* solution from https://github.com/axios/axios/issues/1392 */
 

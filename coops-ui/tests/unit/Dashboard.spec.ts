@@ -72,7 +72,7 @@ describe('Dashboard - UI', () => {
 describe('Dashboard - Click Tests', () => {
   it('routes to Standalone Office Address Filing page when EDIT is clicked', done => {
     // init store
-    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
 
     // create a Local Vue and install router on it
     const localVue = createLocalVue()
@@ -97,7 +97,7 @@ describe('Dashboard - Click Tests', () => {
 
   it('routes to Standalone Directors Filing page when EDIT is clicked', done => {
     // init store
-    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
 
     // create a Local Vue and install router on it
     const localVue = createLocalVue()

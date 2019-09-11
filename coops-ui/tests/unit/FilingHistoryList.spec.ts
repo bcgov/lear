@@ -14,7 +14,7 @@ describe('FilingHistoryList', () => {
     const $route = { query: { 'filingId': null } }
 
     // init store
-    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
     store.state.filings = []
 
     const wrapper = shallowMount(FilingHistoryList, { store, mocks: { $route } })
@@ -36,7 +36,7 @@ describe('FilingHistoryList', () => {
     const $route = { query: { 'filingId': null } }
 
     // init store
-    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
     store.state.filings = [
       {
         'filing': {
@@ -98,7 +98,7 @@ describe('FilingHistoryList', () => {
     const $route = { query: { 'filing_id': '654' } }
 
     // init store
-    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
     store.state.filings = [
       {
         'filing': {

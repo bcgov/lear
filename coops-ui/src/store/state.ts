@@ -2,7 +2,6 @@ export default {
   // tombstone data
   role: null,
   username: null,
-  corpNum: null,
   currentDate: null,
 
   // entity info

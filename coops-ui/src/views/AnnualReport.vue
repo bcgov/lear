@@ -65,7 +65,7 @@
               </header>
               <RegisteredOfficeAddress
                 :changeButtonDisabled="!agmDateValid"
-                :legalEntityNumber="corpNum"
+                :legalEntityNumber="entityIncNo"
                 :addresses.sync="addresses"
                 @modified="officeModifiedEventHandler($event)"
                 @valid="addressesFormValid=$event"
@@ -237,8 +237,8 @@ export default {
   },
 
   computed: {
-    ...mapState(['currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate',
-      'entityName', 'entityIncNo', 'entityFoundingDate']),
+    ...mapState(['currentDate', 'ARFilingYear', 'lastAgmDate', 'entityName',
+      'entityIncNo', 'entityFoundingDate']),
 
     ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState']),
 
@@ -277,7 +277,7 @@ export default {
     this.filingId = this.$route.params.id
 
     // if tombstone data isn't set, route to home
-    if (!this.corpNum || !this.ARFilingYear || (this.filingId === undefined)) {
+    if (!this.entityIncNo || !this.ARFilingYear || (this.filingId === undefined)) {
       this.$router.push('/')
     } else if (this.filingId > 0) {
       // resume draft filing
@@ -317,7 +317,7 @@ export default {
 
   methods: {
     fetchData () {
-      const url = this.corpNum + '/filings/' + this.filingId
+      const url = this.entityIncNo + '/filings/' + this.filingId
       axios.get(url).then(response => {
         if (response && response.data) {
           const filing = response.data.filing
@@ -521,7 +521,7 @@ export default {
 
       if (this.filingId > 0) {
         // we have a filing id, so we are updating an existing filing
-        let url = this.corpNum + '/filings/' + this.filingId
+        let url = this.entityIncNo + '/filings/' + this.filingId
         if (isDraft) { url += '?draft=true' }
         let filing = null
         await axios.put(url, data).then(res => {
@@ -546,7 +546,7 @@ export default {
         return filing
       } else {
         // filing id is 0, so we are saving a new filing
-        let url = this.corpNum + '/filings'
+        let url = this.entityIncNo + '/filings'
         if (isDraft) { url += '?draft=true' }
         let filing = null
         await axios.post(url, data).then(res => {

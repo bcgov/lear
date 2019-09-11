@@ -20,7 +20,7 @@ describe('AGMDate', () => {
 
   beforeEach(async () => {
     // init/reset store
-    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
     store.state.currentDate = '2019/07/15'
     store.state.ARFilingYear = 2019
 

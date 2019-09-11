@@ -470,7 +470,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['corpNum', 'lastPreLoadFilingDate', 'currentDate', 'currentFilingStatus']),
+    ...mapState(['entityIncNo', 'lastPreLoadFilingDate', 'currentDate', 'currentFilingStatus']),
 
     ...mapGetters(['lastCODFilingDate']),
 
@@ -586,8 +586,8 @@ export default {
     },
 
     getDirectors: function () {
-      if (this.corpNum && this.asOfDate) {
-        var url = this.corpNum + '/directors?date=' + this.asOfDate
+      if (this.entityIncNo && this.asOfDate) {
+        var url = this.entityIncNo + '/directors?date=' + this.asOfDate
         axios.get(url)
           .then(response => {
             if (response && response.data && response.data.directors) {

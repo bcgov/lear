@@ -5,9 +5,6 @@ export default {
   username (state, username) {
     state.username = username
   },
-  corpNum (state, corpNum) {
-    state.corpNum = corpNum
-  },
   currentDate (state, currentDate) {
     state.currentDate = currentDate
   },

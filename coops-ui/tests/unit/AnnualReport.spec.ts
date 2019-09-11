@@ -22,7 +22,7 @@ Vue.use(Vuelidate)
 describe('AnnualReport - Part 1 - UI', () => {
   beforeEach(() => {
     // init store
-    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
     store.state.ARFilingYear = 2017
     store.state.currentFilingStatus = 'NEW'
   })
@@ -44,7 +44,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
-    expect(vm.$store.state.corpNum).toEqual('CP0001191')
+    expect(vm.$store.state.entityIncNo).toEqual('CP0001191')
     expect(vm.$store.state.ARFilingYear).toEqual(2017)
     expect(vm.$store.state.currentFilingStatus).toEqual('NEW')
 
@@ -191,7 +191,6 @@ describe('AnnualReport - Part 1 - UI', () => {
 describe('AnnualReport - Part 2 - Resuming', () => {
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
@@ -274,7 +273,6 @@ describe('AnnualReport - Part 3 - Submitting', () => {
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
@@ -485,7 +483,6 @@ describe('AnnualReport - Part 4 - Saving', () => {
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
@@ -605,7 +602,6 @@ describe('AnnualReport - Part 5 - Data', () => {
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = currentFilingYear
@@ -863,7 +859,6 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017

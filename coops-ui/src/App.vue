@@ -88,21 +88,21 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setUsername', 'setCorpNum', 'setRole', 'setCurrentDate', 'setEntityName', 'setEntityStatus',
+    ...mapActions(['setUsername', 'setRole', 'setCurrentDate', 'setEntityName', 'setEntityStatus',
       'setEntityBusinessNo', 'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate',
       'setLastAgmDate', 'setTasks', 'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors']),
 
     async fetchData () {
-      let jwt, username, corpNum, role, date
+      let businessId
 
       // first try synchronous operations
       try {
-        jwt = this.getJWT()
+        const jwt = this.getJWT()
         // console.log('JWT =', jwt)
-        username = this.getUsername(jwt)
-        corpNum = this.getCorpNum(username)
-        role = await this.getRole(corpNum)
-        date = this.updateCurrentDate()
+        const username = this.getUsername(jwt)
+        businessId = this.getBusinessId(username)
+        const role = await this.getRole(businessId)
+        const date = this.updateCurrentDate()
       } catch (error) {
         console.error(error)
         this.dashboardUnavailableDialog = true
@@ -111,11 +111,11 @@ export default {
 
       // now execute async operations
       Promise.all([
-        axios.get(corpNum),
-        axios.get(corpNum + '/tasks'),
-        axios.get(corpNum + '/filings'),
-        axios.get(corpNum + '/addresses'),
-        axios.get(corpNum + '/directors')
+        axios.get(businessId),
+        axios.get(businessId + '/tasks'),
+        axios.get(businessId + '/filings'),
+        axios.get(businessId + '/addresses'),
+        axios.get(businessId + '/directors')
       ]).then(data => {
         if (!data || data.length !== 5) throw new Error('incomplete data')
         this.storeEntityInfo(data[0])
@@ -159,19 +159,18 @@ export default {
       return username
     },
 
-    getCorpNum (username) {
-      // corpNum = sessionStorage.getItem('CORP_NUM') // FUTURE
-      const corpNum = username.toUpperCase() // FOR NOW
-      if (!corpNum) {
-        throw new Error('Corp Num is null')
+    getBusinessId (username) {
+      // const businessId = sessionStorage.getItem('BUSINESS_IDENTIFIER') // FUTURE
+      const businessId = username.toUpperCase() // FOR NOW
+      if (!businessId) {
+        throw new Error('Business Identifier is null')
       }
-      this.setCorpNum(corpNum)
-      return corpNum
+      return businessId
     },
 
-    async getRole (corpNum) {
+    async getRole (businessId) {
       // NB: need to pass lower case Business Identifier for now
-      const url = corpNum.toLowerCase() + '/authorizations'
+      const url = businessId.toLowerCase() + '/authorizations'
       const config = {
         baseURL: sessionStorage.getItem('AUTH_API_URL') + 'api/v1/entities/'
       }

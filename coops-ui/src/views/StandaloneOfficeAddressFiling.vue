@@ -41,7 +41,7 @@
           <section>
             <RegisteredOfficeAddress
               :changeButtonDisabled="false"
-              :legalEntityNumber="corpNum"
+              :legalEntityNumber="entityIncNo"
               :addresses.sync="addresses"
               @modified="officeModifiedEventHandler($event)"
               @valid="officeAddressFormValid = $event" />
@@ -161,7 +161,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['currentDate', 'corpNum', 'entityName', 'entityIncNo', 'entityFoundingDate']),
+    ...mapState(['currentDate', 'entityName', 'entityIncNo', 'entityFoundingDate']),
 
     ...mapGetters(['isRoleStaff']),
 
@@ -193,7 +193,7 @@ export default {
     this.filingId = this.$route.params.id
 
     // if tombstone data isn't set, route to home
-    if (!this.corpNum || (this.filingId === undefined)) {
+    if (!this.entityIncNo || (this.filingId === undefined)) {
       this.$router.push('/')
     }
 
@@ -245,7 +245,7 @@ export default {
     },
 
     fetchChangeOfAddressFiling () {
-      const url = this.corpNum + '/filings/' + this.filingId
+      const url = this.entityIncNo + '/filings/' + this.filingId
       axios.get(url).then(response => {
         if (response && response.data) {
           const filing = response.data.filing
@@ -390,7 +390,7 @@ export default {
 
       if (this.filingId > 0) {
         // we have a filing id, so we are updating an existing filing
-        let url = this.corpNum + '/filings/' + this.filingId
+        let url = this.entityIncNo + '/filings/' + this.filingId
         if (isDraft) { url += '?draft=true' }
         let filing = null
         await axios.put(url, filingData).then(res => {
@@ -415,7 +415,7 @@ export default {
         return filing
       } else {
         // filing id is 0, so we are saving a new filing
-        let url = this.corpNum + '/filings'
+        let url = this.entityIncNo + '/filings'
         if (isDraft) { url += '?draft=true' }
         let filing = null
         await axios.post(url, filingData).then(res => {

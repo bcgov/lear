@@ -5,9 +5,6 @@ export default {
   setUsername ({ commit }, username) {
     commit('username', username)
   },
-  setCorpNum ({ commit }, corpNum) {
-    commit('corpNum', corpNum)
-  },
   setCurrentDate ({ commit }, currentDate) {
     commit('currentDate', currentDate)
   },
