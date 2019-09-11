@@ -38,37 +38,9 @@ async def test_error_cb(caplog, test_name, error_msg, expected):
     assert expected in caplog.text
 
 
-@pytest.mark.asyncio
-async def test_closed_cb(caplog, create_mock_coro, event_loop):
-    """Exit the session after the NATS connection is closed."""
-    from entity_filer.service_utils import closed_cb
-
-    await closed_cb()
-
-    assert 'Connection to NATS is closed.' in caplog.text
-
-
-# def signal_handler(sig_loop, sig_nc, task):
-#     """Handle the signaled event and schedule the shutdown process.
-#     Note: This works on *nix systems only, which is fine for deployment target.
-#     """
-
-#     if sig_nc.is_closed:
-#         return
-#     logger.info('Signal to Shutdown received, disconnecting ...')
-#     # sig_loop.create_task(close())
-#     sig_loop.create_task(task())
-
 def test_signal_handler_task(caplog):
     """Assert handler returns if the NATS connection is closed."""
     from entity_filer.service_utils import signal_handler
-
-    class Nc():
-        was_called = 0
-        @property
-        def is_closed(self):
-            self.was_called += 1
-            return False
 
     class Loop():
         was_called = 0
@@ -81,27 +53,7 @@ def test_signal_handler_task(caplog):
 
     my_loop = Loop()
 
-    signal_handler(sig_loop=my_loop, sig_nc=Nc(), task=close)
+    signal_handler(sig_loop=my_loop, task=close)
 
     assert my_loop.was_called == 1
     assert 'Signal to Shutdown received' in caplog.text
-
-
-def test_signal_handler_already_closed(caplog, create_mock_coro):
-    """Assert handler returns if the NATS connection is closed."""
-    from entity_filer.service_utils import signal_handler
-
-    class Nc():
-        was_called = 0
-
-        @property
-        def is_closed(self):
-            self.was_called += 1
-            return True
-
-    nc = Nc()
-
-    signal_handler(sig_loop=None, sig_nc=nc, task=None)
-
-    assert nc.was_called == 1
-    assert 'Signal: NATS connection is closed.' in caplog.text
