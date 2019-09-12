@@ -86,11 +86,9 @@ export default {
     fetchData () {
       let businessId
 
-      // first try synchronous operations
       try {
-        // const jwt = this.getJWT()
-        // console.log('JWT =', jwt)
-        // const username = this.getUsername(jwt) // NOT NEEDED
+        // const jwt = this.getJWT() // NOT NEEDED AT THIS TIME
+        // this.getUsername(jwt)     // NOT NEEDED AT THIS TIME
         businessId = this.getBusinessId()
         this.updateCurrentDate()
       } catch (error) {
@@ -99,28 +97,34 @@ export default {
         return // do not execute remaining code
       }
 
-      // now execute async operations
-      Promise.all([
-        this.getAuthorizations(businessId),
-        this.getBusinessInfo(businessId),
-        axios.get(businessId),
-        axios.get(businessId + '/tasks'),
-        axios.get(businessId + '/filings'),
-        axios.get(businessId + '/addresses'),
-        axios.get(businessId + '/directors')
-      ]).then(data => {
-        if (!data || data.length !== 7) throw new Error('incomplete data')
-        this.storeRole(data[0])
-        this.storeBusinessInfo(data[1])
-        this.storeEntityInfo(data[2])
-        this.storeTasks(data[3])
-        this.storeFilings(data[4])
-        this.storeAddresses(data[5])
-        this.storeDirectors(data[6])
-        this.dataLoaded = true
+      // check if current user is authorized
+      this.getAuthorizations(businessId).then(data => {
+        this.storeRole(data) // throws if no role
+
+        // good so far ... fetch the rest of the data
+        Promise.all([
+          this.getBusinessInfo(businessId),
+          axios.get(businessId),
+          axios.get(businessId + '/tasks'),
+          axios.get(businessId + '/filings'),
+          axios.get(businessId + '/addresses'),
+          axios.get(businessId + '/directors')
+        ]).then(data => {
+          if (!data || data.length !== 6) throw new Error('incomplete data')
+          this.storeBusinessInfo(data[0])
+          this.storeEntityInfo(data[1])
+          this.storeTasks(data[2])
+          this.storeFilings(data[3])
+          this.storeAddresses(data[4])
+          this.storeDirectors(data[5])
+          this.dataLoaded = true
+        }).catch(error => {
+          console.error(error)
+          this.dashboardUnavailableDialog = true
+        })
       }).catch(error => {
         console.error(error)
-        this.dashboardUnavailableDialog = true
+        this.accountAuthorizationDialog = true
       })
     },
 
@@ -194,12 +198,8 @@ export default {
     storeRole (response) {
       const role = response && response.data && response.data.role
       if (role) {
-        this.setRole(role.toLowerCase())
+        this.setRole(role)
       } else {
-        // FUTURE: handle this differently? (ask Scott)
-        // different dialog?
-        // browser alert?
-        // logout + redirect to auth?
         throw new Error('invalid role')
       }
     },

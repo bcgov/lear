@@ -52,14 +52,14 @@ describe('App', () => {
       .returns(new Promise((resolve) => resolve({
         data:
           {
-            // Auth Entity (business contact info) data
+            // Auth API Entity data
             contacts: [
               {
                 email: 'name@mail.com',
                 phone: '(123)-456-7890'
               }
             ],
-            // Legal Entity Info data
+            // Legal API Business data
             business: {
               legalName: 'TEST NAME',
               status: 'GOODSTANDING',
@@ -247,7 +247,11 @@ describe('App', () => {
   })
 
   it('fetches Role properly', () => {
-    expect(vm.$store.state.role).toEqual('OWNER')
+    expect(vm.$store.state.role).toBe('OWNER')
+    expect(vm.$store.getters.isRoleOwner).toBe(true)
+    expect(vm.$store.getters.isRoleAdmin).toBe(false)
+    expect(vm.$store.getters.isRoleMember).toBe(false)
+    expect(vm.$store.getters.isRoleStaff).toBe(false)
   })
 
   it('fetches Business Info properly', () => {
