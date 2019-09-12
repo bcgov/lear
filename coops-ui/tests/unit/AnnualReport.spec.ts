@@ -466,7 +466,10 @@ describe('AnnualReport - Part 3 - Submitting', () => {
     const vm = wrapper.vm as any
 
     // make sure form is validated
-    vm.setValidated(true)
+    vm.agmDateValid = true
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
 
     // stub address data
     vm.addresses = {
