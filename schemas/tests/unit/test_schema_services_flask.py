@@ -17,8 +17,8 @@ Flask extension to validate json data against the JSONSchema's that have been ca
 """
 from flask import Flask, g
 
-from registry_schemas.flask import SchemaServices
 from registry_schemas.example_data import ANNUAL_REPORT
+from registry_schemas.flask import SchemaServices
 
 from .schema_data import TEST_SCHEMAS_DATA
 

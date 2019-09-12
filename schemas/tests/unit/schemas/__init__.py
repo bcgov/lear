@@ -11,8 +11,4 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Example JSON segments and filings that are known to work.
-
-These can be used in other tests as basis for the JSON filings.
-"""
-from .schema_data import ANNUAL_REPORT, BUSINESS, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS, FILING_HEADER
+"""Test Suite for the filing schemas and segments."""

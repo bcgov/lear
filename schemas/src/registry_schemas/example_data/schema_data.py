@@ -27,9 +27,20 @@ FILING_HEADER = {
             'identifier': 'CP1234567',
             'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
             'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',
-            'legalName': 'legal name - CP1234567'
+            'legalName': 'legal name - CP1234567',
+            'legalType': 'CP'
         }
     }
+}
+
+BUSINESS = {
+    'cacheId': 1,
+    'foundingDate': '2007-04-08',
+    'identifier': 'CP1234567',
+    'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+    'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',
+    'legalName': 'legal name - CP1234567',
+    'legalType': 'CP'
 }
 
 ANNUAL_REPORT = {
@@ -46,7 +57,8 @@ ANNUAL_REPORT = {
             'identifier': 'CP1234567',
             'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
             'lastPreBobFilingTimestamp': '2019-01-01T20:05:49.068272+00:00',
-            'legalName': 'legal name - CP1234567'
+            'legalName': 'legal name - CP1234567',
+            'legalType': 'CP'
         },
         'annualReport': {
             'annualGeneralMeetingDate': '2018-04-08',
