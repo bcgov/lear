@@ -179,8 +179,7 @@ export default {
     },
 
     getAuthorizations (businessId) {
-      // TODO: need to pass lower case Business Identifier for now (also fix respective unit test)
-      const url = businessId.toLowerCase() + '/authorizations'
+      const url = businessId + '/authorizations'
       const config = {
         baseURL: sessionStorage.getItem('AUTH_API_URL') + 'api/v1/entities/'
       }

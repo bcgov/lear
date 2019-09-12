@@ -37,8 +37,7 @@ describe('App', () => {
     const get = sinon.stub(axios, 'get')
 
     // GET authorizations (role)
-    // TODO: need to pass lower case Business Identifier for now (also fix respective code)
-    get.withArgs('cp0001364/authorizations')
+    get.withArgs('CP0001364/authorizations')
       .returns(new Promise((resolve) => resolve({
         data:
           {
