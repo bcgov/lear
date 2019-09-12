@@ -57,27 +57,27 @@ def test_validate_ar_basic(session, test_name, now, ar_date, agm_date,
     [
         ('SUCCESS', date(2020, 9, 17), 'BC', 'CA', 'BC', 'CA', None, None),
         ('FAIL_NOT_BC_DELIVERY_REGION', date(2020, 9, 17), 'AB', 'CA', 'BC', 'CA',
-         HTTPStatus.BAD_REQUEST, [{'error': "addressRegion must be 'BC'.",
+         HTTPStatus.BAD_REQUEST, [{'error': "Address Region must be 'BC'.",
                                    'path': '/filing/changeOfAddress/deliveryAddress/addressRegion'}]),
         ('FAIL_NOT_BC_DELIVERY_REGION', date(2020, 9, 17), 'BC', 'CA', 'AB', 'CA',
-         HTTPStatus.BAD_REQUEST, [{'error': "addressRegion must be 'BC'.",
+         HTTPStatus.BAD_REQUEST, [{'error': "Address Region must be 'BC'.",
                                    'path': '/filing/changeOfAddress/mailingAddress/addressRegion'}]),
         ('FAIL_ALL_ADDRESS_REGIONS', date(2020, 9, 17), 'WA', 'CA', 'WA', 'CA',
          HTTPStatus.BAD_REQUEST, [
-             {'error': "addressRegion must be 'BC'.",
+             {'error': "Address Region must be 'BC'.",
               'path': '/filing/changeOfAddress/mailingAddress/addressRegion'},
-             {'error': "addressRegion must be 'BC'.",
+             {'error': "Address Region must be 'BC'.",
               'path': '/filing/changeOfAddress/mailingAddress/addressRegion'}
         ]),
         ('FAIL_ALL_ADDRESS', date(2020, 9, 17), 'WA', 'US', 'WA', 'US',
          HTTPStatus.BAD_REQUEST, [
-             {'error': "addressRegion must be 'BC'.",
+             {'error': "Address Region must be 'BC'.",
               'path': '/filing/changeOfAddress/mailingAddress/addressRegion'},
-             {'error': "addressRegion must be 'BC'.",
+             {'error': "Address Region must be 'BC'.",
               'path': '/filing/changeOfAddress/deliveryAddress/addressRegion'},
-             {'error': "addressCountry must be 'CA'.",
+             {'error': "Address Country must be 'CA'.",
               'path': '/filing/changeOfAddress/mailingAddress/addressCountry'},
-             {'error': "addressCountry must be 'CA'.",
+             {'error': "Address Country must be 'CA'.",
               'path': '/filing/changeOfAddress/deliveryAddress/addressCountry'}
         ]),
     ])
@@ -117,7 +117,7 @@ def test_validate_coa_basic(session, test_name, now, delivery_region, delivery_c
         ('SUCCESS', date(2020, 9, 17), 'CA', 'CA', None, None),
         ('Director[1] Nonsense Country', date(2020, 9, 17), 'CA', 'nonsense',
          HTTPStatus.BAD_REQUEST, [
-             {'error': 'addressCountry must resolve to a valid ISO-2 country.',
+             {'error': 'Address Country must resolve to a valid ISO-2 country.',
               'path': '/filing/changeOfDirectors/directors/1/deliveryAddress/addressCountry'}]),
     ])
 def test_validate_cod_basic(session, test_name, now, delivery_country_1, delivery_country_2,

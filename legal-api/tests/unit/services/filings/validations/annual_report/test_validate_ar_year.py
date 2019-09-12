@@ -27,28 +27,28 @@ from legal_api.services.filings.validations.annual_report import validate_ar_yea
 @pytest.mark.parametrize('test_name, current_ar_date, previous_ar_date, founding_date, expected_code, expected_msg', [
     ('SUCCESS', '2018-08-05', '2017-08-05', '1900-07-01', None, None),
     ('NO_AR_DATE', None, '2017-08-05', '1900-07-01',
-     HTTPStatus.BAD_REQUEST, [{'error': 'annualReportDate must be a valid date.',
+     HTTPStatus.BAD_REQUEST, [{'error': 'Annual Report Date must be a valid date.',
                                'path': 'filing/annualReport/annualReportDate'}]),
     ('NO_FUTURE_FILINGS',
      (datetime.utcnow() + datedelta.YEAR).date().isoformat(),  # current_ar_date a year in the future
      '2017-08-05', '1900-07-01',
-     HTTPStatus.BAD_REQUEST, [{'error': 'annualReportDate cannot be in the future.',
+     HTTPStatus.BAD_REQUEST, [{'error': 'Annual Report Date cannot be in the future.',
                                'path': 'filing/annualReport/annualReportDate'}]),
     ('AR_BEFORE_LAST_AR', '2016-08-05', '2017-08-05', '1900-07-01',
      HTTPStatus.BAD_REQUEST, [
-         {'error': 'annualReportDate cannot be before a previous AnnualReport or the foundingDate.',
+         {'error': 'Annual Report Date cannot be before a previous Annual Report or the Founding Date.',
           'path': 'filing/annualReport/annualReportDate'}]),
     ('NO_LAST_AR_NOT_AFTER_FOUNDING', '2016-08-05', None, '1900-07-01',
      HTTPStatus.BAD_REQUEST, [
-         {'error': 'annualReportDate must be the next AnnualReport in contiguous order.',
+         {'error': 'Annual Report Date must be the next Annual Report in contiguous order.',
           'path': 'filing/annualReport/annualReportDate'}]),
     ('NO_LAST_AR_BEFORE_FOUNDING', '2016-08-05', None, '2017-08-05',
      HTTPStatus.BAD_REQUEST, [
-         {'error': 'annualReportDate cannot be before a previous AnnualReport or the foundingDate.',
+         {'error': 'Annual Report Date cannot be before a previous Annual Report or the Founding Date.',
           'path': 'filing/annualReport/annualReportDate'}]),
     ('LAST_AR_NOT_CONTIGUOUS_ORDER', '2019-08-05', '2017-08-05', '1900-07-01',
      HTTPStatus.BAD_REQUEST, [
-         {'error': 'annualReportDate must be the next AnnualReport in contiguous order.',
+         {'error': 'Annual Report Date must be the next Annual Report in contiguous order.',
           'path': 'filing/annualReport/annualReportDate'}]),
 ])
 def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, founding_date,
