@@ -480,6 +480,8 @@ describe('AnnualReport - Part 3 - Submitting', () => {
     // verify v-tooltip text
     expect(wrapper.find('#ar-file-pay-btn + span').text()).toBe('Staff are not allowed to file.')
 
+    store.state.role = 'OWNER' // cleanup
+
     wrapper.destroy()
   })
 })
