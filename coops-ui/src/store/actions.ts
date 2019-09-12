@@ -29,6 +29,12 @@ export default {
   setEntityFoundingDate ({ commit }, entityFoundingDate) {
     commit('entityFoundingDate', entityFoundingDate)
   },
+  setBusinessEmail ({ commit }, businessEmail) {
+    commit('businessEmail', businessEmail)
+  },
+  setBusinessPhone ({ commit }, businessPhone) {
+    commit('businessPhone', businessPhone)
+  },
   setLastPreLoadFilingDate ({ commit }, lastPreLoadFilingDate) {
     commit('lastPreLoadFilingDate', lastPreLoadFilingDate)
   },

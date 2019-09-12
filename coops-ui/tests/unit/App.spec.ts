@@ -14,7 +14,6 @@ Vue.use(Vuelidate)
 
 describe('App', () => {
   // just need a token that can get parsed properly (will be expired but doesn't matter for tests)
-  // note - the corp num in this token is CP0001364
   sessionStorage.setItem('KEYCLOAK_TOKEN', 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUbWdtZUk0MnVsdUZ0N3' +
     'FQbmUtcTEzdDUwa0JDbjF3bHF6dHN0UGdUM1dFIn0.eyJqdGkiOiJlMmJlNDc5Yi0zYTkzLTRhNjAtYmZhNi1hZjM4MWE2YTBmNGMiLCJleHA' +
     'iOjE1Njc4ODQ4NjMsIm5iZiI6MCwiaWF0IjoxNTY3Nzk4NDYzLCJpc3MiOiJodHRwczovL3Nzby1kZXYucGF0aGZpbmRlci5nb3YuYmMuY2Ev' +
@@ -29,6 +28,7 @@ describe('App', () => {
     'LRkaijPbHAddm0QmMGgEIDv9Z3EGHaYtTs2L3cSH_bYdUjjclwGwt0GIz3DOHviS8yXuwkzRVHI8W3mdY1dionkqU26_miA10Yxl1ZnFmQpZc' +
     'MHmS4dMcb-_CU6ysgemiO8wonalqLb7Lz01Zd1h2NCyTC4Twk3BFuZNHlXiaXWVaF2UgtQI1Gf7XfRCPQhdLLYPt6mzL_nEnRveCOdqXVM6XK' +
     'OPjpHUIMONexFGbojmRsCg5w-qQrXYY8m-lA17GLdlCCAtrJXlS0mLbFr1jQL0eroqtrFm9WoQByVaso5Kx_n7wXx4h3BjunSJuqsJCmA')
+  sessionStorage.setItem('BUSINESS_IDENTIFIER', 'CP0001364')
 
   let wrapper
   let vm
@@ -36,9 +36,8 @@ describe('App', () => {
   beforeEach(done => {
     const get = sinon.stub(axios, 'get')
 
-    // GET role
-    // NB: need to pass lower case Business Identifier for now
-    // TODO: also fix respective code
+    // GET authorizations (role)
+    // TODO: need to pass lower case Business Identifier for now (also fix respective code)
     get.withArgs('cp0001364/authorizations')
       .returns(new Promise((resolve) => resolve({
         data:
@@ -48,10 +47,19 @@ describe('App', () => {
       })))
 
     // GET entity info
+    // NB: contains responses for 2 axios calls with the same signature
     get.withArgs('CP0001364')
       .returns(new Promise((resolve) => resolve({
         data:
           {
+            // Auth Entity (business contact info) data
+            contacts: [
+              {
+                email: 'name@mail.com',
+                phone: '(123)-456-7890'
+              }
+            ],
+            // Legal Entity Info data
             business: {
               legalName: 'TEST NAME',
               status: 'GOODSTANDING',
@@ -240,6 +248,11 @@ describe('App', () => {
 
   it('fetches Role properly', () => {
     expect(vm.$store.state.role).toEqual('OWNER')
+  })
+
+  it('fetches Business Info properly', () => {
+    expect(vm.$store.state.businessEmail).toEqual('name@mail.com')
+    expect(vm.$store.state.businessPhone).toEqual('(123)-456-7890')
   })
 
   it('initializes Current Date properly', () => {

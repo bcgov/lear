@@ -9,32 +9,17 @@
       </div>
     </div>
 
-    <v-dialog v-model="dashboardUnavailableDialog" width="45rem" persistent>
-      <v-card>
-        <v-card-title>Dashboard Unavailable</v-card-title>
-        <v-card-text>
-          <p class="genErr">We are currently unable to access your dashboard. You can continue to
-            try to access your dashboard, or you can exit now and try to access your dashboard at
-            another time.</p>
-          <p class="genErr">If this error persists, please contact us.</p>
-          <p class="genErr">
-            <v-icon small>phone</v-icon>
-            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
-          </p>
-          <p class="genErr">
-            <v-icon small>email</v-icon>
-            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
-              >SBC_ITOperationsSupport@gov.bc.ca</a>
-          </p>
-        </v-card-text>
-        <v-divider></v-divider>
-        <v-card-actions>
-          <v-btn color="primary" flat @click="onClickExit">Exit</v-btn>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" flat @click="onClickRetry">Retry</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <DashboardUnavailableDialog
+      :dialog="dashboardUnavailableDialog"
+      @exit="onClickExit"
+      @retry="onClickRetry"
+    />
+
+    <AccountAuthorizationDialog
+      :dialog="accountAuthorizationDialog"
+      @exit="onClickExit"
+      @retry="onClickRetry"
+    />
 
     <sbc-header ref="sbcHeader" :authURL="authAPIURL" />
 
@@ -54,6 +39,8 @@
 import { mapActions } from 'vuex'
 import DateUtils from '@/date-utils'
 import axios from '@/axios-auth'
+import DashboardUnavailableDialog from '@/components/Dashboard/DashboardUnavailableDialog.vue'
+import AccountAuthorizationDialog from '@/components/Dashboard/AccountAuthorizationDialog.vue'
 import SbcHeader from 'sbc-common-components/src/components/SbcHeader.vue'
 import SbcFooter from 'sbc-common-components/src/components/SbcFooter.vue'
 import EntityInfo from '@/components/EntityInfo.vue'
@@ -66,11 +53,14 @@ export default {
   data () {
     return {
       dashboardUnavailableDialog: false,
+      accountAuthorizationDialog: false,
       dataLoaded: false
     }
   },
 
   components: {
+    DashboardUnavailableDialog,
+    AccountAuthorizationDialog,
     SbcHeader,
     SbcFooter,
     EntityInfo
@@ -88,21 +78,21 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setUsername', 'setRole', 'setCurrentDate', 'setEntityName', 'setEntityStatus',
-      'setEntityBusinessNo', 'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate',
-      'setLastAgmDate', 'setTasks', 'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors']),
+    ...mapActions(['setUsername', 'setRole', 'setBusinessEmail', 'setBusinessPhone', 'setCurrentDate',
+      'setEntityName', 'setEntityStatus', 'setEntityBusinessNo', 'setEntityIncNo', 'setLastPreLoadFilingDate',
+      'setEntityFoundingDate', 'setLastAgmDate', 'setTasks', 'setFilings', 'setMailingAddress',
+      'setDeliveryAddress', 'setDirectors']),
 
-    async fetchData () {
+    fetchData () {
       let businessId
 
       // first try synchronous operations
       try {
-        const jwt = this.getJWT()
+        // const jwt = this.getJWT()
         // console.log('JWT =', jwt)
-        const username = this.getUsername(jwt)
-        businessId = this.getBusinessId(username)
-        const role = await this.getRole(businessId)
-        const date = this.updateCurrentDate()
+        // const username = this.getUsername(jwt) // NOT NEEDED
+        businessId = this.getBusinessId()
+        this.updateCurrentDate()
       } catch (error) {
         console.error(error)
         this.dashboardUnavailableDialog = true
@@ -111,18 +101,22 @@ export default {
 
       // now execute async operations
       Promise.all([
+        this.getAuthorizations(businessId),
+        this.getBusinessInfo(businessId),
         axios.get(businessId),
         axios.get(businessId + '/tasks'),
         axios.get(businessId + '/filings'),
         axios.get(businessId + '/addresses'),
         axios.get(businessId + '/directors')
       ]).then(data => {
-        if (!data || data.length !== 5) throw new Error('incomplete data')
-        this.storeEntityInfo(data[0])
-        this.storeTasks(data[1])
-        this.storeFilings(data[2])
-        this.storeAddresses(data[3])
-        this.storeDirectors(data[4])
+        if (!data || data.length !== 7) throw new Error('incomplete data')
+        this.storeRole(data[0])
+        this.storeBusinessInfo(data[1])
+        this.storeEntityInfo(data[2])
+        this.storeTasks(data[3])
+        this.storeFilings(data[4])
+        this.storeAddresses(data[5])
+        this.storeDirectors(data[6])
         this.dataLoaded = true
       }).catch(error => {
         console.error(error)
@@ -159,32 +153,12 @@ export default {
       return username
     },
 
-    getBusinessId (username) {
-      // const businessId = sessionStorage.getItem('BUSINESS_IDENTIFIER') // FUTURE
-      const businessId = username.toUpperCase() // FOR NOW
+    getBusinessId () {
+      const businessId = sessionStorage.getItem('BUSINESS_IDENTIFIER')
       if (!businessId) {
         throw new Error('Business Identifier is null')
       }
       return businessId
-    },
-
-    async getRole (businessId) {
-      // NB: need to pass lower case Business Identifier for now
-      // TODO: also fix respective unit test
-      const url = businessId.toLowerCase() + '/authorizations'
-      const config = {
-        baseURL: sessionStorage.getItem('AUTH_API_URL') + 'api/v1/entities/'
-      }
-      await axios.get(url, config).then(response => {
-        const role = response && response.data && response.data.role
-        if (role) {
-          this.setRole(role)
-          return role
-        } else {
-          // TODO: should handle this differently?
-          throw new Error('Role is null')
-        }
-      })
     },
 
     updateCurrentDate () {
@@ -198,6 +172,52 @@ export default {
       const timeout = ((((hoursToMidnight * 60) + minutesToMidnight) * 60) + secondsToMidnight) * 1000
       setTimeout(this.updateCurrentDate, timeout)
       return date
+    },
+
+    getAuthorizations (businessId) {
+      // TODO: need to pass lower case Business Identifier for now (also fix respective unit test)
+      const url = businessId.toLowerCase() + '/authorizations'
+      const config = {
+        baseURL: sessionStorage.getItem('AUTH_API_URL') + 'api/v1/entities/'
+      }
+      return axios.get(url, config)
+    },
+
+    getBusinessInfo (businessId) {
+      const url = businessId
+      const config = {
+        baseURL: sessionStorage.getItem('AUTH_API_URL') + 'api/v1/entities/'
+      }
+      return axios.get(url, config)
+    },
+
+    storeRole (response) {
+      const role = response && response.data && response.data.role
+      if (role) {
+        this.setRole(role.toLowerCase())
+      } else {
+        // FUTURE: handle this differently? (ask Scott)
+        // different dialog?
+        // browser alert?
+        // logout + redirect to auth?
+        throw new Error('invalid role')
+      }
+    },
+
+    storeBusinessInfo (response) {
+      const contacts = response && response.data && response.data.contacts
+      // ensure we received the right looking object
+      // but allow empty contacts array
+      if (contacts) {
+        // at this time there is at most 1 contact
+        const contact = contacts.length > 0 && contacts[0]
+        if (contact) {
+          this.setBusinessEmail(contact.email)
+          this.setBusinessPhone(contact.phone)
+        }
+      } else {
+        throw new Error('invalid business contact info')
+      }
     },
 
     storeEntityInfo (response) {

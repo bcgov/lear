@@ -1,18 +1,18 @@
 export default {
   isRoleOwner: state => {
-    return state.role === 'OWNER'
+    return state.role === 'owner'
   },
 
   isRoleAdmin: state => {
-    return state.role === 'ADMIN'
+    return state.role === 'admin'
   },
 
   isRoleMember: state => {
-    return state.role === 'MEMBER'
+    return state.role === 'member'
   },
 
   isRoleStaff: state => {
-    return state.role === 'STAFF'
+    return state.role === 'staff'
   },
 
   isAnnualReportEditable: state => {

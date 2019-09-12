@@ -402,10 +402,10 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       // work-around because click trigger isn't working
       expect(await vm.onClickFilePay()).toBe(true)
 
-    // verify v-tooltip text
-    const tooltipText = wrapper.find('#ar-file-pay-btn + span').text()
-    expect(tooltipText).toContain('Ensure all of your information is entered correctly before you File & Pay.')
-    expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
+      // verify v-tooltip text
+      const tooltipText = wrapper.find('#ar-file-pay-btn + span').text()
+      expect(tooltipText).toContain('Ensure all of your information is entered correctly before you File & Pay.')
+      expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
       // verify redirection
       const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')

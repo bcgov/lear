@@ -7,6 +7,11 @@ import store from '@/store/store'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+// Boilerplate to prevent the complaint "[Vuetify] Unable to locate target [data-app]"
+const app: HTMLDivElement = document.createElement('div')
+app.setAttribute('data-app', 'true')
+document.body.append(app)
+
 describe('EntityInfo', () => {
   let vm
 

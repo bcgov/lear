@@ -11,6 +11,8 @@ export default {
   entityIncNo: null,
   lastPreLoadFilingDate: null,
   entityFoundingDate: null,
+  businessEmail: null,
+  businessPhone: null,
   lastAgmDate: null,
 
   ARFilingYear: null, /* Number */

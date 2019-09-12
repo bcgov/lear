@@ -29,6 +29,12 @@ export default {
   entityFoundingDate (state, entityFoundingDate) {
     state.entityFoundingDate = entityFoundingDate
   },
+  businessEmail (state, businessEmail) {
+    state.businessEmail = businessEmail
+  },
+  businessPhone (state, businessPhone) {
+    state.businessPhone = businessPhone
+  },
   lastPreLoadFilingDate (state, lastPreLoadFilingDate) {
     state.lastPreLoadFilingDate = lastPreLoadFilingDate
   },
