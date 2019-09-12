@@ -204,6 +204,7 @@ def test_business_find_by_identifier_no_identifier(session):
 def test_business_json():
     """Assert that the business model is saved correctly."""
     business = Business(legal_name='legal_name',
+                        legal_type='CP',
                         founding_date=EPOCH_DATETIME,
                         last_ledger_timestamp=EPOCH_DATETIME,
                         identifier='CP1234567',
@@ -215,6 +216,7 @@ def test_business_json():
     # basic json
     d = {
         'legalName': 'legal_name',
+        'legalType': 'CP',
         'identifier': 'CP1234567',
         'foundingDate': EPOCH_DATETIME.isoformat(),
         'lastLedgerTimestamp': EPOCH_DATETIME.isoformat(),
