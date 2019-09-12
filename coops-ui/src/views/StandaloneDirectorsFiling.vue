@@ -329,7 +329,6 @@ export default {
           filing = res.data.filing
           this.haveChanges = false
         }).catch(error => {
-          console.error('saveFiling() error =', error)
           if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
             this.paymentErrorDialog = true
           } else if (error && error.response && error.response.status === BAD_REQUEST) {
@@ -355,7 +354,6 @@ export default {
           filing = res.data.filing
           this.haveChanges = false
         }).catch(error => {
-          console.error('saveFiling() error =', error)
           if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
             this.paymentErrorDialog = true
           } else if (error && error.response && error.response.status === BAD_REQUEST) {
