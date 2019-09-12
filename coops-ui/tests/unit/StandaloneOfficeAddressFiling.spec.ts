@@ -1,3 +1,4 @@
+/* eslint promise/param-names: 0, prefer-promise-reject-errors: 0 */
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
@@ -11,6 +12,7 @@ import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeA
 import Certify from '@/components/AnnualReport/Certify.vue'
 import VueRouter from 'vue-router'
 import mockRouter from './mockRouter'
+import { BAD_REQUEST } from 'http-status-codes'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -566,4 +568,177 @@ describe('Standalone Office Address Filing - Part 5 - Data', () => {
     expect(payload.filing.header.certifiedBy).toBeDefined()
     expect(payload.filing.header.email).toBeDefined()
   })
+})
+
+describe('Standalone Office Address Filing - Part 6 - Error/Warning dialogues', () => {
+  const { assign } = window.location
+
+  beforeAll(() => {
+    // mock the window.location.assign function
+    delete window.location
+    window.location = { assign: jest.fn() } as any
+  })
+
+  afterAll(() => {
+    window.location.assign = assign
+  })
+
+  beforeEach(async () => {
+    // init store
+    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
+    store.state.entityName = 'Legal Name - CP0001191'
+
+    // mock "file" endpoint
+    sinon.stub(axios, 'post').withArgs('CP0001191/filings')
+      .returns(new Promise((resolves, rejects) => rejects({
+        response: {
+          status: BAD_REQUEST,
+          data: {
+            'errors': [
+              {
+                'error': 'err msg post',
+                'path': 'swkmc/sckmr'
+              }
+            ],
+            'warnings': [
+              {
+                'warning': 'warn msg post',
+                'path': 'swkmc/sckmr'
+              }
+            ],
+            'filing': {
+              'changeOfAddress': {
+                'deliveryAddress': sampleDeliveryAddress,
+                'mailingAddress': sampleMailingAddress
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'changeOfAddress',
+                'date': '2017-06-06',
+                'submitter': 'cp0001191',
+                'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
+                'filingId': 123
+              }
+            }
+          }
+        }
+      })))
+    sinon.stub(axios, 'put').withArgs('CP0001191/filings/123')
+      .returns(new Promise((resolves, rejects) => rejects({
+        response: {
+          status: BAD_REQUEST,
+          data: {
+            'errors': [
+              {
+                'error': 'err msg put',
+                'path': 'swkmc/sckmr'
+              }
+            ],
+            'warnings': [
+              {
+                'warning': 'warn msg put',
+                'path': 'swkmc/sckmr'
+              }
+            ],
+            'filing': {
+              'changeOfAddress': {
+                'deliveryAddress': sampleDeliveryAddress,
+                'mailingAddress': sampleMailingAddress
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'changeOfAddress',
+                'date': '2017-06-06',
+                'submitter': 'cp0001191',
+                'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
+                'filingId': 123
+              }
+            }
+          }
+        }
+      })))
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  it('sets the required fields to display errors from the api after a post call',
+    async () => {
+      const $route = { params: { id: 0 } } // new filing id
+      const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
+      const vm = wrapper.vm as any
+
+      // make sure form is validated
+      vm.officeAddressFormValid = true
+      vm.isCertified = true
+
+      // sanity check
+      expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+      // TODO: verify that new filing was created
+
+      // click the File & Pay button
+      wrapper.find('#coa-file-pay-btn').trigger('click')
+      // work-around because click trigger isn't working
+      await vm.onClickFilePay()
+
+      // verify error dialogue values set to what was returned
+      expect(vm.saveErrorDialog).toBe(true)
+      expect(vm.saveErrors.length).toBe(1)
+      expect(vm.saveErrors[0].error).toBe('err msg post')
+      expect(vm.saveWarnings.length).toBe(1)
+      expect(vm.saveWarnings[0].warning).toBe('warn msg post')
+
+      wrapper.destroy()
+    }
+  )
+
+  it('sets the required fields to display errors from the api after a put call',
+    async () => {
+      const $route = { params: { id: 123 } } // new filing id
+      const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route } })
+      const vm = wrapper.vm as any
+
+      // make sure form is validated
+      vm.officeAddressFormValid = true
+      vm.isCertified = true
+
+      // sanity check
+      expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+      // TODO: verify that new filing was created
+
+      // click the File & Pay button
+      wrapper.find('#coa-file-pay-btn').trigger('click')
+      // work-around because click trigger isn't working
+      await vm.onClickFilePay()
+
+      // verify error dialogue values set to what was returned
+      expect(vm.saveErrorDialog).toBe(true)
+      expect(vm.saveErrors.length).toBe(1)
+      expect(vm.saveErrors[0].error).toBe('err msg put')
+      expect(vm.saveWarnings.length).toBe(1)
+      expect(vm.saveWarnings[0].warning).toBe('warn msg put')
+
+      wrapper.destroy()
+    }
+  )
 })

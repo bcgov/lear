@@ -38,7 +38,7 @@ def validate(business: Business, cod: Dict) -> Error:
                 get_str(director, '/deliveryAddress/addressCountry')
             )[0].alpha_2
         except LookupError:
-            msg.append({'error': _('addressCountry must resolve to a valid ISO-2 country.'),
+            msg.append({'error': _('Address Country must resolve to a valid ISO-2 country.'),
                         'path': f'/filing/changeOfDirectors/directors/{idx}/deliveryAddress/addressCountry'})
 
     if msg:

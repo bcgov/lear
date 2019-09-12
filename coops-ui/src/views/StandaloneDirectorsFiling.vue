@@ -10,8 +10,11 @@
     <SaveErrorDialog
       :dialog="saveErrorDialog"
       :disableRetry="filingPaying"
+      :errors="saveErrors"
+      :warnings="saveWarnings"
       @exit="navigateToDashboard"
       @retry="onClickFilePay"
+      @okay="resetErrors"
     />
 
     <PaymentErrorDialog
@@ -117,7 +120,7 @@ import Directors from '@/components/AnnualReport/Directors.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapActions } from 'vuex'
-import { PAYMENT_REQUIRED } from 'http-status-codes'
+import { BAD_REQUEST, PAYMENT_REQUIRED } from 'http-status-codes'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
@@ -154,7 +157,9 @@ export default {
       saving: false,
       savingResuming: false,
       filingPaying: false,
-      haveChanges: false
+      haveChanges: false,
+      saveErrors: [],
+      saveWarnings: []
     }
   },
 
@@ -324,9 +329,16 @@ export default {
           filing = res.data.filing
           this.haveChanges = false
         }).catch(error => {
-          console.error('saveFiling() error =', error)
           if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
             this.paymentErrorDialog = true
+          } else if (error && error.response && error.response.status === BAD_REQUEST) {
+            if (error.response.data.errors) {
+              this.saveErrors = error.response.data.errors
+            }
+            if (error.response.data.warnings) {
+              this.saveWarnings = error.response.data.warnings
+            }
+            this.saveErrorDialog = true
           } else {
             this.saveErrorDialog = true
           }
@@ -342,9 +354,16 @@ export default {
           filing = res.data.filing
           this.haveChanges = false
         }).catch(error => {
-          console.error('saveFiling() error =', error)
           if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
             this.paymentErrorDialog = true
+          } else if (error && error.response && error.response.status === BAD_REQUEST) {
+            if (error.response.data.errors) {
+              this.saveErrors = error.response.data.errors
+            }
+            if (error.response.data.warnings) {
+              this.saveWarnings = error.response.data.warnings
+            }
+            this.saveErrorDialog = true
           } else {
             this.saveErrorDialog = true
           }
@@ -421,6 +440,12 @@ export default {
         console.error('fetchData() error =', error)
         this.resumeErrorDialog = true
       })
+    },
+
+    resetErrors () {
+      this.saveErrorDialog = false
+      this.saveErrors = []
+      this.saveWarnings = []
     }
   },
 

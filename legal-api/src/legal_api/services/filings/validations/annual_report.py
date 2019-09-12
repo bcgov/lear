@@ -33,7 +33,6 @@ def validate(business: Business, annual_report: Dict) -> Error:
 
     last_filing = Filing.get_a_businesses_most_recent_filing_of_a_type(
         business.id, Filing.FILINGS['annualReport']['name'])
-
     err = validate_ar_year(business=business,
                            previous_annual_report=last_filing,
                            current_annual_report=annual_report)
@@ -55,13 +54,13 @@ def validate_ar_year(*, business: Business, previous_annual_report: Dict, curren
                        'filing/annualReport/annualReportDate')
     if not ar_date:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('annualReportDate must be a valid date.'),
+                     [{'error': _('Annual Report Date must be a valid date.'),
                        'path': 'filing/annualReport/annualReportDate'}])
 
     # The AR Date cannot be in the future (eg. before now() )
     if ar_date > datetime.utcnow().date():
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('annualReportDate cannot be in the future.'),
+                     [{'error': _('Annual Report Date cannot be in the future.'),
                        'path': 'filing/annualReport/annualReportDate'}])
 
     # The AR Date cannot be before the last AR Filed
@@ -75,13 +74,13 @@ def validate_ar_year(*, business: Business, previous_annual_report: Dict, curren
 
     if ar_date.year < expected_date.year:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('annualReportDate cannot be before a previous AnnualReport or the foundingDate.'),
+                     [{'error': _('Annual Report Date cannot be before a previous Annual Report or the Founding Date.'),
                        'path': 'filing/annualReport/annualReportDate'}])
 
     # AR Date must be the next contiguous year, from either the last AR or foundingDate
     if ar_date.year > expected_date.year:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('annualReportDate must be the next AnnualReport in contiguous order.'),
+                     [{'error': _('Annual Report Date must be the next Annual Report in contiguous order.'),
                        'path': 'filing/annualReport/annualReportDate'}])
 
     return None
@@ -94,14 +93,14 @@ def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, 
                        'filing/annualReport/annualReportDate')
     if not ar_date:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('annualReportDate must be a valid date.'),
+                     [{'error': _('Annual Report Date must be a valid date.'),
                        'path': 'filing/annualReport/annualReportDate'}])
 
     submission_date = get_date(annual_report,
                                'filing/header/date')
     if not submission_date:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('submission date must be a valid date.'),
+                     [{'error': _('Submission date must be a valid date.'),
                        'path': 'filing/header/date'}])
 
     agm_date = get_date(annual_report,
@@ -110,27 +109,27 @@ def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, 
     if ar_date.year == submission_date.year \
             and agm_date is None:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('annualGeneralMeetingDate must be a valid date when '
+                     [{'error': _('Annual General MeetingDate must be a valid date when '
                                   'submitting an Annual Report in the current year.'),
                        'path': 'filing/annualReport/annualGeneralMeetingDate'}])
 
     # ar filed for previous year, agm skipped, warn of pending dissolution
     if agm_date is None and business.last_agm_date.year == (ar_date - datedelta.datedelta(years=1)).year:
         return Error(HTTPStatus.OK,
-                     [{'warning': _('annualGeneralMeetingDate is being skipped. '
+                     [{'warning': _('Annual General Meeting Date (AGM) is being skipped. '
                                     'If another AGM is skipped, the business will be dissolved.'),
                        'path': 'filing/annualReport/annualGeneralMeetingDate'}])
 
     # ar filed for previous year, agm skipped, warn of pending dissolution
     if agm_date is None and business.last_agm_date.year <= (ar_date - datedelta.datedelta(years=2)).year:
         return Error(HTTPStatus.OK,
-                     [{'warning': _('annualGeneralMeetingDate is being skipped. '
+                     [{'warning': _('Annual General Meeting Date (AGM) is being skipped. '
                                     'The business will be dissolved, unless an extension and an AGM are held.'),
                        'path': 'filing/annualReport/annualGeneralMeetingDate'}])
 
     if agm_date and agm_date < date.fromisoformat(current_app.config.get('GO_LIVE_DATE')):
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': 'annualGeneralMeetingDate is before 2019-08-12, '
+                     [{'error': 'Annual General Meeting Date is before 2019-08-12, '
                                 'so it must be submitted as a paper-filing.',
                        'path': 'filing/annualReport/annualGeneralMeetingDate'}])
 

@@ -31,25 +31,25 @@ from legal_api.services.filings.validations.annual_report import validate_agm_ye
         ('AGM_DATE_REQUIRED_IF_IN_FILING_YR',
          date(2018, 8, 5), date(2018, 8, 5), None, date(2017, 7, 1), date(2018, 9, 17),
          HTTPStatus.BAD_REQUEST,
-         [{'error': 'annualGeneralMeetingDate must be a valid date '
-           'when submitting an Annual Report in the current year.',
+         [{'error': 'Annual General MeetingDate must be a valid date when submitting '
+           'an Annual Report in the current year.',
            'path': 'filing/annualReport/annualGeneralMeetingDate'}]),
         ('AGM_DATE_MISSING_FIRST_YEAR_WARNING',
          date(2019, 9, 17), date(2018, 8, 5), None, date(2017, 7, 1), date(2019, 9, 17),
          HTTPStatus.OK,
-         [{'warning': 'annualGeneralMeetingDate is being skipped. '
+         [{'warning': 'Annual General Meeting Date (AGM) is being skipped. '
            'If another AGM is skipped, the business will be dissolved.',
            'path': 'filing/annualReport/annualGeneralMeetingDate'}]),
         ('AGM_DATE_MISSING_SECOND_YEAR_WARNING',
          date(2019, 9, 17), date(2018, 8, 5), None, date(2016, 7, 1), date(2019, 9, 17),
          HTTPStatus.OK,
-         [{'warning': 'annualGeneralMeetingDate is being skipped. '
+         [{'warning': 'Annual General Meeting Date (AGM) is being skipped. '
            'The business will be dissolved, unless an extension and an AGM are held.',
            'path': 'filing/annualReport/annualGeneralMeetingDate'}]),
         ('AGM_DATE_NOT BEFORE_GO_LIVE_DATE_2019-08-12',
          date(2019, 9, 17), date(2019, 8, 5), date(2019, 8, 5), date(2017, 7, 1), date(2019, 9, 17),
          HTTPStatus.BAD_REQUEST,
-         [{'error': 'annualGeneralMeetingDate is before 2019-08-12, so it must be submitted as a paper-filing.',
+         [{'error': 'Annual General Meeting Date is before 2019-08-12, so it must be submitted as a paper-filing.',
            'path': 'filing/annualReport/annualGeneralMeetingDate'}]),
     ])
 def test_valid_agm_date(app, test_name, now, ar_date, agm_date, last_agm_date, submission_date,
