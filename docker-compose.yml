@@ -39,7 +39,7 @@ services:
     build:
       context: legal-api
     env_file:
-      - ./legal-api/env-wf
+      - ./legal-api/.env
     ports:
       - 5000:5000
     networks:
