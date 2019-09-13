@@ -1,18 +1,14 @@
 export default {
-  isRoleOwner: state => {
-    return state.role === 'OWNER'
-  },
-
-  isRoleAdmin: state => {
-    return state.role === 'ADMIN'
-  },
-
-  isRoleMember: state => {
-    return state.role === 'MEMBER'
-  },
-
   isRoleStaff: state => {
-    return state.role === 'STAFF'
+    return state.keycloakRoles.includes('staff')
+  },
+
+  isRoleEdit: state => {
+    return state.authRoles.includes('edit')
+  },
+
+  isRoleView: state => {
+    return state.authRoles.includes('view')
   },
 
   isAnnualReportEditable: state => {

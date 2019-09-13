@@ -1,9 +1,9 @@
 export default {
-  setRole ({ commit }, role) {
-    commit('role', role)
+  setKeycloakRoles ({ commit }, keycloakRoles) {
+    commit('keycloakRoles', keycloakRoles)
   },
-  setUsername ({ commit }, username) {
-    commit('username', username)
+  setAuthRoles ({ commit }, authRoles) {
+    commit('authRoles', authRoles)
   },
   setCurrentDate ({ commit }, currentDate) {
     commit('currentDate', currentDate)

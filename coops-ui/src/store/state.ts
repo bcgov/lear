@@ -1,6 +1,7 @@
 export default {
   // tombstone data
-  role: null,
+  keycloakRoles: [],
+  authRoles: [],
   username: null,
   currentDate: null,
 

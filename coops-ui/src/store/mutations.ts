@@ -1,9 +1,9 @@
 export default {
-  role (state, role) {
-    state.role = role
+  keycloakRoles (state, keycloakRoles) {
+    state.keycloakRoles = keycloakRoles
   },
-  username (state, username) {
-    state.username = username
+  authRoles (state, authRoles) {
+    state.authRoles = authRoles
   },
   currentDate (state, currentDate) {
     state.currentDate = currentDate

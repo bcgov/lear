@@ -15,20 +15,28 @@ Vue.use(Vuelidate)
 describe('App', () => {
   // just need a token that can get parsed properly (will be expired but doesn't matter for tests)
   sessionStorage.setItem('KEYCLOAK_TOKEN', 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUbWdtZUk0MnVsdUZ0N3' +
-    'FQbmUtcTEzdDUwa0JDbjF3bHF6dHN0UGdUM1dFIn0.eyJqdGkiOiJlMmJlNDc5Yi0zYTkzLTRhNjAtYmZhNi1hZjM4MWE2YTBmNGMiLCJleHA' +
-    'iOjE1Njc4ODQ4NjMsIm5iZiI6MCwiaWF0IjoxNTY3Nzk4NDYzLCJpc3MiOiJodHRwczovL3Nzby1kZXYucGF0aGZpbmRlci5nb3YuYmMuY2Ev' +
-    'YXV0aC9yZWFsbXMvZmNmMGtwcXIiLCJhdWQiOlsic2JjLWF1dGgtd2ViIiwiYWNjb3VudCJdLCJzdWIiOiIwMmNiNjhiNC00M2UyLTRmYmEtY' +
-    'TI2Yi1hZWNiMGRhOTlhYzciLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJzYmMtYXV0aC13ZWIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdG' +
-    'UiOiI5NGU2N2ZjNy0xMDg3LTRmZjItYTNlOC1mMWU5ZjkzMzIxNjciLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly8xOTI' +
-    'uMTY4LjAuMTM6ODA4MC8iLCIxOTIuMTY4LjAuMTMiLCIqIiwiaHR0cDovLzE5Mi4xNjguMC4xMzo4MDgwIl0sInJlYWxtX2FjY2VzcyI6eyJy' +
-    'b2xlcyI6WyJlZGl0Iiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImJhc2ljIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiY' +
-    'WNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcG' +
-    'UiOiIiLCJyb2xlcyI6WyJlZGl0Iiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImJhc2ljIl0sInByZWZlcnJlZF91c2V' +
-    'ybmFtZSI6ImNwMDAwMTM2NCIsImxvZ2luU291cmNlIjoiUEFTU0NPREUiLCJ1c2VybmFtZSI6ImNwMDAwMTM2NCJ9.VfTdZ2ZnZyUjkFiztA8' +
-    'LRkaijPbHAddm0QmMGgEIDv9Z3EGHaYtTs2L3cSH_bYdUjjclwGwt0GIz3DOHviS8yXuwkzRVHI8W3mdY1dionkqU26_miA10Yxl1ZnFmQpZc' +
-    'MHmS4dMcb-_CU6ysgemiO8wonalqLb7Lz01Zd1h2NCyTC4Twk3BFuZNHlXiaXWVaF2UgtQI1Gf7XfRCPQhdLLYPt6mzL_nEnRveCOdqXVM6XK' +
-    'OPjpHUIMONexFGbojmRsCg5w-qQrXYY8m-lA17GLdlCCAtrJXlS0mLbFr1jQL0eroqtrFm9WoQByVaso5Kx_n7wXx4h3BjunSJuqsJCmA')
-  sessionStorage.setItem('BUSINESS_IDENTIFIER', 'CP0001364')
+    'FQbmUtcTEzdDUwa0JDbjF3bHF6dHN0UGdUM1dFIn0.eyJqdGkiOiIzZDQ3YjgwYy01MTAzLTRjMTYtOGNhZC0yMjU4NDMwZGYwZTciLCJleHA' +
+    'iOjE1Njg0ODk1NTksIm5iZiI6MCwiaWF0IjoxNTY4NDAzMTYwLCJpc3MiOiJodHRwczovL3Nzby1kZXYucGF0aGZpbmRlci5nb3YuYmMuY2Ev' +
+    'YXV0aC9yZWFsbXMvZmNmMGtwcXIiLCJhdWQiOlsic2JjLWF1dGgtd2ViIiwicmVhbG0tbWFuYWdlbWVudCIsImJyb2tlciIsImFjY291bnQiX' +
+    'Swic3ViIjoiZDRjNTBiZTAtYWM2OC00MDIyLTkxMGQtMzE2NzQ4NGFkOWU0IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoic2JjLWF1dGgtd2ViIi' +
+    'wibm9uY2UiOiJkMjljZTZlNS0xNzZhLTRkMTUtODUzZS05NWUzZmUwZmYwZjgiLCJhdXRoX3RpbWUiOjE1Njg0MDMxNTksInNlc3Npb25fc3R' +
+    'hdGUiOiJiOTEwMzQxZi0xNzVjLTRkMTktYWI1Yy1iM2QxNTBiYjk0NjYiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly8x' +
+    'OTIuMTY4LjAuMTM6ODA4MC8iLCIxOTIuMTY4LjAuMTMiLCIqIiwiaHR0cDovLzE5Mi4xNjguMC4xMzo4MDgwIl0sInJlYWxtX2FjY2VzcyI6e' +
+    'yJyb2xlcyI6WyJ2aWV3IiwiZWRpdCIsIm9mZmxpbmVfYWNjZXNzIiwic3RhZmYiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImJhc2ljIl19LCJyZX' +
+    'NvdXJjZV9hY2Nlc3MiOnsicmVhbG0tbWFuYWdlbWVudCI6eyJyb2xlcyI6WyJ2aWV3LWlkZW50aXR5LXByb3ZpZGVycyIsInZpZXctcmVhbG0' +
+    'iLCJtYW5hZ2UtaWRlbnRpdHktcHJvdmlkZXJzIiwiaW1wZXJzb25hdGlvbiIsInJlYWxtLWFkbWluIiwiY3JlYXRlLWNsaWVudCIsIm1hbmFn' +
+    'ZS11c2VycyIsInF1ZXJ5LXJlYWxtcyIsInZpZXctYXV0aG9yaXphdGlvbiIsInF1ZXJ5LWNsaWVudHMiLCJxdWVyeS11c2VycyIsIm1hbmFnZ' +
+    'S1ldmVudHMiLCJtYW5hZ2UtcmVhbG0iLCJ2aWV3LWV2ZW50cyIsInZpZXctdXNlcnMiLCJ2aWV3LWNsaWVudHMiLCJtYW5hZ2UtYXV0aG9yaX' +
+    'phdGlvbiIsIm1hbmFnZS1jbGllbnRzIiwicXVlcnktZ3JvdXBzIl19LCJicm9rZXIiOnsicm9sZXMiOlsicmVhZC10b2tlbiJdfSwiYWNjb3V' +
+    'udCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJv' +
+    'cGVuaWQiLCJmaXJzdG5hbWUiOiJTdW1lc2giLCJyb2xlcyI6WyJ2aWV3IiwiZWRpdCIsIm9mZmxpbmVfYWNjZXNzIiwic3RhZmYiLCJ1bWFfY' +
+    'XV0aG9yaXphdGlvbiIsImJhc2ljIl0sIm5hbWUiOiJTdW1lc2ggS2FyaXlpbCIsInByZWZlcnJlZF91c2VybmFtZSI6InNrYXJpeWlsQGlkaX' +
+    'IiLCJlbWFpbCI6InN1bWVzaC5wLmthcml5aWxAZ292LmJjLmNhIiwibGFzdG5hbWUiOiJLYXJpeWlsIiwidXNlcm5hbWUiOiJza2FyaXlpbEB' +
+    'pZGlyIn0.MSPSakOnCUia4qd-fUpvP2PB3k977Eyhjxn-ykjadsUTEK4f2R3c8vozxaIIMH0-qUwduyQmdZCl3tQnXYQ9Ttf1PE9eMLS4sXJi' +
+    'IUlDmKZ2ow7GmmDabic8igHnEDYD6sI7OFYnCJhRdgVEHN-_4KUk2YsAVl5XUr6blJKMuYDPeMyNreGTXU7foE4AT-93FwlyTyFzQGddrDvc6' +
+    'kkQr7mgJNTtgg87DdYbVGbEtIetyVfvwEF0rU8JH2N-j36XIebo33FU3-gJ5Y5S69EHPqQ37R9H4d8WUrHO-4QzJQih3Yaea820XBplJeo0DO' +
+    '3hQoVtPD42j0p3aIy10cnW2g')
+  sessionStorage.setItem('BUSINESS_IDENTIFIER', 'CP0001867')
 
   let wrapper
   let vm
@@ -37,17 +45,17 @@ describe('App', () => {
     const get = sinon.stub(axios, 'get')
 
     // GET authorizations (role)
-    get.withArgs('CP0001364/authorizations')
+    get.withArgs('CP0001867/authorizations')
       .returns(new Promise((resolve) => resolve({
         data:
           {
-            role: 'OWNER'
+            roles: ['edit', 'view']
           }
       })))
 
     // GET entity info
     // NB: contains responses for 2 axios calls with the same signature
-    get.withArgs('CP0001364')
+    get.withArgs('CP0001867')
       .returns(new Promise((resolve) => resolve({
         data:
           {
@@ -64,7 +72,7 @@ describe('App', () => {
               legalName: 'TEST NAME',
               status: 'GOODSTANDING',
               taxId: '123456789',
-              identifier: 'CP0001364',
+              identifier: 'CP0001867',
               lastLedgerTimestamp: '2019-08-14T22:27:12+00:00',
               foundingDate: '2000-07-13T00:00:00+00:00',
               lastAnnualGeneralMeetingDate: '2019-08-16'
@@ -73,7 +81,7 @@ describe('App', () => {
       })))
 
     // GET tasks
-    get.withArgs('CP0001364/tasks')
+    get.withArgs('CP0001867/tasks')
       .returns(new Promise((resolve) => resolve({
         data:
           {
@@ -122,7 +130,7 @@ describe('App', () => {
       })))
 
     // GET filings
-    get.withArgs('CP0001364/filings')
+    get.withArgs('CP0001867/filings')
       .returns(new Promise((resolve) => resolve({
         data:
           {
@@ -172,7 +180,7 @@ describe('App', () => {
       })))
 
     // GET addresses
-    get.withArgs('CP0001364/addresses')
+    get.withArgs('CP0001867/addresses')
       .returns(new Promise((resolve) => resolve({
         data:
           {
@@ -194,7 +202,7 @@ describe('App', () => {
       })))
 
     // GET directors
-    get.withArgs('CP0001364/directors')
+    get.withArgs('CP0001867/directors')
       .returns(new Promise((resolve) => resolve({
         data:
           {
@@ -246,12 +254,10 @@ describe('App', () => {
     wrapper.destroy()
   })
 
-  it('fetches Role properly', () => {
-    expect(vm.$store.state.role).toBe('OWNER')
-    expect(vm.$store.getters.isRoleOwner).toBe(true)
-    expect(vm.$store.getters.isRoleAdmin).toBe(false)
-    expect(vm.$store.getters.isRoleMember).toBe(false)
-    expect(vm.$store.getters.isRoleStaff).toBe(false)
+  it('gets Keycloak Roles and Auth Roles properly', () => {
+    expect(vm.$store.getters.isRoleStaff).toBe(true)
+    expect(vm.$store.getters.isRoleEdit).toBe(true)
+    expect(vm.$store.getters.isRoleView).toBe(true)
   })
 
   it('fetches Business Info properly', () => {
@@ -273,7 +279,7 @@ describe('App', () => {
     expect(vm.$store.state.entityName).toBe('TEST NAME')
     expect(vm.$store.state.entityStatus).toBe('GOODSTANDING')
     expect(vm.$store.state.entityBusinessNo).toBe('123456789')
-    expect(vm.$store.state.entityIncNo).toBe('CP0001364')
+    expect(vm.$store.state.entityIncNo).toBe('CP0001867')
     expect(vm.$store.state.lastPreLoadFilingDate).toBe('2019-08-14')
     expect(vm.$store.state.entityFoundingDate).toBe('2000-07-13')
     expect(vm.$store.state.lastAgmDate).toBe('2019-08-16')

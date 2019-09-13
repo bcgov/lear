@@ -390,7 +390,7 @@ describe('TodoList - UI', () => {
 
   it('disables Resume Payment button if user has \'staff\' role', done => {
     // init store
-    store.state.role = 'STAFF'
+    store.state.keycloakRoles = ['staff']
     store.state.tasks = [
       {
         'task': {
@@ -431,7 +431,7 @@ describe('TodoList - UI', () => {
 
       // NB: cannot verify v-tooltip text as Vue puts it in a div outside this component
 
-      store.state.role = 'OWNER' // cleanup
+      store.state.keycloakRoles = [] // cleanup
 
       wrapper.destroy()
       done()
@@ -440,7 +440,7 @@ describe('TodoList - UI', () => {
 
   it('disables Retry Payment button if user has \'staff\' role', done => {
     // init store
-    store.state.role = 'STAFF'
+    store.state.keycloakRoles = ['staff']
     store.state.tasks = [
       {
         'task': {
@@ -481,7 +481,7 @@ describe('TodoList - UI', () => {
 
       // NB: cannot verify v-tooltip text as Vue puts it in a div outside this component
 
-      store.state.role = 'OWNER' // cleanup
+      store.state.keycloakRoles = [] // cleanup
 
       wrapper.destroy()
       done()

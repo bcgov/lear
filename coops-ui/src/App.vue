@@ -78,19 +78,20 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setUsername', 'setRole', 'setBusinessEmail', 'setBusinessPhone', 'setBusinessPhoneExtension',
-      'setCurrentDate', 'setEntityName', 'setEntityStatus', 'setEntityBusinessNo', 'setEntityIncNo',
-      'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate', 'setTasks', 'setFilings',
-      'setMailingAddress', 'setDeliveryAddress', 'setDirectors']),
+    ...mapActions(['setKeycloakRoles', 'setAuthRoles', 'setBusinessEmail', 'setBusinessPhone',
+      'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityStatus', 'setEntityBusinessNo',
+      'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate', 'setTasks',
+      'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors']),
 
     fetchData () {
       let businessId
 
       try {
         const jwt = this.getJWT()
-        const username = this.getUsername(jwt)
+        const keycloakRoles = this.getKeycloakRoles(jwt)
+        this.setKeycloakRoles(keycloakRoles)
         businessId = this.getBusinessId()
-        const date = this.updateCurrentDate()
+        this.updateCurrentDate()
       } catch (error) {
         console.error(error)
         this.dashboardUnavailableDialog = true
@@ -99,7 +100,7 @@ export default {
 
       // check if current user is authorized
       this.getAuthorizations(businessId).then(data => {
-        this.storeRole(data) // throws if no role
+        this.storeAuthRoles(data) // throws if no role
 
         // good so far ... fetch the rest of the data
         Promise.all([
@@ -130,10 +131,11 @@ export default {
 
     getJWT () {
       const token = sessionStorage.getItem('KEYCLOAK_TOKEN')
-      if (!token) {
+      if (token) {
+        return this.parseJwt(token)
+      } else {
         throw new Error('Keycloak Token is null')
       }
-      return this.parseJwt(token)
     },
 
     parseJwt (token) {
@@ -148,21 +150,22 @@ export default {
       }
     },
 
-    getUsername (jwt) {
-      const username = jwt.name || jwt.username
-      if (!username) {
-        throw new Error('Username is null')
+    getKeycloakRoles (jwt) {
+      const keycloakRoles = jwt.roles
+      if (keycloakRoles && keycloakRoles.length > 0) {
+        return keycloakRoles
+      } else {
+        throw new Error('Keycloak Role is null')
       }
-      this.setUsername(username)
-      return username
     },
 
     getBusinessId () {
       const businessId = sessionStorage.getItem('BUSINESS_IDENTIFIER')
-      if (!businessId) {
+      if (businessId) {
+        return businessId
+      } else {
         throw new Error('Business Identifier is null')
       }
-      return businessId
     },
 
     updateCurrentDate () {
@@ -175,7 +178,6 @@ export default {
       const secondsToMidnight = 59 - now.getSeconds()
       const timeout = ((((hoursToMidnight * 60) + minutesToMidnight) * 60) + secondsToMidnight) * 1000
       setTimeout(this.updateCurrentDate, timeout)
-      return date
     },
 
     getAuthorizations (businessId) {
@@ -194,12 +196,13 @@ export default {
       return axios.get(url, config)
     },
 
-    storeRole (response) {
-      const role = response && response.data && response.data.role
-      if (role) {
-        this.setRole(role)
+    storeAuthRoles (response) {
+      // NB: roles array may contain 'view', 'edit' or nothing
+      const authRoles = response && response.data && response.data.roles
+      if (authRoles && authRoles.length > 0) {
+        this.setAuthRoles(authRoles)
       } else {
-        throw new Error('invalid role')
+        throw new Error('invalid auth roles')
       }
     },
 

@@ -261,7 +261,6 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     // init store
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
-    store.state.role = 'OWNER'
 
     // mock "fetch a draft filing" endpoint
     sinon.stub(axios, 'get').withArgs('CP0001191/filings/123')
@@ -435,7 +434,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
 
   it('disables File & Pay button if user has \'staff\' role', async () => {
     // init store
-    store.state.role = 'STAFF'
+    store.state.keycloakRoles = ['staff']
 
     const $route = { params: { id: '123' } } // draft filing id
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
@@ -453,7 +452,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     // verify v-tooltip text
     expect(wrapper.find('#cod-file-pay-btn + span').text()).toBe('Staff are not allowed to file.')
 
-    store.state.role = 'OWNER' // cleanup
+    store.state.keycloakRoles = [] // cleanup
 
     wrapper.destroy()
   })

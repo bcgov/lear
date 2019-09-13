@@ -1,5 +1,5 @@
 <template>
-  <div class="entity-info" :class=role>
+  <div class="entity-info" :class="{ 'staff': isRoleStaff }">
     <v-container>
       <div class="title-container">
         <div class="entity-name">{{ entityName || 'Not Available' }}</div>
@@ -54,19 +54,19 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 
 @Component({
   computed: {
     // Property definitions for runtime environment.
-    ...mapState(['role', 'entityName', 'entityStatus', 'entityBusinessNo', 'entityIncNo',
-      'businessEmail', 'businessPhone', 'businessPhoneExtension'])
+    ...mapState(['entityName', 'entityStatus', 'entityBusinessNo', 'entityIncNo',
+      'businessEmail', 'businessPhone', 'businessPhoneExtension']),
+    ...mapGetters(['isRoleStaff'])
   }
 })
 export default class EntityInfo extends Vue {
   // Local definitions of computed properties for static type checking.
   // Use non-null assertion operator to allow use before assignment.
-  readonly role!: string
   readonly entityName!: string
   readonly entityStatus!: string
   readonly entityBusinessNo!: string
@@ -74,6 +74,7 @@ export default class EntityInfo extends Vue {
   readonly businessEmail!: string
   readonly businessPhone!: string
   readonly businessPhoneExtension!: string
+  readonly isRoleStaff!: boolean
 
   /**
    * Computed value.
@@ -104,19 +105,10 @@ export default class EntityInfo extends Vue {
 
   .entity-info
     background #ffffff
-    background-repeat repeat-x
 
-  .entity-info.OWNER
-    // background-image url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='130' height='100'><text x='0' y='108' font-size='30' transform='rotate(-45 10,40)' opacity='0.1'>OWNER</text></svg>")
-
-  .entity-info.ADMIN
-    // background-image url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='100'><text x='0' y='108' font-size='30' transform='rotate(-45 10,40)' opacity='0.1'>ADMIN</text></svg>")
-
-  .entity-info.MEMBER
-    // background-image url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='100'><text x='0' y='120' font-size='30' transform='rotate(-45 10,40)' opacity='0.1'>MEMBER</text></svg>")
-
-  .entity-info.STAFF
-    // background-image url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='100'><text x='0' y='95' font-size='30' transform='rotate(-45 10,40)' opacity='0.1'>STAFF</text></svg>")
+  .entity-info.staff
+    // background-image url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='105' height='100'><text x='0' y='105' font-size='30' transform='rotate(-45 10,40)' opacity='0.1'>STAFF</text></svg>")
+    // background-repeat repeat-x
 
   .container
     padding-top 1.5rem
