@@ -1,0 +1,34 @@
+{% if registeredOfficeAddress is defined %}
+        <div class="no-page-break">
+          <div class="section-title">
+            REGISTERED OFFICE ADDRESS
+          </div>
+
+          <div class="section-data">
+            <table class="section-data-table">
+              <tr>
+                <td>
+                  <div class="title">Delivery Address {% if 'addressChanged' in registeredOfficeAddress.deliveryAddress.actions %}{{ labelNew() }}{% endif %}</div>
+                  <div>{{ registeredOfficeAddress.deliveryAddress.streetAddress }}</div>
+                  <div>{{ registeredOfficeAddress.deliveryAddress.streetAddressAdditional }}</div>
+                  <div>{{ registeredOfficeAddress.deliveryAddress.addressCity }}
+                    {{ registeredOfficeAddress.deliveryAddress.addressRegion }}
+                    &nbsp;{{ registeredOfficeAddress.deliveryAddress.postalCode }}</div>
+                  <div>{{ registeredOfficeAddress.deliveryAddress.addressCountry }}</div>
+                  <div>{{ registeredOfficeAddress.deliveryAddress.deliveryInstructions }}</div>
+                </td>
+                <td>
+                  <div class="title">Mailing Address {% if 'addressChanged' in registeredOfficeAddress.mailingAddress.actions %}{{ labelNew() }}{% endif %}</div>
+                  <div>{{ registeredOfficeAddress.mailingAddress.streetAddress }}</div>
+                  <div>{{ registeredOfficeAddress.mailingAddress.streetAddressAdditional }}</div>
+                  <div>{{ registeredOfficeAddress.mailingAddress.addressCity }}
+                    {{ registeredOfficeAddress.mailingAddress.addressRegion }}
+                    &nbsp;{{ registeredOfficeAddress.mailingAddress.postalCode }}</div>
+                  <div>{{ registeredOfficeAddress.mailingAddress.addressCountry }}</div>
+                  <div>{{ registeredOfficeAddress.mailingAddress.deliveryInstructions }}</div>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+{% endif %}
