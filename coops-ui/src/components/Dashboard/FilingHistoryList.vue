@@ -79,7 +79,7 @@
       <v-card-text>
         <div class="past-filings__text">
           Filings completed before August 21, 2019 will be available from the BC Registry as printed
-          documents.<br>Please contact us at <a href="tel:+1-250-952-0568">250 952-0568</a> to request
+          documents.<br>Please contact us at <a href="tel:+1-877-526-1526">1-877-526-1526</a> to request
           paper copies of these past filings.
         </div>
       </v-card-text>
