@@ -245,9 +245,7 @@ export default {
     async onClickSave () {
       this.saving = true
       const filing = await this.saveFiling(true)
-      if (!filing) {
-        console.log('onClickSave() error - invalid filing =', filing)
-      } else {
+      if (filing) {
         this.filingId = +filing.header.filingId
       }
       this.saving = false
@@ -260,8 +258,6 @@ export default {
       if (filing) {
         const homeURL = window.location.origin || ''
         window.location.assign(homeURL)
-      } else {
-        console.log('onClickSaveResume() error - invalid filing =', filing)
       }
       this.savingResuming = false
     },
@@ -283,8 +279,6 @@ export default {
         const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
         // TODO: first check if pay UI is reachable, else display modal dialog
         window.location.assign(payURL)
-      } else {
-        console.log('onClickFilePay() error - invalid filing =', filing)
       }
       this.filingPaying = false
       return true
