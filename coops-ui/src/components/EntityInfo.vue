@@ -28,9 +28,9 @@
           <dl class="meta-container">
             <dt class="sr-only">Business Email:</dt>
             <dd class="business-email" aria-label="Business Email">{{businessEmail || 'Unknown Email'}}</dd>
-            <template v-if="businessPhone">
+            <template v-if="fullPhoneNumber">
               <dt class="sr-only">Business Phone:</dt>
-              <dd class="business-phone bulletBefore" aria-label="Business Phone">{{businessPhone}}</dd>
+              <dd class="business-phone bulletBefore" aria-label="Business Phone">{{fullPhoneNumber}}</dd>
             </template>
           </dl>
           <v-menu bottom left offset-y content-class="v-menu">
@@ -60,7 +60,12 @@ export default {
 
   computed: {
     ...mapState(['role', 'entityName', 'entityStatus', 'entityBusinessNo', 'entityIncNo',
-      'businessEmail', 'businessPhone'])
+      'businessEmail', 'businessPhone', 'businessPhoneExtension']),
+
+    fullPhoneNumber () {
+      if (!this.businessPhone) return null
+      return `${this.businessPhone}${this.businessPhoneExtension ? (' x' + this.businessPhoneExtension) : ''}`
+    }
   },
 
   methods: {

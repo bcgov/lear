@@ -78,10 +78,10 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setUsername', 'setRole', 'setBusinessEmail', 'setBusinessPhone', 'setCurrentDate',
-      'setEntityName', 'setEntityStatus', 'setEntityBusinessNo', 'setEntityIncNo', 'setLastPreLoadFilingDate',
-      'setEntityFoundingDate', 'setLastAgmDate', 'setTasks', 'setFilings', 'setMailingAddress',
-      'setDeliveryAddress', 'setDirectors']),
+    ...mapActions(['setUsername', 'setRole', 'setBusinessEmail', 'setBusinessPhone', 'setBusinessPhoneExtension',
+      'setCurrentDate', 'setEntityName', 'setEntityStatus', 'setEntityBusinessNo', 'setEntityIncNo',
+      'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate', 'setTasks', 'setFilings',
+      'setMailingAddress', 'setDeliveryAddress', 'setDirectors']),
 
     fetchData () {
       let businessId
@@ -213,6 +213,7 @@ export default {
         if (contact) {
           this.setBusinessEmail(contact.email)
           this.setBusinessPhone(contact.phone)
+          this.setBusinessPhoneExtension(contact.phoneExtension)
         }
       } else {
         throw new Error('invalid business contact info')

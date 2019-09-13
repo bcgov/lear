@@ -35,6 +35,9 @@ export default {
   setBusinessPhone ({ commit }, businessPhone) {
     commit('businessPhone', businessPhone)
   },
+  setBusinessPhoneExtension ({ commit }, businessPhoneExtension) {
+    commit('businessPhoneExtension', businessPhoneExtension)
+  },
   setLastPreLoadFilingDate ({ commit }, lastPreLoadFilingDate) {
     commit('lastPreLoadFilingDate', lastPreLoadFilingDate)
   },

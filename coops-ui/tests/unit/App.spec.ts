@@ -55,7 +55,8 @@ describe('App', () => {
             contacts: [
               {
                 email: 'name@mail.com',
-                phone: '(123)-456-7890'
+                phone: '(111)-222-3333',
+                phoneExtension: '999'
               }
             ],
             // Legal API Business data
@@ -255,7 +256,8 @@ describe('App', () => {
 
   it('fetches Business Info properly', () => {
     expect(vm.$store.state.businessEmail).toEqual('name@mail.com')
-    expect(vm.$store.state.businessPhone).toEqual('(123)-456-7890')
+    expect(vm.$store.state.businessPhone).toEqual('(111)-222-3333')
+    expect(vm.$store.state.businessPhoneExtension).toEqual('999')
   })
 
   it('initializes Current Date properly', () => {

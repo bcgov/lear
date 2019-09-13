@@ -35,6 +35,9 @@ export default {
   businessPhone (state, businessPhone) {
     state.businessPhone = businessPhone
   },
+  businessPhoneExtension (state, businessPhoneExtension) {
+    state.businessPhoneExtension = businessPhoneExtension
+  },
   lastPreLoadFilingDate (state, lastPreLoadFilingDate) {
     state.lastPreLoadFilingDate = lastPreLoadFilingDate
   },

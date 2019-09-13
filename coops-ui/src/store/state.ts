@@ -13,6 +13,7 @@ export default {
   entityFoundingDate: null,
   businessEmail: null,
   businessPhone: null,
+  businessPhoneExtension: null,
   lastAgmDate: null,
 
   ARFilingYear: null, /* Number */
