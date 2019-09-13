@@ -9,32 +9,17 @@
       </div>
     </div>
 
-    <v-dialog v-model="dashboardUnavailableDialog" width="45rem" persistent>
-      <v-card>
-        <v-card-title>Dashboard Unavailable</v-card-title>
-        <v-card-text>
-          <p class="genErr">We are currently unable to access your dashboard. You can continue to
-            try to access your dashboard, or you can exit now and try to access your dashboard at
-            another time.</p>
-          <p class="genErr">If this error persists, please contact us.</p>
-          <p class="genErr">
-            <v-icon small>phone</v-icon>
-            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
-          </p>
-          <p class="genErr">
-            <v-icon small>email</v-icon>
-            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
-              >SBC_ITOperationsSupport@gov.bc.ca</a>
-          </p>
-        </v-card-text>
-        <v-divider></v-divider>
-        <v-card-actions>
-          <v-btn color="primary" flat @click="onClickExit">Exit</v-btn>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" flat @click="onClickRetry">Retry</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <DashboardUnavailableDialog
+      :dialog="dashboardUnavailableDialog"
+      @exit="onClickExit"
+      @retry="onClickRetry"
+    />
+
+    <AccountAuthorizationDialog
+      :dialog="accountAuthorizationDialog"
+      @exit="onClickExit"
+      @retry="onClickRetry"
+    />
 
     <sbc-header ref="sbcHeader" :authURL="authAPIURL" />
 
@@ -52,8 +37,10 @@
 
 <script>
 import { mapActions } from 'vuex'
-import DateUtils from '@/DateUtils'
+import DateUtils from '@/date-utils'
 import axios from '@/axios-auth'
+import DashboardUnavailableDialog from '@/components/Dashboard/DashboardUnavailableDialog.vue'
+import AccountAuthorizationDialog from '@/components/Dashboard/AccountAuthorizationDialog.vue'
 import SbcHeader from 'sbc-common-components/src/components/SbcHeader.vue'
 import SbcFooter from 'sbc-common-components/src/components/SbcFooter.vue'
 import EntityInfo from '@/components/EntityInfo.vue'
@@ -66,11 +53,14 @@ export default {
   data () {
     return {
       dashboardUnavailableDialog: false,
+      accountAuthorizationDialog: false,
       dataLoaded: false
     }
   },
 
   components: {
+    DashboardUnavailableDialog,
+    AccountAuthorizationDialog,
     SbcHeader,
     SbcFooter,
     EntityInfo
@@ -88,68 +78,148 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setCorpNum', 'setCurrentDate', 'setEntityName', 'setEntityStatus', 'setEntityBusinessNo',
+    ...mapActions(['setKeycloakRoles', 'setAuthRoles', 'setBusinessEmail', 'setBusinessPhone',
+      'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityStatus', 'setEntityBusinessNo',
       'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate', 'setTasks',
       'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors']),
 
     fetchData () {
-      let corpNum = null
+      let businessId
 
-      // first try synchronous operations
       try {
-        // get Keycloak Token
-        const token = sessionStorage.getItem('KEYCLOAK_TOKEN')
-        if (!token) {
-          throw new Error('Keycloak Token is null')
-        }
-
-        // decode Username
-        const username = this.parseJwt(token).preferred_username
-        if (!username) {
-          throw new Error('Username is null')
-        }
-
-        // save tombstone data
-        sessionStorage.setItem('USERNAME', username)
-        corpNum = username.toUpperCase()
-        this.setCorpNum(corpNum)
-        this.setCurrentDate(this.dateToUsableString(new Date()))
+        const jwt = this.getJWT()
+        const keycloakRoles = this.getKeycloakRoles(jwt)
+        this.setKeycloakRoles(keycloakRoles)
+        businessId = this.getBusinessId()
+        this.updateCurrentDate()
       } catch (error) {
         console.error(error)
         this.dashboardUnavailableDialog = true
         return // do not execute remaining code
       }
 
-      // now execute async operations
-      Promise.all([
-        axios.get(corpNum),
-        axios.get(corpNum + '/tasks'),
-        axios.get(corpNum + '/filings'),
-        axios.get(corpNum + '/addresses'),
-        axios.get(corpNum + '/directors')
-      ]).then(data => {
-        if (!data || data.length !== 5) throw new Error('incomplete data')
-        this.storeEntityInfo(data[0])
-        this.storeTasks(data[1])
-        this.storeFilings(data[2])
-        this.storeAddresses(data[3])
-        this.storeDirectors(data[4])
-        this.dataLoaded = true
+      // check if current user is authorized
+      this.getAuthorizations(businessId).then(data => {
+        this.storeAuthRoles(data) // throws if no role
+
+        // good so far ... fetch the rest of the data
+        Promise.all([
+          this.getBusinessInfo(businessId),
+          axios.get(businessId),
+          axios.get(businessId + '/tasks'),
+          axios.get(businessId + '/filings'),
+          axios.get(businessId + '/addresses'),
+          axios.get(businessId + '/directors')
+        ]).then(data => {
+          if (!data || data.length !== 6) throw new Error('incomplete data')
+          this.storeBusinessInfo(data[0])
+          this.storeEntityInfo(data[1])
+          this.storeTasks(data[2])
+          this.storeFilings(data[3])
+          this.storeAddresses(data[4])
+          this.storeDirectors(data[5])
+          this.dataLoaded = true
+        }).catch(error => {
+          console.error(error)
+          this.dashboardUnavailableDialog = true
+        })
       }).catch(error => {
         console.error(error)
-        this.dashboardUnavailableDialog = true
+        this.accountAuthorizationDialog = true
       })
+    },
+
+    getJWT () {
+      const token = sessionStorage.getItem('KEYCLOAK_TOKEN')
+      if (token) {
+        return this.parseJwt(token)
+      } else {
+        throw new Error('Keycloak Token is null')
+      }
     },
 
     parseJwt (token) {
       try {
-        var base64Url = token.split('.')[1]
-        var base64 = decodeURIComponent(window.atob(base64Url).split('').map(function (c) {
+        const base64Url = token.split('.')[1]
+        const base64 = decodeURIComponent(window.atob(base64Url).split('').map(function (c) {
           return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
         }).join(''))
         return JSON.parse(base64)
       } catch (error) {
-        throw new Error('error parsing JWT - ' + error)
+        throw new Error('Error parsing JWT - ' + error)
+      }
+    },
+
+    getKeycloakRoles (jwt) {
+      const keycloakRoles = jwt.roles
+      if (keycloakRoles && keycloakRoles.length > 0) {
+        return keycloakRoles
+      } else {
+        throw new Error('Keycloak Role is null')
+      }
+    },
+
+    getBusinessId () {
+      const businessId = sessionStorage.getItem('BUSINESS_IDENTIFIER')
+      if (businessId) {
+        return businessId
+      } else {
+        throw new Error('Business Identifier is null')
+      }
+    },
+
+    updateCurrentDate () {
+      const now = new Date()
+      const date = this.dateToUsableString(now)
+      this.setCurrentDate(date)
+      // set timeout to run this again at midnight
+      const hoursToMidnight = 23 - now.getHours()
+      const minutesToMidnight = 59 - now.getMinutes()
+      const secondsToMidnight = 59 - now.getSeconds()
+      const timeout = ((((hoursToMidnight * 60) + minutesToMidnight) * 60) + secondsToMidnight) * 1000
+      setTimeout(this.updateCurrentDate, timeout)
+    },
+
+    getAuthorizations (businessId) {
+      const url = businessId + '/authorizations'
+      const config = {
+        baseURL: sessionStorage.getItem('AUTH_API_URL') + 'api/v1/entities/'
+      }
+      return axios.get(url, config)
+    },
+
+    getBusinessInfo (businessId) {
+      const url = businessId
+      const config = {
+        baseURL: sessionStorage.getItem('AUTH_API_URL') + 'api/v1/entities/'
+      }
+      return axios.get(url, config)
+    },
+
+    storeAuthRoles (response) {
+      // NB: roles array may contain 'view', 'edit' or nothing
+      const authRoles = response && response.data && response.data.roles
+      if (authRoles && authRoles.length > 0) {
+        this.setAuthRoles(authRoles)
+      } else {
+        throw new Error('invalid auth roles')
+      }
+    },
+
+    storeBusinessInfo (response) {
+      const contacts = response && response.data && response.data.contacts
+      // ensure we received the right looking object
+      // but allow empty contacts array
+      if (contacts) {
+        // at this time there is at most 1 contact
+        const contact = contacts.length > 0 && contacts[0]
+        if (contact) {
+          this.setBusinessEmail(contact.email)
+          this.setBusinessPhone(contact.phone)
+          this.setBusinessPhoneExtension(contact.phoneExtension)
+        }
+      } else {
+        throw new Error('invalid business contact info')
       }
     },
 

@@ -1,6 +1,9 @@
 export default {
-  corpNum (state, corpNum) {
-    state.corpNum = corpNum
+  keycloakRoles (state, keycloakRoles) {
+    state.keycloakRoles = keycloakRoles
+  },
+  authRoles (state, authRoles) {
+    state.authRoles = authRoles
   },
   currentDate (state, currentDate) {
     state.currentDate = currentDate
@@ -25,6 +28,15 @@ export default {
   },
   entityFoundingDate (state, entityFoundingDate) {
     state.entityFoundingDate = entityFoundingDate
+  },
+  businessEmail (state, businessEmail) {
+    state.businessEmail = businessEmail
+  },
+  businessPhone (state, businessPhone) {
+    state.businessPhone = businessPhone
+  },
+  businessPhoneExtension (state, businessPhoneExtension) {
+    state.businessPhoneExtension = businessPhoneExtension
   },
   lastPreLoadFilingDate (state, lastPreLoadFilingDate) {
     state.lastPreLoadFilingDate = lastPreLoadFilingDate

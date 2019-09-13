@@ -27,7 +27,7 @@ describe('Directors', () => {
 
   beforeEach(done => {
     // init store
-    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
 
     // GET directors
     sinon.stub(axios, 'get').withArgs('CP0001191/directors?date=2019-04-01')

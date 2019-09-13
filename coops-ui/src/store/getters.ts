@@ -1,4 +1,16 @@
 export default {
+  isRoleStaff: state => {
+    return state.keycloakRoles.includes('staff')
+  },
+
+  isRoleEdit: state => {
+    return state.authRoles.includes('edit')
+  },
+
+  isRoleView: state => {
+    return state.authRoles.includes('view')
+  },
+
   isAnnualReportEditable: state => {
     return (state.currentFilingStatus === 'NEW' || state.currentFilingStatus === 'DRAFT')
   },

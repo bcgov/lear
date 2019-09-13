@@ -22,7 +22,7 @@ Vue.use(Vuelidate)
 describe('AnnualReport - Part 1 - UI', () => {
   beforeEach(() => {
     // init store
-    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
     store.state.ARFilingYear = 2017
     store.state.currentFilingStatus = 'NEW'
   })
@@ -44,7 +44,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
     const vm: any = wrapper.vm
 
-    expect(vm.$store.state.corpNum).toEqual('CP0001191')
+    expect(vm.$store.state.entityIncNo).toEqual('CP0001191')
     expect(vm.$store.state.ARFilingYear).toEqual(2017)
     expect(vm.$store.state.currentFilingStatus).toEqual('NEW')
 
@@ -191,7 +191,6 @@ describe('AnnualReport - Part 1 - UI', () => {
 describe('AnnualReport - Part 2 - Resuming', () => {
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
@@ -274,7 +273,6 @@ describe('AnnualReport - Part 3 - Submitting', () => {
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
@@ -395,10 +393,18 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
+      const button = wrapper.find('#ar-file-pay-btn')
+      expect(button.attributes('disabled')).toBeUndefined()
+
       // click the File & Pay button
-      wrapper.find('#ar-file-pay-btn').trigger('click')
+      button.trigger('click')
       // work-around because click trigger isn't working
-      await vm.onClickFilePay()
+      expect(await vm.onClickFilePay()).toBe(true)
+
+      // verify v-tooltip text
+      const tooltipText = wrapper.find('#ar-file-pay-btn + span').text()
+      expect(tooltipText).toContain('Ensure all of your information is entered correctly before you File & Pay.')
+      expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
       // verify redirection
       const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
@@ -430,14 +436,53 @@ describe('AnnualReport - Part 3 - Submitting', () => {
     // sanity check
     expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
+    const button = wrapper.find('#ar-file-pay-btn')
+    expect(button.attributes('disabled')).toBeUndefined()
+
     // click the File & Pay button
-    wrapper.find('#ar-file-pay-btn').trigger('click')
+    button.trigger('click')
     // work-around because click trigger isn't working
-    await vm.onClickFilePay()
+    expect(await vm.onClickFilePay()).toBe(true)
+
+    // verify v-tooltip text
+    const tooltipText = wrapper.find('#ar-file-pay-btn + span').text()
+    expect(tooltipText).toContain('Ensure all of your information is entered correctly before you File & Pay.')
+    expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
     // verify redirection
     const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+    wrapper.destroy()
+  })
+
+  it('disables File & Pay button if user has \'staff\' role', async () => {
+    // init store
+    store.state.keycloakRoles = ['staff']
+
+    const $route = { params: { id: '123' } } // draft filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm = wrapper.vm as any
+
+    // make sure form is validated
+    vm.agmDateValid = true
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
+
+    // stub address data
+    vm.addresses = {
+      'deliveryAddress': {},
+      'mailingAddress': {}
+    }
+
+    // verify that onClickFilePay() does nothing
+    expect(await vm.onClickFilePay()).toBe(false)
+
+    // verify v-tooltip text
+    expect(wrapper.find('#ar-file-pay-btn + span').text()).toBe('Staff are not allowed to file.')
+
+    store.state.keycloakRoles = [] // cleanup
 
     wrapper.destroy()
   })
@@ -449,7 +494,6 @@ describe('AnnualReport - Part 4 - Saving', () => {
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
@@ -569,7 +613,6 @@ describe('AnnualReport - Part 5 - Data', () => {
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = currentFilingYear
@@ -827,95 +870,98 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
     store.state.currentFilingStatus = 'NEW'
-    store.state.filedDate = null
-    sinon.stub(axios, 'post').withArgs('CP0001191/filings')
-      .returns(new Promise((resolves, rejects) => rejects({
-        response: {
-          status: BAD_REQUEST,
-          data: {
-            'errors': [
-              {
-                'error': 'err msg post',
-                'path': 'swkmc/sckmr'
-              }
-            ],
-            'warnings': [
-              {
-                'warning': 'warn msg post',
-                'path': 'swkmc/sckmr'
-              }
-            ],
-            'filing': {
-              'annualReport': {
-                'annualGeneralMeetingDate': '2018-07-15'
-              },
-              'business': {
-                'cacheId': 1,
-                'foundingDate': '2007-04-08',
-                'identifier': 'CP0001191',
-                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                'legalName': 'Legal Name - CP0001191'
-              },
-              'header': {
-                'name': 'annualReport',
-                'date': '2017-06-06',
-                'submitter': 'cp0001191',
-                'status': 'DRAFT',
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get',
-                'filingId': 123
-              }
-            }
-          }
-        }
-      })))
 
-    sinon.stub(axios, 'put').withArgs('CP0001191/filings/123')
-      .returns(new Promise((resolves, rejects) => rejects({
-        response: {
-          status: BAD_REQUEST,
-          data: {
-            'errors': [
-              {
-                'error': 'err msg put',
-                'path': 'swkmc/sckmr'
-              }
-            ],
-            'warnings': [
-              {
-                'warning': 'warn msg put',
-                'path': 'swkmc/sckmr'
-              }
-            ],
-            'filing': {
-              'annualReport': {
-                'annualGeneralMeetingDate': '2018-07-15'
-              },
-              'business': {
-                'cacheId': 1,
-                'foundingDate': '2007-04-08',
-                'identifier': 'CP0001191',
-                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                'legalName': 'Legal Name - CP0001191'
-              },
-              'header': {
-                'name': 'annualReport',
-                'date': '2017-06-06',
-                'submitter': 'cp0001191',
-                'status': 'DRAFT',
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get',
-                'filingId': 123
-              }
+    // mock "file post" endpoint
+    const p1 = Promise.reject({
+      response: {
+        status: BAD_REQUEST,
+        data: {
+          'errors': [
+            {
+              'error': 'err msg post',
+              'path': 'swkmc/sckmr'
+            }
+          ],
+          'warnings': [
+            {
+              'warning': 'warn msg post',
+              'path': 'swkmc/sckmr'
+            }
+          ],
+          'filing': {
+            'annualReport': {
+              'annualGeneralMeetingDate': '2018-07-15'
+            },
+            'business': {
+              'cacheId': 1,
+              'foundingDate': '2007-04-08',
+              'identifier': 'CP0001191',
+              'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+              'legalName': 'Legal Name - CP0001191'
+            },
+            'header': {
+              'name': 'annualReport',
+              'date': '2017-06-06',
+              'submitter': 'cp0001191',
+              'status': 'DRAFT',
+              'certifiedBy': 'Full Name',
+              'email': 'no_one@never.get',
+              'filingId': 123
             }
           }
         }
-      })))
+      }
+    })
+    p1.catch(() => {}) // pre-empt "unhandled promise rejection" warning
+    sinon.stub(axios, 'post').withArgs('CP0001191/filings').returns(p1)
+
+    // mock "file put" endpoint
+    const p2 = Promise.reject({
+      response: {
+        status: BAD_REQUEST,
+        data: {
+          'errors': [
+            {
+              'error': 'err msg put',
+              'path': 'swkmc/sckmr'
+            }
+          ],
+          'warnings': [
+            {
+              'warning': 'warn msg put',
+              'path': 'swkmc/sckmr'
+            }
+          ],
+          'filing': {
+            'annualReport': {
+              'annualGeneralMeetingDate': '2018-07-15'
+            },
+            'business': {
+              'cacheId': 1,
+              'foundingDate': '2007-04-08',
+              'identifier': 'CP0001191',
+              'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+              'legalName': 'Legal Name - CP0001191'
+            },
+            'header': {
+              'name': 'annualReport',
+              'date': '2017-06-06',
+              'submitter': 'cp0001191',
+              'status': 'DRAFT',
+              'certifiedBy': 'Full Name',
+              'email': 'no_one@never.get',
+              'filingId': 123
+            }
+          }
+        }
+      }
+    })
+    p2.catch(() => {}) // pre-empt "unhandled promise rejection" warning
+    sinon.stub(axios, 'put').withArgs('CP0001191/filings/123').returns(p2)
 
     // create local Vue and mock router
     const localVue = createLocalVue()

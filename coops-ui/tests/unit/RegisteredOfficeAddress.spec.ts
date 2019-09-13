@@ -149,7 +149,7 @@ describe('RegisteredOfficeAddress', () => {
       propsData: { changeButtonDisabled: false }
     })
 
-    expect(wrapper.find('#reg-off-addr-change-btn').attributes('disabled')).not.toBeDefined()
+    expect(wrapper.find('#reg-off-addr-change-btn').attributes('disabled')).toBeUndefined()
 
     wrapper.destroy()
   })

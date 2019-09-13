@@ -33,14 +33,42 @@
             </template>
 
             <div class="list-item__actions">
-              <v-btn color="primary" v-if="isDraft(item)" :disabled="!item.enabled"
-                @click.native.stop="doResumeFiling(item)">Resume</v-btn>
-              <v-btn color="primary" v-else-if="isPending(item)" :disabled="!item.enabled"
-                @click.native.stop="doResumePayment(item)">Resume Payment</v-btn>
-              <v-btn color="primary" v-else-if="isError(item)" :disabled="!item.enabled"
-                @click.native.stop="doResumePayment(item)">Retry Payment</v-btn>
-              <v-btn color="primary" v-else-if="!isCompleted(item)" :disabled="!item.enabled"
-                @click.native.stop="doFileNow(item)">File Now</v-btn>
+              <v-btn v-if="isDraft(item)"
+                color="primary"
+                :disabled="!item.enabled"
+                @click.native.stop="doResumeFiling(item)">
+                Resume
+              </v-btn>
+              <v-tooltip v-else-if="isPending(item)" top color="#3b6cff" :disabled="!isRoleStaff">
+                <v-btn
+                  color="primary"
+                  slot="activator"
+                  :depressed="isRoleStaff"
+                  :ripple="!isRoleStaff"
+                  :disabled="!item.enabled"
+                  @click.native.stop="doResumePayment(item)">
+                  Resume Payment
+                </v-btn>
+                <span>Staff are not allowed to Resume Payment.</span>
+              </v-tooltip>
+              <v-tooltip v-else-if="isError(item)" top color="#3b6cff" :disabled="!isRoleStaff">
+                <v-btn
+                  color="primary"
+                  slot="activator"
+                  :depressed="isRoleStaff"
+                  :ripple="!isRoleStaff"
+                  :disabled="!item.enabled"
+                  @click.native.stop="doResumePayment(item)">
+                  Retry Payment
+                </v-btn>
+                <span>Staff are not allowed to Retry Payment.</span>
+              </v-tooltip>
+              <v-btn v-else-if="!isCompleted(item)"
+                color="primary"
+                :disabled="!item.enabled"
+                @click.native.stop="doFileNow(item)">
+                File Now
+              </v-btn>
             </div>
           </div>
         </template>
@@ -78,7 +106,7 @@
 
 <script>
 import Vue2Filters from 'vue2-filters'
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapActions, mapGetters } from 'vuex'
 
 export default {
   name: 'TodoList',
@@ -92,7 +120,9 @@ export default {
   },
 
   computed: {
-    ...mapState(['tasks'])
+    ...mapState(['tasks']),
+
+    ...mapGetters(['isRoleStaff'])
   },
 
   created () {
@@ -274,6 +304,9 @@ export default {
 
     // this is called to either Resume Payment or Retry Payment
     doResumePayment (item) {
+      // staff are not allowed to resume or retry payment
+      if (this.isRoleStaff) return false
+
       const origin = window.location.origin || ''
       const filingId = item.id
       const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
@@ -282,6 +315,7 @@ export default {
       const paymentToken = item.paymentToken
       const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
       window.location.assign(payURL)
+      return true
     },
 
     isNew (item) {

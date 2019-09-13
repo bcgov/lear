@@ -113,6 +113,7 @@ export default {
 
   .dashboard-content__main
     flex 1 1 auto
+    z-index 1
 
   .dashboard-content__aside
     margin-left 2rem

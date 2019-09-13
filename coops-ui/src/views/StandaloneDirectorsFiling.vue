@@ -88,18 +88,21 @@
         </div>
 
         <div class="buttons-right">
-          <v-tooltip bottom>
+          <v-tooltip top color="#3b6cff">
             <v-btn
               slot="activator"
               id="cod-file-pay-btn"
               color="primary"
               large
+              :depressed="isRoleStaff"
+              :ripple="!isRoleStaff"
               :disabled="!validated || filingPaying"
               :loading="filingPaying"
               @click="onClickFilePay">
               File &amp; Pay
             </v-btn>
-            <span>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
+            <span v-if="isRoleStaff">Staff are not allowed to file.</span>
+            <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
               There is no opportunity to change information beyond this point.</span>
           </v-tooltip>
           <v-btn
@@ -119,7 +122,7 @@ import axios from '@/axios-auth'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import { BAD_REQUEST, PAYMENT_REQUIRED } from 'http-status-codes'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -164,7 +167,9 @@ export default {
   },
 
   computed: {
-    ...mapState(['currentDate', 'corpNum', 'entityName', 'entityIncNo', 'entityFoundingDate']),
+    ...mapState(['currentDate', 'entityName', 'entityIncNo', 'entityFoundingDate']),
+
+    ...mapGetters(['isRoleStaff']),
 
     validated () {
       return (this.isCertified && this.directorFormValid && this.filingData.length > 0)
@@ -194,7 +199,7 @@ export default {
     this.filingId = this.$route.params.id
 
     // if tombstone data isn't set, route to home
-    if (!this.corpNum || (this.filingId === undefined)) {
+    if (!this.entityIncNo || (this.filingId === undefined)) {
       this.$router.push('/')
     }
 
@@ -240,9 +245,7 @@ export default {
     async onClickSave () {
       this.saving = true
       const filing = await this.saveFiling(true)
-      if (!filing) {
-        console.log('onClickSave() error - invalid filing =', filing)
-      } else {
+      if (filing) {
         this.filingId = +filing.header.filingId
       }
       this.saving = false
@@ -255,13 +258,14 @@ export default {
       if (filing) {
         const homeURL = window.location.origin || ''
         window.location.assign(homeURL)
-      } else {
-        console.log('onClickSaveResume() error - invalid filing =', filing)
       }
       this.savingResuming = false
     },
 
     async onClickFilePay () {
+      // staff are not allowed to file
+      if (this.isRoleStaff) return false
+
       this.filingPaying = true
       const filing = await this.saveFiling(false)
       // on success, redirect to Pay URL
@@ -275,10 +279,9 @@ export default {
         const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
         // TODO: first check if pay UI is reachable, else display modal dialog
         window.location.assign(payURL)
-      } else {
-        console.log('onClickFilePay() error - invalid filing =', filing)
       }
       this.filingPaying = false
+      return true
     },
 
     async saveFiling (isDraft) {
@@ -321,7 +324,7 @@ export default {
 
       if (this.filingId > 0) {
         // we have a filing id, so we are updating an existing filing
-        let url = this.corpNum + '/filings/' + this.filingId
+        let url = this.entityIncNo + '/filings/' + this.filingId
         if (isDraft) { url += '?draft=true' }
         let filing = null
         await axios.put(url, filingData).then(res => {
@@ -346,7 +349,7 @@ export default {
         return filing
       } else {
         // filing id is 0, so we are saving a new filing
-        let url = this.corpNum + '/filings'
+        let url = this.entityIncNo + '/filings'
         if (isDraft) { url += '?draft=true' }
         let filing = null
         await axios.post(url, filingData).then(res => {
@@ -400,7 +403,7 @@ export default {
     },
 
     fetchChangeOfDirectors () {
-      const url = this.corpNum + '/filings/' + this.filingId
+      const url = this.entityIncNo + '/filings/' + this.filingId
       axios.get(url).then(response => {
         if (response && response.data) {
           const filing = response.data.filing
@@ -418,7 +421,7 @@ export default {
             const changeOfDirectors = filing.changeOfDirectors
             if (changeOfDirectors) {
               if (changeOfDirectors.directors && changeOfDirectors.directors.length > 0) {
-                if (this.$refs.directorsList.setAllDirectors) {
+                if (this.$refs.directorsList && this.$refs.directorsList.setAllDirectors) {
                   this.$refs.directorsList.setAllDirectors(changeOfDirectors.directors)
                 }
                 this.toggleFiling('add', 'OTCDR')
@@ -427,7 +430,7 @@ export default {
               }
             } else {
               // To handle the condition of save as draft without change of director
-              if (this.$refs.directorsList.getDirectors) {
+              if (this.$refs.directorsList && this.$refs.directorsList.getDirectors) {
                 this.$refs.directorsList.getDirectors()
               }
             }

@@ -61,7 +61,7 @@ const sampleDirectors = [
 describe('Standalone Directors Filing - Part 1 - UI', () => {
   beforeEach(() => {
     // init store
-    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
   })
 
   it('renders the filing sub-components properly', () => {
@@ -186,7 +186,6 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
 describe('Standalone Directors Filing - Part 2 - Resuming', () => {
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
 
@@ -260,7 +259,6 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
 
@@ -367,16 +365,26 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
       // make sure form is validated
       vm.directorFormValid = true
       vm.isCertified = true
+      vm.filingData = [{}] // dummy data
+      expect(vm.validated).toEqual(true)
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
       // TODO: verify that new filing was created
 
+      const button = wrapper.find('#cod-file-pay-btn')
+      expect(button.attributes('disabled')).toBeUndefined()
+
       // click the File & Pay button
-      wrapper.find('#cod-file-pay-btn').trigger('click')
+      button.trigger('click')
       // work-around because click trigger isn't working
-      await vm.onClickFilePay()
+      expect(await vm.onClickFilePay()).toBe(true)
+
+      // verify v-tooltip text
+      const tooltipText = wrapper.find('#cod-file-pay-btn + span').text()
+      expect(tooltipText).toContain('Ensure all of your information is entered correctly before you File & Pay.')
+      expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
       // verify redirection
       const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
@@ -396,20 +404,55 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     // make sure form is validated
     vm.directorFormValid = true
     vm.isCertified = true
+    vm.filingData = [{}] // dummy data
+    expect(vm.validated).toEqual(true)
 
     // sanity check
     expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
     // TODO: verify that draft filing was fetched
 
+    const button = wrapper.find('#cod-file-pay-btn')
+    expect(button.attributes('disabled')).toBeUndefined()
+
     // click the File & Pay button
-    wrapper.find('#cod-file-pay-btn').trigger('click')
+    button.trigger('click')
     // work-around because click trigger isn't working
-    await vm.onClickFilePay()
+    expect(await vm.onClickFilePay()).toBe(true)
+
+    // verify v-tooltip text
+    const tooltipText = wrapper.find('#cod-file-pay-btn + span').text()
+    expect(tooltipText).toContain('Ensure all of your information is entered correctly before you File & Pay.')
+    expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
     // verify redirection
     const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+    wrapper.destroy()
+  })
+
+  it('disables File & Pay button if user has \'staff\' role', async () => {
+    // init store
+    store.state.keycloakRoles = ['staff']
+
+    const $route = { params: { id: '123' } } // draft filing id
+    const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
+    const vm = wrapper.vm as any
+
+    // make sure form is validated
+    vm.directorFormValid = true
+    vm.isCertified = true
+    vm.filingData = [{}] // dummy data
+    expect(vm.validated).toEqual(true)
+
+    // verify that onClickFilePay() does nothing
+    expect(await vm.onClickFilePay()).toBe(false)
+
+    // verify v-tooltip text
+    expect(wrapper.find('#cod-file-pay-btn + span').text()).toBe('Staff are not allowed to file.')
+
+    store.state.keycloakRoles = [] // cleanup
 
     wrapper.destroy()
   })
@@ -430,7 +473,6 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
 
@@ -531,7 +573,6 @@ describe('Standalone Directors Filing - Part 5 - Data', () => {
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
 
@@ -679,97 +720,98 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
 
   beforeEach(async () => {
     // init store
-    store.state.corpNum = 'CP0001191'
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
 
     // mock "file post" endpoint
-    sinon.stub(axios, 'post').withArgs('CP0001191/filings')
-      .returns(new Promise((resolves, rejects) => rejects({
-        response: {
-          status: BAD_REQUEST,
-          data: {
-            'errors': [
-              {
-                'error': 'err msg post',
-                'path': 'swkmc/sckmr'
-              }
-            ],
-            'warnings': [
-              {
-                'warning': 'warn msg post',
-                'path': 'swkmc/sckmr'
-              }
-            ],
-            'filing': {
-              'changeOfDirectors': {
-                'directors': sampleDirectors
-              },
-              'business': {
-                'cacheId': 1,
-                'foundingDate': '2007-04-08',
-                'identifier': 'CP0001191',
-                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                'legalName': 'Legal Name - CP0001191'
-              },
-              'header': {
-                'name': 'changeOfDirectors',
-                'date': '2017-06-06',
-                'submitter': 'cp0001191',
-                'status': 'PENDING',
-                'filingId': 123,
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get',
-                'paymentToken': '321'
-              }
+    const p1 = Promise.reject({
+      response: {
+        status: BAD_REQUEST,
+        data: {
+          'errors': [
+            {
+              'error': 'err msg post',
+              'path': 'swkmc/sckmr'
+            }
+          ],
+          'warnings': [
+            {
+              'warning': 'warn msg post',
+              'path': 'swkmc/sckmr'
+            }
+          ],
+          'filing': {
+            'changeOfDirectors': {
+              'directors': sampleDirectors
+            },
+            'business': {
+              'cacheId': 1,
+              'foundingDate': '2007-04-08',
+              'identifier': 'CP0001191',
+              'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+              'legalName': 'Legal Name - CP0001191'
+            },
+            'header': {
+              'name': 'changeOfDirectors',
+              'date': '2017-06-06',
+              'submitter': 'cp0001191',
+              'status': 'PENDING',
+              'filingId': 123,
+              'certifiedBy': 'Full Name',
+              'email': 'no_one@never.get',
+              'paymentToken': '321'
             }
           }
         }
-      })))
+      }
+    })
+    p1.catch(() => {}) // pre-empt "unhandled promise rejection" warning
+    sinon.stub(axios, 'post').withArgs('CP0001191/filings').returns(p1)
 
     // mock "file put" endpoint
-    sinon.stub(axios, 'put').withArgs('CP0001191/filings/123')
-      .returns(new Promise((resolves, rejects) => rejects({
-        response: {
-          status: BAD_REQUEST,
-          data: {
-            'errors': [
-              {
-                'error': 'err msg put',
-                'path': 'swkmc/sckmr'
-              }
-            ],
-            'warnings': [
-              {
-                'warning': 'warn msg put',
-                'path': 'swkmc/sckmr'
-              }
-            ],
-            'filing': {
-              'changeOfDirectors': {
-                'directors': sampleDirectors
-              },
-              'business': {
-                'cacheId': 1,
-                'foundingDate': '2007-04-08',
-                'identifier': 'CP0001191',
-                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                'legalName': 'Legal Name - CP0001191'
-              },
-              'header': {
-                'name': 'changeOfDirectors',
-                'date': '2017-06-06',
-                'submitter': 'cp0001191',
-                'status': 'PENDING',
-                'filingId': 123,
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get',
-                'paymentToken': '321'
-              }
+    const p2 = Promise.reject({
+      response: {
+        status: BAD_REQUEST,
+        data: {
+          'errors': [
+            {
+              'error': 'err msg put',
+              'path': 'swkmc/sckmr'
+            }
+          ],
+          'warnings': [
+            {
+              'warning': 'warn msg put',
+              'path': 'swkmc/sckmr'
+            }
+          ],
+          'filing': {
+            'changeOfDirectors': {
+              'directors': sampleDirectors
+            },
+            'business': {
+              'cacheId': 1,
+              'foundingDate': '2007-04-08',
+              'identifier': 'CP0001191',
+              'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+              'legalName': 'Legal Name - CP0001191'
+            },
+            'header': {
+              'name': 'changeOfDirectors',
+              'date': '2017-06-06',
+              'submitter': 'cp0001191',
+              'status': 'PENDING',
+              'filingId': 123,
+              'certifiedBy': 'Full Name',
+              'email': 'no_one@never.get',
+              'paymentToken': '321'
             }
           }
         }
-      })))
+      }
+    })
+    p2.catch(() => {}) // pre-empt "unhandled promise rejection" warning
+    sinon.stub(axios, 'put').withArgs('CP0001191/filings/123').returns(p2)
   })
 
   afterEach(() => {

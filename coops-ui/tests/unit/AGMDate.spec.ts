@@ -14,13 +14,19 @@ import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+// get rid of "Download the Vue Devtools extension for a better development experience" console message
+Vue.config.devtools = false
+
+// get rid of "You are running Vue in development mod" console message
+Vue.config.productionTip = false
+
 describe('AGMDate', () => {
   let wrapper
   let vm
 
   beforeEach(async () => {
-    // init/reset store
-    store.state.corpNum = 'CP0001191'
+    // init store
+    store.state.entityIncNo = 'CP0001191'
     store.state.currentDate = '2019/07/15'
     store.state.ARFilingYear = 2019
 

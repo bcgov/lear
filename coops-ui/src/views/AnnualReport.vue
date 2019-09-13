@@ -65,7 +65,7 @@
               </header>
               <RegisteredOfficeAddress
                 :changeButtonDisabled="!agmDateValid"
-                :legalEntityNumber="corpNum"
+                :legalEntityNumber="entityIncNo"
                 :addresses.sync="addresses"
                 @modified="officeModifiedEventHandler($event)"
                 @valid="addressesFormValid=$event"
@@ -133,19 +133,22 @@
         </div>
 
         <div class="buttons-right">
-          <v-tooltip bottom>
+          <v-tooltip top color="#3b6cff">
             <v-btn
               slot="activator"
               v-if="isAnnualReportEditable"
               id="ar-file-pay-btn"
               color="primary"
               large
+              :depressed="isRoleStaff"
+              :ripple="!isRoleStaff"
               :disabled="!validated || filingPaying"
               :loading="filingPaying"
               @click="onClickFilePay">
               File &amp; Pay
             </v-btn>
-            <span>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
+            <span v-if="isRoleStaff">Staff are not allowed to file.</span>
+            <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
               There is no opportunity to change information beyond this point.</span>
           </v-tooltip>
           <v-btn
@@ -174,7 +177,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
-import DateUtils from '@/DateUtils'
+import DateUtils from '@/date-utils'
 
 export default {
   name: 'AnnualReport',
@@ -234,10 +237,10 @@ export default {
   },
 
   computed: {
-    ...mapState(['currentDate', 'ARFilingYear', 'corpNum', 'lastAgmDate',
-      'entityName', 'entityIncNo', 'entityFoundingDate']),
+    ...mapState(['currentDate', 'ARFilingYear', 'lastAgmDate', 'entityName',
+      'entityIncNo', 'entityFoundingDate']),
 
-    ...mapGetters(['isAnnualReportEditable', 'reportState']),
+    ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState']),
 
     annualReportDate () {
       // AR Filing Year, but as a date field with today's month and day
@@ -274,7 +277,7 @@ export default {
     this.filingId = this.$route.params.id
 
     // if tombstone data isn't set, route to home
-    if (!this.corpNum || !this.ARFilingYear || (this.filingId === undefined)) {
+    if (!this.entityIncNo || !this.ARFilingYear || (this.filingId === undefined)) {
       this.$router.push('/')
     } else if (this.filingId > 0) {
       // resume draft filing
@@ -314,7 +317,7 @@ export default {
 
   methods: {
     fetchData () {
-      const url = this.corpNum + '/filings/' + this.filingId
+      const url = this.entityIncNo + '/filings/' + this.filingId
       axios.get(url).then(response => {
         if (response && response.data) {
           const filing = response.data.filing
@@ -335,7 +338,7 @@ export default {
             if (annualReport) {
               // set the Draft Date in the Directors List component
               // TODO: use props instead of $refs (which cause an error in the unit tests)
-              if (this.$refs.directorsList.setDraftDate) {
+              if (this.$refs.directorsList && this.$refs.directorsList.setDraftDate) {
                 this.$refs.directorsList.setDraftDate(annualReport.annualGeneralMeetingDate)
               }
               // set the Initial AGM Date in the AGM Date component
@@ -350,7 +353,7 @@ export default {
             const changeOfDirectors = filing.changeOfDirectors
             if (changeOfDirectors) {
               if (changeOfDirectors.directors && changeOfDirectors.directors.length > 0) {
-                if (this.$refs.directorsList.setAllDirectors) {
+                if (this.$refs.directorsList && this.$refs.directorsList.setAllDirectors) {
                   this.$refs.directorsList.setAllDirectors(changeOfDirectors.directors)
                 }
                 this.toggleFiling('add', 'OTCDR')
@@ -359,7 +362,7 @@ export default {
               }
             } else {
               // To handle the condition of save as draft without change of director
-              if (this.$refs.directorsList.getDirectors) {
+              if (this.$refs.directorsList && this.$refs.directorsList.getDirectors) {
                 this.$refs.directorsList.getDirectors()
               }
             }
@@ -412,9 +415,7 @@ export default {
     async onClickSave () {
       this.saving = true
       const filing = await this.saveFiling(true)
-      if (!filing) {
-        console.log('onClickSave() error - invalid filing =', filing)
-      } else {
+      if (filing) {
         this.filingId = +filing.header.filingId
       }
       this.saving = false
@@ -426,13 +427,14 @@ export default {
       // on success, route to Home URL
       if (filing) {
         this.$router.push('/')
-      } else {
-        console.log('onClickSaveResume() error - invalid filing =', filing)
       }
       this.savingResuming = false
     },
 
     async onClickFilePay () {
+      // staff are not allowed to file
+      if (this.isRoleStaff) return false
+
       this.filingPaying = true
       const filing = await this.saveFiling(false)
       // on success, redirect to Pay URL
@@ -446,10 +448,9 @@ export default {
         const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
         // assume Pay URL is always reachable
         window.location.assign(payURL)
-      } else {
-        console.log('onClickFilePay() error - invalid filing =', filing)
       }
       this.filingPaying = false
+      return true
     },
 
     async saveFiling (isDraft) {
@@ -514,7 +515,7 @@ export default {
 
       if (this.filingId > 0) {
         // we have a filing id, so we are updating an existing filing
-        let url = this.corpNum + '/filings/' + this.filingId
+        let url = this.entityIncNo + '/filings/' + this.filingId
         if (isDraft) { url += '?draft=true' }
         let filing = null
         await axios.put(url, data).then(res => {
@@ -539,7 +540,7 @@ export default {
         return filing
       } else {
         // filing id is 0, so we are saving a new filing
-        let url = this.corpNum + '/filings'
+        let url = this.entityIncNo + '/filings'
         if (isDraft) { url += '?draft=true' }
         let filing = null
         await axios.post(url, data).then(res => {
@@ -550,13 +551,13 @@ export default {
           if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
             this.paymentErrorDialog = true
           } else if (error && error.response && error.response.status === BAD_REQUEST) {
-            this.saveErrorDialog = true
             if (error.response.data.errors) {
               this.saveErrors = error.response.data.errors
             }
             if (error.response.data.warnings) {
               this.saveWarnings = error.response.data.warnings
             }
+            this.saveErrorDialog = true
           } else {
             this.saveErrorDialog = true
           }

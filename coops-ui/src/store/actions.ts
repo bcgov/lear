@@ -1,6 +1,9 @@
 export default {
-  setCorpNum ({ commit }, corpNum) {
-    commit('corpNum', corpNum)
+  setKeycloakRoles ({ commit }, keycloakRoles) {
+    commit('keycloakRoles', keycloakRoles)
+  },
+  setAuthRoles ({ commit }, authRoles) {
+    commit('authRoles', authRoles)
   },
   setCurrentDate ({ commit }, currentDate) {
     commit('currentDate', currentDate)
@@ -25,6 +28,15 @@ export default {
   },
   setEntityFoundingDate ({ commit }, entityFoundingDate) {
     commit('entityFoundingDate', entityFoundingDate)
+  },
+  setBusinessEmail ({ commit }, businessEmail) {
+    commit('businessEmail', businessEmail)
+  },
+  setBusinessPhone ({ commit }, businessPhone) {
+    commit('businessPhone', businessPhone)
+  },
+  setBusinessPhoneExtension ({ commit }, businessPhoneExtension) {
+    commit('businessPhoneExtension', businessPhoneExtension)
   },
   setLastPreLoadFilingDate ({ commit }, lastPreLoadFilingDate) {
     commit('lastPreLoadFilingDate', lastPreLoadFilingDate)
