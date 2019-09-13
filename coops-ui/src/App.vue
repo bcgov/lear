@@ -87,10 +87,10 @@ export default {
       let businessId
 
       try {
-        // const jwt = this.getJWT() // NOT NEEDED AT THIS TIME
-        // this.getUsername(jwt)     // NOT NEEDED AT THIS TIME
+        const jwt = this.getJWT()
+        const username = this.getUsername(jwt)
         businessId = this.getBusinessId()
-        this.updateCurrentDate()
+        const date = this.updateCurrentDate()
       } catch (error) {
         console.error(error)
         this.dashboardUnavailableDialog = true

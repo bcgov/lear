@@ -52,30 +52,47 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { Component, Vue } from 'vue-property-decorator'
 import { mapState } from 'vuex'
 
-export default {
-  name: 'EntityInfo',
-
+@Component({
   computed: {
+    // Property definitions for runtime environment.
     ...mapState(['role', 'entityName', 'entityStatus', 'entityBusinessNo', 'entityIncNo',
-      'businessEmail', 'businessPhone', 'businessPhoneExtension']),
+      'businessEmail', 'businessPhone', 'businessPhoneExtension'])
+  }
+})
+export default class EntityInfo extends Vue {
+  // Local definitions of computed properties for static type checking.
+  // Use non-null assertion operator to allow use before assignment.
+  readonly role!: string
+  readonly entityName!: string
+  readonly entityStatus!: string
+  readonly entityBusinessNo!: string
+  readonly entityIncNo!: number
+  readonly businessEmail!: string
+  readonly businessPhone!: string
+  readonly businessPhoneExtension!: string
 
-    fullPhoneNumber () {
-      if (!this.businessPhone) return null
-      return `${this.businessPhone}${this.businessPhoneExtension ? (' x' + this.businessPhoneExtension) : ''}`
-    }
-  },
+  /**
+   * Computed value.
+   * @returns The business phone number and optional extension, or null.
+   */
+  private get fullPhoneNumber (): string {
+    if (!this.businessPhone) return null
+    return `${this.businessPhone}${this.businessPhoneExtension ? (' x' + this.businessPhoneExtension) : ''}`
+  }
 
-  methods: {
-    editBusinessProfile () {
-      let authStub = sessionStorage.getItem('AUTH_URL') || ''
-      if (!(authStub.endsWith('/'))) { authStub += '/' }
-      const authURL = authStub + 'businessprofile'
-      // assume Auth URL is always reachable
-      window.location.assign(authURL)
-    }
+  /**
+   * Redirects the user to the Auth UI to update their business profile.
+   */
+  private editBusinessProfile (): void {
+    let authStub = sessionStorage.getItem('AUTH_URL') || ''
+    if (!(authStub.endsWith('/'))) { authStub += '/' }
+    const authURL = authStub + 'businessprofile'
+    // assume Auth URL is always reachable
+    window.location.assign(authURL)
   }
 }
 </script>
@@ -91,6 +108,12 @@ export default {
 
   .entity-info.OWNER
     // background-image url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='130' height='100'><text x='0' y='108' font-size='30' transform='rotate(-45 10,40)' opacity='0.1'>OWNER</text></svg>")
+
+  .entity-info.ADMIN
+    // background-image url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='100'><text x='0' y='108' font-size='30' transform='rotate(-45 10,40)' opacity='0.1'>ADMIN</text></svg>")
+
+  .entity-info.MEMBER
+    // background-image url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='100'><text x='0' y='120' font-size='30' transform='rotate(-45 10,40)' opacity='0.1'>MEMBER</text></svg>")
 
   .entity-info.STAFF
     // background-image url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='100'><text x='0' y='95' font-size='30' transform='rotate(-45 10,40)' opacity='0.1'>STAFF</text></svg>")
