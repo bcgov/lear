@@ -92,8 +92,11 @@ class QueueService():
 
     def teardown(self, exception):  # pylint: disable=unused-argument; flask method signature
         """Destroy all objects created by this extension."""
-        this_loop = asyncio.get_event_loop()
-        this_loop.run_until_complete(self.close())
+        try:
+            this_loop = asyncio.get_event_loop()
+            this_loop.run_until_complete(self.close())
+        except:
+            pass
         # await self.close()
 
     async def connect(self):

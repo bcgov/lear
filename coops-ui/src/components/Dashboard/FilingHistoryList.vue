@@ -79,7 +79,7 @@
       <v-card-text>
         <div class="past-filings__text">
           Filings completed before August 21, 2019 will be available from the BC Registry as printed
-          documents.<br>Please contact us at <a href="tel:+1-250-952-0568">250 952-0568</a> to request
+          documents.<br>Please contact us at <a href="tel:+1-877-526-1526">1-877-526-1526</a> to request
           paper copies of these past filings.
         </div>
       </v-card-text>
@@ -167,22 +167,6 @@ export default {
               name: 'Annual Report',
               documentName: `${this.entityIncNo} - Annual Report (${agmYear}) - ${filing.header.date}.pdf`
             }]
-          }
-          // check if there was also a Change Of Directors
-          if (filing.changeOfDirectors) {
-            item.filingDocuments.push({
-              filingId: filing.header.filingId,
-              name: 'Director Change (AGM)',
-              documentName: `${this.entityIncNo} - Director Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
-            })
-          }
-          // check if there was also a Change Of Address
-          if (filing.changeOfAddress) {
-            item.filingDocuments.push({
-              filingId: filing.header.filingId,
-              name: 'Address Change (AGM)',
-              documentName: `${this.entityIncNo} - Address Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
-            })
           }
           this.filedItems.push(item)
         } else {
