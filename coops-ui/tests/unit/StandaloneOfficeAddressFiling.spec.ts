@@ -630,91 +630,95 @@ describe('Standalone Office Address Filing - Part 6 - Error/Warning dialogues', 
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
 
-    // mock "file" endpoint
-    sinon.stub(axios, 'post').withArgs('CP0001191/filings')
-      .returns(new Promise((resolves, rejects) => rejects({
-        response: {
-          status: BAD_REQUEST,
-          data: {
-            'errors': [
-              {
-                'error': 'err msg post',
-                'path': 'swkmc/sckmr'
-              }
-            ],
-            'warnings': [
-              {
-                'warning': 'warn msg post',
-                'path': 'swkmc/sckmr'
-              }
-            ],
-            'filing': {
-              'changeOfAddress': {
-                'deliveryAddress': sampleDeliveryAddress,
-                'mailingAddress': sampleMailingAddress
-              },
-              'business': {
-                'cacheId': 1,
-                'foundingDate': '2007-04-08',
-                'identifier': 'CP0001191',
-                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                'legalName': 'Legal Name - CP0001191'
-              },
-              'header': {
-                'name': 'changeOfAddress',
-                'date': '2017-06-06',
-                'submitter': 'cp0001191',
-                'status': 'DRAFT',
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get',
-                'filingId': 123
-              }
+    // mock "file post" endpoint
+    const p1 = Promise.reject({
+      response: {
+        status: BAD_REQUEST,
+        data: {
+          'errors': [
+            {
+              'error': 'err msg post',
+              'path': 'swkmc/sckmr'
+            }
+          ],
+          'warnings': [
+            {
+              'warning': 'warn msg post',
+              'path': 'swkmc/sckmr'
+            }
+          ],
+          'filing': {
+            'changeOfAddress': {
+              'deliveryAddress': sampleDeliveryAddress,
+              'mailingAddress': sampleMailingAddress
+            },
+            'business': {
+              'cacheId': 1,
+              'foundingDate': '2007-04-08',
+              'identifier': 'CP0001191',
+              'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+              'legalName': 'Legal Name - CP0001191'
+            },
+            'header': {
+              'name': 'changeOfAddress',
+              'date': '2017-06-06',
+              'submitter': 'cp0001191',
+              'status': 'DRAFT',
+              'certifiedBy': 'Full Name',
+              'email': 'no_one@never.get',
+              'filingId': 123
             }
           }
         }
-      })))
-    sinon.stub(axios, 'put').withArgs('CP0001191/filings/123')
-      .returns(new Promise((resolves, rejects) => rejects({
-        response: {
-          status: BAD_REQUEST,
-          data: {
-            'errors': [
-              {
-                'error': 'err msg put',
-                'path': 'swkmc/sckmr'
-              }
-            ],
-            'warnings': [
-              {
-                'warning': 'warn msg put',
-                'path': 'swkmc/sckmr'
-              }
-            ],
-            'filing': {
-              'changeOfAddress': {
-                'deliveryAddress': sampleDeliveryAddress,
-                'mailingAddress': sampleMailingAddress
-              },
-              'business': {
-                'cacheId': 1,
-                'foundingDate': '2007-04-08',
-                'identifier': 'CP0001191',
-                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                'legalName': 'Legal Name - CP0001191'
-              },
-              'header': {
-                'name': 'changeOfAddress',
-                'date': '2017-06-06',
-                'submitter': 'cp0001191',
-                'status': 'DRAFT',
-                'certifiedBy': 'Full Name',
-                'email': 'no_one@never.get',
-                'filingId': 123
-              }
+      }
+    })
+    p1.catch(() => {})
+    sinon.stub(axios, 'post').withArgs('CP0001191/filings').returns(p1)
+
+    // mock "file put" endpoint
+    const p2 = Promise.reject({
+      response: {
+        status: BAD_REQUEST,
+        data: {
+          'errors': [
+            {
+              'error': 'err msg put',
+              'path': 'swkmc/sckmr'
+            }
+          ],
+          'warnings': [
+            {
+              'warning': 'warn msg put',
+              'path': 'swkmc/sckmr'
+            }
+          ],
+          'filing': {
+            'changeOfAddress': {
+              'deliveryAddress': sampleDeliveryAddress,
+              'mailingAddress': sampleMailingAddress
+            },
+            'business': {
+              'cacheId': 1,
+              'foundingDate': '2007-04-08',
+              'identifier': 'CP0001191',
+              'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+              'legalName': 'Legal Name - CP0001191'
+            },
+            'header': {
+              'name': 'changeOfAddress',
+              'date': '2017-06-06',
+              'submitter': 'cp0001191',
+              'status': 'DRAFT',
+              'certifiedBy': 'Full Name',
+              'email': 'no_one@never.get',
+              'filingId': 123
             }
           }
         }
-      })))
+      }
+    })
+    p2.catch(() => {})
+    sinon.stub(axios, 'put').withArgs('CP0001191/filings/123').returns(p2)
   })
 
   afterEach(() => {
