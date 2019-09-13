@@ -1,7 +1,7 @@
 {
   "API_URL": "http://localhost:2015/api/v1/businesses/",
   "AUTH_URL": "http://localhost:2015/auth/",
-  "AUTH_API_URL": "https://auth-api-test.pathfinder.gov.bc.ca/",
+  "AUTH_API_URL": "https://auth-api-test.pathfinder.gov.bc.ca/api/v1/",
   "PAY_API_URL": "https://pay-api-test.pathfinder.gov.bc.ca/api/v1/",
   "ADDRESS_COMPLETE_KEY": "RZ86-BB54-CM96-EE26"
 }
