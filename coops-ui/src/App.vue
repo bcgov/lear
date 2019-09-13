@@ -183,7 +183,7 @@ export default {
     getAuthorizations (businessId) {
       const url = businessId + '/authorizations'
       const config = {
-        baseURL: sessionStorage.getItem('AUTH_API_URL') + 'api/v1/entities/'
+        baseURL: this.authAPIURL + 'entities/'
       }
       return axios.get(url, config)
     },
@@ -191,7 +191,7 @@ export default {
     getBusinessInfo (businessId) {
       const url = businessId
       const config = {
-        baseURL: sessionStorage.getItem('AUTH_API_URL') + 'api/v1/entities/'
+        baseURL: this.authAPIURL + 'entities/'
       }
       return axios.get(url, config)
     },
