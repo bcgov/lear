@@ -220,6 +220,15 @@
                                         }
                                     },
                                     {
+                                        "name": "AUTH_SVC_URL",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "AUTH_SVC_URL",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
                                         "name": "REPORT_SVC_URL",
                                         "valueFrom": {
                                             "configMapKeyRef": {
@@ -441,6 +450,7 @@
                 "DATABASE_TEST_PORT": "${DB_PORT}",
                 "DATABASE_TEST_USERNAME": "tester",
                 "PAYMENT_SVC_URL": "${PAYMENT_SVC_URL}",
+                "AUTH_SVC_URL": "${AUTH_SVC_URL}",
                 "REPORT_SVC_URL": "${REPORT_SVC_URL}",
                 "JWT_OIDC_ALGORITHMS": "${JWT_OIDC_ALGORITHMS}",
                 "JWT_OIDC_AUDIENCE": "${JWT_OIDC_AUDIENCE}",
@@ -667,6 +677,13 @@
             "description": "The URL used to post invoice to the payment service.",
             "required": true,
             "value": "https://pay-api-dev.pathfinder.gov.bc.ca/api/v1/payments"
+        },
+        {
+            "name": "AUTH_SVC_URL",
+            "displayName": "Authorization Services URL",
+            "description": "The URL used to authorizations.",
+            "required": true,
+            "value": "https://auth-api-dev.pathfinder.gov.bc.ca/api/v1/entities/{identifier}/authorizations"
         },
         {
             "name": "REPORT_SVC_URL",

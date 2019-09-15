@@ -9,6 +9,7 @@ pyhamcrest
 pytest<4.1
 pytest-mock
 pytest-asyncio
+requests-mock
 
 # Lint and code style
 autopep8
