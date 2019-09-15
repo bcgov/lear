@@ -94,7 +94,6 @@ class QueueService():
         """Destroy all objects created by this extension."""
         this_loop = asyncio.get_event_loop()
         this_loop.run_until_complete(self.close())
-        # await self.close()
 
     async def connect(self):
         """Connect to the queueing service."""
