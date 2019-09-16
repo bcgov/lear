@@ -229,6 +229,26 @@ def test_post_only_validate_ar(session, client, jwt):
     assert not rv.json.get('errors')
 
 
+def test_post_validate_ar_using_last_ar_date(session, client, jwt):
+    """Assert that a unpaid filing can be posted."""
+    identifier = 'CP7654321'
+    factory_business(identifier,
+                     last_ar_date=(datetime.utcnow() - datedelta.YEAR),  # last ar date = last year
+                     founding_date=(datetime.utcnow() - datedelta.YEAR - datedelta.YEAR)  # founding date = 2 years ago
+                     )
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings?only_validate=true',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.OK
+    assert not rv.json.get('errors')
+
+
 def test_post_only_validate_error_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     import copy

@@ -94,10 +94,11 @@ AR_FILING = {
 }
 
 
-def factory_business(identifier, founding_date=EPOCH_DATETIME):
+def factory_business(identifier, founding_date=EPOCH_DATETIME, last_ar_date=None):
     """Create a business entity."""
     business = Business(legal_name=f'legal_name-{identifier}',
                         founding_date=founding_date,
+                        last_ar_date=last_ar_date,
                         last_ledger_timestamp=EPOCH_DATETIME,
                         # dissolution_date=EPOCH_DATETIME,
                         identifier=identifier,
