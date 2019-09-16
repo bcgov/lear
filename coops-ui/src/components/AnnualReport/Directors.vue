@@ -469,7 +469,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     showName: true,
     showDates: true
   }
-  private directorFormValid = true
+  private directorFormValid = true // used for New and Edit forms
 
   /**
    * Computed value.
@@ -616,8 +616,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
       earliestDateToSet = this.lastPreLoadFilingDate
     }
 
-    // when earliest date is calculated, emit it back up for display
-    this.$emit('earliestDateToSet', earliestDateToSet)
+    // when earliest date is calculated, inform parent component
+    this.emitEarliestDateToSet(earliestDateToSet)
     return earliestDateToSet
   }
 
@@ -1067,34 +1067,68 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    * - when we've removed/undone all changes, remove the fee
    */
   @Watch('directorsChange')
-  private onDirectorsChange (val): void {
+  private onDirectorsChange (val: boolean): void {
     // emit event back up to parent
-    this.$emit('directorsChange', val)
-  }
-
-  @Watch('directorFormValid')
-  private onDirectorFormValid (val): void {
-    this.$emit('directorFormValid', val)
+    this.emitDirectorsChange(val)
   }
 
   /**
-   * When as-of date changes (from parent component) refresh list of directors.
+   * When a director form's validity changes, inform parent component.
+   */
+  @Watch('directorFormValid')
+  private onDirectorFormValid (val: boolean): void {
+    this.emitDirectorFormValid(val)
+  }
+
+  /**
+   * When as-of date changes (from parent component), refresh list of directors.
    */
   @Watch('asOfDate')
-  private onAsOfDate (newVal, oldVal): void {
+  private onAsOfDate (newVal: string, oldVal: string): void {
     if (!(this.currentFilingStatus === 'DRAFT' && (this.draftDate === newVal || oldVal === null))) {
       this.getDirectors()
     }
   }
 
   /**
-   * Emit data to two events - allDirectors and activeDirectors (no ceased directors).
+   * When directors list content changes, inform parent component of both All Directors and
+   * Active Directors (no ceased directors).
    */
   @Watch('directorsJson')
   private onDirectorsJson (): void {
-    this.$emit('allDirectors', this.directors)
-    this.$emit('activeDirectors', this.directors.filter(el => el.cessationDate === null))
+    this.emitAllDirectors(this.directors)
+    this.emitActiveDirectors(this.directors.filter(el => el.cessationDate === null))
   }
+
+  /**
+   * Emits an event containing the earliest director change date.
+   */
+  @Emit('earliestDateToSet')
+  private emitEarliestDateToSet (val: string): void { }
+
+  /**
+   * Emits an event containing this component's change state.
+   */
+  @Emit('directorsChange')
+  private emitDirectorsChange (val: boolean): void { }
+
+  /**
+   * Emits an event containing the director form's validity.
+   */
+  @Emit('directorFormValid')
+  private emitDirectorFormValid (val: boolean): void { }
+
+  /**
+   * Emits an event containing the complete directors list.
+   */
+  @Emit('allDirectors')
+  private emitAllDirectors (val: any[]): void { }
+
+  /**
+   * Emits an event containing the active directors list.
+   */
+  @Emit('activeDirectors')
+  private emitActiveDirectors (val: any[]): void { }
 }
 
 </script>
