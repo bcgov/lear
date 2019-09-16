@@ -69,6 +69,8 @@ def validate_ar_year(*, business: Business, previous_annual_report: Dict, curren
                              'filing/annualReport/annualReportDate')
     if expected_date:
         expected_date += datedelta.YEAR
+    elif business.last_ar_date:
+        expected_date = business.last_ar_date + datedelta.YEAR
     else:
         expected_date = business.founding_date + datedelta.YEAR
 
