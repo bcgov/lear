@@ -37,7 +37,7 @@
 
 <script>
 import { mapActions } from 'vuex'
-import DateUtils from '@/date-utils'
+import DateMixin from '@/mixins/date-mixin'
 import axios from '@/axios-auth'
 import DashboardUnavailableDialog from '@/components/Dashboard/DashboardUnavailableDialog.vue'
 import AccountAuthorizationDialog from '@/components/Dashboard/AccountAuthorizationDialog.vue'
@@ -48,7 +48,7 @@ import EntityInfo from '@/components/EntityInfo.vue'
 export default {
   name: 'App',
 
-  mixins: [DateUtils],
+  mixins: [DateMixin],
 
   data () {
     return {

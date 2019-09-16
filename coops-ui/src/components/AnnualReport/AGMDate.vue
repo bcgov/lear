@@ -69,9 +69,10 @@
 import { Component, Mixins, Vue, Prop, Watch, Emit } from 'vue-property-decorator'
 import { isNotNull, isValidFormat, isValidYear, isValidMonth, isValidDay } from '@/validators'
 import { mapState, mapGetters } from 'vuex'
-import DateUtils from '@/date-utils'
+import DateMixin from '@/mixins/date-mixin'
 
 @Component({
+  mixins: [DateMixin],
   computed: {
     // Property definitions for runtime environment.
     ...mapState(['ARFilingYear', 'currentDate', 'lastPreLoadFilingDate']),
@@ -81,7 +82,7 @@ import DateUtils from '@/date-utils'
     dateFormatted: { isNotNull, isValidFormat, isValidYear, isValidMonth, isValidDay }
   }
 })
-export default class AGMDate extends Mixins(DateUtils) {
+export default class AGMDate extends Mixins(DateMixin) {
   // Prop passed into this component.
   @Prop({ default: '' })
   private initialAgmDate: string

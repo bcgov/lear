@@ -17,23 +17,23 @@ export default {
       .then(response => {
         const apiUrl = response.data['API_URL']
         axios.defaults.baseURL = apiUrl
-        console.log('Set axios.defaults.baseURL to: ' + apiUrl)
+        console.log('Set Base URL to: ' + apiUrl)
 
         const authUrl = response.data['AUTH_URL']
         sessionStorage.setItem('AUTH_URL', authUrl)
-        console.log('Set uthUrl to: ' + authUrl)
+        console.log('Set Auth URL to: ' + authUrl)
 
         const authApiUrl = response.data['AUTH_API_URL']
         sessionStorage.setItem('AUTH_API_URL', authApiUrl)
-        console.log('Set authApiUrl to: ' + authApiUrl)
+        console.log('Set Auth API URL to: ' + authApiUrl)
 
         const payApiUrl = response.data['PAY_API_URL']
         sessionStorage.setItem('PAY_API_URL', payApiUrl)
-        console.log('Set payApiUrl to: ' + payApiUrl)
+        console.log('Set Pay API URL to: ' + payApiUrl)
 
         const addressCompleteKey = response.data['ADDRESS_COMPLETE_KEY']
         window['addressCompleteKey'] = addressCompleteKey
-        console.log('Set addressCompleteKey')
+        console.log('Set Address Complete Key')
       })
   }
 }

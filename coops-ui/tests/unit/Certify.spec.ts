@@ -34,7 +34,7 @@ const defaultDate = '2019-01-01'
  * @param wrapper the wrapper for the component that is being tested.
  * @param name the name of the event that is to be returned.
  *
- * @return the value of the last named event for the wrapper.
+ * @returns the value of the last named event for the wrapper.
  */
 function getLastEvent (wrapper: Wrapper<Certify>, name: string): any {
   const eventsList: Array<any> = wrapper.emitted(name)
@@ -50,7 +50,7 @@ function getLastEvent (wrapper: Wrapper<Certify>, name: string): any {
  * @param isCertified the value to pass to the component for the checkbox. The default value is "undefined".
  * @param currentDate the value to pass to the component for the static date. The default value is defaultDate.
  *
- * @return a Wrapper<Certify> object with the given parameters.
+ * @returns a Wrapper<Certify> object with the given parameters.
  */
 function createComponent (certifiedBy: string = undefined, isCertified: boolean = undefined,
   currentDate: string = defaultDate): Wrapper<Certify> {

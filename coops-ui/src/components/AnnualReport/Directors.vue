@@ -141,7 +141,7 @@
       <ul class="list director-list">
         <li class="container"
           :id="'director-' + director.id"
-          v-bind:class="{ 'remove' : !isActive(director)  || !isActionable(director)}"
+          v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
           v-for="(director, index) in orderBy(directors, 'id', -1)"
           v-bind:key="index">
           <div class="meta-container">
@@ -377,11 +377,11 @@
 </template>
 
 <script>
-import Vue2Filters from 'vue2-filters'
 import axios from '@/axios-auth'
 import { mapState, mapGetters } from 'vuex'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress'
-import DateUtils from '@/date-utils'
+import DateMixin from '@/mixins/date-mixin'
+import ExternalMixin from '@/mixins/external-mixin'
 
 // action constants
 const APPOINTED = 'appointed'
@@ -392,11 +392,12 @@ const ADDRESSCHANGED = 'addressChanged'
 export default {
   name: 'Directors',
 
-  mixins: [Vue2Filters.mixin, DateUtils],
+  mixins: [DateMixin, ExternalMixin],
 
   components: {
     BaseAddress
   },
+
   props: {
     asOfDate: String,
     componentEnabled: {
@@ -404,6 +405,7 @@ export default {
       default: true
     }
   },
+
   data () {
     return {
       directors: [],
@@ -728,6 +730,7 @@ export default {
       this.activeIndex = index
       this.cancelNewDirector()
     },
+
     editDirectorDates: function (index) {
       this.editFormShowHide = {
         showAddress: false,
@@ -737,6 +740,7 @@ export default {
 
       this.editDirector(index)
     },
+
     editDirectorName: function (index) {
       this.editFormShowHide = {
         showAddress: false,
@@ -746,6 +750,7 @@ export default {
 
       this.editDirector(index)
     },
+
     editDirectorAddress: function (index) {
       this.editFormShowHide = {
         showAddress: true,
@@ -828,30 +833,36 @@ export default {
         return this.earliestDateToSet
       }
     },
+
     toggleAction (director, val) {
       // add or remove action value from actions list
       const index = director.actions.indexOf(val)
       if (index >= 0) director.actions.splice(index)
       else director.actions.push(val)
     },
+
     addAction (director, val) {
       // add an action, if it doesn't already exist; ensures no multiples
       if (director.actions.indexOf(val) < 0) director.actions.push(val)
     },
+
     removeAction (director, val) {
       // remove an action, if it already exists
       director.actions = director.actions.filter(el => el !== val)
     },
+
     isNew (director) {
       // helper function - was the director added in this filing?
       if (director.actions.indexOf(APPOINTED) >= 0) return true
       else return false
     },
+
     isActive (director) {
       // helper function - is the director active, ie: not ceased?
       if (director.actions.indexOf(CEASED) < 0) return true
       else return false
     },
+
     isActionable (director) {
       return director.isDirectorActionable !== undefined ? director.isDirectorActionable : true
     }
@@ -864,15 +875,18 @@ export default {
       // emit event back up to parent
       this.$emit('directorsChange', val)
     },
+
     directorFormValid (val) {
       this.$emit('directorFormValid', val)
     },
+
     // when as-of date changes (from parent component) refresh list of directors
     asOfDate (newVal, oldVal) {
       if (!(this.currentFilingStatus === 'DRAFT' && (this.draftDate === newVal || oldVal == null))) {
         this.getDirectors()
       }
     },
+
     directors_json () {
       // emit data to two events - allDirectors and activeDirectors (no ceased directors)
       this.$emit('allDirectors', this.directors)
@@ -1017,6 +1031,7 @@ export default {
     z-index 99
 </style>
 
+<!-- TODO: WHERE DOES THIS BELONG?
 <style lang="stylus">
   @import "../../assets/styles/theme.styl"
 
@@ -1026,3 +1041,4 @@ export default {
     height 28px
     font-weight 500
 </style>
+-->

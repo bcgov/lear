@@ -105,13 +105,13 @@
 </template>
 
 <script>
-import Vue2Filters from 'vue2-filters'
+import ExternalMixin from '@/mixins/external-mixin'
 import { mapState, mapActions, mapGetters } from 'vuex'
 
 export default {
   name: 'TodoList',
 
-  mixins: [Vue2Filters.mixin],
+  mixins: [ExternalMixin],
 
   data () {
     return {
