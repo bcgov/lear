@@ -101,7 +101,7 @@ class ListFilingResource(Resource):
         json_input = request.get_json()
 
         # check authorization
-        if not authorized(identifier, jwt):
+        if not authorized(identifier, jwt, action=['edit']):
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED
