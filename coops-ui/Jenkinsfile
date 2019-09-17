@@ -72,7 +72,7 @@ if( !triggerBuild(CONTEXT_DIRECTORY) ) {
     stage('No changes. Run pipeline?') {
         try {
             timeout(time: 1, unit: 'DAYS') {
-                input message: "Run pipeline?", id: "1234"//, submitter: 'admin,ljtrent-admin,thorwolpert-admin,rarmitag-admin,kialj876-edit,katiemcgoff-edit,waltermoar-admin'
+                input message: "Run pipeline?", id: "1234"//, submitter: 'admin,ljtrent-admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-admin,waltermoar-admin'
             }
         } catch (Exception e) {
             run_pipeline = false;
