@@ -61,7 +61,7 @@ export default class Certify extends Vue {
 
   /**
    * Computed value.
-   * @return The trimmed "Certified By" string (may be '').
+   * @returns The trimmed "Certified By" string (may be '').
    */
   private get trimmedCertifiedBy (): string {
     return this.certifiedBy && this.certifiedBy.trim()

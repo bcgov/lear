@@ -88,14 +88,14 @@
 </template>
 
 <script lang="ts">
-import Vue2Filters from 'vue2-filters'
+import ExternalMixin from '@/mixins/external-mixin'
 import axios from '@/axios-auth'
 import { mapState } from 'vuex'
 
 export default {
   name: 'FilingHistoryList',
 
-  mixins: [Vue2Filters.mixin],
+  mixins: [ExternalMixin],
 
   data () {
     return {

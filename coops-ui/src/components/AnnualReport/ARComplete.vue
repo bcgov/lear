@@ -14,7 +14,7 @@
 
 <script>
 import { mapState } from 'vuex'
-import DateUtils from '@/DateUtils'
+import DateMixin from '@/mixins/date-mixin'
 
 export default {
   name: 'ARComplete',

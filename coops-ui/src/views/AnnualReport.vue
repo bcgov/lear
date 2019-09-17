@@ -177,12 +177,12 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
-import DateUtils from '@/date-utils'
+import DateMixin from '@/mixins/date-mixin'
 
 export default {
   name: 'AnnualReport',
 
-  mixins: [DateUtils],
+  mixins: [DateMixin],
 
   components: {
     AGMDate,
