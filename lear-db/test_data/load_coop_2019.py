@@ -55,8 +55,9 @@ def create_business(db, business_json):
         business_json['business']['lastAgmDate']
     )
     business.last_ar_date = datetime.date.fromisoformat(
-        business_json['business']['lastArFiledDate']
+        business_json['business']['lastArDate']
     )
+    business.legal_type = business_json['business']['legalType']
     return business
 
 

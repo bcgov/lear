@@ -54,7 +54,7 @@ class Business:
             cursor = DB.connection.cursor()
             cursor.execute("""
                 select corp.CORP_NUM as identifier, CORP_FROZEN_TYP_CD, corp_typ_cd type,
-                LAST_AR_FILED_DT last_ar_filed_date, LAST_AGM_DATE,
+                filing.period_end_dt as last_ar_date, LAST_AR_FILED_DT as last_ar_filed_date, LAST_AGM_DATE,
                 corp_op_state.full_desc as state, corp_state.state_typ_cd as corp_state,
                 t_name.corp_nme as legal_name,
                 t_assumed_name.CORP_NME as assumed_name, RECOGNITION_DTS as founding_date,
@@ -67,8 +67,12 @@ class Business:
                 join CORP_STATE on CORP_STATE.corp_num = corp.corp_num and CORP_STATE.end_event_id is null
                 join CORP_OP_STATE on CORP_OP_STATE.state_typ_cd = CORP_STATE.state_typ_cd
                 left join JURISDICTION on JURISDICTION.corp_num = corp.corp_num
+                join event on corp.corp_num = event.corp_num
+                join filing on event.event_id = filing.event_id
                 where corp_typ_cd = 'CP'
-                and corp.CORP_NUM=:corp_num""", corp_num=identifier)
+                and corp.CORP_NUM=:corp_num
+                and filing.filing_typ_cd in ('OTANN', 'OTINC')
+                order by event.event_timestmp desc""", corp_num=identifier)
             business = cursor.fetchone()
 
             if not business:
@@ -116,12 +120,13 @@ class Business:
             # convert dates and date-times to correct json format and convert to camel case for schema names
             business['foundingDate'] = convert_to_json_date(business['founding_date'])
             business['lastAgmDate'] = convert_to_json_date(business['last_agm_date'])
-            business['lastArFiledDate'] = convert_to_json_date(business['last_ar_filed_date'])
+            business['lastArDate'] = convert_to_json_date(business['last_ar_date'])
             business['lastLedgerTimestamp'] = convert_to_json_datetime(business['last_ledger_timestamp'])
 
             business['businessNumber'] = business['business_number']
             business['corpState'] = business['corp_state']
             business['legalName'] = business['legal_name']
+            business['legalType'] = business['type']
 
             # remove unnecessary fields (
             del business['can_jur_typ_cd']
@@ -136,6 +141,8 @@ class Business:
             del business['last_ar_filed_date']
             del business['last_ledger_timestamp']
             del business['legal_name']
+            del business['type']
+            del business['last_ar_date']
 
             # add cache_id todo: set to real value
             business['cacheId'] = 0

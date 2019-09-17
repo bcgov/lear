@@ -17,6 +17,7 @@
 import json
 
 from registry_schemas import validate
+from registry_schemas.example_data import CHANGE_OF_DIRECTORS, FILING_HEADER
 
 from tests import oracle_integration
 from tests.unit.api.test_ar import cod_ids as cod_ids
@@ -45,114 +46,13 @@ def test_post_cod(client):
     """Assert that business for regular (not xpro) business is correct to spec."""
     headers = {'content-type': 'application/json'}
 
-    fake_filing = {
-        "filing": {
-            "changeOfDirectors": {
-                "certifiedBy": "Joe Smith",
-                "email": "nobody@nothing.com",
-                "directors": [
-                    {
-                        "actions": ["ceased"],
-                        "appointmentDate": "2012-05-08",
-                        "cessationDate": "2019-05-14",
-                        "deliveryAddress": {
-                            "addressCity": "BURNS LAKE",
-                            "addressCountry": "CANADA",
-                            "addressId": 102604824,
-                            "addressRegion": "BC",
-                            "deliveryInstructions": "",
-                            "postalCode": "",
-                            "streetAddress": "1723 SIDAR ROAD",
-                            "streetAddressAdditional": ""
-                        },
-                        "officer": {
-                            "firstName": "LORNA",
-                            "lastName": "HANNETT",
-                            "middleInitial": ""
-                        },
-                        "title": ""
-                    },
-                    {
-                        "actions": [],
-                        "appointmentDate": "2015-10-14",
-                        "cessationDate": None,
-                        "deliveryAddress": {
-                            "addressCity": "BURNS LAKE",
-                            "addressCountry": "CANADA",
-                            "addressRegion": "BC",
-                            "deliveryInstructions": "",
-                            "postalCode": "",
-                            "streetAddress": "173 8TH AVE",
-                            "streetAddressAdditional": ""
-                        },
-                        "officer": {
-                            "firstName": "PAULA",
-                            "lastName": "LAURIE",
-                            "middleInitial": ""
-                        },
-                        "title": ""
-                    },
-                    {
-                        "actions": [],
-                        "appointmentDate": "2017-12-21",
-                        "cessationDate": None,
-                        "deliveryAddress": {
-                            "addressCity": "BURNS LAKE",
-                            "addressCountry": "CANADA",
-                            "addressRegion": "BC",
-                            "deliveryInstructions": "",
-                            "postalCode": "",
-                            "streetAddress": "10816 TINTAGEL ROAD",
-                            "streetAddressAdditional": ""
-                        },
-                        "officer": {
-                            "firstName": "KELLY",
-                            "lastName": "TURFORD",
-                            "middleInitial": ""
-                        },
-                        "title": ""
-                    },
-                    {
-                        "actions": [],
-                        "appointmentDate": "2019-07-15",
-                        "cessationDate": None,
-                        "deliveryAddress": {
-                            "addressCity": "TEST CITY",
-                            "addressCountry": "CANADA",
-                            "addressRegion": "BC",
-                            "deliveryInstructions": "",
-                            "postalCode": "",
-                            "streetAddress": "TESTING TESTS STREET",
-                            "streetAddressAdditional": ""
-                        },
-                        "officer": {
-                            "firstName": "TESTER",
-                            "lastName": "TESTING",
-                            "middleInitial": ""
-                        },
-                        "title": ""
-                    }
-                ]
-            },
-            "business": {
-                "cacheId": 0,
-                "lastLedgerTimestamp": "2019-05-08T21:21:01-00:00",
-                "foundingDate": "2004-04-28",
-                "identifier": "CP0001965",
-                "legalName": "CENTRAL INTERIOR COMMUNITY SERVICES CO-OP",
-                "businessNumber": None,
-                "jurisdiction": "BC",
-                "lastAgmDate": "2019-02-02",
-                "lastArFiledDate": "2019-04-21",
-                "status": "Active",
-                "type": "CP"
-            },
-            "header": {
-                "date": "2019-05-21",
-                "name": "changeOfDirectors"
-            }
-        }
-    }
+    fake_filing = FILING_HEADER
+    fake_filing['filing']['header']['name'] = 'changeOfDirectors'
+    fake_filing['filing']['business']['identifier'] = 'CP0001965'
+    fake_filing['filing']['changeOfDirectors'] = CHANGE_OF_DIRECTORS
+    for director in fake_filing['filing']['changeOfDirectors']['directors']:
+        director['deliveryAddress']['addressCountry'] = 'Canada'
+
     rv = client.post('/api/v1/businesses/CP0001965/filings/changeOfDirectors',
                      data=json.dumps(fake_filing), headers=headers)
 

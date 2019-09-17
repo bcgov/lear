@@ -69,11 +69,44 @@ class Office:
             office_obj.delivery_address = Address.get_by_address_id(office_info['delivery_addr_id']).as_dict()
             if office_info['mailing_addr_id']:
                 office_obj.mailing_address = Address.get_by_address_id(office_info['mailing_addr_id']).as_dict()
+            else:
+                office_obj.mailing_address = office_obj.delivery_address
             return office_obj
 
         except Exception as err:
             current_app.logger.error('error getting office for corp: {}'.format(identifier))
             raise err
+
+    @classmethod
+    def get_events(cls, identifier: str = None):
+        """Get all event ids of change of address filings for this corp."""
+        if not identifier:
+            return None
+
+        try:
+            cursor = DB.connection.cursor()
+            cursor.execute(
+                """
+                select event.event_id, event_timestmp
+                from event
+                join filing on event.event_id = filing.event_id
+                where corp_num=:identifier and filing_typ_cd=:filing_type
+                """,
+                filing_type='OTADD',
+                identifier=identifier
+            )
+
+            events = cursor.fetchall()
+            event_list = []
+            for row in events:
+                row = dict(zip([x[0].lower() for x in cursor.description], row))
+                event_list.append({'id': row['event_id'], 'date': row['event_timestmp']})
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            current_app.logger.error('error getting address events for {}'.format(identifier))
+            raise err
+
+        return event_list
 
     @classmethod
     def get_by_event(cls, event_id: str = None):
@@ -96,11 +129,13 @@ class Office:
                 raise OfficeNotFoundException(event_id=event_id)
 
             office_info = dict(zip([x[0].lower() for x in cursor.description], office_info))
-
             office_obj = Office()
             office_obj.event_id = office_info['start_event_id']
             office_obj.delivery_address = Address.get_by_address_id(office_info['delivery_addr_id']).as_dict()
-            office_obj.mailing_address = Address.get_by_address_id(office_info['mailing_addr_id']).as_dict()
+            if office_info['mailing_addr_id']:
+                office_obj.mailing_address = Address.get_by_address_id(office_info['mailing_addr_id']).as_dict()
+            else:
+                office_obj.mailing_address = office_obj.delivery_address
 
             return office_obj
 
