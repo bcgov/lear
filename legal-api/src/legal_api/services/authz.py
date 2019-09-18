@@ -63,7 +63,8 @@ def authorized(identifier: str, jwt: JwtManager, action: List[str]) -> bool:
                 exceptions.Timeout,
                 ValueError,
                 Exception) as err:
-            current_app.logger.error(f'Authorization connection failure for {identifier}', err)
+            current_app.logger.error(f'template_url {template_url}, svc:{auth_url}')
+            current_app.logger.error(f'Authorization connection failure for {identifier}, using svc:{auth_url}', err)
             return False
 
     return False
