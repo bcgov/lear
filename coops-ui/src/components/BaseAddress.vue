@@ -15,9 +15,7 @@
   <div class="meta-container__inner">
     <!-- Display fields -->
     <v-expand-transition>
-      <div class="address-block"
-           v-show="!editing"
-      >
+      <div class="address-block" v-show="!editing">
         <div class="address-block__info">
           <div class="address-block__info-row">
             {{ addressLocal.streetAddress }}
@@ -33,9 +31,7 @@
           <div class="address-block__info-row">
             {{ addressLocal.addressCountry }}
           </div>
-          <div class="address-block__info-row"
-               v-if="addressLocal.deliveryInstructions"
-          >
+          <div class="address-block__info-row" v-if="addressLocal.deliveryInstructions">
             {{ addressLocal.deliveryInstructions }}
           </div>
         </div>
@@ -43,63 +39,55 @@
     </v-expand-transition>
 
     <!-- Edit fields -->
+    <!-- NB: use Vuetify rules for display purposes -->
     <v-expand-transition>
       <v-form lazy-validation
               name="address-form"
               ref="addressForm"
-              v-show="editing"
-      >
+              v-show="editing">
         <div class="form__row">
           <v-text-field autocomplete="address-complete"
                         box
                         label="Street Address"
                         name="street-address"
                         v-model="addressLocal.streetAddress"
-                        :rules="streetRules"
-                        @click="enableAddressComplete"
-          ></v-text-field>
+                        :rules="rules.streetAddress"
+                        @click="enableAddressComplete" />
         </div>
         <div class="form__row">
           <v-text-field box
                         label="Additional Street Address (Optional)"
                         name="street-address-additional"
-                        v-model="addressLocal.streetAddressAdditional"
-          ></v-text-field>
+                        v-model="addressLocal.streetAddressAdditional" />
         </div>
         <div class="form__row three-column">
           <v-text-field box
                         class="item"
                         label="City"
                         name="address-city"
-                        required
                         v-model="addressLocal.addressCity"
-                        :rules="cityRules"
-          ></v-text-field>
+                        :rules="rules.addressCity" />
           <v-select box
                     class="item"
                     label="Province"
                     name="address-region"
                     v-model="addressLocal.addressRegion"
                     :items="regions"
-                    :rules="regionRules"
-          ></v-select>
+                    :rules="rules.addressRegion" />
           <v-text-field box
                         class="item"
                         label="Postal Code"
                         name="postal-code"
-                        required
                         v-model="addressLocal.postalCode"
-                        :rules="postalCodeRules"
-          ></v-text-field>
+                        :rules="rules.postalCode" />
         </div>
         <div class="form__row">
           <v-text-field box
+                        mask="AA"
                         label="Country"
                         name="address-country"
-                        required
                         v-model="addressLocal.addressCountry"
-                        :rules="countryRules"
-          ></v-text-field>
+                        :rules="rules.addressCountry" />
         </div>
         <div class="form__row">
           <v-textarea auto-grow
@@ -107,8 +95,7 @@
                       label="Delivery Instructions (Optional)"
                       name="delivery-instructions"
                       rows="2"
-                      v-model="addressLocal.deliveryInstructions"
-          />
+                      v-model="addressLocal.deliveryInstructions" />
         </div>
       </v-form>
     </v-expand-transition>
@@ -118,36 +105,26 @@
 <script lang="ts">
 
 import Vue from 'vue'
-import { Component, Emit, Prop, Watch } from 'vue-property-decorator'
-import { validationMixin } from 'vuelidate'
-import { required } from 'vuelidate/lib/validators'
+import { Component, Mixins, Emit, Prop, Watch } from 'vue-property-decorator'
+import { Validation } from 'vue-plugin-helper-decorator'
+import ValidationMixin from '@/mixins/validation-mixin'
 
 /**
  * The component for displaying and editing an address.
  */
 @Component({
-  mixins: [validationMixin],
-  validations: {
-    address: {
-      streetAddress: {
-        required
-      },
-      addressCity: {
-        required
-      },
-      addressRegion: {
-        required
-      },
-      postalCode: {
-        required
-      },
-      addressCountry: {
-        required
-      }
-    }
-  }
+  mixins: [ValidationMixin]
 })
-export default class BaseAddress extends Vue {
+export default class BaseAddress extends Mixins(ValidationMixin) {
+  /**
+   * The validation object used by Vuelidate to compute form validity.
+   * @returns The Vuelidate validation rules object.
+   */
+  @Validation()
+  public validations (): any {
+    return this.createVuelidateValidationObject(this.schemaObject, 'addressLocal')
+  }
+
   /**
    * Contains the address (if any) to be edited.
    */
@@ -157,6 +134,11 @@ export default class BaseAddress extends Vue {
    * Indicates whether the address should be shown in editing mode (true) or display mode (false).
    */
   @Prop({ default: false }) readonly editing: boolean
+
+  /**
+   * An array with a promise that returns the JSON validation schema.
+   */
+  @Prop({ default: null }) readonly schema: any
 
   /**
    * A local copy of the address object, to contain the fields edited by the component.
@@ -172,7 +154,7 @@ export default class BaseAddress extends Vue {
   /**
    * Has this component been mounted yet? Initially unset, but will be set by the {@link mounted} lifecycle callback.
    */
-  private isMounted: boolean
+  private isMounted: boolean = false
 
   /**
    * The provinces for the address region drop-down list.
@@ -181,12 +163,19 @@ export default class BaseAddress extends Vue {
     'BC', 'AB', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT', '--'
   ]
 
-  // TODO: Convert from Vuetify validation to Vuelidate using JSON Schema - temporarily using Vuetify for display.
-  private readonly streetRules = [ v => !!v || 'A street address is required' ]
-  private readonly cityRules = [ v => !!v || 'A city is required' ]
-  private readonly regionRules = [ v => !!v || 'A province is required' ]
-  private readonly postalCodeRules = [ v => !!v || 'A postal code is required' ]
-  private readonly countryRules = [ v => !!v || 'A country is required' ]
+  /**
+   * Object that contains the Address validation schema.
+   */
+  private schemaObject: object = null
+
+  /**
+   * Vuetify validation rules that use Vuelidate to determine validity. Used for display purposes.
+   * @remark As a getter, this is initialized between created() and mounted().
+   * @returns The Vuetify validation rules object.
+   */
+  private get rules (): { [attr: string]: Array<Function> } {
+    return this.createVuetifyRulesObject('addressLocal')
+  }
 
   /**
    * Lifecycle callback to convert the address JSON into an object, so that it can be used by the template.
@@ -235,6 +224,16 @@ export default class BaseAddress extends Vue {
   }
 
   /**
+   * Watches changes to the schema prop and creates the address schema object from it.
+   * @param arr An array with a promise that returns the schema object.
+   * @remark This watcher is called before created().
+   */
+  @Watch('schema', { immediate: true })
+  private async onSchemaChanged (arr: Array<Promise<any>>): Promise<void> {
+    this.schemaObject = await this.createSchemaValidationObject(arr, 'addressLocal')
+  }
+
+  /**
    * Watches changes to the address object, so that if the parent changes the data, then the object copy of it that
    * backs the display will be updated.
    */
@@ -271,9 +270,9 @@ export default class BaseAddress extends Vue {
    * Enables AddressComplete for this instance of the address.
    */
   private enableAddressComplete (): void {
-    // If you want to use this component with the Canada Post AddressComplete service, it needs the following:
-    //  1. The AddressComplete JavaScript script include must be done to set up "window.pca".
-    //  2. Your AddressComplete account key must be defined as "window.addressCompleteKey".
+    // To use this component with the Canada Post AddressComplete service, it needs the following:
+    //  1. The AddressComplete JavaScript must be loaded (in index.html) to set up "window.pca".
+    //  2. Your AddressComplete account key must be saved as "window.addressCompleteKey".
     const pca = window['pca']
     const key = window['addressCompleteKey']
     if (!pca || !key) {
@@ -285,8 +284,7 @@ export default class BaseAddress extends Vue {
     this.moveElementId('street-address')
     this.moveElementId('address-country')
 
-    // Destroy the old one if it exists, and create the new.
-
+    // Destroy the old instance if it exists, and create the new.
     if (window['currentAddressComplete']) {
       window['currentAddressComplete'].destroy()
     }
@@ -375,15 +373,6 @@ export default class BaseAddress extends Vue {
     display flex
     flex-flow column nowrap
     position relative
-
-  .validationError
-    border-color red
-    border-radius .3rem
-    border-style groove
-    border-width thin
-
-  .validationErrorInfo
-    color red
 
   @media (min-width 768px)
     .meta-container

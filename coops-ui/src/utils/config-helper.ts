@@ -15,6 +15,10 @@ export default {
     return axios
       .get(url, { headers })
       .then(response => {
+        const appBaseURL = response.data['VUE_APP_BASE_URL']
+        sessionStorage.setItem('VUE_APP_BASE_URL', appBaseURL)
+        console.log('Set Vue App Base URL to: ' + appBaseURL)
+
         const apiUrl = response.data['API_URL']
         axios.defaults.baseURL = apiUrl
         console.log('Set Base URL to: ' + apiUrl)

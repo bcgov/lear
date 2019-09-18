@@ -8,6 +8,7 @@
             <delivery-address
               :address="deliveryAddress"
               :editing="showAddressForm"
+              :schema="addressSchema"
               v-on:update:address="updateDelivery($event)"
               @valid="isDeliveryValid"
             ></delivery-address>
@@ -53,13 +54,15 @@
                 v-model="inheritDeliveryAddress"
               ></v-checkbox>
             </div>
-            <mailing-address
+            <!-- DISABLED DURING DEBUGGING SO WE DON'T GET DOUBLE EVENTS -->
+            <!-- <mailing-address
               v-if="!showAddressForm || !inheritDeliveryAddress"
               :address="mailingAddress"
               :editing="showAddressForm"
+              :schema="addressSchema"
               v-on:update:address="updateMailing($event)"
               @valid="isMailingValid"
-            ></mailing-address>
+            ></mailing-address> -->
             <div
               class="form__row form__btns"
               v-show="showAddressForm"
@@ -144,6 +147,18 @@ export default class RegisteredOfficeAddress extends Vue {
 
   // State of the form checkbox for determining whether or not the mailing address is the same as the delivery address.
   private inheritDeliveryAddress: boolean = true
+
+  // The Address validation schema, which is loaded asychronously on module require (ie, before created()).
+  // ref: https://github.com/mokkabonna/vue-vuelidate-jsonschema
+  private addressSchema: Array<Promise<any>> = [
+    axios.get(sessionStorage.getItem('VUE_APP_BASE_URL') + 'schemas/address.json')
+      .then(response => {
+        return response.data
+      })
+      .catch(error => {
+        console.error('error getting address schema =', error)
+      })
+  ]
 
   /**
    * Lifecycle callback to set up the component when it is mounted.
@@ -395,6 +410,7 @@ export default class RegisteredOfficeAddress extends Vue {
     }
   }
 
+  // IS THIS OBSOLETE?
   /**
    * Sets up the Canada Post address completion fields.
    */

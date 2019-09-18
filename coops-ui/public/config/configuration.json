@@ -1,4 +1,5 @@
 {
+  "VUE_APP_BASE_URL": "http://localhost:8080/",
   "API_URL": "https://legal-api-dev.pathfinder.gov.bc.ca/api/v1/businesses/",
   "AUTH_URL": "https://coops-dev.pathfinder.gov.bc.ca/auth/",
   "AUTH_API_URL": "https://auth-api-dev.pathfinder.gov.bc.ca/api/v1/",
