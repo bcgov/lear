@@ -15,7 +15,8 @@ import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeA
 import Directors from '@/components/AnnualReport/Directors.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import { BAD_REQUEST } from 'http-status-codes'
-import { EntityTypes } from '@/utils/constants'
+import { EntityTypes } from '@/ts/enums'
+import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -47,7 +48,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
 
-    // TODO: Include ARDate Component when completed.
+    expect(wrapper.find(ARDate).exists()).toBe(true)
     expect(wrapper.find(RegisteredOfficeAddress).exists()).toBe(true)
     expect(wrapper.find(Directors).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)

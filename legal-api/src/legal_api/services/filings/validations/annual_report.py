@@ -133,7 +133,7 @@ def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, 
                                     'The business will be dissolved, unless an extension and an AGM are held.'),
                        'path': 'filing/annualReport/annualGeneralMeetingDate'}])
 
-    if agm_date and agm_date < date.fromisoformat(current_app.config.get('GO_LIVE_DATE')).date():
+    if agm_date and agm_date < date.fromisoformat(current_app.config.get('GO_LIVE_DATE')):
         return Error(HTTPStatus.BAD_REQUEST,
                      [{'error': 'Annual General Meeting Date is before 2019-08-12, '
                                 'so it must be submitted as a paper-filing.',

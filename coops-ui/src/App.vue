@@ -44,7 +44,7 @@ import AccountAuthorizationDialog from '@/components/Dashboard/AccountAuthorizat
 import SbcHeader from 'sbc-common-components/src/components/SbcHeader.vue'
 import SbcFooter from 'sbc-common-components/src/components/SbcFooter.vue'
 import EntityInfo from '@/components/EntityInfo.vue'
-import { EntityTypes } from '@/utils/constants'
+import { EntityTypes } from '@/ts/enums'
 
 export default {
   name: 'App',
@@ -90,6 +90,7 @@ export default {
 
       try {
         const jwt = this.getJWT()
+        console.log(jwt)
         const keycloakRoles = this.getKeycloakRoles(jwt)
         this.setKeycloakRoles(keycloakRoles)
         businessId = this.getBusinessId()
@@ -113,6 +114,7 @@ export default {
           axios.get(businessId + '/addresses'),
           axios.get(businessId + '/directors')
         ]).then(data => {
+          console.log(data)
           if (!data || data.length !== 6) throw new Error('incomplete data')
           this.storeBusinessInfo(data[0])
           this.storeEntityInfo(data[1])
@@ -229,7 +231,7 @@ export default {
       if (response && response.data && response.data.business) {
         this.setEntityName(response.data.business.legalName)
         // TODO: Replace placeholder with `response.data.business.legalType` when legalTypes are seeded.
-        this.setEntityType(EntityTypes.Coop)
+        this.setEntityType(EntityTypes.BCorp)
         this.setEntityStatus(response.data.business.status)
         this.setEntityBusinessNo(response.data.business.taxId)
         this.setEntityIncNo(response.data.business.identifier)

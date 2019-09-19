@@ -52,7 +52,7 @@ services:
     build:
       context: lear-db
     env_file:
-      - ./legal-api/env-wf
+      - ./legal-api/.env
     ports:
       - 5432:5432
     networks:
