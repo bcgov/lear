@@ -16,7 +16,7 @@
 The Business class and Schema are held in this module
 """
 from datetime import datetime
-
+from dateutil.relativedelta import relativedelta
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -57,7 +57,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
-
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
 
@@ -85,6 +84,11 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             self._identifier = value
         else:
             raise BusinessException('invalid-identifier-format', 406)
+
+    @property
+    def nextAnniversary(self):
+        LastAr = self.last_ar_date if self.last_ar_date else self.founding_date
+        return datetime.date(LastAr + relativedelta(years = 1)).isoformat()
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):
@@ -140,6 +144,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'identifier': self.identifier,
             'lastModified': self.last_modified.isoformat(),
             'lastAnnualReport': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
+            'nextAnnualReport': self.nextAnniversary,
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
             'legalName': self.legal_name,
@@ -182,7 +187,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
                 return False
         except ValueError:
             return False
-
+         #TODO This is not correct for entity types that are not Coops
         if identifier[:-7] not in ('CP', 'XCP'):
             return False
 
