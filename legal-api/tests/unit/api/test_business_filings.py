@@ -458,6 +458,47 @@ def test_update_ar_with_missing_json_body_fails(session, client, jwt):
     assert rv.status_code == HTTPStatus.BAD_REQUEST
     assert rv.json['errors'][0] == {'message': f'No filing json data in body of post for {identifier}.'}
 
+def test_file_ar_no_agm_coop(session, client, jwt):
+    """Assert that filing AR as COOP with no AGM date fails."""
+    identifier = 'CP7654399'
+    b = factory_business(identifier,(datetime.utcnow()-datedelta.YEAR))
+    factory_business_mailing_address(b)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
+    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                    json=ar,
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json['errors'][0]['error'] == 'Annual General MeetingDate must be a valid date when submitting an Annual Report in the current year.'
+
+def test_file_ar_no_agm_bcorp(session, client, jwt):
+    """Assert that filing AR as BCORP with no AGM date succeeds."""
+    identifier = 'CP7654399'
+    b = factory_business(identifier,(datetime.utcnow()-datedelta.YEAR),None ,'B')
+    factory_business_mailing_address(b)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
+    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                    json=ar,
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+
+    assert rv.status_code == HTTPStatus.CREATED
+
+def test_calc_annual_report_date(session, client, jwt):
+    """Assert that nextAnnualReport is the anniversary of the business recognition"""
+    identifier = 'CP7654399'
+    b = factory_business(identifier,(datetime.utcnow()-datedelta.YEAR), None ,'B')
+    factory_business_mailing_address(b)
+    assert b.nextAnniversary == datetime.utcnow().date().isoformat()
 
 # @integration_nats
 # @pytest.mark.asyncio

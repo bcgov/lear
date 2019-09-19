@@ -15,7 +15,6 @@
 from datetime import date, datetime
 from http import HTTPStatus
 from typing import Dict, List, Tuple
-
 import datedelta
 from flask import current_app
 from flask_babel import _
@@ -25,7 +24,11 @@ from legal_api.models import Business, Filing
 
 from ..utils import get_date
 
-
+def RequiresAGM (business: Business) -> bool:
+    # TODO: This is not dynamic enough
+    agm_arr = ['CP', 'XP']
+    return business.legal_type in agm_arr
+    
 def validate(business: Business, annual_report: Dict) -> Error:
     """Validate the annual report JSON."""
     if not business or not annual_report:
@@ -39,7 +42,8 @@ def validate(business: Business, annual_report: Dict) -> Error:
     if err:
         return err
 
-    err = validate_agm_year(business=business,
+    if RequiresAGM(business):
+        err = validate_agm_year(business=business,
                             annual_report=annual_report)
 
     if err:
@@ -129,7 +133,7 @@ def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, 
                                     'The business will be dissolved, unless an extension and an AGM are held.'),
                        'path': 'filing/annualReport/annualGeneralMeetingDate'}])
 
-    if agm_date and agm_date < date.fromisoformat(current_app.config.get('GO_LIVE_DATE')):
+    if agm_date and agm_date < date.fromisoformat(current_app.config.get('GO_LIVE_DATE')).date():
         return Error(HTTPStatus.BAD_REQUEST,
                      [{'error': 'Annual General Meeting Date is before 2019-08-12, '
                                 'so it must be submitted as a paper-filing.',
