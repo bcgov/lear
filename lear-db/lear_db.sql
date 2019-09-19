@@ -19,14 +19,14 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -130,7 +130,8 @@ CREATE TABLE public.businesses (
     fiscal_year_end_date timestamp with time zone,
     submitter_userid integer,
     last_agm_date timestamp with time zone,
-    last_ledger_timestamp timestamp with time zone
+    last_ledger_timestamp timestamp with time zone,
+    legal_type  character varying(10)
 );
 
 
@@ -179,7 +180,8 @@ CREATE TABLE public.businesses_version (
     end_transaction_id bigint,
     operation_type smallint NOT NULL,
     last_agm_date timestamp with time zone,
-    last_ledger_timestamp timestamp with time zone
+    last_ledger_timestamp timestamp with time zone,
+    legal_type  character varying(10)
 );
 
 

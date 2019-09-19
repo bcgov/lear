@@ -20,6 +20,9 @@ export default {
   entityName (state, entityName) {
     state.entityName = entityName
   },
+  entityType (state, entityType) {
+    state.entityType = entityType
+  },
   entityStatus (state, entityStatus) {
     state.entityStatus = entityStatus
   },

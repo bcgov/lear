@@ -75,7 +75,8 @@ describe('App', () => {
               identifier: 'CP0001867',
               lastLedgerTimestamp: '2019-08-14T22:27:12+00:00',
               foundingDate: '2000-07-13T00:00:00+00:00',
-              lastAnnualGeneralMeetingDate: '2019-08-16'
+              lastAnnualGeneralMeetingDate: '2019-08-16',
+              legalType: null
             }
           }
       })))

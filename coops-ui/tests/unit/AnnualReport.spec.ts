@@ -15,6 +15,7 @@ import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeA
 import Directors from '@/components/AnnualReport/Directors.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import { BAD_REQUEST } from 'http-status-codes'
+import { EntityTypes } from '@/utils/constants'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -25,13 +26,28 @@ describe('AnnualReport - Part 1 - UI', () => {
     store.state.entityIncNo = 'CP0001191'
     store.state.ARFilingYear = 2017
     store.state.currentFilingStatus = 'NEW'
+    store.state.entityType = 'mockType'
   })
 
-  it('renders the Annual Report sub-components properly', () => {
+  it('renders the Annual Report sub-components properly when entity is a COOP', () => {
+    store.state.entityType = EntityTypes.Coop
     const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
 
     expect(wrapper.find(AGMDate).exists()).toBe(true)
+    expect(wrapper.find(RegisteredOfficeAddress).exists()).toBe(true)
+    expect(wrapper.find(Directors).exists()).toBe(true)
+    expect(wrapper.find(Certify).exists()).toBe(true)
+
+    wrapper.destroy()
+  })
+
+  it('renders the Annual Report sub-components properly when entity is a BCorp', () => {
+    store.state.entityType = EntityTypes.BCorp
+    const $route = { params: { id: '0' } } // new filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+
+    // TODO: Include ARDate Component when completed.
     expect(wrapper.find(RegisteredOfficeAddress).exists()).toBe(true)
     expect(wrapper.find(Directors).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)
@@ -45,6 +61,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     expect(vm.$store.state.entityIncNo).toEqual('CP0001191')
+    expect(vm.$store.state.entityType).toEqual('mockType')
     expect(vm.$store.state.ARFilingYear).toEqual(2017)
     expect(vm.$store.state.currentFilingStatus).toEqual('NEW')
 

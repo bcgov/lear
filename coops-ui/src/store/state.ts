@@ -7,6 +7,7 @@ export default {
 
   // entity info
   entityName: null,
+  entityType: null,
   entityStatus: null,
   entityBusinessNo: null,
   entityIncNo: null,
