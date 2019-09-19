@@ -20,6 +20,9 @@ export default {
   setEntityName ({ commit }, entityName) {
     commit('entityName', entityName)
   },
+  setEntityType ({ commit }, entityType) {
+    commit('entityType', entityType)
+  },
   setEntityStatus ({ commit }, entityStatus) {
     commit('entityStatus', entityStatus)
   },
