@@ -81,16 +81,15 @@ export default {
 
   methods: {
     ...mapActions(['setKeycloakRoles', 'setAuthRoles', 'setBusinessEmail', 'setBusinessPhone',
-      'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityType', 'setEntityStatus', 'setEntityBusinessNo',
-      'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate', 'setTasks',
-      'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors']),
+      'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityType', 'setEntityStatus',
+      'setEntityBusinessNo', 'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate',
+      'setNextARDate', 'setTasks', 'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors']),
 
     fetchData () {
       let businessId
 
       try {
         const jwt = this.getJWT()
-        console.log(jwt)
         const keycloakRoles = this.getKeycloakRoles(jwt)
         this.setKeycloakRoles(keycloakRoles)
         businessId = this.getBusinessId()
@@ -114,7 +113,6 @@ export default {
           axios.get(businessId + '/addresses'),
           axios.get(businessId + '/directors')
         ]).then(data => {
-          console.log(data)
           if (!data || data.length !== 6) throw new Error('incomplete data')
           this.storeBusinessInfo(data[0])
           this.storeEntityInfo(data[1])
@@ -232,6 +230,7 @@ export default {
         this.setEntityName(response.data.business.legalName)
         // TODO: Replace placeholder with `response.data.business.legalType` when legalTypes are seeded.
         this.setEntityType(EntityTypes.BCorp)
+        this.setNextARDate(response.data.business.nextAnnualReport)
         this.setEntityStatus(response.data.business.status)
         this.setEntityBusinessNo(response.data.business.taxId)
         this.setEntityIncNo(response.data.business.identifier)

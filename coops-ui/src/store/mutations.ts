@@ -11,6 +11,9 @@ export default {
   lastAgmDate (state, lastAgmDate) {
     state.lastAgmDate = lastAgmDate
   },
+  nextARDate (state, nextARDate) {
+    state.nextARDate = nextARDate
+  },
   ARFilingYear (state, ARFilingYear) {
     state.ARFilingYear = ARFilingYear
   },

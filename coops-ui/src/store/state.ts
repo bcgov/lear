@@ -17,6 +17,7 @@ export default {
   businessPhone: null,
   businessPhoneExtension: null,
   lastAgmDate: null,
+  nextARDate: null,
 
   ARFilingYear: null, /* Number */
   tasks: [],

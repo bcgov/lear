@@ -1,19 +1,25 @@
 <template>
   <v-card flat class="container">
     <div class="timeline">
-        <span class="title">Annual Report Date</span>
-        <span class="date">Sept 01, 2019</span>
-        <span class="title">Filing Date</span>
-        <span class="date">Today (Sept 16, 2019)</span>
+        <label>Annual Report Date</label>
+        <span class="date ar-date">{{this.toReadableDate(this.nextARDate)}}</span>
+        <label>Filing Date</label>
+        <span class="date file-date">Today ({{this.toReadableDate(new Date())}})</span>
       </div>
   </v-card>
 </template>w
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator'
+import { Component } from 'vue-property-decorator'
+import { mapState } from 'vuex'
+import DateMixin from '@/mixins/date-mixin'
 
-@Component
-export default class ARDate extends Vue {
-  // TODO: Retrieve Dates Data Dynamically.
+@Component({
+  computed: {
+    ...mapState(['nextARDate'])
+  }
+})
+export default class ARDate extends DateMixin {
+    readonly nextARDate: string
 }
 </script>
 <style lang="stylus" scoped>
@@ -24,18 +30,12 @@ export default class ARDate extends Vue {
 
     .timeline
       display: flex
+      justify-content space-between
 
-      .title
-        color: #262626
-        font-size: 1rem
+      label
         font-weight: 500
-        line-height: 1.2rem
 
       .date
-        color: #262626
         font-family: "BC Sans"
-        font-size: 0.875rem
-        line-height: 1.125rem
-        margin: 0 3.125rem 0
-
+        margin-right: 4.5rem
 </style>

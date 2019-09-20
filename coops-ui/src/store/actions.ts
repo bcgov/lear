@@ -11,6 +11,9 @@ export default {
   setLastAgmDate ({ commit }, lastAgmDate) {
     commit('lastAgmDate', lastAgmDate)
   },
+  setNextARDate ({ commit }, nextARDate) {
+    commit('nextARDate', nextARDate)
+  },
   setARFilingYear ({ commit }, ARFilingYear) {
     commit('ARFilingYear', ARFilingYear)
   },
