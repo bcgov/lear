@@ -23,9 +23,9 @@ def process(business: Business, filing: Filing):
     agm_date = filing['annualReport'].get('annualGeneralMeetingDate')
     ar_date = filing['annualReport'].get('annualReportDate')
     if agm_date and validations.annual_report.RequiresAGM(business):
-        agm_date = datetime.date.fromisoformat(agm_date).date()
+        agm_date = datetime.date.fromisoformat(agm_date)
     if ar_date:
-        ar_date = datetime.date.fromisoformat(ar_date).date()
+        ar_date = datetime.date.fromisoformat(ar_date)
     else:
         # should never get here (schema validation should prevent this from making it to the filer)
         logger.error('No annualReportDate given for in annual report. Filing id: %s', filing.id)
