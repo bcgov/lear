@@ -41,13 +41,13 @@ class Filing:
         """Get corporation num, aka identifier."""
         return self.business.business['identifier']
 
-    def get_last_name(self):
+    def get_certified_by(self):
         """Get last name; currently is whole name."""
-        return self.body['certifiedBy']
+        return self.header['certifiedBy']
 
     def get_email(self):
         """Get email address."""
-        return self.body['email']
+        return self.header['email']
 
     def as_dict(self):
         """Return dict of object that can be json serialized and fits schema requirements."""
@@ -125,45 +125,46 @@ class Filing:
             # create new filing user
             cls._create_filing_user(cursor, event_id, filing)
             if filing.filing_type == 'annualReport':
-                date = filing.body['annualGeneralMeetingDate']
+                ar_date = filing.body['annualReportDate']
+                agm_date = filing.body['annualGeneralMeetingDate']
                 filing_type_cd = 'OTANN'
 
                 # create new filing
-                cls._create_filing(cursor, event_id, corp_num, date, filing_type_cd)
+                cls._create_filing(cursor, event_id, corp_num, ar_date, agm_date, filing_type_cd)
 
                 # update corporation record
-                Business.update_corporation(cursor, corp_num, date)
+                Business.update_corporation(cursor, corp_num, agm_date)
 
                 # update corp_state TO ACT (active) if it is in good standing. From CRUD:
                 # - the current corp_state != 'ACT' and,
                 # - they just filed the last outstanding ARs
                 if filing.business.business['corpState'] != 'ACT':
-                    agm_year = int(date[:4])
+                    agm_year = int(ar_date[:4])
                     last_year = datetime.datetime.now().year - 1
                     if agm_year >= last_year:
                         Business.update_corp_state(cursor, event_id, corp_num, state='ACT')
 
             elif filing.filing_type == 'changeOfAddress':
-                # set date to last agm date + 1
-                last_agm_date = filing.business.business['lastAgmDate']
-                day = int(last_agm_date[-2:]) + 1
+                # set date to last ar date + 1
+                last_ar_date = filing.business.business['lastArDate']
+                day = int(last_ar_date[-2:]) + 1
                 try:
-                    date = str(datetime.datetime.strptime(last_agm_date[:-2] + ('0' + str(day))[1:], '%Y-%m-%d'))[:10]
+                    date = str(datetime.datetime.strptime(last_ar_date[:-2] + ('0' + str(day))[1:], '%Y-%m-%d'))[:10]
                 except ValueError:
                     try:
                         day = '-01'
-                        month = int(last_agm_date[5:7]) + 1
-                        date = str(datetime.datetime.strptime(last_agm_date[:5] + ('0' + str(month))[1:] + day,
+                        month = int(last_ar_date[5:7]) + 1
+                        date = str(datetime.datetime.strptime(last_ar_date[:5] + ('0' + str(month))[1:] + day,
                                                               '%Y-%m-%d')
                                    )[:10]
                     except ValueError:
                         mm_dd = '-01-01'
-                        yyyy = int(last_agm_date[:4]) + 1
+                        yyyy = int(last_ar_date[:4]) + 1
                         date = str(datetime.datetime.strptime(str(yyyy) + mm_dd, '%Y-%m-%d'))[:10]
 
                 # create new filing
                 filing_type_cd = 'OTADD'
-                cls._create_filing(cursor, event_id, corp_num, date, filing_type_cd)
+                cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
 
                 # create new addresses for delivery + mailing, return address ids
                 delivery_addr_id = Address.create_new_address(cursor, filing.body['deliveryAddress'])
@@ -179,9 +180,9 @@ class Filing:
 
             elif filing.filing_type == 'changeOfDirectors':
                 # create new filing
-                date = filing.business.business['lastAgmDate']
+                date = filing.business.business['lastArDate']
                 filing_type_cd = 'OTCDR'
-                cls._create_filing(cursor, event_id, corp_num, date, filing_type_cd)
+                cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
 
                 # create, cease, change directors
                 changed_dirs = []
@@ -257,8 +258,8 @@ class Filing:
         return event_id
 
     @classmethod
-    def _create_filing(cls, cursor, event_id, corp_num, date,  # pylint: disable=too-many-arguments; need all these args
-                       filing_type_code='FILE'):
+    def _create_filing(cls, cursor, event_id, corp_num, ar_date,  # pylint: disable=too-many-arguments;
+                       agm_date, filing_type_code='FILE'):
         """Add record to FILING.
 
         Note: Period End Date and AGM Date are both the AGM Date value for Co-ops.
@@ -277,8 +278,8 @@ class Filing:
                 """,
                                event_id=event_id,
                                filing_type_code=filing_type_code,
-                               period_end_date=date,
-                               agm_date=date
+                               period_end_date=ar_date,
+                               agm_date=agm_date
                                )
             elif filing_type_code == 'OTADD' or 'OTCDR':
                 cursor.execute("""
@@ -287,7 +288,7 @@ class Filing:
                 """,
                                event_id=event_id,
                                filing_type_code=filing_type_code,
-                               period_end_date=date,
+                               period_end_date=ar_date,
                                )
             else:
                 current_app.logger.error(f'error in filing: Did not recognize filing type code: {filing_type_code}')
@@ -311,7 +312,7 @@ class Filing:
               VALUES (:event_id, NULL, :last_name, NULL, NULL, :email_address, NULL, NULL)
             """,
                            event_id=event_id,
-                           last_name=filing.get_last_name(),
+                           last_name=filing.get_certified_by(),
                            email_address=filing.get_email()
                            )
         except Exception as err:
@@ -413,7 +414,8 @@ class Filing:
             raise err
 
     @classmethod
-    def find_ar(cls, identifier: str = None, event_id: str = None, year: int = None):
+    def find_ar(cls, identifier: str = None, event_id: str = None,  # pylint: disable=too-many-locals,too-many-branches;
+                year: int = None):
         """Return annual report filing."""
         if event_id:
             filing_event_info = cls._find_filing_event_info(identifier=identifier, event_id=event_id,
@@ -424,29 +426,60 @@ class Filing:
         if not filing_event_info:
             raise FilingNotFoundException(identifier=identifier, filing_type='annualReport', event_id=event_id)
 
-        # if there is no AGM date in period_end_dt, check agm_date and effective date
-        try:
-            agm_date = next(item for item in [
-                filing_event_info['period_end_dt'], filing_event_info['agm_date'], filing_event_info['effective_dt']
-            ] if item is not None)
-        except StopIteration:
-            agm_date = None
+        # get directors and registered office as of this filing
+        director_events = Director.get_events(identifier=identifier)
+        office_events = Office.get_events(identifier=identifier)
+        director_event_id = None
+        office_event_id = None
 
+        tmp_timestamp = datetime.datetime.fromtimestamp(0)
+        for event in director_events:
+            if filing_event_info['event_timestmp'] >= event['date'] > tmp_timestamp:
+                director_event_id = event['id']
+                tmp_timestamp = event['date']
+        tmp_timestamp = datetime.datetime.fromtimestamp(0)
+        for event in office_events:
+            if filing_event_info['event_timestmp'] >= event['date'] > tmp_timestamp:
+                office_event_id = event['id']
+                tmp_timestamp = event['date']
+
+        if director_event_id:
+            try:
+                directors = Director.get_by_event(identifier=identifier, event_id=director_event_id)
+            except:  # noqa B901; pylint: disable=bare-except;
+                # should only get here if event was before the bob date
+                directors = Director.get_current(identifier=identifier)
+        else:
+            directors = Director.get_current(identifier=identifier)
+        directors = [x.as_dict() for x in directors]
+        if office_event_id:
+            try:
+                reg_office = Office.get_by_event(event_id=office_event_id)
+            except:  # noqa B901; pylint: disable=bare-except;
+                # should only get here if event was before the bob date
+                reg_office = Office.get_current(identifier=identifier)
+        else:
+            reg_office = Office.get_current(identifier=identifier)
+        reg_office = reg_office.as_dict()
         # convert dates and date-times to correct json format
         filing_event_info['event_timestmp'] = convert_to_json_date(filing_event_info['event_timestmp'])
-        agm_date = convert_to_json_date(agm_date)
+        agm_date = convert_to_json_date(filing_event_info.get('agm_date', None))
+        ar_date = convert_to_json_date(filing_event_info['period_end_dt'])
 
         filing_obj = Filing()
 
         filing_obj.header = {
             'date': filing_event_info['event_timestmp'],
-            'name': 'annualReport'
+            'name': 'annualReport',
+            'certifiedBy': filing_event_info['certifiedBy'],
+            'email': filing_event_info['email']
         }
         filing_obj.body = {
             'annualGeneralMeetingDate': agm_date,
-            'certifiedBy': filing_event_info['certifiedBy'],
-            'email': filing_event_info['email'],
-            'eventId': filing_event_info['event_id']
+            'annualReportDate': ar_date,
+            'directors': directors,
+            'eventId': filing_event_info['event_id'],
+            **reg_office
         }
         filing_obj.filing_type = 'annualReport'
         filing_obj.event_id = filing_event_info['event_id']  # pylint: disable=attribute-defined-outside-init
@@ -472,11 +505,11 @@ class Filing:
         filing_obj = Filing()
         filing_obj.header = {
             'date': convert_to_json_date(filing_event_info['event_timestmp']),
-            'name': 'changeOfAddress'
+            'name': 'changeOfAddress',
+            'certifiedBy': filing_event_info['certifiedBy'],
+            'email': filing_event_info['email']
         }
         filing_obj.body = {
-            'certifiedBy': filing_event_info['certifiedBy'],
-            'email': filing_event_info['email'],
             **registered_office_obj.as_dict(),
             'eventId': filing_event_info['event_id']
         }
@@ -503,12 +536,12 @@ class Filing:
 
         filing_obj.header = {
             'date': convert_to_json_date(filing_event_info['event_timestmp']),
-            'name': 'changeOfDirectors'
+            'name': 'changeOfDirectors',
+            'certifiedBy': filing_event_info['certifiedBy'],
+            'email': filing_event_info['email']
         }
 
         filing_obj.body = {
-            'certifiedBy': filing_event_info['certifiedBy'],
-            'email': filing_event_info['email'],
             'directors': [x.as_dict() for x in director_objs],
             'eventId': filing_event_info['event_id']
         }

@@ -15,6 +15,7 @@
 
 Currently this only provides API versioning information
 """
+import pycountry
 from flask import current_app
 
 from colin_api.exceptions import AddressNotFoundException
@@ -82,10 +83,7 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
             cursor.execute("""select noncorp_address_seq.NEXTVAL from dual""")
             row = cursor.fetchone()
             addr_id = int(row[0])
-            cursor.execute("""
-                            select country_typ_cd from country_type where full_desc=:country
-                          """, country=address_info['addressCountry'].upper())
-            country_typ_cd = (cursor.fetchone())[0]
+            country_typ_cd = pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))
             raise err
