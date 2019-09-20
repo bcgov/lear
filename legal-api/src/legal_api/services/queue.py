@@ -95,8 +95,8 @@ class QueueService():
         try:
             this_loop = asyncio.get_event_loop()
             this_loop.run_until_complete(self.close())
-        except:
-          pass
+        except Exception as e:
+            self.logger.error(e)
 
     async def connect(self):
         """Connect to the queueing service."""

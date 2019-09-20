@@ -87,8 +87,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
     @property
     def nextAnniversary(self):
-        LastAr = self.last_ar_date if self.last_ar_date else self.founding_date
-        return datetime.date(LastAr + relativedelta(years = 1)).isoformat()
+        arFilings = Filing.get_filings_by_type(self.id, Filing.FilingType.AR.value)
+        count = len(arFilings)
+        return self.founding_date+relativedelta(years=count+1)
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):
@@ -144,7 +145,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'identifier': self.identifier,
             'lastModified': self.last_modified.isoformat(),
             'lastAnnualReport': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
-            'nextAnnualReport': self.nextAnniversary,
+            'nextAnnualReport': self.nextAnniversary.isoformat(),
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
             'legalName': self.legal_name,
