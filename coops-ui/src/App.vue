@@ -44,6 +44,7 @@ import AccountAuthorizationDialog from '@/components/Dashboard/AccountAuthorizat
 import SbcHeader from 'sbc-common-components/src/components/SbcHeader.vue'
 import SbcFooter from 'sbc-common-components/src/components/SbcFooter.vue'
 import EntityInfo from '@/components/EntityInfo.vue'
+import { EntityTypes } from '@/enums'
 
 export default {
   name: 'App',
@@ -54,7 +55,8 @@ export default {
     return {
       dashboardUnavailableDialog: false,
       accountAuthorizationDialog: false,
-      dataLoaded: false
+      dataLoaded: false,
+      EntityTypes
     }
   },
 
@@ -79,9 +81,9 @@ export default {
 
   methods: {
     ...mapActions(['setKeycloakRoles', 'setAuthRoles', 'setBusinessEmail', 'setBusinessPhone',
-      'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityStatus', 'setEntityBusinessNo',
-      'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate', 'setTasks',
-      'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors']),
+      'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityType', 'setEntityStatus',
+      'setEntityBusinessNo', 'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate',
+      'setNextARDate', 'setTasks', 'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors']),
 
     fetchData () {
       let businessId
@@ -226,6 +228,8 @@ export default {
     storeEntityInfo (response) {
       if (response && response.data && response.data.business) {
         this.setEntityName(response.data.business.legalName)
+        this.setEntityType(response.data.business.legalType)
+        this.setNextARDate(response.data.business.nextAnnualReport)
         this.setEntityStatus(response.data.business.status)
         this.setEntityBusinessNo(response.data.business.taxId)
         this.setEntityIncNo(response.data.business.identifier)
