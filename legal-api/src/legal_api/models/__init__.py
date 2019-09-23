@@ -20,8 +20,9 @@ from .colin_update import ColinLastUpdate
 from .comment import Comment
 from .director import Director
 from .filing import Filing
+from .office import Office
 from .user import User, UserSchema
 
 
 __all__ = ('db', 'ma', 'Business', 'BusinessSchema', 'ColinLastUpdate', 'Comment', 'Filing', 'User', 'UserSchema',
-           'Director')
+           'Director', 'Office')

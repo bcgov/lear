@@ -16,11 +16,11 @@
 The Business class and Schema are held in this module
 """
 from datetime import datetime
+
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
-
 from legal_api.exceptions import BusinessException
 
 from .db import db, ma
@@ -30,6 +30,7 @@ from .director import Director  # noqa: F401 pylint: disable=unused-import; need
 from .address import Address  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
 class Business(db.Model):  # pylint: disable=too-many-instance-attributes
@@ -71,7 +72,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
                                        primaryjoin='and_(Business.id==Address.business_id, '
                                        f"Address.address_type=='{Address.DELIVERY}')")
     directors = db.relationship('Director', lazy='dynamic')
-
+    offices = db.relationship('Office')
     @hybrid_property
     def identifier(self):
         """Return the unique business identifier."""

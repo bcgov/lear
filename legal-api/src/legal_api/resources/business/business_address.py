@@ -19,7 +19,6 @@ from http import HTTPStatus
 
 from flask import jsonify, request
 from flask_restplus import Resource, cors
-
 from legal_api.models import Address, Business, db
 from legal_api.utils.util import cors_preflight
 
@@ -50,16 +49,22 @@ class AddressResource(Resource):
             addresses, msg, code = AddressResource._get_address(business, addresses_id, address_type)
             return jsonify(addresses or msg), code
 
-        # return all active addresses
         rv = {}
-        mailing = business.mailing_address.one_or_none()
-        if mailing:
-            rv[Address.JSON_MAILING] = mailing.json
-        delivery = business.delivery_address.one_or_none()
-        if delivery:
-            rv[Address.JSON_DELIVERY] = delivery.json
-        if not rv:
-            return jsonify({'message': f'{identifier} address not found'}), HTTPStatus.NOT_FOUND
+        if business.offices:
+            officelist = business.offices
+            for i in officelist:
+                rv[i.office_type] = {}
+                for address in i.addresses:
+                    rv[i.office_type][address.address_type] = address.json
+        else:
+            mailing = business.mailing_address.one_or_none()
+            if mailing:
+                rv[Address.JSON_MAILING] = mailing.json
+            delivery = business.delivery_address.one_or_none()
+            if delivery:
+                rv[Address.JSON_DELIVERY] = delivery.json
+            if not rv:
+                return jsonify({'message': f'{identifier} address not found'}), HTTPStatus.NOT_FOUND
         return jsonify(rv)
 
     @staticmethod
