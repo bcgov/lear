@@ -19,14 +19,14 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -130,7 +130,8 @@ CREATE TABLE public.businesses (
     fiscal_year_end_date timestamp with time zone,
     submitter_userid integer,
     last_agm_date timestamp with time zone,
-    last_ledger_timestamp timestamp with time zone
+    last_ledger_timestamp timestamp with time zone,
+    legal_type  character varying(10)
 );
 
 
@@ -179,7 +180,8 @@ CREATE TABLE public.businesses_version (
     end_transaction_id bigint,
     operation_type smallint NOT NULL,
     last_agm_date timestamp with time zone,
-    last_ledger_timestamp timestamp with time zone
+    last_ledger_timestamp timestamp with time zone,
+    legal_type  character varying(10)
 );
 
 
@@ -3760,7 +3762,6 @@ COPY public.directors_version (id, first_name, middle_initial, last_name, title,
 --
 -- Data for Name: filings; Type: TABLE DATA; Schema: public; Owner: userG5G
 --
-
 COPY public.filings (id, filing_date, filing_type, filing_json, payment_id, transaction_id, business_id, submitter_id, colin_event_id, status, payment_completion_date) FROM stdin;
 102	2019-08-21 03:12:41.997395+00	lear_epoch	{"filing": {"header": {"name": "lear_epoch"}}}	\N	103	\N	\N	\N	DRAFT	\N
 103	2019-08-21 03:12:48.306417+00	lear_epoch	{"filing": {"header": {"name": "lear_epoch"}}}	\N	104	\N	\N	\N	DRAFT	\N
@@ -3815,11 +3816,9 @@ COPY public.filings (id, filing_date, filing_type, filing_json, payment_id, tran
 152	2019-08-21 16:16:22.054738+00	lear_epoch	{"filing": {"header": {"name": "lear_epoch"}}}	\N	153	\N	\N	\N	DRAFT	\N
 \.
 
-
 --
 -- Data for Name: transaction; Type: TABLE DATA; Schema: public; Owner: userG5G
 --
-
 COPY public.transaction (issued_at, id, remote_addr) FROM stdin;
 2019-08-20 17:24:19.232727	1	\N
 2019-08-20 17:24:24.150925	2	\N
@@ -3973,7 +3972,6 @@ COPY public.transaction (issued_at, id, remote_addr) FROM stdin;
 2019-08-21 16:16:15.926743	152	\N
 2019-08-21 16:16:21.423977	153	\N
 \.
-
 
 --
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: userG5G
@@ -4484,4 +4482,9 @@ ALTER TABLE ONLY public.filings
 --
 -- PostgreSQL database dump complete
 --
+
+update public.businesses set legal_type = 'BC' where id in (select id from public.businesses order by founding_date asc limit 25);
+update public.businesses set legal_type = 'CP' where id in (select id from public.businesses order by founding_date desc limit 25);
+update public.businesses set founding_date = now() - interval '366 days';
+update public.businesses_version set legal_type=public.businesses.legal_type from public.businesses  where public.businesses_version.id = public.businesses.id;
 
