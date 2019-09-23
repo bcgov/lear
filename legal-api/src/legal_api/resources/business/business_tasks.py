@@ -61,7 +61,10 @@ class TaskListResource(Resource):
     def construct_task_list(business):
         tasks = []
         order = 1
-        todo_start_date = datetime(2019,1,1)  # If no filings exist in legal API db this year will be used as the start year.
+        checkAgm = validations.annual_report.RequiresAGM(business)
+        # If no filings exist in legal API db this year will be used as the start year.
+        todo_start_date = (datetime(2019,1,1)).date() if checkAgm else business.nextAnniversary.date()  
+       
         
         # Retrieve filings that are either incomplete, or drafts
         pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
@@ -79,15 +82,15 @@ class TaskListResource(Resource):
         if annual_report_filings:
             last_filing = annual_report_filings[0].filing_json['filing']['annualReport']
                               
-            if validations.annual_report.RequiresAGM(business):
+            if checkAgm:
                 date = datetime.strptime(last_filing['annualGeneralMeetingDate'],'%Y-%m-%d')
-                todo_start_date=datetime(date.year+1,1,1)
+                todo_start_date=(datetime(date.year+1,1,1)).date()
             else:
-                todo_start_date = business.nextAnniversary
+                todo_start_date = business.nextAnniversary.date()
 
         start_year = todo_start_date.year
 
-        while todo_start_date <= datetime.now():
+        while todo_start_date <= datetime.now().date():
                 enabled = not pending_filings and todo_start_date.year == start_year
                 tasks.append(TaskListResource.create_todo(business, todo_start_date.year, order, enabled))
                 todo_start_date += datedelta.YEAR
