@@ -46,6 +46,18 @@ class TaskListResource(Resource):
         rv = TaskListResource.construct_task_list(business)
         return jsonify(tasks=rv)
 
+    """
+    Method to retrieve all current pending tasks to do. First retrieves filings that are
+    either drafts, or incomplete, then populate AR filings that have not been started for
+    years that are due.
+
+    Rules for AR filings:
+        - Co-ops must file one AR per year. The next AR date must be AFTER the most recent
+          AGM date. The calendar year of the filing is the first contiguous year following
+          the last AGM date
+
+        - Corporations must file one AR per year, on or after the anniversary of the founding date
+    """
     @staticmethod
     def construct_task_list(business):
         """

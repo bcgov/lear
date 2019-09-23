@@ -15,7 +15,6 @@
 from datetime import datetime
 from http import HTTPStatus
 from typing import Dict, List, Tuple
-
 import datedelta
 from flask_babel import _
 
