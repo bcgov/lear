@@ -27,9 +27,10 @@ describe('AnnualReport - Part 1 - UI', () => {
   it('succeeds when the Annual report date outputs are correct', () => {
     const wrapper = shallowMount(ARDate, { store })
     const vm: any = wrapper.vm
-    const today = new Date().toDateString().split(' ').slice(1).join(' ')
+    const regex = / (?!.* )/
+    const today = new Date().toDateString().split(' ').slice(1).join(' ').replace(regex, ', ')
 
-    expect(vm.$el.querySelector('.ar-date').textContent).toContain('Sep 18 2020')
+    expect(vm.$el.querySelector('.ar-date').textContent).toContain('Sep 18, 2020')
     expect(vm.$el.querySelector('.file-date').textContent).toContain(`Today (${today})`)
     wrapper.destroy()
   })
