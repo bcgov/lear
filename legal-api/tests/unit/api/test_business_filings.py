@@ -374,6 +374,70 @@ def test_update_draft_ar(session, client, jwt):
     assert rv.json['filing']['header']['filingId'] == filings.id
 
 
+def test_delete_filing_in_draft(session, client, jwt):
+    """Assert that a draft filing can be deleted."""
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    filings = factory_filing(b, ANNUAL_REPORT)
+    headers = create_header(jwt, [STAFF_ROLE], identifier)
+
+    rv = client.delete(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
+                       headers=headers
+                       )
+
+    assert rv.status_code == HTTPStatus.OK
+
+
+def test_delete_filing_block_completed(session, client, jwt):
+    """Assert that a completed filing cannot be deleted."""
+    import copy
+    identifier = 'CP7654321'
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+
+    filings = factory_completed_filing(business, ar)
+
+    rv = client.delete(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
+                       headers=create_header(jwt, [STAFF_ROLE], identifier)
+                       )
+
+    assert rv.status_code == HTTPStatus.FORBIDDEN
+
+
+def test_delete_filing_no_filing_id(client, jwt):
+    identifier = 'CP7654321'
+    rv = client.delete(f'/api/v1/businesses/{identifier}/filings',
+                       headers=create_header(jwt, [STAFF_ROLE], identifier)
+                       )
+
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_delete_filing_missing_filing_id(client, jwt):
+    identifier = 'CP7654321'
+    rv = client.delete(f'/api/v1/businesses/{identifier}/filings/bob',
+                       headers=create_header(jwt, [STAFF_ROLE], identifier)
+                       )
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_delete_filing_not_authorized(session, client, jwt):
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    filings = factory_filing(b, ANNUAL_REPORT)
+    headers = create_header(jwt, ['BAD ROLE'], identifier)
+
+    rv = client.delete(f'/api/v1/businesses/{identifier}/filings/{filings.id}', headers=headers)
+
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+
 def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
     """Assert that a valid filing can NOT be updated once it has been paid."""
     import copy
@@ -457,66 +521,6 @@ def test_update_ar_with_missing_json_body_fails(session, client, jwt):
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
     assert rv.json['errors'][0] == {'message': f'No filing json data in body of post for {identifier}.'}
-
-
-# @integration_nats
-# @pytest.mark.asyncio
-# async def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server, event_loop):
-#     """Assert that payment tokens can be retrieved and decoded from the Queue."""
-#     import copy
-#     # SETUP
-#     msgs = []
-#     this_loop = asyncio.get_event_loop()
-#     # this_loop = event_loop
-#     future = asyncio.Future(loop=this_loop)
-#     queue = QueueService(app_ctx, this_loop)
-#     await queue.connect()
-
-#     async def cb(msg):
-#         nonlocal msgs
-#         nonlocal future
-#         msgs.append(msg)
-#         if len(msgs) == 5:
-#             future.set_result(True)
-
-#     await queue.stan.subscribe(subject=queue.subject,
-#                                queue='colin_queue',
-#                                durable_name='colin_queue',
-#                                cb=cb)
-
-#     # TEST - add some COLIN filings to the system, check that they got placed on the Queue
-#     for i in range(0, 5):
-#         # Create business
-#         identifier = f'CP765432{i}'
-#         b = factory_business(identifier)
-#         factory_business_mailing_address(b)
-#         # Create anm AR filing for the business
-#         ar = copy.deepcopy(ANNUAL_REPORT)
-#         ar['filing']['header']['colinId'] = 1230 + i
-#         ar['filing']['business']['identifier'] = identifier
-
-#         # POST the AR
-#         rv = client.post(f'/api/v1/businesses/{identifier}/filings',
-#                          json=ar,
-#                          headers=create_header(jwt, [COLIN_SVC_ROLE], 'colin_service')
-#                          )
-
-#         # Assure that the filing was accepted
-#         assert rv.status_code == HTTPStatus.CREATED
-
-#     # Await all the messages were received
-#     try:
-#         await asyncio.wait_for(future, 2, loop=this_loop)
-#     except Exception as err:
-#         print(err)
-
-#     # CHECK the colinFilings were retrieved from the queue
-#     assert len(msgs) == 5
-#     for i in range(0, 5):
-#         m = msgs[i]
-#         assert 'colinFiling' in m.data.decode('utf-8')
-#         assert 1230 + i == dpath.util.get(json.loads(m.data.decode('utf-8')),
-#                                           'colinFiling/id')
 
 
 @integration_nats
