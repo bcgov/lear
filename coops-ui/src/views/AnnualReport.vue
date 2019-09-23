@@ -49,6 +49,8 @@
               </header>
               <AGMDate
                 :initialAgmDate="initialAgmDate"
+                :allowCOA="allowChange('coa')"
+                :allowCOD="allowChange('cod')"
                 @agmDate="agmDate=$event"
                 @noAGM="noAGM=$event"
                 @valid="agmDateValid=$event"
@@ -64,7 +66,7 @@
                 <p>Verify or change your Registered Office Addresses.</p>
               </header>
               <RegisteredOfficeAddress
-                :changeButtonDisabled="!agmDateValid"
+                :changeButtonDisabled="!allowChange('coa')"
                 :legalEntityNumber="entityIncNo"
                 :addresses.sync="addresses"
                 @modified="officeModifiedEventHandler($event)"
@@ -84,7 +86,7 @@
                 @allDirectors="allDirectors=$event"
                 @directorFormValid="directorFormValid=$event"
                 :asOfDate="agmDate"
-                :componentEnabled="agmDateValid"
+                :componentEnabled="allowChange('cod')"
               />
             </section>
 
@@ -238,9 +240,9 @@ export default {
 
   computed: {
     ...mapState(['currentDate', 'ARFilingYear', 'lastAgmDate', 'entityName',
-      'entityIncNo', 'entityFoundingDate']),
+      'entityIncNo', 'entityFoundingDate', 'lastPreLoadFilingDate']),
 
-    ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState']),
+    ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState', 'lastCOAFilingDate', 'lastCODFilingDate']),
 
     annualReportDate () {
       // AR Filing Year, but as a date field with today's month and day
@@ -597,6 +599,19 @@ export default {
       this.saveErrorDialog = false
       this.saveErrors = []
       this.saveWarnings = []
+    },
+
+    allowChange (type) {
+      let earliestAllowedDate
+      if (type === 'coa') {
+        earliestAllowedDate = this.lastCOAFilingDate
+      } else if (type === 'cod') {
+        earliestAllowedDate = this.lastCODFilingDate
+      }
+      if (!earliestAllowedDate) {
+        earliestAllowedDate = this.lastPreLoadFilingDate
+      }
+      return this.agmDateValid && this.compareDates(this.agmDate, earliestAllowedDate, '>=')
     }
   },
 
