@@ -14,6 +14,7 @@ module.exports = {
     'max-len': ['warn', { code: 120 }]
   },
   parserOptions: {
-    parser: '@typescript-eslint/parser'
+    parser: '@typescript-eslint/parser',
+    plugins: ['@typescript-eslint']
   }
 }

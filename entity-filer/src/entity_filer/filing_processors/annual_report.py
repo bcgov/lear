@@ -13,9 +13,8 @@
 # limitations under the License.
 """File processing rules and actions for the annual report."""
 import datetime
-
 from legal_api.models import Business, Filing
-
+from legal_api.services.filings import validations
 from entity_filer.service_utils import logger
 
 
@@ -23,7 +22,7 @@ def process(business: Business, filing: Filing):
     """Render the annual_report onto the business model objects."""
     agm_date = filing['annualReport'].get('annualGeneralMeetingDate')
     ar_date = filing['annualReport'].get('annualReportDate')
-    if agm_date:
+    if agm_date and validations.annual_report.RequiresAGM(business):
         agm_date = datetime.date.fromisoformat(agm_date)
     if ar_date:
         ar_date = datetime.date.fromisoformat(ar_date)

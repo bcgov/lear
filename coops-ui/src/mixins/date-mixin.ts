@@ -51,4 +51,15 @@ export default class DateMixin extends Vue {
 
     return eval(date1 + operator + date2) // eslint-disable-line no-eval
   }
+
+  /**
+   * Formats a simple date string (YYYY-MM-DD) to (Month Day, Year) for readability.
+   *
+   * @param date The date string to format.
+   * @returns The re-formatted date string without the day name.
+   */
+  toReadableDate (date: string): string {
+    const regex = / (?!.* )/
+    return (new Date(date).toDateString().split(' ').slice(1).join(' ').replace(regex, ', '))
+  }
 }

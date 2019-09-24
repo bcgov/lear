@@ -51,6 +51,18 @@
           <span v-else-if="!$v.dateFormatted.isValidDay">
             Please enter a day between {{formatDate(minDate)}} and {{formatDate(maxDate)}}.
           </span>
+          <span v-else-if="!allowCOA&&!allowCOD">
+            You can not change your Registered Office Addresses or Directors in this Annual Report because your AGM
+            predates another filing that may have conflicting changes.
+          </span>
+          <span v-else-if="!allowCOA">
+            You can not change your Registered Office Addresses in this Annual Report because your AGM predates another
+            filing that may have conflicting changes.
+          </span>
+          <span v-else-if="!allowCOD">
+            You can not change your Directors in this Annual Report because your AGM predates another
+            filing that may have conflicting changes.
+          </span>
         </div>
       </div>
     </div>
@@ -86,6 +98,12 @@ export default class AGMDate extends Mixins(DateMixin) {
   // Prop passed into this component.
   @Prop({ default: '' })
   private initialAgmDate: string
+
+  @Prop({ default: true })
+  private allowCOA: boolean
+
+  @Prop({ default: true })
+  private allowCOD: boolean
 
   // Local properties.
   private date: string = '' // bound to date picker

@@ -34,6 +34,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
 
     Manages the filing ledger for the associated business.
     """
+    class FilingType(Enum):
+        AR = 'annualReport'
+        COA = 'changeOfAddress'
+        COD ='changeOfDirectors'
 
     class Status(Enum):
         """Render an Enum of the Filing Statuses."""

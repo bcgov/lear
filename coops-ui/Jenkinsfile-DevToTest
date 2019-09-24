@@ -54,7 +54,7 @@ node {
         script {
             try {
                 timeout(time: 1, unit: 'DAYS') {
-                    input message: "Run E2E pipeline?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin,JohnamLane-edit'
+                    input message: "Run E2E pipeline?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-admin,WalterMoar-admin,JohnamLane-edit'
                 }
                 openshift.withCluster() {
                     openshift.withProject("${E2E_NAMESPACE}-${E2E_PROJ}") {
@@ -81,12 +81,12 @@ node {
             if (!passed) {
                 try {
                     timeout(time: 1, unit: 'DAYS') {
-                        input message: "E2E failed or were not run. Proceed to test?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin,JohnamLane-edit'
+                        input message: "E2E failed or were not run. Proceed to test?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-admin,WalterMoar-admin,JohnamLane-edit'
                     }
                 } catch (Exception e1) {
                     try {
                         timeout(time: 1, unit: 'DAYS') {
-                            input message: "Keep E2E image?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-edit,WalterMoar-admin,JohnamLane-edit'
+                            input message: "Keep E2E image?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-admin,WalterMoar-admin,JohnamLane-edit'
                         }
                     } catch (Exception e2) {
                         echo "Reverting E2E image back to previous image..."

@@ -7,6 +7,7 @@ export default {
 
   // entity info
   entityName: null,
+  entityType: null,
   entityStatus: null,
   entityBusinessNo: null,
   entityIncNo: null,
@@ -16,6 +17,7 @@ export default {
   businessPhone: null,
   businessPhoneExtension: null,
   lastAgmDate: null,
+  nextARDate: null,
 
   ARFilingYear: null, /* Number */
   tasks: [],

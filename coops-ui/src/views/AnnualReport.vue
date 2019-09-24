@@ -37,22 +37,36 @@
             <h1 id="AR-header">File {{ ARFilingYear }} Annual Report
               <span style="font-style: italic" v-if="reportState">- {{ reportState }}</span>
             </h1>
-            <p>Select your Annual General Meeting (AGM) date, and verify or change your Registered office address
-              and List of Directors as of your AGM.</p>
+            <p>Please verify or change your Office Addresses and Directors.</p>
           </header>
 
           <div v-if="isAnnualReportEditable">
-            <!-- Annual General Meeting Date -->
-            <section>
+
+            <!-- Annual General Meeting Date ( COOP ) -->
+            <section v-if="entityFilter(EntityTypes.Coop)">
               <header>
                 <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
+                <p>Select your Annual General Meeting (AGM) date</p>
               </header>
               <AGMDate
                 :initialAgmDate="initialAgmDate"
+                :allowCOA="allowChange('coa')"
+                :allowCOD="allowChange('cod')"
                 @agmDate="agmDate=$event"
                 @noAGM="noAGM=$event"
                 @valid="agmDateValid=$event"
               />
+            </section>
+
+            <!-- Annual Report Date ( BCORP ) -->
+            <section v-if="entityFilter(EntityTypes.BCorp)">
+              <header>
+                <h2 id="AR-step-1-header-BC">1. Dates</h2>
+                <p>Your Annual Report Date is the anniversary of the date your corporation was started.<br>
+                  The information displayed on this form reflects the state of your corporation on this date each year.
+                </p>
+              </header>
+              <ARDate />
             </section>
 
             <!-- Registered Office Addresses -->
@@ -64,7 +78,7 @@
                 <p>Verify or change your Registered Office Addresses.</p>
               </header>
               <RegisteredOfficeAddress
-                :changeButtonDisabled="!agmDateValid"
+                :changeButtonDisabled="!allowChange('coa')"
                 :legalEntityNumber="entityIncNo"
                 :addresses.sync="addresses"
                 @modified="officeModifiedEventHandler($event)"
@@ -84,7 +98,7 @@
                 @allDirectors="allDirectors=$event"
                 @directorFormValid="directorFormValid=$event"
                 :asOfDate="agmDate"
-                :componentEnabled="agmDateValid"
+                :componentEnabled="allowChange('cod')"
               />
             </section>
 
@@ -178,13 +192,17 @@ import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
 import DateMixin from '@/mixins/date-mixin'
+import EntityFilterMixin from '@/mixins/entityFilter-mixin'
+import { EntityTypes } from '@/ts/enums'
+import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
 
 export default {
   name: 'AnnualReport',
 
-  mixins: [DateMixin],
+  mixins: [DateMixin, EntityFilterMixin],
 
   components: {
+    ARDate,
     AGMDate,
     RegisteredOfficeAddress,
     Directors,
@@ -232,15 +250,18 @@ export default {
       filingPaying: false,
       haveChanges: false,
       saveErrors: [],
-      saveWarnings: []
+      saveWarnings: [],
+
+      // Constant properties
+      EntityTypes
     }
   },
 
   computed: {
     ...mapState(['currentDate', 'ARFilingYear', 'lastAgmDate', 'entityName',
-      'entityIncNo', 'entityFoundingDate']),
+      'entityIncNo', 'entityFoundingDate', 'lastPreLoadFilingDate']),
 
-    ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState']),
+    ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState', 'lastCOAFilingDate', 'lastCODFilingDate']),
 
     annualReportDate () {
       // AR Filing Year, but as a date field with today's month and day
@@ -597,6 +618,19 @@ export default {
       this.saveErrorDialog = false
       this.saveErrors = []
       this.saveWarnings = []
+    },
+
+    allowChange (type) {
+      let earliestAllowedDate
+      if (type === 'coa') {
+        earliestAllowedDate = this.lastCOAFilingDate
+      } else if (type === 'cod') {
+        earliestAllowedDate = this.lastCODFilingDate
+      }
+      if (!earliestAllowedDate) {
+        earliestAllowedDate = this.lastPreLoadFilingDate
+      }
+      return this.agmDateValid && this.compareDates(this.agmDate, earliestAllowedDate, '>=')
     }
   },
 
@@ -649,7 +683,7 @@ h2
   font-size: 2rem;
   font-weight: 500;
 
-#AR-step-1-header, #AR-step-2-header, #AR-step-3-header, #AR-step-4-header
+#AR-step-1-header, #AR-step-1-header-BC, #AR-step-2-header, #AR-step-3-header, #AR-step-4-header
   margin-bottom: 0.25rem;
   margin-top: 3rem;
   font-size: 1.125rem;
