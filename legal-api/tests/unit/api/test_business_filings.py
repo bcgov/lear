@@ -498,7 +498,7 @@ def test_calc_annual_report_date(session, client, jwt):
     identifier = 'CP7654399'
     b = factory_business(identifier,(datetime.utcnow()-datedelta.YEAR), None ,'B')
     factory_business_mailing_address(b)
-    assert b.nextAnniversary == datetime.utcnow().date().isoformat()
+    assert b.nextAnniversary.date().isoformat() == datetime.utcnow().date().isoformat()
 
 # @integration_nats
 # @pytest.mark.asyncio
