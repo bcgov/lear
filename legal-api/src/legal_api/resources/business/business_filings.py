@@ -22,6 +22,7 @@ from typing import Tuple
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
 from flask import current_app, g, jsonify, request
+from flask_babel import _
 from flask_jwt_oidc import JwtManager
 from flask_restplus import Resource, cors
 from werkzeug.local import LocalProxy
@@ -147,6 +148,41 @@ class ListFilingResource(Resource):
         # all done
         return jsonify(filing.json),\
             (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_auth
+    def delete(identifier, filing_id=None):
+        """Delete a filing from the business."""
+        if not filing_id:
+            return ({'message':
+                     _('No filing id provided for:') + identifier},
+                    HTTPStatus.BAD_REQUEST)
+
+        # check authorization
+        if not authorized(identifier, jwt, action=['edit']):
+            return jsonify({'message':
+                            _('You are not authorized to delete a filing for:') + identifier}),\
+                HTTPStatus.UNAUTHORIZED
+
+        filing = Business.get_filing_by_id(identifier, filing_id)
+
+        if not filing:
+            return jsonify({'message':
+                            _('Filing Not Found.')}), \
+                HTTPStatus.NOT_FOUND
+
+        try:
+            filing.delete()
+            return jsonify({'message':
+                            _('Filing deleted.')}), \
+                HTTPStatus.OK
+        except BusinessException as err:
+            return jsonify({'errors': [
+                {'error': err.error},
+            ]}), err.status_code
+
+        return {}, HTTPStatus.NOT_IMPLEMENTED
 
     @staticmethod
     def _put_basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
