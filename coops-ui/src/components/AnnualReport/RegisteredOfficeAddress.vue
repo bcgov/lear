@@ -8,9 +8,10 @@
             <delivery-address
               :address="deliveryAddress"
               :editing="showAddressForm"
+              :schema="addressSchema"
               v-on:update:address="updateDelivery($event)"
               @valid="isDeliveryValid"
-            ></delivery-address>
+            />
             <v-expand-transition>
               <div class="address-block__actions">
                 <v-btn
@@ -57,9 +58,10 @@
               v-if="!showAddressForm || !inheritDeliveryAddress"
               :address="mailingAddress"
               :editing="showAddressForm"
+              :schema="addressSchema"
               v-on:update:address="updateMailing($event)"
               @valid="isMailingValid"
-            ></mailing-address>
+            />
             <div
               class="form__row form__btns"
               v-show="showAddressForm"
@@ -85,6 +87,7 @@
 import { Component, Vue, Emit, Prop, Watch } from 'vue-property-decorator'
 import axios from '@/axios-auth'
 import isEmpty from 'lodash.isempty'
+import { required, maxLength } from 'vuelidate/lib/validators'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
 // action constants
@@ -143,6 +146,37 @@ export default class RegisteredOfficeAddress extends Vue {
 
   // State of the form checkbox for determining whether or not the mailing address is the same as the delivery address.
   private inheritDeliveryAddress: boolean = true
+
+  // The Address schema containing Vuelidate rules.
+  // NB: This should match the subject JSON schema.
+  private addressSchema = {
+    streetAddress: {
+      required,
+      maxLength: maxLength(50)
+    },
+    streetAddressAdditional: {
+      maxLength: maxLength(50)
+    },
+    addressCity: {
+      required,
+      maxLength: maxLength(40)
+    },
+    addressCountry: {
+      required
+      // isCanada: (val) => (val.toLower() === 'canada') // FUTURE
+    },
+    addressRegion: {
+      required,
+      maxLength: maxLength(2)
+    },
+    postalCode: {
+      required,
+      maxLength: maxLength(15)
+    },
+    deliveryInstructions: {
+      maxLength: maxLength(80)
+    }
+  }
 
   /**
    * Lifecycle callback to set up the component when it is mounted.
