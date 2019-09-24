@@ -4488,3 +4488,75 @@ update public.businesses set legal_type = 'CP' where id in (select id from publi
 update public.businesses set founding_date = now() - interval '366 days';
 update public.businesses_version set legal_type=public.businesses.legal_type from public.businesses  where public.businesses_version.id = public.businesses.id;
 
+
+--
+-- Name: offices; Type: TABLE; Schema: public; Owner: userG5G
+--
+
+CREATE TABLE public.offices (
+    id integer NOT NULL,
+    office_type character varying(75),
+    deactivated_date timestamp with time zone,
+    business_id integer
+);
+
+
+ALTER TABLE public.offices OWNER TO "userG5G";
+
+--
+-- Name: offices_id_seq; Type: SEQUENCE; Schema: public; Owner: userG5G
+--
+
+CREATE SEQUENCE public.offices_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.offices_id_seq OWNER TO "userG5G";
+
+--
+-- Name: offices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: userG5G
+--
+
+ALTER SEQUENCE public.offices_id_seq OWNED BY public.offices.id;
+
+
+--
+-- Name: offices id; Type: DEFAULT; Schema: public; Owner: userG5G
+--
+
+ALTER TABLE ONLY public.offices ALTER COLUMN id SET DEFAULT nextval('public.offices_id_seq'::regclass);
+
+
+--
+-- Name: offices offices_pkey; Type: CONSTRAINT; Schema: public; Owner: userG5G
+--
+
+ALTER TABLE ONLY public.offices
+    ADD CONSTRAINT offices_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ix_offices_business_id; Type: INDEX; Schema: public; Owner: userG5G
+--
+
+CREATE INDEX ix_offices_business_id ON public.offices USING btree (business_id);
+
+
+--
+-- Name: offices offices_business_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: userG5G
+--
+
+ALTER TABLE ONLY public.offices
+    ADD CONSTRAINT offices_business_id_fkey FOREIGN KEY (business_id) REFERENCES public.businesses(id);
+
+
+--
+-- PostgreSQL database dump complete
+--
+insert into public.offices values (1,'registeredOffice',null,116);
+update public.addresses set office_id =1 where business_id=116;
