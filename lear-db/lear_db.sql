@@ -50,7 +50,8 @@ CREATE TABLE public.addresses (
     country character varying(2),
     postal_code character varying(10),
     delivery_instructions character varying(4096),
-    business_id integer
+    business_id integer,
+    office_id integer
 );
 
 
@@ -4554,6 +4555,8 @@ CREATE INDEX ix_offices_business_id ON public.offices USING btree (business_id);
 ALTER TABLE ONLY public.offices
     ADD CONSTRAINT offices_business_id_fkey FOREIGN KEY (business_id) REFERENCES public.businesses(id);
 
+ALTER TABLE ONLY public.addresses
+    ADD CONSTRAINT addresses_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.offices(id);
 
 --
 -- PostgreSQL database dump complete
