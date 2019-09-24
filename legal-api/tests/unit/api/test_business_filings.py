@@ -410,6 +410,7 @@ def test_delete_filing_block_completed(session, client, jwt):
 
 
 def test_delete_filing_no_filing_id(client, jwt):
+    """Assert that a call without an ID is a BAD_REQUEST."""
     identifier = 'CP7654321'
     rv = client.delete(f'/api/v1/businesses/{identifier}/filings',
                        headers=create_header(jwt, [STAFF_ROLE], identifier)
@@ -419,6 +420,7 @@ def test_delete_filing_no_filing_id(client, jwt):
 
 
 def test_delete_filing_missing_filing_id(client, jwt):
+    """Assert that trying to delete a non-existant filing returns a 404."""
     identifier = 'CP7654321'
     rv = client.delete(f'/api/v1/businesses/{identifier}/filings/bob',
                        headers=create_header(jwt, [STAFF_ROLE], identifier)
@@ -428,6 +430,7 @@ def test_delete_filing_missing_filing_id(client, jwt):
 
 
 def test_delete_filing_not_authorized(session, client, jwt):
+    """Assert that a users is authorized to delete a filing."""
     identifier = 'CP7654321'
     b = factory_business(identifier)
     filings = factory_filing(b, ANNUAL_REPORT)
