@@ -85,7 +85,8 @@
 import { Component, Vue, Emit, Prop, Watch } from 'vue-property-decorator'
 import axios from '@/axios-auth'
 import isEmpty from 'lodash.isempty'
-import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
+// import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
+import BaseAddress from '@/components/BaseAddress.vue'
 
 // action constants
 const ADDRESSCHANGED = 'addressChanged'
