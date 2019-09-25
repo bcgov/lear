@@ -22,7 +22,7 @@ def process(business: Business, filing: Filing):
     """Render the annual_report onto the business model objects."""
     agm_date = filing['annualReport'].get('annualGeneralMeetingDate')
     ar_date = filing['annualReport'].get('annualReportDate')
-    if agm_date and validations.annual_report.RequiresAGM(business):
+    if agm_date and validations.annual_report.requires_agm(business):
         agm_date = datetime.date.fromisoformat(agm_date)
     if ar_date:
         ar_date = datetime.date.fromisoformat(ar_date)

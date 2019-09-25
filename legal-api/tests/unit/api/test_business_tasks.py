@@ -75,6 +75,7 @@ def test_get_tasks_no_filings(session, client):
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('tasks')) == 1  # To-do for the current year
 
+
 def test_bcorps_get_tasks_no_filings(session, client):
     """Assert that to-do for the current year is returned when there are no filings."""
     identifier = 'CP7654321'
@@ -84,6 +85,7 @@ def test_bcorps_get_tasks_no_filings(session, client):
 
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('tasks')) == 0  # To-do for the current year
+
 
 def test_get_tasks_current_year_filing_exists(session, client):
     """Assert that only the filing for the current year is returned when only current year filing exists."""
@@ -112,6 +114,7 @@ def test_get_tasks_prev_year_incomplete_filing_exists(session, client):
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('tasks')) == 2  # Previous year filing and a disabled to-do for current year.
 
+
 def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client):
     """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""
     identifier = 'CP7654321'
@@ -124,6 +127,7 @@ def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client):
 
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('tasks')) == 2  # Previous year filing and a disabled to-do for current year.
+
 
 def test_get_404_filing_with_invalid_business(session, client):
     """Assert that error is returned when business does not exist."""

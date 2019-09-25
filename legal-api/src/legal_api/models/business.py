@@ -16,6 +16,7 @@
 The Business class and Schema are held in this module
 """
 from datetime import datetime
+
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -86,9 +87,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             raise BusinessException('invalid-identifier-format', 406)
 
     @property
-    def nextAnniversary(self):
-        arFilings = Filing.get_filings_by_type(self.id, Filing.FilingType.AR.value)
-        count = len(arFilings)
+    def next_anniversary(self):
+        """Retrieve the next anniversary date for which an AR filing is due."""
+        ar_filings = Filing.get_filings_by_type(self.id, Filing.FilingType.AR.value)
+        count = len(ar_filings)
         return self.founding_date+relativedelta(years=count+1)
 
     @classmethod
@@ -145,7 +147,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'identifier': self.identifier,
             'lastModified': self.last_modified.isoformat(),
             'lastAnnualReport': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
-            'nextAnnualReport': self.nextAnniversary.isoformat(),
+            'nextAnnualReport': self.next_anniversary.isoformat(),
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
             'legalName': self.legal_name,
@@ -188,7 +190,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
                 return False
         except ValueError:
             return False
-         #TODO This is not correct for entity types that are not Coops
+        # TODO This is not correct for entity types that are not Coops
         if identifier[:-7] not in ('CP', 'XCP'):
             return False
 
