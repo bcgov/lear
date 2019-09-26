@@ -18,8 +18,8 @@ Test-Suite to ensure that the Business Model is working as expected.
 """
 from datetime import datetime
 
-import pytest
 import datedelta
+import pytest
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business
