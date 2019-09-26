@@ -15,16 +15,17 @@
 
 Provides all the search and retrieval from the business filings datastore.
 """
-from datetime import date, datetime
-import datedelta
+from datetime import datetime
 from http import HTTPStatus
 
+import datedelta
 from flask import jsonify
 from flask_restplus import Resource, cors
 
 from legal_api.models import Business, Filing
-from legal_api.utils.util import cors_preflight
 from legal_api.services.filings import validations
+from legal_api.utils.util import cors_preflight
+
 from .api_namespace import API
 
 
@@ -44,28 +45,29 @@ class TaskListResource(Resource):
 
         rv = TaskListResource.construct_task_list(business)
         return jsonify(tasks=rv)
-    
-    """
-    Method to retrieve all current pending tasks to do. First retrieves filings that are 
-    either drafts, or incomplete, then populate AR filings that have not been started for
-    years that are due. 
-    
-    Rules for AR filings:
-        - Co-ops must file one AR per year. The next AR date must be AFTER the most recent
-          AGM date. The calendar year of the filing is the first contiguous year following
-          the last AGM date
 
-        - Corporations must file one AR per year, on or after the anniversary of the founding date 
-    """
     @staticmethod
     def construct_task_list(business):
+        """
+        Return all current pending tasks to do.
+
+        First retrieves filings that are either drafts, or incomplete,
+        then populate AR filings that have not been started for
+        years that are due.
+
+        Rules for AR filings:
+            - Co-ops must file one AR per year. The next AR date must be AFTER the most recent
+              AGM date. The calendar year of the filing is the first contiguous year following
+              the last AGM date
+
+            - Corporations must file one AR per year, on or after the anniversary of the founding date
+        """
         tasks = []
         order = 1
-        checkAgm = validations.annual_report.RequiresAGM(business)
+        check_agm = validations.annual_report.requires_agm(business)
         # If no filings exist in legal API db this year will be used as the start year.
-        todo_start_date = (datetime(2019,1,1)).date() if checkAgm else business.nextAnniversary.date()  
-       
-        
+        todo_start_date = (datetime(2019, 1, 1)).date() if check_agm else business.next_anniversary.date()
+
         # Retrieve filings that are either incomplete, or drafts
         pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
                                                                      Filing.Status.PENDING.value,
@@ -81,20 +83,20 @@ class TaskListResource(Resource):
         annual_report_filings = Filing.get_filings_by_type(business.id, 'annualReport')
         if annual_report_filings:
             last_filing = annual_report_filings[0].filing_json['filing']['annualReport']
-                              
-            if checkAgm:
-                date = datetime.strptime(last_filing['annualGeneralMeetingDate'],'%Y-%m-%d')
-                todo_start_date=(datetime(date.year+1,1,1)).date()
+
+            if check_agm:
+                last_agm_date = datetime.strptime(last_filing['annualGeneralMeetingDate'], '%Y-%m-%d')
+                todo_start_date = (datetime(last_agm_date.year+1, 1, 1)).date()
             else:
-                todo_start_date = business.nextAnniversary.date()
+                todo_start_date = business.next_anniversary.date()
 
         start_year = todo_start_date.year
 
         while todo_start_date <= datetime.now().date():
-                enabled = not pending_filings and todo_start_date.year == start_year
-                tasks.append(TaskListResource.create_todo(business, todo_start_date.year, order, enabled))
-                todo_start_date += datedelta.YEAR
-                order += 1
+            enabled = not pending_filings and todo_start_date.year == start_year
+            tasks.append(TaskListResource.create_todo(business, todo_start_date.year, order, enabled))
+            todo_start_date += datedelta.YEAR
+            order += 1
         return tasks
 
     @staticmethod
@@ -114,4 +116,4 @@ class TaskListResource(Resource):
             'order': order,
             'enabled': enabled
         }
-        return todo 
+        return todo
