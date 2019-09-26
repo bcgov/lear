@@ -14,6 +14,8 @@
 """Validation for the Change of Address filing."""
 from http import HTTPStatus
 from typing import Dict
+from collections import namedtuple
+import json 
 
 import pycountry
 from flask_babel import _
@@ -30,36 +32,30 @@ def validate(business: Business, cod: Dict) -> Error:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
     msg = []
 
-    # Check Delivery Address
-    da_region_path = '/filing/changeOfAddress/deliveryAddress/addressRegion'
-    if get_str(cod, da_region_path) != 'BC':
-        msg.append({'error': _("Address Region must be 'BC'."),
-                    'path': da_region_path})
+    offices_array = json.dumps(cod['filing']['changeOfAddress']['addresses'])
+    addresses = json.loads(offices_array, object_hook=_json_object_hook)
 
-    da_country_path = '/filing/changeOfAddress/deliveryAddress/addressCountry'
-    raw_da_country = get_str(cod, da_country_path)
-    try:
-        da_country = pycountry.countries.search_fuzzy(raw_da_country)[0].alpha_2
-        if da_country != 'CA':
-            raise LookupError
-    except LookupError:
-        msg.append({'error': _("Address Country must be 'CA'."),
-                    'path': da_country_path})
+    for item in addresses:
+        for address_obj in item.office.addresses:
+            region = address_obj.addressRegion
+            country = address_obj.addressCountry
 
-    ma_region_path = '/filing/changeOfAddress/mailingAddress/addressRegion'
-    if get_str(cod, ma_region_path) != 'BC':
-        msg.append({'error': _("Address Region must be 'BC'."),
-                    'path': ma_region_path})
+            if region != 'BC':
+                msg.append({'error': _("Address Region must be 'BC'."),
+                            'path': 'officeType: %s, addressType: %s' % (
+                             item.office.officeType, address_obj.addressType)})
 
-    ma_country_path = '/filing/changeOfAddress/mailingAddress/addressCountry'
-    raw_ma_country = get_str(cod, ma_country_path)
-    try:
-        ma_country = pycountry.countries.search_fuzzy(raw_ma_country)[0].alpha_2
-        if ma_country != 'CA':
-            raise LookupError
-    except LookupError:
-        msg.append({'error': _("Address Country must be 'CA'."),
-                    'path': ma_country_path})
-    if msg:
-        return Error(HTTPStatus.BAD_REQUEST, msg)
+            try:
+                country = pycountry.countries.search_fuzzy(country)[0].alpha_2
+                if country != 'CA':
+                    raise LookupError
+            except LookupError:
+                msg.append({'error': _("Address Country must be 'CA'."),
+                            'path': ('officeType: %s, addressCountry: %s' % (
+                             item.office.officeType, address_obj.addressCountry))})
+            if msg:
+                return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
+
+
+def _json_object_hook(d): return namedtuple('X', d.keys())(*d.values())

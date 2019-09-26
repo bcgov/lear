@@ -31,6 +31,11 @@
         "deliveryInstructions": {
             "type": "string",
             "maxLength": 80
+        },
+        "addressType": {
+            "type": "string",
+            "maxLength": 80,
+            "enum":["delivery", "mailing"]
         }
     },
     "required": [

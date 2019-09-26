@@ -1,5 +1,4 @@
 {
-    "definitions": {},
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "https://bcrs.gov.bc.ca/.well_known/schemas/change_of_address",
     "required": [
@@ -25,35 +24,47 @@
             "required": [
                 "actions"
             ]
-        }
-    },
-    "properties": {
-        "changeOfAddress": {
+        },
+        "office": {
             "type": "object",
-            "required": [
-                "deliveryAddress",
-                "mailingAddress"
-            ],
             "properties": {
-                "deliveryAddress": {
-                    "allOf": [
-                        {
-                            "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
-                        },
-                        {
-                            "$ref": "#/definitions/actions"
-                        }
-                    ]
+                "officeType": {
+                    "type": "string",
+                    "maxLength": 75
                 },
-                "mailingAddress": {
-                    "allOf": [
-                        {
-                            "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
-                        },
-                        {
-                            "$ref": "#/definitions/actions"
+                "addresses": {
+                    "type": "array",
+                    "items": {
+                        "allOf": [
+                            {
+                                "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
+                            }
+                        ]
+                    }
+                }
+            },
+            "required": ["officeType", "addresses"]
+        },
+        "properties": {
+            "changeOfAddress": {
+                "type": "object",
+                "required": [
+                    "addresses"
+                ],
+                "properties": {
+                    "addresses": {
+                        "type": "array",
+                        "items": {
+                            "allOf": [
+                                {
+                                    "$ref": "#definitions/office"
+                                },
+                                {
+                                    "$ref": "#definitions/actions"
+                                }
+                            ]
                         }
-                    ]
+                    }
                 }
             }
         }
