@@ -140,7 +140,8 @@ class ListFilingResource(Resource):
 
         # create invoice ??
         if not draft:
-            err_msg, err_code = ListFilingResource._create_invoice(business, filing, jwt)
+            filing_types = ListFilingResource._get_filing_types(filing.filing_json)
+            err_msg, err_code = ListFilingResource._create_invoice(business, filing, filing_types, jwt)
             if err_code:
                 reply = filing.json
                 reply['errors'] = [err_msg, ]
@@ -286,8 +287,36 @@ class ListFilingResource(Resource):
         return errors, HTTPStatus.BAD_REQUEST
 
     @staticmethod
+    def _get_filing_types(filing_json: dict):
+        """Get the filing type fee codes for the filing.
+
+        Returns: {
+            list: a list, filing type fee codes in the filing
+        }
+        """
+        filing_types = []
+        for k in filing_json['filing'].keys():
+            # check if changeOfDirectors is a free filing
+            if k == 'changeOfDirectors':
+                free = True
+                free_changes = ['nameChanged', 'addressChanged']
+                for director in filing_json['filing'][k].get('directors'):
+                    # if changes other than name/address change then this is not a free filing
+                    if not all(change in free_changes for change in director.get('actions', [])):
+                        free = False
+                        break
+                filing_types.append({
+                    # this is the temporary free filing code
+                    'filingTypeCode': 'OTCGM' if free else Filing.FILINGS[k].get('code')
+                })
+            elif Filing.FILINGS.get(k, None):
+                filing_types.append({'filingTypeCode': Filing.FILINGS[k].get('code')})
+        return filing_types
+
+    @staticmethod
     def _create_invoice(business: Business,
                         filing: Filing,
+                        filing_types: list,
                         user_jwt: JwtManager) \
             -> Tuple[int, dict, int]:
         """Create the invoice for the filing submission.
@@ -299,12 +328,6 @@ class ListFilingResource(Resource):
         }
         """
         payment_svc_url = current_app.config.get('PAYMENT_SVC_URL')
-
-        filing_types = []
-        for k in filing.filing_json['filing'].keys():
-            if Filing.FILINGS.get(k, None):
-                filing_types.append({'filingTypeCode': Filing.FILINGS[k].get('code')})
-
         mailing_address = business.mailing_address.one_or_none()
 
         payload = {
@@ -323,7 +346,6 @@ class ListFilingResource(Resource):
                 'filingTypes': filing_types
             }
         }
-
         try:
             token = user_jwt.get_token_auth_header()
             headers = {'Authorization': 'Bearer ' + token}

@@ -22,10 +22,12 @@ from http import HTTPStatus
 
 import datedelta
 from flask import current_app
-from registry_schemas.example_data import ANNUAL_REPORT
+from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS, FILING_HEADER
 
-from legal_api.services.authz import BASIC_USER, STAFF_ROLE
-from tests import integration_payment
+from legal_api.resources.business.business_filings import Filing, ListFilingResource
+from legal_api.services import QueueService
+from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE
+from tests import integration_nats, integration_payment
 from tests.unit.services.utils import create_header
 from tests.unit.models import factory_business_mailing_address, factory_business, factory_completed_filing, factory_filing  # noqa:E501,I001
 
@@ -265,7 +267,7 @@ def test_post_only_validate_error_ar(session, client, jwt):
 
 @integration_payment
 def test_post_valid_ar(session, client, jwt):
-    """Assert that a unpaid filing can be posted."""
+    """Assert that a filing can be completed up to payment."""
     from legal_api.models import Filing
     identifier = 'CP7654321'
     business = factory_business(identifier,
@@ -565,3 +567,38 @@ def test_calc_annual_report_date(session, client, jwt):
     b = factory_business(identifier, (datetime.utcnow()-datedelta.YEAR), None, 'B')
     factory_business_mailing_address(b)
     assert b.next_anniversary.date().isoformat() == datetime.utcnow().date().isoformat()
+
+
+def test_get_correct_fee_codes(session):
+    """Assert fee codes are properly assigned to filings before sending to payment."""
+    import copy
+
+    # set filings
+    ar = ANNUAL_REPORT
+    coa = copy.deepcopy(FILING_HEADER)
+    coa['filing']['header']['name'] = 'changeOfAddress'
+    coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+    cod = copy.deepcopy(FILING_HEADER)
+    cod['filing']['header']['name'] = 'changeOfDirectors'
+    cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+    assert len(cod['filing']['changeOfDirectors']['directors']) > 1
+    cod['filing']['changeOfDirectors']['directors'][0]['actions'] = ['ceased', 'nameChanged']
+    cod['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
+    free_cod = copy.deepcopy(FILING_HEADER)
+    free_cod['filing']['header']['name'] = 'changeOfDirectors'
+    free_cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+    for director in free_cod['filing']['changeOfDirectors']['directors']:
+        if not all(action in ['nameChanged', 'addressChanged'] for action in director.get('actions', [])):
+            director['actions'] = ['nameChanged', 'addressChanged']
+
+    # get fee codes
+    ar_fee_code = ListFilingResource._get_filing_types(ar)[0]['filingTypeCode']
+    coa_fee_code = ListFilingResource._get_filing_types(coa)[0]['filingTypeCode']
+    cod_fee_code = ListFilingResource._get_filing_types(cod)[0]['filingTypeCode']
+    free_cod_fee_code = ListFilingResource._get_filing_types(free_cod)[0]['filingTypeCode']
+
+    # test fee codes
+    assert ar_fee_code == Filing.FILINGS['annualReport'].get('code')
+    assert coa_fee_code == Filing.FILINGS['changeOfAddress'].get('code')
+    assert cod_fee_code == Filing.FILINGS['changeOfDirectors'].get('code')
+    assert free_cod_fee_code == 'OTCGM'
