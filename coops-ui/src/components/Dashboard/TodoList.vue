@@ -405,7 +405,7 @@ export default {
     async doDeleteDraft (item) {
       let url = this.entityIncNo + '/filings/' + item.id
       await axios.delete(url).then(res => {
-        if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
+        if (!res) { throw new Error('invalid API response') }
 
         // reload dashboard
         this.setTriggerDashboardReload(true)
