@@ -9,9 +9,10 @@
         <div class="list-item__subtitle">
           <ul class="address-details">
             <li>{{ director.deliveryAddress.streetAddress }}</li>
+            <li class="pre-wrap" v-html="director.deliveryAddress.streetAddressAdditional"></li>
             <li>{{ director.deliveryAddress.addressCity }} {{ director.deliveryAddress.addressRegion }}
               &nbsp;&nbsp;{{ director.postalCode}}</li>
-            <li>{{ director.deliveryAddress.addressCountry }}</li>
+            <li>{{ getCountryName(director.deliveryAddress.addressCountry) }}</li>
             </ul>
         </div>
       </div>
@@ -22,8 +23,10 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
 import { mapState } from 'vuex'
+import CountriesProvincesMixin from '@/mixins/countries-provinces-mixin'
 
 @Component({
+  mixins: [CountriesProvincesMixin],
   computed: {
     ...mapState(['directors'])
   }
@@ -58,4 +61,7 @@ export default class DirectorListSm extends Vue {
   .card .list-item
     flex 0 0 33.333333%
     border none
+
+  .pre-wrap
+    white-space pre-wrap
 </style>
