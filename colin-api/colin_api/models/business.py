@@ -71,8 +71,8 @@ class Business:
                 join filing on event.event_id = filing.event_id
                 where corp_typ_cd = 'CP'
                 and corp.CORP_NUM=:corp_num
-                and filing.filing_typ_cd in ('OTANN', 'OTINC')
-                order by event.event_timestmp desc""", corp_num=identifier)
+                and filing.filing_typ_cd = 'OTANN'
+                order by filing.period_end_dt desc""", corp_num=identifier)
             business = cursor.fetchone()
 
             if not business:
