@@ -36,7 +36,7 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex'
+import { mapActions, mapState } from 'vuex'
 import DateMixin from '@/mixins/date-mixin'
 import axios from '@/axios-auth'
 import DashboardUnavailableDialog from '@/components/Dashboard/DashboardUnavailableDialog.vue'
@@ -67,6 +67,8 @@ export default {
   },
 
   computed: {
+    ...mapState(['triggerDashboardReload']),
+
     authAPIURL () {
       return sessionStorage.getItem('AUTH_API_URL')
     }
@@ -81,7 +83,7 @@ export default {
     ...mapActions(['setKeycloakRoles', 'setAuthRoles', 'setBusinessEmail', 'setBusinessPhone',
       'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityStatus', 'setEntityBusinessNo',
       'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate', 'setTasks',
-      'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors']),
+      'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors', 'setTriggerDashboardReload']),
 
     fetchData () {
       let businessId
@@ -313,6 +315,13 @@ export default {
       // (does not fire on initial dashboard load)
       if (this.$route.name === 'dashboard') {
         this.fetchData()
+      }
+    },
+
+    triggerDashboardReload (val) {
+      if (val) {
+        this.fetchData()
+        this.setTriggerDashboardReload(false)
       }
     }
   }
