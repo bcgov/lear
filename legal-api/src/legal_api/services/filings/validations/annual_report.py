@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Annual Report filing."""
-from datetime import date, datetime
+from datetime import datetime
 from http import HTTPStatus
 from typing import Dict, List, Tuple
 
 import datedelta
-from flask import current_app
 from flask_babel import _
 
 from legal_api.errors import Error
@@ -129,10 +128,11 @@ def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, 
                                     'The business will be dissolved, unless an extension and an AGM are held.'),
                        'path': 'filing/annualReport/annualGeneralMeetingDate'}])
 
-    if agm_date and agm_date < datetime.date(business.last_ledger_timestamp):
+    last_filing_date = datetime.date(business.last_ledger_timestamp)
+    if agm_date and agm_date < last_filing_date:
         return Error(HTTPStatus.BAD_REQUEST,
                      [{'error': 'Annual General Meeting Date is before a previous filing filed on '
-                                f'{business.last_ledger_timestamp}, so it must be submitted as a paper-filing.',
+                                f'{last_filing_date}, so it must be submitted as a paper-filing.',
                        'path': 'filing/annualReport/annualGeneralMeetingDate'}])
 
     return None
