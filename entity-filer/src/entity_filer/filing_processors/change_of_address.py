@@ -16,10 +16,20 @@ from legal_api.models import Business, Filing
 
 from entity_filer.filing_processors import update_address
 
+import json
+
 
 def process(business: Business, filing: Filing):
     """Render the change_of_address onto the business model objects."""
-    delivery_address = filing['changeOfAddress'].get('deliveryAddress')
-    update_address(business.delivery_address.one_or_none(), delivery_address)
-    mailing_address = filing['changeOfAddress'].get('mailingAddress')
-    update_address(business.mailing_address.one_or_none(), mailing_address)
+    offices_array = json.dumps(filing['changeOfAddress']['offices'])
+    addresses = json.loads(offices_array)
+
+    for item in addresses.keys():
+        office = business.offices.filter_by(office_type=item).one_or_none()
+        for k, new_address in addresses[item].items():
+            address = office.addresses.filter_by(address_type=k).one_or_none()
+            update_address(address, new_address)
+    # delivery_address = filing['changeOfAddress'].get('deliveryAddress')
+    # update_address(business.delivery_address.one_or_none(), delivery_address)
+    # mailing_address = filing['changeOfAddress'].get('mailingAddress')
+    # update_address(business.mailing_address.one_or_none(), mailing_address)

@@ -72,7 +72,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
                                        primaryjoin='and_(Business.id==Address.business_id, '
                                        f"Address.address_type=='{Address.DELIVERY}')")
     directors = db.relationship('Director', lazy='dynamic')
-    offices = db.relationship('Office')
+    offices = db.relationship('Office', lazy='dynamic')
     @hybrid_property
     def identifier(self):
         """Return the unique business identifier."""
