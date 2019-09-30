@@ -537,9 +537,8 @@ def test_file_ar_no_agm_coop(session, client, jwt):
                      )
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0]['error'] == ('Annual General MeetingDate must be a '
+    assert rv.json['errors'][0]['error'] == ('Annual General Meeting Date must be a '
                                              'valid date when submitting an Annual Report in the current year.')
-
 
 
 def test_file_ar_no_agm_bcorp(session, client, jwt):

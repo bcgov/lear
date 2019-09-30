@@ -38,15 +38,14 @@ def validate(business: Business, filing_json: Dict) -> Error:
             # The type of this Filing exists in the JSON, determine which
             # one it is (Annual Report, Change of Address, or Change of Directors)
             # and validate against the appropriate logic
-            filing_type = Filing.FILINGS[k].get('name')
 
-            if filing_type == Filing.FilingType.AR.value:
+            if k == Filing.FILINGS['annualReport'].get('name'):
                 err = annual_report_validate(business, filing_json)
 
-            elif filing_type == Filing.FilingType.COA.value:
+            elif k == Filing.FILINGS['changeOfAddress'].get('name'):
                 err = coa_validate(business, filing_json)
 
-            elif filing_type == Filing.FilingType.COD.value:
+            elif k == Filing.FILINGS['changeOfDirectors'].get('name'):
                 err = cod_validate(business, filing_json)
 
             if err:

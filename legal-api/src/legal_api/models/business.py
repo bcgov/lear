@@ -17,7 +17,7 @@ The Business class and Schema are held in this module
 """
 from datetime import datetime
 
-from dateutil.relativedelta import relativedelta
+import datedelta
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -58,6 +58,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
+
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
 
@@ -89,9 +90,11 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     @property
     def next_anniversary(self):
         """Retrieve the next anniversary date for which an AR filing is due."""
-        ar_filings = Filing.get_filings_by_type(self.id, Filing.FilingType.AR.value)
-        count = len(ar_filings)
-        return self.founding_date+relativedelta(years=count+1)
+        last_anniversary = self.founding_date
+        if self.last_ar_date:
+            last_anniversary = self.last_ar_date
+
+        return last_anniversary+datedelta.datedelta(years=1)
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):
