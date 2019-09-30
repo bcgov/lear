@@ -58,7 +58,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    
+
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
 
@@ -90,10 +90,11 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     @property
     def next_anniversary(self):
         """Retrieve the next anniversary date for which an AR filing is due."""
+        last_anniversary = self.founding_date
         if self.last_ar_date:
-            return self.last_ar_date+datedelta.datedelta(years=1)
-        else:
-            return self.founding_date+datedelta.datedelta(years=1)
+            last_anniversary = self.last_ar_date
+
+        return last_anniversary+datedelta.datedelta(years=1)
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):
@@ -169,6 +170,16 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             d['taxId'] = self.tax_id
 
         return d
+
+    @classmethod
+    def get_filing_by_id(cls, business_identifier: int, filing_id: str):
+        """Return the filings for a specific business and filing_id."""
+        filing = db.session.query(Business, Filing). \
+            filter(Business.id == Filing.business_id). \
+            filter(Business.identifier == business_identifier). \
+            filter(Filing.id == filing_id). \
+            one_or_none()
+        return None if not filing else filing[1]
 
     @staticmethod
     def validate_identifier(identifier: str) -> bool:

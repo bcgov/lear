@@ -30,6 +30,7 @@ from sqlalchemy_continuum import versioning_manager
 from legal_api.exceptions import BusinessException
 from legal_api.models import Filing, User
 from tests import EPOCH_DATETIME
+from tests.conftest import not_raises
 from tests.unit.models import factory_business, factory_filing
 
 
@@ -48,18 +49,60 @@ def test_minimal_filing_json(session):
     assert filing.id is not None
 
 
-def test_filing_block_orm_delete(session):
+def test_filing_orm_delete_allowed_for_in_progress_filing(session):
     """Assert that attempting to delete a filing will raise a BusinessException."""
     from legal_api.exceptions import BusinessException
 
     b = factory_business('CP1234567')
 
-    data = {'filing': 'not a real filing, fail validation'}
+    filing = Filing()
+    filing.business_id = b.id
+    filing.filing_date = datetime.datetime.utcnow()
+    filing.filing_json = ANNUAL_REPORT
+    filing.save()
+
+    with not_raises(BusinessException):
+        session.delete(filing)
+        session.commit()
+
+
+def test_filing_orm_delete_blocked_if_invoiced(session):
+    """Assert that attempting to delete a filing will raise a BusinessException."""
+    from legal_api.exceptions import BusinessException
+
+    b = factory_business('CP1234567')
 
     filing = Filing()
     filing.business_id = b.id
     filing.filing_date = datetime.datetime.utcnow()
-    filing.filing_data = json.dumps(data)
+    filing.filing_json = ANNUAL_REPORT
+    filing.payment_token = 'a token'
+    filing.save()
+
+    with pytest.raises(BusinessException) as excinfo:
+        session.delete(filing)
+        session.commit()
+
+    assert excinfo.value.status_code == HTTPStatus.FORBIDDEN
+    assert excinfo.value.error == 'Deletion not allowed.'
+
+
+def test_filing_orm_delete_blocked_if_completed(session):
+    """Assert that attempting to delete a filing will raise a BusinessException."""
+    from legal_api.exceptions import BusinessException
+
+    uow = versioning_manager.unit_of_work(session)
+    transaction = uow.create_transaction(session)
+
+    b = factory_business('CP1234567')
+
+    filing = Filing()
+    filing.business_id = b.id
+    filing.filing_date = datetime.datetime.utcnow()
+    filing.filing_json = ANNUAL_REPORT
+    filing.payment_token = 'a token'
+    filing.payment_completion_date = datetime.datetime.utcnow()
+    filing.transaction_id = transaction.id
     filing.save()
 
     with pytest.raises(BusinessException) as excinfo:
@@ -83,18 +126,6 @@ def test_filing_json(session):
     assert filing.id
     assert filing.json['filing']['business'] == ANNUAL_REPORT['filing']['business']
     assert filing.json['filing']['annualReport'] == ANNUAL_REPORT['filing']['annualReport']
-
-
-def test_filing_delete_is_blocked(session):
-    """Assert that an AR filing can be saved."""
-    b = factory_business('CP1234567')
-    filing = factory_filing(b, ANNUAL_REPORT)
-
-    with pytest.raises(BusinessException) as excinfo:
-        filing.delete()
-
-    assert excinfo.value.status_code == HTTPStatus.FORBIDDEN
-    assert excinfo.value.error == 'Deletion not allowed.'
 
 
 def test_filing_missing_name(session):

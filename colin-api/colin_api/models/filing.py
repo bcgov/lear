@@ -309,7 +309,7 @@ class Filing:
             cursor.execute("""
             INSERT INTO filing_user (event_id, user_id, last_nme, first_nme, middle_nme, email_addr, party_typ_cd,
             role_typ_cd)
-              VALUES (:event_id, NULL, :last_name, NULL, NULL, :email_address, NULL, NULL)
+              VALUES (:event_id, 'COOPER', :last_name, NULL, NULL, :email_address, NULL, NULL)
             """,
                            event_id=event_id,
                            last_name=filing.get_certified_by(),

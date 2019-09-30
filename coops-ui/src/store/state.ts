@@ -26,5 +26,7 @@ export default {
   deliveryAddress: null,
   directors: [],
 
+  triggerDashboardReload: false,
+
   currentFilingStatus: null
 }

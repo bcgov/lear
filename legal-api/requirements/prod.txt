@@ -14,6 +14,7 @@ datedelta
 dpath
 gunicorn
 jsonschema
+launchdarkly-server-sdk
 marshmallow<3
 marshmallow-sqlalchemy
 psycopg2-binary

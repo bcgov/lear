@@ -64,5 +64,8 @@ export default {
   },
   directors (state, directors) {
     state.directors = directors
+  },
+  triggerDashboardReload (state, value) {
+    state.triggerDashboardReload = value
   }
 }
