@@ -60,9 +60,9 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', '')
-    AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', '')
-    REPORT_SVC_URL = os.getenv('REPORT_SVC_URL', '')
+    PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', 'http://')
+    AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'http://')
+    REPORT_SVC_URL = os.getenv('REPORT_SVC_URL', 'http://')
 
     GO_LIVE_DATE = os.getenv('GO_LIVE_DATE')
 
