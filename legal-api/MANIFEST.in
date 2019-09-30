@@ -4,3 +4,4 @@ include gunicorn_config.py
 include logging.conf
 include LICENSE
 include README.md
+include config

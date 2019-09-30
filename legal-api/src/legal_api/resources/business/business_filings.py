@@ -295,7 +295,7 @@ class ListFilingResource(Resource):
             rv = requests.post(url=payment_svc_url,
                                json=payload,
                                headers=headers,
-                               timeout=5.0)
+                               timeout=20.0)
         except (exceptions.ConnectionError, exceptions.Timeout) as err:
             current_app.logger.error(f'Payment connection failure for {business.identifier}: filing:{filing.id}', err)
             return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED

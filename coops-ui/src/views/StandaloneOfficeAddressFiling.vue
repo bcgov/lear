@@ -9,7 +9,7 @@
 
     <SaveErrorDialog
       :dialog="saveErrorDialog"
-      :disableRetry="filingPaying"
+      :disableRetry="busySaving"
       :errors="saveErrors"
       :warnings="saveWarnings"
       @exit="navigateToDashboard"
@@ -69,13 +69,13 @@
       <v-container id="buttons-container" class="list-item">
         <div class="buttons-left">
           <v-btn id="coa-save-btn" large
-            :disabled="!saveAsDraftEnabled || saving"
+            :disabled="!saveAsDraftEnabled || busySaving"
             :loading="saving"
             @click="onClickSave">
             Save
           </v-btn>
           <v-btn id="coa-save-resume-btn" large
-            :disabled="!saveAsDraftEnabled || savingResuming"
+            :disabled="!saveAsDraftEnabled || busySaving"
             :loading="savingResuming"
             @click="onClickSaveResume">
             Save &amp; Resume Later
@@ -91,7 +91,7 @@
               large
               :depressed="isRoleStaff"
               :ripple="!isRoleStaff"
-              :disabled="!validated || filingPaying"
+              :disabled="!validated || busySaving"
               :loading="filingPaying"
               @click="onClickFilePay">
               File &amp; Pay
@@ -167,6 +167,10 @@ export default {
 
     validated () {
       return (this.isCertified && this.officeAddressFormValid && this.filingData.length > 0)
+    },
+
+    busySaving () {
+      return this.saving || this.savingResuming || this.filingPaying
     },
 
     saveAsDraftEnabled () {
@@ -302,6 +306,9 @@ export default {
     },
 
     async onClickSave () {
+      // prevent double saving
+      if (this.busySaving) return
+
       this.saving = true
       const filing = await this.saveFiling(true)
       if (filing) {
@@ -311,6 +318,9 @@ export default {
     },
 
     async onClickSaveResume () {
+      // prevent double saving
+      if (this.busySaving) return
+
       this.savingResuming = true
       const filing = await this.saveFiling(true)
       // on success, redirect to Home URL
@@ -324,6 +334,9 @@ export default {
     async onClickFilePay () {
       // staff are not allowed to file
       if (this.isRoleStaff) return false
+
+      // prevent double saving
+      if (this.busySaving) return true
 
       this.filingPaying = true
       const filing = await this.saveFiling(false)
