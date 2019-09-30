@@ -160,6 +160,16 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
         return d
 
+    @classmethod
+    def get_filing_by_id(cls, business_identifier: int, filing_id: str):
+        """Return the filings for a specific business and filing_id."""
+        filing = db.session.query(Business, Filing). \
+            filter(Business.id == Filing.business_id). \
+            filter(Business.identifier == business_identifier). \
+            filter(Filing.id == filing_id). \
+            one_or_none()
+        return None if not filing else filing[1]
+
     @staticmethod
     def validate_identifier(identifier: str) -> bool:
         """Validate the identifier meets the Registry naming standards.

@@ -369,6 +369,73 @@ def test_update_draft_ar(session, client, jwt):
     assert rv.json['filing']['header']['filingId'] == filings.id
 
 
+def test_delete_filing_in_draft(session, client, jwt):
+    """Assert that a draft filing can be deleted."""
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    filings = factory_filing(b, ANNUAL_REPORT)
+    headers = create_header(jwt, [STAFF_ROLE], identifier)
+
+    rv = client.delete(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
+                       headers=headers
+                       )
+
+    assert rv.status_code == HTTPStatus.OK
+
+
+def test_delete_filing_block_completed(session, client, jwt):
+    """Assert that a completed filing cannot be deleted."""
+    import copy
+    identifier = 'CP7654321'
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+
+    filings = factory_completed_filing(business, ar)
+
+    rv = client.delete(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
+                       headers=create_header(jwt, [STAFF_ROLE], identifier)
+                       )
+
+    assert rv.status_code == HTTPStatus.FORBIDDEN
+
+
+def test_delete_filing_no_filing_id(client, jwt):
+    """Assert that a call without an ID is a BAD_REQUEST."""
+    identifier = 'CP7654321'
+    rv = client.delete(f'/api/v1/businesses/{identifier}/filings',
+                       headers=create_header(jwt, [STAFF_ROLE], identifier)
+                       )
+
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_delete_filing_missing_filing_id(client, jwt):
+    """Assert that trying to delete a non-existant filing returns a 404."""
+    identifier = 'CP7654321'
+    rv = client.delete(f'/api/v1/businesses/{identifier}/filings/bob',
+                       headers=create_header(jwt, [STAFF_ROLE], identifier)
+                       )
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_delete_filing_not_authorized(session, client, jwt):
+    """Assert that a users is authorized to delete a filing."""
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    filings = factory_filing(b, ANNUAL_REPORT)
+    headers = create_header(jwt, ['BAD ROLE'], identifier)
+
+    rv = client.delete(f'/api/v1/businesses/{identifier}/filings/{filings.id}', headers=headers)
+
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+
 def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
     """Assert that a valid filing can NOT be updated once it has been paid."""
     import copy

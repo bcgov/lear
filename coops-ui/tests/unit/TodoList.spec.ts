@@ -3,6 +3,8 @@ import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
 import VueRouter from 'vue-router'
 import { mount, createLocalVue } from '@vue/test-utils'
+import axios from '@/axios-auth'
+import sinon from 'sinon'
 
 import mockRouter from './mockRouter'
 import store from '@/store/store'
@@ -686,6 +688,157 @@ describe('TodoList - Click Tests', () => {
       // verify redirection
       const payURL = '/makepayment/987/' + encodeURIComponent('/dashboard?filing_id=789')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+      wrapper.destroy()
+      done()
+    })
+  })
+})
+
+describe('TodoList - Delete Draft', () => {
+  const { assign } = window.location
+  let deleteCall
+
+  beforeEach(async () => {
+    deleteCall = sinon.stub(axios, 'delete')
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  beforeAll(() => {
+    // mock the window.location.assign function
+    delete window.location
+    window.location = { assign: jest.fn() } as any
+  })
+
+  afterAll(() => {
+    window.location.assign = assign
+  })
+
+  it('shows confirmation popup when \'Delete Draft\' is clicked', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'DRAFT',
+              'filingId': 789
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(async () => {
+      const button = vm.$refs.draft_actions[0].$el.querySelector('#btn-delete-draft')
+      await button.click()
+
+      // verify confirmation popup is showing
+      expect(vm.$refs.confirm.dialog).toBeTruthy()
+
+      done()
+    })
+  })
+
+  it('calls DELETE API call when user clicks confirmation OK', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'DRAFT',
+              'filingId': 789
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(async () => {
+      const button = vm.$refs.draft_actions[0].$el.querySelector('#btn-delete-draft')
+      await button.click()
+
+      // verify confirmation popup is showing
+      expect(vm.$refs.confirm.dialog).toBeTruthy()
+
+      // click the OK button (call the 'yes' callback function)
+      await vm.$refs.confirm.onClickYes()
+
+      // confirm that delete API was called
+      expect(deleteCall.called).toBeTruthy()
+
+      wrapper.destroy()
+      done()
+    })
+  })
+
+  it('does not call DELETE API call when user clicks confirmation cancel', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'DRAFT',
+              'filingId': 789
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(async () => {
+      const button = vm.$refs.draft_actions[0].$el.querySelector('#btn-delete-draft')
+      await button.click()
+
+      // verify confirmation popup is showing
+      expect(vm.$refs.confirm.dialog).toBeTruthy()
+
+      // click the cancel button (call the 'cancel' callback function)
+      await vm.$refs.confirm.onClickCancel()
+
+      // confirm that delete API was not called
+      expect(deleteCall.called).toBeFalsy()
 
       wrapper.destroy()
       done()

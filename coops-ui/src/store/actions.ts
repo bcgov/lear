@@ -58,5 +58,8 @@ export default {
   },
   setDirectors ({ commit }, directors) {
     commit('directors', directors)
+  },
+  setTriggerDashboardReload ({ commit }, value) {
+    commit('triggerDashboardReload', value)
   }
 }
