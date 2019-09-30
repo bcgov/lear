@@ -32,18 +32,18 @@ def validate(business: Business, cod: Dict) -> Error:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
     msg = []
 
-    offices_array = json.dumps(cod['filing']['changeOfAddress']['addresses'])
-    addresses = json.loads(offices_array, object_hook=_json_object_hook)
+    offices_array = json.dumps(cod['filing']['changeOfAddress']['offices'])
+    addresses = json.loads(offices_array)
 
-    for item in addresses:
-        for address_obj in item.office.addresses:
-            region = address_obj.addressRegion
-            country = address_obj.addressCountry
+    for item in addresses.keys():
+        for k,v in addresses[item].items():
+            region = v['addressRegion']
+            country = v['addressCountry']
 
             if region != 'BC':
                 msg.append({'error': _("Address Region must be 'BC'."),
                             'path': 'officeType: %s, addressType: %s' % (
-                             item.office.officeType, address_obj.addressType)})
+                             item.office.officeType, v['addressType'])})
 
             try:
                 country = pycountry.countries.search_fuzzy(country)[0].alpha_2
@@ -52,7 +52,7 @@ def validate(business: Business, cod: Dict) -> Error:
             except LookupError:
                 msg.append({'error': _("Address Country must be 'CA'."),
                             'path': ('officeType: %s, addressCountry: %s' % (
-                             item.office.officeType, address_obj.addressCountry))})
+                             item.office.officeType, v['addressCountry']))})
             if msg:
                 return Error(HTTPStatus.BAD_REQUEST, msg)
     return None

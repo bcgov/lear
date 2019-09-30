@@ -4562,4 +4562,8 @@ ALTER TABLE ONLY public.addresses
 -- PostgreSQL database dump complete
 --
 insert into public.offices values (1,'registeredOffice',null,116);
+insert into public.offices values (2,'recordsOffice',null,116);
 update public.addresses set office_id =1 where business_id=116;
+
+insert into public.addresses (address_type , street, city, region, country, postal_code, business_id, office_id) values ('delivery', '103 - 13435 104 AVENUE', ' SURREY', 'BC', 'CA', 'V3T 5K6',  116, 2);
+insert into public.addresses (address_type , street, city, region, country, postal_code, business_id, office_id) values ('mailing', '103 - 13435 104 AVENUE', ' SURREY', 'BC', 'CA', 'V3T 5K6',  116, 2);

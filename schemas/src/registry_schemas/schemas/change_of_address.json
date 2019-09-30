@@ -4,69 +4,78 @@
     "required": [
         "changeOfAddress"
     ],
-    "type": "object",
-    "title": "Change of Address Filing",
     "definitions": {
-        "actions": {
+        "changeOfAddress": {
             "type": "object",
             "properties": {
-                "actions": {
-                    "type": "array",
-                    "title": "List of actions taken on an address",
-                    "items": {
-                        "type": "string",
-                        "enum": [
-                            "addressChanged"
-                        ]
-                    }
+                "legalType": {
+                    "type": "string"
                 }
             },
+            "if": {
+                "properties": {
+                    "legalType": {
+                        "const": "CP"
+                    }
+                },
+                "required": [
+                    "legalType"
+                ]
+            },
+            "then": {
+                "properties": {
+                    "offices": {
+                        "registeredOffice": {
+                            "$ref": "#/definitions/office"
+                        },
+                        "required": [
+                            "registeredOffice"
+                        ]
+                    }
+                },
+                "required": [
+                    "offices"
+                ]
+            },
+            "else": {
+                "properties": {
+                    "registeredOffice": {
+                        "$ref": "#/definitions/office"
+                    },
+                    "recordsOffice": {
+                        "$ref": "#/definitions/office"
+                    }
+                },
+                "required": [
+                    "registeredOffice", "recordsOffice"
+                ]
+            },
             "required": [
-                "actions"
+                "legalType"
             ]
         },
         "office": {
             "type": "object",
+            "required": [
+                "mailingAddress",
+                "deliveryAddress"
+            ],
             "properties": {
                 "officeType": {
-                    "type": "string",
-                    "maxLength": 75
+                    "type": "string"
                 },
-                "addresses": {
-                    "type": "array",
-                    "items": {
-                        "allOf": [
-                            {
-                                "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
-                            }
-                        ]
-                    }
-                }
-            },
-            "required": ["officeType", "addresses"]
-        },
-        "properties": {
-            "changeOfAddress": {
-                "type": "object",
-                "required": [
-                    "addresses"
-                ],
-                "properties": {
-                    "addresses": {
-                        "type": "array",
-                        "items": {
-                            "allOf": [
-                                {
-                                    "$ref": "#definitions/office"
-                                },
-                                {
-                                    "$ref": "#definitions/actions"
-                                }
-                            ]
-                        }
-                    }
+                "mailingAddress": {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
+                },
+                "deliveryAddress": {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
                 }
             }
+        }
+    },
+    "properties": {
+        "changeOfAddress": {
+            "$ref": "#/definitions/changeOfAddress"
         }
     }
 }
