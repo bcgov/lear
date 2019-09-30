@@ -144,7 +144,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
                 status_code=HTTPStatus.UNPROCESSABLE_ENTITY
             )
 
-        if self.payment_token:
+        if self._payment_token:
             valid, err = rsbc_schemas.validate(json_data, 'filing')
             if not valid:
                 self._filing_type = None
@@ -201,7 +201,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             json_submission['filing']['header']['colinId'] = self.colin_event_id
             json_submission['filing']['header']['status'] = self.status
 
-            if self.payment_token:
+            if self._payment_token:
                 json_submission['filing']['header']['paymentToken'] = self.payment_token
             if self.submitter_id:
                 json_submission['filing']['header']['submitter'] = self.filing_submitter.username

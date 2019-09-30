@@ -1,0 +1,7 @@
+{
+    "flagValues": {
+        "string-flag": "a string value",
+        "bool-flag": true,
+        "integer-flag": 10
+    }
+}

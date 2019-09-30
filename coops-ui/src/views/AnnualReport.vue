@@ -9,7 +9,7 @@
 
     <SaveErrorDialog
       :dialog="saveErrorDialog"
-      :disableRetry="filingPaying"
+      :disableRetry="busySaving"
       :errors="saveErrors"
       :warnings="saveWarnings"
       @exit="navigateToDashboard"
@@ -49,6 +49,8 @@
               </header>
               <AGMDate
                 :initialAgmDate="initialAgmDate"
+                :allowCOA="allowChange('coa')"
+                :allowCOD="allowChange('cod')"
                 @agmDate="agmDate=$event"
                 @noAGM="noAGM=$event"
                 @valid="agmDateValid=$event"
@@ -64,7 +66,7 @@
                 <p>Verify or change your Registered Office Addresses.</p>
               </header>
               <RegisteredOfficeAddress
-                :changeButtonDisabled="!agmDateValid"
+                :changeButtonDisabled="!allowChange('coa')"
                 :legalEntityNumber="entityIncNo"
                 :addresses.sync="addresses"
                 @modified="officeModifiedEventHandler($event)"
@@ -84,7 +86,7 @@
                 @allDirectors="allDirectors=$event"
                 @directorFormValid="directorFormValid=$event"
                 :asOfDate="agmDate"
-                :componentEnabled="agmDateValid"
+                :componentEnabled="allowChange('cod')"
               />
             </section>
 
@@ -118,14 +120,14 @@
         <div class="buttons-left">
           <v-btn id="ar-save-btn" large
             v-if="isAnnualReportEditable"
-            :disabled="!isSaveButtonEnabled || saving"
+            :disabled="!isSaveButtonEnabled || busySaving"
             :loading="saving"
             @click="onClickSave">
             Save
           </v-btn>
           <v-btn id="ar-save-resume-btn" large
             v-if="isAnnualReportEditable"
-            :disabled="!isSaveButtonEnabled || savingResuming"
+            :disabled="!isSaveButtonEnabled || busySaving"
             :loading="savingResuming"
             @click="onClickSaveResume">
             Save &amp; Resume Later
@@ -142,7 +144,7 @@
               large
               :depressed="isRoleStaff"
               :ripple="!isRoleStaff"
-              :disabled="!validated || filingPaying"
+              :disabled="!validated || busySaving"
               :loading="filingPaying"
               @click="onClickFilePay">
               File &amp; Pay
@@ -238,9 +240,9 @@ export default {
 
   computed: {
     ...mapState(['currentDate', 'ARFilingYear', 'lastAgmDate', 'entityName',
-      'entityIncNo', 'entityFoundingDate']),
+      'entityIncNo', 'entityFoundingDate', 'lastPreLoadFilingDate']),
 
-    ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState']),
+    ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState', 'lastCOAFilingDate', 'lastCODFilingDate']),
 
     annualReportDate () {
       // AR Filing Year, but as a date field with today's month and day
@@ -255,6 +257,10 @@ export default {
 
     validated () {
       return this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.certifyFormValid
+    },
+
+    busySaving () {
+      return this.saving || this.savingResuming || this.filingPaying
     },
 
     isSaveButtonEnabled () {
@@ -413,6 +419,9 @@ export default {
     },
 
     async onClickSave () {
+      // prevent double saving
+      if (this.busySaving) return
+
       this.saving = true
       const filing = await this.saveFiling(true)
       if (filing) {
@@ -422,6 +431,9 @@ export default {
     },
 
     async onClickSaveResume () {
+      // prevent double saving
+      if (this.busySaving) return
+
       this.savingResuming = true
       const filing = await this.saveFiling(true)
       // on success, route to Home URL
@@ -434,6 +446,9 @@ export default {
     async onClickFilePay () {
       // staff are not allowed to file
       if (this.isRoleStaff) return false
+
+      // prevent double saving
+      if (this.busySaving) return true
 
       this.filingPaying = true
       const filing = await this.saveFiling(false)
@@ -597,6 +612,19 @@ export default {
       this.saveErrorDialog = false
       this.saveErrors = []
       this.saveWarnings = []
+    },
+
+    allowChange (type) {
+      let earliestAllowedDate
+      if (type === 'coa') {
+        earliestAllowedDate = this.lastCOAFilingDate
+      } else if (type === 'cod') {
+        earliestAllowedDate = this.lastCODFilingDate
+      }
+      if (!earliestAllowedDate) {
+        earliestAllowedDate = this.lastPreLoadFilingDate
+      }
+      return this.agmDateValid && this.compareDates(this.agmDate, earliestAllowedDate, '>=')
     }
   },
 

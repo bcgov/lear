@@ -44,7 +44,7 @@ class Report:  # pylint: disable=too-few-public-methods
             'templateVars': self._get_template_data()
         }
 
-        response = requests.post(current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
+        response = requests.post(url=current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
 
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
@@ -156,13 +156,13 @@ class Report:  # pylint: disable=too-few-public-methods
         except KeyError:
             pass
 
-        filing['environment'] = '{} FILING #{}'.format(self._get_environment(), self._filing.id)
+        filing['environment'] = f'{self._get_environment()} FILING #{self._filing.id}'.lstrip()
 
         # Get the string for the filing date and time - do not use a leading zero on the hour (04:30 PM) as it looks
         # too much like the 24 hour 4:30 AM. Also, we can't use "%-I" on Windows.
         filing_datetime = self._filing.filing_date.replace(tzinfo=timezone.utc).astimezone(tz=None)
-        hour = filing_datetime.strftime('%I').lstrip('0')
-        filing['filing_date_time'] = filing_datetime.strftime('%B %d, %Y {}:%M %p Pacific Time'.format(hour))
+        # hour = filing_datetime.strftime('%I').lstrip('0')
+        filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {filing_datetime.hour}:%M %p Pacific Time')
 
         # Get the effective date - TODO 'effective date' doesn't exist yet but will in future; for now use filing date
         effective_date = self._filing.filing_date.replace(tzinfo=timezone.utc).astimezone(tz=None)

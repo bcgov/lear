@@ -31,21 +31,6 @@ cod_ids = []
 
 
 @oracle_integration
-def test_get_ar(client):
-    """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0001965/filings/annualReport')
-
-    assert 200 == rv.status_code
-    is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
-    if errors:
-        for err in errors:
-            print('\nERROR MESSAGE:')
-            print(err.message)
-
-    assert is_valid
-
-
-@oracle_integration
 def test_get_ar_no_results(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
     rv = client.get('/api/v1/businesses/CP0000000/filings/annualReport')
@@ -74,6 +59,21 @@ def test_post_ar(client):
 
     assert is_valid
     ar_ids.append(str(rv.json['filing']['annualReport']['eventId']))
+
+
+@oracle_integration
+def test_get_ar(client):
+    """Assert that the business info for regular (not xpro) business is correct to spec."""
+    rv = client.get('/api/v1/businesses/CP0001965/filings/annualReport')
+
+    assert 200 == rv.status_code
+    is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
+    if errors:
+        for err in errors:
+            print('\nERROR MESSAGE:')
+            print(err.message)
+
+    assert is_valid
 
 
 @oracle_integration

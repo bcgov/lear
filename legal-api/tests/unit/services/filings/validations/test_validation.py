@@ -36,7 +36,7 @@ def test_validate_ar_basic(session, test_name, now, ar_date, agm_date,
     # setup
     identifier = 'CP1234567'
     founding_date = ar_date - datedelta.YEAR
-    business = Business(identifier=identifier)
+    business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
     business.founding_date = founding_date
 
     ar = copy.deepcopy(ANNUAL_REPORT)
@@ -87,7 +87,7 @@ def test_validate_coa_basic(session, test_name, now, delivery_region, delivery_c
     # setup
     identifier = 'CP1234567'
     founding_date = now - datedelta.YEAR
-    business = Business(identifier=identifier)
+    business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
     business.founding_date = founding_date
 
     f = copy.deepcopy(FILING_HEADER)
@@ -126,7 +126,7 @@ def test_validate_cod_basic(session, test_name, now, delivery_country_1, deliver
     # setup
     identifier = 'CP1234567'
     founding_date = now - datedelta.YEAR
-    business = Business(identifier=identifier)
+    business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
     business.founding_date = founding_date
 
     f = copy.deepcopy(FILING_HEADER)

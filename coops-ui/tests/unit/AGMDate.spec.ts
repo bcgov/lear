@@ -602,4 +602,20 @@ describe('AGMDate', () => {
     // verify that there are no validation errors
     expect(vm.$el.querySelector('.validationErrorInfo')).toBeNull()
   })
+
+  it('Displays disabled address change message when allowCOA is false', () => {
+    wrapper.setProps({ allowCOA: false })
+    expect(vm.$el.querySelector('.validationErrorInfo').textContent.trim()).toContain(
+      'You can not change your Registered Office Addresses in this Annual Report')
+  })
+  it('Displays disabled director change message when allowCOD is false', () => {
+    wrapper.setProps({ allowCOD: false })
+    expect(vm.$el.querySelector('.validationErrorInfo').textContent.trim()).toContain(
+      'You can not change your Directors in this Annual Report')
+  })
+  it('Displays disabled address + director change message when allowCOA and allowCOD are both false', () => {
+    wrapper.setProps({ allowCOA: false, allowCOD: false })
+    expect(vm.$el.querySelector('.validationErrorInfo').textContent.trim()).toContain(
+      'You can not change your Registered Office Addresses or Directors in this Annual Report')
+  })
 })

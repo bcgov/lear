@@ -35,7 +35,7 @@ def test_validate(session, test_name, now, ar_date, agm_date,
     # setup
     identifier = 'CP1234567'
     founding_date = ar_date - datedelta.YEAR
-    business = Business(identifier=identifier)
+    business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
     business.founding_date = founding_date
 
     ar = copy.deepcopy(ANNUAL_REPORT)

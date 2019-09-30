@@ -72,7 +72,8 @@ class ListFilingResource(Resource):
 
         # Does it make sense to get a PDF of all filings?
         if str(request.accept_mimetypes) == 'application/pdf':
-            return 'Please specify a single filing', HTTPStatus.NOT_ACCEPTABLE
+            return jsonify({'message': _('Cannot return a single PDF of multiple filing submissions.')}),\
+                HTTPStatus.NOT_ACCEPTABLE
 
         rv = []
         go_live_date = datetime.date.fromisoformat(current_app.config.get('GO_LIVE_DATE'))
@@ -329,7 +330,7 @@ class ListFilingResource(Resource):
             rv = requests.post(url=payment_svc_url,
                                json=payload,
                                headers=headers,
-                               timeout=5.0)
+                               timeout=20.0)
         except (exceptions.ConnectionError, exceptions.Timeout) as err:
             current_app.logger.error(f'Payment connection failure for {business.identifier}: filing:{filing.id}', err)
             return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
