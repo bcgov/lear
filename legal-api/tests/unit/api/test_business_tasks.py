@@ -126,7 +126,7 @@ def test_get_tasks_prev_year_incomplete_filing_exists(session, client):
 def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client):
     """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""
     identifier = 'CP7654321'
-    b = factory_business(identifier, datetime.now()-relativedelta(years=2))
+    b = factory_business(identifier, datetime.now()-datedelta.datedelta(years=2))
     filings = factory_filing(b, AR_FILING_PREVIOUS_YEAR)
 
     print('test_get_all_business_filings - filing:', filings)
