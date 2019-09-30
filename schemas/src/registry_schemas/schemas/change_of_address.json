@@ -9,18 +9,17 @@
             "type": "object",
             "properties": {
                 "legalType": {
-                    "type": "string"
+                    "enum": ["CP", "BC"]
                 }
             },
+            "allOf": [
+                {
             "if": {
                 "properties": {
                     "legalType": {
                         "const": "CP"
                     }
-                },
-                "required": [
-                    "legalType"
-                ]
+                }
             },
             "then": {
                 "properties": {
@@ -36,20 +35,34 @@
                 "required": [
                     "offices"
                 ]
-            },
-            "else": {
+            }},
+            {
+            "if": {
                 "properties": {
-                    "registeredOffice": {
-                        "$ref": "#/definitions/office"
-                    },
-                    "recordsOffice": {
-                        "$ref": "#/definitions/office"
+                    "legalType": {
+                        "enum": ["BC"]
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "offices": {
+                        "registeredOffice": {
+                            "$ref": "#/definitions/office"
+                        },
+                        "recordsOffice": {
+                            "$ref": "#/definitions/office"
+                        },
+                        "required": [
+                            "registeredOffice"
+                        ]
                     }
                 },
                 "required": [
-                    "registeredOffice", "recordsOffice"
+                    "offices"
                 ]
-            },
+            }}
+        ],
             "required": [
                 "legalType"
             ]
