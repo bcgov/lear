@@ -19,6 +19,8 @@ import DateMixin from '@/mixins/date-mixin'
 export default {
   name: 'ARComplete',
   computed: {
+    mixins: [DateMixin],
+
     ...mapState(['ARFilingYear']),
 
     // dummy value for now

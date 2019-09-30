@@ -110,6 +110,114 @@ describe('AnnualReport - Part 1 - UI', () => {
     wrapper.destroy()
   })
 
+  it('disables address component when agm date < last COA', () => {
+    store.state.lastPreLoadFilingDate = '2019-02-10'
+    store.state.filings = [
+      {
+        'filing': {
+          'header': {
+            'name': 'changeOfAddress',
+            'date': '2019-05-06',
+            'paymentToken': 789,
+            'certifiedBy': 'Full Name 3',
+            'filingId': 987
+          },
+          'changeOfAddress': {
+          }
+        }
+      }
+    ]
+    const $route = { params: { id: '0' } } // new filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm: any = wrapper.vm
+    wrapper.setData({ agmDate: '2019-05-05' })
+
+    // set flags
+    vm.agmDateValid = true
+    vm.addressesFormValid = false
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
+
+    // confirm that address component disabled
+    expect(vm.allowChange('coa')).toBe(false)
+
+    wrapper.destroy()
+  })
+
+  it('disables address component when last COA is null and agm date < lastPreLoadFilingDate', () => {
+    store.state.lastPreLoadFilingDate = '2019-02-10'
+    store.state.filings = []
+    const $route = { params: { id: '0' } } // new filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm: any = wrapper.vm
+    wrapper.setData({ agmDate: '2019-02-09' })
+
+    // set flags
+    vm.agmDateValid = true
+    vm.addressesFormValid = false
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
+
+    // confirm that change address button is disabled
+    expect(vm.allowChange('coa')).toBe(false)
+
+    wrapper.destroy()
+  })
+
+  it('disables directors component agm date < lastCOD', () => {
+    store.state.lastPreLoadFilingDate = '2019-02-10'
+    store.state.filings = [
+      {
+        'filing': {
+          'header': {
+            'name': 'changeOfDirectors',
+            'date': '2019-05-06',
+            'paymentToken': 789,
+            'certifiedBy': 'Full Name 3',
+            'filingId': 987
+          },
+          'changeOfDirectors': {
+          }
+        }
+      }
+    ]
+    const $route = { params: { id: '0' } } // new filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm: any = wrapper.vm
+    wrapper.setData({ agmDate: '2019-05-05' })
+
+    // set flags
+    vm.agmDateValid = true
+    vm.addressesFormValid = false
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
+
+    // confirm that director component disabled
+    expect(vm.allowChange('cod')).toBe(false)
+
+    wrapper.destroy()
+  })
+
+  it('disables directors component when last COD is null and agm date < lastPreLoadFilingDate', () => {
+    store.state.lastPreLoadFilingDate = '2019-02-10'
+    store.state.filings = []
+    const $route = { params: { id: '0' } } // new filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const vm: any = wrapper.vm
+    wrapper.setData({ agmDate: '2019-02-09' })
+
+    // set flags
+    vm.agmDateValid = true
+    vm.addressesFormValid = false
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
+
+    // confirm that director component disabled
+    expect(vm.allowChange('cod')).toBe(false)
+
+    wrapper.destroy()
+  })
+
   it('disables Validated flag when Director Form is invalid', () => {
     const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
