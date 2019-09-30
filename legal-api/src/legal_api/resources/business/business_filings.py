@@ -22,6 +22,7 @@ from typing import Tuple
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
 from flask import current_app, g, jsonify, request
+from flask_babel import _
 from flask_jwt_oidc import JwtManager
 from flask_restplus import Resource, cors
 from werkzeug.local import LocalProxy
@@ -71,7 +72,8 @@ class ListFilingResource(Resource):
 
         # Does it make sense to get a PDF of all filings?
         if str(request.accept_mimetypes) == 'application/pdf':
-            return 'Please specify a single filing', HTTPStatus.NOT_ACCEPTABLE
+            return jsonify({'message': _('Cannot return a single PDF of multiple filing submissions.')}),\
+                HTTPStatus.NOT_ACCEPTABLE
 
         rv = []
         go_live_date = datetime.date.fromisoformat(current_app.config.get('GO_LIVE_DATE'))
