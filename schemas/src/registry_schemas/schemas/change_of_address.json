@@ -54,7 +54,7 @@
                             "$ref": "#/definitions/office"
                         },
                         "required": [
-                            "registeredOffice"
+                            "registeredOffice", "recordsOffice"
                         ]
                     }
                 },

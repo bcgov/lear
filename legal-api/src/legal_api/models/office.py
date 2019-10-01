@@ -32,7 +32,7 @@ class Office (db.Model):
     id = db.Column(db.Integer, primary_key=True)
     office_type = db.Column('office_type', db.String(75))
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
-    addresses = db.relationship('Address')
+    addresses = db.relationship('Address', lazy='dynamic')
     deactivated_date = db.Column('deactivated_date', db.DateTime(timezone=True), default=None)
 
     # relationships

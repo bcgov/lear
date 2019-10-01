@@ -96,7 +96,8 @@ CREATE TABLE public.addresses_version (
     business_id integer,
     transaction_id bigint NOT NULL,
     end_transaction_id bigint,
-    operation_type smallint NOT NULL
+    operation_type smallint NOT NULL,
+    office_id integer
 );
 
 
@@ -132,11 +133,7 @@ CREATE TABLE public.businesses (
     submitter_userid integer,
     last_agm_date timestamp with time zone,
     last_ledger_timestamp timestamp with time zone,
-<<<<<<< HEAD
-    legal_type character varying(10)
-=======
     legal_type  character varying(10)
->>>>>>> fix_linting_errors
 );
 
 
@@ -186,11 +183,7 @@ CREATE TABLE public.businesses_version (
     operation_type smallint NOT NULL,
     last_agm_date timestamp with time zone,
     last_ledger_timestamp timestamp with time zone,
-<<<<<<< HEAD
-    legal_type character varying(10)
-=======
     legal_type  character varying(10)
->>>>>>> fix_linting_errors
 );
 
 

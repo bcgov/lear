@@ -63,14 +63,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
-    mailing_address = db.relationship('Address',
-                                      lazy='dynamic',
-                                      primaryjoin='and_(Business.id==Address.business_id, '
-                                      f"Address.address_type=='{Address.MAILING}')")
-    delivery_address = db.relationship('Address',
-                                       lazy='dynamic',
-                                       primaryjoin='and_(Business.id==Address.business_id, '
-                                       f"Address.address_type=='{Address.DELIVERY}')")
+
     directors = db.relationship('Director', lazy='dynamic')
     offices = db.relationship('Office', lazy='dynamic')
     @hybrid_property
@@ -94,6 +87,19 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             last_anniversary = self.last_ar_date
 
         return last_anniversary+datedelta.datedelta(years=1)
+
+    @property
+    def mailing_address(self):
+        registered_office = db.session.query(Office).filter(Office.business_id == self.id).\
+            filter(Office.office_type == 'registeredOffice').one_or_none()
+        address = registered_office.addresses.filter(Address.address_type == 'mailing')
+        return address
+
+    def delivery_address(self):
+        registered_office = db.session.query(Office).filter(Office.business_id == self.id).\
+            filter(Office.office_type == 'registeredOffice').one_or_none()
+        address = registered_office.addresses.filter(Address.address_type == 'delivery')
+        return address
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):

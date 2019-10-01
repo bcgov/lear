@@ -42,10 +42,10 @@ def validate(business: Business, filing_json: Dict) -> Error:
             if k == Filing.FILINGS['annualReport'].get('name'):
                 err = annual_report_validate(business, filing_json)
 
-            elif filing_type == Filing.FilingType.COA.value :
+            elif k == Filing.FILINGS['changeOfAddress'].get('name'):
                 err = coa_validate(business, filing_json)
 
-            elif filing_type == Filing.FilingType.COD.value :
+            elif k == Filing.FILINGS['changeOfDirectors'].get('name'):
                 err = cod_validate(business, filing_json)
 
             if err:

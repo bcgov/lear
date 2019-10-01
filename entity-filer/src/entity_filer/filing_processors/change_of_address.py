@@ -22,11 +22,13 @@ import json
 def process(business: Business, filing: Filing):
     """Render the change_of_address onto the business model objects."""
     offices_array = json.dumps(filing['changeOfAddress']['offices'])
-    addresses = json.loads(offices_array)
+    # Only retrieve the offices component from the filing json
+    offices = json.loads(offices_array)
 
-    for item in addresses.keys():
+    for item in offices.keys():
         office = business.offices.filter_by(office_type=item).one_or_none()
-        for k, new_address in addresses[item].items():
+        for k, new_address in offices[item].items():
+            k = k.replace('Address', '')
             address = office.addresses.filter_by(address_type=k).one_or_none()
             update_address(address, new_address)
     # delivery_address = filing['changeOfAddress'].get('deliveryAddress')
