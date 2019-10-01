@@ -37,21 +37,6 @@ def test_get_business(client):
 
 
 @oracle_integration
-def test_get_business_missing_data(client):
-    """Assert that the business info for regular business with some missing data is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0000440')
-
-    assert 200 == rv.status_code
-    is_valid, errors = validate(rv.json, 'business', validate_schema=True)
-    if errors:
-        for err in errors:
-            print('\nERROR MESSAGE:')
-            print(err.message)
-
-    assert is_valid
-
-
-@oracle_integration
 def test_get_business_no_results(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
     rv = client.get('/api/v1/businesses/CP0000000')

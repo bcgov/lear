@@ -77,9 +77,9 @@ class FilingInfo(Resource):
 
             json_data = json_data.get('filing', None)
 
-            filing_list = {'annualReport': json_data.get('annualReport', None),
-                           'changeOfAddress': json_data.get('changeOfAddress', None),
-                           'changeOfDirectors': json_data.get('changeOfDirectors', None)}
+            filing_list = {'changeOfAddress': json_data.get('changeOfAddress', None),
+                           'changeOfDirectors': json_data.get('changeOfDirectors', None),
+                           'annualReport': json_data.get('annualReport', None)}
 
             # ensure that the business in the AR matches the business in the URL
             if identifier != json_data['business']['identifier']:

@@ -17,7 +17,7 @@ The Business class and Schema are held in this module
 """
 from datetime import datetime
 
-from dateutil.relativedelta import relativedelta
+import datedelta
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -87,10 +87,13 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             raise BusinessException('invalid-identifier-format', 406)
 
     @property
-    def nextAnniversary(self):
-        arFilings = Filing.get_filings_by_type(self.id, Filing.FilingType.AR.value)
-        count = len(arFilings)
-        return self.founding_date+relativedelta(years=count+1)
+    def next_anniversary(self):
+        """Retrieve the next anniversary date for which an AR filing is due."""
+        last_anniversary = self.founding_date
+        if self.last_ar_date:
+            last_anniversary = self.last_ar_date
+
+        return last_anniversary+datedelta.datedelta(years=1)
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):
@@ -146,7 +149,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'identifier': self.identifier,
             'lastModified': self.last_modified.isoformat(),
             'lastAnnualReport': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
-            'nextAnnualReport': self.nextAnniversary.isoformat(),
+            'nextAnnualReport': self.next_anniversary.isoformat(),
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
             'legalName': self.legal_name,
@@ -166,6 +169,16 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             d['taxId'] = self.tax_id
 
         return d
+
+    @classmethod
+    def get_filing_by_id(cls, business_identifier: int, filing_id: str):
+        """Return the filings for a specific business and filing_id."""
+        filing = db.session.query(Business, Filing). \
+            filter(Business.id == Filing.business_id). \
+            filter(Business.identifier == business_identifier). \
+            filter(Filing.id == filing_id). \
+            one_or_none()
+        return None if not filing else filing[1]
 
     @staticmethod
     def validate_identifier(identifier: str) -> bool:
@@ -189,7 +202,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
                 return False
         except ValueError:
             return False
-         #TODO This is not correct for entity types that are not Coops
+        # TODO This is not correct for entity types that are not Coops
         if identifier[:-7] not in ('CP', 'XCP'):
             return False
 

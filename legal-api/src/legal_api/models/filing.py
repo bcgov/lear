@@ -148,7 +148,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
                 status_code=HTTPStatus.UNPROCESSABLE_ENTITY
             )
 
-        if self.payment_token:
+        if self._payment_token:
             valid, err = rsbc_schemas.validate(json_data, 'filing')
             if not valid:
                 self._filing_type = None
@@ -205,7 +205,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             json_submission['filing']['header']['colinId'] = self.colin_event_id
             json_submission['filing']['header']['status'] = self.status
 
-            if self.payment_token:
+            if self._payment_token:
                 json_submission['filing']['header']['paymentToken'] = self.payment_token
             if self.submitter_id:
                 json_submission['filing']['header']['submitter'] = self.filing_submitter.username
@@ -283,13 +283,15 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         """Save toThe session, do not commit immediately."""
         db.session.add(self)
 
-    @staticmethod
-    def delete():
-        """Raise an error if the filing is deleted."""
-        raise BusinessException(
-            error='Deletion not allowed.',
-            status_code=HTTPStatus.FORBIDDEN
-        )
+    def delete(self):
+        """Raise an error if the filing is locked."""
+        if self.locked:
+            raise BusinessException(
+                error='Deletion not allowed.',
+                status_code=HTTPStatus.FORBIDDEN
+            )
+        db.session.delete(self)
+        db.session.commit()
 
     def legal_filings(self) -> List:
         """Return a list of the filings extracted from this filing submission.
@@ -311,12 +313,15 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
 
 
 @event.listens_for(Filing, 'before_delete')
-def block_filing_delete_listener_function(*arg):  # pylint: disable=unused-argument
+def block_filing_delete_listener_function(mapper, connection, target):  # pylint: disable=unused-argument
     """Raise an error when a delete is attempted on a Filing."""
-    raise BusinessException(
-        error='Deletion not allowed.',
-        status_code=HTTPStatus.FORBIDDEN
-    )
+    filing = target
+
+    if filing.locked:
+        raise BusinessException(
+            error='Deletion not allowed.',
+            status_code=HTTPStatus.FORBIDDEN
+        )
 
 
 @event.listens_for(Filing, 'before_insert')
