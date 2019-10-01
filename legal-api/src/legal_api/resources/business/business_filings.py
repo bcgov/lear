@@ -269,8 +269,7 @@ class ListFilingResource(Resource):
                         free = False
                         break
                 filing_types.append({
-                    # this is the temporary free filing code
-                    'filingTypeCode': 'OTCGM' if free else Filing.FILINGS[k].get('code')
+                    'filingTypeCode': 'OTFDR' if free else Filing.FILINGS[k].get('code')
                 })
             elif Filing.FILINGS.get(k, None):
                 filing_types.append({'filingTypeCode': Filing.FILINGS[k].get('code')})
