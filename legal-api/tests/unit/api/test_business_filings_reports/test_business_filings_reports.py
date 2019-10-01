@@ -98,10 +98,10 @@ def test_get_filing_submission_pdf(requests_mock, session, client, jwt, role, fi
                                           **{'accept': 'application/pdf'})
                     )
 
-    ignore_vars = {'templateVars': {'environment': 'ignored'}}
+    ignore_vars = ['templateVars/environment']
 
     assert rv.status_code == HTTPStatus.OK
     assert requests_mock.called_once
     assert requests_mock.last_request._request.headers.get('Content-Type') == 'application/json'
 
-    assert matches_sent_snapshot(filing_submission, requests_mock.last_request.json(), **ignore_vars)
+    assert matches_sent_snapshot(filing_submission, requests_mock.last_request.json(), ignore_vars)

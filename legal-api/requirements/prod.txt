@@ -18,8 +18,9 @@ launchdarkly-server-sdk
 marshmallow<3
 marshmallow-sqlalchemy
 psycopg2-binary
-python-dotenv
 pycountry
+python-dotenv
+pytz
 requests
 sentry-sdk[flask]
 

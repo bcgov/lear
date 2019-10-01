@@ -27,3 +27,6 @@ pylint-flask
 # docker
 lovely-pytest-docker
 pytest_docker
+
+# utils
+deepdiff
