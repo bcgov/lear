@@ -21,4 +21,4 @@ python-dotenv
 pycountry
 requests
 sentry-sdk[flask]
-
+attrs<19.2.0
