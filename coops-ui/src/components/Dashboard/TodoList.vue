@@ -15,7 +15,7 @@
         v-for="(item, index) in orderBy(taskItems, 'order')"
         v-bind:key="index"
         expand-icon=""
-        :class="{ 'disabled': !item.enabled }">
+        :class="{ 'disabled': !item.enabled, 'draft': isDraft(item) }">
 
         <template v-slot:header>
           <div class="list-item">
@@ -444,7 +444,7 @@ export default {
 <style lang="stylus">
 
   // disable expansion
-  .todo-list .v-expansion-panel__body
+  .todo-list.draft .v-expansion-panel__body
     display none
 
 </style>
