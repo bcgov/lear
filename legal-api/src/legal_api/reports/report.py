@@ -21,6 +21,7 @@ import requests
 from flask import current_app, jsonify
 
 from legal_api.utils.auth import jwt
+from legal_api.utils.timezone import local_from_utc
 
 
 class Report:  # pylint: disable=too-few-public-methods
@@ -160,9 +161,10 @@ class Report:  # pylint: disable=too-few-public-methods
 
         # Get the string for the filing date and time - do not use a leading zero on the hour (04:30 PM) as it looks
         # too much like the 24 hour 4:30 AM. Also, we can't use "%-I" on Windows.
-        filing_datetime = self._filing.filing_date.replace(tzinfo=timezone.utc).astimezone(tz=None)
-        # hour = filing_datetime.strftime('%I').lstrip('0')
-        filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {filing_datetime.hour}:%M %p Pacific Time')
+        # filing_datetime = self._filing.filing_date.replace(tzinfo=timezone.utc).astimezone(tz=None)
+        filing_datetime = local_from_utc(self._filing.filing_date, 'America/Vancouver')
+        hour = filing_datetime.strftime('%I').lstrip('0')
+        filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {hour}:%M %p Pacific Time')
 
         # Get the effective date - TODO 'effective date' doesn't exist yet but will in future; for now use filing date
         effective_date = self._filing.filing_date.replace(tzinfo=timezone.utc).astimezone(tz=None)

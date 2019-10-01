@@ -16,7 +16,10 @@ import datetime
 import inspect
 import json
 import os
+from contextlib import suppress
 from typing import Dict
+
+import dpath
 
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -36,7 +39,7 @@ def _get_json_sent_as_saved_example(var: object) -> Dict:
         return {}
 
 
-def matches_sent_snapshot(example, request_json, **ignore_keys):
+def matches_sent_snapshot(example, request_json, ignore_keys):
     """Assert that the request_json matches the snapshot.
 
     The gold_file for the example is retrieved (the snapshot) and compared the the request_json.
@@ -46,7 +49,19 @@ def matches_sent_snapshot(example, request_json, **ignore_keys):
     """
     gold_json = _get_json_sent_as_saved_example(example)
 
-    if {**request_json, **ignore_keys} == {**gold_json, **ignore_keys}:
+    for key in ignore_keys:
+        try:
+            dpath.util.delete(gold_json, key)
+        except (KeyError, dpath.exceptions.PathNotFound) as err:
+            # we don't care
+            print(err)
+        try:
+            dpath.util.delete(request_json, key)
+        except (KeyError, dpath.exceptions.PathNotFound) as err:
+            # we don't care
+            print(err)
+
+    if request_json == gold_json:
         return True
 
     new_snap_filename = _retrieve_name(example) + \
