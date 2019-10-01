@@ -601,4 +601,4 @@ def test_get_correct_fee_codes(session):
     assert ar_fee_code == Filing.FILINGS['annualReport'].get('code')
     assert coa_fee_code == Filing.FILINGS['changeOfAddress'].get('code')
     assert cod_fee_code == Filing.FILINGS['changeOfDirectors'].get('code')
-    assert free_cod_fee_code == 'OTCGM'
+    assert free_cod_fee_code == 'OTFDR'
