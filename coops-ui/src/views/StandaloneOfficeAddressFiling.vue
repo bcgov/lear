@@ -55,7 +55,9 @@
             </header>
             <Certify
               :isCertified.sync="isCertified"
-              :certifiedBy.sync="certifiedBy" />
+              :certifiedBy.sync="certifiedBy"
+              @valid="certifyFormValid=$event"
+            />
           </section>
         </article>
 
@@ -150,6 +152,7 @@ export default {
       paymentErrorDialog: false,
       isCertified: false,
       certifiedBy: '',
+      certifyFormValid: false,
       officeAddressFormValid: true,
       saving: false,
       savingResuming: false,
@@ -166,7 +169,7 @@ export default {
     ...mapGetters(['isRoleStaff']),
 
     validated () {
-      return (this.isCertified && this.officeAddressFormValid && this.filingData.length > 0)
+      return (this.certifyFormValid && this.officeAddressFormValid && this.filingData.length > 0)
     },
 
     busySaving () {
