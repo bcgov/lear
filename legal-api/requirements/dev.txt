@@ -4,7 +4,7 @@
 # Testing
 coverage
 freezegun
-hypothesis
+hypothesis<4.38.2
 pyhamcrest
 pytest<4.1
 pytest-mock
