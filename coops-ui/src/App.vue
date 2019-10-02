@@ -83,9 +83,10 @@ export default {
 
   methods: {
     ...mapActions(['setKeycloakRoles', 'setAuthRoles', 'setBusinessEmail', 'setBusinessPhone',
-      'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityType', 'setEntityStatus', 'setEntityBusinessNo',
-      'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate', 'setNextARDate', 'setTasks',
-      'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors', 'setTriggerDashboardReload']),
+      'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityType', 'setEntityStatus',
+      'setEntityBusinessNo', 'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate',
+      'setNextARDate', 'setTasks', 'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors',
+      'setTriggerDashboardReload']),
 
     fetchData () {
       let businessId

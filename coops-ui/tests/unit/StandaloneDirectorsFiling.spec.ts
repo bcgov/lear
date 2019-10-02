@@ -81,7 +81,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
 
     // set flags
     vm.directorFormValid = true
-    vm.isCertified = true
+    vm.certifyFormValid = true
 
     // set stub list of filings
     vm.filingData.push({})
@@ -99,7 +99,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
 
     // set flags
     vm.directorFormValid = false
-    vm.isCertified = true
+    vm.certifyFormValid = true
 
     // set stub list of filings
     vm.filingData.push({})
@@ -117,7 +117,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
 
     // set flags
     vm.directorFormValid = true
-    vm.isCertified = false
+    vm.certifyFormValid = false
 
     // set stub list of filings
     vm.filingData.push({})
@@ -135,7 +135,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
 
     // set flags
     vm.directorFormValid = true
-    vm.isCertified = true
+    vm.certifyFormValid = true
 
     // set stub list of filings
     vm.filingData = []
@@ -153,7 +153,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
 
     // set flag
     vm.directorFormValid = true
-    vm.isCertified = true
+    vm.certifyFormValid = true
 
     // set stub list of filings
     vm.filingData.push({})
@@ -171,7 +171,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
 
     // set flag
     vm.directorFormValid = true
-    vm.isCertified = false
+    vm.certifyFormValid = false
 
     // set stub list of filings
     vm.filingData.push({})
@@ -364,7 +364,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
 
       // make sure form is validated
       vm.directorFormValid = true
-      vm.isCertified = true
+      vm.certifyFormValid = true
       vm.filingData = [{}] // dummy data
       expect(vm.validated).toEqual(true)
 
@@ -403,7 +403,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
 
     // make sure form is validated
     vm.directorFormValid = true
-    vm.isCertified = true
+    vm.certifyFormValid = true
     vm.filingData = [{}] // dummy data
     expect(vm.validated).toEqual(true)
 
@@ -442,7 +442,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
 
     // make sure form is validated
     vm.directorFormValid = true
-    vm.isCertified = true
+    vm.certifyFormValid = true
     vm.filingData = [{}] // dummy data
     expect(vm.validated).toEqual(true)
 
@@ -518,7 +518,7 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
 
       // make sure form is validated
       vm.directorFormValid = true
-      vm.isCertified = true
+      vm.certifyFormValid = true
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -545,7 +545,7 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
 
       // make sure form is validated
       vm.directorFormValid = true
-      vm.isCertified = true
+      vm.certifyFormValid = true
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -660,7 +660,7 @@ describe('Standalone Directors Filing - Part 5 - Data', () => {
 
     // make sure form is validated
     vm.directorFormValid = true
-    vm.isCertified = true
+    vm.certifyFormValid = true
     vm.directorsChange(true)
   })
 
@@ -825,7 +825,7 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
       const vm = wrapper.vm as any
       // make sure form is validated
       vm.directorFormValid = true
-      vm.isCertified = true
+      vm.certifyFormValid = true
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -855,7 +855,7 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
       const vm = wrapper.vm as any
       // make sure form is validated
       vm.directorFormValid = true
-      vm.isCertified = true
+      vm.certifyFormValid = true
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
