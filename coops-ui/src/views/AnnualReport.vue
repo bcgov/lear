@@ -85,7 +85,7 @@
                 @directorsChange="directorsChange"
                 @allDirectors="allDirectors=$event"
                 @directorFormValid="directorFormValid=$event"
-                @directorEditInProgress="directorEditInProgress=$event"
+                @directorEditAction="directorEditInProgress=$event"
                 :asOfDate="agmDate"
                 :componentEnabled="allowChange('cod')"
               />

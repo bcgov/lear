@@ -812,7 +812,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     this.activeIndex = null
     this.showPopup = false
     this.activeDirectorToDelete = null
-    this.emitDirectorEditInProgress(false)
     this.directorEditInProgress = false
   }
 
@@ -893,7 +892,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   private editDirector (index): void {
     // clear in-progress director data from form in BaseAddress component - ie: start fresh
     this.inProgressAddress = {}
-    this.emitDirectorEditInProgress(true)
     this.directorEditInProgress = true
     this.activeIndex = index
     this.cancelNewDirector()
@@ -989,7 +987,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    */
   private cancelEditDirector (): void {
     this.activeIndex = -1
-    this.emitDirectorEditInProgress(false)
     this.directorEditInProgress = false
 
     // reset form show/hide flags
@@ -1141,6 +1138,11 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     this.emitActiveDirectors(this.directors.filter(el => el.cessationDate === null))
   }
 
+  @Watch('directorEditInProgress')
+  private onDirectorEditActionChange (val: boolean): void {
+    this.emitDirectorEditInProgress(val)
+  }
+
   /**
    * Emits an event containing the earliest director change date.
    */
@@ -1174,7 +1176,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   /**
    * Emits an event that indicates whether the director edit is in progress.
    */
-  @Emit('directorEditInProgress')
+  @Emit('directorEditAction')
   private emitDirectorEditInProgress (val: boolean): void { }
 }
 
