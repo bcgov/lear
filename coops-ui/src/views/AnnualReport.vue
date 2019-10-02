@@ -267,7 +267,7 @@ export default {
     },
 
     isSaveButtonEnabled () {
-      return this.agmDateValid && this.addressesFormValid && this.directorFormValid
+      return this.agmDateValid && this.addressesFormValid && this.directorFormValid && !this.directorEditInProgress
     }
   },
 
