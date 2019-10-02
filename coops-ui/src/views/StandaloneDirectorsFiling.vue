@@ -48,6 +48,7 @@
               @earliestDateToSet="earliestDateToSet=$event"
               @directorFormValid="directorFormValid=$event"
               @allDirectors="allDirectors=$event"
+              @directorEditAction="directorEditInProgress=$event"
               :asOfDate="currentDate"
               />
           </section>
@@ -156,6 +157,7 @@ export default {
       isCertified: false,
       certifiedBy: '',
       directorFormValid: true,
+      directorEditInProgress: false,
       filingId: null,
       saving: false,
       savingResuming: false,
@@ -172,7 +174,8 @@ export default {
     ...mapGetters(['isRoleStaff']),
 
     validated () {
-      return (this.isCertified && this.directorFormValid && this.filingData.length > 0)
+      return (this.isCertified && this.directorFormValid && this.filingData.length > 0 &&
+      !this.directorEditInProgress)
     },
 
     busySaving () {
@@ -180,7 +183,7 @@ export default {
     },
 
     isSaveButtonEnabled () {
-      return (this.directorFormValid && this.filingData.length > 0)
+      return (this.directorFormValid && this.filingData.length > 0 && !this.directorEditInProgress)
     },
 
     payAPIURL () {
