@@ -1,96 +1,26 @@
 <template>
   <div>
-    <v-dialog v-model="resumeErrorDialog" width="50rem" persistent>
-      <v-card>
-        <v-card-title>Unable to Resume Filing</v-card-title>
-        <v-card-text>
-          <p class="genErr">We were unable to resume your filing. You can return to your dashboard
-            and try again.</p>
-          <p class="genErr">If this error persists, please contact us.</p>
-          <p class="genErr">
-            <v-icon small>phone</v-icon>
-            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
-          </p>
-          <p class="genErr">
-            <v-icon small>email</v-icon>
-            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
-              >SBC_ITOperationsSupport@gov.bc.ca</a>
-          </p>
-        </v-card-text>
-        <v-divider></v-divider>
-        <v-card-actions>
-          <v-btn color="primary" flat @click="navigateToDashboard">Return to dashboard</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <ConfirmDialog ref="confirm" />
 
-    <v-dialog v-model="saveErrorDialog" width="50rem">
-      <v-card>
-        <v-card-title>Unable to Save Filing</v-card-title>
-        <v-card-text>
-          <p class="genErr">We were unable to save your filing. You can continue to try to save this
-             filing or you can exit without saving and re-create this filing at another time.</p>
-          <p  class="genErr">If you exit this filing, any changes you've made will not be saved.</p>
-          <p class="genErr">
-            <v-icon small>phone</v-icon>
-            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
-          </p>
-          <p class="genErr">
-            <v-icon small>email</v-icon>
-            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
-              >SBC_ITOperationsSupport@gov.bc.ca</a>
-          </p>
-        </v-card-text>
-        <v-divider></v-divider>
-        <v-card-actions>
-          <v-btn color="primary" flat @click="navigateToDashboard">Exit without saving</v-btn>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" flat @click="onClickFilePay" :disabled="filingPaying">Retry</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <ResumeErrorDialog
+      :dialog="resumeErrorDialog"
+      @exit="navigateToDashboard"
+    />
 
-    <v-dialog v-model="paymentErrorDialog" width="60rem">
-      <v-card>
-        <v-card-title>Unable to Process Payment</v-card-title>
-        <v-card-text>
-          <p class="genErr">PayBC is unable to process payments at this time.</p>
-          <p class="genErr">Your filing has been saved as a DRAFT and you can resume your filing from your Dashboard
-            at a later time.</p>
-          <p class="genErr">PayBC is normally available:</p>
-          <p class="genErr">
-            Monday to Friday: 6:00am to 9:00pm
-            <br />Saturday: 12:00am to 7:00pm
-            <br />Sunday: 12:00pm to 12:00am
-          </p>
-          <p class="genErr">
-            <v-icon small>phone</v-icon>
-            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
-          </p>
-          <p class="genErr">
-            <v-icon small>email</v-icon>
-            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
-              >SBC_ITOperationsSupport@gov.bc.ca</a>
-          </p>
-        </v-card-text>
-        <v-divider></v-divider>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" flat @click="navigateToDashboard">Back to My Dashboard</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <SaveErrorDialog
+      :dialog="saveErrorDialog"
+      :disableRetry="busySaving"
+      :errors="saveErrors"
+      :warnings="saveWarnings"
+      @exit="navigateToDashboard"
+      @retry="onClickFilePay"
+      @okay="resetErrors"
+    />
 
-    <!-- Transition to Payment -->
-    <!-- TODO - this should be on Payment page -->
-    <v-fade-transition>
-      <div class="loading-container" v-show="showLoading">
-        <div class="loading__content">
-          <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-          <div class="loading-msg">Redirecting to PayBC to Process Your Payment</div>
-        </div>
-      </div>
-    </v-fade-transition>
+    <PaymentErrorDialog
+      :dialog="paymentErrorDialog"
+      @exit="navigateToDashboard"
+    />
 
     <div id="standalone-office-address" ref="standaloneOfficeAddress">
       <!-- Initial Page Load Transition -->
@@ -107,26 +37,26 @@
             <h1 id="filing-header">Change of Office Addresses</h1>
           </header>
 
-          <div>
-            <!-- Registered Office Addresses -->
-            <section>
-              <RegisteredOfficeAddress
-                :changeButtonDisabled="false"
-                :legalEntityNumber="corpNum"
-                :addresses.sync="addresses"
-                @modified="officeModifiedEventHandler($event)"
-                @valid="officeAddressFormValid = $event" />
-            </section>
+          <!-- Registered Office Addresses -->
+          <section>
+            <RegisteredOfficeAddress
+              :changeButtonDisabled="false"
+              :legalEntityNumber="entityIncNo"
+              :addresses.sync="addresses"
+              @modified="officeModifiedEventHandler($event)"
+              @valid="officeAddressFormValid = $event" />
+          </section>
 
-            <!-- Certify -->
-            <section>
-              <header>
-                <h2 id="AR-step-4-header">Certify Correct</h2>
-                <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
-              </header>
-              <Certify @certifyChange="changeCertifyData" @certifiedBy="certifiedBy=$event" ref="certifyClause"/>
-            </section>
-          </div>
+          <!-- Certify -->
+          <section>
+            <header>
+              <h2 id="AR-step-4-header">Certify Correct</h2>
+              <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+            </header>
+            <Certify
+              :isCertified.sync="isCertified"
+              :certifiedBy.sync="certifiedBy" />
+          </section>
         </article>
 
         <aside>
@@ -139,13 +69,13 @@
       <v-container id="buttons-container" class="list-item">
         <div class="buttons-left">
           <v-btn id="coa-save-btn" large
-            :disabled="!saveAsDraftEnabled || saving"
+            :disabled="!saveAsDraftEnabled || busySaving"
             :loading="saving"
             @click="onClickSave">
             Save
           </v-btn>
           <v-btn id="coa-save-resume-btn" large
-            :disabled="!saveAsDraftEnabled || savingResuming"
+            :disabled="!saveAsDraftEnabled || busySaving"
             :loading="savingResuming"
             @click="onClickSaveResume">
             Save &amp; Resume Later
@@ -153,18 +83,21 @@
         </div>
 
         <div class="buttons-right">
-          <v-tooltip bottom>
+          <v-tooltip top color="#3b6cff">
             <v-btn
               slot="activator"
               id="coa-file-pay-btn"
               color="primary"
               large
-              :disabled="!validated || filingPaying"
+              :depressed="isRoleStaff"
+              :ripple="!isRoleStaff"
+              :disabled="!validated || busySaving"
               :loading="filingPaying"
               @click="onClickFilePay">
               File &amp; Pay
             </v-btn>
-            <span>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
+            <span v-if="isRoleStaff">Staff are not allowed to file.</span>
+            <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
               There is no opportunity to change information beyond this point.</span>
           </v-tooltip>
           <v-btn
@@ -181,14 +114,16 @@
 
 <script lang="ts">
 import axios from '@/axios-auth'
-import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
-import Directors from '@/components/AnnualReport/Directors.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
-import { mapState, mapActions, mapGetters } from 'vuex'
-import { PAYMENT_REQUIRED } from 'http-status-codes'
+import { mapState, mapGetters } from 'vuex'
+import { PAYMENT_REQUIRED, BAD_REQUEST } from 'http-status-codes'
 import Certify from '@/components/AnnualReport/Certify.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
+import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
+import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
 
 export default {
   name: 'StandaloneOfficeAddressFiling',
@@ -197,7 +132,11 @@ export default {
     RegisteredOfficeAddress,
     SbcFeeSummary,
     Affix,
-    Certify
+    Certify,
+    ConfirmDialog,
+    PaymentErrorDialog,
+    ResumeErrorDialog,
+    SaveErrorDialog
   },
 
   data () {
@@ -209,40 +148,89 @@ export default {
       resumeErrorDialog: false,
       saveErrorDialog: false,
       paymentErrorDialog: false,
-      certifyChange: false,
-      certifiedBy: null,
+      isCertified: false,
+      certifiedBy: '',
       officeAddressFormValid: true,
       saving: false,
       savingResuming: false,
-      filingPaying: false
+      filingPaying: false,
+      haveChanges: false,
+      saveErrors: [],
+      saveWarnings: []
     }
   },
 
   computed: {
-    ...mapState(['currentDate', 'corpNum', 'entityName', 'entityIncNo', 'entityFoundingDate']),
+    ...mapState(['currentDate', 'entityName', 'entityIncNo', 'entityFoundingDate']),
+
+    ...mapGetters(['isRoleStaff']),
 
     validated () {
-      if (this.certifyChange && this.officeAddressFormValid) return true
-      else return false
+      return (this.isCertified && this.officeAddressFormValid && this.filingData.length > 0)
+    },
+
+    busySaving () {
+      return this.saving || this.savingResuming || this.filingPaying
     },
 
     saveAsDraftEnabled () {
-      if (this.officeAddressFormValid && this.filingData.length > 0) return true
-      else return false
+      return (this.officeAddressFormValid && this.filingData.length > 0)
+    },
+
+    payAPIURL () {
+      return sessionStorage.getItem('PAY_API_URL')
     }
   },
 
   created () {
+    // before unloading this page, if there are changes then prompt user
+    window.onbeforeunload = (event) => {
+      if (this.haveChanges) {
+        event.preventDefault()
+        // NB: custom text is not supported in all browsers
+        event.returnValue = 'You have unsaved changes. Are you sure you want to leave?'
+      }
+    }
+
+    // NB: filing id of 0 means "new"
+    // otherwise it's a draft filing id
+    this.filingId = this.$route.params.id
+
     // if tombstone data isn't set, route to home
-    if (!this.corpNum) {
+    if (!this.entityIncNo || (this.filingId === undefined)) {
       this.$router.push('/')
     }
 
-    // if loading from draft...
-    this.filingId = this.$route.params.id
-    if (this.filingId > '0') {
+    if (this.filingId > 0) {
+      // resume draft filing
       this.fetchChangeOfAddressFiling()
     }
+  },
+
+  beforeRouteLeave (to, from, next) {
+    if (!this.haveChanges) {
+      // no changes -- resolve promise right away
+      next()
+      return
+    }
+
+    // open confirmation dialog and wait for response
+    this.$refs.confirm.open(
+      'Save Your Changes to Your Change of Office Addresses?',
+      'You have unsaved changes in your Change of Office Addresses. Do you want to save your changes?',
+      { width: '40rem', persistent: true, yes: 'Save', no: 'Don\'t save' }
+    ).then(async (confirm) => {
+      // if we get here, Yes or No was clicked
+      if (confirm) {
+        await this.onClickSave()
+      } else {
+        this.haveChanges = false
+      }
+      next()
+    }).catch(() => {
+      // if we get here, Cancel was clicked
+      next(false)
+    })
   },
 
   methods: {
@@ -261,7 +249,7 @@ export default {
     },
 
     fetchChangeOfAddressFiling () {
-      const url = this.corpNum + '/filings/' + this.filingId
+      const url = this.entityIncNo + '/filings/' + this.filingId
       axios.get(url).then(response => {
         if (response && response.data) {
           const filing = response.data.filing
@@ -273,6 +261,8 @@ export default {
             if (filing.header.name !== 'changeOfAddress') throw new Error('invalid filing type')
             if (filing.business.identifier !== this.entityIncNo) throw new Error('invalid business identifier')
             if (filing.business.legalName !== this.entityName) throw new Error('invalid business legal name')
+
+            this.certifiedBy = filing.header.certifiedBy
 
             // load Annual Report fields
             if (!filing.changeOfAddress) throw new Error('Missing change of address')
@@ -310,56 +300,60 @@ export default {
      * original values.
      */
     officeModifiedEventHandler (modified: boolean): void {
+      this.haveChanges = true
       // when addresses change, update filing data
       this.toggleFiling(modified ? 'add' : 'remove', 'OTADD')
     },
 
-    changeCertifyData (val) {
-      this.certifyChange = val
-    },
-
     async onClickSave () {
+      // prevent double saving
+      if (this.busySaving) return
+
       this.saving = true
       const filing = await this.saveFiling(true)
-      if (!filing) {
-        console.log('onClickSave() error - invalid filing =', filing)
-      } else {
-        this.filingId = filing.header.filingId
+      if (filing) {
+        this.filingId = +filing.header.filingId
       }
       this.saving = false
     },
 
     async onClickSaveResume () {
+      // prevent double saving
+      if (this.busySaving) return
+
       this.savingResuming = true
       const filing = await this.saveFiling(true)
       // on success, redirect to Home URL
       if (filing) {
         const homeURL = window.location.origin || ''
         window.location.assign(homeURL)
-      } else {
-        console.log('onClickSaveResume() error - invalid filing =', filing)
       }
       this.savingResuming = false
     },
 
     async onClickFilePay () {
+      // staff are not allowed to file
+      if (this.isRoleStaff) return false
+
+      // prevent double saving
+      if (this.busySaving) return true
+
       this.filingPaying = true
       const filing = await this.saveFiling(false)
       // on success, redirect to Pay URL
       if (filing && filing.header) {
         const origin = window.location.origin || ''
-        const filingId = filing.header.filingId
-        const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
-        let authStub: string = this.authURL || ''
+        const filingId = +filing.header.filingId
+        const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
+        let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
         if (!(authStub.endsWith('/'))) { authStub += '/' }
         const paymentToken = filing.header.paymentToken
         const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
         // TODO: first check if pay UI is reachable, else display modal dialog
         window.location.assign(payURL)
-      } else {
-        console.log('onClickFilePay() error - invalid filing =', filing)
       }
       this.filingPaying = false
+      return true
     },
 
     async saveFiling (isDraft) {
@@ -369,6 +363,8 @@ export default {
       const header = {
         header: {
           name: 'changeOfAddress',
+          certifiedBy: this.certifiedBy || '',
+          email: 'no_one@never.get',
           date: this.currentDate
         }
       }
@@ -384,8 +380,6 @@ export default {
       if (this.isDataChanged('OTADD') && this.addresses) {
         changeOfAddress = {
           changeOfAddress: {
-            certifiedBy: this.certifiedBy || '',
-            email: 'no_one@never.get',
             deliveryAddress: this.formatAddress(this.addresses['deliveryAddress']),
             mailingAddress: this.formatAddress(this.addresses['mailingAddress'])
           }
@@ -401,35 +395,51 @@ export default {
         )
       }
 
-      if (this.filingId > '0') {
+      if (this.filingId > 0) {
         // we have a filing id, so we are updating an existing filing
-        let url = this.corpNum + '/filings/' + this.filingId
+        let url = this.entityIncNo + '/filings/' + this.filingId
         if (isDraft) { url += '?draft=true' }
         let filing = null
         await axios.put(url, filingData).then(res => {
           if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
           filing = res.data.filing
+          this.haveChanges = false
         }).catch(error => {
-          console.error('saveFiling() error =', error)
           if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
             this.paymentErrorDialog = true
+          } else if (error && error.response && error.response.status === BAD_REQUEST) {
+            if (error.response.data.errors) {
+              this.saveErrors = error.response.data.errors
+            }
+            if (error.response.data.warnings) {
+              this.saveWarnings = error.response.data.warnings
+            }
+            this.saveErrorDialog = true
           } else {
             this.saveErrorDialog = true
           }
         })
         return filing
       } else {
-        // filing id is '0', so we are saving a new filing
-        let url = this.corpNum + '/filings'
+        // filing id is 0, so we are saving a new filing
+        let url = this.entityIncNo + '/filings'
         if (isDraft) { url += '?draft=true' }
         let filing = null
         await axios.post(url, filingData).then(res => {
           if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
           filing = res.data.filing
+          this.haveChanges = false
         }).catch(error => {
-          console.error('saveFiling() error =', error)
           if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
             this.paymentErrorDialog = true
+          } else if (error && error.response && error.response.status === BAD_REQUEST) {
+            if (error.response.data.errors) {
+              this.saveErrors = error.response.data.errors
+            }
+            if (error.response.data.warnings) {
+              this.saveWarnings = error.response.data.warnings
+            }
+            this.saveErrorDialog = true
           } else {
             this.saveErrorDialog = true
           }
@@ -460,8 +470,25 @@ export default {
     },
 
     navigateToDashboard () {
+      this.haveChanges = false
       this.dialog = false
       this.$router.push('/dashboard')
+    },
+
+    resetErrors () {
+      this.saveErrorDialog = false
+      this.saveErrors = []
+      this.saveWarnings = []
+    }
+  },
+
+  watch: {
+    isCertified (val) {
+      this.haveChanges = true
+    },
+
+    certifiedBy (val) {
+      this.haveChanges = true
     }
   }
 }

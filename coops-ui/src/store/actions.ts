@@ -1,6 +1,9 @@
 export default {
-  setCorpNum ({ commit }, corpNum) {
-    commit('corpNum', corpNum)
+  setKeycloakRoles ({ commit }, keycloakRoles) {
+    commit('keycloakRoles', keycloakRoles)
+  },
+  setAuthRoles ({ commit }, authRoles) {
+    commit('authRoles', authRoles)
   },
   setCurrentDate ({ commit }, currentDate) {
     commit('currentDate', currentDate)
@@ -10,21 +13,6 @@ export default {
   },
   setARFilingYear ({ commit }, ARFilingYear) {
     commit('ARFilingYear', ARFilingYear)
-  },
-  setFiledDate ({ commit }, filedDate) {
-    commit('filedDate', filedDate)
-  },
-  setAgmDate ({ commit }, agmDate) {
-    commit('agmDate', agmDate)
-  },
-  setNoAGM ({ commit }, noAGM) {
-    commit('noAGM', noAGM)
-  },
-  setRegOffAddrChange ({ commit }, regOffAddrChange) {
-    commit('regOffAddrChange', regOffAddrChange)
-  },
-  setValidated ({ commit }, validated) {
-    commit('validated', validated)
   },
   setEntityBusinessNo ({ commit }, entityBusinessNo) {
     commit('entityBusinessNo', entityBusinessNo)
@@ -41,22 +29,37 @@ export default {
   setEntityFoundingDate ({ commit }, entityFoundingDate) {
     commit('entityFoundingDate', entityFoundingDate)
   },
+  setBusinessEmail ({ commit }, businessEmail) {
+    commit('businessEmail', businessEmail)
+  },
+  setBusinessPhone ({ commit }, businessPhone) {
+    commit('businessPhone', businessPhone)
+  },
+  setBusinessPhoneExtension ({ commit }, businessPhoneExtension) {
+    commit('businessPhoneExtension', businessPhoneExtension)
+  },
   setLastPreLoadFilingDate ({ commit }, lastPreLoadFilingDate) {
     commit('lastPreLoadFilingDate', lastPreLoadFilingDate)
   },
   setCurrentFilingStatus ({ commit }, currentFilingStatus) {
     commit('currentFilingStatus', currentFilingStatus)
   },
-  setAddressesFormValid ({ commit }, addressesFormValid) {
-    commit('addressesFormValid', addressesFormValid)
+  setTasks ({ commit }, tasks) {
+    commit('tasks', tasks)
   },
-  setDirectorFormValid ({ commit }, directorFormValid) {
-    commit('directorFormValid', directorFormValid)
+  setFilings ({ commit }, filings) {
+    commit('filings', filings)
   },
-  setAgmDateValid ({ commit }, agmDateValid) {
-    commit('agmDateValid', agmDateValid)
+  setMailingAddress ({ commit }, mailingAddress) {
+    commit('mailingAddress', mailingAddress)
   },
-  setFilingHistory ({ commit }, filingHistory) {
-    commit('filingHistory', filingHistory)
+  setDeliveryAddress ({ commit }, deliveryAddress) {
+    commit('deliveryAddress', deliveryAddress)
+  },
+  setDirectors ({ commit }, directors) {
+    commit('directors', directors)
+  },
+  setTriggerDashboardReload ({ commit }, value) {
+    commit('triggerDashboardReload', value)
   }
 }

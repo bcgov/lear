@@ -17,9 +17,10 @@ Flask extension to validate json data against the JSONSchema's that have been ca
 """
 from flask import Flask, g
 
+from registry_schemas.example_data import ANNUAL_REPORT
 from registry_schemas.flask import SchemaServices
 
-from .schema_data import TEST_AR, TEST_SCHEMAS_DATA
+from .schema_data import TEST_SCHEMAS_DATA
 
 
 def create_app():
@@ -103,6 +104,6 @@ def test_validate():
     with app.app_context():
         schema_service.init_app(app)
 
-        valid, _ = schema_service.validate(TEST_AR, 'filing')
+        valid, _ = schema_service.validate(ANNUAL_REPORT, 'filing')
 
         assert valid

@@ -1,26 +1,30 @@
 export default {
-  corpNum: null,
+  // tombstone data
+  keycloakRoles: [],
+  authRoles: [],
+  username: null,
   currentDate: null,
 
+  // entity info
   entityName: null,
   entityStatus: null,
   entityBusinessNo: null,
   entityIncNo: null,
-  entityFoundingDate: null,
-
-  lastAgmDate: null,
-  ARFilingYear: null, /* Number */
-  filedDate: null,
   lastPreLoadFilingDate: null,
-  agmDate: null,
-  noAGM: false,
-  filingHistory: [],
-  regOffAddrChange: false,
-  validated: false,
+  entityFoundingDate: null,
+  businessEmail: null,
+  businessPhone: null,
+  businessPhoneExtension: null,
+  lastAgmDate: null,
 
-  currentFilingStatus: null,
+  ARFilingYear: null, /* Number */
+  tasks: [],
+  filings: [],
+  mailingAddress: null,
+  deliveryAddress: null,
+  directors: [],
 
-  addressesFormValid: true,
-  directorFormValid: true,
-  agmDateValid: true
+  triggerDashboardReload: false,
+
+  currentFilingStatus: null
 }

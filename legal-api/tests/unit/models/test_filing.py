@@ -16,18 +16,22 @@
 
 Test-Suite to ensure that the Business Model is working as expected.
 """
+import copy
 import datetime
 import json
 from http import HTTPStatus
 
+import datedelta
 import pytest
 from flask import current_app
+from registry_schemas.example_data import ANNUAL_REPORT
 from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Filing, User
 from tests import EPOCH_DATETIME
-from tests.unit.models import AR_FILING, factory_business, factory_filing
+from tests.conftest import not_raises
+from tests.unit.models import factory_business, factory_filing
 
 
 def test_minimal_filing_json(session):
@@ -45,18 +49,60 @@ def test_minimal_filing_json(session):
     assert filing.id is not None
 
 
-def test_filing_block_orm_delete(session):
+def test_filing_orm_delete_allowed_for_in_progress_filing(session):
     """Assert that attempting to delete a filing will raise a BusinessException."""
     from legal_api.exceptions import BusinessException
 
     b = factory_business('CP1234567')
 
-    data = {'filing': 'not a real filing, fail validation'}
+    filing = Filing()
+    filing.business_id = b.id
+    filing.filing_date = datetime.datetime.utcnow()
+    filing.filing_json = ANNUAL_REPORT
+    filing.save()
+
+    with not_raises(BusinessException):
+        session.delete(filing)
+        session.commit()
+
+
+def test_filing_orm_delete_blocked_if_invoiced(session):
+    """Assert that attempting to delete a filing will raise a BusinessException."""
+    from legal_api.exceptions import BusinessException
+
+    b = factory_business('CP1234567')
 
     filing = Filing()
     filing.business_id = b.id
     filing.filing_date = datetime.datetime.utcnow()
-    filing.filing_data = json.dumps(data)
+    filing.filing_json = ANNUAL_REPORT
+    filing.payment_token = 'a token'
+    filing.save()
+
+    with pytest.raises(BusinessException) as excinfo:
+        session.delete(filing)
+        session.commit()
+
+    assert excinfo.value.status_code == HTTPStatus.FORBIDDEN
+    assert excinfo.value.error == 'Deletion not allowed.'
+
+
+def test_filing_orm_delete_blocked_if_completed(session):
+    """Assert that attempting to delete a filing will raise a BusinessException."""
+    from legal_api.exceptions import BusinessException
+
+    uow = versioning_manager.unit_of_work(session)
+    transaction = uow.create_transaction(session)
+
+    b = factory_business('CP1234567')
+
+    filing = Filing()
+    filing.business_id = b.id
+    filing.filing_date = datetime.datetime.utcnow()
+    filing.filing_json = ANNUAL_REPORT
+    filing.payment_token = 'a token'
+    filing.payment_completion_date = datetime.datetime.utcnow()
+    filing.transaction_id = transaction.id
     filing.save()
 
     with pytest.raises(BusinessException) as excinfo:
@@ -71,27 +117,15 @@ def test_filing_json(session):
     """Assert that an AR filing can be saved."""
     import copy
     b = factory_business('CP1234567')
-    filing = factory_filing(b, AR_FILING)
+    filing = factory_filing(b, ANNUAL_REPORT)
 
-    ar = copy.deepcopy(AR_FILING)
+    ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['header']['filingId'] = filing.id
     ar['filing']['header']['colinId'] = None
 
     assert filing.id
-    assert filing.json['filing']['business'] == AR_FILING['filing']['business']
-    assert filing.json['filing']['annualReport'] == AR_FILING['filing']['annualReport']
-
-
-def test_filing_delete_is_blocked(session):
-    """Assert that an AR filing can be saved."""
-    b = factory_business('CP1234567')
-    filing = factory_filing(b, AR_FILING)
-
-    with pytest.raises(BusinessException) as excinfo:
-        filing.delete()
-
-    assert excinfo.value.status_code == HTTPStatus.FORBIDDEN
-    assert excinfo.value.error == 'Deletion not allowed.'
+    assert filing.json['filing']['business'] == ANNUAL_REPORT['filing']['business']
+    assert filing.json['filing']['annualReport'] == ANNUAL_REPORT['filing']['annualReport']
 
 
 def test_filing_missing_name(session):
@@ -99,7 +133,7 @@ def test_filing_missing_name(session):
     import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)
-    ar = copy.deepcopy(AR_FILING)
+    ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['header'].pop('name', None)
 
     with pytest.raises(BusinessException) as excinfo:
@@ -116,13 +150,13 @@ def test_filing_dump_json(session):
     b = factory_business(identifier)
 
     # Check base JSON
-    filings = factory_filing(b, AR_FILING)
+    filings = factory_filing(b, ANNUAL_REPORT)
 
-    assert filings.json['filing']['business'] == AR_FILING['filing']['business']
-    assert filings.json['filing']['annualReport'] == AR_FILING['filing']['annualReport']
+    assert filings.json['filing']['business'] == ANNUAL_REPORT['filing']['business']
+    assert filings.json['filing']['annualReport'] == ANNUAL_REPORT['filing']['annualReport']
 
     # Check payment token
-    ar = copy.deepcopy(AR_FILING)
+    ar = copy.deepcopy(ANNUAL_REPORT)
     token = 'token'
     ar['filing']['header']['paymentToken'] = token
     filings = factory_filing(b, ar)
@@ -132,14 +166,14 @@ def test_filing_dump_json(session):
     u = User()
     u.username = 'submitter'
     u.save()
-    ar = copy.deepcopy(AR_FILING)
+    ar = copy.deepcopy(ANNUAL_REPORT)
     filings = factory_filing(b, ar)
     filings.submitter_id = u.id
     filings.save()
     assert filings.json['filing']['header']['submitter'] == u.username
 
     # check Exception
-    ar = copy.deepcopy(AR_FILING)
+    ar = copy.deepcopy(ANNUAL_REPORT)
     filings = factory_filing(b, ar)
     filings.save()
     filings.submitter_id = -1  # some bogus id to throw an error
@@ -151,7 +185,7 @@ def test_filing_save_to_session(session):
     """Assert that the filing is saved to the session but not committed."""
     from sqlalchemy.orm.session import Session
     # b = factory_business('CP1234567')
-    # filing = factory_filing(b, AR_FILING)
+    # filing = factory_filing(b, ANNUAL_REPORT)
 
     filing = Filing()
 
@@ -174,7 +208,7 @@ def test_add_json_after_payment(session):
     assert not filing.status
 
     filing.payment_token = 'payment token'
-    filing.filing_json = AR_FILING
+    filing.filing_json = ANNUAL_REPORT
 
     assert filing.json
     assert filing.status == Filing.Status.PENDING.value
@@ -190,7 +224,7 @@ def test_add_json_and_payment_after_saved_filing(session):
     assert filing.status == Filing.Status.DRAFT.value
 
     filing.payment_token = 'payment token'
-    filing.filing_json = AR_FILING
+    filing.filing_json = ANNUAL_REPORT
 
     assert filing.json
     assert filing.status == Filing.Status.PENDING.value
@@ -203,7 +237,7 @@ def test_add_payment_completion_date_after_payment(session):
     filing.save()
 
     filing.payment_token = 'payment token'
-    filing.filing_json = AR_FILING
+    filing.filing_json = ANNUAL_REPORT
 
     # sanity check starting position
     assert filing.json
@@ -220,7 +254,7 @@ def test_add_invalid_json_after_payment(session):
     filing = Filing()
     filing.payment_token = 'payment token'
 
-    ar = copy.deepcopy(AR_FILING)
+    ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['header'].pop('date', None)
 
     with pytest.raises(BusinessException) as excinfo:
@@ -257,7 +291,7 @@ def test_get_legal_filings():
 
     assert not filing.legal_filings()
 
-    filing.filing_json = AR_FILING
+    filing.filing_json = ANNUAL_REPORT
     legal_filings = filing.legal_filings()
 
     assert legal_filings
@@ -268,7 +302,7 @@ def test_get_filing_by_payment_token(session):
     """Assert that a filing can be retrieved by a unique payment token."""
     payment_token = '1000'
     filing = Filing()
-    filing.filing_json = AR_FILING
+    filing.filing_json = ANNUAL_REPORT
     filing.payment_token = payment_token
     filing.save()
 
@@ -286,7 +320,7 @@ def test_get_filings_by_status(session):
     payment_token = '1000'
     filing = Filing()
     filing.business_id = business.id
-    filing.filing_json = AR_FILING
+    filing.filing_json = ANNUAL_REPORT
     filing.payment_token = payment_token
     filing.transaction_id = transaction.id
     filing.payment_completion_date = datetime.datetime.utcnow()
@@ -313,7 +347,7 @@ def test_get_filings_by_status_before_go_live_date(session, test_type, days, exp
     transaction = uow.create_transaction(session)
     business = factory_business('CP1234567')
     payment_token = '1000'
-    ar = copy.deepcopy(AR_FILING)
+    ar = copy.deepcopy(ANNUAL_REPORT)
 
     go_live_date = datetime.date.fromisoformat(current_app.config.get('GO_LIVE_DATE'))
     filing_date = go_live_date + datetime.timedelta(days=days)
@@ -341,7 +375,7 @@ def test_get_internal_filings(session, client, jwt):
     # setup
     identifier = 'CP7654321'
     b = factory_business(identifier)
-    filing = factory_completed_filing(b, AR_FILING)
+    filing = factory_completed_filing(b, ANNUAL_REPORT)
     assert filing.status == Filing.Status.COMPLETED.value
     filing.colin_event_id = 1234
     filing.save()
@@ -363,3 +397,26 @@ def test_get_internal_filings(session, client, jwt):
     assert filing.status != Filing.Status.COMPLETED.value
     filings = Filing.get_completed_filings_for_colin()
     assert len(filings) == 0
+
+
+def test_get_a_businesses_most_recent_filing_of_a_type(session):
+    """Assert that the most recent completed filing of a specified type is returned."""
+    from legal_api.models import Filing
+    from tests.unit.models import factory_completed_filing
+    # setup
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    base_ar_date = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362)
+    filings = []
+    for i in range(0, 5):
+        filing_date = base_ar_date + datedelta.datedelta(years=i)
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = \
+            filing_date.date().isoformat()
+        filing = factory_completed_filing(b, ar, filing_date)
+        filings.append(filing)
+    # test
+    filing = Filing.get_a_businesses_most_recent_filing_of_a_type(b.id, Filing.FILINGS['annualReport']['name'])
+
+    # assert that we get the last filing
+    assert filings[4] == filing

@@ -7,13 +7,14 @@ $app-header-height = 70px
   min-height 100vh
 
 .app-header
-  flex 0 0 auto
-  height $app-header-height
+  position -webkit-sticky // Safari
+  position sticky
+  top 0
+  width 100%
   z-index 2
 
 .app-body
   flex 1 1 auto
-  margin-top $app-header-height // Offset the height of the fixed header
 
 .app-container
   > .container:first-child

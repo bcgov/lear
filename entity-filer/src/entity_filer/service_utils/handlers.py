@@ -12,32 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Callbacks and signal trapping used in the main loop."""
-import asyncio
-
-# from entity_filer.service.service_logger import logger
 from .service_logger import logger
 
 
 async def error_cb(e):
     """Emit error message to the log stream."""
-    logger.error(e)
+    logger.error('NATS library emitted an error. %s', e, stack_info=True)
 
 
-async def closed_cb():
-    """Exit the session after the NATS connection is closed."""
-    logger.info('Connection to NATS is closed.')
-    my_loop = asyncio.get_running_loop()
-    await asyncio.sleep(0.1, loop=my_loop)
-    my_loop.stop()
-
-
-def signal_handler(sig_loop, sig_nc, task):
+def signal_handler(sig_loop, task):
     """Handle the signaled event and schedule the shutdown process.
 
     Note: This works on *nix systems only, which is fine for deployment target.
     """
-    if sig_nc.is_closed:
-        logger.info('Signal: NATS connection is closed.')
-        return
     logger.info('Signal to Shutdown received, disconnecting ...')
     sig_loop.create_task(task())

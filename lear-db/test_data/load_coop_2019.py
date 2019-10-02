@@ -51,12 +51,10 @@ def create_business(db, business_json):
     business.last_ledger_timestamp = business_json['business']['lastLedgerTimestamp']
     business.legal_name = business_json['business']['legalName']
     business.founding_date = business_json['business']['foundingDate']
-    business.last_agm_date = datetime.date.fromisoformat(
-        business_json['business']['lastAgmDate']
-    )
-    business.last_ar_date = datetime.date.fromisoformat(
-        business_json['business']['lastArFiledDate']
-    )
+    business.last_agm_date = datetime.date.fromisoformat(business_json['business']['lastAgmDate'])
+    business.last_ar_date = datetime.date.fromisoformat(business_json['business']['lastArDate'])\
+        if business_json['business']['lastArDate'] else business.last_agm_date
+    business.legal_type = business_json['business']['legalType']
     return business
 
 
@@ -119,7 +117,7 @@ def add_business_directors(business, directors_json):
 rowcount = 0
 TIMEOUT = 5
 
-with open('test_data/coop_2019_test_data.csv', 'r') as csvfile:
+with open('coop_2019_test_data.csv', 'r') as csvfile:
     reader = csv.DictReader(csvfile)
     with FLASK_APP.app_context():
         for row in reader:

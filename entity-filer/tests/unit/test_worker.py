@@ -18,8 +18,50 @@ import random
 
 import pytest
 
-from tests import EPOCH_DATETIME
-from tests.unit import AR_FILING, COA_FILING, COD_FILING, COMBINED_FILING, create_business, create_filing
+from tests.unit import AR_FILING, COA_FILING, COD_FILING, COMBINED_FILING, create_business, create_director, create_filing  # noqa I001, E501;
+
+
+def compare_addresses(business_address: dict, filing_address: dict):
+    """Compare two address dicts."""
+    for key in business_address.keys():
+        if key == 'addressCountry':
+            assert business_address[key] == 'CA'
+        elif key != 'addressType':
+            assert business_address[key] == filing_address[key]
+
+
+def active_ceased_lists(filing):
+    """Create active/ceased director lists based on a filing json."""
+    ceased_directors = []
+    active_directors = []
+    for filed_director in filing['filing']['changeOfDirectors']['directors']:
+        if filed_director.get('cessationDate'):
+            ceased_directors.append(filed_director['officer']['firstName'].upper())
+        else:
+            active_directors.append(filed_director['officer']['firstName'].upper())
+    return ceased_directors, active_directors
+
+
+def check_directors(business, directors, director_ceased_id, ceased_directors, active_directors):
+    """Assert basic checks on directors."""
+    from legal_api.resources.business import DirectorResource
+    assert len(directors) == len(active_directors)
+    for director in directors:
+        # check that director in setup is not in the list (should've been ceased)
+        assert director.id != director_ceased_id
+        assert director.first_name not in ceased_directors
+        assert director.first_name in active_directors
+        active_directors.remove(director.first_name)
+        # check returned only active directors
+        assert director.cessation_date is None
+        assert director.appointment_date
+        assert director.delivery_address
+        assert director.first_name == director.delivery_address.delivery_instructions.upper()
+
+    # check added all active directors in filing
+    assert active_directors == []
+    # check cessation date set on ceased director
+    assert DirectorResource._get_director(business, director_ceased_id)[0]['director']['cessationDate'] is not None
 
 
 def test_extract_payment_token():
@@ -80,6 +122,7 @@ def test_process_ar_filing(app, session):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
     agm_date = datetime.date.fromisoformat(AR_FILING['filing']['annualReport'].get('annualGeneralMeetingDate'))
+    ar_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualReportDate'))
 
     # setup
     business = create_business(identifier)
@@ -99,7 +142,7 @@ def test_process_ar_filing(app, session):
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
     assert datetime.datetime.date(business.last_agm_date) == agm_date
-    assert business.last_ar_date.replace(tzinfo=None) == EPOCH_DATETIME
+    assert datetime.datetime.date(business.last_ar_date) == ar_date
 
 
 def test_process_coa_filing(app, session):
@@ -133,66 +176,54 @@ def test_process_coa_filing(app, session):
     assert filing.status == Filing.Status.COMPLETED.value
 
     delivery_address = business.delivery_address.one_or_none().json
-    for key in delivery_address.keys():
-        if key == 'addressCountry':
-            assert delivery_address[key] == 'CA'
-        elif key != 'addressType':
-            assert delivery_address[key] == new_delivery_address[key]
-
+    compare_addresses(delivery_address, new_delivery_address)
     mailing_address = business.mailing_address.one_or_none().json
-    for key in mailing_address.keys():
-        if key == 'addressCountry':
-            assert delivery_address[key] == 'CA'
-        elif key != 'addressType':
-            assert mailing_address[key] == new_mailing_address[key]
+    compare_addresses(mailing_address, new_mailing_address)
 
 
 def test_process_cod_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
+    import copy
+    from legal_api.models import Business, Director, Filing
+
     from entity_filer.worker import process_filing
     from entity_filer.worker import get_filing_by_payment_id
-    from legal_api.models import Address, Business, Director, Filing
-    from legal_api.resources.business import DirectorResource
 
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
     end_date = datetime.datetime.utcnow().date()
-    director_address = Address(
-        street=COD_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['streetAddress'],
-        city=COD_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['addressCity'],
-        country='CA',
-        postal_code=COD_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['postalCode'],
-        region=COD_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['addressRegion'],
-    )
-    director_address.save()
-    director = Director(
-        first_name=COD_FILING['filing']['changeOfDirectors']['directors'][3]['officer']['firstName'],
-        last_name=COD_FILING['filing']['changeOfDirectors']['directors'][3]['officer']['lastName'],
-        middle_initial=COD_FILING['filing']['changeOfDirectors']['directors'][3]['officer']['middleInitial'],
-        appointment_date=COD_FILING['filing']['changeOfDirectors']['directors'][3]['appointmentDate'],
-        cessation_date=None,
-        delivery_address=director_address
-    )
-    director.save()
-    director_id = director.id
+    # prep director for no change
+    filing_data = copy.deepcopy(COD_FILING)
+    director1 = create_director(filing_data['filing']['changeOfDirectors']['directors'][0])
+    # prep director for name change
+    director2 = filing_data['filing']['changeOfDirectors']['directors'][1]
+    director2['officer']['firstName'] = director2['officer']['prevFirstName']
+    director2['officer']['middleInitial'] = director2['officer']['prevMiddleInitial']
+    director2['officer']['lastName'] = director2['officer']['prevLastName']
+    director2 = create_director(director2)
+    # prep director for cease
+    director3 = create_director(filing_data['filing']['changeOfDirectors']['directors'][2])
+    director_ceased_id = director3.id
+    # prep director for address change
+    director4 = filing_data['filing']['changeOfDirectors']['directors'][3]
+    director4['deliveryAddress']['streetAddress'] = 'should get changed'
+    director4 = create_director(director4)
+
     # list of active/ceased directors in test filing
-    active_directors = []
-    ceased_directors = []
-    for filed_director in COD_FILING['filing']['changeOfDirectors']['directors']:
-        if filed_director.get('cessationDate'):
-            ceased_directors.append(filed_director['officer']['firstName'])
-        else:
-            active_directors.append(filed_director['officer']['firstName'])
+    ceased_directors, active_directors = active_ceased_lists(COD_FILING)
 
     # setup
     business = create_business(identifier)
-    business.directors.append(director)
+    business.directors.append(director1)
+    business.directors.append(director2)
+    business.directors.append(director3)
+    business.directors.append(director4)
     business.save()
     # check that adding the director during setup was successful
     directors = Director.get_active_directors(business.id, end_date)
-    assert len(directors) == 1
-    assert directors[0].first_name == COD_FILING['filing']['changeOfDirectors']['directors'][3]['officer']['firstName']
+    assert len(directors) == 4
+    # create filing
     business_id = business.id
     create_filing(payment_id, COD_FILING, business.id)
     payment_token = {'paymentToken': {'id': payment_id, 'statusCode': Filing.Status.COMPLETED.value}}
@@ -210,74 +241,55 @@ def test_process_cod_filing(app, session):
     assert filing.status == Filing.Status.COMPLETED.value
 
     directors = Director.get_active_directors(business.id, end_date)
-    assert len(directors) == 3
-    for director in directors:
-        # check that director in setup is not in the list (should've been ceased)
-        assert director.id != director_id
-        assert director.first_name not in ceased_directors
-        assert director.first_name in active_directors
-        active_directors.remove(director.first_name)
-        # check returned only active directors
-        assert director.cessation_date is None
-        assert director.appointment_date
-        assert director.delivery_address
-        assert director.first_name == director.delivery_address.delivery_instructions
-
-    # check added all active directors in filing
-    assert active_directors == []
-    # check cessation date set on ceased director
-    assert DirectorResource._get_director(business, director_id)[0]['director']['cessationDate'] is not None
+    check_directors(business, directors, director_ceased_id, ceased_directors, active_directors)
 
 
 def test_process_combined_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
+    import copy
+    from legal_api.models import Business, Director, Filing
+
     from entity_filer.worker import process_filing
     from entity_filer.worker import get_filing_by_payment_id
-    from legal_api.models import Address, Business, Director, Filing
-    from legal_api.resources.business import DirectorResource
 
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
     agm_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualGeneralMeetingDate'))
+    ar_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualReportDate'))
     new_delivery_address = COMBINED_FILING['filing']['changeOfAddress']['deliveryAddress']
     new_mailing_address = COMBINED_FILING['filing']['changeOfAddress']['mailingAddress']
     end_date = datetime.datetime.utcnow().date()
-    director_address = Address(
-        street=COMBINED_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['streetAddress'],
-        city=COMBINED_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['addressCity'],
-        country='CA',
-        postal_code=COMBINED_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['postalCode'],
-        region=COMBINED_FILING['filing']['changeOfDirectors']['directors'][3]['deliveryAddress']['addressRegion'],
-    )
-    director_address.save()
-    director = Director(
-        first_name=COMBINED_FILING['filing']['changeOfDirectors']['directors'][3]['officer']['firstName'],
-        last_name=COMBINED_FILING['filing']['changeOfDirectors']['directors'][3]['officer']['lastName'],
-        middle_initial=COMBINED_FILING['filing']['changeOfDirectors']['directors'][3]['officer']['middleInitial'],
-        appointment_date=COMBINED_FILING['filing']['changeOfDirectors']['directors'][3]['appointmentDate'],
-        cessation_date=None,
-        delivery_address=director_address
-    )
-    director.save()
-    director_id = director.id
+    # prep director for no change
+    filing_data = copy.deepcopy(COMBINED_FILING)
+    director1 = create_director(filing_data['filing']['changeOfDirectors']['directors'][0])
+    # prep director for name change
+    director2 = filing_data['filing']['changeOfDirectors']['directors'][1]
+    director2['officer']['firstName'] = director2['officer']['prevFirstName']
+    director2['officer']['middleInitial'] = director2['officer']['prevMiddleInitial']
+    director2['officer']['lastName'] = director2['officer']['prevLastName']
+    director2 = create_director(director2)
+    # prep director for cease
+    director3 = create_director(filing_data['filing']['changeOfDirectors']['directors'][2])
+    director_ceased_id = director3.id
+    # prep director for address change
+    director4 = filing_data['filing']['changeOfDirectors']['directors'][3]
+    director4['deliveryAddress']['streetAddress'] = 'should get changed'
+    director4 = create_director(director4)
+
     # list of active/ceased directors in test filing
-    active_directors = []
-    ceased_directors = []
-    for filed_director in COMBINED_FILING['filing']['changeOfDirectors']['directors']:
-        if filed_director.get('cessationDate'):
-            ceased_directors.append(filed_director['officer']['firstName'])
-        else:
-            active_directors.append(filed_director['officer']['firstName'])
+    ceased_directors, active_directors = active_ceased_lists(COMBINED_FILING)
 
     # setup
     business = create_business(identifier)
-    business.directors.append(director)
+    business.directors.append(director1)
+    business.directors.append(director2)
+    business.directors.append(director3)
+    business.directors.append(director4)
     business.save()
     # check that adding the director during setup was successful
     directors = Director.get_active_directors(business.id, end_date)
-    assert len(directors) == 1
-    assert directors[0].first_name == COD_FILING['filing']['changeOfDirectors']['directors'][3]['officer']['firstName']
+    assert len(directors) == 4
     business_id = business.id
     create_filing(payment_id, COMBINED_FILING, business.id)
     payment_token = {'paymentToken': {'id': payment_id, 'statusCode': Filing.Status.COMPLETED.value}}
@@ -294,42 +306,17 @@ def test_process_combined_filing(app, session):
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
     assert datetime.datetime.date(business.last_agm_date) == agm_date
-    assert business.last_ar_date.replace(tzinfo=None) == EPOCH_DATETIME
+    assert datetime.datetime.date(business.last_ar_date) == ar_date
 
     # check address filing
     delivery_address = business.delivery_address.one_or_none().json
-    for key in delivery_address.keys():
-        if key == 'addressCountry':
-            assert delivery_address[key] == 'CA'
-        elif key != 'addressType':
-            assert delivery_address[key] == new_delivery_address[key]
-
+    compare_addresses(delivery_address, new_delivery_address)
     mailing_address = business.mailing_address.one_or_none().json
-    for key in mailing_address.keys():
-        if key == 'addressCountry':
-            assert mailing_address[key] == 'CA'
-        elif key != 'addressType':
-            assert mailing_address[key] == new_mailing_address[key]
+    compare_addresses(mailing_address, new_mailing_address)
 
     # check director filing
     directors = Director.get_active_directors(business.id, end_date)
-    assert len(directors) == 3
-    for director in directors:
-        # check that director in setup is not in the list (should've been ceased)
-        assert director.id != director_id
-        assert director.first_name not in ceased_directors
-        assert director.first_name in active_directors
-        active_directors.remove(director.first_name)
-        # check returned only active directors
-        assert director.cessation_date is None
-        assert director.appointment_date
-        assert director.delivery_address
-        assert director.first_name == director.delivery_address.delivery_instructions
-
-    # check added all active directors in filing
-    assert active_directors == []
-    # check cessation date set on ceased director
-    assert DirectorResource._get_director(business, director_id)[0]['director']['cessationDate'] is not None
+    check_directors(business, directors, director_ceased_id, ceased_directors, active_directors)
 
 
 def test_process_filing_failed(app, session):

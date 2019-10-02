@@ -16,7 +16,7 @@
               >SBC_ITOperationsSupport@gov.bc.ca</a>
           </p>
         </v-card-text>
-        <v-divider></v-divider>
+        <v-divider class="my-0"></v-divider>
         <v-card-actions>
           <v-btn color="primary" flat @click="downloadErrorDialog = false">Close</v-btn>
         </v-card-actions>
@@ -67,18 +67,10 @@
     </v-expansion-panel>
 
     <!-- No Results Message -->
-    <v-card class="no-results" flat v-if="filedItems && filedItems.length === 0 && !errorMessage">
+    <v-card class="no-results" flat v-if="filedItems && filedItems.length === 0">
       <v-card-text>
         <div class="no-results__title">You have no filing history</div>
         <div class="no-results__subtitle">Your completed filings and transactions will appear here</div>
-      </v-card-text>
-    </v-card>
-
-    <!-- Error Message -->
-    <v-card class="network-error" flat v-if="filedItems && filedItems.length === 0 && errorMessage">
-      <v-card-text>
-        <div class="network-error__title">{{errorMessage}}</div>
-        <div class="no-results__subtitle">Your completed filings and transactions will normally appear here</div>
       </v-card-text>
     </v-card>
 
@@ -87,7 +79,7 @@
       <v-card-text>
         <div class="past-filings__text">
           Filings completed before August 21, 2019 will be available from the BC Registry as printed
-          documents.<br>Please contact us at <a href="tel:+1-250-952-0568">250 952-0568</a> to request
+          documents.<br>Please contact us at <a href="tel:+1-877-526-1526">1-877-526-1526</a> to request
           paper copies of these past filings.
         </div>
       </v-card-text>
@@ -96,21 +88,20 @@
 </template>
 
 <script lang="ts">
-import Vue2Filters from 'vue2-filters'
+import ExternalMixin from '@/mixins/external-mixin'
 import axios from '@/axios-auth'
-import { mapState, mapActions } from 'vuex'
+import { mapState } from 'vuex'
 
 export default {
   name: 'FilingHistoryList',
 
-  mixins: [Vue2Filters.mixin],
+  mixins: [ExternalMixin],
 
   data () {
     return {
       downloadErrorDialog: false,
       panel: null, // currently expanded panel
       filedItems: null,
-      errorMessage: null,
       loadingDocument: false,
       loadingReceipt: false,
       loadingAll: false
@@ -118,79 +109,47 @@ export default {
   },
 
   computed: {
-    ...mapState(['corpNum'])
+    ...mapState(['entityIncNo', 'filings'])
   },
 
-  mounted () {
-    // load data for this page
-    this.getFilings()
+  created () {
+    // load data into this page
+    this.loadData()
   },
 
   methods: {
-    ...mapActions(['setFilingHistory']),
-
-    getFilings () {
+    loadData () {
       this.filedItems = []
-      this.errorMessage = null
-      if (this.corpNum) {
-        var url = this.corpNum + '/filings'
-        axios.get(url).then(response => {
-          if (response && response.data && response.data.filings) {
-            // sort by date descending (ie, latest to earliest)
-            const filings = response.data.filings.sort(
-              (a, b) => (b.filing.header.date - a.filing.header.date)
-            )
 
-            // store the list of filing history to be used elsewhere
-            this.setFilingHistory(filings)
-
-            // create filed items
-            for (let i = 0; i < filings.length; i++) {
-              const filing = filings[i].filing
-              if (filing && filing.header) {
-                switch (filing.header.name) {
-                  case 'annualReport':
-                    this.loadAnnualReport(filing)
-                    break
-                  case 'changeOfDirectors':
-                    this.loadChangeOfDirectors(filing)
-                    break
-                  case 'changeOfAddress':
-                    this.loadChangeOfAddress(filing)
-                    break
-                  default:
-                    console.log('ERROR - got unknown filing name =', filing)
-                    break
-                }
-              } else {
-                console.log('ERROR - invalid filing or filing header =', filing)
-              }
-            }
-          } else {
-            console.log('getFilings() error - invalid Filings')
-            this.errorMessage = 'Oops, could not parse data from server'
+      // create filed items
+      for (let i = 0; i < this.filings.length; i++) {
+        const filing = this.filings[i].filing
+        if (filing && filing.header) {
+          switch (filing.header.name) {
+            case 'annualReport':
+              this.loadAnnualReport(filing)
+              break
+            case 'changeOfDirectors':
+              this.loadChangeOfDirectors(filing)
+              break
+            case 'changeOfAddress':
+              this.loadChangeOfAddress(filing)
+              break
+            default:
+              console.log('ERROR - got unknown filing name =', filing)
+              break
           }
-          this.$emit('filed-count', this.filedItems.length)
-          // if needed, highlight a specific filing
-          // NB: use unary plus operator to cast string to number
-          const highlightId = +this.$route.query.filing_id // may be NaN (which is false)
-          if (highlightId) { this.highlightFiling(highlightId) }
-        }).catch(error => {
-          console.error('getFilings() error =', error)
-          this.errorMessage = 'Oops, could not load data from server'
-        })
-      }
-    },
-
-    highlightFiling (highlightId) {
-      // expand the panel of the matching filing
-      for (let i = 0; i < this.filedItems.length; i++) {
-        // assume there is always a filing document
-        if (this.filedItems[i].filingDocuments[0].filingId === highlightId) {
-          this.panel = i
-          break
+        } else {
+          console.log('ERROR - invalid filing or filing header =', filing)
         }
       }
+
+      this.$emit('filed-count', this.filedItems.length)
+
+      // if needed, highlight a specific filing
+      // NB: use unary plus operator to cast string to number
+      const highlightId = +this.$route.query.filing_id // may be NaN (which is false)
+      if (highlightId) { this.highlightFiling(highlightId) }
     },
 
     loadAnnualReport (filing) {
@@ -200,31 +159,14 @@ export default {
           const agmYear = +date.substring(0, 4)
           const item = {
             name: `Annual Report (${agmYear})`,
-            filingAuthor: filing.annualReport.certifiedBy,
+            filingAuthor: filing.header.certifiedBy,
             filingDate: filing.header.date,
             paymentToken: filing.header.paymentToken,
-            filingStatus: filing.header.status,
             filingDocuments: [{
               filingId: filing.header.filingId,
               name: 'Annual Report',
-              documentName: `${this.corpNum} - Annual Report (${agmYear}) - ${filing.header.date}.pdf`
+              documentName: `${this.entityIncNo} - Annual Report (${agmYear}) - ${filing.header.date}.pdf`
             }]
-          }
-          // check if there was also a Change Of Directors
-          if (filing.changeOfDirectors) {
-            item.filingDocuments.push({
-              filingId: filing.header.filingId,
-              name: 'Director Change (AGM)',
-              documentName: `${this.corpNum} - Director Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
-            })
-          }
-          // check if there was also a Change Of Address
-          if (filing.changeOfAddress) {
-            item.filingDocuments.push({
-              filingId: filing.header.filingId,
-              name: 'Address Change (AGM)',
-              documentName: `${this.corpNum} - Address Change (AGM ${agmYear}) - ${filing.header.date}.pdf`
-            })
           }
           this.filedItems.push(item)
         } else {
@@ -239,14 +181,13 @@ export default {
       if (filing.changeOfDirectors) {
         const item = {
           name: 'Director Change',
-          filingAuthor: filing.changeOfDirectors.certifiedBy,
+          filingAuthor: filing.header.certifiedBy,
           filingDate: filing.header.date,
           paymentToken: filing.header.paymentToken,
-          filingStatus: filing.header.status,
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: 'Director Change',
-            documentName: `${this.corpNum} - Director Change - ${filing.header.date}.pdf`
+            documentName: `${this.entityIncNo} - Director Change - ${filing.header.date}.pdf`
           }]
         }
         this.filedItems.push(item)
@@ -259,19 +200,29 @@ export default {
       if (filing.changeOfAddress) {
         const item = {
           name: 'Address Change',
-          filingAuthor: filing.changeOfAddress.certifiedBy,
+          filingAuthor: filing.header.certifiedBy,
           filingDate: filing.header.date,
           paymentToken: filing.header.paymentToken,
-          filingStatus: filing.header.status,
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: 'Address Change',
-            documentName: `${this.corpNum} - Address Change - ${filing.header.date}.pdf`
+            documentName: `${this.entityIncNo} - Address Change - ${filing.header.date}.pdf`
           }]
         }
         this.filedItems.push(item)
       } else {
         console.log('ERROR - invalid changeOfAddress in filing =', filing)
+      }
+    },
+
+    highlightFiling (highlightId) {
+      // expand the panel of the matching filing
+      for (let i = 0; i < this.filedItems.length; i++) {
+        // assume there is always a filing document
+        if (this.filedItems[i].filingDocuments[0].filingId === highlightId) {
+          this.panel = i
+          break
+        }
       }
     },
 
@@ -282,27 +233,32 @@ export default {
     },
 
     async downloadOneDocument (filingDocument) {
-      const url = this.corpNum + '/filings/' + filingDocument.filingId
+      const url = this.entityIncNo + '/filings/' + filingDocument.filingId
       const headers = { 'Accept': 'application/pdf' }
 
-      await axios.get(url, { headers: headers, responseType: 'arraybuffer' }).then(response => {
+      await axios.get(url, { headers: headers, responseType: 'blob' as 'json' }).then(response => {
         if (response) {
           /* solution from https://github.com/axios/axios/issues/1392 */
 
           // it is necessary to create a new blob object with mime-type explicitly set
           // otherwise only Chrome works like it should
-          const newBlob = new Blob([response.data], { type: 'application/pdf' })
+          const blob = new Blob([response.data], { type: 'application/pdf' })
 
           // IE doesn't allow using a blob object directly as link href
           // instead it is necessary to use msSaveOrOpenBlob
           if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-            window.navigator.msSaveOrOpenBlob(newBlob, filingDocument.documentName)
+            window.navigator.msSaveOrOpenBlob(blob, filingDocument.documentName)
           } else {
             // for other browsers, create a link pointing to the ObjectURL containing the blob
-            const link = document.createElement('a')
-            link.href = window.URL.createObjectURL(newBlob)
-            link.download = filingDocument.documentName
-            link.click()
+            const url = window.URL.createObjectURL(blob)
+            const a = window.document.createElement('a')
+            window.document.body.appendChild(a)
+            a.setAttribute('style', 'display: none')
+            a.href = url
+            a.download = filingDocument.documentName
+            a.click()
+            window.URL.revokeObjectURL(url)
+            a.remove()
           }
         } else {
           console.log('downloadOneDocument() error - null response')
@@ -323,36 +279,41 @@ export default {
     async downloadOneReceipt (filing) {
       const url = filing.paymentToken + '/receipts'
       const data = {
-        corpName: this.corpNum,
+        corpName: this.entityIncNo,
         filingDateTime: filing.filingDate, // TODO: format as needed
         fileName: 'receipt' // not used
       }
       const config = {
         headers: { 'Accept': 'application/pdf' },
-        responseType: 'arraybuffer',
-        baseURL: this.payAPIURL + 'payments/'
+        responseType: 'blob' as 'json',
+        baseURL: sessionStorage.getItem('PAY_API_URL') + 'payment-requests/'
       }
 
       await axios.post(url, data, config).then(response => {
         if (response) {
-          const fileName = `${this.corpNum} - Receipt - ${filing.filingDate}.pdf`
+          const fileName = `${this.entityIncNo} - Receipt - ${filing.filingDate}.pdf`
 
           /* solution from https://github.com/axios/axios/issues/1392 */
 
           // it is necessary to create a new blob object with mime-type explicitly set
           // otherwise only Chrome works like it should
-          const newBlob = new Blob([response.data], { type: 'application/pdf' })
+          const blob = new Blob([response.data], { type: 'application/pdf' })
 
           // IE doesn't allow using a blob object directly as link href
           // instead it is necessary to use msSaveOrOpenBlob
           if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-            window.navigator.msSaveOrOpenBlob(newBlob, fileName)
+            window.navigator.msSaveOrOpenBlob(blob, fileName)
           } else {
             // for other browsers, create a link pointing to the ObjectURL containing the blob
-            const link = document.createElement('a')
-            link.href = window.URL.createObjectURL(newBlob)
-            link.download = fileName
-            link.click()
+            const url = window.URL.createObjectURL(blob)
+            const a = window.document.createElement('a')
+            window.document.body.appendChild(a)
+            a.setAttribute('style', 'display: none')
+            a.href = url
+            a.download = fileName
+            a.click()
+            window.URL.revokeObjectURL(url)
+            a.remove()
           }
         } else {
           console.log('downloadOneReceipt() error - null response')
@@ -377,9 +338,10 @@ export default {
   },
 
   watch: {
-    corpNum (val) {
-      // if Corp Num changes, get new filings
-      this.getFilings()
+    filings () {
+      // if filings changes, reload them
+      // (does not fire on initial page load)
+      this.loadData()
     }
   }
 }

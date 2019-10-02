@@ -1,111 +1,158 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
-import sinon from 'sinon'
+import { shallowMount } from '@vue/test-utils'
 
-import axios from '@/axios-auth'
 import store from '@/store/store'
 import FilingHistoryList from '@/components/Dashboard/FilingHistoryList.vue'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('FilingHistoryList.vue', () => {
-  let vm
+describe('FilingHistoryList', () => {
+  it('handles empty data', done => {
+    const $route = { query: { 'filingId': null } }
 
-  beforeEach(done => {
     // init store
-    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
+    store.state.filings = []
 
-    // GET filing history
-    sinon.stub(axios, 'get').withArgs('CP0001191/filings')
-      .returns(new Promise((resolve) => resolve({
-        data:
-          {
-            'filings': [
-              {
-                'filing': {
-                  'annualReport': {
-                    'annualGeneralMeetingDate': '2018-07-15',
-                    'certifiedBy': 'full1 name1',
-                    'email': 'no_one@never.get'
-                  },
-                  'business': {
-                    'cacheId': 1,
-                    'foundingDate': '2007-04-08',
-                    'identifier': 'CP0002098',
-                    'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                    'legalName': 'Legal Name - CP0002098'
-                  },
-                  'header': {
-                    'date': '2017-06-06',
-                    'filingId': 123,
-                    'name': 'annualReport',
-                    'status': 'DRAFT'
-                  }
-                }
-              },
-              {
-                'filing': {
-                  'changeOfAddress': {
-                    'certifiedBy': 'full2 name2',
-                    'email': 'no_one@never.get'
-                  },
-                  'business': {
-                    'cacheId': 1,
-                    'foundingDate': '2007-04-08',
-                    'identifier': 'CP0002098',
-                    'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                    'legalName': 'Legal Name - CP0002098'
-                  },
-                  'header': {
-                    'date': '2017-06-06',
-                    'filingId': 456,
-                    'name': 'changeOfAddress',
-                    'status': 'ERROR'
-                  }
-                }
-              },
-              {
-                'filing': {
-                  'changeOfDirectors': {
-                    'certifiedBy': 'full3 name3',
-                    'email': 'no_one@never.get'
-                  },
-                  'business': {
-                    'cacheId': 1,
-                    'foundingDate': '2007-04-08',
-                    'identifier': 'CP0002098',
-                    'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                    'legalName': 'Legal Name - CP0002098'
-                  },
-                  'header': {
-                    'date': '2017-06-06',
-                    'filingId': 789,
-                    'name': 'changeOfDirectors',
-                    'status': 'PENDING'
-                  }
-                }
-              }
-            ]
-          }
-      })))
-
-    const constructor = Vue.extend(FilingHistoryList)
-    const instance = new constructor({ store: store })
-    vm = instance.$mount()
+    const wrapper = shallowMount(FilingHistoryList, { store, mocks: { $route } })
+    const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
+      expect(vm.filedItems.length).toEqual(0)
+      expect(vm.$el.querySelectorAll('.filing-history-list').length).toEqual(0)
+      expect(wrapper.emitted('filed-count')).toEqual([[0]])
+      expect(vm.panel).toBeNull() // no row is expanded
+      expect(vm.$el.querySelector('.no-results')).not.toBeNull()
+      expect(vm.$el.querySelector('.no-results').textContent).toContain('You have no filing history')
+      wrapper.destroy()
       done()
     })
   })
 
-  afterEach(() => {
-    sinon.restore()
+  it('displays the Filed Items', done => {
+    const $route = { query: { 'filingId': null } }
+
+    // init store
+    store.state.entityIncNo = 'CP0001191'
+    store.state.filings = [
+      {
+        'filing': {
+          'header': {
+            'name': 'annualReport',
+            'date': '2019-01-02',
+            'paymentToken': 123,
+            'certifiedBy': 'Full Name 1',
+            'filingId': 321
+          },
+          'annualReport': {
+            'annualGeneralMeetingDate': '2019-12-31'
+          }
+        }
+      },
+      {
+        'filing': {
+          'header': {
+            'name': 'changeOfDirectors',
+            'date': '2019-03-04',
+            'paymentToken': 456,
+            'certifiedBy': 'Full Name 2',
+            'filingId': 654
+          },
+          'changeOfDirectors': {
+          }
+        }
+      },
+      {
+        'filing': {
+          'header': {
+            'name': 'changeOfAddress',
+            'date': '2019-05-06',
+            'paymentToken': 789,
+            'certifiedBy': 'Full Name 3',
+            'filingId': 987
+          },
+          'changeOfAddress': {
+          }
+        }
+      }
+    ]
+
+    const wrapper = shallowMount(FilingHistoryList, { store, mocks: { $route } })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(() => {
+      expect(vm.filedItems.length).toEqual(3)
+      expect(vm.$el.querySelectorAll('.filing-history-list').length).toEqual(3)
+      expect(wrapper.emitted('filed-count')).toEqual([[3]])
+      expect(vm.panel).toBeNull() // no row is expanded
+      expect(vm.$el.querySelector('.no-results')).toBeNull()
+      wrapper.destroy()
+      done()
+    })
   })
 
-  it('loads and displays the Filed Items properly', () => {
-    expect(vm.filedItems).not.toBeNull()
-    expect(vm.filedItems.length).toEqual(3)
+  it('expands the specified filing ID', done => {
+    const $route = { query: { 'filing_id': '654' } }
+
+    // init store
+    store.state.entityIncNo = 'CP0001191'
+    store.state.filings = [
+      {
+        'filing': {
+          'header': {
+            'name': 'annualReport',
+            'date': '2019-01-02',
+            'paymentToken': 123,
+            'certifiedBy': 'Full Name 1',
+            'filingId': 321
+          },
+          'annualReport': {
+            'annualGeneralMeetingDate': '2019-12-31'
+          }
+        }
+      },
+      {
+        'filing': {
+          'header': {
+            'name': 'changeOfDirectors',
+            'date': '2019-03-04',
+            'paymentToken': 456,
+            'certifiedBy': 'Full Name 2',
+            'filingId': 654
+          },
+          'changeOfDirectors': {
+          }
+        }
+      },
+      {
+        'filing': {
+          'header': {
+            'name': 'changeOfAddress',
+            'date': '2019-05-06',
+            'paymentToken': 789,
+            'certifiedBy': 'Full Name 3',
+            'filingId': 987
+          },
+          'changeOfAddress': {
+          }
+        }
+      }
+    ]
+
+    const wrapper = shallowMount(FilingHistoryList, { store, mocks: { $route } })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(() => {
+      expect(vm.filedItems.length).toEqual(3)
+      expect(vm.$el.querySelectorAll('.filing-history-list').length).toEqual(3)
+      expect(wrapper.emitted('filed-count')).toEqual([[3]])
+      expect(vm.panel).toEqual(1) // second row is expanded
+      expect(vm.$el.querySelector('.no-results')).toBeNull()
+      wrapper.destroy()
+      done()
+    })
   })
 })

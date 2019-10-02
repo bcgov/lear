@@ -12,20 +12,34 @@
             "type": "object",
             "required": [
                 "annualGeneralMeetingDate",
-                "certifiedBy",
-                "email"
+                "annualReportDate",
+                "directors",
+                "mailingAddress",
+                "deliveryAddress"
             ],
             "properties": {
                 "annualGeneralMeetingDate": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "format": "date"
+                },
+                "annualReportDate": {
                     "type": "string",
                     "format": "date"
                 },
-                "certifiedBy": {
-                    "type": "string"
+                "directors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/directors#/definitions/director"
+                    }
                 },
-                "email": {
-                    "type": "string",
-                    "format": "email"
+                "deliveryAddress": {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
+                },
+                "mailingAddress": {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
                 }
             }
         }

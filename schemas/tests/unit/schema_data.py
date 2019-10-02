@@ -27,26 +27,3 @@ TEST_SCHEMAS_DATA = [
     ('task.json'),
     ('todo.json'),
 ]
-
-TEST_AR = {
-    'filing': {
-        'header': {
-            'name': 'annualReport',
-            'date': '2019-04-08',
-            'filingId': 1
-        },
-        'business': {
-            'cacheId': 1,
-            'foundingDate': '2007-04-08',
-            'identifier': 'CP1234567',
-            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-            'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',
-            'legalName': 'legal name - CP1234567'
-        },
-        'annualReport': {
-            'annualGeneralMeetingDate': '2019-04-08',
-            'certifiedBy': 'full name',
-            'email': 'no_one@never.get'
-        }
-    }
-}

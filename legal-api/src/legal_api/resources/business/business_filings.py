@@ -22,6 +22,7 @@ from typing import Tuple
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
 from flask import current_app, g, jsonify, request
+from flask_babel import _
 from flask_jwt_oidc import JwtManager
 from flask_restplus import Resource, cors
 from werkzeug.local import LocalProxy
@@ -31,6 +32,7 @@ from legal_api.exceptions import BusinessException
 from legal_api.models import Business, Filing, User, db
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import COLIN_SVC_ROLE, authorized, queue
+from legal_api.services.filings import validate
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
@@ -46,6 +48,7 @@ class ListFilingResource(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @jwt.requires_auth
     def get(identifier, filing_id=None):
         """Return a JSON object with meta information about the Service."""
         business = Business.find_by_identifier(identifier)
@@ -69,7 +72,8 @@ class ListFilingResource(Resource):
 
         # Does it make sense to get a PDF of all filings?
         if str(request.accept_mimetypes) == 'application/pdf':
-            return 'Please specify a single filing', HTTPStatus.NOT_ACCEPTABLE
+            return jsonify({'message': _('Cannot return a single PDF of multiple filing submissions.')}),\
+                HTTPStatus.NOT_ACCEPTABLE
 
         rv = []
         go_live_date = datetime.date.fromisoformat(current_app.config.get('GO_LIVE_DATE'))
@@ -99,7 +103,7 @@ class ListFilingResource(Resource):
         json_input = request.get_json()
 
         # check authorization
-        if not authorized(identifier, jwt):
+        if not authorized(identifier, jwt, action=['edit']):
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED
@@ -111,11 +115,14 @@ class ListFilingResource(Resource):
 
         # validate filing
         if not draft:
-            err_msg, err_code = ListFilingResource._validate_filing_json(request)
-            if err_code != HTTPStatus.OK \
-                    or (only_validate):
-                msg = {'errors': err_msg} if (err_code != HTTPStatus.OK) else err_msg
-                return jsonify(msg), err_code
+            business = Business.find_by_identifier(identifier)
+            err = validate(business, json_input)
+            # err_msg, err_code = ListFilingResource._validate_filing_json(request)
+            if err or only_validate:
+                if err:
+                    json_input['errors'] = err.msg
+                    return jsonify(json_input), err.code
+                return jsonify(json_input), HTTPStatus.OK
 
         # save filing, if it's draft only then bail
         user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
@@ -132,7 +139,6 @@ class ListFilingResource(Resource):
             return jsonify(err_msg), err_code
 
         # create invoice ??
-        draft = request.args.get('draft', None)
         if not draft:
             err_msg, err_code = ListFilingResource._create_invoice(business, filing, jwt)
             if err_code:
@@ -143,6 +149,41 @@ class ListFilingResource(Resource):
         # all done
         return jsonify(filing.json),\
             (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_auth
+    def delete(identifier, filing_id=None):
+        """Delete a filing from the business."""
+        if not filing_id:
+            return ({'message':
+                     _('No filing id provided for:') + identifier},
+                    HTTPStatus.BAD_REQUEST)
+
+        # check authorization
+        if not authorized(identifier, jwt, action=['edit']):
+            return jsonify({'message':
+                            _('You are not authorized to delete a filing for:') + identifier}),\
+                HTTPStatus.UNAUTHORIZED
+
+        filing = Business.get_filing_by_id(identifier, filing_id)
+
+        if not filing:
+            return jsonify({'message':
+                            _('Filing Not Found.')}), \
+                HTTPStatus.NOT_FOUND
+
+        try:
+            filing.delete()
+            return jsonify({'message':
+                            _('Filing deleted.')}), \
+                HTTPStatus.OK
+        except BusinessException as err:
+            return jsonify({'errors': [
+                {'error': err.error},
+            ]}), err.status_code
+
+        return {}, HTTPStatus.NOT_IMPLEMENTED
 
     @staticmethod
     def _put_basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
@@ -262,24 +303,24 @@ class ListFilingResource(Resource):
         filing_types = []
         for k in filing.filing_json['filing'].keys():
             if Filing.FILINGS.get(k, None):
-                filing_types.append({'filing_type_code': Filing.FILINGS[k].get('code')})
+                filing_types.append({'filingTypeCode': Filing.FILINGS[k].get('code')})
 
         mailing_address = business.mailing_address.one_or_none()
 
         payload = {
-            'payment_info': {'method_of_payment': 'CC'},
-            'business_info': {
-                'business_identifier': f'{business.identifier}',
-                'corp_type': f'{business.identifier[:-7]}',
-                'business_name': f'{business.legal_name}',
-                'contact_info': {'city': mailing_address.city,
-                                 'postal_code': mailing_address.postal_code,
-                                 'province': mailing_address.region,
-                                 'address_line_1': mailing_address.street,
-                                 'country': mailing_address.country}
+            'paymentInfo': {'methodOfPayment': 'CC'},
+            'businessInfo': {
+                'businessIdentifier': f'{business.identifier}',
+                'corpType': f'{business.identifier[:-7]}',
+                'businessName': f'{business.legal_name}',
+                'contactInfo': {'city': mailing_address.city,
+                                'postalCode': mailing_address.postal_code,
+                                'province': mailing_address.region,
+                                'addressLine1': mailing_address.street,
+                                'country': mailing_address.country}
             },
-            'filing_info': {
-                'filing_types': filing_types
+            'filingInfo': {
+                'filingTypes': filing_types
             }
         }
 
@@ -289,7 +330,7 @@ class ListFilingResource(Resource):
             rv = requests.post(url=payment_svc_url,
                                json=payload,
                                headers=headers,
-                               timeout=5.0)
+                               timeout=20.0)
         except (exceptions.ConnectionError, exceptions.Timeout) as err:
             current_app.logger.error(f'Payment connection failure for {business.identifier}: filing:{filing.id}', err)
             return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED

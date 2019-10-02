@@ -1,6 +1,7 @@
 Flask
 Flask-SQLAlchemy
 SQLAlchemy-Continuum
+aiohttp
 flask-jwt-oidc>=0.1.5
 jsonschema
 python-dotenv

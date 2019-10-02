@@ -1,0 +1,97 @@
+
+{% if listOfDirectors is defined %}
+
+    {# APPOINTED #}
+
+        <div class="section-title">
+          NEW DIRECTORS APPOINTED OR ELECTED
+        </div>
+{% for director in listOfDirectors.directorsAppointed %}
+        <div class="section-data no-page-break">
+          <div class="title">
+            {{ director.officer.lastName }},
+            {{ director.officer.firstName }}
+            {% if director.officer.middleInitial is defined %}{{ director.officer.middleInitial }}{% endif %}
+          </div>
+          <div class="title">Address</div>
+          <div>{{ director.deliveryAddress.streetAddress }}</div>
+          <div>{{ director.deliveryAddress.streetAddressAdditional }}</div>
+          <div>{{ director.deliveryAddress.addressCity }}
+            {{ director.deliveryAddress.addressRegion }}
+            &nbsp;{{ director.deliveryAddress.postalCode }}</div>
+          <div>{{ director.deliveryAddress.addressCountry }}</div>
+          <div>{{ director.deliveryAddress.deliveryInstructions }}</div>
+        </div>
+        {% if not loop.last %}
+        <div class="separator"></div>
+        {% endif %}
+{% else %}
+      None.
+{% endfor %}
+
+    {# CEASED #}
+
+        <div class="section-title">
+          CEASED DIRECTORS
+        </div>
+{% for director in listOfDirectors.directorsCeased %}
+        <div class="section-data no-page-break">
+          <div class="title">
+            {{ director.officer.lastName }},
+            {{ director.officer.firstName }}
+            {% if director.officer.middleInitial is defined %}{{ director.officer.middleInitial }}{% endif %}
+          </div>
+          <div class="title">Address</div>
+          <div>{{ director.deliveryAddress.streetAddress }}</div>
+          <div>{{ director.deliveryAddress.streetAddressAdditional }}</div>
+          <div>{{ director.deliveryAddress.addressCity }}
+            {{ director.deliveryAddress.addressRegion }}
+            &nbsp;{{ director.deliveryAddress.postalCode }}</div>
+          <div>{{ director.deliveryAddress.addressCountry }}</div>
+          <div>{{ director.deliveryAddress.deliveryInstructions }}</div>
+        </div>
+        {% if not loop.last %}
+        <div class="separator"></div>
+        {% endif %}
+{% else %}
+      None.
+{% endfor %}
+
+    {# ALL CURRENT #}
+
+        <div class="section-title">
+          ALL DIRECTORS AS OF {{ effective_date.upper() }}
+        </div>
+{% for director in listOfDirectors.directors %}
+{% if not director.cessationDate%}
+        <div class="section-data no-page-break">
+          <div class="title">
+            {{ director.officer.lastName }},
+            {{ director.officer.firstName }}
+            {% if director.officer.middleInitial is defined %}{{ director.officer.middleInitial }}{% endif %}
+            {% if 'appointed' in director.actions %}{{ labelNew() }}{% endif %}
+            {% if 'nameChanged' in director.actions %}
+                <span class="director-former-name">
+                    (Formerly {{ director.officer.prevLastName }},
+                    {{ director.officer.prevFirstName }} {{ director.officer.prevMiddleInitial }}
+                    )
+                </span>
+            {% endif %}
+          </div>
+          <div class="title">Address {% if 'addressChanged' in director.actions %}{{ labelNew() }}{% endif %}</div>
+          <div>{{ director.deliveryAddress.streetAddress }}</div>
+          <div>{{ director.deliveryAddress.streetAddressAdditional }}</div>
+          <div>{{ director.deliveryAddress.addressCity }}
+            {{ director.deliveryAddress.addressRegion }}
+            &nbsp;{{ director.deliveryAddress.postalCode }}</div>
+          <div>{{ director.deliveryAddress.addressCountry }}</div>
+          <div>{{ director.deliveryAddress.deliveryInstructions }}</div>
+        </div>
+        {% if not loop.last %}
+        <div class="separator"></div>
+        {% endif %}
+{% endif %}
+{% else %}
+      None.
+{% endfor %}
+{% endif %}

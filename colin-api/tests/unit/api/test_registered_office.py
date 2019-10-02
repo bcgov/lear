@@ -17,6 +17,7 @@
 import json
 
 from registry_schemas import validate
+from registry_schemas.example_data import CHANGE_OF_ADDRESS, FILING_HEADER
 
 from tests import oracle_integration
 from tests.unit.api.test_ar import coa_ids as coa_ids
@@ -41,48 +42,12 @@ def test_post_coa(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
     headers = {'content-type': 'application/json'}
 
-    fake_filing = {
-
-        "filing": {
-            "business": {
-                "cacheId": 0,
-                "corpState": "ACT",
-                "foundingDate": "2004-04-28",
-                "identifier": "CP0001965",
-                "jurisdiction": "BC",
-                "lastAgmDate": "2017-12-31",
-                "lastArFiledDate": "2019-05-23",
-                "lastLedgerTimestamp": "2019-05-23T22:21:12-00:00",
-                "legalName": "CENTRAL INTERIOR COMMUNITY SERVICES CO-OP",
-                "status": "In Good Standing",
-                "type": "CP"
-            },
-            "changeOfAddress": {
-                "certifiedBy": "Joe Smith",
-                "deliveryAddress": {
-                    "actions": ["addressChanged"],
-                    "addressCity": "WILLIAMS LAKE",
-                    "addressCountry": "CANADA",
-                    "addressRegion": "BC",
-                    "postalCode": "V2G 1J6",
-                    "streetAddress": "51 4TH AVENUE SOUTH test",
-                },
-                "email": "nobody@nothing.com",
-                "mailingAddress": {
-                    "actions": ["addressChanged"],
-                    "addressCity": "WILLIAMS LAKE",
-                    "addressCountry": "CANADA",
-                    "addressRegion": "BC",
-                    "postalCode": "V2G 1J6",
-                    "streetAddress": "51 4TH AVENUE SOUTH test",
-                }
-            },
-            "header": {
-                "date": "2019-05-23",
-                "name": "changeOfAddress"
-            }
-        }
-    }
+    fake_filing = FILING_HEADER
+    fake_filing['filing']['header']['name'] = 'changeOfAddress'
+    fake_filing['filing']['business']['identifier'] = 'CP0001965'
+    fake_filing['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+    fake_filing['filing']['changeOfAddress']['deliveryAddress']['addressCountry'] = 'Canada'
+    fake_filing['filing']['changeOfAddress']['mailingAddress']['addressCountry'] = 'Canada'
     rv = client.post('/api/v1/businesses/CP0001965/filings/changeOfAddress',
                      data=json.dumps(fake_filing), headers=headers)
 
@@ -193,47 +158,10 @@ def test_post_coa_with_mismatched_identifer(client):
     """Assert that the identifier (corp num) must match between URL and posted data."""
     headers = {'content-type': 'application/json'}
 
-    fake_filing = {
-        "filing": {
-            "changeOfAddress": {
-                "certifiedBy": "Joe Smith",
-                "deliveryAddress": {
-                    "actions": ["addressChanged"],
-                    "addressCity": "WILLIAMS LAKE",
-                    "addressCountry": "CANADA",
-                    "addressRegion": "BC",
-                    "postalCode": "V2G 1J6",
-                    "streetAddress": "51 4TH AVENUE SOUTH",
-                },
-                "email": "nobody@nothing.com",
-                "mailingAddress": {
-                    "actions": ["addressChanged"],
-                    "addressCity": "WILLIAMS LAKE",
-                    "addressCountry": "CANADA",
-                    "addressRegion": "BC",
-                    "postalCode": "V2G 1J6",
-                    "streetAddress": "51 4TH AVENUE SOUTH",
-                }
-            },
-            "business": {
-                "cacheId": 0,
-                "lastLedgerTimestamp": "2019-05-08T21:21:01-00:00",
-                "foundingDate": "2004-04-28",
-                "identifier": "CP0001965",
-                "legalName": "CENTRAL INTERIOR COMMUNITY SERVICES CO-OP",
-                "businessNumber": None,
-                "jurisdiction": "BC",
-                "lastAgmDate": "2017-11-07",
-                "lastArFiledDate": "2017-04-28",
-                "status": "Active",
-                "type": "CP"
-            },
-            "header": {
-                "date": "2017-11-23",
-                "name": "changeOfAddress"
-            }
-        }
-    }
+    fake_filing = FILING_HEADER
+    fake_filing['filing']['header']['name'] = 'changeOfAddress'
+    fake_filing['filing']['business']['identifier'] = 'CP0001965'
+    fake_filing['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
     rv = client.post('/api/v1/businesses/CP0001966/filings/changeOfAddress',
                      data=json.dumps(fake_filing), headers=headers)
 

@@ -15,7 +15,7 @@ const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
 document.body.append(app)
 
-describe('Directors.vue', () => {
+describe('Directors', () => {
   let vm
 
   function click (id) {
@@ -27,7 +27,7 @@ describe('Directors.vue', () => {
 
   beforeEach(done => {
     // init store
-    store.state.corpNum = 'CP0001191'
+    store.state.entityIncNo = 'CP0001191'
 
     // GET directors
     sinon.stub(axios, 'get').withArgs('CP0001191/directors?date=2019-04-01')
@@ -75,8 +75,8 @@ describe('Directors.vue', () => {
           }
       })))
 
-    const constructor = Vue.extend(Directors)
-    const instance = new constructor({ store: store })
+    const Constructor = Vue.extend(Directors)
+    const instance = new Constructor({ store: store })
     vm = instance.$mount()
 
     // set as-of date
@@ -116,12 +116,12 @@ describe('Directors.vue', () => {
     // check complete first address
     expect(vm.directors.length).toEqual(2)
     expect(vm.directors[0].deliveryAddress.streetAddress).toEqual('mailing_address - address line one')
-    expect(vm.directors[0].deliveryAddress.streetAddressAdditional).toBeNull()
+    expect(vm.directors[0].deliveryAddress.streetAddressAdditional).toEqual('')
     expect(vm.directors[0].deliveryAddress.addressCity).toEqual('mailing_address city')
     expect(vm.directors[0].deliveryAddress.addressRegion).toEqual('BC')
     expect(vm.directors[0].deliveryAddress.addressCountry).toEqual('mailing_address country')
     expect(vm.directors[0].deliveryAddress.postalCode).toEqual('H0H0H0')
-    expect(vm.directors[0].deliveryAddress.deliveryInstructions).toBeNull()
+    expect(vm.directors[0].deliveryAddress.deliveryInstructions).toEqual('')
 
     // spot-check second address
     expect(vm.directors[1].deliveryAddress.streetAddressAdditional).toEqual('Kirkintiloch')

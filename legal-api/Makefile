@@ -63,6 +63,7 @@ setup-venv: requirements.txt
 .PHONY: install-dev
 install-dev: venv/bin/activate
 	. venv/bin/activate ; \
+	pip install -Ur requirements/dev.txt; \
 	pip install -e .
 
 .PHONY: activate
@@ -93,7 +94,6 @@ mac-cov:	install-dev coverage-report
 pylint:
 	pylint --rcfile=setup.cfg \
 	 --load-plugins=pylint_flask \
-	 --disable=C0301,W0511,R0801 \
 	 src/$(project_name)
 
 ## run flake8 on the package and tests
@@ -103,6 +103,11 @@ flake8:
 ## Verify source code license headers.
 license:
 	./scripts/verify_license_headers.sh src/$(project_name) tests
+
+.PHONY: test-ratio
+test-ratio:
+	./scripts/test_ratio.sh
+
 
 #################################################################################
 # Self Documenting Commands                                                     #

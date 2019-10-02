@@ -36,55 +36,18 @@
   </ul>
 </template>
 
-<script>
-import axios from '@/axios-auth'
+<script lang="ts">
+import { Component, Vue } from 'vue-property-decorator'
 import { mapState } from 'vuex'
 
-export default {
-  name: 'AddressListSm',
-
-  data () {
-    return {
-      mailingAddress: null,
-      deliveryAddress: null
-    }
-  },
-
+@Component({
   computed: {
-    ...mapState(['corpNum'])
-  },
-
-  mounted () {
-    // reload data for this page
-    this.getAddresses()
-  },
-
-  methods: {
-    getAddresses () {
-      if (this.corpNum) {
-        const url = this.corpNum + '/addresses'
-        axios.get(url).then(response => {
-          if (response && response.data && response.data.mailingAddress) {
-            this.mailingAddress = response.data.mailingAddress
-          } else {
-            console.log('getAddresses() error - invalid Mailing Address')
-          }
-          if (response && response.data && response.data.deliveryAddress) {
-            this.deliveryAddress = response.data.deliveryAddress
-          } else {
-            console.log('getAddresses() error - invalid Delivery Address')
-          }
-        }).catch(error => console.error('getAddresses() error =', error))
-      }
-    }
-  },
-
-  watch: {
-    corpNum (val) {
-      // when Corp Num is set or changes, get new addresses
-      this.getAddresses()
-    }
+    ...mapState(['mailingAddress', 'deliveryAddress'])
   }
+})
+export default class AddressListSm extends Vue {
+  readonly mailingAddress: object
+  readonly deliveryAddress: object
 }
 </script>
 

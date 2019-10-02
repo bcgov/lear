@@ -1,12 +1,21 @@
 <template>
   <div>
+    <ConfirmDialog ref="confirm" />
+
+    <DeleteErrorDialog
+      :dialog="deleteErrorDialog"
+      :errors="deleteErrors"
+      :warnings="deleteWarnings"
+      @okay="resetErrors"
+    />
+
     <v-expansion-panel v-if="taskItems && taskItems.length > 0">
       <v-expansion-panel-content
         class="todo-list"
         v-for="(item, index) in orderBy(taskItems, 'order')"
         v-bind:key="index"
         expand-icon=""
-        :class="{ 'disabled': !item.enabled }">
+        :class="{ 'disabled': !item.enabled, 'draft': isDraft(item) }">
 
         <template v-slot:header>
           <div class="list-item">
@@ -33,14 +42,60 @@
             </template>
 
             <div class="list-item__actions">
-              <v-btn color="primary" v-if="isDraft(item)" :disabled="!item.enabled"
-                @click.native.stop="doResumeFiling(item)">Resume</v-btn>
-              <v-btn color="primary" v-else-if="isPending(item)" :disabled="!item.enabled"
-                @click.native.stop="doResumePayment(item)">Resume Payment</v-btn>
-              <v-btn color="primary" v-else-if="isError(item)" :disabled="!item.enabled"
-                @click.native.stop="doResumePayment(item)">Retry Payment</v-btn>
-              <v-btn color="primary" v-else-if="!isCompleted(item)" :disabled="!item.enabled"
-                @click.native.stop="doFileNow(item)">File Now</v-btn>
+              <span v-if="isDraft(item)">
+                <v-btn id="btn-draft-resume"
+                  color="primary"
+                  :disabled="!item.enabled"
+                  @click.native.stop="doResumeFiling(item)">
+                  Resume
+                </v-btn>
+                <!-- more DRAFT actions menu -->
+                <v-menu offset-y left>
+                  <template v-slot:activator="{ on }">
+                    <v-btn color="primary" class="actions__more-actions__btn"
+                      v-on="on"
+                    >
+                      <v-icon>arrow_drop_down</v-icon>
+                    </v-btn>
+                  </template>
+                  <v-list ref="draft_actions" class="actions__more-actions">
+                    <v-list-tile id="btn-delete-draft" @click="confirmDeleteDraft(item)">
+                      <v-list-tile-title>Delete Draft</v-list-tile-title>
+                    </v-list-tile>
+                  </v-list>
+                </v-menu>
+              </span>
+
+              <v-tooltip v-else-if="isPending(item)" top color="#3b6cff" :disabled="!isRoleStaff">
+                <v-btn
+                  color="primary"
+                  slot="activator"
+                  :depressed="isRoleStaff"
+                  :ripple="!isRoleStaff"
+                  :disabled="!item.enabled"
+                  @click.native.stop="doResumePayment(item)">
+                  Resume Payment
+                </v-btn>
+                <span>Staff are not allowed to Resume Payment.</span>
+              </v-tooltip>
+              <v-tooltip v-else-if="isError(item)" top color="#3b6cff" :disabled="!isRoleStaff">
+                <v-btn
+                  color="primary"
+                  slot="activator"
+                  :depressed="isRoleStaff"
+                  :ripple="!isRoleStaff"
+                  :disabled="!item.enabled"
+                  @click.native.stop="doResumePayment(item)">
+                  Retry Payment
+                </v-btn>
+                <span>Staff are not allowed to Retry Payment.</span>
+              </v-tooltip>
+              <v-btn v-else-if="!isCompleted(item)"
+                color="primary"
+                :disabled="!item.enabled"
+                @click.native.stop="doFileNow(item)">
+                File Now
+              </v-btn>
             </div>
           </div>
         </template>
@@ -67,88 +122,78 @@
     </v-expansion-panel>
 
     <!-- No Results Message -->
-    <v-card class="no-results" flat v-if="taskItems && taskItems.length === 0 && !errorMessage">
+    <v-card class="no-results" flat v-if="taskItems && taskItems.length === 0">
       <v-card-text>
         <div class="no-results__title">You don't have anything to do yet</div>
         <div class="no-results__subtitle">Filings that require your attention will appear here</div>
       </v-card-text>
     </v-card>
-
-    <!-- Error Message -->
-    <v-card class="network-error" flat v-if="taskItems && taskItems.length === 0 && errorMessage">
-      <v-card-text>
-        <div class="network-error__title">{{errorMessage}}</div>
-        <div class="network-error__subtitle">Filings that require your attention will normally appear here</div>
-      </v-card-text>
-    </v-card>
   </div>
 </template>
 
-<script lang="ts">
-import Vue2Filters from 'vue2-filters'
+<script>
 import axios from '@/axios-auth'
-import { mapState, mapActions } from 'vuex'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import ExternalMixin from '@/mixins/external-mixin'
+import { mapState, mapActions, mapGetters } from 'vuex'
+import DeleteErrorDialog from '../AnnualReport/DeleteErrorDialog'
 
 export default {
   name: 'TodoList',
 
-  mixins: [Vue2Filters.mixin],
+  components: {
+    DeleteErrorDialog,
+    ConfirmDialog
+  },
+
+  mixins: [ExternalMixin],
 
   data () {
     return {
       taskItems: null,
-      errorMessage: null
+      deleteErrors: [],
+      deleteWarnings: [],
+      deleteErrorDialog: false
     }
   },
 
   computed: {
-    ...mapState(['corpNum'])
+    ...mapState(['tasks', 'entityIncNo']),
+
+    ...mapGetters(['isRoleStaff'])
   },
 
-  mounted () {
-    // load data for this page
-    this.getTasks()
+  created () {
+    // load data into this page
+    this.loadData()
   },
 
   methods: {
-    ...mapActions(['setARFilingYear', 'setCurrentFilingStatus', 'setRegOffAddrChange', 'setAgmDate',
-      'setFiledDate', 'setNoAGM', 'setValidated']),
+    ...mapActions(['setARFilingYear', 'setCurrentFilingStatus', 'setTriggerDashboardReload']),
 
-    getTasks () {
+    loadData () {
       this.taskItems = []
-      this.errorMessage = null
-      if (this.corpNum) {
-        const url = this.corpNum + '/tasks'
-        axios.get(url).then(response => {
-          if (response && response.data && response.data.tasks) {
-            // create task items
-            response.data.tasks.forEach(task => {
-              if (task && task.task && task.task.todo) {
-                this.loadTodoItem(task)
-              } else if (task && task.task && task.task.filing) {
-                this.loadFilingItem(task)
-              } else {
-                console.log('ERROR - got unknown task =', task)
-              }
-            })
-          } else {
-            console.log('getTasks() error - invalid response =', response)
-            this.errorMessage = 'Oops, could not parse data from server'
-          }
-          this.$emit('todo-count', this.taskItems.length)
 
-          // if this is a draft/pending/error item, emit the has-blocker-filings event to the parent component
-          // this indicates that a new filing cannot be started because this one has to be completed first
-          this.$emit('has-blocker-filing',
-            this.taskItems.filter(elem => {
-              return this.isDraft(elem) || this.isPending(elem) || this.isError(elem)
-            }).length > 0
-          )
-        }).catch(error => {
-          console.error('getTasks() error =', error)
-          this.errorMessage = 'Oops, could not load data from server'
-        })
-      }
+      // create task items
+      this.tasks.forEach(task => {
+        if (task && task.task && task.task.todo) {
+          this.loadTodoItem(task)
+        } else if (task && task.task && task.task.filing) {
+          this.loadFilingItem(task)
+        } else {
+          console.log('ERROR - got unknown task =', task)
+        }
+      })
+
+      this.$emit('todo-count', this.taskItems.length)
+
+      // if this is a draft/pending/error item, emit the has-blocker-filings event to the parent component
+      // this indicates that a new filing cannot be started because this one has to be completed first
+      this.$emit('has-blocker-filing',
+        this.taskItems.filter(elem => {
+          return this.isDraft(elem) || this.isPending(elem) || this.isError(elem)
+        }).length > 0
+      )
     },
 
     loadTodoItem (task) {
@@ -209,11 +254,12 @@ export default {
             type: filing.header.name,
             id: filing.header.filingId,
             title: `File ${ARFilingYear} Annual Report`,
+            draftTitle: `${ARFilingYear} Annual Report`,
             ARFilingYear,
             status: filing.header.status || 'NEW',
             enabled: Boolean(task.enabled),
             order: task.order,
-            paymentToken: filing.header.paymentToken ? filing.header.paymentToken : null
+            paymentToken: filing.header.paymentToken || null
           })
         } else {
           console.log('ERROR - invalid date in filing =', filing)
@@ -230,10 +276,11 @@ export default {
           type: filing.header.name,
           id: filing.header.filingId,
           title: `File Director Change`,
+          draftTitle: `Director Change`,
           status: filing.header.status || 'NEW',
           enabled: Boolean(task.enabled),
           order: task.order,
-          paymentToken: filing.header.paymentToken ? filing.header.paymentToken : null
+          paymentToken: filing.header.paymentToken || null
         })
       } else {
         console.log('ERROR - invalid filing or header or changeOfDirectors in task =', task)
@@ -247,10 +294,11 @@ export default {
           type: filing.header.name,
           id: filing.header.filingId,
           title: `File Address Change`,
+          draftTitle: `Address Change`,
           status: filing.header.status || 'NEW',
           enabled: Boolean(task.enabled),
           order: task.order,
-          paymentToken: filing.header.paymentToken ? filing.header.paymentToken : null
+          paymentToken: filing.header.paymentToken || null
         })
       } else {
         console.log('ERROR - invalid filing or header or changeOfAddress in task =', task)
@@ -261,8 +309,9 @@ export default {
       switch (item.type) {
         case 'annualReport':
           // file the subject Annual Report
-          this.resetStore(item)
-          this.$router.push({ name: 'annual-report', params: { id: '0' } }) // '0' means "new AR"
+          this.setARFilingYear(item.ARFilingYear)
+          this.setCurrentFilingStatus('NEW')
+          this.$router.push({ name: 'annual-report', params: { id: 0 } }) // 0 means "new AR"
           break
         default:
           console.log('doFileNow(), invalid type for item =', item)
@@ -273,19 +322,19 @@ export default {
       switch (item.type) {
         case 'annualReport':
           // resume the subject Annual Report
-          this.resetStore(item)
+          this.setARFilingYear(item.ARFilingYear)
           this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'annual-report', params: { id: item.id } })
           break
         case 'changeOfDirectors':
           // resume the subject Change Of Directors
-          this.resetStore(item)
+          this.setARFilingYear(item.ARFilingYear)
           this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'standalone-directors', params: { id: item.id } })
           break
         case 'changeOfAddress':
           // resume the subject Change Of Address
-          this.resetStore(item)
+          this.setARFilingYear(item.ARFilingYear)
           this.setCurrentFilingStatus('DRAFT')
           this.$router.push({ name: 'standalone-addresses', params: { id: item.id } })
           break
@@ -294,26 +343,20 @@ export default {
       }
     },
 
-    // this is called to either Resume Payment or Retry Payment.
+    // this is called to either Resume Payment or Retry Payment
     doResumePayment (item) {
+      // staff are not allowed to resume or retry payment
+      if (this.isRoleStaff) return false
+
       const origin = window.location.origin || ''
       const filingId = item.id
-      const returnURL = encodeURIComponent(origin + '/Dashboard?filing_id=' + filingId)
-      let authStub: string = this.authURL || ''
+      const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
+      let authStub = sessionStorage.getItem('AUTH_URL') || ''
       if (!(authStub.endsWith('/'))) { authStub += '/' }
       const paymentToken = item.paymentToken
       const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
       window.location.assign(payURL)
-    },
-
-    resetStore (item) {
-      this.setARFilingYear(item.ARFilingYear)
-      this.setCurrentFilingStatus('NEW')
-      this.setRegOffAddrChange(false)
-      this.setAgmDate(null)
-      this.setFiledDate(null)
-      this.setNoAGM(false)
-      this.setValidated(false)
+      return true
     },
 
     isNew (item) {
@@ -334,17 +377,77 @@ export default {
 
     isCompleted (item) {
       return item.status === 'COMPLETED'
+    },
+
+    confirmDeleteDraft (item) {
+      // open confirmation dialog and wait for response
+      this.$refs.confirm.open(
+        'Delete Draft?',
+        'Delete your ' + item.draftTitle + '? Any changes you\'ve made will be lost.',
+        { width: '40rem',
+          persistent: true,
+          yes: 'Delete',
+          no: null,
+          cancel: 'Don\'t delete',
+          className: 'delete-draft-confirmation-dialog' }
+      ).then(async (confirm) => {
+        // if we get here, Yes or No was clicked
+        if (confirm) {
+          await this.doDeleteDraft(item)
+        } else {
+          // do nothing
+        }
+      }).catch(() => {
+        // if we get here, Cancel was clicked - do nothing
+      })
+    },
+
+    async doDeleteDraft (item) {
+      let url = this.entityIncNo + '/filings/' + item.id
+      await axios.delete(url).then(res => {
+        if (!res) { throw new Error('invalid API response') }
+
+        // reload dashboard
+        this.setTriggerDashboardReload(true)
+      }).catch(error => {
+        if (error && error.response) {
+          if (error.response.data.errors) {
+            this.deleteErrors = error.response.data.errors
+          }
+          if (error.response.data.warnings) {
+            this.deleteWarnings = error.response.data.warnings
+          }
+          this.deleteErrorDialog = true
+        } else {
+          this.deleteErrorDialog = true
+        }
+      })
+    },
+
+    resetErrors () {
+      this.deleteErrorDialog = false
+      this.deleteErrors = []
+      this.deleteWarnings = []
     }
   },
 
   watch: {
-    corpNum (val) {
-      // if Corp Num changes, get new tasks
-      this.getTasks()
+    tasks () {
+      // if tasks changes, reload them
+      // (does not fire on initial page load)
+      this.loadData()
     }
   }
 }
 </script>
+
+<style lang="stylus">
+
+  // disable expansion
+  .todo-list.draft .v-expansion-panel__body
+    display none
+
+</style>
 
 <style lang="stylus" scoped>
 @import "../../assets/styles/theme.styl"
@@ -377,6 +480,11 @@ export default {
     .v-btn
       min-width 142px
 
+    #btn-draft-resume
+      min-width 103px
+      border-top-right-radius 0
+      border-bottom-right-radius 0
+
 .todo-list.disabled
   background-color $gray0
 
@@ -397,4 +505,14 @@ export default {
 
 p.bold
   font-weight 500
+
+.list-item__actions .v-btn.actions__more-actions__btn
+  min-width 38px !important
+  width 38px
+  border-top-left-radius 0
+  border-bottom-left-radius 0
+  margin-left 1px
+
+.actions__more-actions
+  padding 0
 </style>

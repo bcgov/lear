@@ -82,8 +82,7 @@
 
 <script lang="ts">
 
-import Vue from 'vue'
-import { Component, Emit, Prop, Watch } from 'vue-property-decorator'
+import { Component, Vue, Emit, Prop, Watch } from 'vue-property-decorator'
 import axios from '@/axios-auth'
 import isEmpty from 'lodash.isempty'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
@@ -205,7 +204,7 @@ export default class RegisteredOfficeAddress extends Vue {
   /**
    * Computed value of whether or not the address form is valid.
    *
-   * @return a boolean that is true if the data on the form is valid, or false otherwise.
+   * @returns a boolean that is true if the data on the form is valid, or false otherwise.
    */
   private get formValid (): boolean {
     return this.deliveryAddressValid && (this.inheritDeliveryAddress || this.mailingAddressValid)
@@ -214,7 +213,7 @@ export default class RegisteredOfficeAddress extends Vue {
   /**
    * Computed value of whether or not an address has been modified from the original.
    *
-   * @return a boolean that is true if one or both addresses have been modified, or false otherwise.
+   * @returns a boolean that is true if one or both addresses have been modified, or false otherwise.
    */
   private get modified (): boolean {
     // Unfortunately we cannot use the modified event from the BaseAddress components due to timing issues on loading
@@ -227,7 +226,7 @@ export default class RegisteredOfficeAddress extends Vue {
   /**
    * Computed value of whether or not the mailing address has been modified from the original.
    *
-   * @return a boolean that is true if the mailing address has been modified, or false otherwise.
+   * @returns a boolean that is true if the mailing address has been modified, or false otherwise.
    */
   private get mailingModified (): boolean {
     return !this.sameAddress(this.mailingAddress, this.mailingAddressOriginal)
@@ -236,7 +235,7 @@ export default class RegisteredOfficeAddress extends Vue {
   /**
    * Computed value of whether or not the delivery address has been modified from the original.
    *
-   * @return a boolean that is true if the delivery address has been modified, or false otherwise.
+   * @returns a boolean that is true if the delivery address has been modified, or false otherwise.
    */
   private get deliveryModified (): boolean {
     return !this.sameAddress(this.deliveryAddress, this.deliveryAddressOriginal)
@@ -291,7 +290,7 @@ export default class RegisteredOfficeAddress extends Vue {
    * @param address1 the first address object to compare.
    * @param address2 the second address object to compare.
    *
-   * @return a boolean that is true if the addresses are equivalent, or false otherwise.
+   * @returns a boolean that is true if the addresses are equivalent, or false otherwise.
    */
   private sameAddress (address1: object, address2: object): boolean {
     const json1 = JSON.stringify(address1, (name: string, val: any) : any => {
@@ -384,6 +383,9 @@ export default class RegisteredOfficeAddress extends Vue {
             } else {
               console.log('loadAddressesFromApi() error - invalid Mailing Address =', mailingAddress)
             }
+
+            // emit address data back up so that parent data has data (needed for AR filing specifically)
+            this.emitAddresses()
           } else {
             console.log('loadAddressesFromApi() error - invalid response =', response)
           }

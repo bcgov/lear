@@ -60,20 +60,18 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', '')
+    PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', 'http://')
+    AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'http://')
+    REPORT_SVC_URL = os.getenv('REPORT_SVC_URL', 'http://')
 
     GO_LIVE_DATE = os.getenv('GO_LIVE_DATE')
 
-    REPORT_SVC_URL = os.getenv('REPORT_SVC_URL', '')
-
     SENTRY_DSN = os.getenv('SENTRY_DSN', None)
-
+    LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
     SECRET_KEY = 'a secret'
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
     ALEMBIC_INI = 'migrations/alembic.ini'
-
     # POSTGRESQL
     DB_USER = os.getenv('DATABASE_USERNAME', '')
     DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')

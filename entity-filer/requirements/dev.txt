@@ -2,9 +2,10 @@
 -r prod.txt
 
 # Testing
-pytest
-pytest-mock
+pytest<=5.0.1
+pytest-aiohttp
 pytest-asyncio
+pytest-mock
 requests
 pyhamcrest
 dpath

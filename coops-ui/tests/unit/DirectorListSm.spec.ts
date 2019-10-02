@@ -1,81 +1,71 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
-import sinon from 'sinon'
+import { mount } from '@vue/test-utils'
 
-import axios from '@/axios-auth'
 import store from '@/store/store'
 import DirectorListSm from '@/components/Dashboard/DirectorListSm.vue'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('DirectorListSm.vue', () => {
-  let vm
-
-  beforeEach(done => {
+describe('DirectorListSm', () => {
+  it('handles empty data', done => {
     // init store
-    store.state.corpNum = 'CP0001191'
+    store.state.directors = []
 
-    // GET directors
-    sinon.stub(axios, 'get').withArgs('CP0001191/directors')
-      .returns(new Promise((resolve) => resolve({
-        data:
-          {
-            directors: [
-              {
-                'officer': {
-                  'firstName': 'Peter',
-                  'middleInitial': null,
-                  'lastName': 'Griffin'
-                },
-                'deliveryAddress': {
-                  'streetAddress': 'mailing_address - address line one',
-                  'streetAddressAdditional': null,
-                  'addressCity': 'mailing_address city',
-                  'addressCountry': 'mailing_address country',
-                  'postalCode': 'H0H0H0',
-                  'addressRegion': 'BC',
-                  'deliveryInstructions': null
-                },
-                'title': null
-              },
-              {
-                'officer': {
-                  'firstName': 'Joe',
-                  'middleInitial': 'P',
-                  'lastName': 'Swanson'
-                },
-                'deliveryAddress': {
-                  'streetAddress': 'mailing_address - address line #1',
-                  'streetAddressAdditional': 'Kirkintiloch',
-                  'addressCity': 'Glasgow',
-                  'addressCountry': 'UK',
-                  'postalCode': 'H0H 0H0',
-                  'addressRegion': 'Scotland',
-                  'deliveryInstructions': 'go to the back'
-                },
-                'title': 'Treasurer'
-              }
-            ]
-          }
-      })))
-
-    const constructor = Vue.extend(DirectorListSm)
-    const instance = new constructor({ store: store })
-    vm = instance.$mount()
+    const wrapper = mount(DirectorListSm, { store })
+    const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
+      expect(vm.directors.length).toEqual(0)
+      expect(vm.$el.querySelectorAll('.list-item').length).toEqual(0)
+
+      wrapper.destroy()
       done()
     })
   })
 
-  afterEach(() => {
-    sinon.restore()
-  })
+  it('displays multiple directors', done => {
+    // init store
+    store.state.directors = [
+      {
+        'officer': {
+          'firstName': 'Peter',
+          'lastName': 'Griffin'
+        },
+        'deliveryAddress': {
+          'streetAddress': '1012 Douglas St',
+          'addressCity': 'Victoria',
+          'addressRegion': 'BC',
+          'postalCode': 'V8W 2C3',
+          'addressCountry': 'CA'
+        }
+      },
+      {
+        'officer': {
+          'firstName': 'Joe',
+          'lastName': 'Swanson'
+        },
+        'deliveryAddress': {
+          'streetAddress': '220 Buchanan St',
+          'addressCity': 'Glasgow',
+          'addressRegion': 'Scotland',
+          'postalCode': 'G1 2FFF',
+          'addressCountry': 'UK'
+        }
+      }
+    ]
 
-  it('loads and displays the directors properly', () => {
-    expect(vm.directors).not.toBeNull()
-    expect(vm.directors.length).toEqual(2)
+    const wrapper = mount(DirectorListSm, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(() => {
+      expect(vm.directors.length).toEqual(2)
+      expect(vm.$el.querySelectorAll('.list-item').length).toEqual(2)
+
+      wrapper.destroy()
+      done()
+    })
   })
 })

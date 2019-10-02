@@ -1,6 +1,9 @@
 export default {
-  corpNum (state, corpNum) {
-    state.corpNum = corpNum
+  keycloakRoles (state, keycloakRoles) {
+    state.keycloakRoles = keycloakRoles
+  },
+  authRoles (state, authRoles) {
+    state.authRoles = authRoles
   },
   currentDate (state, currentDate) {
     state.currentDate = currentDate
@@ -10,21 +13,6 @@ export default {
   },
   ARFilingYear (state, ARFilingYear) {
     state.ARFilingYear = ARFilingYear
-  },
-  filedDate (state, filedDate) {
-    state.filedDate = filedDate
-  },
-  agmDate (state, agmDate) {
-    state.agmDate = agmDate
-  },
-  noAGM (state, noAGM) {
-    state.noAGM = noAGM
-  },
-  regOffAddrChange (state, regOffAddrChange) {
-    state.regOffAddrChange = regOffAddrChange
-  },
-  validated (state, validated) {
-    state.validated = validated
   },
   entityBusinessNo (state, entityBusinessNo) {
     state.entityBusinessNo = entityBusinessNo
@@ -41,22 +29,37 @@ export default {
   entityFoundingDate (state, entityFoundingDate) {
     state.entityFoundingDate = entityFoundingDate
   },
+  businessEmail (state, businessEmail) {
+    state.businessEmail = businessEmail
+  },
+  businessPhone (state, businessPhone) {
+    state.businessPhone = businessPhone
+  },
+  businessPhoneExtension (state, businessPhoneExtension) {
+    state.businessPhoneExtension = businessPhoneExtension
+  },
   lastPreLoadFilingDate (state, lastPreLoadFilingDate) {
     state.lastPreLoadFilingDate = lastPreLoadFilingDate
   },
   currentFilingStatus (state, currentFilingStatus) {
     state.currentFilingStatus = currentFilingStatus
   },
-  addressesFormValid (state, addressesFormValid) {
-    state.addressesFormValid = addressesFormValid
+  tasks (state, tasks) {
+    state.tasks = tasks
   },
-  directorFormValid (state, directorFormValid) {
-    state.directorFormValid = directorFormValid
+  filings (state, filings) {
+    state.filings = filings
   },
-  agmDateValid (state, agmDateValid) {
-    state.agmDateValid = agmDateValid
+  mailingAddress (state, mailingAddress) {
+    state.mailingAddress = mailingAddress
   },
-  filingHistory (state, filingHistory) {
-    state.filingHistory = filingHistory
+  deliveryAddress (state, deliveryAddress) {
+    state.deliveryAddress = deliveryAddress
+  },
+  directors (state, directors) {
+    state.directors = directors
+  },
+  triggerDashboardReload (state, value) {
+    state.triggerDashboardReload = value
   }
 }

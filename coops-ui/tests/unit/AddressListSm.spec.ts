@@ -1,65 +1,82 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
-import sinon from 'sinon'
+import { mount } from '@vue/test-utils'
 
-import axios from '@/axios-auth'
 import store from '@/store/store'
 import AddressListSm from '@/components/Dashboard/AddressListSm.vue'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
-describe('AddressListSm.vue', () => {
-  let vm
-
-  beforeEach(done => {
+describe('AddressListSm', () => {
+  it('handles empty data', done => {
     // init store
-    store.state.corpNum = 'CP0001191'
+    store.state.mailingAddress = null
+    store.state.deliveryAddress = null
 
-    // GET addresses
-    sinon.stub(axios, 'get').withArgs('CP0001191/addresses')
-      .returns(new Promise((resolve) => resolve({
-        data:
-          {
-            'mailingAddress': {
-              'addressCity': 'Test City',
-              'addressCountry': 'TA',
-              'addressRegion': 'BC',
-              'addressType': 'mailing',
-              'deliveryInstructions': null,
-              'postalCode': 'T3S3T3',
-              'streetAddress': 'CP0002098-mailingAddress-Test Street',
-              'streetAddressAdditional': null
-            },
-            'deliveryAddress': {
-              'addressCity': 'Test City',
-              'addressCountry': 'TA',
-              'addressRegion': 'BC',
-              'addressType': 'mailing',
-              'deliveryInstructions': null,
-              'postalCode': 'T3S3T3',
-              'streetAddress': 'CP0002098-deliveryAddress-Test Street',
-              'streetAddressAdditional': null
-            }
-          }
-      })))
-
-    const constructor = Vue.extend(AddressListSm)
-    const instance = new constructor({ store: store })
-    vm = instance.$mount()
+    const wrapper = mount(AddressListSm, { store })
+    const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
+      expect(vm.mailingAddress).toBeNull()
+      expect(vm.deliveryAddress).toBeNull()
+      expect(vm.$el.querySelectorAll('.list-item').length).toEqual(0)
+
+      wrapper.destroy()
       done()
     })
   })
 
-  afterEach(() => {
-    sinon.restore()
+  it('displays the mailing address', done => {
+    // init store
+    store.state.mailingAddress = {
+      'streetAddress': '1012 Douglas St',
+      'addressCity': 'Victoria',
+      'addressRegion': 'BC',
+      'postalCode': 'V8W 2C3',
+      'addressCountry': 'CA'
+    }
+    store.state.deliveryAddress = null
+
+    const wrapper = mount(AddressListSm, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(() => {
+      expect(vm.mailingAddress).not.toBeNull()
+      expect(vm.deliveryAddress).toBeNull()
+      expect(vm.$el.querySelectorAll('.list-item').length).toEqual(1)
+      expect(vm.$el.querySelector('.list-item__title').textContent).toBe('Mailing Address')
+      expect(vm.$el.querySelector('.address-details').textContent).toContain('Victoria BC')
+
+      wrapper.destroy()
+      done()
+    })
   })
 
-  it('loads and displays the addresses properly', () => {
-    expect(vm.mailingAddress).not.toBeNull()
-    expect(vm.deliveryAddress).not.toBeNull()
+  it('displays the delivery address', done => {
+    // init store
+    store.state.mailingAddress = null
+    store.state.deliveryAddress = {
+      'streetAddress': '220 Buchanan St',
+      'addressCity': 'Glasgow',
+      'addressRegion': 'Scotland',
+      'postalCode': 'G1 2FFF',
+      'addressCountry': 'UK'
+    }
+
+    const wrapper = mount(AddressListSm, { store })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(() => {
+      expect(vm.mailingAddress).toBeNull()
+      expect(vm.deliveryAddress).not.toBeNull()
+      expect(vm.$el.querySelectorAll('.list-item').length).toEqual(1)
+      expect(vm.$el.querySelector('.list-item__title').textContent).toBe('Delivery Address')
+      expect(vm.$el.querySelector('.address-details').textContent).toContain('Glasgow Scotland')
+
+      wrapper.destroy()
+      done()
+    })
   })
 })

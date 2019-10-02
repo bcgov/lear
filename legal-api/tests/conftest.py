@@ -61,6 +61,7 @@ def app():
 
 @pytest.fixture(scope='function')
 def app_ctx(event_loop):
+    # def app_ctx():
     """Return a session-wide application configured in TEST mode."""
     _app = create_app('testing')
     with _app.app_context():

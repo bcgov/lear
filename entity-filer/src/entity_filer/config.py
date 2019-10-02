@@ -20,6 +20,7 @@ Flask config, rather than reading environment variables directly
 or by accessing this configuration directly.
 """
 import os
+import random
 
 from dotenv import find_dotenv, load_dotenv
 
@@ -78,6 +79,24 @@ class _Config():  # pylint: disable=too-few-public-methods
         port=int(DB_PORT),
         name=DB_NAME,
     )
+
+    NATS_CONNECTION_OPTIONS = {
+        'servers': os.getenv('NATS_SERVERS', 'nats://127.0.0.1:4222').split(','),
+        'name': os.getenv('NATS_CLIENT_NAME', 'entity.filing.worker')
+
+    }
+    STAN_CONNECTION_OPTIONS = {
+        'cluster_id': os.getenv('NATS_CLUSTER_ID', 'test-cluster'),
+        'client_id': str(random.SystemRandom().getrandbits(0x58)),
+        'ping_interval': 1,
+        'ping_max_out': 5,
+    }
+
+    SUBSCRIPTION_OPTIONS = {
+        'subject': os.getenv('NATS_SUBJECT', 'entity.filings'),
+        'queue': os.getenv('NATS_QUEUE', 'filing-worker'),
+        'durable_name': os.getenv('NATS_QUEUE', 'filing-worker') + '_durable',
+    }
 
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
