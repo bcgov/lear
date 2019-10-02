@@ -22,5 +22,6 @@ def local_from_utc(utc_datetime: datetime, time_zone: str) -> datetime:
     try:
         utc_datetime.replace(tzinfo=pytz.utc)
         return utc_datetime.astimezone(pytz.timezone(time_zone))
-    except pytz.exceptions.NonExistentTimeError:
+    except (pytz.exceptions.NonExistentTimeError,
+            pytz.exceptions.UnknownTimeZoneError):
         return None

@@ -22,16 +22,23 @@ from deepdiff import DeepDiff
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
-if len(sys.argv) < 2:
+if len(sys.argv) == 2:
     print('usage: diff_util file1 file2')
+    exit(0)
 else:
     file1 = sys.argv[1]
     file2 = sys.argv[2]
 
-    with open(os.path.join(__location__, file1)) as json_file:
-        json1 = json.load(json_file)
+    try:
 
-    with open(os.path.join(__location__, file2)) as json_file:
-        json2 = json.load(json_file)
+        with open(os.path.join(__location__, file1)) as json_file:
+            json1 = json.load(json_file)
 
-    print(DeepDiff(json1, json2))
+        with open(os.path.join(__location__, file2)) as json_file:
+            json2 = json.load(json_file)
+
+        print(DeepDiff(json1, json2))
+
+    except FileNotFoundError as err:
+        print(err)
+        # exit(0)  # should return an error -1, but pytest chokes on this file

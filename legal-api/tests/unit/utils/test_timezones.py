@@ -58,3 +58,10 @@ def test_local_from_utc_hypothesis(dt):
     The only error thrown for inputs can be pytz.exceptions.NonExistentTimeError
     """
     local_from_utc(dt, 'America/Vancouver')
+
+
+def test_bad_unknown_local_from_utc():
+    """Assert that UTC is converted to the locale specified."""
+    d2 = local_from_utc(datetime(2019, 7, 1, 0, 43, 30, 802644, tzinfo=timezone.utc), 'Mars/UnknownTZ')
+
+    assert not d2

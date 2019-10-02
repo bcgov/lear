@@ -19,7 +19,7 @@ from .pytest_marks import integration_authorization, integration_nats, integrati
 
 
 EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0)
-FROZEN_DATETIME = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362)
+FROZEN_DATETIME = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362, tzinfo=datetime.timezone.utc)
 
 
 def add_years(d, years):
