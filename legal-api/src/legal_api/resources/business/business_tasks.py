@@ -18,10 +18,12 @@ Provides all the search and retrieval from the business filings datastore.
 from datetime import datetime
 from http import HTTPStatus
 
+import datedelta
 from flask import jsonify
 from flask_restplus import Resource, cors
 
 from legal_api.models import Business, Filing
+from legal_api.services.filings import validations
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
@@ -46,31 +48,55 @@ class TaskListResource(Resource):
 
     @staticmethod
     def construct_task_list(business):
-        """Return a task list object."""
+        """
+        Return all current pending tasks to do.
+
+        First retrieves filings that are either drafts, or incomplete,
+        then populate AR filings that have not been started for
+        years that are due.
+
+        Rules for AR filings:
+            - Co-ops must file one AR per year. The next AR date must be AFTER the most recent
+              AGM date. The calendar year of the filing is the first contiguous year following
+              the last AGM date
+
+            - Corporations must file one AR per year, on or after the anniversary of the founding date
+        """
         tasks = []
         order = 1
-        todo_start_year = 2019  # If no filings exist in legal API db this year will be used as the start year.
+        check_agm = validations.annual_report.requires_agm(business)
+        # If no filings exist in legal API db this year will be used as the start year.
+        todo_start_date = (datetime(2019, 1, 1)).date() if check_agm else business.next_anniversary.date()
 
+        # Retrieve filings that are either incomplete, or drafts
         pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
                                                                      Filing.Status.PENDING.value,
                                                                      Filing.Status.ERROR.value])
+        # Create a todo item for each pending filing
         for filing in pending_filings:
             task = {'task': filing.json, 'order': order, 'enabled': True}
             tasks.append(task)
             order += 1
 
+        # Retrieve all previous annual report filings. If there are existing AR filings, determine
+        # the latest date of filing
         annual_report_filings = Filing.get_filings_by_type(business.id, 'annualReport')
         if annual_report_filings:
-            last_filing = annual_report_filings[0].filing_json
-            todo_start_year = datetime.strptime(last_filing['filing']['annualReport']['annualGeneralMeetingDate'],
-                                                '%Y-%m-%d').year + 1
+            last_filing = annual_report_filings[0].filing_json['filing']['annualReport']
 
-        if todo_start_year <= datetime.now().year:
-            for todo_year in range(todo_start_year, datetime.now().year+1):
-                enabled = not pending_filings and todo_year == todo_start_year
-                tasks.append(TaskListResource.create_todo(business, todo_year, order, enabled))
-                order += 1
+            if check_agm:
+                last_agm_date = datetime.strptime(last_filing['annualGeneralMeetingDate'], '%Y-%m-%d')
+                todo_start_date = (datetime(last_agm_date.year+1, 1, 1)).date()
+            else:
+                todo_start_date = business.next_anniversary.date()
 
+        start_year = todo_start_date.year
+
+        while todo_start_date <= datetime.now().date():
+            enabled = not pending_filings and todo_start_date.year == start_year
+            tasks.append(TaskListResource.create_todo(business, todo_start_date.year, order, enabled))
+            todo_start_date += datedelta.YEAR
+            order += 1
         return tasks
 
     @staticmethod

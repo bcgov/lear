@@ -11,6 +11,9 @@ export default {
   lastAgmDate (state, lastAgmDate) {
     state.lastAgmDate = lastAgmDate
   },
+  nextARDate (state, nextARDate) {
+    state.nextARDate = nextARDate
+  },
   ARFilingYear (state, ARFilingYear) {
     state.ARFilingYear = ARFilingYear
   },
@@ -19,6 +22,9 @@ export default {
   },
   entityName (state, entityName) {
     state.entityName = entityName
+  },
+  entityType (state, entityType) {
+    state.entityType = entityType
   },
   entityStatus (state, entityStatus) {
     state.entityStatus = entityStatus

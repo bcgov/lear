@@ -18,6 +18,7 @@ Test-Suite to ensure that the Business Model is working as expected.
 """
 from datetime import datetime
 
+import datedelta
 import pytest
 
 from legal_api.exceptions import BusinessException
@@ -201,7 +202,7 @@ def test_business_find_by_identifier_no_identifier(session):
     assert b is None
 
 
-def test_business_json():
+def test_business_json(session):
     """Assert that the business model is saved correctly."""
     business = Business(legal_name='legal_name',
                         legal_type='CP',
@@ -212,7 +213,6 @@ def test_business_json():
                         last_ar_date=EPOCH_DATETIME,
                         last_agm_date=EPOCH_DATETIME
                         )
-
     # basic json
     d = {
         'legalName': 'legal_name',
@@ -223,7 +223,9 @@ def test_business_json():
         'lastModified': EPOCH_DATETIME.isoformat(),
         'lastAnnualReport': datetime.date(EPOCH_DATETIME).isoformat(),
         'lastAnnualGeneralMeetingDate': datetime.date(EPOCH_DATETIME).isoformat(),
+        'nextAnnualReport': (EPOCH_DATETIME+datedelta.YEAR).isoformat()
     }
+
     assert business.json() == d
 
     # include dissolutionDate
