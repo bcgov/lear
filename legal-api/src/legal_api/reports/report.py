@@ -167,7 +167,8 @@ class Report:  # pylint: disable=too-few-public-methods
         filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {hour}:%M %p Pacific Time')
 
         # Get the effective date - TODO 'effective date' doesn't exist yet but will in future; for now use filing date
-        effective_date = self._filing.filing_date.replace(tzinfo=timezone.utc).astimezone(tz=None)
+        # effective_date = self._filing.filing_date.replace(tzinfo=timezone.utc).astimezone(tz=None)
+        effective_date = local_from_utc(self._filing.filing_date, 'America/Vancouver')
 
         # TODO: best: custom date/time filters in the report-api. Otherwise: a subclass for filing-specific data.
         if self._filing.filing_type == 'annualReport':

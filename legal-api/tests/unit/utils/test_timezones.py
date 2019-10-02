@@ -61,7 +61,7 @@ def test_local_from_utc_hypothesis(dt):
 
 
 def test_bad_unknown_local_from_utc():
-    """Assert that UTC is converted to the locale specified."""
+    """Assert that an error in inputs return None."""
     d2 = local_from_utc(datetime(2019, 7, 1, 0, 43, 30, 802644, tzinfo=timezone.utc), 'Mars/UnknownTZ')
 
     assert not d2
