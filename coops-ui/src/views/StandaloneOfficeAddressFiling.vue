@@ -152,7 +152,7 @@ export default {
       paymentErrorDialog: false,
       isCertified: false,
       certifiedBy: '',
-      certifyFormValid: null,
+      certifyFormValid: false,
       officeAddressFormValid: true,
       saving: false,
       savingResuming: false,

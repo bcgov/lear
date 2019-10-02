@@ -157,7 +157,7 @@ export default {
       earliestDateToSet: 'your last filing',
       isCertified: false,
       certifiedBy: '',
-      certifyFormValid: null,
+      certifyFormValid: false,
       directorFormValid: true,
       filingId: null,
       saving: false,
