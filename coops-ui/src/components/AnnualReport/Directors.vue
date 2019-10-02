@@ -61,8 +61,9 @@
                   </div>
 
                   <BaseAddress ref="baseAddressNew"
-                    v-bind:address="director.deliveryAddress"
-                    v-bind:editing="true"
+                    :address="director.deliveryAddress"
+                    :editing="true"
+                    :schema="addressSchema"
                     @update:address="baseAddressWatcher"
                   />
 
@@ -289,8 +290,9 @@
 
                   <BaseAddress ref="baseAddressEdit"
                     v-show="editFormShowHide.showAddress"
-                    v-bind:address="director.deliveryAddress"
-                    v-bind:editing="true"
+                    :address="director.deliveryAddress"
+                    :editing="true"
+                    :schema="addressSchema"
                     @update:address="baseAddressWatcher"
                     :key="activeIndex"
                   />
@@ -384,8 +386,7 @@
 import { Component, Mixins, Vue, Prop, Watch, Emit } from 'vue-property-decorator'
 import axios from '@/axios-auth'
 import { mapState, mapGetters } from 'vuex'
-// NB: .vue extension is required when importing SFC
-// ref: https://github.com/vuejs/vetur/issues/423#issuecomment-340235722
+import { required, maxLength } from 'vuelidate/lib/validators'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 import DateMixin from '@/mixins/date-mixin'
 import ExternalMixin from '@/mixins/external-mixin'
@@ -475,6 +476,36 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     showDates: true
   }
   private directorFormValid = true // used for New and Edit forms
+
+  // The Address schema containing Vuelidate rules.
+  // NB: This should match the subject JSON schema.
+  private addressSchema = {
+    streetAddress: {
+      required,
+      maxLength: maxLength(50)
+    },
+    streetAddressAdditional: {
+      maxLength: maxLength(50)
+    },
+    addressCity: {
+      required,
+      maxLength: maxLength(40)
+    },
+    addressCountry: {
+      required
+    },
+    addressRegion: {
+      required,
+      maxLength: maxLength(2)
+    },
+    postalCode: {
+      required,
+      maxLength: maxLength(15)
+    },
+    deliveryInstructions: {
+      maxLength: maxLength(80)
+    }
+  }
 
   /**
    * Computed value.
