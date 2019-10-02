@@ -28,7 +28,7 @@
 
     <v-expand-transition>
       <div v-show="!showNewDirectorForm">
-        <v-btn class="new-director-btn" outline color="primary" :disabled="!componentEnabled"
+        <v-btn class="new-director-btn" outline color="primary" :disabled="!componentEnabled || directorEditInProgress"
           @click="addNewDirector">
           <v-icon>add</v-icon>
           <span>Appoint New Director</span>
@@ -145,6 +145,7 @@
           v-for="(director, index) in orderBy(directors, 'id', -1)"
           v-bind:key="index">
           <div class="meta-container">
+            <div :class="{ 'editFormStyle': activeIndex === index }">
             <label>
               <span>{{director.officer.firstName}} </span>
               <span>{{director.officer.middleInitial}} </span>
@@ -185,7 +186,7 @@
 
                     <!-- Edit menu -->
                     <span v-show="isNew(director)">
-                      <v-btn small flat color="primary" :disabled="!componentEnabled"
+                      <v-btn small flat color="primary" :disabled="!componentEnabled || directorEditInProgress"
                         :id="'director-' + director.id + '-change-btn'"
                         @click="editDirector(index)">
                         <v-icon small>edit</v-icon>
@@ -214,7 +215,7 @@
 
                     <!-- Cease menu -->
                     <span v-show="!isNew(director)">
-                      <v-btn small flat color="primary" :disabled="!componentEnabled"
+                      <v-btn small flat color="primary" :disabled="!componentEnabled || directorEditInProgress"
                         class="cease-btn"
                         :id="'director-' + director.id + '-cease-btn'"
                         @click="ceaseDirector(director)">
@@ -291,6 +292,7 @@
                     v-bind:address="director.deliveryAddress"
                     v-bind:editing="true"
                     @update:address="baseAddressWatcher"
+                    :key="activeIndex"
                   />
 
                   <!-- removed until release 2 -->
@@ -368,6 +370,7 @@
               </v-expand-transition>
               <!-- END edit director form -->
             </div>
+            </div>
           </div>
         </li>
       </ul>
@@ -429,6 +432,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
 
   @Prop({ default: true })
   private componentEnabled: boolean
+
+  private directorEditInProgress:boolean = false;
 
   // Local properties.
   private directors = []
@@ -776,6 +781,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     this.activeIndex = null
     this.showPopup = false
     this.activeDirectorToDelete = null
+    this.emitDirectorEditInProgress(false)
+    this.directorEditInProgress = false
   }
 
   /**
@@ -855,7 +862,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   private editDirector (index): void {
     // clear in-progress director data from form in BaseAddress component - ie: start fresh
     this.inProgressAddress = {}
-
+    this.emitDirectorEditInProgress(true)
+    this.directorEditInProgress = true
     this.activeIndex = index
     this.cancelNewDirector()
   }
@@ -950,6 +958,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    */
   private cancelEditDirector (): void {
     this.activeIndex = -1
+    this.emitDirectorEditInProgress(false)
+    this.directorEditInProgress = false
 
     // reset form show/hide flags
     this.editFormShowHide = {
@@ -1129,6 +1139,12 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    */
   @Emit('activeDirectors')
   private emitActiveDirectors (val: any[]): void { }
+
+  /**
+   * Emits an event that indicates whether the director edit is in progress.
+   */
+  @Emit('directorEditInProgress')
+  private emitDirectorEditInProgress (val: boolean): void { }
 }
 
 </script>
@@ -1266,6 +1282,10 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     right 0
     position absolute
     z-index 99
+
+  .editFormStyle
+    border 1px solid red
+    padding 1rem
 </style>
 
 <!-- TODO: WHERE DOES THIS BELONG?
