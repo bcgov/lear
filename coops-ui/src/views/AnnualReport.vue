@@ -97,6 +97,7 @@
                 @directorsChange="directorsChange"
                 @allDirectors="allDirectors=$event"
                 @directorFormValid="directorFormValid=$event"
+                @directorEditAction="directorEditInProgress=$event"
                 :asOfDate="agmDate"
                 :componentEnabled="allowChange('cod')"
               />
@@ -230,6 +231,7 @@ export default {
       // properties for Directors component
       allDirectors: [],
       directorFormValid: true,
+      directorEditInProgress: false,
 
       // properties for Certify component
       certifiedBy: '',
@@ -275,7 +277,8 @@ export default {
     },
 
     validated () {
-      return this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.certifyFormValid
+      return this.agmDateValid && this.addressesFormValid && this.directorFormValid &&
+      this.certifyFormValid && !this.directorEditInProgress
     },
 
     busySaving () {
@@ -283,7 +286,7 @@ export default {
     },
 
     isSaveButtonEnabled () {
-      return this.agmDateValid && this.addressesFormValid && this.directorFormValid
+      return this.agmDateValid && this.addressesFormValid && this.directorFormValid && !this.directorEditInProgress
     }
   },
 
