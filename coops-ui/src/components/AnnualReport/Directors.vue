@@ -440,12 +440,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   private directors = []
   private directorsFinal = []
   private directorsOriginal = []
-  private countryList: [
-    'Canada'
-  ]
-  private regionList: [
-    'BC'
-  ]
   private showNewDirectorForm = false
   private draftDate = null
   private showPopup = false
@@ -463,7 +457,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
       addressCity: '',
       addressRegion: '',
       postalCode: '',
-      addressCountry: ''
+      addressCountry: '',
+      deliveryInstructions: ''
     },
     appointmentDate: this.asOfDate,
     cessationDate: null,
@@ -848,7 +843,9 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
         addressCity: this.inProgressAddress.addressCity,
         addressRegion: this.inProgressAddress.addressRegion,
         postalCode: this.inProgressAddress.postalCode,
-        addressCountry: this.inProgressAddress.addressCountry
+        addressCountry: this.inProgressAddress.addressCountry,
+        deliveryInstructions: this.inProgressAddress.deliveryInstructions
+
       },
       appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
       cessationDate: null // when implemented: this.director.cessationDate
