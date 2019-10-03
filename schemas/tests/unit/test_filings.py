@@ -16,8 +16,12 @@
 This suite should have at least 1 test for every filing type allowed.
 """
 from registry_schemas import validate
+from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS, \
     CORP_CHANGE_OF_ADDRESS
 
+
+def test_valid_ar_filing():
+    """Assert that the schema is performing as expected."""
     is_valid, errors = validate(ANNUAL_REPORT, 'filing')
 
     # if errors:
