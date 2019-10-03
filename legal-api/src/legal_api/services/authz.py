@@ -25,6 +25,7 @@ from urllib3.util.retry import Retry
 STAFF_ROLE = 'staff'
 BASIC_USER = 'basic'
 COLIN_SVC_ROLE = 'colin'
+PUBLIC_USER = 'public_user'
 
 
 def authorized(identifier: str, jwt: JwtManager, action: List[str]) -> bool:
@@ -37,7 +38,7 @@ def authorized(identifier: str, jwt: JwtManager, action: List[str]) -> bool:
             or jwt.validate_roles([COLIN_SVC_ROLE]):
         return True
 
-    if jwt.validate_roles([BASIC_USER]):
+    if jwt.has_one_of_roles([BASIC_USER, PUBLIC_USER]):
 
         template_url = current_app.config.get('AUTH_SVC_URL')
         auth_url = template_url.format(**vars())
