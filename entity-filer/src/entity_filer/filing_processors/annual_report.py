@@ -13,10 +13,8 @@
 # limitations under the License.
 """File processing rules and actions for the annual report."""
 import datetime
-
 from legal_api.models import Business, Filing
 from legal_api.services.filings import validations
-
 from entity_filer.service_utils import logger
 
 

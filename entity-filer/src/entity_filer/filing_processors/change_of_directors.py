@@ -27,14 +27,20 @@ def process(business: Business, filing: Filing):
             # create address
             address = create_address(new_director['deliveryAddress'], Address.DELIVERY)
 
-            # add new director to the list
-            business.directors.append(Director(first_name=new_director['officer'].get('firstName', '').upper(),
+            director_to_add = Director(first_name=new_director['officer'].get('firstName', '').upper(),
                                                middle_initial=new_director['officer'].get('middleInitial', '').upper(),
                                                last_name=new_director['officer'].get('lastName', '').upper(),
                                                title=new_director.get('title', '').upper(),
                                                appointment_date=new_director.get('appointmentDate'),
                                                cessation_date=new_director.get('cessationDate'),
-                                               delivery_address=address))
+                                               delivery_address=address)
+
+            if ('mailingAddress' in new_director.keys()):
+                mailing_address = create_address(new_director['mailingAddress'], Address.MAILING)
+                director_to_add.mailing_address = mailing_address
+
+            # add new director to the list
+            business.directors.append(director_to_add)
 
         if any([action != 'appointed' for action in new_director['actions']]):
             # get name of director in json for comparison *

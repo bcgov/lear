@@ -20,6 +20,7 @@ import datetime
 from http import HTTPStatus
 
 from legal_api.services.authz import STAFF_ROLE
+from legal_api.resources.business import business_directors
 from tests.unit.models import Address, Director, factory_business
 from tests.unit.services.utils import create_header
 
@@ -51,6 +52,34 @@ def test_get_business_directors(session, client, jwt):
     assert 'directors' in rv.json
     assert rv.json['directors'][0]['deliveryAddress']['addressCity'] == 'Test Mailing City'
 
+def test_bcorp_get_business_directors(session, client, jwt):
+    """Assert that business directors are returned."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier, datetime.datetime.now(), None, 'BC')
+    director = Director(
+        first_name='Michael',
+        last_name='Crane',
+        middle_initial='Joe',
+        title='VP',
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None
+    )
+    director_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
+    director_mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
+    director.delivery_address = director_address
+    director.mailing_address = director_mailing_address
+    business.directors.append(director)
+    business.save()
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/directors',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.OK
+    assert 'directors' in rv.json
+    assert rv.json['directors'][0]['mailingAddress']['addressCity'] == 'Test Mailing City'
 
 def test_get_business_no_directors(session, client, jwt):
     """Assert that business directors are not returned."""

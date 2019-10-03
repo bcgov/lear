@@ -18,7 +18,7 @@ import random
 
 import pytest
 
-from tests.unit import AR_FILING, COA_FILING, COD_FILING, COMBINED_FILING, create_business, create_director, create_filing  # noqa I001, E501;
+from tests.unit import AR_FILING, COA_FILING, COD_FILING, COD_FILING_TWO_ADDRESSES,COMBINED_FILING, create_business, create_director, create_filing  # noqa I001, E501;
 
 
 def compare_addresses(business_address: dict, filing_address: dict):
@@ -242,6 +242,89 @@ def test_process_cod_filing(app, session):
 
     directors = Director.get_active_directors(business.id, end_date)
     check_directors(business, directors, director_ceased_id, ceased_directors, active_directors)
+
+def test_process_cod_mailing_address(app, session):
+    """Assert that an AR filling can be applied to the model correctly."""
+    import copy
+    from legal_api.models import Business, Director, Filing
+
+    from entity_filer.worker import process_filing
+    from entity_filer.worker import get_filing_by_payment_id
+
+    # vars
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    identifier = 'CP1234567'
+    end_date = datetime.datetime.utcnow().date()
+    # prep director for no change
+    filing_data = copy.deepcopy(COD_FILING_TWO_ADDRESSES)
+
+    # setup
+    business = create_business(identifier)
+    business.save()
+
+    directors = Director.get_active_directors(business.id, end_date)
+    assert len(directors) == 0
+
+    # create filing
+    business_id = business.id
+    filing_data['filing']['changeOfDirectors']['directors'][0]['actions'] = ['appointed']
+    filing_data['filing']['changeOfDirectors']['directors'][1]['actions'] = ['appointed']
+    create_filing(payment_id, filing_data, business.id)
+    payment_token = {'paymentToken': {'id': payment_id, 'statusCode': Filing.Status.COMPLETED.value}}
+
+    # TEST
+    process_filing(payment_token, app)
+
+    filing = get_filing_by_payment_id(payment_id)
+    business = Business.find_by_internal_id(business_id)
+
+    directors = Director.get_active_directors(business.id, end_date)
+    
+    has_mailing = list(filter(lambda x: x.mailing_address != None, directors))
+    no_mailing = list(filter(lambda x: x.mailing_address == None, directors))
+    
+    assert len(has_mailing) == 1
+    assert has_mailing[0].mailing_address.street == 'test mailing 1'
+    assert no_mailing[0].mailing_address == None
+
+    # Add/update mailing address to a director
+
+    del filing_data['filing']['changeOfDirectors']['directors'][0]
+    filing_data['filing']['changeOfDirectors']['directors'][0]['actions'] = ['addressChanged']
+
+    MAILING_ADDRESS = {
+                        'streetAddress': 'test mailing 2',
+                        'streetAddressAdditional': 'test line 1',
+                        'addressCity': 'testcity',
+                        'addressCountry': 'Canada',
+                        'addressRegion': 'BC',
+                        'postalCode': 'T3S T3R',
+                        'deliveryInstructions': 'director1'
+                    }
+
+    filing_data['filing']['changeOfDirectors']['directors'][0]['mailingAddress'] = MAILING_ADDRESS
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    create_filing(payment_id, filing_data, business.id)
+    payment_token = {'paymentToken': {'id': payment_id, 'statusCode': Filing.Status.COMPLETED.value}}
+
+    process_filing(payment_token, app)
+
+    filing = get_filing_by_payment_id(payment_id)
+    business = Business.find_by_internal_id(business_id)
+
+    directors = Director.get_active_directors(business.id, end_date)
+    # Get modified data
+    filing = get_filing_by_payment_id(payment_id)
+    business = Business.find_by_internal_id(business_id)
+
+    # check it out
+    assert len(list(filter(lambda x: x.mailing_address != None, directors))) == 2
+    assert filing.transaction_id
+    assert filing.business_id == business_id
+    assert filing.status == Filing.Status.COMPLETED.value
+
+    directors = Director.get_active_directors(business.id, end_date)    
 
 
 def test_process_combined_filing(app, session):
