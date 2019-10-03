@@ -49,6 +49,9 @@
                 "deliveryAddress": {
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
                 },
+                "mailingAddress": {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
+                },
                 "title": {
                     "type": "string"
                 },

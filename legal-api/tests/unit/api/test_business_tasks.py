@@ -75,15 +75,6 @@ def test_get_tasks_no_filings(session, client):
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('tasks')) == 1  # To-do for the current year
 
-def test_bcorps_get_tasks_no_filings(session, client):
-    """Assert that to-do for the current year is returned when there are no filings."""
-    identifier = 'CP7654321'
-    factory_business(identifier, datetime.now(), None, 'BC')
-
-    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
-
-    assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json.get('tasks')) == 0  # To-do for the current year
 
 def test_bcorps_get_tasks_no_filings(session, client):
     """Assert that to-do for the current year is returned when there are no filings."""
@@ -123,18 +114,6 @@ def test_get_tasks_prev_year_incomplete_filing_exists(session, client):
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('tasks')) == 2  # Previous year filing and a disabled to-do for current year.
 
-def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client):
-    """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""
-    identifier = 'CP7654321'
-    b = factory_business(identifier, datetime.now()-datedelta.datedelta(years=2))
-    filings = factory_filing(b, AR_FILING_PREVIOUS_YEAR)
-
-    print('test_get_all_business_filings - filing:', filings)
-
-    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
-
-    assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json.get('tasks')) == 2  # Previous year filing and a disabled to-do for current year.
 
 def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client):
     """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""

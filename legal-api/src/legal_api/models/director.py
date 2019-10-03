@@ -20,6 +20,7 @@ from datetime import datetime
 from sqlalchemy import Date, cast, or_
 
 from .db import db
+from .address import Address  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 
 
 class Director(db.Model):  # pylint: disable=too-many-instance-attributes
@@ -39,9 +40,11 @@ class Director(db.Model):  # pylint: disable=too-many-instance-attributes
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
     address_id = db.Column('address_id', db.Integer, db.ForeignKey('addresses.id'))
+    mailing_address_id = db.Column('mailing_address_id', db.Integer, db.ForeignKey('addresses.id'))
 
     # Relationships - Address
     delivery_address = db.relationship('Address', foreign_keys=[address_id])
+    mailing_address = db.relationship('Address', foreign_keys=[mailing_address_id])
 
     def save(self):
         """Save the object to the database immediately."""
@@ -61,6 +64,14 @@ class Director(db.Model):  # pylint: disable=too-many-instance-attributes
             if 'addressType' in director_address:
                 del director_address['addressType']
             d['deliveryAddress'] = director_address
+        if self.mailing_address:
+            director_mailing_address = self.mailing_address
+            if 'addressTYpe' in director_mailing_address:
+                del director_mailing_address['addressType']
+            d['mailingAddress'] = director_mailing_address
+        else:
+            if self.delivery_address:
+                d['mailingAddress'] = d['deliveryAddress']
         if self.title:
             d['title'] = self.title
         if self.middle_initial:
