@@ -61,7 +61,9 @@
             </header>
             <Certify
               :isCertified.sync="isCertified"
-              :certifiedBy.sync="certifiedBy" />
+              :certifiedBy.sync="certifiedBy"
+              @valid="certifyFormValid=$event"
+            />
           </section>
         </article>
 
@@ -156,6 +158,7 @@ export default {
       earliestDateToSet: 'your last filing',
       isCertified: false,
       certifiedBy: '',
+      certifyFormValid: false,
       directorFormValid: true,
       directorEditInProgress: false,
       filingId: null,
@@ -174,7 +177,7 @@ export default {
     ...mapGetters(['isRoleStaff']),
 
     validated () {
-      return (this.isCertified && this.directorFormValid && this.filingData.length > 0 &&
+      return (this.certifyFormValid && this.directorFormValid && this.filingData.length > 0 &&
       !this.directorEditInProgress)
     },
 

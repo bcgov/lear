@@ -31,11 +31,13 @@ def validate(business: Business, filing_json: Dict) -> Error:
 
         # last_filing = Filing.get_a_businesses_most_recent_filing_of_a_type(
         #     business.id, Filing.FILINGS['annualReport']['name'])
-
     err = None
     for k in filing_json['filing'].keys():
+        # Check if the JSON key exists in the FILINGS reference Dictionary
         if Filing.FILINGS.get(k, None):
-            # legal_filings.append({k: filing_json['filing'].get(k)})
+            # The type of this Filing exists in the JSON, determine which
+            # one it is (Annual Report, Change of Address, or Change of Directors)
+            # and validate against the appropriate logic
 
             if k == Filing.FILINGS['annualReport'].get('name'):
                 err = annual_report_validate(business, filing_json)

@@ -59,7 +59,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set properties
-    vm.isCertified = true
+    vm.certifyFormValid = true
     vm.officeAddressFormValid = true
     vm.filingData = [{}] // dummy data
 
@@ -75,7 +75,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set properties
-    vm.isCertified = true
+    vm.certifyFormValid = true
     vm.officeAddressFormValid = false
     vm.filingData = [{}] // dummy data
 
@@ -91,7 +91,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set properties
-    vm.isCertified = false
+    vm.certifyFormValid = false
     vm.officeAddressFormValid = true
     vm.filingData = [{}] // dummy data
 
@@ -107,7 +107,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set properties
-    vm.isCertified = true
+    vm.certifyFormValid = true
     vm.officeAddressFormValid = true
     vm.filingData = []
 
@@ -121,7 +121,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set all properties truthy
-    vm.isCertified = true
+    vm.certifyFormValid = true
     vm.officeAddressFormValid = true
     vm.filingData = [{}] // dummy data
 
@@ -137,7 +137,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set all properties falsy
-    vm.isCertified = false
+    vm.certifyFormValid = false
     vm.officeAddressFormValid = false
     vm.filingData = [] // dummy data
 
@@ -335,7 +335,7 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
 
       // make sure form is validated
       vm.officeAddressFormValid = true
-      vm.isCertified = true
+      vm.certifyFormValid = true
       vm.filingData = [{}] // dummy data
       expect(vm.validated).toEqual(true)
 
@@ -374,7 +374,7 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
 
     // make sure form is validated
     vm.officeAddressFormValid = true
-    vm.isCertified = true
+    vm.certifyFormValid = true
     vm.filingData = [{}] // dummy data
     expect(vm.validated).toEqual(true)
 
@@ -413,7 +413,7 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
 
     // make sure form is validated
     vm.officeAddressFormValid = true
-    vm.isCertified = true
+    vm.certifyFormValid = true
     vm.filingData = [{}] // dummy data
     expect(vm.validated).toEqual(true)
 
@@ -490,7 +490,7 @@ describe('Standalone Office Address Filing - Part 4 - Saving', () => {
 
       // make sure form is validated
       vm.officeAddressFormValid = true
-      vm.isCertified = true
+      vm.certifyFormValid = true
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -517,7 +517,7 @@ describe('Standalone Office Address Filing - Part 4 - Saving', () => {
 
       // make sure form is validated
       vm.officeAddressFormValid = true
-      vm.isCertified = true
+      vm.certifyFormValid = true
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -584,7 +584,7 @@ describe('Standalone Office Address Filing - Part 5 - Data', () => {
 
     // make sure form is validated
     vm.officeAddressFormValid = true
-    vm.isCertified = true
+    vm.certifyFormValid = true
     vm.officeModifiedEventHandler(true)
   })
 
@@ -732,7 +732,7 @@ describe('Standalone Office Address Filing - Part 6 - Error/Warning dialogues', 
 
       // make sure form is validated
       vm.officeAddressFormValid = true
-      vm.isCertified = true
+      vm.certifyFormValid = true
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
@@ -763,7 +763,7 @@ describe('Standalone Office Address Filing - Part 6 - Error/Warning dialogues', 
 
       // make sure form is validated
       vm.officeAddressFormValid = true
-      vm.isCertified = true
+      vm.certifyFormValid = true
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)

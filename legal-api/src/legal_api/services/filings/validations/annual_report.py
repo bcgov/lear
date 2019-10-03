@@ -25,6 +25,13 @@ from legal_api.models import Business, Filing
 from ..utils import get_date
 
 
+def requires_agm(business: Business) -> bool:
+    """Determine if AGM validation is required for AR."""
+    # FUTURE: This is not dynamic enough
+    agm_arr = ['CP', 'XP']
+    return business.legal_type in agm_arr
+
+
 def validate(business: Business, annual_report: Dict) -> Error:
     """Validate the annual report JSON."""
     if not business or not annual_report:
@@ -38,8 +45,9 @@ def validate(business: Business, annual_report: Dict) -> Error:
     if err:
         return err
 
-    err = validate_agm_year(business=business,
-                            annual_report=annual_report)
+    if requires_agm(business):
+        err = validate_agm_year(business=business,
+                                annual_report=annual_report)
 
     if err:
         return err
