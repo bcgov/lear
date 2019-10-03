@@ -18,13 +18,9 @@ const router = new VueRouter({
 router.afterEach((to, from) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
     const redirected = sessionStorage.getItem('REDIRECTED')
-    console.log(`redirect check = '${redirected}'`)
 
     if (redirected !== 'true') {
-      if (sessionStorage.getItem('KEYCLOAK_TOKEN')) {
-        console.log('AUTH PASSED')
-      } else {
-        console.log('AUTH FAILED')
+      if (!sessionStorage.getItem('KEYCLOAK_TOKEN')) {
         sessionStorage.setItem('REDIRECTED', 'true')
         window.location.href = sessionStorage.getItem('AUTH_URL')
       }
