@@ -40,8 +40,12 @@ def test_valid_filing(filing_data):
     print(filing_data['filing']['header']['name'])
 =======
 from registry_schemas import validate
+from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS, \
     CORP_CHANGE_OF_ADDRESS
 
+
+def test_valid_ar_filing():
+    """Assert that the schema is performing as expected."""
     is_valid, errors = validate(ANNUAL_REPORT, 'filing')
 >>>>>>> Add mailing address to director (#367)
 
