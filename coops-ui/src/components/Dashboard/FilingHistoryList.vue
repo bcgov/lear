@@ -347,51 +347,61 @@ export default {
 }
 </script>
 
-<style lang="stylus" scoped>
-  @import "../../assets/styles/theme.styl"
+<style lang="scss" scoped>
+  @import "../../assets/styles/theme.scss";
 
   // Filing History List
-  .filing-history-list
-    .list-item
-      flex-direction column
-      align-items flex-start
-      padding 0
+  .filing-history-list {
+    .list-item {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0
+    }
 
-    .v-expansion-panel__header__status
-      font-size 0.875rem
-      color $gray6
+    .v-expansion-panel__header__status{
+      font-size: 0.875rem;
+      color: $gray6;
+    }
 
-    .v-expansion-panel__header__icon
-      font-size 0.875rem
-      font-weight 700
+    .v-expansion-panel__header__icon{
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+  }
 
    // Document List
-  .document-list
-    border-top 1px solid $gray3
+  .document-list{
+    border-top: 1px solid $gray3;
 
-    .list-item__btn
-      margin 0.25rem 0
-      padding 0 0.5rem 0 0.25rem
+    .list-item__btn{
+      margin: 0.25rem 0;
+      padding: 0 0.5rem 0 0.25rem;
+    }
+  }
 
    // Documents Actions Bar
-  .documents-actions-bar
-    padding-top 1rem
-    display flex
-    border-top 1px solid $gray3
+  .documents-actions-bar{
+    padding-top: 1rem;
+    display: flex;
+    border-top: 1px solid $gray3;
 
-    .download-all-btn
-      margin-left auto
-      margin-right 0
-      min-width 8rem
+    .download-all-btn{
+      margin-left: auto;
+      margin-right: 0;
+      min-width: 8rem;
+    }
+  }
 
   // Past Filings
-  .past-filings
-    border-top 1px solid $gray3
-    text-align center
+  .past-filings{
+    border-top: 1px solid $gray3;
+    text-align: center;
 
-    .past-filings__text
-      margin-top 0.25rem
-      color $gray6
-      font-size 0.875rem
-      font-weight 500
+    .past-filings__text{
+      margin-top: 0.25rem;
+      color: $gray6;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+  }
 </style>

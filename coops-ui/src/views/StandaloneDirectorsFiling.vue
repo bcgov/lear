@@ -36,7 +36,7 @@
           <header>
             <h1 id="filing-header">Change of Directors</h1>
 
-            <v-alert type="info" :value="true" icon="info" outline style="background-color: white;">
+            <v-alert type="info" :value="true" icon="info" outlined style="background-color: white;">
               Director changes can be made as far back as {{ earliestDateToSet }}.
             </v-alert>
           </header>
@@ -484,7 +484,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '../assets/scss/theme.scss';
+@import '../assets/styles/theme.scss';
 
 article{
   .v-card{

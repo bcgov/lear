@@ -37,12 +37,14 @@ export default class ResumeErrorDialog extends Vue {
 }
 </script>
 
-<style lang="stylus" scoped>
-@import '../../assets/styles/theme.styl'
+<style lang="scss" scoped>
+@import '../../assets/styles/theme.scss';
 
-.genErr
+.genErr{
   font-size: 0.9rem;
+}
 
-.error-dialog-padding
+.error-dialog-padding{
   margin-left: 1rem;
+}
 </style>

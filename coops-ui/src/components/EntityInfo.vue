@@ -35,7 +35,7 @@
           </dl>
           <v-menu bottom left offset-y content-class="v-menu">
             <template v-slot:activator="{ on }">
-              <v-btn small flat v-on="on" color="primary">
+              <v-btn small text v-on="on" color="primary">
                 <v-icon small>settings</v-icon>
               </v-btn>
             </template>
@@ -101,15 +101,15 @@ export default class EntityInfo extends Vue {
 <!-- eslint-disable max-len -->
 <style lang="scss" scoped>
 // TODO: Explore how to expose this globally without having to include in each module
-@import "../assets/scss/theme.scss";
+@import "../assets/styles/theme.scss";
 
 .entity-info {
   background: #ffffff;
 }
 
 .entity-info.staff {
-  // background-image url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='105' height='100'><text x='0' y='105' font-size='30' transform='rotate(-45 10,40)' opacity='0.1'>STAFF</text></svg>")
-  // background-repeat repeat-x
+  // background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='105' height='100'><text x='0' y='105' font-size='30' transform='rotate(-45 10,40)' opacity='0.1'>STAFF</text></svg>");
+  // background-repeat: repeat-x;
 }
 
 .container {
@@ -153,8 +153,7 @@ export default class EntityInfo extends Vue {
   font-size: 0.875rem;
 }
 
-dd,
-dt {
+dd, dt {
   float: left;
 }
 
@@ -162,11 +161,13 @@ dt {
   position: relative;
 }
 
-.bulletBefore &:before {
-  content: "•";
-  display: inline-block;
-  margin-right: 0.75rem;
-  margin-left: 0.75rem;
+.bulletBefore {
+   &:before {
+    content: "•";
+    display: inline-block;
+    margin-right: 0.75rem;
+    margin-left: 0.75rem;
+  }
 }
 
 .v-btn {
@@ -177,7 +178,6 @@ dt {
 .v-menu {
   .v-list {
     padding: 0;
-
     .v-list__tile__title {
       font-size: 0.875rem;
     }

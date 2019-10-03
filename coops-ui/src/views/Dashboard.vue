@@ -27,7 +27,7 @@
             <section>
               <header>
                 <h2>Office Addresses</h2>
-                <v-btn id="btn-standalone-addresses" flat small color="primary" :disabled="hasBlockerFiling"
+                <v-btn id="btn-standalone-addresses" text small color="primary" :disabled="hasBlockerFiling"
                       @click.native.stop="goToStandaloneAddresses()">
                   <v-icon small>edit</v-icon>
                   <span>EDIT</span>
@@ -41,7 +41,7 @@
             <section>
               <header>
                 <h2>Current Directors</h2>
-                <v-btn id="btn-standalone-directors" flat small color="primary" :disabled="hasBlockerFiling"
+                <v-btn id="btn-standalone-directors" text small color="primary" :disabled="hasBlockerFiling"
                       @click.native.stop="goToStandaloneDirectors()">
                   <v-icon small>edit</v-icon>
                   <span>EDIT</span>
@@ -100,7 +100,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  @import "../assets/scss/theme.scss";
+  @import "../assets/styles/theme.scss";
 
   .text-muted{
     color: $gray5;
