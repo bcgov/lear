@@ -99,31 +99,38 @@ export default {
 }
 </script>
 
-<style lang="stylus" scoped>
-  @import "../assets/styles/theme.styl"
+<style lang="scss" scoped>
+  @import "../assets/scss/theme.scss";
 
-  .text-muted
-    color $gray5
+  .text-muted{
+    color: $gray5;
+  }
 
-  h1
-    margin-bottom 0
+  h1{
+    margin-bottom: 0
+  }
 
-  .dashboard-content
-    display flex
+  .dashboard-content{
+    display: flex
+  }
 
-  .dashboard-content__main
-    flex 1 1 auto
-    z-index 1
+  .dashboard-content__main{
+    flex: 1 1 auto;
+    z-index: 1
+  }
 
-  .dashboard-content__aside
-    margin-left 2rem
+  .dashboard-content__aside{
+    margin-left: 2rem
+  }
 
-  section header
-    display flex
-    flex-direction row
+  section header{
+    display: flex;
+    flex-direction: row;
 
-    .v-btn
-      margin-top 0
-      margin-right 0
-      margin-left auto
+    .v-btn{
+      margin-top: 0;
+      margin-right: 0;
+      margin-left: auto;
+    }
+  }
 </style>

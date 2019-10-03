@@ -12,7 +12,9 @@ import store from '@/store/store'
 import configHelper from '@/utils/config-helper'
 import '@/registerServiceWorker'
 
-Vue.use(Vuetify, { iconfont: 'md' })
+const opts = { iconfont: 'md' }
+
+Vue.use(Vuetify)
 Vue.use(Vuelidate)
 Vue.use(Vue2Filters)
 Vue.use(Affix)
@@ -21,9 +23,11 @@ Vue.config.productionTip = false
 /**
  * first fetch config from server, then load Vue
  */
+
 configHelper.fetchConfig()
   .then(() => {
     new Vue({
+      vuetify: new Vuetify(opts),
       router,
       store,
       render: h => h(App)

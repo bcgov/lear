@@ -99,72 +99,88 @@ export default class EntityInfo extends Vue {
 </script>
 
 <!-- eslint-disable max-len -->
-<style lang="stylus" scoped>
-  // TODO: Explore how to expose this globally without having to include in each module
-  @import "../assets/styles/theme.styl"
+<style lang="scss" scoped>
+// TODO: Explore how to expose this globally without having to include in each module
+@import "../assets/scss/theme.scss";
 
-  .entity-info
-    background #ffffff
+.entity-info {
+  background: #ffffff;
+}
 
-  .entity-info.staff
-    // background-image url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='105' height='100'><text x='0' y='105' font-size='30' transform='rotate(-45 10,40)' opacity='0.1'>STAFF</text></svg>")
-    // background-repeat repeat-x
+.entity-info.staff {
+  // background-image url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='105' height='100'><text x='0' y='105' font-size='30' transform='rotate(-45 10,40)' opacity='0.1'>STAFF</text></svg>")
+  // background-repeat repeat-x
+}
 
-  .container
-    padding-top 1.5rem
-    padding-bottom 1.5rem
+.container {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
 
-  .title-container
-    margin-top -0.2rem
+.title-container {
+  margin-top: -0.2rem;
+}
 
-  .entity-name
-    margin-top 0.125rem
-    margin-bottom 0.25rem
-    display inline-block
-    font-size 1.125rem
-    font-weight 600
+.entity-name {
+  margin-top: 0.125rem;
+  margin-bottom: 0.25rem;
+  display: inline-block;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
 
-  .entity-status
-    margin-top: 0.25rem
-    margin-left 0.5rem
-    vertical-align top
+.entity-status {
+  margin-top: 0.25rem;
+  margin-left: 0.5rem;
+  vertical-align: top;
+}
 
-  .business-info
-    display flex
-    direction row
+.business-info {
+  display: flex;
+  direction: row;
 
-    .info-right
-      margin-top 0
-      margin-right 0
-      margin-left auto
+  .info-right {
+    margin-top: 0;
+    margin-right: 0;
+    margin-left: auto;
+  }
+}
 
-  .meta-container
-    display inline-block
-    overflow hidden
-    color $gray6
-    font-size 0.875rem
+.meta-container {
+  display: inline-block;
+  overflow: hidden;
+  color: $gray6;
+  font-size: 0.875rem;
+}
 
-  dd, dt
-    float left
+dd,
+dt {
+  float: left;
+}
 
-  dt
-    position relative
+dt {
+  position: relative;
+}
 
-  .bulletBefore
-    &:before
-      content '•'
-      display inline-block
-      margin-right 0.75rem
-      margin-left 0.75rem
+.bulletBefore &:before {
+  content: "•";
+  display: inline-block;
+  margin-right: 0.75rem;
+  margin-left: 0.75rem;
+}
 
-  .v-btn
-    margin 0 0 0 0.5rem
-    bottom 0.5rem
+.v-btn {
+  margin: 0 0 0 0.5rem;
+  bottom: 0.5rem;
+}
 
-  .v-menu
-    .v-list
-      padding 0
+.v-menu {
+  .v-list {
+    padding: 0;
 
-      .v-list__tile__title
-        font-size 0.875rem
+    .v-list__tile__title {
+      font-size: 0.875rem;
+    }
+  }
+}
 </style>
