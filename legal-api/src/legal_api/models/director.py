@@ -64,7 +64,7 @@ class Director(db.Model):  # pylint: disable=too-many-instance-attributes
                 del director_address['addressType']
             d['deliveryAddress'] = director_address
         if self.mailing_address:
-            director_mailing_address = self.mailing_address
+            director_mailing_address = self.mailing_address.json
             if 'addressTYpe' in director_mailing_address:
                 del director_mailing_address['addressType']
             d['mailingAddress'] = director_mailing_address
