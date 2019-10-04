@@ -95,7 +95,7 @@ node {
                                 sequences = ['noncorp_event_seq', 'noncorp_address_seq', 'noncorp_party_seq']
                                 for (seq in sequences) {
                                     def set_seq_vals = openshift.exec(
-                                        OLD_POD,
+                                        pod,
                                         '--',
                                         "bash -c ' \
                                         echo \"alter sequence C##CDEV.${seq} increment by 50;\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba \
