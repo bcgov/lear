@@ -5,7 +5,7 @@ export default {
    * fetch config from API
    */
   fetchConfig () {
-    const url = '/config/configuration.json'
+    const url = `/${process.env.VUE_APP_PATH}/config/configuration.json`
     const headers = {
       'Accept': 'application/json',
       'ResponseType': 'application/json',
