@@ -31,7 +31,7 @@
                   class="reset-btn"
                   color="red"
                   id="reg-off-addr-reset-btn"
-                  outline
+                  outlined
                   small
                   v-if="!showAddressForm && modified"
                   @click="resetAddress"
@@ -504,7 +504,7 @@ export default class RegisteredOfficeAddress extends Vue {
 }
 
 label:first-child {
-  font-weight: 500;
+  font-weight: 700;
   &__inner {
     flex: 1 1 auto;
   }

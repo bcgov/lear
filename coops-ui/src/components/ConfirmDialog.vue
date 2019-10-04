@@ -85,7 +85,7 @@ export default class ConfirmDialog extends Vue {
 
   // The dialog's options
   private options: OptionsObject = {
-    width: 300,
+    width: 400,
     zIndex: 200,
     persistent: false,
     yes: 'Yes',

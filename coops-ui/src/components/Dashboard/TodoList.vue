@@ -522,7 +522,7 @@ export default {
 }
 
 p.bold{
-  font-weight: 500
+  font-weight: 700
 }
 
 .list-item__actions .v-btn.actions__more-actions__btn{

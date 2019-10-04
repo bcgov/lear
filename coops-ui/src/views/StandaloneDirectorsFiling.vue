@@ -92,18 +92,20 @@
 
         <div class="buttons-right">
           <v-tooltip top color="#3b6cff">
-            <v-btn
-              slot="activator"
-              id="cod-file-pay-btn"
-              color="primary"
-              large
-              :depressed="isRoleStaff"
-              :ripple="!isRoleStaff"
-              :disabled="!validated || busySaving"
-              :loading="filingPaying"
-              @click="onClickFilePay">
-              File &amp; Pay
-            </v-btn>
+             <template v-slot:activator="{ on }">
+              <v-btn
+                v-on="on"
+                id="cod-file-pay-btn"
+                color="primary"
+                large
+                :depressed="isRoleStaff"
+                :ripple="!isRoleStaff"
+                :disabled="!validated || busySaving"
+                :loading="filingPaying"
+                @click="onClickFilePay">
+                File &amp; Pay
+              </v-btn>
+             </template>
             <span v-if="isRoleStaff">Staff are not allowed to file.</span>
             <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
               There is no opportunity to change information beyond this point.</span>
@@ -511,7 +513,7 @@ h2{
   line-height: 2rem;
   letter-spacing: -0.01rem;
   font-size: 2rem;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .title-container{
@@ -520,7 +522,7 @@ h2{
 
 .agm-date{
   margin-left: 0.25rem;
-  font-weight: 300;
+  font-weight: 400;
 }
 
 // Save & Filing Buttons
@@ -539,5 +541,9 @@ h2{
   .v-btn + .v-btn{
     margin-left: 0.5rem;
   }
+}
+
+#cod-cancel-btn{
+  margin-left: 0.5rem;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <ul class="list">
+  <ul class="list list-container">
     <li class="list-item" v-if="mailingAddress">
       <v-avatar>
         <v-icon color="primary">mail_outline</v-icon>
@@ -51,15 +51,22 @@ export default class AddressListSm extends Vue {
 }
 </script>
 
-<style lang="stylus" scoped>
-  .address-details
-    padding 0
-    list-style-type none
+<style lang="scss" scoped>
+  .address-details{
+    padding: 0;
+    list-style-type: none
+  }
 
-  .list-item
-    flex-direction row
-    align-items flex-start
+  .list-container{
+   padding-left:0
+  }
 
-  .v-icon
-    margin-right 1.25rem
+  .list-item{
+    flex-direction: row;
+    align-items: flex-start
+  }
+
+  .v-icon{
+    margin-right: 1.25rem
+  }
 </style>

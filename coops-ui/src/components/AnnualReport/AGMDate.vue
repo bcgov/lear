@@ -300,7 +300,7 @@ export default class AGMDate extends Mixins(DateMixin) {
   position: relative;
 
   > label:first-child{
-    font-weight: 500
+    font-weight: 700
   }
 }
 

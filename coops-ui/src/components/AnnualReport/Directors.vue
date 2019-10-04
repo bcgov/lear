@@ -1207,7 +1207,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     position: relative;
 
     > label:first-child{
-      font-weight: 500;
+      font-weight: 700;
     }
 
     &__inner {
