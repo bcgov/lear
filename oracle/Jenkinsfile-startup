@@ -92,6 +92,19 @@ node {
                             // todo: make this check if database is up (currently passes no matter what)
                             try {
                                 echo "${pod}"
+                                sequences = ['noncorp_event_seq', 'noncorp_address_seq', 'noncorp_party_seq']
+                                for (seq in sequences) {
+                                    def set_seq_vals = openshift.exec(
+                                        OLD_POD,
+                                        '--',
+                                        "bash -c ' \
+                                        echo \"alter sequence C##CDEV.${seq} increment by 50;\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba \
+                                        echo \"select C##CDEV.${seq}.NEXTVAL from dual;\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba \
+                                        echo \"alter sequence C##CDEV.${seq} increment by 1;\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba \
+                                        '"
+                                    ).actions[0].out
+                                    echo set_seq_vals
+                                }
                                 return true
                             } catch (Exception e) {
                                 echo "${e}"
