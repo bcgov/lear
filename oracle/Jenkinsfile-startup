@@ -90,7 +90,7 @@ node {
                         if (pod != OLD_POD && it.objects()[0].status.phase == 'Running' && it.objects()[0].status.containerStatuses[0].ready) {
                             echo "New pod: ${pod}"
                             sleep 10
-                            echo "waited {count*10} seconds"
+                            echo "waited ${count*10} seconds"
                             try {
                                 echo "${pod}"
                                 sequences = ['noncorp_event_seq', 'noncorp_address_seq', 'noncorp_party_seq']
