@@ -10,10 +10,8 @@
           ref="menu"
           v-model="menu"
           :nudge-right="40"
-          lazy
           transition="scale-transition"
           offset-y
-          full-width
           min-width="18rem">
           <template v-slot:activator="{ on }">
             <v-text-field
@@ -25,7 +23,7 @@
               hint="YYYY/MM/DD"
               append-icon="event"
               v-on="on"
-              box>
+              filled>
             </v-text-field>
           </template>
           <v-date-picker

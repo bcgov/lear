@@ -16,7 +16,7 @@
               <div class="address-block__actions">
                 <v-btn
                   color="primary"
-                  flat
+                  text
                   id="reg-off-addr-change-btn"
                   small
                   v-if="!showAddressForm"

@@ -18,7 +18,7 @@
       </v-card-text>
       <v-divider class="my-0"></v-divider>
       <v-card-actions>
-        <v-btn color="primary" flat @click="exit()">Return to dashboard</v-btn>
+        <v-btn color="primary" text @click="exit()">Return to dashboard</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

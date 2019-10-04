@@ -36,7 +36,7 @@
         </v-card-text>
         <v-divider class="my-0"></v-divider>
         <v-card-actions>
-          <v-btn id="okay-btn" color="primary" flat @click="okay()">Okay</v-btn>
+          <v-btn id="okay-btn" color="primary" text @click="okay()">Okay</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

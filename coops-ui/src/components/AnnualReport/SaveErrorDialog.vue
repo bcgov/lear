@@ -40,12 +40,12 @@
         </v-card-text>
         <v-divider class="my-0"></v-divider>
         <v-card-actions v-if="errors.length + warnings.length < 1">
-          <v-btn color="primary" flat @click="exit()">Exit without saving</v-btn>
+          <v-btn color="primary" text @click="exit()">Exit without saving</v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="primary" flat @click="retry()" :disabled="disableRetry">Retry</v-btn>
+          <v-btn color="primary" text @click="retry()" :disabled="disableRetry">Retry</v-btn>
         </v-card-actions>
         <v-card-actions v-else>
-          <v-btn id="okay-btn" color="primary" flat @click="okay()">Okay</v-btn>
+          <v-btn id="okay-btn" color="primary" text @click="okay()">Okay</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

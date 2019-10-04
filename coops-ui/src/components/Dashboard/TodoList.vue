@@ -34,10 +34,10 @@
 
               <div class="list-item__status2">
                 <span v-if="isPending(item)">
-                  PAYMENT INCOMPLETE<v-btn flat icon color="black"><v-icon>info_outline</v-icon></v-btn>
+                  PAYMENT INCOMPLETE<v-btn text icon color="black"><v-icon>info_outline</v-icon></v-btn>
                 </span>
                 <span v-else-if="isError(item)">
-                  PAYMENT UNSUCCESSFUL<v-btn flat icon color="black"><v-icon>info_outline</v-icon></v-btn>
+                  PAYMENT UNSUCCESSFUL<v-btn text icon color="black"><v-icon>info_outline</v-icon></v-btn>
                 </span>
               </div>
             </template>

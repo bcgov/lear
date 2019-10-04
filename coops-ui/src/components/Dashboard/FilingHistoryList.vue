@@ -18,17 +18,17 @@
         </v-card-text>
         <v-divider class="my-0"></v-divider>
         <v-card-actions>
-          <v-btn color="primary" flat @click="downloadErrorDialog = false">Close</v-btn>
+          <v-btn color="primary" text @click="downloadErrorDialog = false">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <v-expansion-panel v-if="filedItems && filedItems.length > 0" v-model="panel">
-      <v-expansion-panel-content
+    <v-expansion-panels v-if="filedItems && filedItems.length > 0" v-model="panel">
+      <v-expansion-panel
         class="filing-history-list"
         v-for="(item, index) in filedItems"
         v-bind:key="index">
-        <template v-slot:header>
+        <v-expansion-panel-header>
           <div class="list-item">
             <div class="list-item__title">{{item.name}}</div>
             <div class="list-item__subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
@@ -38,19 +38,20 @@
             <span v-if="panel === index">Hide Documents</span>
             <span v-else>View Documents</span>
           </div>
-        </template>
+        </v-expansion-panel-header>
+         <v-expansion-panel-content>
         <ul class="list document-list">
           <li class="list-item"
             v-for="(document, index) in item.filingDocuments"
             v-bind:key="index">
-            <v-btn class="list-item__btn" flat color="primary" @click="downloadDocument(document)"
+            <v-btn class="list-item__btn" text color="primary" @click="downloadDocument(document)"
               :disabled="loadingDocument" :loading="loadingDocument">
               <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
               <div class="list-item__title">{{document.name}}</div>
             </v-btn>
           </li>
           <li class="list-item">
-            <v-btn class="list-item__btn" flat color="primary" @click="downloadReceipt(item)"
+            <v-btn class="list-item__btn" text color="primary" @click="downloadReceipt(item)"
               :disabled="loadingReceipt" :loading="loadingReceipt">
               <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
               <div class="list-item__title">Receipt</div>
@@ -63,8 +64,9 @@
             Download All
           </v-btn>
         </div>
-      </v-expansion-panel-content>
-    </v-expansion-panel>
+         </v-expansion-panel-content>
+      </v-expansion-panel>
+    </v-expansion-panels>
 
     <!-- No Results Message -->
     <v-card class="no-results" flat v-if="filedItems && filedItems.length === 0">

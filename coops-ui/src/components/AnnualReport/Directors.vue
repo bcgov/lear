@@ -199,7 +199,7 @@
                       <!--
                       <v-menu offset-y>
                         <template v-slot:activator="{ on }">
-                          <v-btn flat small class="actions__more-actions__btn"
+                          <v-btn text small class="actions__more-actions__btn"
                             v-on="on"
                           >
                             <v-icon>arrow_drop_down</v-icon>
@@ -229,7 +229,7 @@
                       <span v-show="isActive(director)">
                         <v-menu offset-y>
                           <template v-slot:activator="{ on }">
-                            <v-btn flat small class="actions__more-actions__btn"
+                            <v-btn text small class="actions__more-actions__btn"
                               v-on="on"
                             >
                               <v-icon>arrow_drop_down</v-icon>
