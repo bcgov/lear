@@ -526,8 +526,6 @@ h2{
   margin-bottom: 1.25rem;
   line-height: 2rem;
   letter-spacing: -0.01rem;
-  font-size: 2rem;
-  font-weight: 700;
 }
 
 .title-container{
