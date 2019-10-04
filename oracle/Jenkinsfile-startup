@@ -82,15 +82,14 @@ node {
                     def podSelector = openshift.selector('pod', [ app:"${COMPONENT_NAME}-${COMPONENT_TAG}" ])
 
                     deploy.rollout().latest()
-                    // count to prevent oc loop cache
                     def count = 1
                     podSelector.untilEach {
                         def pod = it.objects()[0].metadata.name
                         echo "pod: ${pod}"
                         if (pod != OLD_POD && it.objects()[0].status.phase == 'Running' && it.objects()[0].status.containerStatuses[0].ready) {
                             echo "New pod: ${pod}"
-                            sleep 10
-                            echo "waited ${count*10} seconds"
+                            sleep 80
+                            echo "waited ${count*80} seconds"
                             try {
                                 echo "${pod}"
                                 sequences = ['noncorp_event_seq', 'noncorp_address_seq', 'noncorp_party_seq']
