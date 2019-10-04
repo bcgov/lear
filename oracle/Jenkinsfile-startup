@@ -85,11 +85,12 @@ node {
                     podSelector.untilEach {
                         def pod = it.objects()[0].metadata.name
                         echo "pod: ${pod}"
-
+                        // count to prevent oc loop cache
+                        def count = 1
                         if (pod != OLD_POD && it.objects()[0].status.phase == 'Running' && it.objects()[0].status.containerStatuses[0].ready) {
                             echo "New pod: ${pod}"
                             sleep 10
-                            // todo: make this check if database is up (currently passes no matter what)
+                            echo "waited {count*10} seconds"
                             try {
                                 echo "${pod}"
                                 sequences = ['noncorp_event_seq', 'noncorp_address_seq', 'noncorp_party_seq']
@@ -122,6 +123,7 @@ node {
                                 return true
                             } catch (Exception e) {
                                 echo "${e}"
+                                count++
                                 return false
                             }
                         } else {
