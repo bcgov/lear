@@ -88,22 +88,36 @@ node {
 
                         if (pod != OLD_POD && it.objects()[0].status.phase == 'Running' && it.objects()[0].status.containerStatuses[0].ready) {
                             echo "New pod: ${pod}"
-                            sleep 80
+                            sleep 10
                             // todo: make this check if database is up (currently passes no matter what)
                             try {
                                 echo "${pod}"
                                 sequences = ['noncorp_event_seq', 'noncorp_address_seq', 'noncorp_party_seq']
                                 for (seq in sequences) {
-                                    def set_seq_vals = openshift.exec(
+                                    def inc_seq_50 = openshift.exec(
                                         pod,
                                         '--',
                                         "bash -c ' \
                                         echo \"alter sequence C##CDEV.${seq} increment by 50;\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba \
+                                        '"
+                                    ).actions[0].out
+                                    echo inc_seq_50
+                                    def set_seq_val = openshift.exec(
+                                        pod,
+                                        '--',
+                                        "bash -c ' \
                                         echo \"select C##CDEV.${seq}.NEXTVAL from dual;\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba \
+                                        '"
+                                    ).actions[0].out
+                                    echo set_seq_val
+                                    def reset_seq_inc = openshift.exec(
+                                        pod,
+                                        '--',
+                                        "bash -c ' \
                                         echo \"alter sequence C##CDEV.${seq} increment by 1;\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba \
                                         '"
                                     ).actions[0].out
-                                    echo set_seq_vals
+                                    echo reset_seq_inc
                                 }
                                 return true
                             } catch (Exception e) {
