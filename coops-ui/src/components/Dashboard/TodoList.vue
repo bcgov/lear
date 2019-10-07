@@ -51,44 +51,49 @@
                   Resume
                 </v-btn>
                 <!-- more DRAFT actions menu -->
-                <v-menu offset-y left>
+                <v-menu offset-y left >
                   <template v-slot:activator="{ on }">
                     <v-btn color="primary" class="actions__more-actions__btn"
-                      v-on="on"
-                    >
+                      v-on="on">
                       <v-icon>mdi-menu-down</v-icon>
                     </v-btn>
                   </template>
                   <v-list ref="draft_actions" class="actions__more-actions">
-                    <v-list-tile id="btn-delete-draft" @click="confirmDeleteDraft(item)">
-                      <v-list-tile-title>Delete Draft</v-list-tile-title>
-                    </v-list-tile>
+                    <v-list-item id="btn-delete-draft" @click="confirmDeleteDraft(item)">
+                      <v-list-item-title>Delete Draft</v-list-item-title>
+                    </v-list-item>
                   </v-list>
                 </v-menu>
               </span>
 
               <v-tooltip v-else-if="isPending(item)" top color="#3b6cff" :disabled="!isRoleStaff">
-                <v-btn
-                  color="primary"
-                  slot="activator"
-                  :depressed="isRoleStaff"
-                  :ripple="!isRoleStaff"
-                  :disabled="!item.enabled"
-                  @click.native.stop="doResumePayment(item)">
-                  Resume Payment
-                </v-btn>
+                 <template v-slot:activator="{ on }">
+                  <v-btn
+                    color="primary"
+                    slot="activator"
+                    v-on="on"
+                    :depressed="isRoleStaff"
+                    :ripple="!isRoleStaff"
+                    :disabled="!item.enabled"
+                    @click.native.stop="doResumePayment(item)">
+                    Resume Payment
+                  </v-btn>
+                 </template>
                 <span>Staff are not allowed to Resume Payment.</span>
               </v-tooltip>
               <v-tooltip v-else-if="isError(item)" top color="#3b6cff" :disabled="!isRoleStaff">
-                <v-btn
-                  color="primary"
-                  slot="activator"
-                  :depressed="isRoleStaff"
-                  :ripple="!isRoleStaff"
-                  :disabled="!item.enabled"
-                  @click.native.stop="doResumePayment(item)">
-                  Retry Payment
-                </v-btn>
+                 <template v-slot:activator="{ on }">
+                  <v-btn
+                    v-on="on"
+                    color="primary"
+                    slot="activator"
+                    :depressed="isRoleStaff"
+                    :ripple="!isRoleStaff"
+                    :disabled="!item.enabled"
+                    @click.native.stop="doResumePayment(item)">
+                    Retry Payment
+                  </v-btn>
+                 </template>
                 <span>Staff are not allowed to Retry Payment.</span>
               </v-tooltip>
               <v-btn v-else-if="!isCompleted(item)"

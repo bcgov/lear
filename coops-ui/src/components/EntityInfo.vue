@@ -40,9 +40,9 @@
               </v-btn>
             </template>
             <v-list>
-              <v-list-tile @click="editBusinessProfile">
-                <v-list-tile-title>Update business profile</v-list-tile-title>
-              </v-list-tile>
+              <v-list-item @click="editBusinessProfile">
+                <v-list-item-title>Update business profile</v-list-item-title>
+              </v-list-item>
             </v-list>
           </v-menu>
         </div>
