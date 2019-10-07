@@ -9,6 +9,8 @@ import FilingHistoryList from '@/components/Dashboard/FilingHistoryList.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+let vuetify = new Vuetify({})
+
 describe('FilingHistoryList', () => {
   it('handles empty data', done => {
     const $route = { query: { 'filingId': null } }
@@ -17,7 +19,7 @@ describe('FilingHistoryList', () => {
     store.state.entityIncNo = 'CP0001191'
     store.state.filings = []
 
-    const wrapper = shallowMount(FilingHistoryList, { store, mocks: { $route } })
+    const wrapper = shallowMount(FilingHistoryList, { store, mocks: { $route }, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -80,7 +82,7 @@ describe('FilingHistoryList', () => {
       }
     ]
 
-    const wrapper = shallowMount(FilingHistoryList, { store, mocks: { $route } })
+    const wrapper = shallowMount(FilingHistoryList, { store, mocks: { $route }, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -142,7 +144,7 @@ describe('FilingHistoryList', () => {
       }
     ]
 
-    const wrapper = shallowMount(FilingHistoryList, { store, mocks: { $route } })
+    const wrapper = shallowMount(FilingHistoryList, { store, mocks: { $route }, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
