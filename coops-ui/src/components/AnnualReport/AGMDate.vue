@@ -21,7 +21,7 @@
               :rules="agmDateRules"
               label="Enter your Annual General Meeting Date"
               hint="YYYY/MM/DD"
-              append-icon="event"
+              append-icon="mdi-calendar"
               v-on="on"
               filled>
             </v-text-field>

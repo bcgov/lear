@@ -23,7 +23,7 @@
                   :disabled="changeButtonDisabled"
                   @click="editAddress"
                 >
-                  <v-icon small>edit</v-icon>
+                  <v-icon small>mdi-pencil</v-icon>
                   <span>Change</span>
                 </v-btn>
                 <br />

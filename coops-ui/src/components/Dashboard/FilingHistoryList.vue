@@ -7,11 +7,11 @@
           <p class="genErr">We were unable to download your filing history document(s).</p>
           <p class="genErr">If this error persists, please contact us.</p>
           <p class="genErr">
-            <v-icon small>phone</v-icon>
+            <v-icon small>mdi-phone</v-icon>
             <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
           </p>
           <p class="genErr">
-            <v-icon small>email</v-icon>
+            <v-icon small>mdi-email</v-icon>
             <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
               >SBC_ITOperationsSupport@gov.bc.ca</a>
           </p>

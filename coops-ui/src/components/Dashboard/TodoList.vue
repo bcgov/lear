@@ -34,10 +34,10 @@
 
               <div class="list-item__status2">
                 <span v-if="isPending(item)">
-                  PAYMENT INCOMPLETE<v-btn text icon color="black"><v-icon>info_outline</v-icon></v-btn>
+                  PAYMENT INCOMPLETE<v-btn text icon color="black"><v-icon>mdi-info-outline</v-icon></v-btn>
                 </span>
                 <span v-else-if="isError(item)">
-                  PAYMENT UNSUCCESSFUL<v-btn text icon color="black"><v-icon>info_outline</v-icon></v-btn>
+                  PAYMENT UNSUCCESSFUL<v-btn text icon color="black"><v-icon>mdi-info-outline</v-icon></v-btn>
                 </span>
               </div>
             </template>
@@ -56,7 +56,7 @@
                     <v-btn color="primary" class="actions__more-actions__btn"
                       v-on="on"
                     >
-                      <v-icon>arrow_drop_down</v-icon>
+                      <v-icon>mdi-menu-down</v-icon>
                     </v-btn>
                   </template>
                   <v-list ref="draft_actions" class="actions__more-actions">

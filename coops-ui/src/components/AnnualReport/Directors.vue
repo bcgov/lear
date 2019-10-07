@@ -30,7 +30,7 @@
       <div v-show="!showNewDirectorForm">
         <v-btn class="new-director-btn" outlined color="primary" :disabled="!componentEnabled || directorEditInProgress"
           @click="addNewDirector">
-          <v-icon>add</v-icon>
+          <v-icon>mdi-plus</v-icon>
           <span>Appoint New Director</span>
         </v-btn>
       </div>
@@ -190,7 +190,7 @@
                       <v-btn small text color="primary" :disabled="!componentEnabled || directorEditInProgress"
                         :id="'director-' + director.id + '-change-btn'"
                         @click="editDirector(index)">
-                        <v-icon small>edit</v-icon>
+                        <v-icon small>mdi-pencil</v-icon>
                         <span>Edit</span>
                       </v-btn>
 
@@ -220,7 +220,7 @@
                         class="cease-btn"
                         :id="'director-' + director.id + '-cease-btn'"
                         @click="ceaseDirector(director)">
-                        <v-icon small>{{isActive(director) ? 'close':'undo'}}</v-icon>
+                        <v-icon small>{{isActive(director) ? 'mdi-close':'mdi-undo'}}</v-icon>
                         <span>{{isActive(director) ? 'Cease':'Undo'}}</span>
                       </v-btn>
                       <!-- more actions menu -->

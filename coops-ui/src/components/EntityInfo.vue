@@ -36,7 +36,7 @@
           <v-menu bottom left offset-y content-class="v-menu">
             <template v-slot:activator="{ on }">
               <v-btn small text v-on="on" color="primary">
-                <v-icon small>settings</v-icon>
+                <v-icon small>mdi-settings</v-icon>
               </v-btn>
             </template>
             <v-list>

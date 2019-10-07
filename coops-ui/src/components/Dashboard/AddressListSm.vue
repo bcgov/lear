@@ -2,7 +2,7 @@
   <ul class="list list-container">
     <li class="list-item" v-if="mailingAddress">
       <v-avatar>
-        <v-icon color="primary">mail_outline</v-icon>
+        <v-icon color="primary">mdi-email-outline</v-icon>
       </v-avatar>
       <div class="address">
         <div class="list-item__title">Mailing Address</div>
@@ -19,7 +19,7 @@
 
     <li class="list-item" v-if="deliveryAddress">
       <v-avatar>
-        <v-icon color="primary">local_shipping</v-icon>
+        <v-icon color="primary">mdi-truck</v-icon>
       </v-avatar>
       <div class="address">
         <div class="list-item__title">Delivery Address</div>

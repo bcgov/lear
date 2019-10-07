@@ -29,7 +29,7 @@
                 <h2>Office Addresses</h2>
                 <v-btn id="btn-standalone-addresses" text small color="primary" :disabled="hasBlockerFiling"
                       @click.native.stop="goToStandaloneAddresses()">
-                  <v-icon small>edit</v-icon>
+                  <v-icon small>mdi-pencil</v-icon>
                   <span>EDIT</span>
                 </v-btn>
               </header>
@@ -43,7 +43,7 @@
                 <h2>Current Directors</h2>
                 <v-btn id="btn-standalone-directors" text small color="primary" :disabled="hasBlockerFiling"
                       @click.native.stop="goToStandaloneDirectors()">
-                  <v-icon small>edit</v-icon>
+                  <v-icon small>mdi-pencil</v-icon>
                   <span>EDIT</span>
                 </v-btn>
               </header>
