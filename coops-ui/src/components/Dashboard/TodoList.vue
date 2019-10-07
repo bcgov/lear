@@ -16,9 +16,7 @@
         v-bind:key="index"
         expand-icon=""
         :class="{ 'disabled': !item.enabled, 'draft': isDraft(item) }">
-
-        <v-expansion-panel-header>
-
+        <v-expansion-panel-header class="no-dropdown">
           <div class="list-item">
             <div class="list-item__title">{{item.title}}</div>
 
@@ -34,10 +32,10 @@
 
               <div class="list-item__status2">
                 <span v-if="isPending(item)">
-                  PAYMENT INCOMPLETE<v-btn text icon color="black"><v-icon>mdi-info-outline</v-icon></v-btn>
+                  PAYMENT INCOMPLETE<v-btn text icon color="black"><v-icon>mdi-information-outline</v-icon></v-btn>
                 </span>
                 <span v-else-if="isError(item)">
-                  PAYMENT UNSUCCESSFUL<v-btn text icon color="black"><v-icon>mdi-info-outline</v-icon></v-btn>
+                  PAYMENT UNSUCCESSFUL<v-btn text icon color="black"><v-icon>mdi-information-outline</v-icon></v-btn>
                 </span>
               </div>
             </template>
@@ -106,25 +104,23 @@
           </div>
 
         </v-expansion-panel-header>
-
         <v-expansion-panel-content>
-        <v-card v-if="isPending(item)">
-          <v-card-text>
-            <p class="bold">Payment Incomplete</P>
-            <p>This filing is pending payment. The payment may still be in progress or may have been
-              interrupted for some reason.<p>
-            <p>You may continue this filing by selecting "Resume Payment".</p>
-          </v-card-text>
-        </v-card>
-
-        <v-card v-if="isError(item)">
-          <v-card-text>
-            <p class="bold">Payment Unsuccessful</p>
-            <p>This filing is pending payment. The payment appears to have been unsuccessful for some
-              reason.</p>
-            <p>You may continue this filing by selecting "Retry Payment".</p>
-          </v-card-text>
-        </v-card>
+            <v-card v-if="isPending(item)">
+              <v-card-text>
+                <p class="bold">Payment Incomplete</P>
+                <p>This filing is pending payment. The payment may still be in progress or may have been
+                  interrupted for some reason.<p>
+                <p>You may continue this filing by selecting "Resume Payment".</p>
+              </v-card-text>
+            </v-card>
+            <v-card v-if="isError(item)">
+              <v-card-text>
+                <p class="bold">Payment Unsuccessful</p>
+                <p>This filing is pending payment. The payment appears to have been unsuccessful for some
+                  reason.</p>
+                <p>You may continue this filing by selecting "Retry Payment".</p>
+              </v-card-text>
+            </v-card>
         </v-expansion-panel-content>
       </v-expansion-panel>
     </v-expansion-panels>
@@ -449,16 +445,12 @@ export default {
 }
 </script>
 
-<style lang="stylus">
-
-  // disable expansion
-  .todo-list.draft .v-expansion-panel__body
-    display none
-
-</style>
-
 <style lang="scss" scoped>
 @import "../../assets/styles/theme.scss";
+
+ .todo-list.draft .v-expansion-panel__body{
+    display: none
+ }
 
 .todo-list{
   // disable expansion

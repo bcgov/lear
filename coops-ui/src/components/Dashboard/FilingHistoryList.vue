@@ -39,32 +39,32 @@
             <span v-else>View Documents</span>
           </div>
         </v-expansion-panel-header>
-         <v-expansion-panel-content>
-        <ul class="list document-list">
-          <li class="list-item"
-            v-for="(document, index) in item.filingDocuments"
-            v-bind:key="index">
-            <v-btn class="list-item__btn" text color="primary" @click="downloadDocument(document)"
-              :disabled="loadingDocument" :loading="loadingDocument">
-              <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
-              <div class="list-item__title">{{document.name}}</div>
+        <v-expansion-panel-content>
+          <ul class="list document-list">
+            <li class="list-item"
+              v-for="(document, index) in item.filingDocuments"
+              v-bind:key="index">
+              <v-btn class="list-item__btn" text color="primary" @click="downloadDocument(document)"
+                :disabled="loadingDocument" :loading="loadingDocument">
+                <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
+                <div class="list-item__title">{{document.name}}</div>
+              </v-btn>
+            </li>
+            <li class="list-item">
+              <v-btn class="list-item__btn" text color="primary" @click="downloadReceipt(item)"
+                :disabled="loadingReceipt" :loading="loadingReceipt">
+                <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
+                <div class="list-item__title">Receipt</div>
+              </v-btn>
+            </li>
+          </ul>
+          <div class="documents-actions-bar">
+            <v-btn class="download-all-btn" color="primary" @click="downloadAll(item)"
+              :disabled="loadingAll" :loading="loadingAll">
+              Download All
             </v-btn>
-          </li>
-          <li class="list-item">
-            <v-btn class="list-item__btn" text color="primary" @click="downloadReceipt(item)"
-              :disabled="loadingReceipt" :loading="loadingReceipt">
-              <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
-              <div class="list-item__title">Receipt</div>
-            </v-btn>
-          </li>
-        </ul>
-        <div class="documents-actions-bar">
-          <v-btn class="download-all-btn" color="primary" @click="downloadAll(item)"
-            :disabled="loadingAll" :loading="loadingAll">
-            Download All
-          </v-btn>
-        </div>
-         </v-expansion-panel-content>
+          </div>
+        </v-expansion-panel-content>
       </v-expansion-panel>
     </v-expansion-panels>
 

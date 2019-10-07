@@ -19,7 +19,7 @@ describe('EntityInfo', () => {
 
   beforeEach(done => {
     const Constructor = Vue.extend(EntityInfo)
-    const instance = new Constructor({ store: store , vuetify })
+    const instance = new Constructor({ store: store, vuetify })
     vm = instance.$mount()
 
     Vue.nextTick(() => {

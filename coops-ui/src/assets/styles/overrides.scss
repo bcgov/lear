@@ -40,7 +40,7 @@
 .v-expansion-panel {
   box-shadow: none;
 }
-
+ 
 .v-expansion-panel__header {
   padding: 1.25rem 1.25rem;
 }
@@ -65,4 +65,10 @@
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   border: 0;
+}
+
+.v-expansion-panel-header.no-dropdown {
+  .v-expansion-panel-header__icon{
+    display: none;
+  }
 }
