@@ -13,6 +13,8 @@ import TodoList from '@/components/Dashboard/TodoList.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+let vuetify = new Vuetify({})
+
 // Boilerplate to prevent the complaint "[Vuetify] Unable to locate target [data-app]"
 const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
@@ -23,7 +25,7 @@ describe('TodoList - UI', () => {
     // init store
     store.state.tasks = []
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -83,7 +85,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -131,7 +133,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -179,7 +181,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -223,7 +225,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -267,7 +269,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -316,7 +318,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -365,7 +367,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -416,7 +418,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
@@ -466,7 +468,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
@@ -526,7 +528,7 @@ describe('TodoList - Click Tests', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
-    const wrapper = mount(TodoList, { localVue, store, router })
+    const wrapper = mount(TodoList, { localVue, store, router, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
@@ -578,7 +580,7 @@ describe('TodoList - Click Tests', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
-    const wrapper = mount(TodoList, { localVue, store, router })
+    const wrapper = mount(TodoList, { localVue, store, router, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
@@ -627,7 +629,7 @@ describe('TodoList - Click Tests', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
@@ -674,7 +676,7 @@ describe('TodoList - Click Tests', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
@@ -779,7 +781,7 @@ describe('TodoList - Delete Draft', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
@@ -824,7 +826,7 @@ describe('TodoList - Delete Draft', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
