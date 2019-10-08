@@ -20,7 +20,7 @@ Currently this only provides API versioning information
 from .db import db
 
 
-class Office (db.Model):
+class Office(db.Model): # pylint: disable=too-few-public-methods
     """This is the object mapping for the Office entity.
 
     An office is associated with one business, and 0...n addresses
@@ -30,10 +30,20 @@ class Office (db.Model):
     __tablename__ = 'offices'
 
     id = db.Column(db.Integer, primary_key=True)
-    office_type = db.Column('office_type', db.String(75))
+    office_type = db.Column('office_type', db.String(75), db.ForeignKey('office_types.identifier'))
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
     addresses = db.relationship('Address', lazy='dynamic')
     deactivated_date = db.Column('deactivated_date', db.DateTime(timezone=True), default=None)
 
     # relationships
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
+
+class OfficeType(db.Model): # pylint: disable=too-few-public-methods
+    __tablename__ = 'office_types'
+
+    identifier = db.Column(db.String(50), primary_key=True)
+    description = db.Column(db.String(50))
+
+    # Office Types Constants
+    REGISTERED = 'registeredOffice'
+    RECORDS = 'recordsOffice'

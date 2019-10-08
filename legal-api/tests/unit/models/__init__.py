@@ -17,7 +17,7 @@ from datetime import datetime
 
 from sqlalchemy_continuum import versioning_manager
 
-from legal_api.models import Address, Business, Director, Filing, db
+from legal_api.models import Address, Business, Director, Filing, Office, db
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
 
@@ -120,7 +120,13 @@ def factory_business_mailing_address(business):
         region='BC',
         address_type=Address.MAILING
     )
-    business.mailing_address.append(address)
+
+    office = Office(
+        office_type='registeredOffice'
+    )
+    
+    office.addresses.append(address)
+    business.offices.append(office)
     business.save()
     return business
 

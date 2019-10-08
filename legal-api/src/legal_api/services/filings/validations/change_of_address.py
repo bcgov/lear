@@ -22,7 +22,6 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Business
 
-from ..utils import get_str
 
 
 def validate(business: Business, cod: Dict) -> Error:
@@ -35,13 +34,13 @@ def validate(business: Business, cod: Dict) -> Error:
     addresses = json.loads(offices_array)
 
     for item in addresses.keys():
-        for k,v in addresses[item].items():
+        for k, v in addresses[item].items():
             region = v['addressRegion']
             country = v['addressCountry']
 
             if region != 'BC':
                 path = '/filing/changeOfAddress/offices/%s/%s/addressRegion' % (
-                    item,k
+                    item, k
                 )
                 msg.append({'error': _("Address Region must be 'BC'."),
                             'path': path})
