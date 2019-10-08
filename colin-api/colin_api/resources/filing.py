@@ -112,7 +112,7 @@ class FilingInfo(Resource):
             completed_filing.body = {}
             for filing_info in filings_added:
                 filing = Filing.get_filing(business=completed_filing.business, event_id=filing_info['event_id'],
-                                            filing_type=filing_info['filing_type'])
+                                           filing_type=filing_info['filing_type'])
                 if not filing:
                     raise FilingNotFoundException(identifier=identifier, filing_type=filing_info['filing_type'],
                                                   event_id=filing_info['event_id'])

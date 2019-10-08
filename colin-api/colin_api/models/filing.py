@@ -27,6 +27,7 @@ from colin_api.utils import convert_to_json_date
 
 class Filing:
     """Class to contain all model-like functions such as getting and setting from database."""
+
     # in order of number filed by coops as of september 2019
     FILING_TYPES = {'OTANN': 'annualReport',
                     'OTCDR': 'changeOfDirectors',
@@ -75,7 +76,7 @@ class Filing:
                 'business': self.business.business,
             }
         }
-        possible_filings = [Filing.FILING_TYPES[x] for x in Filing.FILING_TYPES.keys()]
+        possible_filings = [Filing.FILING_TYPES[key] for key in Filing.FILING_TYPES]
         entered_filings = [x for x in self.body.keys() if x in possible_filings]
 
         if entered_filings:  # filing object possibly storing multiple filings
@@ -197,13 +198,13 @@ class Filing:
 
     @classmethod
     def _get_filing_event_info(cls,  # pylint: disable=too-many-arguments,too-many-branches;
-                                identifier: str = None, event_id: str = None, filing_type_cd1: str = None,
-                                filing_type_cd2: str = 'empty', year: int = None):
+                               identifier: str = None, event_id: str = None, filing_type_cd1: str = None,
+                               filing_type_cd2: str = 'empty', year: int = None):
 
         # build base querystring
         querystring = ("""
-                select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt, agm_date,
-                effective_dt, event.corp_num
+                select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt,
+                agm_date, effective_dt, event.corp_num
                 from event
                 join filing on filing.event_id = event.event_id
                 left join filing_user on event.event_id = filing_user.event_id
