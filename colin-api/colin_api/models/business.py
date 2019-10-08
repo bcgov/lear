@@ -72,7 +72,7 @@ class Business:
                 where corp_typ_cd = 'CP'
                 and corp.CORP_NUM=:corp_num
                 and filing.filing_typ_cd = 'OTANN'
-                order by filing.period_end_dt desc""", corp_num=identifier)
+                order by filing.period_end_dt desc nulls last""", corp_num=identifier)
             business = cursor.fetchone()
 
             if not business:
@@ -118,9 +118,11 @@ class Business:
                 business['status'] = business['state']
 
             # convert dates and date-times to correct json format and convert to camel case for schema names
+
             business['foundingDate'] = convert_to_json_date(business['founding_date'])
             business['lastAgmDate'] = convert_to_json_date(business['last_agm_date'])
-            business['lastArDate'] = convert_to_json_date(business['last_ar_date'])
+            business['lastArDate'] = convert_to_json_date(business['last_ar_date']) if business['last_ar_date'] \
+                else business['lastAgmDate']
             business['lastLedgerTimestamp'] = convert_to_json_datetime(business['last_ledger_timestamp'])
 
             business['businessNumber'] = business['business_number']

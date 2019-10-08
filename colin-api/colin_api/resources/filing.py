@@ -33,7 +33,7 @@ class FilingInfo(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     def get(identifier, filing_type):
-        """Return the complete filing info."""
+        """Return the complete filing info or historic (pre-bob-date=2019-03-08) filings."""
         try:
             # get optional parameters (event_id / year)
             event_id = request.args.get('eventId', None)
@@ -44,8 +44,13 @@ class FilingInfo(Resource):
             # get business
             business = Business.find_by_identifier(identifier)
 
-            # get filing
-            filing = Filing.find_filing(business=business, event_id=event_id, filing_type=filing_type, year=year)
+            # get filings history from before bob-date
+            if filing_type == 'historic':
+                historic_filings_info = Filing.get_historic_filings(business=business)
+                return jsonify(historic_filings_info)
+
+            # else get filing
+            filing = Filing.get_filing(business=business, event_id=event_id, filing_type=filing_type, year=year)
             return jsonify(filing.as_dict())
 
         except GenericException as err:  # pylint: disable=duplicate-code
@@ -106,7 +111,7 @@ class FilingInfo(Resource):
             completed_filing.business = Business.find_by_identifier(identifier)
             completed_filing.body = {}
             for filing_info in filings_added:
-                filing = Filing.find_filing(business=completed_filing.business, event_id=filing_info['event_id'],
+                filing = Filing.get_filing(business=completed_filing.business, event_id=filing_info['event_id'],
                                             filing_type=filing_info['filing_type'])
                 if not filing:
                     raise FilingNotFoundException(identifier=identifier, filing_type=filing_info['filing_type'],

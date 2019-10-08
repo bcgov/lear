@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e665c91e-9961-461e-a778-76af4d07870a",
+		"_postman_id": "6c508540-1512-4ee3-807a-0dc803210c42",
 		"name": "colin-api",
 		"description": "version=0.103 - This is a Colin API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -105,7 +105,8 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "AR",
@@ -931,6 +932,7 @@
 								"exec": [
 									"// set event id variable (used for future tests)",
 									"var jsonData = pm.response.json()",
+									"pm.environment.set(\"noAgmEventId\", jsonData.filing.annualReport.eventId)",
 									"",
 									"pm.test(\"Response time is less than 20000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -1125,7 +1127,8 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "business",
@@ -1421,7 +1424,151 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Historic Filings",
+			"item": [
+				{
+					"name": "GET HF CP0002098",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c1067abe-1b2f-44f7-9896-87e432779d29",
+								"exec": [
+									"pm.test(\"Response time is less than 20000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(20000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for Historic Filings\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    for (var index in jsonData) {",
+									"        filing = jsonData[index].filing",
+									"        pm.expect(filing).to.exist",
+									"        pm.expect(filing.business).to.exist",
+									"        pm.expect(filing.header).to.exist",
+									"        pm.expect(filing.header.name).to.exist",
+									"        pm.expect(filing[filing.header.name]).to.exist",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Only returns filings from before the Bob Date\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    for (var index in jsonData) {",
+									"        bob_date = '2019-03-08'",
+									"        pm.expect(jsonData[index].filing.header.date < bob_date).to.eql(true)",
+									"    }",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0002098/filings/historic",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0002098",
+								"filings",
+								"historic"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "GET AR CP0002098",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/CP0002098/filings/annualReport",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"CP0002098",
+										"filings",
+										"annualReport"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "GET, OPTIONS, POST, HEAD"
+								},
+								{
+									"key": "Access-Control-Max-Age",
+									"value": "21600"
+								},
+								{
+									"key": "API",
+									"value": "colin_api/0.1.0a0.dev"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/0.15.4 Python/3.6.5"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 15 Jul 2019 20:29:42 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2017-12-21\",\n            \"certifiedBy\": \"N/A\",\n            \"email\": \"xxxx@xxxx.xxx\",\n            \"eventId\": 103248132\n        },\n        \"business\": {\n            \"businessNumber\": null,\n            \"cacheId\": 0,\n            \"corpState\": \"ACT\",\n            \"foundingDate\": \"2010-10-15\",\n            \"identifier\": \"CP0002098\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2017-09-11\",\n            \"lastArFiledDate\": \"2017-09-11\",\n            \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n            \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n            \"status\": \"Active\",\n            \"type\": \"CP\"\n        },\n        \"header\": {\n            \"date\": \"2017-12-21\",\n            \"name\": \"annualReport\"\n        }\n    }\n}"
+						}
+					]
+				}
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "AR + ROA + COD",
@@ -1710,7 +1857,8 @@
 						}
 					]
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "Registered Office",
@@ -2399,7 +2547,8 @@
 						}
 					]
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "Directors",
@@ -3113,7 +3262,8 @@
 						}
 					]
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "Event",
@@ -3156,10 +3306,10 @@
 									"",
 									"pm.test(\"Returns the correct values for events\", () => {",
 									"    var events = jsonData.events",
-									"    var ids = [pm.environment.get(\"arExtraEventId\"), pm.environment.get(\"coaExtraEventId\"), pm.environment.get(\"codExtraEventId\"), pm.environment.get(\"coaEventId\"), pm.environment.get(\"codEventId\")]",
+									"    var ids = [pm.environment.get(\"noAgmEventId\"), pm.environment.get(\"arExtraEventId\"), pm.environment.get(\"coaExtraEventId\"), pm.environment.get(\"codExtraEventId\"), pm.environment.get(\"coaEventId\"), pm.environment.get(\"codEventId\")]",
 									"    console.log(ids)",
+									"    console.log(events)",
 									"    for (var i=0; i<events.length; i++) {",
-									"        pm.expect(events[i].corp_num).to.eql(\"CP0002098\")",
 									"        pm.expect(events[i].event_id == pm.environment.get(\"arEventId\")).to.be.false",
 									"        console.log(events[i].event_id)",
 									"        console.log(ids.includes(events[i].event_id))",
@@ -3269,7 +3419,8 @@
 						}
 					]
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"event": [
@@ -3293,5 +3444,6 @@
 				]
 			}
 		}
-	]
+	],
+	"protocolProfileBehavior": {}
 }
