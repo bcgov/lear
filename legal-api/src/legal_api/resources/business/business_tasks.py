@@ -25,8 +25,6 @@ from flask_restplus import Resource, cors
 from legal_api.models import Business, Filing
 from legal_api.services.filings import validations
 from legal_api.utils.util import cors_preflight
-from legal_api.services.filings import validations
-from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
 
