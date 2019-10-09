@@ -573,7 +573,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
       required
     },
     addressRegion: {
-      required,
       maxLength: maxLength(2)
     },
     postalCode: {

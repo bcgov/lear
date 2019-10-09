@@ -169,7 +169,6 @@ export default class RegisteredOfficeAddress extends Mixins(AddressMixin, Common
       // isCanada: (val) => (val.toLower() === 'canada') // FUTURE
     },
     addressRegion: {
-      required,
       maxLength: maxLength(2)
     },
     postalCode: {
