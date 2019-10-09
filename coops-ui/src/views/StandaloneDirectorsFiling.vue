@@ -272,10 +272,9 @@ export default {
 
       this.savingResuming = true
       const filing = await this.saveFiling(true)
-      // on success, redirect to Home URL
+      // on success, route to Home URL
       if (filing) {
-        const homeURL = window.location.origin || ''
-        window.location.assign(homeURL)
+        this.$router.push('/')
       }
       this.savingResuming = false
     },
@@ -291,14 +290,17 @@ export default {
       const filing = await this.saveFiling(false)
       // on success, redirect to Pay URL
       if (filing && filing.header) {
-        const origin = window.location.origin || ''
+        const root = window.location.origin || ''
+        const path = process.env.VUE_APP_PATH
+        const origin = `${root}/${path}`
+
         const filingId = +filing.header.filingId
         const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
         let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
         if (!(authStub.endsWith('/'))) { authStub += '/' }
         const paymentToken = filing.header.paymentToken
         const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
-        // TODO: first check if pay UI is reachable, else display modal dialog
+        // assume Pay URL is always reachable
         window.location.assign(payURL)
       }
       this.filingPaying = false

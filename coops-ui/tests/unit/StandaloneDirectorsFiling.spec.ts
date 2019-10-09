@@ -452,7 +452,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
       // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
       // verify redirection
-      const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
+      const payURL = '/makepayment/321/' + encodeURIComponent('/cooperatives/dashboard?filing_id=123')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
@@ -509,7 +509,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
     // verify redirection
-    const payURL = '/makepayment/321/' + encodeURIComponent('/dashboard?filing_id=123')
+    const payURL = '/makepayment/321/' + encodeURIComponent('/cooperatives/dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
     wrapper.destroy()
@@ -638,33 +638,30 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
     }
   )
 
-  it('saves a new filing and redirects to Home URL when this is a new filing and the Save & Resume button is clicked',
-    async () => {
-      const $route = { params: { id: 0 } } // new filing id
-      const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
-      const vm = wrapper.vm as any
+  it('saves a new filing and routes to Dashboard URL when the Save & Resume button is clicked', async () => {
+    // create local Vue and mock router
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
 
-      // make sure form is validated
-      vm.directorFormValid = true
-      vm.certifyFormValid = true
+    const wrapper = shallowMount(StandaloneDirectorsFiling, { store, localVue, router })
+    const vm = wrapper.vm as any
 
-      // sanity check
-      expect(jest.isMockFunction(window.location.assign)).toBe(true)
+    // make sure form is validated
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
 
-      // TODO: verify that new filing was created
+    // click the Save & Resume Later button
+    wrapper.find('#cod-save-resume-btn').trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickSaveResume()
 
-      // click the Save & Resume Later button
-      wrapper.find('#cod-save-resume-btn').trigger('click')
-      // work-around because click trigger isn't working
-      await vm.onClickSaveResume()
+    // verify routing back to Dashboard URL
+    expect(vm.$route.name).toBe('dashboard')
 
-      // verify redirection
-      const homeURL = ''
-      expect(window.location.assign).toHaveBeenCalledWith(homeURL)
-
-      wrapper.destroy()
-    }
-  )
+    wrapper.destroy()
+  })
 })
 
 describe('Standalone Directors Filing - Part 5 - Data', () => {

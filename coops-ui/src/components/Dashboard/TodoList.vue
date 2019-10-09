@@ -352,7 +352,10 @@ export default {
       // staff are not allowed to resume or retry payment
       if (this.isRoleStaff) return false
 
-      const origin = window.location.origin || ''
+      const root = window.location.origin || ''
+      const path = process.env.VUE_APP_PATH
+      const origin = `${root}/${path}`
+
       const filingId = item.id
       const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
       let authStub = sessionStorage.getItem('AUTH_URL') || ''

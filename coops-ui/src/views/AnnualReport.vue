@@ -478,7 +478,10 @@ export default {
       const filing = await this.saveFiling(false)
       // on success, redirect to Pay URL
       if (filing && filing.header) {
-        const origin = window.location.origin || ''
+        const root = window.location.origin || ''
+        const path = process.env.VUE_APP_PATH
+        const origin = `${root}/${path}`
+
         const filingId = +filing.header.filingId
         const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
         let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
