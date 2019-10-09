@@ -43,7 +43,8 @@ html {
 }
 
 body {
-  font-family: "BCSans", sans-serif;
+  // NB: Vuetify font is set on .v-application class (see below)
+  font-family: 'BCSans', sans-serif;
   font-size: 1rem;
 }
 
@@ -53,7 +54,6 @@ h1 {
   letter-spacing: -0.01rem;
   font-size: 1.75rem;
   font-weight: 700;
-  letter-spacing: -0.03rem
 }
 
 h2 {
@@ -290,14 +290,7 @@ hr {
   font-weight: 700;
 }
 
-.application {
-  // override the default Vuetify font
-  font-family: 'BCSans', sans-serif
-}
-
-
 .v-application {
   // override the default Vuetify font
-  font-family: 'BCSans', sans-serif
+  font-family: 'BCSans', sans-serif;
 }
-
