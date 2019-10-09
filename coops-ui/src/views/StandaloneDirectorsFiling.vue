@@ -541,11 +541,19 @@ article{
     font-size: 0.875rem;
   }
 }
+<<<<<<< HEAD
 
 .white-background {
   background-color: white !important;
 }
 
+=======
+
+.white-background {
+  background-color: white !important;
+}
+
+>>>>>>> Add mailing address to director (#367)
 section p{
   // font-size 0.875rem
   color: $gray6;

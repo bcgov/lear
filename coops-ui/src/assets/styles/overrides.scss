@@ -37,6 +37,7 @@
   font-weight: 300;
 }
 
+<<<<<<< HEAD
 // Expansion Panels
 .v-expansion-panel:before {
   box-shadow: none;
@@ -49,12 +50,44 @@
   }
 }
  
+=======
+// Expansion Panel
+.v-expansion-panel::before {
+  box-shadow: none;
+} 
+
+.v-expansion-panel {
+  box-shadow: none;
+}
+ 
+.v-expansion-panel-header {
+  padding: 1.25rem 1.25rem;
+}
+
+>>>>>>> Add mailing address to director (#367)
 .v-expansion-panel-header.no-dropdown {
   .v-expansion-panel-header__icon{
     display: none;
   }
 }
 
+<<<<<<< HEAD
+=======
+.v-expansion-panel-content {
+  padding-right: 1.25rem;
+  padding-left: 1.25rem;
+  padding-bottom: 1.25rem;
+
+  .v-expansion-panel-content__wrap {
+    padding: 0;
+  }
+
+  p:last-of-type {
+    margin-bottom: 0;
+  }
+}
+
+>>>>>>> Add mailing address to director (#367)
 // Hides an element to all devices except screen readers
 .sr-only {
   position: absolute;

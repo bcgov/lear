@@ -23,3 +23,7 @@ python-dotenv
 pycountry
 requests
 sentry-sdk[flask]
+<<<<<<< HEAD
+=======
+attrs<19.2.0
+>>>>>>> Add mailing address to director (#367)

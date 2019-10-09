@@ -32,6 +32,7 @@
                 <span v-else-if="isPending(item)">FILING PENDING</span>
                 <span v-else-if="isError(item)">FILING PENDING</span>
               </div>
+<<<<<<< HEAD
               <div class="filing-status-2" v-if="inProcessFiling === item.id && item.id !== undefined">
                 <span>
                   PROCESSING...
@@ -46,6 +47,15 @@
               <div class="filing-status-2" v-else-if="isError(item)">
                 <span>
                   PAYMENT UNSUCCESSFUL
+=======
+
+              <div class="list-item__status2">
+                <span v-if="isPending(item)">
+                  PAYMENT INCOMPLETE<v-btn text icon color="black"><v-icon>mdi-information-outline</v-icon></v-btn>
+                </span>
+                <span v-else-if="isError(item)">
+                  PAYMENT UNSUCCESSFUL<v-btn text icon color="black"><v-icon>mdi-information-outline</v-icon></v-btn>
+>>>>>>> Add mailing address to director (#367)
                 </span>
                 <v-btn small icon color="black" class="info-btn"><v-icon>mdi-information-outline</v-icon></v-btn>
               </div>
@@ -472,10 +482,18 @@ export default {
 <style lang="scss" scoped>
 @import "../../assets/styles/theme.scss";
 
+<<<<<<< HEAD
+=======
+.todo-list.draft .v-expansion-panel__body {
+  display: none;
+}
+
+>>>>>>> Add mailing address to director (#367)
 .todo-list {
   // disable expansion
   pointer-events: none;
 }
+<<<<<<< HEAD
 
 .todo-list.disabled {
   opacity: 0.6;
@@ -540,4 +558,79 @@ export default {
   margin-left: 0.25rem;
 }
 
+=======
+
+.todo-list .list-item {
+  padding: 0;
+
+  .list-item__title {
+    width: 25%;
+  }
+
+  .list-item__subtitle {
+    font-size: 0.75rem;
+  }
+
+  .list-item__status1 {
+    width: 20%;
+    color: $gray7;
+  }
+
+  .list-item__status2 {
+    width: 36%;
+    color: $gray7;
+
+    .v-btn {
+      margin: 0;
+    }
+  }
+
+  .list-item__actions {
+    .v-btn {
+      min-width: 142px;
+    }
+
+    #btn-draft-resume {
+      min-width: 103px;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+  }
+}
+
+.todo-list.disabled {
+  background-color: $gray0;
+
+  .list-item__title,
+  .list-item__subtitle,
+  .list-item__status1,
+  .list-item__status2 {
+    color: $gray6;
+
+    .v-btn {
+      // enable expansion buttons
+      pointer-events: auto;
+    }
+  }
+}
+
+.todo-list:not(.disabled) {
+  .v-btn {
+    // enable action buttons
+    pointer-events: auto;
+  }
+}
+
+.list-item__actions .v-btn.actions__more-actions__btn {
+  min-width: 38px !important;
+  width: 38px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: 1px;
+}
+
+.actions__more-actions {
+  padding: 0;
+}
+>>>>>>> Add mailing address to director (#367)
 </style>

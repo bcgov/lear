@@ -1,5 +1,6 @@
 @import "theme.scss";
 
+<<<<<<< HEAD
 @font-face{
   font-family: 'BCSans';
   font-style: normal;
@@ -26,6 +27,34 @@
   src: url('assets/fonts/BCSans/BCSans-BoldItalic.woff') format('woff2'), /* Modern Browsers */
        url('assets/fonts/BCSans/BCSans-BoldItalic.woff2') format('woff'); /* Optimized for very modern browsers */
 }
+=======
+// @font-face{
+//   font-family: 'BCSans';
+//   font-style: normal;
+//   font-weight: 400;
+//   src: url('assets/fonts/BCSans/BCSans-Regular.woff2') format('woff2'), /* Optimized for very modern browsers */
+//        url('assets/fonts/BCSans/BCSans-Regular.woff') format('woff'), /* Modern Browsers */
+// }
+// @font-face{
+//   font-family: 'BCSans';
+//   font-style: italic;
+//   src: url('assets/fonts/BCSans/BCSans-Italic.woff2') format('woff2'), /* Optimized for very modern browsers */
+//        url('assets/fonts/BCSans/BCSans-Italic.woff') format('woff'); /* Modern Browsers */
+// }
+// @font-face{
+//   font-family: 'BCSans';
+//   font-weight: 700; 
+//   src: url('assets/fonts/BCSans/BCSans-Bold.woff') format('woff2'), /* Modern Browsers */
+//        url('assets/fonts/BCSans/BCSans-Bold.woff2') format('woff'); /* Optimized for very modern browsers */
+// }
+// @font-face{
+//   font-family: 'BCSans';
+//   font-style: italic;
+//   font-weight: 700; 
+//   src: url('assets/fonts/BCSans/BCSans-BoldItalic.woff') format('woff2'), /* Modern Browsers */
+//        url('assets/fonts/BCSans/BCSans-BoldItalic.woff2') format('woff'); /* Optimized for very modern browsers */
+// }
+>>>>>>> Add mailing address to director (#367)
 
 html,
 body {
@@ -43,6 +72,7 @@ html {
 }
 
 body {
+<<<<<<< HEAD
   font-size: 1rem;
 }
 
@@ -71,12 +101,59 @@ p {
 .theme--light.v-application {
   color: $gray7;
   background-color: $gray1;
+=======
+  // NB: Vuetify font is set on .v-application class (see below)
+  // font-family: 'BCSans', sans-serif;
+  font-family: 'Roboto', sans-serif;
+  font-size: 1rem;
+}
+
+h1 {
+  margin-bottom: 1rem;
+  line-height: 2rem;
+  letter-spacing: -0.01rem;
+  font-size: 1.75rem;
+  font-weight: 500;
+}
+
+h2 {
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.01rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+h3 {
+  letter-spacing: -0.01rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+p {
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+  font-weight: 400
+}
+
+hr {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  border-color: $gray4;
+  border-style: solid;
+>>>>>>> Add mailing address to director (#367)
 }
 
 .container {
   padding: 1.25rem;
 }
 
+<<<<<<< HEAD
+=======
+.app-container.theme--light {
+  background: $gray1;
+}
+
+>>>>>>> Add mailing address to director (#367)
 .form-input {
   display: flex;
   border: 1px solid $gray5;
@@ -217,7 +294,11 @@ p {
 }
 
 // Common
+<<<<<<< HEAD
 ul.list {
+=======
+.list {
+>>>>>>> Add mailing address to director (#367)
   margin: 0;
   padding: 0;
   list-style-type: none;
@@ -228,6 +309,10 @@ ul.list {
   flex-direction: row;
   align-items: center;
   padding: 1rem 1.25rem;
+<<<<<<< HEAD
+=======
+  font-size: 0.875rem;
+>>>>>>> Add mailing address to director (#367)
   line-height: 1.25rem;
 }
 
@@ -236,6 +321,10 @@ ul.list {
 }
 
 .list-item__icon {
+<<<<<<< HEAD
+=======
+  margin-top: -1px;
+>>>>>>> Add mailing address to director (#367)
   margin-right: 0.5rem;
 }
 
@@ -245,6 +334,10 @@ ul.list {
 
 .list-item__subtitle {
   color: $gray6;
+<<<<<<< HEAD
+=======
+  font-weight: 300;
+>>>>>>> Add mailing address to director (#367)
 }
 
 .list-item__actions {
@@ -276,6 +369,15 @@ ul.list {
   font-weight: 500;
 }
 
+<<<<<<< HEAD
+=======
+.v-application {
+  // override the default Vuetify font
+  // font-family: 'BCSans', sans-serif;
+  font-family: 'Roboto', sans-serif;
+}
+
+>>>>>>> Add mailing address to director (#367)
 .inline-div{
   display: inline
 }

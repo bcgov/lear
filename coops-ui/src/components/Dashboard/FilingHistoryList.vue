@@ -23,9 +23,15 @@
       </v-card>
     </v-dialog>
 
+<<<<<<< HEAD
     <v-expansion-panels v-if="filedItems && filedItems.length > 0" v-model="panel" accordion>
       <v-expansion-panel
         class="align-items-top filing-history-item"
+=======
+    <v-expansion-panels v-if="filedItems && filedItems.length > 0" v-model="panel" accordion >
+      <v-expansion-panel
+        class="filing-history-list"
+>>>>>>> Add mailing address to director (#367)
         v-for="(item, index) in filedItems"
         v-bind:key="index">
         <v-expansion-panel-header>
@@ -42,9 +48,20 @@
               <span v-else>View Documents</span>
             </div>
           </div>
+<<<<<<< HEAD
         </v-expansion-panel-header>
         <v-expansion-panel-content>
           <ul v-if="!item.paperOnly" class="list document-list">
+=======
+          <div class="v-expansion-panel-header__status">FILED AND PAID</div>
+          <div class="v-expansion-panel-header__icon">
+            <span v-if="panel === index">Hide Documents</span>
+            <span v-else>View Documents</span>
+          </div>
+        </v-expansion-panel-header>
+        <v-expansion-panel-content>
+          <ul class="list document-list">
+>>>>>>> Add mailing address to director (#367)
             <li class="list-item"
               v-for="(document, index) in item.filingDocuments"
               v-bind:key="index">
@@ -62,12 +79,17 @@
               </v-btn>
             </li>
           </ul>
+<<<<<<< HEAD
           <div v-if="!item.paperOnly" class="documents-actions-bar">
+=======
+          <div class="documents-actions-bar">
+>>>>>>> Add mailing address to director (#367)
             <v-btn class="download-all-btn" color="primary" @click="downloadAll(item)"
               :disabled="loadingAll" :loading="loadingAll">
               Download All
             </v-btn>
           </div>
+<<<<<<< HEAD
           <v-card v-if="item.paperOnly" class="paper-filings" flat>
             <v-card-text>
               <div class="paper-filings__text">
@@ -89,6 +111,8 @@
               </div>
             </v-card-text>
           </v-card>
+=======
+>>>>>>> Add mailing address to director (#367)
         </v-expansion-panel-content>
       </v-expansion-panel>
     </v-expansion-panels>
@@ -402,6 +426,7 @@ export default {
 <style lang="scss" scoped>
   @import "../../assets/styles/theme.scss";
 
+<<<<<<< HEAD
   .list-item {
     align-items: flex-start;
     justify-content: space-between;
@@ -424,6 +449,26 @@ export default {
     width: 30%;
     text-align: right;
     font-weight: 700;
+=======
+  // Filing History List
+  .filing-history-list {
+    .list-item {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0
+    }
+
+    .v-expansion-panel-header__status {
+      font-size: 0.875rem;
+      color: $gray6;
+      vertical-align: top
+    }
+
+    .v-expansion-panel-header__icon {
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+>>>>>>> Add mailing address to director (#367)
   }
 
    // Document List
@@ -431,6 +476,7 @@ export default {
     border-top: 1px solid $gray3;
     padding-left: 0;
 
+<<<<<<< HEAD
     .list-item {
       padding: 0.25rem 0;
     }
@@ -448,6 +494,23 @@ export default {
     border-top: 1px solid $gray3;
 
     .download-all-btn {
+=======
+    .list-item__btn {
+      margin: 0.25rem 0;
+      padding: 0 0.5rem 0 0.25rem;
+    }
+  }
+
+   // Documents Actions Bar
+  .documents-actions-bar {
+    padding-top: 1rem;
+    display: flex;
+    border-top: 1px solid $gray3;
+
+    .download-all-btn {
+      margin-left: auto;
+      margin-right: 0;
+>>>>>>> Add mailing address to director (#367)
       min-width: 8rem;
     }
   }
@@ -464,6 +527,7 @@ export default {
       font-weight: 500;
     }
   }
+<<<<<<< HEAD
   .paper-filings {
     border-top: 1px solid $gray3;
     text-align: left;
@@ -481,4 +545,6 @@ export default {
       }
     }
   }
+=======
+>>>>>>> Add mailing address to director (#367)
 </style>

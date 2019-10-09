@@ -272,7 +272,8 @@ CREATE TABLE public.directors (
     appointment_date timestamp with time zone,
     cessation_date timestamp with time zone,
     business_id integer,
-    address_id integer
+    address_id integer,
+    mailing_address_id integer
 );
 
 
@@ -316,7 +317,8 @@ CREATE TABLE public.directors_version (
     address_id integer,
     transaction_id bigint NOT NULL,
     end_transaction_id bigint,
-    operation_type smallint NOT NULL
+    operation_type smallint NOT NULL,
+    mailing_address_id integer
 );
 
 

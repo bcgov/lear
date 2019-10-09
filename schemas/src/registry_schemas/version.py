@@ -22,4 +22,8 @@ Post-release segment: .postN
 Development release segment: .devN
 """
 
+<<<<<<< HEAD
 __version__ = '2.2.0'  # pylint: disable=invalid-name
+=======
+__version__ = '2.1.0'  # pylint: disable=invalid-name
+>>>>>>> Add mailing address to director (#367)

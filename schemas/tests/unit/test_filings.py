@@ -15,6 +15,7 @@
 
 This suite should have at least 1 test for every filing type allowed.
 """
+<<<<<<< HEAD
 import copy
 
 import pytest
@@ -37,6 +38,12 @@ def test_valid_filing(filing_data):
 
     # print filing name for easier debugging
     print(filing_data['filing']['header']['name'])
+=======
+from registry_schemas import validate
+    CORP_CHANGE_OF_ADDRESS
+
+    is_valid, errors = validate(ANNUAL_REPORT, 'filing')
+>>>>>>> Add mailing address to director (#367)
 
     print(errors)
 
@@ -103,6 +110,71 @@ def test_invalid_coa_filing_bcorp():
     assert not is_valid
 
 
+<<<<<<< HEAD
+=======
+def test_valid_cod_filing():
+    """Assert that the Change of Directors filing schema is performing as expected."""
+    filing = {
+        'filing': {
+            'header': {
+                'name': 'changeOfDirectors',
+                'date': '2019-04-08',
+                'certifiedBy': 'full legal name',
+                'email': 'no_one@never.get'
+            },
+            'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP1234567',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'legal name - CP1234567'
+            },
+            'changeOfDirectors': CHANGE_OF_DIRECTORS
+        }
+    }
+
+    is_valid, errors = validate(filing, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert is_valid
+
+
+def test_valid_cod_filing_with_mailing_address():
+    """Assert that the Change of Directors filing schema is performing as expected."""
+    filing = {
+        'filing': {
+            'header': {
+                'name': 'changeOfDirectors',
+                'date': '2019-04-08',
+                'certifiedBy': 'full legal name',
+                'email': 'no_one@never.get'
+            },
+            'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP1234567',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'legal name - CP1234567'
+            },
+            'changeOfDirectors': CHANGE_OF_DIRECTORS_MAILING
+        }
+    }
+
+    is_valid, errors = validate(filing, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert is_valid
+
+
+>>>>>>> Add mailing address to director (#367)
 def test_invalid_cod_filing():
     """Assert that the Change of Directors filing schema is catching invalid data."""
     filing = {

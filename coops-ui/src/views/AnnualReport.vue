@@ -717,13 +717,19 @@ export default {
 <style lang="scss" scoped>
 @import '../assets/styles/theme.scss';
 
+<<<<<<< HEAD
 article {
   .v-card {
+=======
+article{
+  .v-card{
+>>>>>>> Add mailing address to director (#367)
     line-height: 1.2rem;
     font-size: 0.875rem;
   }
 }
 
+<<<<<<< HEAD
 section p {
   color: $gray6;
 }
@@ -739,21 +745,54 @@ h2 {
 }
 
 #AR-header {
+=======
+section p{
+  // font-size 0.875rem
+  color: $gray6;
+}
+
+section + section{
+  margin-top: 3rem;
+}
+
+h2{
+  margin-bottom: 0.25rem;
+}
+
+#AR-header{
+>>>>>>> Add mailing address to director (#367)
   margin-bottom: 1.25rem;
   line-height: 2rem;
   letter-spacing: -0.01rem;
 }
+<<<<<<< HEAD
 
 .title-container {
   margin-bottom: 0.5rem;
 }
 
 .agm-date {
+=======
+
+#AR-step-1-header, #AR-step-1-header-BC, #AR-step-2-header, #AR-step-3-header, #AR-step-4-header{
+  margin-bottom: 0.25rem;
+  margin-top: 3rem;
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+
+.title-container{
+  margin-bottom: 0.5rem;
+}
+
+.agm-date{
+>>>>>>> Add mailing address to director (#367)
   margin-left: 0.25rem;
   font-weight: 300;
 }
 
 // Save & Filing Buttons
+<<<<<<< HEAD
 #buttons-container {
   padding-top: 2rem;
   border-top: 1px solid $gray5;
@@ -773,5 +812,26 @@ h2 {
   #ar-cancel-btn {
     margin-left: 0.5rem;
   }
+=======
+#buttons-container{
+  padding-top: 2rem;
+  border-top: 1px solid $gray5;
+
+  .buttons-left{
+    width: 50%;
+  }
+
+  .buttons-right{
+    margin-left: auto
+  }
+
+  .v-btn + .v-btn{
+    margin-left: 0.5rem;
+  }
+
+  #ar-cancel-btn{
+    margin-left: 0.5rem;
+  }
+>>>>>>> Add mailing address to director (#367)
 }
 </style>

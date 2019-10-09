@@ -1,4 +1,5 @@
 <template>
+<<<<<<< HEAD
   <v-list>
     <v-list-item v-if="mailingAddress">
       <v-list-item-icon class="address-icon mr-0">
@@ -8,6 +9,17 @@
         <v-list-item-title class="mb-2">Mailing Address</v-list-item-title>
         <v-list-item-subtitle>
           <ul class="address-info">
+=======
+  <ul class="list list-container">
+    <li class="list-item" v-if="mailingAddress">
+      <v-avatar>
+        <v-icon color="primary">mdi-email-outline</v-icon>
+      </v-avatar>
+      <div class="address">
+        <div class="list-item__title">Mailing Address</div>
+        <div class="list-item__subtitle">
+          <ul class="address-details">
+>>>>>>> Add mailing address to director (#367)
             <li>{{ mailingAddress.streetAddress }}</li>
             <li>{{ mailingAddress.addressCity }} {{ mailingAddress.addressRegion }}
               &nbsp;&nbsp;{{ mailingAddress.postalCode}}</li>
@@ -17,6 +29,7 @@
       </v-list-item-content>
     </v-list-item>
 
+<<<<<<< HEAD
     <v-divider></v-divider>
 
     <v-list-item v-if="deliveryAddress">
@@ -27,6 +40,16 @@
         <v-list-item-title class="mb-2">Delivery Address</v-list-item-title>
         <v-list-item-subtitle>
           <ul class="address-info">
+=======
+    <li class="list-item" v-if="deliveryAddress">
+      <v-avatar>
+        <v-icon color="primary">mdi-truck</v-icon>
+      </v-avatar>
+      <div class="address">
+        <div class="list-item__title">Delivery Address</div>
+        <div class="list-item__subtitle">
+          <ul class="address-details">
+>>>>>>> Add mailing address to director (#367)
             <li>{{ deliveryAddress.streetAddress }}</li>
             <li>{{ deliveryAddress.addressCity }} {{ deliveryAddress.addressRegion }}
               &nbsp;&nbsp;{{ deliveryAddress.postalCode}}</li>
@@ -55,6 +78,7 @@ export default class AddressListSm extends Vue {
 </script>
 
 <style lang="scss" scoped>
+<<<<<<< HEAD
   @import "../../assets/styles/theme.scss";
 
   // Variables
@@ -83,5 +107,23 @@ export default class AddressListSm extends Vue {
     margin: 0;
     padding: 0;
     list-style-type: none;
+=======
+  .address-details{
+    padding: 0;
+    list-style-type: none
+  }
+
+  .list-container{
+   padding-left:0
+  }
+
+  .list-item{
+    flex-direction: row;
+    align-items: flex-start
+  }
+
+  .v-icon{
+    margin-right: 1.25rem
+>>>>>>> Add mailing address to director (#367)
   }
 </style>

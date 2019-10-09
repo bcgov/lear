@@ -27,10 +27,17 @@
             <section>
               <header class="aside-header mb-3">
                 <h2>Office Addresses</h2>
+<<<<<<< HEAD
                 <v-btn text small color="primary" id="btn-standalone-addresses" :disabled="hasBlockerFiling"
                       @click.native.stop="goToStandaloneAddresses()">
                   <v-icon small>mdi-pencil</v-icon>
                   <span>Change</span>
+=======
+                <v-btn id="btn-standalone-addresses" text small color="primary" :disabled="hasBlockerFiling"
+                      @click.native.stop="goToStandaloneAddresses()">
+                  <v-icon small>mdi-pencil</v-icon>
+                  <span>EDIT</span>
+>>>>>>> Add mailing address to director (#367)
                 </v-btn>
               </header>
               <v-card flat>
@@ -41,10 +48,17 @@
             <section>
               <header class="aside-header mb-3">
                 <h2>Current Directors</h2>
+<<<<<<< HEAD
                 <v-btn text small color="primary" id="btn-standalone-directors" :disabled="hasBlockerFiling"
                       @click.native.stop="goToStandaloneDirectors()">
                   <v-icon small>mdi-pencil</v-icon>
                   <span>Change</span>
+=======
+                <v-btn id="btn-standalone-directors" text small color="primary" :disabled="hasBlockerFiling"
+                      @click.native.stop="goToStandaloneDirectors()">
+                  <v-icon small>mdi-pencil</v-icon>
+                  <span>EDIT</span>
+>>>>>>> Add mailing address to director (#367)
                 </v-btn>
               </header>
               <v-card flat>
@@ -185,6 +199,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+<<<<<<< HEAD
   section header {
     display: flex;
     flex-direction: row;
@@ -207,5 +222,39 @@ export default {
 
   .dashboard-content__aside {
     margin-left: 2rem
+=======
+  @import "../assets/styles/theme.scss";
+
+  .text-muted{
+    color: $gray5;
+  }
+
+  h1{
+    margin-bottom: 0
+  }
+
+  .dashboard-content{
+    display: flex
+  }
+
+  .dashboard-content__main{
+    flex: 1 1 auto;
+    z-index: 1
+  }
+
+  .dashboard-content__aside{
+    margin-left: 2rem
+  }
+
+  section header{
+    display: flex;
+    flex-direction: row;
+
+    .v-btn{
+      margin-top: 0;
+      margin-right: 0;
+      margin-left: auto;
+    }
+>>>>>>> Add mailing address to director (#367)
   }
 </style>
