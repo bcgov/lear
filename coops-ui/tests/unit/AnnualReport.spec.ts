@@ -22,7 +22,8 @@ import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
-
+// suppress update watchers warnings
+// ref: https://github.com/vuejs/vue-test-utils/issues/532
 Vue.config.silent = true
 
 let vuetify = new Vuetify({})
