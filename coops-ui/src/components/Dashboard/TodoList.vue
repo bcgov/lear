@@ -52,7 +52,7 @@
                 <v-menu offset-y left >
                   <template v-slot:activator="{ on }">
                     <v-btn color="primary" class="actions__more-actions__btn"
-                      v-on="on">
+                      v-on="on" id="menu-activator">
                       <v-icon>mdi-menu-down</v-icon>
                     </v-btn>
                   </template>
