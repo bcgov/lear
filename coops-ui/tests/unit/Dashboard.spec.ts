@@ -15,6 +15,8 @@ import DirectorListSm from '@/components/Dashboard/DirectorListSm.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+let vuetify = new Vuetify({})
+
 // Boilerplate to prevent the complaint "[Vuetify] Unable to locate target [data-app]"
 const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
@@ -26,11 +28,14 @@ describe('Dashboard - UI', () => {
   beforeEach(() => {
     // create wrapper for Dashboard
     // this stubs out the 4 sub-components
-    wrapper = shallowMount(Dashboard)
+    wrapper = shallowMount(Dashboard, { sync: false })
   })
 
-  afterEach(() => {
-    wrapper.destroy()
+  afterEach(done => {
+    Vue.nextTick(async () => {
+      await wrapper.destroy()
+      done()
+    })
   })
 
   it('renders the dashboard sub-components properly', () => {
@@ -63,24 +68,41 @@ describe('Dashboard - UI', () => {
 
     expect(wrapper.vm.hasBlockerFiling).toEqual(true)
     expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
-      .getAttribute('disabled')).toBeTruthy()
+      .getAttribute('disabled')).toBeFalsy()
     expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
-      .getAttribute('disabled')).toBeTruthy()
+      .getAttribute('disabled')).toBeFalsy()
   })
 })
 
 describe('Dashboard - Click Tests', () => {
-  it('routes to Standalone Office Address Filing page when EDIT is clicked', done => {
+  let vm
+  let wrapper
+
+  beforeEach(() => {
     // init store
     store.state.entityIncNo = 'CP0001191'
 
-    // create a Local Vue and install router on it
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
-    const wrapper = mount(Dashboard, { localVue, store, router })
-    const vm = wrapper.vm as any
+    wrapper = mount(Dashboard, {
+      sync: false,
+      localVue,
+      store,
+      router,
+      vuetify
+    })
+    vm = wrapper.vm as any
+  })
 
+  afterEach(done => {
+    Vue.nextTick(async () => {
+      await wrapper.destroy()
+      done()
+    })
+  })
+
+  it('routes to Standalone Office Address Filing page when EDIT is clicked', done => {
     Vue.nextTick(async () => {
       const button = vm.$el.querySelector('#btn-standalone-addresses')
       expect(button.querySelector('.v-btn__content').textContent).toContain('EDIT')
@@ -96,16 +118,6 @@ describe('Dashboard - Click Tests', () => {
   })
 
   it('routes to Standalone Directors Filing page when EDIT is clicked', done => {
-    // init store
-    store.state.entityIncNo = 'CP0001191'
-
-    // create a Local Vue and install router on it
-    const localVue = createLocalVue()
-    localVue.use(VueRouter)
-    const router = mockRouter.mock()
-    const wrapper = mount(Dashboard, { localVue, store, router })
-    const vm = wrapper.vm as any
-
     Vue.nextTick(async () => {
       const button = vm.$el.querySelector('#btn-standalone-directors')
       expect(button.querySelector('.v-btn__content').textContent).toContain('EDIT')

@@ -10,6 +10,8 @@ import Directors from '@/components/AnnualReport/Directors.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+let vuetify = new Vuetify({})
+
 // Boilerplate to prevent the complaint "[Vuetify] Unable to locate target [data-app]"
 const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
@@ -76,7 +78,7 @@ describe('Directors', () => {
       })))
 
     const Constructor = Vue.extend(Directors)
-    const instance = new Constructor({ store: store })
+    const instance = new Constructor({ store: store, vuetify })
     vm = instance.$mount()
 
     // set as-of date

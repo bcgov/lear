@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
-import { mount } from '@vue/test-utils'
 
 import store from '@/store/store'
 import AddressListSm from '@/components/Dashboard/AddressListSm.vue'
@@ -9,21 +8,31 @@ import AddressListSm from '@/components/Dashboard/AddressListSm.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+let vuetify = new Vuetify({})
+
 describe('AddressListSm', () => {
+  let vm
+
+  beforeEach(done => {
+    const Constructor = Vue.extend(AddressListSm)
+    const instance = new Constructor({ store: store, vuetify })
+    vm = instance.$mount()
+
+    Vue.nextTick(() => {
+      done()
+    })
+  })
+
   it('handles empty data', done => {
     // init store
     store.state.mailingAddress = null
     store.state.deliveryAddress = null
-
-    const wrapper = mount(AddressListSm, { store })
-    const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
       expect(vm.mailingAddress).toBeNull()
       expect(vm.deliveryAddress).toBeNull()
       expect(vm.$el.querySelectorAll('.list-item').length).toEqual(0)
 
-      wrapper.destroy()
       done()
     })
   })
@@ -39,9 +48,6 @@ describe('AddressListSm', () => {
     }
     store.state.deliveryAddress = null
 
-    const wrapper = mount(AddressListSm, { store })
-    const vm = wrapper.vm as any
-
     Vue.nextTick(() => {
       expect(vm.mailingAddress).not.toBeNull()
       expect(vm.deliveryAddress).toBeNull()
@@ -49,7 +55,6 @@ describe('AddressListSm', () => {
       expect(vm.$el.querySelector('.list-item__title').textContent).toBe('Mailing Address')
       expect(vm.$el.querySelector('.address-details').textContent).toContain('Victoria BC')
 
-      wrapper.destroy()
       done()
     })
   })
@@ -65,9 +70,6 @@ describe('AddressListSm', () => {
       'addressCountry': 'UK'
     }
 
-    const wrapper = mount(AddressListSm, { store })
-    const vm = wrapper.vm as any
-
     Vue.nextTick(() => {
       expect(vm.mailingAddress).toBeNull()
       expect(vm.deliveryAddress).not.toBeNull()
@@ -75,7 +77,6 @@ describe('AddressListSm', () => {
       expect(vm.$el.querySelector('.list-item__title').textContent).toBe('Delivery Address')
       expect(vm.$el.querySelector('.address-details').textContent).toContain('Glasgow Scotland')
 
-      wrapper.destroy()
       done()
     })
   })

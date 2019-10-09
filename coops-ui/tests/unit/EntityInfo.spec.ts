@@ -1,8 +1,9 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
-import EntityInfo from '@/components/EntityInfo.vue'
+
 import store from '@/store/store'
+import EntityInfo from '@/components/EntityInfo.vue'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)

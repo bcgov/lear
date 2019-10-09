@@ -12,6 +12,8 @@ import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeA
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+let vuetify = new Vuetify({})
+
 // Boilerplate to prevent the complaint "[Vuetify] Unable to locate target [data-app]"
 const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
@@ -83,7 +85,8 @@ describe('RegisteredOfficeAddress', () => {
     // ref: https://github.com/vuejs/vue-test-utils/issues/1130
     const wrapper: Wrapper<RegisteredOfficeAddress> = mount(RegisteredOfficeAddress, {
       sync: false,
-      propsData: { legalEntityNumber: 'CP0001191' }
+      propsData: { legalEntityNumber: 'CP0001191' },
+      vuetify
     })
 
     await flushPromises()
@@ -112,7 +115,8 @@ describe('RegisteredOfficeAddress', () => {
   it('loads the draft addresses properly', async () => {
     const wrapper: Wrapper<RegisteredOfficeAddress> = mount(RegisteredOfficeAddress, {
       sync: false,
-      propsData: { legalEntityNumber: 'CP0001191', addresses: null }
+      propsData: { legalEntityNumber: 'CP0001191', addresses: null },
+      vuetify
     })
 
     await flushPromises()
@@ -146,7 +150,8 @@ describe('RegisteredOfficeAddress', () => {
   it('has enabled Change button', () => {
     const wrapper: Wrapper<RegisteredOfficeAddress> = mount(RegisteredOfficeAddress, {
       sync: false,
-      propsData: { changeButtonDisabled: false }
+      propsData: { changeButtonDisabled: false },
+      vuetify
     })
 
     expect(wrapper.find('#reg-off-addr-change-btn').attributes('disabled')).toBeUndefined()
@@ -157,7 +162,8 @@ describe('RegisteredOfficeAddress', () => {
   it('has disabled Change button', () => {
     const wrapper: Wrapper<RegisteredOfficeAddress> = mount(RegisteredOfficeAddress, {
       sync: false,
-      propsData: { changeButtonDisabled: true }
+      propsData: { changeButtonDisabled: true },
+      vuetify
     })
 
     expect(wrapper.find('#reg-off-addr-change-btn').attributes('disabled')).toBe('disabled')
