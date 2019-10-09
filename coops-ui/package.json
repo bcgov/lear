@@ -46,8 +46,6 @@
     "eslint": "^5.0.0",
     "eslint-plugin-vue": "^5.2.3",
     "flush-promises": "^1.0.2",
-    "stylus": "^0.54.5",
-    "stylus-loader": "^3.0.2",
     "ts-jest": "^24.0.2",
     "typescript": "<3.6.0",
     "vue-class-component": "^7.1.0",
