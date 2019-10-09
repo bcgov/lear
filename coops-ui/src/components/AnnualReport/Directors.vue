@@ -490,7 +490,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
       required
     },
     addressRegion: {
-      required,
       maxLength: maxLength(2)
     },
     postalCode: {
