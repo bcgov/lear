@@ -12,7 +12,7 @@ import store from '@/store/store'
 import configHelper from '@/utils/config-helper'
 import '@/registerServiceWorker'
 
-const opts = { iconfont: 'md' }
+const opts = { iconfont: 'mdi' }
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -23,7 +23,6 @@ Vue.config.productionTip = false
 /**
  * first fetch config from server, then load Vue
  */
-
 configHelper.fetchConfig()
   .then(() => {
     new Vue({
