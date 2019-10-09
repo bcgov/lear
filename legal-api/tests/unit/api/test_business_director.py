@@ -144,3 +144,63 @@ def test_get_directors_invalid_business(session, client, jwt):
     # check
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': f'{identifier} not found'}
+
+
+def test_directors_mailing_address(session, client, jwt):
+    """Assert that bcorp directors have a mailing and delivery address."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier, datetime.datetime(2017, 4, 17), None, 'BC')
+    director = Director(
+        first_name='Michael',
+        last_name='Crane',
+        middle_initial='Joe',
+        title='VP',
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None
+    )
+    delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
+    mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
+    director.delivery_address = delivery_address
+    director.mailing_address = mailing_address
+    business.directors.append(director)
+    business.save()
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/directors',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.OK
+    assert 'directors' in rv.json
+    assert rv.json['directors'][0]['deliveryAddress']['addressCity'] == 'Test Delivery City'
+    assert rv.json['directors'][0]['mailingAddress']['addressCity'] == 'Test Mailing City'
+
+
+def test_directors_coop_no_mailing_address(session, client, jwt):
+    """Assert that coop directors have a mailing and delivery address."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    director = Director(
+        first_name='Michael',
+        last_name='Crane',
+        middle_initial='Joe',
+        title='VP',
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None
+    )
+    delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
+    director.delivery_address = delivery_address
+    business.directors.append(director)
+    business.save()
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/directors',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.OK
+    assert 'directors' in rv.json
+    assert rv.json['directors'][0]['deliveryAddress']['addressCity'] == 'Test Delivery City'
+    assert 'mailingAddress' not in rv.json['directors'][0]
