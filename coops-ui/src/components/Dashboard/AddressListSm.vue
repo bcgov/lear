@@ -9,9 +9,10 @@
         <div class="list-item__subtitle">
           <ul class="address-details">
             <li>{{ mailingAddress.streetAddress }}</li>
+            <li class="pre-wrap" v-html="mailingAddress.streetAddressAdditional"></li>
             <li>{{ mailingAddress.addressCity }} {{ mailingAddress.addressRegion }}
               &nbsp;&nbsp;{{ mailingAddress.postalCode}}</li>
-            <li>{{ mailingAddress.addressCountry }}</li>
+            <li>{{ getCountryName(mailingAddress.addressCountry) }}</li>
           </ul>
         </div>
       </div>
@@ -26,9 +27,10 @@
         <div class="list-item__subtitle">
           <ul class="address-details">
             <li>{{ deliveryAddress.streetAddress }}</li>
+            <li class="pre-wrap" v-html="deliveryAddress.streetAddressAdditional"></li>
             <li>{{ deliveryAddress.addressCity }} {{ deliveryAddress.addressRegion }}
               &nbsp;&nbsp;{{ deliveryAddress.postalCode}}</li>
-            <li>{{ deliveryAddress.addressCountry }}</li>
+            <li>{{ getCountryName(deliveryAddress.addressCountry) }}</li>
           </ul>
         </div>
       </div>
@@ -39,8 +41,10 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
 import { mapState } from 'vuex'
+import CountriesProvincesMixin from '@/mixins/countries-provinces-mixin'
 
 @Component({
+  mixins: [CountriesProvincesMixin],
   computed: {
     ...mapState(['mailingAddress', 'deliveryAddress'])
   }
@@ -52,21 +56,25 @@ export default class AddressListSm extends Vue {
 </script>
 
 <style lang="scss" scoped>
-  .address-details{
+  .address-details {
     padding: 0;
-    list-style-type: none
+    list-style-type: none;
   }
 
-  .list-container{
-   padding-left:0
+  .list-container {
+   padding-left: 0;
   }
 
-  .list-item{
+  .list-item {
     flex-direction: row;
     align-items: flex-start
   }
 
-  .v-icon{
-    margin-right: 1.25rem
+  .v-icon {
+    margin-right: 1.25rem;
+  }
+
+  .pre-wrap {
+    white-space: pre-wrap;
   }
 </style>

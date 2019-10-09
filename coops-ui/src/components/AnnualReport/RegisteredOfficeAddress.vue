@@ -166,7 +166,6 @@ export default class RegisteredOfficeAddress extends Vue {
       // isCanada: (val) => (val.toLower() === 'canada') // FUTURE
     },
     addressRegion: {
-      required,
       maxLength: maxLength(2)
     },
     postalCode: {
