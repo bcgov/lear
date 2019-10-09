@@ -49,6 +49,7 @@ class DirectorResource(Resource):
         end_date = datetime.utcnow().strptime(request.args.get('date'), '%Y-%m-%d').date()\
             if request.args.get('date') else datetime.utcnow().date()
         director_list = Director.get_active_directors(business.id, end_date)
+
         for director in director_list:
             director_json = director.json
             if business.legal_type == 'CP':
