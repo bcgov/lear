@@ -59,7 +59,20 @@
                             "enum": [
                                 "annualReport",
                                 "changeOfDirectors",
-                                "changeOfAddress"
+                                "changeOfAddress",
+                                "voluntaryDissolution",
+                                "specialResolution",
+                                "changeOfName",
+                                "incorporationApplication",
+                                "amalgamationApplication",
+                                "dissolved",
+                                "amendedAGM",
+                                "restorationApplication",
+                                "amendedAnnualReport",
+                                "amendedChangeOfDirectors",
+                                "voluntaryLiquidation",
+                                "appointReceiver",
+                                "continuedOut"
                             ]
                         },
                         "date": {
@@ -129,7 +142,20 @@
                 },
                 {
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/change_of_directors"
-                }
+                },
+                {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/voluntary_dissolution"
+                },
+                {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/special_resolution"
+                },
+                {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/change_of_name"
+                },
+                {
+                    "title": "Placeholder until all filing types are defined.",
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/stub_filing"
+               }
             ]
         }
     }
