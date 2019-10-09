@@ -16,3 +16,7 @@
 
 class QueueException(Exception):
     """Base exception for the Queue Services."""
+
+
+class FilingException(Exception):
+    """No filing found to match queue payload."""

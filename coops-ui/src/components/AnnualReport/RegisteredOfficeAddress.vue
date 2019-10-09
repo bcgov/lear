@@ -16,14 +16,14 @@
               <div class="address-block__actions">
                 <v-btn
                   color="primary"
-                  flat
+                  text
                   id="reg-off-addr-change-btn"
                   small
                   v-if="!showAddressForm"
                   :disabled="changeButtonDisabled"
                   @click="editAddress"
                 >
-                  <v-icon small>edit</v-icon>
+                  <v-icon small>mdi-pencil</v-icon>
                   <span>Change</span>
                 </v-btn>
                 <br />
@@ -31,7 +31,7 @@
                   class="reset-btn"
                   color="red"
                   id="reg-off-addr-reset-btn"
-                  outline
+                  outlined
                   small
                   v-if="!showAddressForm && modified"
                   @click="resetAddress"
@@ -84,11 +84,14 @@
 
 <script lang="ts">
 
-import { Component, Vue, Emit, Prop, Watch } from 'vue-property-decorator'
+import { Component, Vue, Emit, Prop, Watch, Mixins } from 'vue-property-decorator'
 import axios from '@/axios-auth'
 import isEmpty from 'lodash.isempty'
 import { required, maxLength } from 'vuelidate/lib/validators'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
+
+// Mixins
+import { AddressMixin, CommonMixin } from '@/mixins'
 
 // action constants
 const ADDRESSCHANGED = 'addressChanged'
@@ -103,7 +106,7 @@ interface AddressObject {
     'mailing-address': BaseAddress
   }
 })
-export default class RegisteredOfficeAddress extends Vue {
+export default class RegisteredOfficeAddress extends Mixins(AddressMixin, CommonMixin) {
   /**
    * The identifier for the legal entity that is to have its addresses retrieved from the API.
    */
@@ -253,8 +256,8 @@ export default class RegisteredOfficeAddress extends Vue {
     // Unfortunately we cannot use the modified event from the BaseAddress components due to timing issues on loading
     // since we're using the API to load on mount. That should be looked into at some point.
     return !(
-      this.sameAddress(this.deliveryAddress, this.deliveryAddressOriginal) &&
-      this.sameAddress(this.mailingAddress, this.mailingAddressOriginal))
+      this.isSameAddress(this.deliveryAddress, this.deliveryAddressOriginal) &&
+      this.isSameAddress(this.mailingAddress, this.mailingAddressOriginal))
   }
 
   /**
@@ -263,7 +266,7 @@ export default class RegisteredOfficeAddress extends Vue {
    * @returns a boolean that is true if the mailing address has been modified, or false otherwise.
    */
   private get mailingModified (): boolean {
-    return !this.sameAddress(this.mailingAddress, this.mailingAddressOriginal)
+    return !this.isSameAddress(this.mailingAddress, this.mailingAddressOriginal)
   }
 
   /**
@@ -272,7 +275,7 @@ export default class RegisteredOfficeAddress extends Vue {
    * @returns a boolean that is true if the delivery address has been modified, or false otherwise.
    */
   private get deliveryModified (): boolean {
-    return !this.sameAddress(this.deliveryAddress, this.deliveryAddressOriginal)
+    return !this.isSameAddress(this.deliveryAddress, this.deliveryAddressOriginal)
   }
 
   /**
@@ -318,30 +321,10 @@ export default class RegisteredOfficeAddress extends Vue {
   }
 
   /**
-   * Compares two address objects for equivalency. Empty strings and undefined fields will be considered to be
-   * equivalent.
-   *
-   * @param address1 the first address object to compare.
-   * @param address2 the second address object to compare.
-   *
-   * @returns a boolean that is true if the addresses are equivalent, or false otherwise.
-   */
-  private sameAddress (address1: object, address2: object): boolean {
-    const json1 = JSON.stringify(address1, (name: string, val: any) : any => {
-      return val !== '' && name !== 'actions' ? val : undefined
-    })
-    const json2 = JSON.stringify(address2, (name: string, val: any) : any => {
-      return val !== '' && name !== 'actions' ? val : undefined
-    })
-
-    return json1 === json2
-  }
-
-  /**
    * Sets up the component for editing, retaining a copy of current state so that the user can cancel.
    */
   private editAddress (): void {
-    this.inheritDeliveryAddress = this.sameAddress(this.mailingAddress, this.deliveryAddress)
+    this.inheritDeliveryAddress = this.isSameAddress(this.mailingAddress, this.deliveryAddress)
     this.deliveryAddressTemp = { ...this.deliveryAddress }
     this.mailingAddressTemp = { ...this.mailingAddress }
 
@@ -365,7 +348,6 @@ export default class RegisteredOfficeAddress extends Vue {
     if (this.inheritDeliveryAddress) {
       this.mailingAddress = { ...this.deliveryAddress }
     }
-
     this.showAddressForm = false
     this.emitAddresses()
     this.emitModified()
@@ -396,11 +378,13 @@ export default class RegisteredOfficeAddress extends Vue {
             if (deliveryAddress) {
               deliveryAddress.actions = []
 
-              this.deliveryAddressOriginal = { ...deliveryAddress }
+              this.deliveryAddressOriginal = { ...this.omitProp(deliveryAddress, ['addressType']) }
               // If parent page loaded draft before this API call, don't overwrite draft delivery address.
               // Otherwise this API call finished before parent page loaded draft, or parent page won't
               // load draft (ie, this is a new filing) -> initialize delivery address.
-              if (isEmpty(this.deliveryAddress)) this.deliveryAddress = { ...deliveryAddress }
+              if (isEmpty(this.deliveryAddress)) {
+                this.deliveryAddress = { ...this.omitProp(deliveryAddress, ['addressType']) }
+              }
             } else {
               console.log('loadAddressesFromApi() error - invalid Delivery Address =', deliveryAddress)
             }
@@ -409,11 +393,13 @@ export default class RegisteredOfficeAddress extends Vue {
             if (mailingAddress) {
               mailingAddress.actions = []
 
-              this.mailingAddressOriginal = { ...mailingAddress }
+              this.mailingAddressOriginal = { ...this.omitProp(mailingAddress, ['addressType']) }
               // If parent page loaded draft before this API call, don't overwrite draft mailng address
               // Otherwise this API call finished before parent page loaded draft, or parent page won't
               // load draft (ie, this is a new filing) -> initialize mailing address.
-              if (isEmpty(this.mailingAddress)) this.mailingAddress = { ...mailingAddress }
+              if (isEmpty(this.mailingAddress)) {
+                this.mailingAddress = { ...this.omitProp(mailingAddress, ['addressType']) }
+              }
             } else {
               console.log('loadAddressesFromApi() error - invalid Mailing Address =', mailingAddress)
             }
@@ -480,99 +466,123 @@ export default class RegisteredOfficeAddress extends Vue {
 
 </script>
 
-<style lang="stylus" scoped>
-@import '../../assets/styles/theme.styl'
+<style lang="scss" scoped>
+@import '../../assets/styles/theme.scss';
 
-.v-btn
+.v-btn {
   margin: 0;
   min-width: 6rem;
   text-transform: none;
+}
 
-.reset-btn
+.reset-btn {
   margin-top: 0.5rem;
+}
 
-.meta-container
+.meta-container {
   display: flex;
   flex-flow: column nowrap;
   position: relative;
+}
 
-.meta-container__inner
+.meta-container__inner {
   margin-top: 1rem;
+}
 
-label:first-child
+label:first-child {
   font-weight: 500;
+  &__inner {
+    flex: 1 1 auto;
+  }
+}
 
-&__inner
-  flex: 1 1 auto;
-
-@media (min-width: 768px)
-  .meta-container
+@media (min-width: 768px) {
+  .meta-container {
     flex-flow: row nowrap;
 
-    label:first-child
+    label:first-child {
       flex: 0 0 auto;
       padding-right: 4rem;
       width: 12rem;
-
-  .meta-container__inner
+    }
+  }
+  .meta-container__inner {
     margin-top: 0;
-
+  }
+}
 // List Layout
-.list
-  li
+.list {
+  li {
     border-bottom: 1px solid $gray3;
+  }
+}
 
-.address-list .form
+.address-list .form {
   margin-top: 1rem;
+}
 
-@media (min-width: 768px)
-  .address-list .form
+@media (min-width: 768px) {
+  .address-list .form {
     margin-top: 0;
+  }
+}
 
 // Address Block Layout
-.address-block__actions
+.address-block__actions {
   position: absolute;
   top: 0;
   right: 0;
 
-  .v-btn
+  .v-btn {
     min-width: 4rem;
+  }
 
-  .v-btn + .v-btn
+  .v-btn + .v-btn {
     margin-left: 0.5rem;
+  }
+}
 
 // Form Row Elements
-.form__row + .form__row
+.form__row + .form__row {
   margin-top: 0.25rem;
+}
 
-.form__btns
+.form__btns {
   text-align: right;
 
-  .v-btn
+  .v-btn {
     margin: 0;
 
-    + .v-btn
+    + .v-btn {
       margin-left: 0.5rem;
+    }
+  }
+}
 
-.form__row.three-column
+.form__row.three-column {
   display: flex;
   flex-flow: row nowrap;
   align-items: stretch;
   margin-right: -0.5rem;
   margin-left: -0.5rem;
+}
 
-.inherit-checkbox
+.inherit-checkbox {
   margin-top: -3px;
   margin-left: -3px;
   padding: 0;
+}
 
 // Registered Office Address Form Behavior
-.show-address-form
-  li:first-child
+.show-address-form {
+  li:first-child {
     padding-bottom: 0;
+  }
+}
 
-ul
+ul {
   margin: 0;
   padding: 0;
   list-style-type: none;
+}
 </style>

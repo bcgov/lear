@@ -50,7 +50,10 @@ class DirectorResource(Resource):
             if request.args.get('date') else datetime.utcnow().date()
         director_list = Director.get_active_directors(business.id, end_date)
         for director in director_list:
-            res.append(director.json)
+            director_json = director.json
+            if business.legal_type == 'CP':
+                del director_json['mailingAddress']
+            res.append(director_json)
 
         if not res:
             return jsonify({'message': f'{identifier} directors not found'}), HTTPStatus.NOT_FOUND

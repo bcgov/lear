@@ -2,11 +2,12 @@
 -r prod.txt
 
 # Testing
+attrs<=19.1.0
 coverage
 freezegun
-hypothesis<4.38.2
+hypothesis<=4.38.1
 pyhamcrest
-pytest<4.1
+pytest<=4.0.2
 pytest-mock
 pytest-asyncio
 requests-mock

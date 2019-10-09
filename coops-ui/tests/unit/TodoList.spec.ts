@@ -9,9 +9,12 @@ import sinon from 'sinon'
 import mockRouter from './mockRouter'
 import store from '@/store/store'
 import TodoList from '@/components/Dashboard/TodoList.vue'
+import flushPromises from 'flush-promises'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
+
+let vuetify = new Vuetify({})
 
 // Boilerplate to prevent the complaint "[Vuetify] Unable to locate target [data-app]"
 const app: HTMLDivElement = document.createElement('div')
@@ -23,7 +26,7 @@ describe('TodoList - UI', () => {
     // init store
     store.state.tasks = []
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -83,7 +86,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -131,7 +134,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -179,7 +182,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -223,7 +226,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -267,7 +270,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -316,7 +319,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -365,7 +368,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
@@ -416,7 +419,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify, sync: false })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
@@ -434,7 +437,6 @@ describe('TodoList - UI', () => {
       // NB: cannot verify v-tooltip text as Vue puts it in a div outside this component
 
       store.state.keycloakRoles = [] // cleanup
-
       wrapper.destroy()
       done()
     })
@@ -466,9 +468,8 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify, sync: false })
     const vm = wrapper.vm as any
-
     Vue.nextTick(async () => {
       expect(vm.isRoleStaff).toBe(true)
 
@@ -484,7 +485,6 @@ describe('TodoList - UI', () => {
       // NB: cannot verify v-tooltip text as Vue puts it in a div outside this component
 
       store.state.keycloakRoles = [] // cleanup
-
       wrapper.destroy()
       done()
     })
@@ -526,7 +526,7 @@ describe('TodoList - Click Tests', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
-    const wrapper = mount(TodoList, { localVue, store, router })
+    const wrapper = mount(TodoList, { localVue, store, router, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
@@ -578,7 +578,7 @@ describe('TodoList - Click Tests', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
-    const wrapper = mount(TodoList, { localVue, store, router })
+    const wrapper = mount(TodoList, { localVue, store, router, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
@@ -603,6 +603,10 @@ describe('TodoList - Click Tests', () => {
   })
 
   it('redirects to Pay URL when \'Resume Payment\' is clicked', done => {
+    // set necessary session variables
+    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+
     // init store
     store.state.tasks = [
       {
@@ -627,7 +631,7 @@ describe('TodoList - Click Tests', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
@@ -641,7 +645,8 @@ describe('TodoList - Click Tests', () => {
       await button.click()
 
       // verify redirection
-      const payURL = '/makepayment/654/' + encodeURIComponent('/cooperatives/dashboard?filing_id=456')
+      const payURL = 'myhost/cooperatives/auth/makepayment/654/' +
+        encodeURIComponent('myhost/cooperatives/dashboard?filing_id=456')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
@@ -650,6 +655,10 @@ describe('TodoList - Click Tests', () => {
   })
 
   it('redirects to Pay URL when \'Retry Payment\' is clicked', done => {
+    // set necessary session variables
+    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+
     // init store
     store.state.tasks = [
       {
@@ -674,7 +683,7 @@ describe('TodoList - Click Tests', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
@@ -686,7 +695,8 @@ describe('TodoList - Click Tests', () => {
       await button.click()
 
       // verify redirection
-      const payURL = '/makepayment/987/' + encodeURIComponent('/cooperatives/dashboard?filing_id=789')
+      const payURL = 'myhost/cooperatives/auth/makepayment/987/' +
+        encodeURIComponent('myhost/cooperatives/dashboard?filing_id=789')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
@@ -741,15 +751,18 @@ describe('TodoList - Delete Draft', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
-      const button = vm.$refs.draft_actions[0].$el.querySelector('#btn-delete-draft')
-      await button.click()
-
+      const button = wrapper.find('#menu-activator')
+      await button.trigger('click')
+      const button1 = wrapper.find('#btn-delete-draft')
+      await button1.trigger('click')
       // verify confirmation popup is showing
-      expect(vm.$refs.confirm.dialog).toBeTruthy()
+      expect(wrapper.vm.$refs.confirm).toBeTruthy()
+
+      await flushPromises()
 
       done()
     })
@@ -779,13 +792,14 @@ describe('TodoList - Delete Draft', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
-      const button = vm.$refs.draft_actions[0].$el.querySelector('#btn-delete-draft')
-      await button.click()
-
+      const button = wrapper.find('#menu-activator')
+      await button.trigger('click')
+      const button1 = wrapper.find('#btn-delete-draft')
+      await button1.trigger('click')
       // verify confirmation popup is showing
       expect(vm.$refs.confirm.dialog).toBeTruthy()
 
@@ -824,13 +838,14 @@ describe('TodoList - Delete Draft', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store })
+    const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
-      const button = vm.$refs.draft_actions[0].$el.querySelector('#btn-delete-draft')
-      await button.click()
-
+      const button = wrapper.find('#menu-activator')
+      await button.trigger('click')
+      const button1 = wrapper.find('#btn-delete-draft')
+      await button1.trigger('click')
       // verify confirmation popup is showing
       expect(vm.$refs.confirm.dialog).toBeTruthy()
 

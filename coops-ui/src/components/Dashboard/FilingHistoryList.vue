@@ -7,64 +7,66 @@
           <p class="genErr">We were unable to download your filing history document(s).</p>
           <p class="genErr">If this error persists, please contact us.</p>
           <p class="genErr">
-            <v-icon small>phone</v-icon>
+            <v-icon small>mdi-phone</v-icon>
             <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
           </p>
           <p class="genErr">
-            <v-icon small>email</v-icon>
+            <v-icon small>mdi-email</v-icon>
             <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
               >SBC_ITOperationsSupport@gov.bc.ca</a>
           </p>
         </v-card-text>
         <v-divider class="my-0"></v-divider>
         <v-card-actions>
-          <v-btn color="primary" flat @click="downloadErrorDialog = false">Close</v-btn>
+          <v-btn color="primary" text @click="downloadErrorDialog = false">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <v-expansion-panel v-if="filedItems && filedItems.length > 0" v-model="panel">
-      <v-expansion-panel-content
+    <v-expansion-panels v-if="filedItems && filedItems.length > 0" v-model="panel" accordion >
+      <v-expansion-panel
         class="filing-history-list"
         v-for="(item, index) in filedItems"
         v-bind:key="index">
-        <template v-slot:header>
+        <v-expansion-panel-header>
           <div class="list-item">
             <div class="list-item__title">{{item.name}}</div>
             <div class="list-item__subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
           </div>
-          <div class="v-expansion-panel__header__status">FILED AND PAID</div>
-          <div class="v-expansion-panel__header__icon">
+          <div class="v-expansion-panel-header__status">FILED AND PAID</div>
+          <div class="v-expansion-panel-header__icon">
             <span v-if="panel === index">Hide Documents</span>
             <span v-else>View Documents</span>
           </div>
-        </template>
-        <ul class="list document-list">
-          <li class="list-item"
-            v-for="(document, index) in item.filingDocuments"
-            v-bind:key="index">
-            <v-btn class="list-item__btn" flat color="primary" @click="downloadDocument(document)"
-              :disabled="loadingDocument" :loading="loadingDocument">
-              <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
-              <div class="list-item__title">{{document.name}}</div>
+        </v-expansion-panel-header>
+        <v-expansion-panel-content>
+          <ul class="list document-list">
+            <li class="list-item"
+              v-for="(document, index) in item.filingDocuments"
+              v-bind:key="index">
+              <v-btn class="list-item__btn" text color="primary" @click="downloadDocument(document)"
+                :disabled="loadingDocument" :loading="loadingDocument">
+                <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
+                <div class="list-item__title">{{document.name}}</div>
+              </v-btn>
+            </li>
+            <li class="list-item">
+              <v-btn class="list-item__btn" text color="primary" @click="downloadReceipt(item)"
+                :disabled="loadingReceipt" :loading="loadingReceipt">
+                <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
+                <div class="list-item__title">Receipt</div>
+              </v-btn>
+            </li>
+          </ul>
+          <div class="documents-actions-bar">
+            <v-btn class="download-all-btn" color="primary" @click="downloadAll(item)"
+              :disabled="loadingAll" :loading="loadingAll">
+              Download All
             </v-btn>
-          </li>
-          <li class="list-item">
-            <v-btn class="list-item__btn" flat color="primary" @click="downloadReceipt(item)"
-              :disabled="loadingReceipt" :loading="loadingReceipt">
-              <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
-              <div class="list-item__title">Receipt</div>
-            </v-btn>
-          </li>
-        </ul>
-        <div class="documents-actions-bar">
-          <v-btn class="download-all-btn" color="primary" @click="downloadAll(item)"
-            :disabled="loadingAll" :loading="loadingAll">
-            Download All
-          </v-btn>
-        </div>
-      </v-expansion-panel-content>
-    </v-expansion-panel>
+          </div>
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+    </v-expansion-panels>
 
     <!-- No Results Message -->
     <v-card class="no-results" flat v-if="filedItems && filedItems.length === 0">
@@ -347,51 +349,63 @@ export default {
 }
 </script>
 
-<style lang="stylus" scoped>
-  @import "../../assets/styles/theme.styl"
+<style lang="scss" scoped>
+  @import "../../assets/styles/theme.scss";
 
   // Filing History List
-  .filing-history-list
-    .list-item
-      flex-direction column
-      align-items flex-start
-      padding 0
+  .filing-history-list {
+    .list-item {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0
+    }
 
-    .v-expansion-panel__header__status
-      font-size 0.875rem
-      color $gray6
+    .v-expansion-panel-header__status {
+      font-size: 0.875rem;
+      color: $gray6;
+      vertical-align: top
+    }
 
-    .v-expansion-panel__header__icon
-      font-size 0.875rem
-      font-weight 700
+    .v-expansion-panel-header__icon {
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+  }
 
    // Document List
-  .document-list
-    border-top 1px solid $gray3
+  .document-list {
+    border-top: 1px solid $gray3;
+    padding-left: 0;
 
-    .list-item__btn
-      margin 0.25rem 0
-      padding 0 0.5rem 0 0.25rem
+    .list-item__btn {
+      margin: 0.25rem 0;
+      padding: 0 0.5rem 0 0.25rem;
+    }
+  }
 
    // Documents Actions Bar
-  .documents-actions-bar
-    padding-top 1rem
-    display flex
-    border-top 1px solid $gray3
+  .documents-actions-bar {
+    padding-top: 1rem;
+    display: flex;
+    border-top: 1px solid $gray3;
 
-    .download-all-btn
-      margin-left auto
-      margin-right 0
-      min-width 8rem
+    .download-all-btn {
+      margin-left: auto;
+      margin-right: 0;
+      min-width: 8rem;
+    }
+  }
 
   // Past Filings
-  .past-filings
-    border-top 1px solid $gray3
-    text-align center
+  .past-filings {
+    border-top: 1px solid $gray3;
+    text-align: center;
 
-    .past-filings__text
-      margin-top 0.25rem
-      color $gray6
-      font-size 0.875rem
-      font-weight 500
+    .past-filings__text {
+      margin-top: 0.25rem;
+      color: $gray6;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+  }
 </style>

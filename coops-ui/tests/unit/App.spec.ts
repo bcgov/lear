@@ -12,6 +12,8 @@ import App from '@/App.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+let vuetify = new Vuetify({})
+
 describe('App', () => {
   // just need a token that can get parsed properly (will be expired but doesn't matter for tests)
   sessionStorage.setItem('KEYCLOAK_TOKEN', 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUbWdtZUk0MnVsdUZ0N3' +
@@ -189,6 +191,7 @@ describe('App', () => {
               'streetAddress': '1012 Douglas St',
               'addressCity': 'Victoria',
               'addressRegion': 'BC',
+              'addressType': 'mailing',
               'postalCode': 'V8W 2C3',
               'addressCountry': 'CA'
             },
@@ -196,6 +199,7 @@ describe('App', () => {
               'streetAddress': '220 Buchanan St',
               'addressCity': 'Glasgow',
               'addressRegion': 'Scotland',
+              'addressType': 'delivery',
               'postalCode': 'G1 2FFF',
               'addressCountry': 'UK'
             }
@@ -242,7 +246,7 @@ describe('App', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = new VueRouter()
-    wrapper = shallowMount(App, { localVue, router, store })
+    wrapper = shallowMount(App, { localVue, router, store, vuetify })
     vm = wrapper.vm
 
     vm.$nextTick(() => {
@@ -303,6 +307,10 @@ describe('App', () => {
   it('fetches Addresses properly', () => {
     expect(vm.$store.state.mailingAddress.addressCity).toBe('Victoria')
     expect(vm.$store.state.deliveryAddress.addressCity).toBe('Glasgow')
+
+    // These values have been assigned in the mockResponse but are expected to be filtered out by front-end logic.
+    expect(vm.$store.state.mailingAddress.addressType).toBeUndefined()
+    expect(vm.$store.state.deliveryAddress.addressType).toBeUndefined()
   })
 
   it('fetches Directors properly', () => {
