@@ -541,6 +541,7 @@ def test_file_ar_no_agm_coop(session, client, jwt):
                                              'valid date when submitting an Annual Report in the current year.')
 
 
+@integration_payment
 def test_file_ar_no_agm_bcorp(session, client, jwt):
     """Assert that filing AR as BCORP with no AGM date succeeds."""
     identifier = 'CP7654399'
