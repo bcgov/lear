@@ -3,7 +3,7 @@
     <v-container>
       <div class="title-container">
         <div class="entity-name">{{ entityName || 'Not Available' }}</div>
-        <v-chip class="entity-status" label small disabled text-color="white" v-if="entityStatus"
+        <v-chip class="entity-status" small label text-color="white" v-if="entityStatus"
           :class="{
             'blue' : entityStatus === 'GOODSTANDING',
             'red' : entityStatus === 'PENDINGDISSOLUTION' | 'NOTINCOMPLIANCE',
