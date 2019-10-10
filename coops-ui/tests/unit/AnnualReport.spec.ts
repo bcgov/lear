@@ -669,9 +669,9 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       // work-around because click trigger isn't working
       expect(await vm.onClickFilePay()).toBe(true)
 
-    // verify redirection
-    const payURL = '/makepayment/321/' + encodeURIComponent('/cooperatives/dashboard?filing_id=123')
-    expect(window.location.assign).toHaveBeenCalledWith(payURL)
+      // verify redirection
+      const payURL = '/makepayment/321/' + encodeURIComponent('/cooperatives/dashboard?filing_id=123')
+      expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
     }
