@@ -56,22 +56,20 @@
 // Vue Libraries
 import { Component, Mixins } from 'vue-property-decorator'
 import { mapState } from 'vuex'
-import CountriesProvincesMixin from '@/mixins/countries-provinces-mixin'
 
 // Mixins
-import { EntityFilterMixin, AddressMixin } from '@/mixins'
+import { CountriesProvincesMixin, EntityFilterMixin, AddressMixin } from '@/mixins'
 
 // Constants
 import { EntityTypes } from '@/enums'
 
 @Component({
-  mixins: [CountriesProvincesMixin],
   computed: {
     ...mapState(['directors'])
   },
-  mixins: [EntityFilterMixin, AddressMixin]
+  mixins: [CountriesProvincesMixin, EntityFilterMixin, AddressMixin]
 })
-export default class DirectorListSm extends Mixins(EntityFilterMixin, AddressMixin) {
+export default class DirectorListSm extends Mixins(CountriesProvincesMixin, EntityFilterMixin, AddressMixin) {
   readonly directors: Array<object>
 
   // EntityTypes Enum
