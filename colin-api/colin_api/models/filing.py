@@ -471,7 +471,8 @@ class Filing:
                     filing.business = business
                     filing.header = {
                         'date': date,
-                        'name': filing_info['filing_type']
+                        'name': filing_info['filing_type'],
+                        'availableOnPaperOnly': True
                     }
                     filing.body = {
                         filing_info['filing_type']: {
