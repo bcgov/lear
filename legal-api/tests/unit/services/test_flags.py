@@ -36,6 +36,7 @@ def test_flags_init():
 def test_flags_init_app():
     """Ensure that extension can be initialized."""
     app = Flask(__name__)
+    app.config['LD_SDK_KEY'] = 'https://no.flag/avail'
 
     with app.app_context():
         flags = Flags()
@@ -47,11 +48,52 @@ def test_flags_init_app_production():
     """Ensure that extension can be initialized."""
     app = Flask(__name__)
     app.env = 'production'
+    app.config['LD_SDK_KEY'] = 'https://no.flag/avail'
 
     with app.app_context():
         flags = Flags()
         flags.init_app(app)
     assert app.extensions['featureflags']
+
+
+def test_flags_init_app_no_key_dev():
+    """Assert that the extension is setup with a KEY, but in non-production mode."""
+    app = Flask(__name__)
+    app.config['LD_SDK_KEY'] = None
+    app.env = 'development'
+
+    with app.app_context():
+        flags = Flags()
+        flags.init_app(app)
+    assert app.extensions['featureflags']
+
+
+def test_flags_init_app_no_key_prod():
+    """Assert that prod with no key initializes, but does not setup the extension."""
+    app = Flask(__name__)
+    app.config['LD_SDK_KEY'] = None
+    app.env = 'production'
+
+    with app.app_context():
+        flags = Flags()
+        flags.init_app(app)
+        with pytest.raises(KeyError):
+            client = app.extensions['featureflags']
+            assert not client
+
+
+def test_flags_bool_no_key_prod():
+    """Assert that prod with no key initializes, but does not setup the extension."""
+    app = Flask(__name__)
+    app.config['LD_SDK_KEY'] = None
+    app.env = 'production'
+
+    with app.app_context():
+        flags = Flags()
+        flags.init_app(app)
+        on = flags.is_on('bool-flag')
+
+    assert not on
 
 
 def test_flags_bool(app):
