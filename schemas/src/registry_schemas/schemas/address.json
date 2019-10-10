@@ -21,7 +21,10 @@
             "type": "string"
         },
         "addressRegion": {
-            "type": "string",
+            "type": [
+                "string",
+                "null"
+            ],
             "maxLength": 2
         },
         "postalCode": {
