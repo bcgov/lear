@@ -25,6 +25,7 @@ from legal_api.services import Flags
 def test_flags_init():
     """Ensure that extension can be initialized."""
     app = Flask(__name__)
+    app.env = 'development'
 
     with app.app_context():
         flags = Flags(app)
@@ -36,6 +37,7 @@ def test_flags_init():
 def test_flags_init_app():
     """Ensure that extension can be initialized."""
     app = Flask(__name__)
+    app.env = 'development'
     app.config['LD_SDK_KEY'] = 'https://no.flag/avail'
 
     with app.app_context():
@@ -97,35 +99,42 @@ def test_flags_bool_no_key_prod():
 
 
 def test_flags_bool(app):
-    """Assert that a boolean (True) is returned."""
+    """Assert that a boolean (True) is returned, when using the local Flag.json file."""
     from legal_api import flags
+    app.env = 'development'
 
     with app.app_context():
-        on = flags.is_on('bool-flag')
+        flag_on = flags.is_on('bool-flag')
 
-    assert on
+    assert flag_on
 
 
 def test_flags_bool_missing_flag(app):
-    """Assert that a boolean (True) is returned."""
+    """Assert that a boolean (True) is returned, when using the local Flag.json file."""
     from legal_api import flags
+    app_env = app.env
+    try:
+        with app.app_context():
+            flag_on = flags.is_on('no flag here')
 
-    with app.app_context():
-        on = flags.is_on('no flag here')
-
-    assert not on
+        assert not flag_on
+    except:  # pylint: disable=bare-except; # noqa: B901, E722
+        # for tests we don't care
+        assert False
+    finally:
+        app.env = app_env
 
 
 def test_flags_bool_using_current_app():
-    """Assert that a boolean (True) is returned."""
+    """Assert that a boolean (True) is returned, when using the local Flag.json file."""
     from legal_api import flags
     app = Flask(__name__)
     app.env = 'development'
 
     with app.app_context():
-        on = flags.is_on('bool-flag')
+        flag_on = flags.is_on('bool-flag')
 
-    assert on
+    assert flag_on
 
 
 @pytest.mark.parametrize('test_name,flag_name,expected', [
@@ -134,7 +143,7 @@ def test_flags_bool_using_current_app():
     ('integer flag', 'integer-flag', 10),
 ])
 def test_flags_bool_value(test_name, flag_name, expected):
-    """Assert that a boolean (True) is returned."""
+    """Assert that a boolean (True) is returned, when using the local Flag.json file."""
     from legal_api import flags
     app = Flask(__name__)
     app.env = 'development'
@@ -146,12 +155,21 @@ def test_flags_bool_value(test_name, flag_name, expected):
 
 
 def test_flag_bool_unique_user(app):
-    """Assert that a unique user can retrieve a flag."""
+    """Assert that a unique user can retrieve a flag, when using the local Flag.json file."""
     from legal_api import flags
     user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss')
-    with app.app_context():
-        val = flags.value('bool-flag', user)
-        on = flags.is_on('bool-flag', user)
 
-    assert val
-    assert on
+    app_env = app.env
+    try:
+        with app.app_context():
+            app.env = 'development'
+            val = flags.value('bool-flag', user)
+            flag_on = flags.is_on('bool-flag', user)
+
+        assert val
+        assert flag_on
+    except:  # pylint: disable=bare-except; # noqa: B901, E722
+        # for tests we don't care
+        assert False
+    finally:
+        app.env = app_env
