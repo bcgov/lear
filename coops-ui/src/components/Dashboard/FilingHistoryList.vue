@@ -403,7 +403,7 @@ export default {
       margin-top: 0.25rem;
       color: $gray6;
       font-size: 0.875rem;
-      font-weight: 700;
+      font-weight: 500;
     }
   }
 </style>

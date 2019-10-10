@@ -33,7 +33,7 @@ export default class ARDate extends DateMixin {
       justify-content: space-between;
 
       label{
-        font-weight: 700;
+        font-weight: 500;
       }
 
       .date {

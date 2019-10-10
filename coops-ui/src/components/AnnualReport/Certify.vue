@@ -100,7 +100,7 @@ export default class Certify extends Vue {
   flex-flow: column nowrap;
   position: relative;
   > label:first-child{
-    font-weight: 700;
+    font-weight: 500;
   }
 }
 

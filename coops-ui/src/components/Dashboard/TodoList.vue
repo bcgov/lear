@@ -107,7 +107,7 @@
         <v-expansion-panel-content>
             <v-card v-if="isPending(item)">
               <v-card-text>
-                <p class="bold">Payment Incomplete</P>
+                <p class="font-weight-bold">Payment Incomplete</P>
                 <p>This filing is pending payment. The payment may still be in progress or may have been
                   interrupted for some reason.<p>
                 <p>You may continue this filing by selecting "Resume Payment".</p>
@@ -115,7 +115,7 @@
             </v-card>
             <v-card v-if="isError(item)">
               <v-card-text>
-                <p class="bold">Payment Unsuccessful</p>
+                <p class="font-weight-bold">Payment Unsuccessful</p>
                 <p>This filing is pending payment. The payment appears to have been unsuccessful for some
                   reason.</p>
                 <p>You may continue this filing by selecting "Retry Payment".</p>
@@ -519,10 +519,6 @@ export default {
     // enable action buttons
     pointer-events: auto
   }
-}
-
-p.bold{
-  font-weight: 700
 }
 
 .list-item__actions .v-btn.actions__more-actions__btn{

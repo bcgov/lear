@@ -504,7 +504,7 @@ export default class RegisteredOfficeAddress extends Vue {
 }
 
 label:first-child {
-  font-weight: 700;
+  font-weight: 500;
   &__inner {
     flex: 1 1 auto;
   }

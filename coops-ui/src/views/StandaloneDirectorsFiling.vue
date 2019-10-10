@@ -522,7 +522,7 @@ h2{
 
 .agm-date{
   margin-left: 0.25rem;
-  font-weight: 400;
+  font-weight: 300;
 }
 
 // Save & Filing Buttons

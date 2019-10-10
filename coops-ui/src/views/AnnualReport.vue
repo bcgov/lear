@@ -712,7 +712,7 @@ h2{
   margin-bottom: 0.25rem;
   margin-top: 3rem;
   font-size: 1.125rem;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .title-container{
@@ -721,7 +721,7 @@ h2{
 
 .agm-date{
   margin-left: 0.25rem;
-  font-weight: 400;
+  font-weight: 300;
 }
 
 // Save & Filing Buttons
