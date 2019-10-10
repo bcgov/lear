@@ -9,12 +9,14 @@ import DirectorListSm from '@/components/Dashboard/DirectorListSm.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+let vuetify = new Vuetify({})
+
 describe('DirectorListSm', () => {
   it('handles empty data', done => {
     // init store
     store.state.directors = []
 
-    const wrapper = mount(DirectorListSm, { store })
+    const wrapper = mount(DirectorListSm, { store, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {

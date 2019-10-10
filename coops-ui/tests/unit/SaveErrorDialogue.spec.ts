@@ -10,6 +10,8 @@ import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+let vuetify = new Vuetify({})
+
 describe('SaveErrorDialogue - Part 1 - Displays Error/Warning messages', () => {
   beforeEach(() => {
     // init store
@@ -35,7 +37,8 @@ describe('SaveErrorDialogue - Part 1 - Displays Error/Warning messages', () => {
             }
           ],
           warnings: []
-        }
+        },
+        vuetify
       })
     const vm: any = wrapper.vm
     expect(vm.errors[0].error).toBe('error msg')
@@ -62,7 +65,8 @@ describe('SaveErrorDialogue - Part 1 - Displays Error/Warning messages', () => {
               'path': 'path/path'
             }
           ]
-        }
+        },
+        vuetify
       })
     const vm: any = wrapper.vm
     expect(vm.warnings[0].warning).toBe('warning msg')

@@ -46,6 +46,6 @@ export default {
 }
 </script>
 
-<style lang="stylus" scoped>
-  @import "../../assets/styles/theme.styl"
+<style lang="scss" scoped>
+  @import "../../assets/styles/theme.scss"
 </style>

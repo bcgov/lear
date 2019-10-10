@@ -27,9 +27,9 @@
             <section>
               <header>
                 <h2>Office Addresses</h2>
-                <v-btn id="btn-standalone-addresses" flat small color="primary" :disabled="hasBlockerFiling"
+                <v-btn id="btn-standalone-addresses" text small color="primary" :disabled="hasBlockerFiling"
                       @click.native.stop="goToStandaloneAddresses()">
-                  <v-icon small>edit</v-icon>
+                  <v-icon small>mdi-pencil</v-icon>
                   <span>EDIT</span>
                 </v-btn>
               </header>
@@ -41,9 +41,9 @@
             <section>
               <header>
                 <h2>Current Directors</h2>
-                <v-btn id="btn-standalone-directors" flat small color="primary" :disabled="hasBlockerFiling"
+                <v-btn id="btn-standalone-directors" text small color="primary" :disabled="hasBlockerFiling"
                       @click.native.stop="goToStandaloneDirectors()">
-                  <v-icon small>edit</v-icon>
+                  <v-icon small>mdi-pencil</v-icon>
                   <span>EDIT</span>
                 </v-btn>
               </header>
@@ -99,31 +99,38 @@ export default {
 }
 </script>
 
-<style lang="stylus" scoped>
-  @import "../assets/styles/theme.styl"
+<style lang="scss" scoped>
+  @import "../assets/styles/theme.scss";
 
-  .text-muted
-    color $gray5
+  .text-muted{
+    color: $gray5;
+  }
 
-  h1
-    margin-bottom 0
+  h1{
+    margin-bottom: 0
+  }
 
-  .dashboard-content
-    display flex
+  .dashboard-content{
+    display: flex
+  }
 
-  .dashboard-content__main
-    flex 1 1 auto
-    z-index 1
+  .dashboard-content__main{
+    flex: 1 1 auto;
+    z-index: 1
+  }
 
-  .dashboard-content__aside
-    margin-left 2rem
+  .dashboard-content__aside{
+    margin-left: 2rem
+  }
 
-  section header
-    display flex
-    flex-direction row
+  section header{
+    display: flex;
+    flex-direction: row;
 
-    .v-btn
-      margin-top 0
-      margin-right 0
-      margin-left auto
+    .v-btn{
+      margin-top: 0;
+      margin-right: 0;
+      margin-left: auto;
+    }
+  }
 </style>

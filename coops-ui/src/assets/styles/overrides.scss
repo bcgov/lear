@@ -1,0 +1,83 @@
+// Vuetify Overrides
+
+// Buttons
+.v-btn {
+  min-width: 0;
+  text-transform: none;
+  font-weight: 500;
+  letter-spacing: normal;
+
+  .v-icon + span,
+  span + .v-icon {
+    margin-left: 0.25rem;
+  }
+}
+
+.v-text-field--box .v-label--active,
+.v-text-field--full-width .v-label--active,
+.v-text-field--outline .v-label--active {
+  transform: translateY(-8px) scale(0.75);
+}
+
+// Dialogs
+.v-dialog {
+  margin: 2rem;
+}
+
+.v-card__title {
+  padding: 1.25rem 1.5rem;
+  color: $BCgovFontColorInverted;
+  background: $BCgovBlue5;
+  font-size: 1.5em;
+  font-weight: 400;
+}
+
+.v-card__text {
+  padding: 1.5rem !important;
+  font-weight: 300;
+}
+
+// Expansion Panel
+.v-expansion-panel::before {
+  box-shadow: none;
+} 
+
+.v-expansion-panel {
+  box-shadow: none;
+}
+ 
+.v-expansion-panel-header {
+  padding: 1.25rem 1.25rem;
+}
+
+.v-expansion-panel-header.no-dropdown {
+  .v-expansion-panel-header__icon{
+    display: none;
+  }
+}
+
+.v-expansion-panel-content {
+  padding-right: 1.25rem;
+  padding-left: 1.25rem;
+  padding-bottom: 1.25rem;
+
+  .v-expansion-panel-content__wrap {
+    padding: 0;
+  }
+
+  p:last-of-type {
+    margin-bottom: 0;
+  }
+}
+
+// Hides an element to all devices except screen readers
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
