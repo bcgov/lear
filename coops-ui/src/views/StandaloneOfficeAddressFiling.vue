@@ -87,8 +87,8 @@
         <div class="buttons-right">
           <v-tooltip top color="#3b6cff">
             <template v-slot:activator="{ on }">
+              <div v-on="on" class="inline-div">
               <v-btn
-                v-on="on"
                 id="coa-file-pay-btn"
                 color="primary"
                 large
@@ -99,6 +99,7 @@
                 @click="onClickFilePay">
                 File &amp; Pay
               </v-btn>
+              </div>
             </template>
             <span v-if="isRoleStaff">Staff are not allowed to file.</span>
             <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>

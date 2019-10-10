@@ -9,7 +9,7 @@
       @okay="resetErrors"
     />
 
-    <v-expansion-panels v-if="taskItems && taskItems.length > 0">
+    <v-expansion-panels v-if="taskItems && taskItems.length > 0" accordion>
       <v-expansion-panel
         class="todo-list"
         v-for="(item, index) in orderBy(taskItems, 'order')"

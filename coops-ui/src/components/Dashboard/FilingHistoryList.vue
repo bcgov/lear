@@ -23,7 +23,7 @@
       </v-card>
     </v-dialog>
 
-    <v-expansion-panels v-if="filedItems && filedItems.length > 0" v-model="panel">
+    <v-expansion-panels v-if="filedItems && filedItems.length > 0" v-model="panel" accordion >
       <v-expansion-panel
         class="filing-history-list"
         v-for="(item, index) in filedItems"
@@ -363,6 +363,7 @@ export default {
     .v-expansion-panel__header__status{
       font-size: 0.875rem;
       color: $gray6;
+      vertical-align: top
     }
 
     .v-expansion-panel__header__icon{

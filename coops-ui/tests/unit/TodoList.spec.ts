@@ -419,7 +419,7 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store, vuetify })
+    const wrapper = mount(TodoList, { store, vuetify, sync: false })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
@@ -437,10 +437,9 @@ describe('TodoList - UI', () => {
       // NB: cannot verify v-tooltip text as Vue puts it in a div outside this component
 
       store.state.keycloakRoles = [] // cleanup
+      wrapper.destroy()
       done()
     })
-
-    wrapper.destroy()
   })
 
   it('disables Retry Payment button if user has \'staff\' role', done => {
@@ -469,9 +468,8 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store, vuetify })
+    const wrapper = mount(TodoList, { store, vuetify, sync: false })
     const vm = wrapper.vm as any
-
     Vue.nextTick(async () => {
       expect(vm.isRoleStaff).toBe(true)
 
@@ -487,9 +485,9 @@ describe('TodoList - UI', () => {
       // NB: cannot verify v-tooltip text as Vue puts it in a div outside this component
 
       store.state.keycloakRoles = [] // cleanup
+      wrapper.destroy()
       done()
     })
-    wrapper.destroy()
   })
 })
 

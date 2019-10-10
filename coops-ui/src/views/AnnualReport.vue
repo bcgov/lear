@@ -150,19 +150,20 @@
         <div class="buttons-right">
           <v-tooltip top color="#3b6cff">
             <template v-slot:activator="{ on }">
-              <v-btn
-                v-on="on"
-                v-if="isAnnualReportEditable"
-                id="ar-file-pay-btn"
-                color="primary"
-                large
-                :depressed="isRoleStaff"
-                :ripple="!isRoleStaff"
-                :disabled="!validated || busySaving"
-                :loading="filingPaying"
-                @click="onClickFilePay">
-                File &amp; Pay
-              </v-btn>
+              <div v-on="on" class="inline-div">
+                <v-btn
+                  v-if="isAnnualReportEditable"
+                  id="ar-file-pay-btn"
+                  color="primary"
+                  large
+                  :depressed="isRoleStaff"
+                  :ripple="!isRoleStaff"
+                  :disabled="!validated || busySaving"
+                  :loading="filingPaying"
+                  @click="onClickFilePay">
+                  File &amp; Pay
+                </v-btn>
+              </div>
             </template>
             <span v-if="isRoleStaff">Staff are not allowed to file.</span>
             <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
