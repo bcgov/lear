@@ -207,6 +207,8 @@ with open('coop_2019_test_data.csv', 'r') as csvfile:
                             uow = versioning_manager.unit_of_work(db.session)
                             transaction = uow.create_transaction(db.session)
                             filing = Filing()
+                            filing_date = historic_filing['filing']['header']['date']
+                            filing.filing_date = datetime.datetime.strptime(filing_date, '%Y-%m-%d')
                             filing.business_id = business.id
                             filing.filing_json = historic_filing
                             filing.transaction_id = transaction.id

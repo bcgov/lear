@@ -177,7 +177,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         attr_state = insp.attrs._payment_token  # pylint: disable=protected-access;
         # inspect requires the member, and the hybrid decorator doesn't help us here
 
-        if self._payment_token and not attr_state.history.added:
+        if (self._payment_token and not attr_state.history.added) or self.colin_event_id:
             return True
 
         return False
