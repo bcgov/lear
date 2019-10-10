@@ -49,7 +49,7 @@ import CountriesProvincesMixin from '@/mixins/countries-provinces-mixin'
     ...mapState(['mailingAddress', 'deliveryAddress'])
   }
 })
-export default class AddressListSm extends Vue {
+export default class AddressListSm extends CountriesProvincesMixin {
   readonly mailingAddress: object
   readonly deliveryAddress: object
 }

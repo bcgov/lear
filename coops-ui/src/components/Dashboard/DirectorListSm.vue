@@ -31,7 +31,7 @@ import CountriesProvincesMixin from '@/mixins/countries-provinces-mixin'
     ...mapState(['directors'])
   }
 })
-export default class DirectorListSm extends Vue {
+export default class DirectorListSm extends CountriesProvincesMixin {
   readonly directors: Array<object>
 }
 </script>
