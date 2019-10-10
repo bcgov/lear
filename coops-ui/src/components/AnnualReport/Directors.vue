@@ -1121,7 +1121,14 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    */
   @Watch('asOfDate')
   private onAsOfDate (newVal: string, oldVal: string): void {
-    if (!(this.currentFilingStatus === 'DRAFT' && (this.draftDate === newVal || oldVal === null))) {
+    // reload the directors list when as-of date changes EXCEPT WHEN...
+    if (this.currentFilingStatus === 'DRAFT' && oldVal === null) {
+      // this is a draft but the component hasn't quite loaded yet - do nothing
+
+    } else if (this.currentFilingStatus === 'DRAFT' && this.directorsChange && this.draftDate === newVal) {
+      // this is a draft, there were director changes loaded, and the date hasn't changed - do nothing
+
+    } else {
       this.getDirectors()
     }
   }
