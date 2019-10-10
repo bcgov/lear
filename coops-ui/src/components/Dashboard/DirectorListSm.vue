@@ -1,5 +1,5 @@
 <template>
-  <ul class="list">
+  <ul class="list list-container">
     <li class="list-item" v-for="director in directors" v-bind:key="director.id">
       <v-avatar color="primary" size="25">
         <span class="white--text small">{{ director.officer.firstName.substring(0,1)}}</span>
@@ -33,29 +33,39 @@ export default class DirectorListSm extends Vue {
 }
 </script>
 
-<style lang="stylus" scoped>
-  .address-details
-    padding 0
-    list-style-type none
+<style lang="scss" scoped>
+  .address-details {
+    padding: 0;
+    list-style-type: none
+  }
 
-  .list-item
-    flex-direction row
-    align-items center
-    background #ffffff
+  .list-item {
+    flex-direction: row;
+    align-items: center;
+    background: #ffffff;
+  }
 
-  .v-icon
-    margin-right 1rem
+  .v-icon {
+    margin-right: 1rem;
+  }
 
-  .v-avatar
-    flex 0 0 auto
-    margin-right 1.25rem
+  .v-avatar {
+    flex: 0 0 auto;
+    margin-right: 1.25rem
+  }
 
-  .card
-    display flex
-    flex-wrap wrap
-    align-items flex-start
+  .card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
 
-  .card .list-item
-    flex 0 0 33.333333%
-    border none
+  .card .list-item {
+    flex: 0 0 33.333333%;
+    border: none;
+  }
+
+  .list-container {
+   padding-left:0
+  }
 </style>

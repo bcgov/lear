@@ -16,14 +16,14 @@
               <div class="address-block__actions">
                 <v-btn
                   color="primary"
-                  flat
+                  text
                   id="reg-off-addr-change-btn"
                   small
                   v-if="!showAddressForm"
                   :disabled="changeButtonDisabled"
                   @click="editAddress"
                 >
-                  <v-icon small>edit</v-icon>
+                  <v-icon small>mdi-pencil</v-icon>
                   <span>Change</span>
                 </v-btn>
                 <br />
@@ -31,7 +31,7 @@
                   class="reset-btn"
                   color="red"
                   id="reg-off-addr-reset-btn"
-                  outline
+                  outlined
                   small
                   v-if="!showAddressForm && modified"
                   @click="resetAddress"
@@ -480,99 +480,123 @@ export default class RegisteredOfficeAddress extends Vue {
 
 </script>
 
-<style lang="stylus" scoped>
-@import '../../assets/styles/theme.styl'
+<style lang="scss" scoped>
+@import '../../assets/styles/theme.scss';
 
-.v-btn
+.v-btn {
   margin: 0;
   min-width: 6rem;
   text-transform: none;
+}
 
-.reset-btn
+.reset-btn {
   margin-top: 0.5rem;
+}
 
-.meta-container
+.meta-container {
   display: flex;
   flex-flow: column nowrap;
   position: relative;
+}
 
-.meta-container__inner
+.meta-container__inner {
   margin-top: 1rem;
+}
 
-label:first-child
+label:first-child {
   font-weight: 500;
+  &__inner {
+    flex: 1 1 auto;
+  }
+}
 
-&__inner
-  flex: 1 1 auto;
-
-@media (min-width: 768px)
-  .meta-container
+@media (min-width: 768px) {
+  .meta-container {
     flex-flow: row nowrap;
 
-    label:first-child
+    label:first-child {
       flex: 0 0 auto;
       padding-right: 4rem;
       width: 12rem;
-
-  .meta-container__inner
+    }
+  }
+  .meta-container__inner {
     margin-top: 0;
-
+  }
+}
 // List Layout
-.list
-  li
+.list {
+  li {
     border-bottom: 1px solid $gray3;
+  }
+}
 
-.address-list .form
+.address-list .form {
   margin-top: 1rem;
+}
 
-@media (min-width: 768px)
-  .address-list .form
+@media (min-width: 768px) {
+  .address-list .form {
     margin-top: 0;
+  }
+}
 
 // Address Block Layout
-.address-block__actions
+.address-block__actions {
   position: absolute;
   top: 0;
   right: 0;
 
-  .v-btn
+  .v-btn {
     min-width: 4rem;
+  }
 
-  .v-btn + .v-btn
+  .v-btn + .v-btn {
     margin-left: 0.5rem;
+  }
+}
 
 // Form Row Elements
-.form__row + .form__row
+.form__row + .form__row {
   margin-top: 0.25rem;
+}
 
-.form__btns
+.form__btns {
   text-align: right;
 
-  .v-btn
+  .v-btn {
     margin: 0;
 
-    + .v-btn
+    + .v-btn {
       margin-left: 0.5rem;
+    }
+  }
+}
 
-.form__row.three-column
+.form__row.three-column {
   display: flex;
   flex-flow: row nowrap;
   align-items: stretch;
   margin-right: -0.5rem;
   margin-left: -0.5rem;
+}
 
-.inherit-checkbox
+.inherit-checkbox {
   margin-top: -3px;
   margin-left: -3px;
   padding: 0;
+}
 
 // Registered Office Address Form Behavior
-.show-address-form
-  li:first-child
+.show-address-form {
+  li:first-child {
     padding-bottom: 0;
+  }
+}
 
-ul
+ul {
   margin: 0;
   padding: 0;
   list-style-type: none;
+}
 </style>

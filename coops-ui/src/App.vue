@@ -339,8 +339,8 @@ export default {
 }
 </script>
 
-<style lang="stylus">
-  @import "./assets/styles/base.styl"
-  @import "./assets/styles/layout.styl"
-  @import "./assets/styles/overrides.styl"
+<style lang="scss">
+  @import "./assets/styles/base.scss";
+  @import "./assets/styles/layout.scss";
+  @import "./assets/styles/overrides.scss";
 </style>

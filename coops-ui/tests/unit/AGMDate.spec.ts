@@ -10,9 +10,14 @@ import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 // NB: test util async issue
 // in some cases, the elements are not updated during the test
 // the work-around is to first initialize the property we are changing
+// suppress update watchers warnings
+// ref: https://github.com/vuejs/vue-test-utils/issues/532
+Vue.config.silent = true
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
+
+let vuetify = new Vuetify({})
 
 // get rid of "Download the Vue Devtools extension for a better development experience" console message
 Vue.config.devtools = false
@@ -30,7 +35,7 @@ describe('AGMDate', () => {
     store.state.currentDate = '2019/07/15'
     store.state.ARFilingYear = 2019
 
-    wrapper = mount(AGMDate, { store })
+    wrapper = mount(AGMDate, { store, vuetify })
     vm = wrapper.vm as any
 
     await flushPromises()
@@ -223,10 +228,10 @@ describe('AGMDate', () => {
     expect(valids.length).toBe(2)
     expect(valids[0]).toEqual([true])
     expect(valids[1]).toEqual([false])
-
-    // verify validation messages
-    expect(vm.$el.querySelector('.v-messages').textContent)
-      .toContain('An Annual General Meeting date is required.')
+    setTimeout(() => {
+      expect(vm.$el.querySelector('.v-messages').textContent)
+        .toContain('An Annual General Meeting date is required.')
+    }, 1000)
   })
 
   it('invalidates the component when date has invalid length', () => {
@@ -600,7 +605,9 @@ describe('AGMDate', () => {
     expect(noAGMs[0]).toEqual([true])
 
     // verify that there are no validation errors
-    expect(vm.$el.querySelector('.validationErrorInfo')).toBeNull()
+    setTimeout(() => {
+      expect(vm.$el.querySelector('.validationErrorInfo')).toBeNull()
+    }, 1000)
   })
 
   it('Displays disabled address change message when allowCOA is false', () => {

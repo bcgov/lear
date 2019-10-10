@@ -18,14 +18,14 @@
     "lodash.isempty": "^4.4.0",
     "regenerator-runtime": "^0.13.3",
     "register-service-worker": "^1.6.2",
-    "sbc-common-components": "1.1.15",
+    "sbc-common-components": "2.0.6",
     "sinon": "^7.3.2",
     "vue": "^2.6.10",
     "vue-affix": "^0.5.2",
     "vue-router": "^3.0.3",
     "vue2-filters": "^0.7.1",
     "vuelidate": "^0.7.4",
-    "vuetify": "^1.5.18",
+    "vuetify": "^2.0.11",
     "vuex": "^3.0.1"
   },
   "devDependencies": {
@@ -41,19 +41,19 @@
     "@vue/cli-service": "4.0.0-rc.0",
     "@vue/eslint-config-standard": "^4.0.0",
     "@vue/eslint-config-typescript": "^4.0.0",
-    "@vue/test-utils": "1.0.0-beta.29",
+    "@vue/test-utils": "1.0.0-beta.28",
     "babel-eslint": "^10.0.1",
     "eslint": "^5.0.0",
     "eslint-plugin-vue": "^5.2.3",
     "flush-promises": "^1.0.2",
-    "stylus": "^0.54.5",
-    "stylus-loader": "^3.0.2",
     "ts-jest": "^24.0.2",
     "typescript": "<3.6.0",
     "vue-class-component": "^7.1.0",
     "vue-cli-plugin-vuetify": "^0.5.0",
     "vue-property-decorator": "^8.2.2",
     "vue-template-compiler": "^2.6.10",
-    "vue-test-utils-helpers": "git+https://github.com/AmpleOrganics/vue-test-utils-helpers.git"
+    "vue-test-utils-helpers": "git+https://github.com/AmpleOrganics/vue-test-utils-helpers.git",
+    "sass": "^1.22.10",
+    "sass-loader": "^7.3.1"
   }
 }

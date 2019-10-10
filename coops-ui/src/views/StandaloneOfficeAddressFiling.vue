@@ -86,18 +86,21 @@
 
         <div class="buttons-right">
           <v-tooltip top color="#3b6cff">
-            <v-btn
-              slot="activator"
-              id="coa-file-pay-btn"
-              color="primary"
-              large
-              :depressed="isRoleStaff"
-              :ripple="!isRoleStaff"
-              :disabled="!validated || busySaving"
-              :loading="filingPaying"
-              @click="onClickFilePay">
-              File &amp; Pay
-            </v-btn>
+            <template v-slot:activator="{ on }">
+              <div v-on="on" class="inline-div">
+              <v-btn
+                id="coa-file-pay-btn"
+                color="primary"
+                large
+                :depressed="isRoleStaff"
+                :ripple="!isRoleStaff"
+                :disabled="!validated || busySaving"
+                :loading="filingPaying"
+                @click="onClickFilePay">
+                File &amp; Pay
+              </v-btn>
+              </div>
+            </template>
             <span v-if="isRoleStaff">Staff are not allowed to file.</span>
             <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
               There is no opportunity to change information beyond this point.</span>
@@ -499,51 +502,66 @@ export default {
 }
 </script>
 
-<style lang="stylus" scoped>
-@import '../assets/styles/theme.styl'
+<style lang="scss" scoped>
+@import '../assets/styles/theme.scss';
 
-article
-  .v-card
+article{
+  .v-card{
     line-height: 1.2rem;
     font-size: 0.875rem;
+  }
+}
 
-section p
+section p{
   // font-size 0.875rem
   color: $gray6;
+}
 
-section + section
+section + section{
   margin-top: 3rem;
+}
 
-h2
+h2{
   margin-bottom: 0.25rem;
+}
 
-#filing-header
+#filing-header{
   margin-bottom: 1.25rem;
   line-height: 2rem;
   letter-spacing: -0.01rem;
-  font-size: 2rem;
-  font-weight: 500;
+}
 
-.title-container
+.title-container{
   margin-bottom: 0.5rem;
+}
 
 // Save & Filing Buttons
-#buttons-container
+#buttons-container{
   padding-top: 2rem;
   border-top: 1px solid $gray5;
 
-  .buttons-left
+  .buttons-left{
     width: 50%;
+  }
 
-  .buttons-right
-    margin-left auto
+  .buttons-right{
+    margin-left: auto
+  }
 
-  .v-btn + .v-btn
+  .v-btn + .v-btn{
     margin-left: 0.5rem;
+  }
+}
 
-.genErr
+.genErr{
   font-size: 0.9rem;
+}
 
-.error-dialog-padding
+.error-dialog-padding{
   margin-left: 1rem;
+}
+
+#coa-cancel-btn{
+   margin-left: 0.5rem;
+}
 </style>

@@ -10,10 +10,8 @@
           ref="menu"
           v-model="menu"
           :nudge-right="40"
-          lazy
           transition="scale-transition"
           offset-y
-          full-width
           min-width="18rem">
           <template v-slot:activator="{ on }">
             <v-text-field
@@ -23,9 +21,9 @@
               :rules="agmDateRules"
               label="Enter your Annual General Meeting Date"
               hint="YYYY/MM/DD"
-              append-icon="event"
+              append-icon="mdi-calendar"
               v-on="on"
-              box>
+              filled>
             </v-text-field>
           </template>
           <v-date-picker
@@ -285,35 +283,43 @@ export default class AGMDate extends Mixins(DateMixin) {
 
 </script>
 
-<style lang="stylus" scoped>
-@import "../../assets/styles/theme.styl"
+<style lang="scss" scoped>
+@import "../../assets/styles/theme.scss";
 
-.validationErrorInfo
-  color red
+.validationErrorInfo{
+  color: red;
+}
 
-.value.date
-  min-width 24rem
+.value.date{
+  min-width: 24rem;
+}
 
-.meta-container
-  display flex
-  flex-flow column nowrap
-  position relative
+.meta-container{
+  display: flex;
+  flex-flow: column nowrap;
+  position: relative;
 
-  > label:first-child
-    font-weight 500
+  > label:first-child{
+    font-weight: 500
+  }
+}
 
-@media (min-width 768px)
-  .meta-container
-    flex-flow row nowrap
+@media (min-width: 768px){
+  .meta-container{
+    flex-flow: row nowrap;
 
-    > label:first-child
-      flex 0 0 auto
-      padding-right: 2rem
-      width 12rem
+    > label:first-child{
+      flex: 0 0 auto;
+      padding-right: 2rem;
+      width: 12rem;
+    }
+  }
+}
 
-#agm-checkbox
-  font-size 14px
-  margin-top 0
-  margin-left -3px
-  padding 0
+#agm-checkbox {
+  font-size: 14px;
+  margin-top: 0;
+  margin-left: -3px;
+  padding: 0;
+}
 </style>

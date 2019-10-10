@@ -29,23 +29,23 @@
           </p>
 
           <p class="genErr">
-            <v-icon small>phone</v-icon>
+            <v-icon small>mdi-phone</v-icon>
             <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
           </p>
           <p class="genErr">
-            <v-icon small>email</v-icon>
+            <v-icon small>mdi-email</v-icon>
             <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
               >SBC_ITOperationsSupport@gov.bc.ca</a>
           </p>
         </v-card-text>
         <v-divider class="my-0"></v-divider>
         <v-card-actions v-if="errors.length + warnings.length < 1">
-          <v-btn color="primary" flat @click="exit()">Exit without saving</v-btn>
+          <v-btn color="primary" text @click="exit()">Exit without saving</v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="primary" flat @click="retry()" :disabled="disableRetry">Retry</v-btn>
+          <v-btn color="primary" text @click="retry()" :disabled="disableRetry">Retry</v-btn>
         </v-card-actions>
         <v-card-actions v-else>
-          <v-btn id="okay-btn" color="primary" flat @click="okay()">Okay</v-btn>
+          <v-btn id="okay-btn" color="primary" text @click="okay()">Okay</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -74,12 +74,14 @@ export default class SaveErrorDialog extends Vue {
 }
 </script>
 
-<style lang="stylus" scoped>
-@import '../../assets/styles/theme.styl'
+<style lang="scss" scoped>
+@import '../../assets/styles/theme.scss';
 
-.genErr
+.genErr{
   font-size: 0.9rem;
+}
 
-.error-dialog-padding
+.error-dialog-padding{
   margin-left: 1rem;
+}
 </style>
