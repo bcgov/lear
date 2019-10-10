@@ -21,7 +21,7 @@
       @retry="onClickRetry"
     />
 
-    <sbc-header ref="sbcHeader" :authURL="authAPIURL" />
+    <sbc-header ref="sbcHeader" :brandLink="origin" :authURL="authAPIURL" />
 
     <div class="app-body">
       <main v-if="dataLoaded">
@@ -70,6 +70,12 @@ export default {
 
   computed: {
     ...mapState(['triggerDashboardReload']),
+
+    origin () {
+      const root = window.location.origin || ''
+      const path = process.env.VUE_APP_PATH
+      return `${root}/${path}`
+    },
 
     authAPIURL () {
       return sessionStorage.getItem('AUTH_API_URL')
@@ -333,8 +339,8 @@ export default {
 }
 </script>
 
-<style lang="stylus">
-  @import "./assets/styles/base.styl"
-  @import "./assets/styles/layout.styl"
-  @import "./assets/styles/overrides.styl"
+<style lang="scss">
+  @import "./assets/styles/base.scss";
+  @import "./assets/styles/layout.scss";
+  @import "./assets/styles/overrides.scss";
 </style>

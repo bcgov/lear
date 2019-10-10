@@ -22,19 +22,23 @@ export default class ARDate extends DateMixin {
     readonly nextARDate!: string
 }
 </script>
-<style lang="stylus" scoped>
-  @import '../../../assets/styles/theme.styl'
+<style lang="scss" scoped>
+  @import '../../../assets/styles/theme.scss';
 
-  .container
-    background: #FFFFFF
+  .container {
+    background: #FFFFFF;
 
-    .timeline
-      display: flex
-      justify-content space-between
+    .timeline {
+      display: flex;
+      justify-content: space-between;
 
-      label
-        font-weight: 500
+      label{
+        font-weight: 500;
+      }
 
-      .date
-        margin-right: 4.5rem
+      .date {
+        margin-right: 4.5rem;
+      }
+    }
+  }
 </style>
