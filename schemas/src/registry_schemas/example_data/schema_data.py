@@ -48,6 +48,16 @@ BUSINESS = {
     'legalType': 'CP'
 }
 
+ADDRESS = {
+    'streetAddress': 'delivery_address - address line one',
+    'streetAddressAdditional': 'line 2',
+    'addressCity': 'delivery_address city',
+    'addressCountry': 'delivery_address country',
+    'postalCode': 'H0H0H0',
+    'addressRegion': 'BC',
+    'deliveryInstructions': 'some delivery instructions'
+}
+
 ANNUAL_REPORT = {
     'filing': {
         'header': {
