@@ -36,7 +36,7 @@
           <header>
             <h1 id="filing-header">Change of Directors</h1>
 
-            <v-alert type="info" :value="true" icon="mdi-information" outlined style="background-color: white;">
+            <v-alert type="info" :value="true" icon="mdi-information" outlined class="white-background">
               Director changes can be made as far back as {{ earliestDateToSet }}.
             </v-alert>
           </header>
@@ -495,6 +495,10 @@ article{
     line-height: 1.2rem;
     font-size: 0.875rem;
   }
+}
+
+.white-background {
+  background-color: white !important;
 }
 
 section p{
