@@ -153,20 +153,21 @@
               <span>{{director.officer.lastName}}</span>
               <div class="director-status">
                 <v-scale-transition>
-                  <v-chip small label color="blue" text-color="white"
+                  <v-chip x-small label color="blue" text-color="white"
                           v-show="isNew(director) && !director.cessationDate">
                     New
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
-                  <v-chip small label v-show="!isActive(director) || !isActionable(director)">
+                  <v-chip x-small label text-color="rgba(0,0,0,.38)"
+                          v-show="!isActive(director) || !isActionable(director)">
                     Ceased
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
-                  <v-chip small label color="blue lighten-2" text-color="white"
+                  <v-chip x-small label color="blue lighten-2" text-color="white"
                           v-show="isNew(director) && director.cessationDate">
-                    Appointed & Ceased
+                    Appointed &amp; Ceased
                   </v-chip>
                 </v-scale-transition>
               </div>
@@ -1297,15 +1298,12 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   }
 
   // V-chip customization
-  .v-chip--small {
-    height: 1.2rem !important;
-    margin: 0;
+  .v-size--x-small {
+    height: 1.25rem;
     margin-top: 0.5rem;
-    padding: 0;
-    text-transform: uppercase;
     font-size: 0.65rem;
+    text-transform: uppercase;
     font-weight: 700;
-    vertical-align: top;
   }
 
   .remove, .remove .director-info {
