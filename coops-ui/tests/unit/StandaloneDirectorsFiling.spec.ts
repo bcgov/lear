@@ -545,6 +545,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     expect(await vm.onClickFilePay()).toBe(false)
 
     // verify v-tooltip text
+    // Commented out because tool tip text is outside the wrapper. Need to figure out how to get hold of that.
     // expect(wrapper.find('#cod-file-pay-btn + span').text()).toBe('Staff are not allowed to file.')
 
     store.state.keycloakRoles = [] // cleanup

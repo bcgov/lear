@@ -228,10 +228,10 @@ describe('AGMDate', () => {
     expect(valids.length).toBe(2)
     expect(valids[0]).toEqual([true])
     expect(valids[1]).toEqual([false])
-
-    // verify validation messages - TO CHECK!!
-    // expect(vm.$el.querySelector('.v-messages').textContent)
-    // .toContain('An Annual General Meeting date is required.')
+    setTimeout(() => {
+      expect(vm.$el.querySelector('.v-messages').textContent)
+        .toContain('An Annual General Meeting date is required.')
+    }, 1000)
   })
 
   it('invalidates the component when date has invalid length', () => {
@@ -605,7 +605,9 @@ describe('AGMDate', () => {
     expect(noAGMs[0]).toEqual([true])
 
     // verify that there are no validation errors
-    // expect(vm.$el.querySelector('.validationErrorInfo')).toBeNull()
+    setTimeout(() => {
+      expect(vm.$el.querySelector('.validationErrorInfo')).toBeNull()
+    }, 1000)
   })
 
   it('Displays disabled address change message when allowCOA is false', () => {
