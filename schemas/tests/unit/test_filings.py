@@ -15,13 +15,20 @@
 
 This suite should have at least 1 test for every filing type allowed.
 """
+
+import pytest
+
 from registry_schemas import validate
-from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS, CHANGE_OF_DIRECTORS_MAILING
+from registry_schemas.example_data import ALL_FILINGS, ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS, CHANGE_OF_DIRECTORS_MAILING
 
 
-def test_valid_ar_filing():
+@pytest.mark.parametrize('filing_data', ALL_FILINGS)
+def test_valid_filing(filing_data):
     """Assert that the schema is performing as expected."""
-    is_valid, errors = validate(ANNUAL_REPORT, 'filing')
+    is_valid, errors = validate(filing_data, 'filing')
+
+    # print filing name for easier debugging
+    print(filing_data['filing']['header']['name'])
 
     # if errors:
     #     for err in errors:
@@ -56,99 +63,6 @@ def test_invalid_ar_filing():
     print(errors)
 
     assert not is_valid
-
-
-def test_valid_coa_filing():
-    """Assert that the Change of Address filing schema is performing as expected."""
-    iar = {
-        'filing': {
-            'header': {
-                'name': 'changeOfAddress',
-                'date': '2019-04-08',
-                'certifiedBy': 'full legal name',
-                'email': 'no_one@never.get'
-            },
-            'business': {
-                'cacheId': 1,
-                'foundingDate': '2007-04-08',
-                'identifier': 'CP1234567',
-                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                'lastPreBobFilingTimestamp': '',
-                'legalName': 'legal name - CP1234567'
-            },
-            'changeOfAddress': CHANGE_OF_ADDRESS
-        }
-    }
-    is_valid, errors = validate(iar, 'filing')
-
-    if errors:
-        for err in errors:
-            print(err.message)
-    print(errors)
-
-    assert is_valid
-
-
-def test_valid_cod_filing():
-    """Assert that the Change of Directors filing schema is performing as expected."""
-    filing = {
-        'filing': {
-            'header': {
-                'name': 'changeOfDirectors',
-                'date': '2019-04-08',
-                'certifiedBy': 'full legal name',
-                'email': 'no_one@never.get'
-            },
-            'business': {
-                'cacheId': 1,
-                'foundingDate': '2007-04-08',
-                'identifier': 'CP1234567',
-                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                'legalName': 'legal name - CP1234567'
-            },
-            'changeOfDirectors': CHANGE_OF_DIRECTORS
-        }
-    }
-
-    is_valid, errors = validate(filing, 'filing')
-
-    if errors:
-        for err in errors:
-            print(err.message)
-    print(errors)
-
-    assert is_valid
-
-
-def test_valid_cod_filing_with_mailing_address():
-    """Assert that the Change of Directors filing schema is performing as expected."""
-    filing = {
-        'filing': {
-            'header': {
-                'name': 'changeOfDirectors',
-                'date': '2019-04-08',
-                'certifiedBy': 'full legal name',
-                'email': 'no_one@never.get'
-            },
-            'business': {
-                'cacheId': 1,
-                'foundingDate': '2007-04-08',
-                'identifier': 'CP1234567',
-                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                'legalName': 'legal name - CP1234567'
-            },
-            'changeOfDirectors': CHANGE_OF_DIRECTORS_MAILING
-        }
-    }
-
-    is_valid, errors = validate(filing, 'filing')
-
-    if errors:
-        for err in errors:
-            print(err.message)
-    print(errors)
-
-    assert is_valid
 
 
 def test_invalid_cod_filing():
