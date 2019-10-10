@@ -177,7 +177,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         attr_state = insp.attrs._payment_token  # pylint: disable=protected-access;
         # inspect requires the member, and the hybrid decorator doesn't help us here
 
-        if self._payment_token and not attr_state.history.added:
+        if (self._payment_token and not attr_state.history.added) or self.colin_event_id:
             return True
 
         return False
@@ -333,5 +333,7 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
             filing._status = Filing.Status.ERROR.value  # pylint: disable=protected-access
         else:
             filing._status = Filing.Status.PENDING.value  # pylint: disable=protected-access
+    elif filing.colin_event_id:
+        filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
     else:
         filing._status = Filing.Status.DRAFT.value  # pylint: disable=protected-access

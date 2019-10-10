@@ -1,8 +1,8 @@
 {
 	"info": {
-		"_postman_id": "e665c91e-9961-461e-a778-76af4d07870a",
+		"_postman_id": "6c508540-1512-4ee3-807a-0dc803210c42",
 		"name": "colin-api",
-		"description": "version=0.103 - This is a Colin API description",
+		"description": "version=0.104 - This is a Colin API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -105,7 +105,8 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "AR",
@@ -931,6 +932,7 @@
 								"exec": [
 									"// set event id variable (used for future tests)",
 									"var jsonData = pm.response.json()",
+									"pm.environment.set(\"noAgmEventId\", jsonData.filing.annualReport.eventId)",
 									"",
 									"pm.test(\"Response time is less than 20000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -1125,7 +1127,8 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "business",
@@ -1421,7 +1424,151 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Historic Filings",
+			"item": [
+				{
+					"name": "GET HF CP0002098",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c1067abe-1b2f-44f7-9896-87e432779d29",
+								"exec": [
+									"pm.test(\"Response time is less than 20000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(20000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for Historic Filings\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    for (var index in jsonData) {",
+									"        filing = jsonData[index].filing",
+									"        pm.expect(filing).to.exist",
+									"        pm.expect(filing.business).to.exist",
+									"        pm.expect(filing.header).to.exist",
+									"        pm.expect(filing.header.name).to.exist",
+									"        pm.expect(filing[filing.header.name]).to.exist",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Only returns filings from before the Bob Date\", () => {",
+									"    var jsonData = pm.response.json()",
+									"    for (var index in jsonData) {",
+									"        bob_date = '2019-03-08'",
+									"        pm.expect(jsonData[index].filing.header.date < bob_date).to.eql(true)",
+									"    }",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/CP0002098/filings/historic",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"CP0002098",
+								"filings",
+								"historic"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "GET HF CP0002098",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/CP0002098/filings/historic",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"CP0002098",
+										"filings",
+										"historic"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "GET, HEAD, OPTIONS, POST"
+								},
+								{
+									"key": "Access-Control-Max-Age",
+									"value": "21600"
+								},
+								{
+									"key": "API",
+									"value": "colin_api/2.0.0"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/0.16.0 Python/3.7.4"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 10 Oct 2019 23:41:23 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\n        \"filing\": {\n            \"business\": {\n                \"businessNumber\": null,\n                \"cacheId\": 0,\n                \"corpState\": \"ACT\",\n                \"foundingDate\": \"2010-10-15\",\n                \"identifier\": \"CP0002098\",\n                \"jurisdiction\": \"BC\",\n                \"lastAgmDate\": \"2017-09-11\",\n                \"lastArDate\": \"2017-09-11\",\n                \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n                \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n                \"legalType\": \"CP\",\n                \"status\": \"Active\"\n            },\n            \"header\": {\n                \"availableOnPaperOnly\": true,\n                \"date\": \"2010-10-15\",\n                \"name\": \"incorporationApplication\"\n            },\n            \"incorporationApplication\": {\n                \"agmDate\": null,\n                \"effectiveDate\": \"2010-10-15\",\n                \"eventDate\": \"2010-10-15\",\n                \"eventId\": 101990302,\n                \"periodEndDate\": null\n            }\n        }\n    },\n    {\n        \"filing\": {\n            \"annualReport\": {\n                \"agmDate\": null,\n                \"effectiveDate\": \"2011-03-30\",\n                \"eventDate\": \"2011-03-30\",\n                \"eventId\": 102024799,\n                \"periodEndDate\": \"2010-11-11\"\n            },\n            \"business\": {\n                \"businessNumber\": null,\n                \"cacheId\": 0,\n                \"corpState\": \"ACT\",\n                \"foundingDate\": \"2010-10-15\",\n                \"identifier\": \"CP0002098\",\n                \"jurisdiction\": \"BC\",\n                \"lastAgmDate\": \"2017-09-11\",\n                \"lastArDate\": \"2017-09-11\",\n                \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n                \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n                \"legalType\": \"CP\",\n                \"status\": \"Active\"\n            },\n            \"header\": {\n                \"availableOnPaperOnly\": true,\n                \"date\": \"2011-03-30\",\n                \"name\": \"annualReport\"\n            }\n        }\n    },\n    {\n        \"filing\": {\n            \"business\": {\n                \"businessNumber\": null,\n                \"cacheId\": 0,\n                \"corpState\": \"ACT\",\n                \"foundingDate\": \"2010-10-15\",\n                \"identifier\": \"CP0002098\",\n                \"jurisdiction\": \"BC\",\n                \"lastAgmDate\": \"2017-09-11\",\n                \"lastArDate\": \"2017-09-11\",\n                \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n                \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n                \"legalType\": \"CP\",\n                \"status\": \"Active\"\n            },\n            \"header\": {\n                \"availableOnPaperOnly\": true,\n                \"date\": \"2012-02-16\",\n                \"name\": \"specialResolution\"\n            },\n            \"specialResolution\": {\n                \"agmDate\": null,\n                \"effectiveDate\": \"2012-02-16\",\n                \"eventDate\": \"2012-02-16\",\n                \"eventId\": 102065783,\n                \"periodEndDate\": null\n            }\n        }\n    },\n    {\n        \"filing\": {\n            \"business\": {\n                \"businessNumber\": null,\n                \"cacheId\": 0,\n                \"corpState\": \"ACT\",\n                \"foundingDate\": \"2010-10-15\",\n                \"identifier\": \"CP0002098\",\n                \"jurisdiction\": \"BC\",\n                \"lastAgmDate\": \"2017-09-11\",\n                \"lastArDate\": \"2017-09-11\",\n                \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n                \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n                \"legalType\": \"CP\",\n                \"status\": \"Active\"\n            },\n            \"changeOfDirectors\": {\n                \"agmDate\": null,\n                \"effectiveDate\": \"2012-05-08\",\n                \"eventDate\": \"2012-05-08\",\n                \"eventId\": 102024800,\n                \"periodEndDate\": null\n            },\n            \"header\": {\n                \"availableOnPaperOnly\": true,\n                \"date\": \"2012-05-08\",\n                \"name\": \"changeOfDirectors\"\n            }\n        }\n    },\n    {\n        \"filing\": {\n            \"annualReport\": {\n                \"agmDate\": null,\n                \"effectiveDate\": \"2012-05-08\",\n                \"eventDate\": \"2012-05-08\",\n                \"eventId\": 102024801,\n                \"periodEndDate\": \"2011-12-12\"\n            },\n            \"business\": {\n                \"businessNumber\": null,\n                \"cacheId\": 0,\n                \"corpState\": \"ACT\",\n                \"foundingDate\": \"2010-10-15\",\n                \"identifier\": \"CP0002098\",\n                \"jurisdiction\": \"BC\",\n                \"lastAgmDate\": \"2017-09-11\",\n                \"lastArDate\": \"2017-09-11\",\n                \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n                \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n                \"legalType\": \"CP\",\n                \"status\": \"Active\"\n            },\n            \"header\": {\n                \"availableOnPaperOnly\": true,\n                \"date\": \"2012-05-08\",\n                \"name\": \"annualReport\"\n            }\n        }\n    },\n    {\n        \"filing\": {\n            \"annualReport\": {\n                \"agmDate\": null,\n                \"effectiveDate\": \"2015-02-23\",\n                \"eventDate\": \"2015-02-23\",\n                \"eventId\": 102024803,\n                \"periodEndDate\": \"2013-09-15\"\n            },\n            \"business\": {\n                \"businessNumber\": null,\n                \"cacheId\": 0,\n                \"corpState\": \"ACT\",\n                \"foundingDate\": \"2010-10-15\",\n                \"identifier\": \"CP0002098\",\n                \"jurisdiction\": \"BC\",\n                \"lastAgmDate\": \"2017-09-11\",\n                \"lastArDate\": \"2017-09-11\",\n                \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n                \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n                \"legalType\": \"CP\",\n                \"status\": \"Active\"\n            },\n            \"header\": {\n                \"availableOnPaperOnly\": true,\n                \"date\": \"2015-02-23\",\n                \"name\": \"annualReport\"\n            }\n        }\n    },\n    {\n        \"filing\": {\n            \"annualReport\": {\n                \"agmDate\": null,\n                \"effectiveDate\": \"2015-02-23\",\n                \"eventDate\": \"2015-02-23\",\n                \"eventId\": 102024802,\n                \"periodEndDate\": \"2012-12-12\"\n            },\n            \"business\": {\n                \"businessNumber\": null,\n                \"cacheId\": 0,\n                \"corpState\": \"ACT\",\n                \"foundingDate\": \"2010-10-15\",\n                \"identifier\": \"CP0002098\",\n                \"jurisdiction\": \"BC\",\n                \"lastAgmDate\": \"2017-09-11\",\n                \"lastArDate\": \"2017-09-11\",\n                \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n                \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n                \"legalType\": \"CP\",\n                \"status\": \"Active\"\n            },\n            \"header\": {\n                \"availableOnPaperOnly\": true,\n                \"date\": \"2015-02-23\",\n                \"name\": \"annualReport\"\n            }\n        }\n    },\n    {\n        \"filing\": {\n            \"annualReport\": {\n                \"agmDate\": null,\n                \"effectiveDate\": \"2015-02-23\",\n                \"eventDate\": \"2015-02-23\",\n                \"eventId\": 102024804,\n                \"periodEndDate\": \"2014-09-27\"\n            },\n            \"business\": {\n                \"businessNumber\": null,\n                \"cacheId\": 0,\n                \"corpState\": \"ACT\",\n                \"foundingDate\": \"2010-10-15\",\n                \"identifier\": \"CP0002098\",\n                \"jurisdiction\": \"BC\",\n                \"lastAgmDate\": \"2017-09-11\",\n                \"lastArDate\": \"2017-09-11\",\n                \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n                \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n                \"legalType\": \"CP\",\n                \"status\": \"Active\"\n            },\n            \"header\": {\n                \"availableOnPaperOnly\": true,\n                \"date\": \"2015-02-23\",\n                \"name\": \"annualReport\"\n            }\n        }\n    },\n    {\n        \"filing\": {\n            \"annualReport\": {\n                \"agmDate\": null,\n                \"effectiveDate\": \"2015-10-14\",\n                \"eventDate\": \"2015-10-14\",\n                \"eventId\": 102024806,\n                \"periodEndDate\": \"2015-09-22\"\n            },\n            \"business\": {\n                \"businessNumber\": null,\n                \"cacheId\": 0,\n                \"corpState\": \"ACT\",\n                \"foundingDate\": \"2010-10-15\",\n                \"identifier\": \"CP0002098\",\n                \"jurisdiction\": \"BC\",\n                \"lastAgmDate\": \"2017-09-11\",\n                \"lastArDate\": \"2017-09-11\",\n                \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n                \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n                \"legalType\": \"CP\",\n                \"status\": \"Active\"\n            },\n            \"header\": {\n                \"availableOnPaperOnly\": true,\n                \"date\": \"2015-10-14\",\n                \"name\": \"annualReport\"\n            }\n        }\n    },\n    {\n        \"filing\": {\n            \"business\": {\n                \"businessNumber\": null,\n                \"cacheId\": 0,\n                \"corpState\": \"ACT\",\n                \"foundingDate\": \"2010-10-15\",\n                \"identifier\": \"CP0002098\",\n                \"jurisdiction\": \"BC\",\n                \"lastAgmDate\": \"2017-09-11\",\n                \"lastArDate\": \"2017-09-11\",\n                \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n                \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n                \"legalType\": \"CP\",\n                \"status\": \"Active\"\n            },\n            \"changeOfDirectors\": {\n                \"agmDate\": null,\n                \"effectiveDate\": \"2015-10-14\",\n                \"eventDate\": \"2015-10-14\",\n                \"eventId\": 102024805,\n                \"periodEndDate\": null\n            },\n            \"header\": {\n                \"availableOnPaperOnly\": true,\n                \"date\": \"2015-10-14\",\n                \"name\": \"changeOfDirectors\"\n            }\n        }\n    },\n    {\n        \"filing\": {\n            \"business\": {\n                \"businessNumber\": null,\n                \"cacheId\": 0,\n                \"corpState\": \"ACT\",\n                \"foundingDate\": \"2010-10-15\",\n                \"identifier\": \"CP0002098\",\n                \"jurisdiction\": \"BC\",\n                \"lastAgmDate\": \"2017-09-11\",\n                \"lastArDate\": \"2017-09-11\",\n                \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n                \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n                \"legalType\": \"CP\",\n                \"status\": \"Active\"\n            },\n            \"changeOfDirectors\": {\n                \"agmDate\": null,\n                \"effectiveDate\": \"2017-09-11\",\n                \"eventDate\": \"2017-09-11\",\n                \"eventId\": 102024808,\n                \"periodEndDate\": null\n            },\n            \"header\": {\n                \"availableOnPaperOnly\": true,\n                \"date\": \"2017-09-11\",\n                \"name\": \"changeOfDirectors\"\n            }\n        }\n    },\n    {\n        \"filing\": {\n            \"annualReport\": {\n                \"agmDate\": null,\n                \"effectiveDate\": \"2017-12-21\",\n                \"eventDate\": \"2017-12-21\",\n                \"eventId\": 102024807,\n                \"periodEndDate\": \"2016-09-13\"\n            },\n            \"business\": {\n                \"businessNumber\": null,\n                \"cacheId\": 0,\n                \"corpState\": \"ACT\",\n                \"foundingDate\": \"2010-10-15\",\n                \"identifier\": \"CP0002098\",\n                \"jurisdiction\": \"BC\",\n                \"lastAgmDate\": \"2017-09-11\",\n                \"lastArDate\": \"2017-09-11\",\n                \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n                \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n                \"legalType\": \"CP\",\n                \"status\": \"Active\"\n            },\n            \"header\": {\n                \"availableOnPaperOnly\": true,\n                \"date\": \"2017-12-21\",\n                \"name\": \"annualReport\"\n            }\n        }\n    },\n    {\n        \"filing\": {\n            \"annualReport\": {\n                \"agmDate\": null,\n                \"effectiveDate\": \"2017-12-21\",\n                \"eventDate\": \"2017-12-21\",\n                \"eventId\": 102024809,\n                \"periodEndDate\": \"2017-09-11\"\n            },\n            \"business\": {\n                \"businessNumber\": null,\n                \"cacheId\": 0,\n                \"corpState\": \"ACT\",\n                \"foundingDate\": \"2010-10-15\",\n                \"identifier\": \"CP0002098\",\n                \"jurisdiction\": \"BC\",\n                \"lastAgmDate\": \"2017-09-11\",\n                \"lastArDate\": \"2017-09-11\",\n                \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n                \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n                \"legalType\": \"CP\",\n                \"status\": \"Active\"\n            },\n            \"header\": {\n                \"availableOnPaperOnly\": true,\n                \"date\": \"2017-12-21\",\n                \"name\": \"annualReport\"\n            }\n        }\n    }\n]"
+						}
+					]
+				}
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "AR + ROA + COD",
@@ -1710,7 +1857,8 @@
 						}
 					]
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "Registered Office",
@@ -2399,7 +2547,8 @@
 						}
 					]
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "Directors",
@@ -3113,7 +3262,8 @@
 						}
 					]
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "Event",
@@ -3156,10 +3306,10 @@
 									"",
 									"pm.test(\"Returns the correct values for events\", () => {",
 									"    var events = jsonData.events",
-									"    var ids = [pm.environment.get(\"arExtraEventId\"), pm.environment.get(\"coaExtraEventId\"), pm.environment.get(\"codExtraEventId\"), pm.environment.get(\"coaEventId\"), pm.environment.get(\"codEventId\")]",
+									"    var ids = [pm.environment.get(\"noAgmEventId\"), pm.environment.get(\"arExtraEventId\"), pm.environment.get(\"coaExtraEventId\"), pm.environment.get(\"codExtraEventId\"), pm.environment.get(\"coaEventId\"), pm.environment.get(\"codEventId\")]",
 									"    console.log(ids)",
+									"    console.log(events)",
 									"    for (var i=0; i<events.length; i++) {",
-									"        pm.expect(events[i].corp_num).to.eql(\"CP0002098\")",
 									"        pm.expect(events[i].event_id == pm.environment.get(\"arEventId\")).to.be.false",
 									"        console.log(events[i].event_id)",
 									"        console.log(ids.includes(events[i].event_id))",
@@ -3269,7 +3419,8 @@
 						}
 					]
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"event": [
@@ -3293,5 +3444,6 @@
 				]
 			}
 		}
-	]
+	],
+	"protocolProfileBehavior": {}
 }
