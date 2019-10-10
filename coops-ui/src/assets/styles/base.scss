@@ -1,31 +1,31 @@
 @import "theme.scss";
 
-@font-face{
-  font-family: 'BCSans';
-  font-style: normal;
-  font-weight: 400;
-  src: url('assets/fonts/BCSans/BCSans-Regular.woff2') format('woff2'), /* Optimized for very modern browsers */
-       url('assets/fonts/BCSans/BCSans-Regular.woff') format('woff'), /* Modern Browsers */
-}
-@font-face{
-  font-family: 'BCSans';
-  font-style: italic;
-  src: url('assets/fonts/BCSans/BCSans-Italic.woff2') format('woff2'), /* Optimized for very modern browsers */
-       url('assets/fonts/BCSans/BCSans-Italic.woff') format('woff'); /* Modern Browsers */
-}
-@font-face{
-  font-family: 'BCSans';
-  font-weight: 700; 
-  src: url('assets/fonts/BCSans/BCSans-Bold.woff') format('woff2'), /* Modern Browsers */
-       url('assets/fonts/BCSans/BCSans-Bold.woff2') format('woff'); /* Optimized for very modern browsers */
-}
-@font-face{
-  font-family: 'BCSans';
-  font-style: italic;
-  font-weight: 700; 
-  src: url('assets/fonts/BCSans/BCSans-BoldItalic.woff') format('woff2'), /* Modern Browsers */
-       url('assets/fonts/BCSans/BCSans-BoldItalic.woff2') format('woff'); /* Optimized for very modern browsers */
-}
+// @font-face{
+//   font-family: 'BCSans';
+//   font-style: normal;
+//   font-weight: 400;
+//   src: url('assets/fonts/BCSans/BCSans-Regular.woff2') format('woff2'), /* Optimized for very modern browsers */
+//        url('assets/fonts/BCSans/BCSans-Regular.woff') format('woff'), /* Modern Browsers */
+// }
+// @font-face{
+//   font-family: 'BCSans';
+//   font-style: italic;
+//   src: url('assets/fonts/BCSans/BCSans-Italic.woff2') format('woff2'), /* Optimized for very modern browsers */
+//        url('assets/fonts/BCSans/BCSans-Italic.woff') format('woff'); /* Modern Browsers */
+// }
+// @font-face{
+//   font-family: 'BCSans';
+//   font-weight: 700; 
+//   src: url('assets/fonts/BCSans/BCSans-Bold.woff') format('woff2'), /* Modern Browsers */
+//        url('assets/fonts/BCSans/BCSans-Bold.woff2') format('woff'); /* Optimized for very modern browsers */
+// }
+// @font-face{
+//   font-family: 'BCSans';
+//   font-style: italic;
+//   font-weight: 700; 
+//   src: url('assets/fonts/BCSans/BCSans-BoldItalic.woff') format('woff2'), /* Modern Browsers */
+//        url('assets/fonts/BCSans/BCSans-BoldItalic.woff2') format('woff'); /* Optimized for very modern browsers */
+// }
 
 html,
 body {
@@ -44,7 +44,8 @@ html {
 
 body {
   // NB: Vuetify font is set on .v-application class (see below)
-  font-family: 'BCSans', sans-serif;
+  // font-family: 'BCSans', sans-serif;
+  font-family: 'Roboto', sans-serif;
   font-size: 1rem;
 }
 
@@ -53,20 +54,20 @@ h1 {
   line-height: 2rem;
   letter-spacing: -0.01rem;
   font-size: 1.75rem;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 h2 {
   margin-bottom: 0.75rem;
   letter-spacing: -0.01rem;
   font-size: 1.125rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 h3 {
   letter-spacing: -0.01rem;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 p {
@@ -259,7 +260,7 @@ hr {
 
 .list-item__subtitle {
   color: $gray6;
-  font-weight: 400;
+  font-weight: 300;
 }
 
 .list-item__actions {
@@ -269,7 +270,7 @@ hr {
   .v-btn {
     margin: 0;
     min-width: 8rem;
-    font-weight: 700;
+    font-weight: 500;
   }
 }
 
@@ -279,6 +280,7 @@ hr {
 }
 
 .no-results__title {
+  color: $gray8;
   font-size: 1rem;
   font-weight: 700;
 }
@@ -287,10 +289,11 @@ hr {
   margin-top: 0.25rem;
   color: $gray6;
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .v-application {
   // override the default Vuetify font
-  font-family: 'BCSans', sans-serif;
+  // font-family: 'BCSans', sans-serif;
+  font-family: 'Roboto', sans-serif;
 }

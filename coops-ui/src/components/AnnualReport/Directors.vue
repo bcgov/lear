@@ -153,18 +153,18 @@
               <span>{{director.officer.lastName}}</span>
               <div class="director-status">
                 <v-scale-transition>
-                  <v-chip small label disabled color="blue" text-color="white"
+                  <v-chip small label color="blue" text-color="white"
                           v-show="isNew(director) && !director.cessationDate">
                     New
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
-                  <v-chip small label disabled v-show="!isActive(director) || !isActionable(director)">
+                  <v-chip small label v-show="!isActive(director) || !isActionable(director)">
                     Ceased
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
-                  <v-chip small label disabled color="blue lighten-2" text-color="white"
+                  <v-chip small label color="blue lighten-2" text-color="white"
                           v-show="isNew(director) && director.cessationDate">
                     Appointed & Ceased
                   </v-chip>
@@ -1204,7 +1204,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     position: relative;
 
     > label:first-child{
-      font-weight: 700;
+      font-weight: 500;
     }
 
     &__inner {
@@ -1350,15 +1350,3 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     padding: 1rem;
   }
 </style>
-
-<!-- TODO: WHERE DOES THIS BELONG?
-<style lang="stylus">
-  @import "../../assets/styles/theme.styl"
-
-  .actions__more_actions .v-list__tile
-    color $gray6
-    font-size 8pt
-    height 28px
-    font-weight 500
-</style>
--->
