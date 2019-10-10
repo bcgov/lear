@@ -107,7 +107,7 @@
         <v-expansion-panel-content>
             <v-card v-if="isPending(item)">
               <v-card-text>
-                <p class="font-weight-bold">Payment Incomplete</P>
+                <p class="font-weight-bold black--text">Payment Incomplete</P>
                 <p>This filing is pending payment. The payment may still be in progress or may have been
                   interrupted for some reason.<p>
                 <p>You may continue this filing by selecting "Resume Payment".</p>
@@ -115,7 +115,7 @@
             </v-card>
             <v-card v-if="isError(item)">
               <v-card-text>
-                <p class="font-weight-bold">Payment Unsuccessful</p>
+                <p class="font-weight-bold black--text">Payment Unsuccessful</p>
                 <p>This filing is pending payment. The payment appears to have been unsuccessful for some
                   reason.</p>
                 <p>You may continue this filing by selecting "Retry Payment".</p>
@@ -451,46 +451,46 @@ export default {
 <style lang="scss" scoped>
 @import "../../assets/styles/theme.scss";
 
- .todo-list.draft .v-expansion-panel__body{
-    display: none
- }
-
-.todo-list{
-  // disable expansion
-  pointer-events: none
+.todo-list.draft .v-expansion-panel__body {
+  display: none;
 }
 
-.todo-list .list-item{
+.todo-list {
+  // disable expansion
+  pointer-events: none;
+}
+
+.todo-list .list-item {
   padding: 0;
 
-  .list-item__title{
+  .list-item__title {
     width: 25%;
   }
 
-  .list-item__subtitle{
+  .list-item__subtitle {
     font-size: 0.75rem;
   }
 
-  .list-item__status1{
+  .list-item__status1 {
     width: 20%;
     color: $gray7;
   }
 
-  .list-item__status2{
+  .list-item__status2 {
     width: 36%;
     color: $gray7;
 
-    .v-btn{
-      margin: 0
+    .v-btn {
+      margin: 0;
     }
   }
 
-  .list-item__actions{
-    .v-btn{
+  .list-item__actions {
+    .v-btn {
       min-width: 142px;
     }
 
-    #btn-draft-resume{
+    #btn-draft-resume {
       min-width: 103px;
       border-top-right-radius: 0;
       border-bottom-right-radius: 0;
@@ -498,30 +498,30 @@ export default {
   }
 }
 
-.todo-list.disabled{
+.todo-list.disabled {
   background-color: $gray0;
 
   .list-item__title,
   .list-item__subtitle,
   .list-item__status1,
-  .list-item__status2{
+  .list-item__status2 {
     color: $gray6;
 
-    .v-btn{
+    .v-btn {
       // enable expansion buttons
       pointer-events: auto;
     }
   }
 }
 
-.todo-list:not(.disabled){
-  .v-btn{
+.todo-list:not(.disabled) {
+  .v-btn {
     // enable action buttons
-    pointer-events: auto
+    pointer-events: auto;
   }
 }
 
-.list-item__actions .v-btn.actions__more-actions__btn{
+.list-item__actions .v-btn.actions__more-actions__btn {
   min-width: 38px !important;
   width: 38px;
   border-top-left-radius: 0;
@@ -529,7 +529,7 @@ export default {
   margin-left: 1px;
 }
 
-.actions__more-actions{
-  padding: 0
+.actions__more-actions {
+  padding: 0;
 }
 </style>

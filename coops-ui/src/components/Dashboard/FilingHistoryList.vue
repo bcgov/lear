@@ -33,8 +33,8 @@
             <div class="list-item__title">{{item.name}}</div>
             <div class="list-item__subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
           </div>
-          <div class="v-expansion-panel__header__status">FILED AND PAID</div>
-          <div class="v-expansion-panel__header__icon">
+          <div class="v-expansion-panel-header__status">FILED AND PAID</div>
+          <div class="v-expansion-panel-header__icon">
             <span v-if="panel === index">Hide Documents</span>
             <span v-else>View Documents</span>
           </div>
@@ -360,35 +360,36 @@ export default {
       padding: 0
     }
 
-    .v-expansion-panel__header__status{
+    .v-expansion-panel-header__status {
       font-size: 0.875rem;
       color: $gray6;
       vertical-align: top
     }
 
-    .v-expansion-panel__header__icon{
+    .v-expansion-panel-header__icon {
       font-size: 0.875rem;
       font-weight: 700;
     }
   }
 
    // Document List
-  .document-list{
+  .document-list {
     border-top: 1px solid $gray3;
+    padding-left: 0;
 
-    .list-item__btn{
+    .list-item__btn {
       margin: 0.25rem 0;
       padding: 0 0.5rem 0 0.25rem;
     }
   }
 
    // Documents Actions Bar
-  .documents-actions-bar{
+  .documents-actions-bar {
     padding-top: 1rem;
     display: flex;
     border-top: 1px solid $gray3;
 
-    .download-all-btn{
+    .download-all-btn {
       margin-left: auto;
       margin-right: 0;
       min-width: 8rem;
@@ -396,11 +397,11 @@ export default {
   }
 
   // Past Filings
-  .past-filings{
+  .past-filings {
     border-top: 1px solid $gray3;
     text-align: center;
 
-    .past-filings__text{
+    .past-filings__text {
       margin-top: 0.25rem;
       color: $gray6;
       font-size: 0.875rem;
