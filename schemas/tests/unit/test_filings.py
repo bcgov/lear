@@ -15,11 +15,19 @@
 
 This suite should have at least 1 test for every filing type allowed.
 """
+import copy
 
 import pytest
 
 from registry_schemas import validate
-from registry_schemas.example_data import ALL_FILINGS, ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS, CHANGE_OF_DIRECTORS_MAILING
+from registry_schemas.example_data import (
+    ALL_FILINGS,
+    ANNUAL_REPORT,
+    CHANGE_OF_ADDRESS,
+    CHANGE_OF_DIRECTORS,
+    CHANGE_OF_DIRECTORS_MAILING,
+    FILING_HEADER,
+)
 
 
 @pytest.mark.parametrize('filing_data', ALL_FILINGS)
@@ -30,9 +38,6 @@ def test_valid_filing(filing_data):
     # print filing name for easier debugging
     print(filing_data['filing']['header']['name'])
 
-    # if errors:
-    #     for err in errors:
-    #         print(err.message)
     print(errors)
 
     assert is_valid
@@ -57,9 +62,9 @@ def test_invalid_ar_filing():
     }
     is_valid, errors = validate(iar, 'filing')
 
-    # if errors:
-    #     for err in errors:
-    #         print(err.message)
+    if errors:
+        for err in errors:
+            print(err.message)
     print(errors)
 
     assert not is_valid
@@ -71,7 +76,8 @@ def test_invalid_cod_filing():
         'filing': {
             'header': {
                 'name': 'changeOfDirectors',
-                'date': '2019-04-08'
+                'date': '2019-04-08',
+                'email': 'no_one@never.get',
             },
             'business': {
                 'cacheId': 1,
@@ -81,8 +87,6 @@ def test_invalid_cod_filing():
                 'legalName': 'legal name - CP1234567'
             },
             'changeOfDirectors': {
-                'certifiedBy': 'Joe Smith',
-                'email': 'nobody@nothing.com',
                 'directors': [
                     {
                         'officer': {
@@ -135,6 +139,22 @@ def test_valid_multi_filing():
             'changeOfAddress': CHANGE_OF_ADDRESS
         }
     }
+
+    is_valid, errors = validate(filing, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert is_valid
+
+
+def test_filing_paper():
+    """Assert that a Paper Only filing is valid."""
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['availableOnPaperOnly'] = True
+    # filing['filing']['available'] = 'available on paper only.'
 
     is_valid, errors = validate(filing, 'filing')
 

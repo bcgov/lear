@@ -20,6 +20,7 @@ FILING_HEADER = {
     'filing': {
         'header': {
             'name': 'annualReport',
+            'availableOnPaperOnly': False,
             'date': '2019-04-08',
             'certifiedBy': 'full name',
             'email': 'no_one@never.get',
@@ -51,6 +52,7 @@ ANNUAL_REPORT = {
     'filing': {
         'header': {
             'name': 'annualReport',
+            'availableOnPaperOnly': False,
             'certifiedBy': 'full name',
             'email': 'no_one@never.get',
             'date': '2019-04-08'
