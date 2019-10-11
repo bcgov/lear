@@ -772,6 +772,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   private addNewDirector (): void {
     this.showNewDirectorForm = true
     this.activeIndex = null
+    this.directorEditInProgress = true
   }
 
   /**
@@ -784,6 +785,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
 
     // set form to initial director data again
     this.director.appointmentDate = this.asOfDate
+    this.directorEditInProgress = false
   }
 
   /**
