@@ -48,9 +48,7 @@ def test_invalid_ar_filing():
         'filing': {
             'header': {
                 'name': 'annualReport',
-                'date': '2019-04-08',
-                'certifiedBy': 'full name',
-                'email': 'no_one@never.get',
+                'date': '2019-04-08'
             },
             'business': {
                 'cacheId': 1,
@@ -58,9 +56,6 @@ def test_invalid_ar_filing():
                 'identifier': 'CP1234567',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
-            },
-            'annualReport': {
-                'annualGeneralMeetingDate': '2018-04-08',
             }
         }
     }
@@ -71,7 +66,7 @@ def test_invalid_ar_filing():
             print(err.message)
     print(errors)
 
-    assert is_valid
+    assert not is_valid
 
 
 def test_invalid_cod_filing():
