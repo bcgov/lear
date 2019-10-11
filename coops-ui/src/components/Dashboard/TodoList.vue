@@ -1,14 +1,22 @@
 <template>
   <div>
-    <v-expansion-panel v-if="taskItems && taskItems.length > 0">
-      <v-expansion-panel-content
+    <ConfirmDialog ref="confirm" />
+
+    <DeleteErrorDialog
+      :dialog="deleteErrorDialog"
+      :errors="deleteErrors"
+      :warnings="deleteWarnings"
+      @okay="resetErrors"
+    />
+
+    <v-expansion-panels v-if="taskItems && taskItems.length > 0" accordion>
+      <v-expansion-panel
         class="todo-list"
         v-for="(item, index) in orderBy(taskItems, 'order')"
         v-bind:key="index"
         expand-icon=""
-        :class="{ 'disabled': !item.enabled }">
-
-        <template v-slot:header>
+        :class="{ 'disabled': !item.enabled, 'draft': isDraft(item) }">
+        <v-expansion-panel-header class="no-dropdown">
           <div class="list-item">
             <div class="list-item__title">{{item.title}}</div>
 
@@ -24,43 +32,66 @@
 
               <div class="list-item__status2">
                 <span v-if="isPending(item)">
-                  PAYMENT INCOMPLETE<v-btn flat icon color="black"><v-icon>info_outline</v-icon></v-btn>
+                  PAYMENT INCOMPLETE<v-btn text icon color="black"><v-icon>mdi-information-outline</v-icon></v-btn>
                 </span>
                 <span v-else-if="isError(item)">
-                  PAYMENT UNSUCCESSFUL<v-btn flat icon color="black"><v-icon>info_outline</v-icon></v-btn>
+                  PAYMENT UNSUCCESSFUL<v-btn text icon color="black"><v-icon>mdi-information-outline</v-icon></v-btn>
                 </span>
               </div>
             </template>
 
             <div class="list-item__actions">
-              <v-btn v-if="isDraft(item)"
-                color="primary"
-                :disabled="!item.enabled"
-                @click.native.stop="doResumeFiling(item)">
-                Resume
-              </v-btn>
-              <v-tooltip v-else-if="isPending(item)" top color="#3b6cff" :disabled="!isRoleStaff">
-                <v-btn
+              <span v-if="isDraft(item)">
+                <v-btn id="btn-draft-resume"
                   color="primary"
-                  slot="activator"
-                  :depressed="isRoleStaff"
-                  :ripple="!isRoleStaff"
                   :disabled="!item.enabled"
-                  @click.native.stop="doResumePayment(item)">
-                  Resume Payment
+                  @click.native.stop="doResumeFiling(item)">
+                  Resume
                 </v-btn>
+                <!-- more DRAFT actions menu -->
+                <v-menu offset-y left >
+                  <template v-slot:activator="{ on }">
+                    <v-btn color="primary" class="actions__more-actions__btn"
+                      v-on="on" id="menu-activator">
+                      <v-icon>mdi-menu-down</v-icon>
+                    </v-btn>
+                  </template>
+                  <v-list ref="draft_actions" class="actions__more-actions">
+                    <v-list-item id="btn-delete-draft" @click="confirmDeleteDraft(item)">
+                      <v-list-item-title>Delete Draft</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </span>
+
+              <v-tooltip v-else-if="isPending(item)" top color="#3b6cff" :disabled="!isRoleStaff">
+                 <template v-slot:activator="{ on }">
+                  <v-btn
+                    color="primary"
+                    slot="activator"
+                    v-on="on"
+                    :depressed="isRoleStaff"
+                    :ripple="!isRoleStaff"
+                    :disabled="!item.enabled"
+                    @click.native.stop="doResumePayment(item)">
+                    Resume Payment
+                  </v-btn>
+                 </template>
                 <span>Staff are not allowed to Resume Payment.</span>
               </v-tooltip>
               <v-tooltip v-else-if="isError(item)" top color="#3b6cff" :disabled="!isRoleStaff">
-                <v-btn
-                  color="primary"
-                  slot="activator"
-                  :depressed="isRoleStaff"
-                  :ripple="!isRoleStaff"
-                  :disabled="!item.enabled"
-                  @click.native.stop="doResumePayment(item)">
-                  Retry Payment
-                </v-btn>
+                 <template v-slot:activator="{ on }">
+                  <v-btn
+                    v-on="on"
+                    color="primary"
+                    slot="activator"
+                    :depressed="isRoleStaff"
+                    :ripple="!isRoleStaff"
+                    :disabled="!item.enabled"
+                    @click.native.stop="doResumePayment(item)">
+                    Retry Payment
+                  </v-btn>
+                 </template>
                 <span>Staff are not allowed to Retry Payment.</span>
               </v-tooltip>
               <v-btn v-else-if="!isCompleted(item)"
@@ -71,28 +102,28 @@
               </v-btn>
             </div>
           </div>
-        </template>
 
-        <v-card v-if="isPending(item)">
-          <v-card-text>
-            <p class="bold">Payment Incomplete</P>
-            <p>This filing is pending payment. The payment may still be in progress or may have been
-              interrupted for some reason.<p>
-            <p>You may continue this filing by selecting "Resume Payment".</p>
-          </v-card-text>
-        </v-card>
-
-        <v-card v-if="isError(item)">
-          <v-card-text>
-            <p class="bold">Payment Unsuccessful</p>
-            <p>This filing is pending payment. The payment appears to have been unsuccessful for some
-              reason.</p>
-            <p>You may continue this filing by selecting "Retry Payment".</p>
-          </v-card-text>
-        </v-card>
-
-      </v-expansion-panel-content>
-    </v-expansion-panel>
+        </v-expansion-panel-header>
+        <v-expansion-panel-content>
+            <v-card v-if="isPending(item)">
+              <v-card-text>
+                <p class="font-weight-bold black--text">Payment Incomplete</P>
+                <p>This filing is pending payment. The payment may still be in progress or may have been
+                  interrupted for some reason.<p>
+                <p>You may continue this filing by selecting "Resume Payment".</p>
+              </v-card-text>
+            </v-card>
+            <v-card v-if="isError(item)">
+              <v-card-text>
+                <p class="font-weight-bold black--text">Payment Unsuccessful</p>
+                <p>This filing is pending payment. The payment appears to have been unsuccessful for some
+                  reason.</p>
+                <p>You may continue this filing by selecting "Retry Payment".</p>
+              </v-card-text>
+            </v-card>
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+    </v-expansion-panels>
 
     <!-- No Results Message -->
     <v-card class="no-results" flat v-if="taskItems && taskItems.length === 0">
@@ -105,22 +136,33 @@
 </template>
 
 <script>
+import axios from '@/axios-auth'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import ExternalMixin from '@/mixins/external-mixin'
 import { mapState, mapActions, mapGetters } from 'vuex'
+import DeleteErrorDialog from '../AnnualReport/DeleteErrorDialog'
 
 export default {
   name: 'TodoList',
+
+  components: {
+    DeleteErrorDialog,
+    ConfirmDialog
+  },
 
   mixins: [ExternalMixin],
 
   data () {
     return {
-      taskItems: null
+      taskItems: null,
+      deleteErrors: [],
+      deleteWarnings: [],
+      deleteErrorDialog: false
     }
   },
 
   computed: {
-    ...mapState(['tasks']),
+    ...mapState(['tasks', 'entityIncNo']),
 
     ...mapGetters(['isRoleStaff'])
   },
@@ -131,7 +173,7 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setARFilingYear', 'setCurrentFilingStatus']),
+    ...mapActions(['setARFilingYear', 'setCurrentFilingStatus', 'setTriggerDashboardReload']),
 
     loadData () {
       this.taskItems = []
@@ -216,6 +258,7 @@ export default {
             type: filing.header.name,
             id: filing.header.filingId,
             title: `File ${ARFilingYear} Annual Report`,
+            draftTitle: `${ARFilingYear} Annual Report`,
             ARFilingYear,
             status: filing.header.status || 'NEW',
             enabled: Boolean(task.enabled),
@@ -237,6 +280,7 @@ export default {
           type: filing.header.name,
           id: filing.header.filingId,
           title: `File Director Change`,
+          draftTitle: `Director Change`,
           status: filing.header.status || 'NEW',
           enabled: Boolean(task.enabled),
           order: task.order,
@@ -254,6 +298,7 @@ export default {
           type: filing.header.name,
           id: filing.header.filingId,
           title: `File Address Change`,
+          draftTitle: `Address Change`,
           status: filing.header.status || 'NEW',
           enabled: Boolean(task.enabled),
           order: task.order,
@@ -307,7 +352,10 @@ export default {
       // staff are not allowed to resume or retry payment
       if (this.isRoleStaff) return false
 
-      const origin = window.location.origin || ''
+      const root = window.location.origin || ''
+      const path = process.env.VUE_APP_PATH
+      const origin = `${root}/${path}`
+
       const filingId = item.id
       const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
       let authStub = sessionStorage.getItem('AUTH_URL') || ''
@@ -336,6 +384,57 @@ export default {
 
     isCompleted (item) {
       return item.status === 'COMPLETED'
+    },
+
+    confirmDeleteDraft (item) {
+      // open confirmation dialog and wait for response
+      this.$refs.confirm.open(
+        'Delete Draft?',
+        'Delete your ' + item.draftTitle + '? Any changes you\'ve made will be lost.',
+        { width: '40rem',
+          persistent: true,
+          yes: 'Delete',
+          no: null,
+          cancel: 'Don\'t delete',
+          className: 'delete-draft-confirmation-dialog' }
+      ).then(async (confirm) => {
+        // if we get here, Yes or No was clicked
+        if (confirm) {
+          await this.doDeleteDraft(item)
+        } else {
+          // do nothing
+        }
+      }).catch(() => {
+        // if we get here, Cancel was clicked - do nothing
+      })
+    },
+
+    async doDeleteDraft (item) {
+      let url = this.entityIncNo + '/filings/' + item.id
+      await axios.delete(url).then(res => {
+        if (!res) { throw new Error('invalid API response') }
+
+        // reload dashboard
+        this.setTriggerDashboardReload(true)
+      }).catch(error => {
+        if (error && error.response) {
+          if (error.response.data.errors) {
+            this.deleteErrors = error.response.data.errors
+          }
+          if (error.response.data.warnings) {
+            this.deleteWarnings = error.response.data.warnings
+          }
+          this.deleteErrorDialog = true
+        } else {
+          this.deleteErrorDialog = true
+        }
+      })
+    },
+
+    resetErrors () {
+      this.deleteErrorDialog = false
+      this.deleteErrors = []
+      this.deleteWarnings = []
     }
   },
 
@@ -349,55 +448,88 @@ export default {
 }
 </script>
 
-<style lang="stylus" scoped>
-@import "../../assets/styles/theme.styl"
+<style lang="scss" scoped>
+@import "../../assets/styles/theme.scss";
 
-.todo-list
+.todo-list.draft .v-expansion-panel__body {
+  display: none;
+}
+
+.todo-list {
   // disable expansion
-  pointer-events none
+  pointer-events: none;
+}
 
-.todo-list .list-item
-  padding 0
+.todo-list .list-item {
+  padding: 0;
 
-  .list-item__title
-    width 25%
+  .list-item__title {
+    width: 25%;
+  }
 
-  .list-item__subtitle
-    font-size 0.75rem
+  .list-item__subtitle {
+    font-size: 0.75rem;
+  }
 
-  .list-item__status1
-    width 20%
-    color $gray7
+  .list-item__status1 {
+    width: 20%;
+    color: $gray7;
+  }
 
-  .list-item__status2
-    width 36%
-    color $gray7
+  .list-item__status2 {
+    width: 36%;
+    color: $gray7;
 
-    .v-btn
-      margin 0
+    .v-btn {
+      margin: 0;
+    }
+  }
 
-  .list-item__actions
-    .v-btn
-      min-width 142px
+  .list-item__actions {
+    .v-btn {
+      min-width: 142px;
+    }
 
-.todo-list.disabled
-  background-color $gray0
+    #btn-draft-resume {
+      min-width: 103px;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+  }
+}
+
+.todo-list.disabled {
+  background-color: $gray0;
 
   .list-item__title,
   .list-item__subtitle,
   .list-item__status1,
-  .list-item__status2
-    color $gray6
+  .list-item__status2 {
+    color: $gray6;
 
-    .v-btn
+    .v-btn {
       // enable expansion buttons
-      pointer-events auto
+      pointer-events: auto;
+    }
+  }
+}
 
-.todo-list:not(.disabled)
-  .v-btn
+.todo-list:not(.disabled) {
+  .v-btn {
     // enable action buttons
-    pointer-events auto
+    pointer-events: auto;
+  }
+}
 
-p.bold
-  font-weight 500
+.list-item__actions .v-btn.actions__more-actions__btn {
+  min-width: 38px !important;
+  width: 38px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: 1px;
+}
+
+.actions__more-actions {
+  padding: 0;
+}
 </style>

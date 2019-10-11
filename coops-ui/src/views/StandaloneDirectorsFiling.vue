@@ -9,7 +9,7 @@
 
     <SaveErrorDialog
       :dialog="saveErrorDialog"
-      :disableRetry="filingPaying"
+      :disableRetry="busySaving"
       :errors="saveErrors"
       :warnings="saveWarnings"
       @exit="navigateToDashboard"
@@ -36,7 +36,7 @@
           <header>
             <h1 id="filing-header">Change of Directors</h1>
 
-            <v-alert type="info" :value="true" icon="info" outline style="background-color: white;">
+            <v-alert type="info" :value="true" icon="mdi-information" outlined class="white-background">
               Director changes can be made as far back as {{ earliestDateToSet }}.
             </v-alert>
           </header>
@@ -48,6 +48,7 @@
               @earliestDateToSet="earliestDateToSet=$event"
               @directorFormValid="directorFormValid=$event"
               @allDirectors="allDirectors=$event"
+              @directorEditAction="directorEditInProgress=$event"
               :asOfDate="currentDate"
               />
           </section>
@@ -60,7 +61,9 @@
             </header>
             <Certify
               :isCertified.sync="isCertified"
-              :certifiedBy.sync="certifiedBy" />
+              :certifiedBy.sync="certifiedBy"
+              @valid="certifyFormValid=$event"
+            />
           </section>
         </article>
 
@@ -74,13 +77,13 @@
       <v-container id="buttons-container" class="list-item">
         <div class="buttons-left">
           <v-btn id="cod-save-btn" large
-            :disabled="!isSaveButtonEnabled || saving"
+            :disabled="!isSaveButtonEnabled || busySaving"
             :loading="saving"
             @click="onClickSave">
             Save
           </v-btn>
           <v-btn id="cod-save-resume-btn" large
-            :disabled="!isSaveButtonEnabled || savingResuming"
+            :disabled="!isSaveButtonEnabled || busySaving"
             :loading="savingResuming"
             @click="onClickSaveResume">
             Save &amp; Resume Later
@@ -89,18 +92,21 @@
 
         <div class="buttons-right">
           <v-tooltip top color="#3b6cff">
-            <v-btn
-              slot="activator"
-              id="cod-file-pay-btn"
-              color="primary"
-              large
-              :depressed="isRoleStaff"
-              :ripple="!isRoleStaff"
-              :disabled="!validated || filingPaying"
-              :loading="filingPaying"
-              @click="onClickFilePay">
-              File &amp; Pay
-            </v-btn>
+             <template v-slot:activator="{ on }">
+              <div v-on="on" class="inline-div">
+                <v-btn
+                  id="cod-file-pay-btn"
+                  color="primary"
+                  large
+                  :depressed="isRoleStaff"
+                  :ripple="!isRoleStaff"
+                  :disabled="!validated || busySaving"
+                  :loading="filingPaying"
+                  @click="onClickFilePay">
+                  File &amp; Pay
+                </v-btn>
+              </div>
+             </template>
             <span v-if="isRoleStaff">Staff are not allowed to file.</span>
             <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
               There is no opportunity to change information beyond this point.</span>
@@ -155,7 +161,9 @@ export default {
       earliestDateToSet: 'your last filing',
       isCertified: false,
       certifiedBy: '',
+      certifyFormValid: false,
       directorFormValid: true,
+      directorEditInProgress: false,
       filingId: null,
       saving: false,
       savingResuming: false,
@@ -172,11 +180,16 @@ export default {
     ...mapGetters(['isRoleStaff']),
 
     validated () {
-      return (this.isCertified && this.directorFormValid && this.filingData.length > 0)
+      return (this.certifyFormValid && this.directorFormValid && this.filingData.length > 0 &&
+      !this.directorEditInProgress)
+    },
+
+    busySaving () {
+      return this.saving || this.savingResuming || this.filingPaying
     },
 
     isSaveButtonEnabled () {
-      return (this.directorFormValid && this.filingData.length > 0)
+      return (this.directorFormValid && this.filingData.length > 0 && !this.directorEditInProgress)
     },
 
     payAPIURL () {
@@ -243,6 +256,9 @@ export default {
     },
 
     async onClickSave () {
+      // prevent double saving
+      if (this.busySaving) return
+
       this.saving = true
       const filing = await this.saveFiling(true)
       if (filing) {
@@ -252,12 +268,14 @@ export default {
     },
 
     async onClickSaveResume () {
+      // prevent double saving
+      if (this.busySaving) return
+
       this.savingResuming = true
       const filing = await this.saveFiling(true)
-      // on success, redirect to Home URL
+      // on success, route to Home URL
       if (filing) {
-        const homeURL = window.location.origin || ''
-        window.location.assign(homeURL)
+        this.$router.push('/')
       }
       this.savingResuming = false
     },
@@ -266,18 +284,24 @@ export default {
       // staff are not allowed to file
       if (this.isRoleStaff) return false
 
+      // prevent double saving
+      if (this.busySaving) return true
+
       this.filingPaying = true
       const filing = await this.saveFiling(false)
       // on success, redirect to Pay URL
       if (filing && filing.header) {
-        const origin = window.location.origin || ''
+        const root = window.location.origin || ''
+        const path = process.env.VUE_APP_PATH
+        const origin = `${root}/${path}`
+
         const filingId = +filing.header.filingId
         const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
         let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
         if (!(authStub.endsWith('/'))) { authStub += '/' }
         const paymentToken = filing.header.paymentToken
         const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
-        // TODO: first check if pay UI is reachable, else display modal dialog
+        // assume Pay URL is always reachable
         window.location.assign(payURL)
       }
       this.filingPaying = false
@@ -464,49 +488,67 @@ export default {
 }
 </script>
 
-<style lang="stylus" scoped>
-@import '../assets/styles/theme.styl'
+<style lang="scss" scoped>
+@import '../assets/styles/theme.scss';
 
-article
-  .v-card
+article{
+  .v-card{
     line-height: 1.2rem;
     font-size: 0.875rem;
+  }
+}
 
-section p
+.white-background {
+  background-color: white !important;
+}
+
+section p{
   // font-size 0.875rem
   color: $gray6;
+}
 
-section + section
+section + section{
   margin-top: 3rem;
+}
 
-h2
+h2{
   margin-bottom: 0.25rem;
+}
 
-#filing-header
+#filing-header{
   margin-bottom: 1.25rem;
   line-height: 2rem;
   letter-spacing: -0.01rem;
-  font-size: 2rem;
-  font-weight: 500;
+}
 
-.title-container
+.title-container{
   margin-bottom: 0.5rem;
+}
 
-.agm-date
+.agm-date{
   margin-left: 0.25rem;
   font-weight: 300;
+}
 
 // Save & Filing Buttons
-#buttons-container
+#buttons-container{
   padding-top: 2rem;
   border-top: 1px solid $gray5;
 
-  .buttons-left
+  .buttons-left{
     width: 50%;
+  }
 
-  .buttons-right
-    margin-left auto
+  .buttons-right{
+    margin-left: auto
+  }
 
-  .v-btn + .v-btn
+  .v-btn + .v-btn{
     margin-left: 0.5rem;
+  }
+}
+
+#cod-cancel-btn{
+  margin-left: 0.5rem;
+}
 </style>

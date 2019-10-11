@@ -12,6 +12,8 @@ import App from '@/App.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+let vuetify = new Vuetify({})
+
 describe('App', () => {
   // just need a token that can get parsed properly (will be expired but doesn't matter for tests)
   sessionStorage.setItem('KEYCLOAK_TOKEN', 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUbWdtZUk0MnVsdUZ0N3' +
@@ -75,7 +77,8 @@ describe('App', () => {
               identifier: 'CP0001867',
               lastLedgerTimestamp: '2019-08-14T22:27:12+00:00',
               foundingDate: '2000-07-13T00:00:00+00:00',
-              lastAnnualGeneralMeetingDate: '2019-08-16'
+              lastAnnualGeneralMeetingDate: '2019-08-16',
+              legalType: null
             }
           }
       })))
@@ -241,7 +244,7 @@ describe('App', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = new VueRouter()
-    wrapper = shallowMount(App, { localVue, router, store })
+    wrapper = shallowMount(App, { localVue, router, store, vuetify })
     vm = wrapper.vm
 
     vm.$nextTick(() => {

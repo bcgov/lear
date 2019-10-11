@@ -7,7 +7,7 @@
         </label>
         <div class="value certifiedby">
           <v-text-field
-            box
+            filled
             id="certified-by-textfield"
             label="Name of current director, officer, or lawyer of the association"
             :value="certifiedBy"
@@ -92,41 +92,50 @@ export default class Certify extends Vue {
 
 </script>
 
-<style lang="stylus" scoped>
-@import '../../assets/styles/theme.styl'
+<style lang="scss" scoped>
+@import '../../assets/styles/theme.scss';
 
-.certifiedby-container
-  display flex
-  flex-flow column nowrap
-  position relative
-  > label:first-child
-    font-weight 500
+.certifiedby-container{
+  display: flex;
+  flex-flow: column nowrap;
+  position: relative;
+  > label:first-child{
+    font-weight: 500;
+  }
+}
 
-@media (min-width 768px)
-  .certifiedby-container
-    flex-flow row nowrap
-    > label:first-child
-      flex 0 0 auto
-      padding-right: 2rem
-      width 12rem
+@media (min-width: 768px) {
+  .certifiedby-container {
+    flex-flow: row nowrap;
+    > label:first-child {
+      flex: 0 0 auto;
+      padding-right: 2rem;
+      width: 12rem;
+    }
+  }
+}
 
-.value.certifiedby
-  min-width 35rem
+.value.certifiedby{
+  min-width: 35rem
+}
 
-.certify-clause
-  padding-left 2rem
-  color black
-  font-size 0.875rem
+.certify-clause{
+  padding-left: 2rem;
+  color: black;
+  font-size: 0.875rem;
+}
 
-.certify-stmt
-  display:inline
-  font-size: 0.875rem
-  color black
+.certify-stmt{
+  display:inline;
+  font-size: 0.875rem;
+  color: black
+}
 
-#AR-step-4-container
+#AR-step-4-container{
   margin-top: 1rem;
   padding-bottom: 0.5rem;
   padding-top: 1rem;
   line-height: 1.2rem;
   font-size: 0.875rem;
+}
 </style>

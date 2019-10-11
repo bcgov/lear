@@ -105,7 +105,7 @@
                                     {
                                         "name": "coops-web-ui-configuration",
                                         "readOnly": true,
-                                        "mountPath": "/var/www/html/config"
+                                        "mountPath": "/var/www/html/${WEB_APP_CONTEXT_PATH}/config"
                                     }
                                 ],
                                 "terminationMessagePath": "/dev/termination-log",
@@ -129,6 +129,15 @@
                 "availableReplicas": 0,
                 "unavailableReplicas": 0
             }
+        }
+    ],
+    "parameters": [
+        {
+            "name": "WEB_APP_CONTEXT_PATH",
+            "displayName": "WEB_APP_CONTEXT_PATH",
+            "description": "The path at which web application is deployed.Context root for the web applicaton",
+            "required": true,
+            "value": "cooperatives"
         }
     ]
 }

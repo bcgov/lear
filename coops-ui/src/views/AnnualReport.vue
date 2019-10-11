@@ -9,7 +9,7 @@
 
     <SaveErrorDialog
       :dialog="saveErrorDialog"
-      :disableRetry="filingPaying"
+      :disableRetry="busySaving"
       :errors="saveErrors"
       :warnings="saveWarnings"
       @exit="navigateToDashboard"
@@ -37,15 +37,16 @@
             <h1 id="AR-header">File {{ ARFilingYear }} Annual Report
               <span style="font-style: italic" v-if="reportState">- {{ reportState }}</span>
             </h1>
-            <p>Select your Annual General Meeting (AGM) date, and verify or change your Registered office address
-              and List of Directors as of your AGM.</p>
+            <p>Please verify or change your Office Addresses and Directors.</p>
           </header>
 
           <div v-if="isAnnualReportEditable">
-            <!-- Annual General Meeting Date -->
-            <section>
+
+            <!-- Annual General Meeting Date ( COOP ) -->
+            <section v-if="entityFilter(EntityTypes.Coop)">
               <header>
                 <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
+                <p>Select your Annual General Meeting (AGM) date</p>
               </header>
               <AGMDate
                 :initialAgmDate="initialAgmDate"
@@ -55,6 +56,17 @@
                 @noAGM="noAGM=$event"
                 @valid="agmDateValid=$event"
               />
+            </section>
+
+            <!-- Annual Report Date ( BCORP ) -->
+            <section v-if="entityFilter(EntityTypes.BCorp)">
+              <header>
+                <h2 id="AR-step-1-header-BC">1. Dates</h2>
+                <p>Your Annual Report Date is the anniversary of the date your corporation was started.<br>
+                  The information displayed on this form reflects the state of your corporation on this date each year.
+                </p>
+              </header>
+              <ARDate />
             </section>
 
             <!-- Registered Office Addresses -->
@@ -85,6 +97,7 @@
                 @directorsChange="directorsChange"
                 @allDirectors="allDirectors=$event"
                 @directorFormValid="directorFormValid=$event"
+                @directorEditAction="directorEditInProgress=$event"
                 :asOfDate="agmDate"
                 :componentEnabled="allowChange('cod')"
               />
@@ -120,14 +133,14 @@
         <div class="buttons-left">
           <v-btn id="ar-save-btn" large
             v-if="isAnnualReportEditable"
-            :disabled="!isSaveButtonEnabled || saving"
+            :disabled="!isSaveButtonEnabled || busySaving"
             :loading="saving"
             @click="onClickSave">
             Save
           </v-btn>
           <v-btn id="ar-save-resume-btn" large
             v-if="isAnnualReportEditable"
-            :disabled="!isSaveButtonEnabled || savingResuming"
+            :disabled="!isSaveButtonEnabled || busySaving"
             :loading="savingResuming"
             @click="onClickSaveResume">
             Save &amp; Resume Later
@@ -136,19 +149,22 @@
 
         <div class="buttons-right">
           <v-tooltip top color="#3b6cff">
-            <v-btn
-              slot="activator"
-              v-if="isAnnualReportEditable"
-              id="ar-file-pay-btn"
-              color="primary"
-              large
-              :depressed="isRoleStaff"
-              :ripple="!isRoleStaff"
-              :disabled="!validated || filingPaying"
-              :loading="filingPaying"
-              @click="onClickFilePay">
-              File &amp; Pay
-            </v-btn>
+            <template v-slot:activator="{ on }">
+              <div v-on="on" class="inline-div">
+                <v-btn
+                  v-if="isAnnualReportEditable"
+                  id="ar-file-pay-btn"
+                  color="primary"
+                  large
+                  :depressed="isRoleStaff"
+                  :ripple="!isRoleStaff"
+                  :disabled="!validated || busySaving"
+                  :loading="filingPaying"
+                  @click="onClickFilePay">
+                  File &amp; Pay
+                </v-btn>
+              </div>
+            </template>
             <span v-if="isRoleStaff">Staff are not allowed to file.</span>
             <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
               There is no opportunity to change information beyond this point.</span>
@@ -180,13 +196,17 @@ import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
 import DateMixin from '@/mixins/date-mixin'
+import EntityFilterMixin from '@/mixins/entityFilter-mixin'
+import { EntityTypes } from '@/enums'
+import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
 
 export default {
   name: 'AnnualReport',
 
-  mixins: [DateMixin],
+  mixins: [DateMixin, EntityFilterMixin],
 
   components: {
+    ARDate,
     AGMDate,
     RegisteredOfficeAddress,
     Directors,
@@ -214,6 +234,7 @@ export default {
       // properties for Directors component
       allDirectors: [],
       directorFormValid: true,
+      directorEditInProgress: false,
 
       // properties for Certify component
       certifiedBy: '',
@@ -234,7 +255,10 @@ export default {
       filingPaying: false,
       haveChanges: false,
       saveErrors: [],
-      saveWarnings: []
+      saveWarnings: [],
+
+      // EntityTypes Enum
+      EntityTypes
     }
   },
 
@@ -256,11 +280,16 @@ export default {
     },
 
     validated () {
-      return this.agmDateValid && this.addressesFormValid && this.directorFormValid && this.certifyFormValid
+      return this.agmDateValid && this.addressesFormValid && this.directorFormValid &&
+      this.certifyFormValid && !this.directorEditInProgress
+    },
+
+    busySaving () {
+      return this.saving || this.savingResuming || this.filingPaying
     },
 
     isSaveButtonEnabled () {
-      return this.agmDateValid && this.addressesFormValid && this.directorFormValid
+      return this.agmDateValid && this.addressesFormValid && this.directorFormValid && !this.directorEditInProgress
     }
   },
 
@@ -415,6 +444,9 @@ export default {
     },
 
     async onClickSave () {
+      // prevent double saving
+      if (this.busySaving) return
+
       this.saving = true
       const filing = await this.saveFiling(true)
       if (filing) {
@@ -424,6 +456,9 @@ export default {
     },
 
     async onClickSaveResume () {
+      // prevent double saving
+      if (this.busySaving) return
+
       this.savingResuming = true
       const filing = await this.saveFiling(true)
       // on success, route to Home URL
@@ -437,11 +472,17 @@ export default {
       // staff are not allowed to file
       if (this.isRoleStaff) return false
 
+      // prevent double saving
+      if (this.busySaving) return true
+
       this.filingPaying = true
       const filing = await this.saveFiling(false)
       // on success, redirect to Pay URL
       if (filing && filing.header) {
-        const origin = window.location.origin || ''
+        const root = window.location.origin || ''
+        const path = process.env.VUE_APP_PATH
+        const origin = `${root}/${path}`
+
         const filingId = +filing.header.filingId
         const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
         let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
@@ -639,55 +680,70 @@ export default {
 }
 </script>
 
-<style lang="stylus" scoped>
-@import '../assets/styles/theme.styl'
+<style lang="scss" scoped>
+@import '../assets/styles/theme.scss';
 
-article
-  .v-card
+article{
+  .v-card{
     line-height: 1.2rem;
     font-size: 0.875rem;
+  }
+}
 
-section p
+section p{
   // font-size 0.875rem
   color: $gray6;
+}
 
-section + section
+section + section{
   margin-top: 3rem;
+}
 
-h2
+h2{
   margin-bottom: 0.25rem;
+}
 
-#AR-header
+#AR-header{
   margin-bottom: 1.25rem;
   line-height: 2rem;
   letter-spacing: -0.01rem;
-  font-size: 2rem;
-  font-weight: 500;
+}
 
-#AR-step-1-header, #AR-step-2-header, #AR-step-3-header, #AR-step-4-header
+#AR-step-1-header, #AR-step-1-header-BC, #AR-step-2-header, #AR-step-3-header, #AR-step-4-header{
   margin-bottom: 0.25rem;
   margin-top: 3rem;
   font-size: 1.125rem;
   font-weight: 500;
+}
 
-.title-container
+.title-container{
   margin-bottom: 0.5rem;
+}
 
-.agm-date
+.agm-date{
   margin-left: 0.25rem;
   font-weight: 300;
+}
 
 // Save & Filing Buttons
-#buttons-container
+#buttons-container{
   padding-top: 2rem;
   border-top: 1px solid $gray5;
 
-  .buttons-left
+  .buttons-left{
     width: 50%;
+  }
 
-  .buttons-right
-    margin-left auto
+  .buttons-right{
+    margin-left: auto
+  }
 
-  .v-btn + .v-btn
+  .v-btn + .v-btn{
     margin-left: 0.5rem;
+  }
+
+  #ar-cancel-btn{
+    margin-left: 0.5rem;
+  }
+}
 </style>

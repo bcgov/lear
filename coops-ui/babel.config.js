@@ -6,5 +6,6 @@ module.exports = {
         'useBuiltIns': 'entry'
       }
     ]
-  ]
+  ],
+  'compact': true
 }

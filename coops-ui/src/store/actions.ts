@@ -11,6 +11,9 @@ export default {
   setLastAgmDate ({ commit }, lastAgmDate) {
     commit('lastAgmDate', lastAgmDate)
   },
+  setNextARDate ({ commit }, nextARDate) {
+    commit('nextARDate', nextARDate)
+  },
   setARFilingYear ({ commit }, ARFilingYear) {
     commit('ARFilingYear', ARFilingYear)
   },
@@ -19,6 +22,9 @@ export default {
   },
   setEntityName ({ commit }, entityName) {
     commit('entityName', entityName)
+  },
+  setEntityType ({ commit }, entityType) {
+    commit('entityType', entityType)
   },
   setEntityStatus ({ commit }, entityStatus) {
     commit('entityStatus', entityStatus)
@@ -58,5 +64,8 @@ export default {
   },
   setDirectors ({ commit }, directors) {
     commit('directors', directors)
+  },
+  setTriggerDashboardReload ({ commit }, value) {
+    commit('triggerDashboardReload', value)
   }
 }

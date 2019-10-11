@@ -12,18 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Annual Report filing."""
-from datetime import date, datetime
+from datetime import datetime
 from http import HTTPStatus
 from typing import Dict, List, Tuple
 
 import datedelta
-from flask import current_app
 from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
 
 from ..utils import get_date
+
+
+def requires_agm(business: Business) -> bool:
+    """Determine if AGM validation is required for AR."""
+    # FUTURE: This is not dynamic enough
+    agm_arr = ['CP', 'XP']
+    return business.legal_type in agm_arr
 
 
 def validate(business: Business, annual_report: Dict) -> Error:
@@ -39,8 +45,9 @@ def validate(business: Business, annual_report: Dict) -> Error:
     if err:
         return err
 
-    err = validate_agm_year(business=business,
-                            annual_report=annual_report)
+    if requires_agm(business):
+        err = validate_agm_year(business=business,
+                                annual_report=annual_report)
 
     if err:
         return err
@@ -111,7 +118,7 @@ def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, 
     if ar_date.year == submission_date.year \
             and agm_date is None:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('Annual General MeetingDate must be a valid date when '
+                     [{'error': _('Annual General Meeting Date must be a valid date when '
                                   'submitting an Annual Report in the current year.'),
                        'path': 'filing/annualReport/annualGeneralMeetingDate'}])
 
@@ -129,10 +136,11 @@ def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, 
                                     'The business will be dissolved, unless an extension and an AGM are held.'),
                        'path': 'filing/annualReport/annualGeneralMeetingDate'}])
 
-    if agm_date and agm_date < date.fromisoformat(current_app.config.get('GO_LIVE_DATE')):
+    last_filing_date = datetime.date(business.last_ledger_timestamp)
+    if agm_date and agm_date < last_filing_date:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': 'Annual General Meeting Date is before 2019-08-12, '
-                                'so it must be submitted as a paper-filing.',
+                     [{'error': 'Annual General Meeting Date is before a previous filing filed on '
+                                f'{last_filing_date}, so it must be submitted as a paper-filing.',
                        'path': 'filing/annualReport/annualGeneralMeetingDate'}])
 
     return None

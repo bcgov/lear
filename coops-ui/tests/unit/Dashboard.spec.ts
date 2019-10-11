@@ -15,6 +15,8 @@ import DirectorListSm from '@/components/Dashboard/DirectorListSm.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+let vuetify = new Vuetify({})
+
 // Boilerplate to prevent the complaint "[Vuetify] Unable to locate target [data-app]"
 const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
@@ -26,7 +28,7 @@ describe('Dashboard - UI', () => {
   beforeEach(() => {
     // create wrapper for Dashboard
     // this stubs out the 4 sub-components
-    wrapper = shallowMount(Dashboard)
+    wrapper = shallowMount(Dashboard, { vuetify })
   })
 
   afterEach(() => {
@@ -78,7 +80,7 @@ describe('Dashboard - Click Tests', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
-    const wrapper = mount(Dashboard, { localVue, store, router })
+    const wrapper = mount(Dashboard, { localVue, store, router, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
@@ -103,7 +105,7 @@ describe('Dashboard - Click Tests', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
-    const wrapper = mount(Dashboard, { localVue, store, router })
+    const wrapper = mount(Dashboard, { localVue, store, router, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {

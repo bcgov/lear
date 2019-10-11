@@ -82,19 +82,47 @@ node {
                     def podSelector = openshift.selector('pod', [ app:"${COMPONENT_NAME}-${COMPONENT_TAG}" ])
 
                     deploy.rollout().latest()
+                    def count = 1
                     podSelector.untilEach {
                         def pod = it.objects()[0].metadata.name
                         echo "pod: ${pod}"
-
                         if (pod != OLD_POD && it.objects()[0].status.phase == 'Running' && it.objects()[0].status.containerStatuses[0].ready) {
                             echo "New pod: ${pod}"
                             sleep 80
-                            // todo: make this check if database is up (currently passes no matter what)
+                            echo "waited ${count*80} seconds"
                             try {
                                 echo "${pod}"
+                                sequences = ['noncorp_event_seq', 'noncorp_address_seq', 'noncorp_party_seq']
+                                for (seq in sequences) {
+                                    def inc_seq_50 = openshift.exec(
+                                        pod,
+                                        '--',
+                                        "bash -c ' \
+                                        echo \"alter sequence C##CDEV.${seq} increment by 50;\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba \
+                                        '"
+                                    ).actions[0].out
+                                    echo inc_seq_50
+                                    def set_seq_val = openshift.exec(
+                                        pod,
+                                        '--',
+                                        "bash -c ' \
+                                        echo \"select C##CDEV.${seq}.NEXTVAL from dual;\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba \
+                                        '"
+                                    ).actions[0].out
+                                    echo set_seq_val
+                                    def reset_seq_inc = openshift.exec(
+                                        pod,
+                                        '--',
+                                        "bash -c ' \
+                                        echo \"alter sequence C##CDEV.${seq} increment by 1;\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba \
+                                        '"
+                                    ).actions[0].out
+                                    echo reset_seq_inc
+                                }
                                 return true
                             } catch (Exception e) {
                                 echo "${e}"
+                                count++
                                 return false
                             }
                         } else {

@@ -28,9 +28,9 @@
 
     <v-expand-transition>
       <div v-show="!showNewDirectorForm">
-        <v-btn class="new-director-btn" outline color="primary" :disabled="!componentEnabled"
+        <v-btn class="new-director-btn" outlined color="primary" :disabled="!componentEnabled || directorEditInProgress"
           @click="addNewDirector">
-          <v-icon>add</v-icon>
+          <v-icon>mdi-plus</v-icon>
           <span>Appoint New Director</span>
         </v-btn>
       </div>
@@ -47,22 +47,23 @@
                 <v-form ref="newDirectorForm" v-on:submit.prevent="addNewDirector" v-model="directorFormValid"
                         lazy-validation>
                   <div class="form__row three-column">
-                    <v-text-field box class="item" label="First Name" id="new-director__first-name"
+                    <v-text-field filled class="item" label="First Name" id="new-director__first-name"
                       v-model="director.officer.firstName"
                       :rules="directorFirstNameRules"
                       required></v-text-field>
-                    <v-text-field box label="Initial" class="item director-initial"
+                    <v-text-field filled label="Initial" class="item director-initial"
                       v-model="director.officer.middleInitial"
                     ></v-text-field>
-                    <v-text-field box class="item" label="Last Name"
+                    <v-text-field filled class="item" label="Last Name"
                       v-model="director.officer.lastName"
                       :rules="directorLastNameRules"
                       required></v-text-field>
                   </div>
 
                   <BaseAddress ref="baseAddressNew"
-                    v-bind:address="director.deliveryAddress"
-                    v-bind:editing="true"
+                    :address="director.deliveryAddress"
+                    :editing="true"
+                    :schema="addressSchema"
                     @update:address="baseAddressWatcher"
                   />
 
@@ -145,26 +146,28 @@
           v-for="(director, index) in orderBy(directors, 'id', -1)"
           v-bind:key="index">
           <div class="meta-container">
+            <div :class="{ 'editFormStyle': activeIndex === index }">
             <label>
               <span>{{director.officer.firstName}} </span>
               <span>{{director.officer.middleInitial}} </span>
               <span>{{director.officer.lastName}}</span>
               <div class="director-status">
                 <v-scale-transition>
-                  <v-chip small label disabled color="blue" text-color="white"
+                  <v-chip x-small label color="blue" text-color="white"
                           v-show="isNew(director) && !director.cessationDate">
                     New
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
-                  <v-chip small label disabled v-show="!isActive(director) || !isActionable(director)">
+                  <v-chip x-small label text-color="rgba(0,0,0,.38)"
+                          v-show="!isActive(director) || !isActionable(director)">
                     Ceased
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
-                  <v-chip small label disabled color="blue lighten-2" text-color="white"
+                  <v-chip x-small label color="blue lighten-2" text-color="white"
                           v-show="isNew(director) && director.cessationDate">
-                    Appointed & Ceased
+                    Appointed &amp; Ceased
                   </v-chip>
                 </v-scale-transition>
               </div>
@@ -185,10 +188,10 @@
 
                     <!-- Edit menu -->
                     <span v-show="isNew(director)">
-                      <v-btn small flat color="primary" :disabled="!componentEnabled"
+                      <v-btn small text color="primary" :disabled="!componentEnabled || directorEditInProgress"
                         :id="'director-' + director.id + '-change-btn'"
                         @click="editDirector(index)">
-                        <v-icon small>edit</v-icon>
+                        <v-icon small>mdi-pencil</v-icon>
                         <span>Edit</span>
                       </v-btn>
 
@@ -197,7 +200,7 @@
                       <!--
                       <v-menu offset-y>
                         <template v-slot:activator="{ on }">
-                          <v-btn flat small class="actions__more-actions__btn"
+                          <v-btn text small class="actions__more-actions__btn"
                             v-on="on"
                           >
                             <v-icon>arrow_drop_down</v-icon>
@@ -214,11 +217,11 @@
 
                     <!-- Cease menu -->
                     <span v-show="!isNew(director)">
-                      <v-btn small flat color="primary" :disabled="!componentEnabled"
+                      <v-btn small text color="primary" :disabled="!componentEnabled || directorEditInProgress"
                         class="cease-btn"
                         :id="'director-' + director.id + '-cease-btn'"
                         @click="ceaseDirector(director)">
-                        <v-icon small>{{isActive(director) ? 'close':'undo'}}</v-icon>
+                        <v-icon small>{{isActive(director) ? 'mdi-close':'mdi-undo'}}</v-icon>
                         <span>{{isActive(director) ? 'Cease':'Undo'}}</span>
                       </v-btn>
                       <!-- more actions menu -->
@@ -227,7 +230,7 @@
                       <span v-show="isActive(director)">
                         <v-menu offset-y>
                           <template v-slot:activator="{ on }">
-                            <v-btn flat small class="actions__more-actions__btn"
+                            <v-btn text small class="actions__more-actions__btn"
                               v-on="on"
                             >
                               <v-icon>arrow_drop_down</v-icon>
@@ -272,15 +275,15 @@
                   v-show="activeIndex === index"
                   v-model="directorFormValid" lazy-validation>
                   <div class="form__row three-column" v-show="editFormShowHide.showName">
-                    <v-text-field box label="First Name" class="item"
+                    <v-text-field filled label="First Name" class="item"
                       v-model="director.officer.firstName"
                       :rules="directorFirstNameRules"
                       required
                     ></v-text-field>
-                    <v-text-field box label="Initial" class="item director-initial"
+                    <v-text-field filled label="Initial" class="item director-initial"
                       v-model="director.officer.middleInitial"
                     ></v-text-field>
-                    <v-text-field box label="Last Name" class="item"
+                    <v-text-field filled label="Last Name" class="item"
                       v-model="director.officer.lastName"
                       :rules="directorLastNameRules"
                     ></v-text-field>
@@ -288,9 +291,11 @@
 
                   <BaseAddress ref="baseAddressEdit"
                     v-show="editFormShowHide.showAddress"
-                    v-bind:address="director.deliveryAddress"
-                    v-bind:editing="true"
+                    :address="director.deliveryAddress"
+                    :editing="true"
+                    :schema="addressSchema"
                     @update:address="baseAddressWatcher"
+                    :key="activeIndex"
                   />
 
                   <!-- removed until release 2 -->
@@ -368,6 +373,7 @@
               </v-expand-transition>
               <!-- END edit director form -->
             </div>
+            </div>
           </div>
         </li>
       </ul>
@@ -381,8 +387,7 @@
 import { Component, Mixins, Vue, Prop, Watch, Emit } from 'vue-property-decorator'
 import axios from '@/axios-auth'
 import { mapState, mapGetters } from 'vuex'
-// NB: .vue extension is required when importing SFC
-// ref: https://github.com/vuejs/vetur/issues/423#issuecomment-340235722
+import { required, maxLength } from 'vuelidate/lib/validators'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 import DateMixin from '@/mixins/date-mixin'
 import ExternalMixin from '@/mixins/external-mixin'
@@ -430,16 +435,12 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   @Prop({ default: true })
   private componentEnabled: boolean
 
+  private directorEditInProgress:boolean = false;
+
   // Local properties.
   private directors = []
   private directorsFinal = []
   private directorsOriginal = []
-  private countryList: [
-    'Canada'
-  ]
-  private regionList: [
-    'BC'
-  ]
   private showNewDirectorForm = false
   private draftDate = null
   private showPopup = false
@@ -457,7 +458,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
       addressCity: '',
       addressRegion: '',
       postalCode: '',
-      addressCountry: ''
+      addressCountry: '',
+      deliveryInstructions: ''
     },
     appointmentDate: this.asOfDate,
     cessationDate: null,
@@ -470,6 +472,36 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     showDates: true
   }
   private directorFormValid = true // used for New and Edit forms
+
+  // The Address schema containing Vuelidate rules.
+  // NB: This should match the subject JSON schema.
+  private addressSchema = {
+    streetAddress: {
+      required,
+      maxLength: maxLength(50)
+    },
+    streetAddressAdditional: {
+      maxLength: maxLength(50)
+    },
+    addressCity: {
+      required,
+      maxLength: maxLength(40)
+    },
+    addressCountry: {
+      required
+    },
+    addressRegion: {
+      required,
+      maxLength: maxLength(2)
+    },
+    postalCode: {
+      required,
+      maxLength: maxLength(15)
+    },
+    deliveryInstructions: {
+      maxLength: maxLength(80)
+    }
+  }
 
   /**
    * Computed value.
@@ -740,6 +772,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   private addNewDirector (): void {
     this.showNewDirectorForm = true
     this.activeIndex = null
+    this.directorEditInProgress = true
   }
 
   /**
@@ -752,6 +785,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
 
     // set form to initial director data again
     this.director.appointmentDate = this.asOfDate
+    this.directorEditInProgress = false
   }
 
   /**
@@ -776,6 +810,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     this.activeIndex = null
     this.showPopup = false
     this.activeDirectorToDelete = null
+    this.directorEditInProgress = false
   }
 
   /**
@@ -811,7 +846,9 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
         addressCity: this.inProgressAddress.addressCity,
         addressRegion: this.inProgressAddress.addressRegion,
         postalCode: this.inProgressAddress.postalCode,
-        addressCountry: this.inProgressAddress.addressCountry
+        addressCountry: this.inProgressAddress.addressCountry,
+        deliveryInstructions: this.inProgressAddress.deliveryInstructions
+
       },
       appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
       cessationDate: null // when implemented: this.director.cessationDate
@@ -855,7 +892,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   private editDirector (index): void {
     // clear in-progress director data from form in BaseAddress component - ie: start fresh
     this.inProgressAddress = {}
-
+    this.directorEditInProgress = true
     this.activeIndex = index
     this.cancelNewDirector()
   }
@@ -950,6 +987,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    */
   private cancelEditDirector (): void {
     this.activeIndex = -1
+    this.directorEditInProgress = false
 
     // reset form show/hide flags
     this.editFormShowHide = {
@@ -1085,7 +1123,14 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    */
   @Watch('asOfDate')
   private onAsOfDate (newVal: string, oldVal: string): void {
-    if (!(this.currentFilingStatus === 'DRAFT' && (this.draftDate === newVal || oldVal === null))) {
+    // reload the directors list when as-of date changes EXCEPT WHEN...
+    if (this.currentFilingStatus === 'DRAFT' && oldVal === null) {
+      // this is a draft but the component hasn't quite loaded yet - do nothing
+
+    } else if (this.currentFilingStatus === 'DRAFT' && this.directorsChange && this.draftDate === newVal) {
+      // this is a draft, there were director changes loaded, and the date hasn't changed - do nothing
+
+    } else {
       this.getDirectors()
     }
   }
@@ -1098,6 +1143,11 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   private onDirectorsJson (): void {
     this.emitAllDirectors(this.directors)
     this.emitActiveDirectors(this.directors.filter(el => el.cessationDate === null))
+  }
+
+  @Watch('directorEditInProgress')
+  private onDirectorEditActionChange (val: boolean): void {
+    this.emitDirectorEditInProgress(val)
   }
 
   /**
@@ -1129,153 +1179,181 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    */
   @Emit('activeDirectors')
   private emitActiveDirectors (val: any[]): void { }
+
+  /**
+   * Emits an event that indicates whether the director edit is in progress.
+   */
+  @Emit('directorEditAction')
+  private emitDirectorEditInProgress (val: boolean): void { }
 }
 
 </script>
 
-<style lang="stylus" scoped>
-  @import "../../assets/styles/theme.styl"
+<style lang="scss" scoped>
+  @import "../../assets/styles/theme.scss";
 
-  .v-card
-    line-height 1.2rem
-    font-size 0.875rem
+  .v-card {
+    line-height: 1.2rem;
+    font-size: 0.875rem;
+  }
 
-  .v-btn
-    margin 0
-    text-transform none
+  .v-btn {
+    margin: 0;
+    text-transform: none;
+  }
 
-  ul
-    margin 0
-    padding 0
-    list-style-type none
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+  }
 
-  .meta-container
-    display flex
-    flex-flow column nowrap
-    position relative
+  .meta-container{
+    display: flex;
+    flex-flow: column nowrap;
+    position: relative;
 
-    > label:first-child
-      font-weight 500
+    > label:first-child{
+      font-weight: 500;
+    }
 
-    &__inner
-      flex 1 1 auto
+    &__inner {
+      flex: 1 1 auto;
+    }
 
-    .actions
-      position absolute
-      top 0
-      right 0
+    .actions {
+      position: absolute;
+      top: 0;
+      right: 0;
 
-      .v-btn
-        min-width 4rem
+      .v-btn {
+        min-width: 4rem;
+      }
 
-      .v-btn + .v-btn
-        margin-left 0.5rem
+      .v-btn + .v-btn {
+        margin-left: 0.5rem;
+      }
+    }
+  }
 
-  @media (min-width 768px)
-    .meta-container
-      flex-flow row nowrap
+  @media (min-width: 768px) {
+    .meta-container {
+      flex-flow: row nowrap;
 
-      > label:first-child
-        flex 0 0 auto
-        padding-right: 2rem
-        width 12rem
+      > label:first-child {
+        flex: 0 0 auto;
+        padding-right: 2rem;
+        width: 12rem;
+      }
+    }
+  }
 
   // List Layout
-  .list
-    li
-      border-bottom 1px solid $gray3
+  .list {
+    li {
+      border-bottom: 1px solid $gray3;
+    }
+  }
 
-  .form__row.three-column
-    display flex
-    flex-flow row nowrap
-    align-items stretch
-    margin-right -0.5rem
-    margin-left -0.5rem
-    .item
-      flex 1 1 auto
-      flex-basis 0
-      margin-right 0.5rem
-      margin-left 0.5rem
+  .form__row.three-column {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: stretch;
+    margin-right: -0.5rem;
+    margin-left: -0.5rem;
+    .item {
+      flex: 1 1 auto;
+      flex-basis: 0;
+      margin-right: 0.5rem;
+      margin-left: 0.5rem;
+    }
+  }
 
   // Address Block Layout
-  .address
-    display flex
-    flex-direction column
-    width 10rem
+  .address {
+    display: flex;
+    flex-direction: column;
+    width: 10rem;
+  }
 
-  .address__row
-    flex 1 1 auto
+  .address__row {
+    flex: 1 1 auto;
+  }
 
   // Director Display
-  .director-info
-    display flex
-    color $gray6
+  .director-info {
+    display: flex;
+    color: $gray6;
 
-    .status
-      flex 1 1 auto
+    .status {
+      flex: 1 1 auto;
+    }
 
-    .actions
-      flex 0 0 auto
+    .actions {
+      flex: 0 0 auto;
+    }
+  }
 
-  .director-initial
-    max-width 6rem
+  .director-initial {
+    max-width: 6rem;
+  }
 
-  .new-director-btn
-    margin-bottom 1.5rem !important
+  .new-director-btn {
+    margin-bottom: 1.5rem !important;
 
-    .v-icon
-      margin-left -0.5rem
+    .v-icon {
+      margin-left: -0.5rem;
+    }
+  }
 
   // V-chip customization
-  .v-chip--small
-    height 1.2rem !important
-    margin 0
-    margin-top 0.5rem
-    padding 0
-    text-transform uppercase
-    font-size 0.65rem
-    font-weight 700
-    vertical-align top
+  .v-size--x-small {
+    height: 1.25rem;
+    margin-top: 0.5rem;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
 
-  .remove, .remove .director-info
-    color $gray5 !important
+  .remove, .remove .director-info {
+    color: $gray5 !important;
+  }
 
   .new-director .meta-container,
-  .meta-container.new-director
+  .meta-container.new-director {
     flex-flow column nowrap
-    > label:first-child
-      margin-bottom 1.5rem
+    > label:first-child {
+      margin-bottom: 1.5rem;
+    }
+  }
 
-  .director_dates
-    font-size 0.8rem
-    margin-left 100px
+  .director_dates {
+    font-size: 0.8rem;
+    margin-left: 100px;
 
-    .director_dates__date
-      margin-left 20px
+    .director_dates__date {
+      margin-left: 20px;
+    }
+  }
 
-  .actions .v-btn.actions__more-actions__btn
-    min-width 25px
-    border-left 1px solid $gray3
-    border-radius 0
-    margin-left 5px !important
-    padding 0 5px
-    color $gray6
+  .actions .v-btn.actions__more-actions__btn {
+    min-width: 25px;
+    border-left: 1px solid $gray3;
+    border-radius: 0;
+    margin-left: 5px !important;
+    padding: 0 5px;
+    color: $gray6;
+  }
 
-  .standalone__cessation-date__datepicker
-    margin-top 25px
-    right 0
-    position absolute
-    z-index 99
+  .standalone__cessation-date__datepicker {
+    margin-top: 25px;
+    right: 0;
+    position: absolute;
+    z-index: 99;
+  }
+
+  .editFormStyle {
+    border: 1px solid red;
+    padding: 1rem;
+  }
 </style>
-
-<!-- TODO: WHERE DOES THIS BELONG?
-<style lang="stylus">
-  @import "../../assets/styles/theme.styl"
-
-  .actions__more_actions .v-list__tile
-    color $gray6
-    font-size 8pt
-    height 28px
-    font-weight 500
-</style>
--->

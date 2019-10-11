@@ -7,17 +7,17 @@
 
     <v-card>
       <v-card-title>{{ title }}</v-card-title>
-      <v-card-text v-show="!!message">{{ message }}</v-card-text>
+      <v-card-text class="black--text" v-show="!!message">{{ message }}</v-card-text>
       <v-divider class="my-0" v-show="!!options.yes || !!options.no || !!options.cancel"></v-divider>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" flat v-show="!!options.yes" @click.native="onClickYes">
+        <v-btn color="primary" text v-show="!!options.yes" @click.native="onClickYes">
           {{ options.yes }}
         </v-btn>
-        <v-btn color="primary" flat v-show="!!options.no" @click.native="onClickNo">
+        <v-btn color="primary" text v-show="!!options.no" @click.native="onClickNo">
           {{ options.no }}
         </v-btn>
-        <v-btn color="secondary" flat v-show="!!options.cancel" @click.native="onClickCancel">
+        <v-btn color="secondary" text v-show="!!options.cancel" @click.native="onClickCancel">
           {{ options.cancel }}
         </v-btn>
       </v-card-actions>
@@ -85,7 +85,7 @@ export default class ConfirmDialog extends Vue {
 
   // The dialog's options
   private options: OptionsObject = {
-    width: 300,
+    width: 400,
     zIndex: 200,
     persistent: false,
     yes: 'Yes',

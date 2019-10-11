@@ -56,7 +56,7 @@ def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, fou
     """Assert that ARs filing/annualReport/annualReportDate is valid."""
     # setup
     identifier = 'CP1234567'
-    business = Business(identifier=identifier)
+    business = Business(identifier=identifier, last_ledger_timestamp=previous_ar_date)
     business.founding_date = datetime.fromisoformat(founding_date)
 
     previous_ar = copy.deepcopy(ANNUAL_REPORT)
