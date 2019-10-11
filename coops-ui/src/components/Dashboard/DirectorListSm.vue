@@ -15,7 +15,7 @@
               <ul class="address-details">
                 <li>{{ director.deliveryAddress.streetAddress }}</li>
                 <li>{{ director.deliveryAddress.addressCity }} {{ director.deliveryAddress.addressRegion }}
-                  {{ director.deliveryAddress.postalCode}}</li>
+                  {{ director.deliveryAddress.postalCode }}</li>
                 <li>{{ director.deliveryAddress.addressCountry }}</li>
               </ul>
             </div>
@@ -31,7 +31,7 @@
               <ul v-else class="address-details" >
                 <li>{{ director.mailingAddress.streetAddress }}</li>
                 <li>{{ director.mailingAddress.addressCity }} {{ director.mailingAddress.addressRegion }}
-                  &nbsp;&nbsp;{{ director.mailingAddress.postalCode}}</li>
+                  {{ director.mailingAddress.postalCode }}</li>
                 <li>{{ director.mailingAddress.addressCountry }}</li>
               </ul>
             </div>
