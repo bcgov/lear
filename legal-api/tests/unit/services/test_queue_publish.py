@@ -198,6 +198,7 @@ async def test_on_close_callback(caplog):
 
 
 @pytest.mark.asyncio
+@integration_nats
 async def test_on_reconnect_callback(caplog, app_ctx, stan_server):
     """Assert the reconnect callback logs a warning."""
     error_msg = 'Reconnected to NATS'
