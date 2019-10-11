@@ -33,6 +33,7 @@ def factory_business(designation: str = '001'):
                     last_ledger_timestamp=datetime.utcfromtimestamp(0),
                     dissolution_date=None,
                     identifier='CP1234567',
+                    paper_only=False,
                     tax_id=f'BN0000{designation}',
                     fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
 
@@ -211,10 +212,12 @@ def test_business_json(session):
                         identifier='CP1234567',
                         last_modified=EPOCH_DATETIME,
                         last_ar_date=EPOCH_DATETIME,
-                        last_agm_date=EPOCH_DATETIME
+                        last_agm_date=EPOCH_DATETIME,
+                        paper_only=False
                         )
     # basic json
     d = {
+        'availableOnPaperOnly': False,
         'legalName': 'legal_name',
         'legalType': 'CP',
         'identifier': 'CP1234567',
@@ -223,7 +226,7 @@ def test_business_json(session):
         'lastModified': EPOCH_DATETIME.isoformat(),
         'lastAnnualReport': datetime.date(EPOCH_DATETIME).isoformat(),
         'lastAnnualGeneralMeetingDate': datetime.date(EPOCH_DATETIME).isoformat(),
-        'nextAnnualReport': (EPOCH_DATETIME+datedelta.YEAR).isoformat()
+        'nextAnnualReport': (EPOCH_DATETIME + datedelta.YEAR).isoformat()
     }
 
     assert business.json() == d
