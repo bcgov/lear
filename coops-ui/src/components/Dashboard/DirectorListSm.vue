@@ -25,7 +25,7 @@
           <div class="director-info">
             <div class="list-item_title">Mailing Address</div>
             <div class="list-item__subtitle">
-              <span v-if="isSameAddress(director.deliveryAddress.streetAddress, director.mailingAddress.streetAddress)">
+              <span v-if="isSameAddress(director.deliveryAddress, director.mailingAddress)">
                 Same as above
               </span>
               <ul v-else class="address-details" >
