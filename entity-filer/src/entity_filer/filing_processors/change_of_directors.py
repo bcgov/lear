@@ -28,14 +28,14 @@ def process(business: Business, filing: Filing):
             address = create_address(new_director['deliveryAddress'], Address.DELIVERY)
 
             director_to_add = Director(first_name=new_director['officer'].get('firstName', '').upper(),
-                                               middle_initial=new_director['officer'].get('middleInitial', '').upper(),
-                                               last_name=new_director['officer'].get('lastName', '').upper(),
-                                               title=new_director.get('title', '').upper(),
-                                               appointment_date=new_director.get('appointmentDate'),
-                                               cessation_date=new_director.get('cessationDate'),
-                                               delivery_address=address)
+                                       middle_initial=new_director['officer'].get('middleInitial', '').upper(),
+                                       last_name=new_director['officer'].get('lastName', '').upper(),
+                                       title=new_director.get('title', '').upper(),
+                                       appointment_date=new_director.get('appointmentDate'),
+                                       cessation_date=new_director.get('cessationDate'),
+                                       delivery_address=address)
 
-            if ('mailingAddress' in new_director.keys()):
+            if 'mailingAddress' in new_director.keys():
                 mailing_address = create_address(new_director['mailingAddress'], Address.MAILING)
                 director_to_add.mailing_address = mailing_address
 

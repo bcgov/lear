@@ -2223,7 +2223,7 @@ COPY public.addresses_version (id, address_type, street, street_additional, city
 --
 
 COPY public.alembic_version (version_num) FROM stdin;
-5ad3243edc3e
+176f983485c8
 \.
 
 

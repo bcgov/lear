@@ -55,8 +55,8 @@ def update_director(director: Director, new_info: dict):
     # director.appointment_date = new_info.get('appointmentDate')
     director.cessation_date = new_info.get('cessationDate')
     director.delivery_address = update_address(director.delivery_address, new_info['deliveryAddress'])
-    if ('mailingAddress' in new_info.keys()):
-        if director.mailing_address == None:
+    if 'mailingAddress' in new_info.keys():
+        if director.mailing_address is None:
             director.mailing_address = create_address(new_info['mailingAddress'], Address.MAILING)
         else:
             director.mailing_address = update_address(director.mailing_address, new_info['mailingAddress'])
