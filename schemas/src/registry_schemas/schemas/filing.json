@@ -75,6 +75,9 @@
                                 "continuedOut"
                             ]
                         },
+                        "availableOnPaperOnly": {
+                            "type": "boolean"
+                        },
                         "date": {
                             "type": "string",
                             "format": "date",
@@ -155,7 +158,7 @@
                 {
                     "title": "Placeholder until all filing types are defined.",
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/stub_filing"
-               }
+                }
             ]
         }
     }
