@@ -63,9 +63,9 @@
                   <label class="address-sub-header">Delivery Address</label>
                   <div class="address-wrapper">
                     <BaseAddress ref="baseAddressNew"
-                                 v-bind:address="director.deliveryAddress"
-                                 v-bind:editing="true"
-                                 @update:address="baseAddressWatcher"
+                       v-bind:editing="true"
+                       :schema="addressSchema"
+                       @update:address="baseAddressWatcher"
                     />
                   </div>
                   <div class="form__row" v-if="entityFilter(EntityTypes.BCorp)">
@@ -74,14 +74,13 @@
                       label="Mailing Address same as Delivery Address"
                       v-model="inheritDeliveryAddress"
                     ></v-checkbox>
-                    <div v-if="entityFilter(EntityTypes.BCorp) && !inheritDeliveryAddress">
+                    <div v-if="!inheritDeliveryAddress">
                       <label class="address-sub-header">Mailing Address</label>
                       <div class="address-wrapper">
-                        <BaseAddress
-                          v-bind:address="director.deliveryAddress"
+                        <BaseAddress ref="mailAddressNew"
                           v-bind:editing="true"
                           :schema="addressSchema"
-                          @update:address="baseAddressWatcher"
+                          @update:address="mailingAddressWatcher"
                         />
                       </div>
                     </div>
@@ -218,8 +217,11 @@
                   <div class="address">
                     <BaseAddress v-bind:address="director.deliveryAddress" />
                   </div>
-                  <div class="address" v-if="entityFilter(EntityTypes.BCorp)">
-                    <BaseAddress v-bind:address="director.deliveryAddress" />
+                  <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
+                    <span v-if="isSameAddress(director.deliveryAddress, director.mailingAddress)">
+                      Same as Delivery Address
+                    </span>
+                    <BaseAddress v-else v-bind:address="director.mailingAddress" />
                   </div>
                   <div class="director_dates">
                     <div class="director_dates__date">{{ director.appointmentDate }}</div>
@@ -346,13 +348,15 @@
                       label="Mailing Address same as Delivery Address"
                       v-model="inheritDeliveryAddress"
                     ></v-checkbox>
-                    <div v-if="entityFilter(EntityTypes.BCorp) && !inheritDeliveryAddress">
+                    <div v-if="!inheritDeliveryAddress">
                       <label class="address-sub-header">Mailing Address</label>
                       <div class="address-wrapper">
-                        <BaseAddress
-                          v-bind:address="director.deliveryAddress"
-                          v-bind:editing="true"
-                          @update:address="baseAddressWatcher"
+                        <BaseAddress ref="mailAddressEdit"
+                          :address="director.mailingAddress"
+                          :editing="true"
+                          :schema="addressSchema"
+                          @update:address="mailingAddressWatcher"
+                          :key="activeIndex"
                         />
                       </div>
                     </div>
@@ -448,7 +452,7 @@ import axios from '@/axios-auth'
 import { mapState, mapGetters } from 'vuex'
 import { required, maxLength } from 'vuelidate/lib/validators'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
-import { DateMixin, ExternalMixin, EntityFilterMixin } from '@/mixins'
+import { DateMixin, ExternalMixin, EntityFilterMixin, AddressMixin } from '@/mixins'
 import { EntityTypes } from '@/enums'
 
 // action constants
@@ -470,21 +474,22 @@ interface BaseAddressType extends Vue {
   components: {
     BaseAddress
   },
-  mixins: [DateMixin, ExternalMixin],
   computed: {
     // Property definitions for runtime environment.
     ...mapState(['entityIncNo', 'lastPreLoadFilingDate', 'currentDate', 'currentFilingStatus']),
     ...mapGetters(['lastCODFilingDate'])
   }
 })
-export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFilterMixin) {
+export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFilterMixin, AddressMixin) {
   // To fix "property X does not exist on type Y" errors, annotate types for referenced components.
   // ref: https://github.com/vuejs/vetur/issues/1414
   $refs!: {
     newDirectorForm: FormType,
     baseAddressNew: BaseAddressType,
+    mailAddressNew: BaseAddressType,
     editDirectorForm: Array<FormType>,
     baseAddressEdit: Array<BaseAddressType>
+    mailAddressEdit: Array<BaseAddressType>
   }
 
   // Props passed into this component.
@@ -520,11 +525,21 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
       addressCountry: '',
       deliveryInstructions: ''
     },
+    mailingAddress: {
+      streetAddress: '',
+      streetAddressAdditional: '',
+      addressCity: '',
+      addressRegion: '',
+      postalCode: '',
+      addressCountry: '',
+      deliveryInstructions: ''
+    },
     appointmentDate: this.asOfDate,
     cessationDate: null,
     cessationDateTemp: null
   }
   private inProgressAddress = null
+  private inProgressMailAddress = null
   private editFormShowHide = {
     showAddress: true,
     showName: true,
@@ -778,7 +793,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
       'addressCity': address.addressCity || '',
       'addressCountry': address.addressCountry || '',
       'addressRegion': address.addressRegion || '',
-      'addressType': address.addressType || '',
       'deliveryInstructions': address.deliveryInstructions || '',
       'postalCode': address.postalCode || '',
       'streetAddress': address.streetAddress || '',
@@ -813,6 +827,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
             // otherwise new attributes are not reflected in initial draw of HTML list.
 
             var directors = response.data.directors
+
             for (var i = 0; i < directors.length; i++) {
               directors[i].id = i + 1
               directors[i].isFeeApplied = directors[i].isFeeApplied !== undefined ? directors[i].isFeeApplied : false
@@ -830,8 +845,10 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
 
               // ensure there is complete address data including missing/blank fields
               directors[i].deliveryAddress = this.formatAddress(directors[i].deliveryAddress)
+              if (directors[i].mailingAddress) {
+                directors[i].mailingAddress = this.formatAddress(directors[i].mailingAddress)
+              }
             }
-
             // save to component data now that extra attributes are added
             if (!getOrigOnly) this.directors = directors
 
@@ -861,6 +878,9 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     this.showNewDirectorForm = false
     this.$refs.newDirectorForm.reset()
     this.$refs.baseAddressNew.$refs.addressForm.reset()
+    if (this.$refs.mailAddressNew) {
+      this.$refs.mailAddressNew.$refs.addressForm.reset()
+    }
 
     // set form to initial director data again
     this.director.appointmentDate = this.asOfDate
@@ -898,9 +918,17 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private validateNewDirectorForm (): void {
     var mainFormIsValid = this.$refs.newDirectorForm.validate()
     var addressFormIsValid = this.$refs.baseAddressNew.$refs.addressForm.validate()
-    if (mainFormIsValid && addressFormIsValid) {
-      this.pushNewDirectorData()
-      this.cancelNewDirector()
+    if (this.$refs.mailAddressNew) {
+      var mailAddressFormIsValid = this.$refs.mailAddressNew.$refs.addressForm.validate()
+      if (mainFormIsValid && addressFormIsValid && mailAddressFormIsValid) {
+        this.pushNewDirectorData()
+        this.cancelNewDirector()
+      }
+    } else {
+      if (mainFormIsValid && addressFormIsValid) {
+        this.pushNewDirectorData()
+        this.cancelNewDirector()
+      }
     }
     // else do nothing - validator handles validation messaging
   }
@@ -909,6 +937,10 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * Local helper push the current director data into the list.
    */
   private pushNewDirectorData (): void {
+    if (this.inheritDeliveryAddress) {
+      this.inProgressMailAddress = { ...this.inProgressAddress }
+    }
+
     let newDirector = {
       actions: [APPOINTED],
       id: this.directors.length + 1,
@@ -919,16 +951,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
         middleInitial: this.director.officer.middleInitial,
         lastName: this.director.officer.lastName
       },
-      deliveryAddress: {
-        streetAddress: this.inProgressAddress.streetAddress,
-        streetAddressAdditional: this.inProgressAddress.streetAddressAdditional,
-        addressCity: this.inProgressAddress.addressCity,
-        addressRegion: this.inProgressAddress.addressRegion,
-        postalCode: this.inProgressAddress.postalCode,
-        addressCountry: this.inProgressAddress.addressCountry,
-        deliveryInstructions: this.inProgressAddress.deliveryInstructions
-
-      },
+      deliveryAddress: { ...this.inProgressAddress },
+      mailingAddress: { ...this.inProgressMailAddress },
       appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
       cessationDate: null // when implemented: this.director.cessationDate
     }
@@ -937,7 +961,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     if (this.director.cessationDate !== null && this.director.cessationDate !== undefined) {
       this.addAction(newDirector, CEASED)
     }
-
     this.directors.push(newDirector)
   }
 
@@ -971,6 +994,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private editDirector (index): void {
     // clear in-progress director data from form in BaseAddress component - ie: start fresh
     this.inProgressAddress = {}
+    this.inProgressMailAddress = {}
     this.directorEditInProgress = true
     this.activeIndex = index
     this.cancelNewDirector()
@@ -1029,6 +1053,14 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
 
     var mainFormIsValid = this.$refs.editDirectorForm[index].validate()
     var addressFormIsValid = this.$refs.baseAddressEdit[index].$refs.addressForm.validate()
+
+    if (this.$refs.mailAddressEdit && this.$refs.mailAddressEdit[index]) {
+      var mailAddressFormIsValid = this.$refs.mailAddressEdit[index].$refs.addressForm.validate()
+      if (!mailAddressFormIsValid) {
+        addressFormIsValid = mailAddressFormIsValid
+      }
+    }
+
     if (mainFormIsValid && addressFormIsValid) {
       // save data from BaseAddress component
       // - only save address if a change was made, ie there is an in-progress address from the component
@@ -1036,12 +1068,21 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
         director.deliveryAddress = this.inProgressAddress
       }
 
+      if (!Object.values(this.inProgressMailAddress).every(el => el === undefined)) {
+        director.mailingAddress = this.inProgressMailAddress
+      }
+
+      if (this.inheritDeliveryAddress) {
+        director.mailingAddress = director.deliveryAddress
+      }
+
       /* COMPARE changes to original director data, for existing directors */
       if (director.actions.indexOf(APPOINTED) < 0) {
         const origDirector = this.directorsOriginal.filter(el => el.id === id)[0]
 
         // check whether address has changed
-        if (JSON.stringify(origDirector.deliveryAddress) !== JSON.stringify(director.deliveryAddress)) {
+        if ((JSON.stringify(origDirector.deliveryAddress) !== JSON.stringify(director.deliveryAddress)) ||
+          (JSON.stringify(origDirector.mailingAddress) !== JSON.stringify(director.mailingAddress))) {
           this.addAction(director, ADDRESSCHANGED)
         } else {
           this.removeAction(director, ADDRESSCHANGED)
@@ -1083,6 +1124,15 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    */
   private baseAddressWatcher (val): void {
     this.inProgressAddress = val
+  }
+
+  /**
+   * Local helper to watch changes to the mailing address data in BaseAddress component, and to update
+   * our inProgressMailAddress holder. To be used when we want to save the data.
+   * @param val The new value.
+   */
+  private mailingAddressWatcher (val): void {
+    this.inProgressMailAddress = val
   }
 
   /**
@@ -1357,7 +1407,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
 
   .address-sub-header {
     padding-bottom: 1.5rem;
-    font-size: .85rem;
+    font-size: 1rem;
     line-height: 1.5rem;
   }
 

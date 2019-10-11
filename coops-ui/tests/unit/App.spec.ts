@@ -191,6 +191,7 @@ describe('App', () => {
               'streetAddress': '1012 Douglas St',
               'addressCity': 'Victoria',
               'addressRegion': 'BC',
+              'addressType': 'mailing',
               'postalCode': 'V8W 2C3',
               'addressCountry': 'CA'
             },
@@ -198,6 +199,7 @@ describe('App', () => {
               'streetAddress': '220 Buchanan St',
               'addressCity': 'Glasgow',
               'addressRegion': 'Scotland',
+              'addressType': 'delivery',
               'postalCode': 'G1 2FFF',
               'addressCountry': 'UK'
             }
@@ -305,6 +307,10 @@ describe('App', () => {
   it('fetches Addresses properly', () => {
     expect(vm.$store.state.mailingAddress.addressCity).toBe('Victoria')
     expect(vm.$store.state.deliveryAddress.addressCity).toBe('Glasgow')
+
+    // These values have been assigned in the mockResponse but are expected to be filtered out by front-end logic.
+    expect(vm.$store.state.mailingAddress.addressType).toBeUndefined()
+    expect(vm.$store.state.deliveryAddress.addressType).toBeUndefined()
   })
 
   it('fetches Directors properly', () => {
