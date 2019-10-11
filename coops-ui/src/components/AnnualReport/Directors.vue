@@ -60,12 +60,32 @@
                       required></v-text-field>
                   </div>
 
-                  <BaseAddress ref="baseAddressNew"
-                    :address="director.deliveryAddress"
-                    :editing="true"
-                    :schema="addressSchema"
-                    @update:address="baseAddressWatcher"
-                  />
+                  <label class="address-sub-header">Delivery Address</label>
+                  <div class="address-wrapper">
+                    <BaseAddress ref="baseAddressNew"
+                                 v-bind:address="director.deliveryAddress"
+                                 v-bind:editing="true"
+                                 @update:address="baseAddressWatcher"
+                    />
+                  </div>
+                  <div class="form__row" v-if="entityFilter(EntityTypes.BCorp)">
+                    <v-checkbox
+                      class="inherit-checkbox"
+                      label="Mailing Address same as Delivery Address"
+                      v-model="inheritDeliveryAddress"
+                    ></v-checkbox>
+                    <div v-if="entityFilter(EntityTypes.BCorp) && !inheritDeliveryAddress">
+                      <label class="address-sub-header">Mailing Address</label>
+                      <div class="address-wrapper">
+                        <BaseAddress
+                          v-bind:address="director.deliveryAddress"
+                          v-bind:editing="true"
+                          :schema="addressSchema"
+                          @update:address="baseAddressWatcher"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
                   <!-- removed until release 2 -->
                   <!--
@@ -143,6 +163,12 @@
 
       <!-- Current Director List -->
       <ul class="list director-list">
+        <v-subheader v-if="this.directors.length && !directorEditInProgress" class="director-header">
+          <span>Names</span>
+          <span>Delivery Address</span>
+          <span v-if="entityFilter(EntityTypes.BCorp)">Mailing Address</span>
+          <span>Appointed/Elected</span>
+        </v-subheader>
         <li class="container"
           :id="'director-' + director.id"
           v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
@@ -192,8 +218,10 @@
                   <div class="address">
                     <BaseAddress v-bind:address="director.deliveryAddress" />
                   </div>
+                  <div class="address" v-if="entityFilter(EntityTypes.BCorp)">
+                    <BaseAddress v-bind:address="director.deliveryAddress" />
+                  </div>
                   <div class="director_dates">
-                    <div>Appointed/Elected</div>
                     <div class="director_dates__date">{{ director.appointmentDate }}</div>
                     <div v-if="director.cessationDate">Ceased</div>
                     <div class="director_dates__date">{{ director.cessationDate }}</div>
@@ -312,6 +340,24 @@
                     :key="activeIndex"
                   />
 
+                  <div class="form__row" v-if="entityFilter(EntityTypes.BCorp)">
+                    <v-checkbox
+                      class="inherit-checkbox"
+                      label="Mailing Address same as Delivery Address"
+                      v-model="inheritDeliveryAddress"
+                    ></v-checkbox>
+                    <div v-if="entityFilter(EntityTypes.BCorp) && !inheritDeliveryAddress">
+                      <label class="address-sub-header">Mailing Address</label>
+                      <div class="address-wrapper">
+                        <BaseAddress
+                          v-bind:address="director.deliveryAddress"
+                          v-bind:editing="true"
+                          @update:address="baseAddressWatcher"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <!-- removed until release 2 -->
                   <!--
                   <div class="form__row three-column edit-director__dates" v-show="editFormShowHide.showDates">
@@ -402,8 +448,8 @@ import axios from '@/axios-auth'
 import { mapState, mapGetters } from 'vuex'
 import { required, maxLength } from 'vuelidate/lib/validators'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
-import DateMixin from '@/mixins/date-mixin'
-import ExternalMixin from '@/mixins/external-mixin'
+import { DateMixin, ExternalMixin, EntityFilterMixin } from '@/mixins'
+import { EntityTypes } from '@/enums'
 
 // action constants
 const APPOINTED = 'appointed'
@@ -431,7 +477,7 @@ interface BaseAddressType extends Vue {
     ...mapGetters(['lastCODFilingDate'])
   }
 })
-export default class Directors extends Mixins(DateMixin, ExternalMixin) {
+export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFilterMixin) {
   // To fix "property X does not exist on type Y" errors, annotate types for referenced components.
   // ref: https://github.com/vuejs/vetur/issues/1414
   $refs!: {
@@ -485,6 +531,12 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     showDates: true
   }
   private directorFormValid = true // used for New and Edit forms
+
+  // State of the form checkbox for determining whether or not the mailing address is the same as the delivery address.
+  private inheritDeliveryAddress: boolean = true
+
+  // EntityTypes Enum
+  private EntityTypes: {} = EntityTypes
 
   // The Address schema containing Vuelidate rules.
   // NB: This should match the subject JSON schema.
@@ -1266,6 +1318,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     margin: 0;
     padding: 0;
     list-style-type: none;
+    min-width: 54rem;
   }
 
   .meta-container{
@@ -1296,6 +1349,22 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     }
   }
 
+  .appoint-header {
+    font-size: 1rem;
+    font-weight: bold;
+    line-height: 1.5rem;
+  }
+
+  .address-sub-header {
+    padding-bottom: 1.5rem;
+    font-size: .85rem;
+    line-height: 1.5rem;
+  }
+
+  .address-wrapper {
+    margin-top: 1.5rem;
+  }
+
   @media (min-width: 768px) {
     .meta-container {
       flex-flow: row nowrap;
@@ -1303,7 +1372,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
       > label:first-child {
         flex: 0 0 auto;
         padding-right: 2rem;
-        width: 12rem;
+        width: 14rem;
       }
     }
   }
@@ -1332,8 +1401,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   // Address Block Layout
   .address {
     display: flex;
-    flex-direction: column;
-    width: 10rem;
+    width: 14rem;
   }
 
   .address__row {
@@ -1389,11 +1457,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
 
   .director_dates {
     font-size: 0.8rem;
-    margin-left: 100px;
-
-    .director_dates__date {
-      margin-left: 20px;
-    }
   }
 
   .actions .v-btn.actions__more-actions__btn {
@@ -1411,7 +1474,21 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     position: absolute;
     z-index: 99;
   }
+  .director-header {
+    padding: 1.25rem;
+    display: flex;
+    justify-content: flex-start;
+    height: 3rem;
+    background-color: rgba(77, 112, 147, 0.15);
 
+      span {
+        width: 14rem;
+        color: #000014;
+        font-size: 0.875rem;
+        font-weight: 600;
+        line-height: 1.1875rem;
+      }
+  }
   .editFormStyle {
     border: 1px solid red;
     padding: 1rem;
