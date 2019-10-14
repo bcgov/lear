@@ -597,6 +597,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
         deliveryAddress: {},
         mailingAddress: {}
       }
+      vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'CP' }] // dummy data
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
       const button = wrapper.find('#ar-file-pay-btn')

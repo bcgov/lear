@@ -146,7 +146,6 @@
           v-for="(director, index) in orderBy(directors, 'id', -1)"
           v-bind:key="index">
           <div class="meta-container">
-            <div :class="{ 'editFormStyle': activeIndex === index }">
             <label>
               <span>{{director.officer.firstName}} </span>
               <span>{{director.officer.middleInitial}} </span>
@@ -168,6 +167,18 @@
                   <v-chip x-small label color="blue lighten-2" text-color="white"
                           v-show="isNew(director) && director.cessationDate">
                     Appointed &amp; Ceased
+                  </v-chip>
+                </v-scale-transition>
+                <v-scale-transition>
+                  <v-chip x-small label color="blue" text-color="white"
+                          v-show="isNameChanged(director)">
+                    Name Changed
+                  </v-chip>
+                </v-scale-transition>
+                <v-scale-transition>
+                  <v-chip x-small label color="blue" text-color="white"
+                          v-show="isAddressChanged(director)">
+                    Address Changed
                   </v-chip>
                 </v-scale-transition>
               </div>
@@ -225,31 +236,31 @@
                         <span>{{isActive(director) ? 'Cease':'Undo'}}</span>
                       </v-btn>
                       <!-- more actions menu -->
-                      <!-- removed until release 2 -->
-                      <!--
                       <span v-show="isActive(director)">
                         <v-menu offset-y>
                           <template v-slot:activator="{ on }">
                             <v-btn text small class="actions__more-actions__btn"
                               v-on="on"
                             >
-                              <v-icon>arrow_drop_down</v-icon>
+                              <v-icon>mdi-menu-down</v-icon>
                             </v-btn>
                           </template>
                           <v-list class="actions__more_actions">
+                            <!-- removed until release 2 -->
+                            <!--
                             <v-list-tile @click="cessationDateTemp = asOfDate; activeIndexCustomCease = index;">
                               <v-list-tile-title>Set custom cessation date</v-list-tile-title>
                             </v-list-tile>
-                            <v-list-tile @click="editDirectorAddress(index)">
-                              <v-list-tile-title>Change address</v-list-tile-title>
-                            </v-list-tile>
-                            <v-list-tile @click="editDirectorName(index)">
-                              <v-list-tile-title>Change of legal name</v-list-tile-title>
-                            </v-list-tile>
+                            -->
+                            <v-list-item @click="editDirectorAddress(index)">
+                              <v-list-item-title>Change address</v-list-item-title>
+                            </v-list-item>
+                            <v-list-item @click="editDirectorName(index)">
+                              <v-list-item-title>Change of legal name</v-list-item-title>
+                            </v-list-item>
                           </v-list>
                         </v-menu>
                       </span>
-                      -->
                     </span>
                   </div>
 
@@ -372,7 +383,6 @@
                 </v-form>
               </v-expand-transition>
               <!-- END edit director form -->
-            </div>
             </div>
           </div>
         </li>
@@ -597,6 +607,16 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    */
   private get directorsChange (): boolean {
     return this.directors.filter(director => director.isFeeApplied).length > 0
+  }
+
+  /**
+   * Computed value.
+   * @returns Whether at least one director has a free change (name change, address change) applied.
+   */
+  private get directorsFreeChange (): boolean {
+    return this.directors.filter(director =>
+      director.actions.indexOf(NAMECHANGED) >= 0 || director.actions.indexOf(ADDRESSCHANGED) >= 0
+    ).length > 0
   }
 
   /**
@@ -1081,6 +1101,24 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   }
 
   /**
+   * Local helper to check if a director has the name changed.
+   * @param director The director to check.
+   * @returns Whether the director has had the name changed.
+   */
+  private isNameChanged (director): boolean {
+    return (director.actions.indexOf(NAMECHANGED) >= 0)
+  }
+
+  /**
+   * Local helper to check if a director has the address changed.
+   * @param director The director to check.
+   * @returns Whether the director has had the address changed.
+   */
+  private isAddressChanged (director): boolean {
+    return (director.actions.indexOf(ADDRESSCHANGED) >= 0)
+  }
+
+  /**
    * Local helper to check if a director is active in this filing.
    * @param director The director to check.
    * @returns Whether the director is active (ie, not ceased).
@@ -1100,7 +1138,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   }
 
   /**
-   * If we have director changes (add or cease) add a single fee to the filing.
+   * If we have paid director changes (add or cease) add a single fee to the filing.
    * - when we've made one change, add the fee
    * - when we've removed/undone all changes, remove the fee
    */
@@ -1108,6 +1146,15 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   private onDirectorsChange (val: boolean): void {
     // emit event back up to parent
     this.emitDirectorsChange(val)
+  }
+
+  /**
+   * If we have free director changes (add or cease) add a single free fee code to the filing.
+   */
+  @Watch('directorsFreeChange')
+  private onDirectorsFreeChange (val: boolean): void {
+    // emit event back up to parent
+    this.emitDirectorsFreeChange(val)
   }
 
   /**
@@ -1161,6 +1208,12 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    */
   @Emit('directorsChange')
   private emitDirectorsChange (val: boolean): void { }
+
+  /**
+   * Emits an event containing this component's free filing change state.
+   */
+  @Emit('directorsFreeChange')
+  private emitDirectorsFreeChange (val: boolean): void { }
 
   /**
    * Emits an event containing the director form's validity.
@@ -1340,7 +1393,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     min-width: 25px;
     border-left: 1px solid $gray3;
     border-radius: 0;
-    margin-left: 5px !important;
+    margin-left: 1px !important;
     padding: 0 5px;
     color: $gray6;
   }
