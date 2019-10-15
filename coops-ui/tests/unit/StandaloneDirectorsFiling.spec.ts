@@ -24,6 +24,7 @@ let vuetify = new Vuetify({})
 
 const sampleDirectors = [
   {
+    'actions': [],
     'officer': {
       'firstName': 'Peter',
       'middleInitial': null,
@@ -43,6 +44,7 @@ const sampleDirectors = [
     'cessationDate': null
   },
   {
+    'actions': ['ceased', 'nameChanged'],
     'officer': {
       'firstName': 'Joe',
       'middleInitial': 'P',
@@ -276,7 +278,9 @@ describe('Standalone Directors Filing - Part 2 - Resuming', () => {
       // verify that we stored the Filing ID
       expect(+vm.filingId).toBe(123)
 
-      // FUTURE - verify that changed directors were restored
+      // verify that we loaded the director data correctly
+      expect(vm.filingData.filter(el => el.filingTypeCode === 'OTCDR').length).toEqual(1)
+      expect(vm.filingData.filter(el => el.filingTypeCode === 'OTFDR').length).toEqual(1)
 
       wrapper.destroy()
       done()
@@ -423,7 +427,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
       // make sure form is validated
       vm.directorFormValid = true
       vm.certifyFormValid = true
-      vm.filingData = [{}] // dummy data
+      vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'CP' }] // dummy data
       expect(vm.validated).toEqual(true)
 
       // sanity check
