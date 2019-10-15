@@ -1,9 +1,9 @@
 <template>
-  <v-expansion-panels class="list list-container" :accordion=true :multiple=true>
+  <v-expansion-panels class="list list-container" accordion multiple>
     <v-expansion-panel class="address-panel" v-for="director in directors" v-bind:key="director.id">
       <v-expansion-panel-header>
         <v-avatar color="primary" size="25">
-        <span class="">{{ director.officer.firstName.substring(0,1)}}</span>
+          <span class="">{{ director.officer.firstName.substring(0,1)}}</span>
         </v-avatar>
         <div class="list-item__title">{{ director.officer.firstName }} {{ director.officer.lastName }}</div>
       </v-expansion-panel-header>
@@ -45,8 +45,7 @@
 <script lang="ts">
 
 // Vue Libraries
-import { Component } from 'vue-property-decorator'
-import { mixins } from 'vue-class-component'
+import { Component, Mixins } from 'vue-property-decorator'
 import { mapState } from 'vuex'
 
 // Mixins
@@ -58,9 +57,10 @@ import { EntityTypes } from '@/enums'
 @Component({
   computed: {
     ...mapState(['directors'])
-  }
+  },
+  mixins: [EntityFilterMixin, AddressMixin]
 })
-export default class DirectorListSm extends mixins(EntityFilterMixin, AddressMixin) {
+export default class DirectorListSm extends Mixins(EntityFilterMixin, AddressMixin) {
   readonly directors: Array<object>
 
   // EntityTypes Enum
