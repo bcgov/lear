@@ -328,12 +328,11 @@ export default class RegisteredOfficeAddress extends Vue {
    */
   private sameAddress (address1: object, address2: object): boolean {
     const json1 = JSON.stringify(address1, (name: string, val: any) : any => {
-      return val !== '' && name !== 'actions' ? val : undefined
+      return (val !== '' && name !== 'actions' && name !== 'addressType') ? val : undefined
     })
     const json2 = JSON.stringify(address2, (name: string, val: any) : any => {
-      return val !== '' && name !== 'actions' ? val : undefined
+      return (val !== '' && name !== 'actions' && name !== 'addressType') ? val : undefined
     })
-
     return json1 === json2
   }
 
@@ -365,7 +364,6 @@ export default class RegisteredOfficeAddress extends Vue {
     if (this.inheritDeliveryAddress) {
       this.mailingAddress = { ...this.deliveryAddress }
     }
-
     this.showAddressForm = false
     this.emitAddresses()
     this.emitModified()
