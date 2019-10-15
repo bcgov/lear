@@ -361,15 +361,12 @@ export default class RegisteredOfficeAddress extends Vue {
    * Updates the address data using what was entered on the forms.
    */
   private updateAddress (): void {
-    if (!(this.sameAddress(this.mailingAddress, this.mailingAddressOriginal) &&
-          this.sameAddress(this.deliveryAddress, this.deliveryAddressOriginal))) {
-      if (this.inheritDeliveryAddress) {
-        this.mailingAddress = { ...this.deliveryAddress }
-      }
-      this.emitAddresses()
-      this.emitModified()
+    if (this.inheritDeliveryAddress) {
+      this.mailingAddress = { ...this.deliveryAddress }
     }
     this.showAddressForm = false
+    this.emitAddresses()
+    this.emitModified()
   }
 
   /**
