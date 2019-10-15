@@ -34,7 +34,7 @@
       <v-container id="standalone-office-address-container" class="view-container">
         <article id="standalone-office-address-article">
           <header>
-            <h1 id="filing-header">Change of Office Addresses</h1>
+            <h1 id="filing-header">Address Change</h1>
           </header>
 
           <!-- Registered Office Addresses -->

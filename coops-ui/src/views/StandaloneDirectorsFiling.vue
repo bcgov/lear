@@ -34,7 +34,7 @@
       <v-container id="standalone-directors-container" class="view-container">
         <article id="standalone-directors-article">
           <header>
-            <h1 id="filing-header">Change of Directors</h1>
+            <h1 id="filing-header">Director Change</h1>
 
             <v-alert type="info" :value="true" icon="mdi-information" outlined class="white-background">
               Director changes can be made as far back as {{ earliestDateToSet }}.
@@ -45,6 +45,7 @@
           <section>
             <Directors ref="directorsList"
               @directorsChange="directorsChange"
+              @directorsFreeChange="directorsFreeChange"
               @earliestDateToSet="earliestDateToSet=$event"
               @directorFormValid="directorFormValid=$event"
               @allDirectors="allDirectors=$event"
@@ -69,7 +70,7 @@
 
         <aside>
           <affix relative-element-selector="#standalone-directors-article" :offset="{ top: 120, bottom: 40 }">
-            <sbc-fee-summary v-bind:filingData="[...filingData]" v-bind:payURL="payAPIURL"/>
+            <sbc-fee-summary v-bind:filingData="[...filingDataForWidget]" v-bind:payURL="payAPIURL"/>
           </affix>
         </aside>
       </v-container>
@@ -136,6 +137,12 @@ import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
 
+// action constants
+const APPOINTED = 'appointed'
+const CEASED = 'ceased'
+const NAMECHANGED = 'nameChanged'
+const ADDRESSCHANGED = 'addressChanged'
+
 export default {
   name: 'StandaloneDirectorsFiling',
 
@@ -194,6 +201,16 @@ export default {
 
     payAPIURL () {
       return sessionStorage.getItem('PAY_API_URL')
+    },
+
+    filingDataForWidget () {
+      // filing data for pricing widget, without free filing code
+      return this.filingData.filter(el => el.filingTypeCode !== 'OTFDR')
+    },
+
+    isPaidFiling () {
+      // true if there is a charge for this filing
+      return this.filingData.filter(el => el.filingTypeCode === 'OTCDR').length > 0
     }
   },
 
@@ -255,6 +272,12 @@ export default {
       this.toggleFiling(modified ? 'add' : 'remove', 'OTCDR')
     },
 
+    directorsFreeChange (modified: boolean) {
+      this.haveChanges = true
+      // when directors change (free filing), update filing data
+      this.toggleFiling(modified ? 'add' : 'remove', 'OTFDR')
+    },
+
     async onClickSave () {
       // prevent double saving
       if (this.busySaving) return
@@ -291,18 +314,22 @@ export default {
       const filing = await this.saveFiling(false)
       // on success, redirect to Pay URL
       if (filing && filing.header) {
-        const root = window.location.origin || ''
-        const path = process.env.VUE_APP_PATH
-        const origin = `${root}/${path}`
-
         const filingId = +filing.header.filingId
-        const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
-        let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
-        if (!(authStub.endsWith('/'))) { authStub += '/' }
-        const paymentToken = filing.header.paymentToken
-        const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
-        // assume Pay URL is always reachable
-        window.location.assign(payURL)
+        if (this.isPaidFiling) {
+          const root = window.location.origin || ''
+          const path = process.env.VUE_APP_PATH
+          const origin = `${root}/${path}`
+
+          const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
+          let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
+          if (!(authStub.endsWith('/'))) { authStub += '/' }
+          const paymentToken = filing.header.paymentToken
+          const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
+          // assume Pay URL is always reachable
+          window.location.assign(payURL)
+        } else {
+          this.$router.push('/dashboard?filing_id=' + filingId)
+        }
       }
       this.filingPaying = false
       return true
@@ -329,7 +356,7 @@ export default {
         }
       }
 
-      if (this.isDataChanged('OTCDR')) {
+      if (this.isDataChanged('OTCDR') || this.isDataChanged('OTFDR')) {
         changeOfDirectors = {
           changeOfDirectors: {
             directors: this.allDirectors
@@ -448,7 +475,20 @@ export default {
                 if (this.$refs.directorsList && this.$refs.directorsList.setAllDirectors) {
                   this.$refs.directorsList.setAllDirectors(changeOfDirectors.directors)
                 }
-                this.toggleFiling('add', 'OTCDR')
+
+                // add filing code for paid changes
+                if (changeOfDirectors.directors.filter(
+                  director => this.hasAction(director, CEASED) || this.hasAction(director, APPOINTED)
+                ).length > 0) {
+                  this.toggleFiling('add', 'OTCDR')
+                }
+
+                // add filing code for free changes
+                if (changeOfDirectors.directors.filter(
+                  director => this.hasAction(director, NAMECHANGED) || this.hasAction(director, ADDRESSCHANGED)
+                ).length > 0) {
+                  this.toggleFiling('add', 'OTFDR')
+                }
               } else {
                 throw new Error('invalid change of directors')
               }
@@ -473,6 +513,11 @@ export default {
       this.saveErrorDialog = false
       this.saveErrors = []
       this.saveWarnings = []
+    },
+
+    hasAction (director, action) {
+      if (director.actions.indexOf(action) >= 0) return true
+      else return false
     }
   },
 
