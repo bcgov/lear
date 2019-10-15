@@ -94,6 +94,14 @@ describe('DirectorListSm', () => {
   })
 
   it('displays multiple directors as a bcorp', done => {
+
+    function click (id) {
+      const button = vm.$el.querySelector(id)
+      const window = button.ownerDocument.defaultView
+      const click = new window.Event('click')
+      button.dispatchEvent(click)
+    }
+
     // init store
     store.state.entityType = EntityTypes.BCorp
     store.state.directors = [
@@ -143,9 +151,11 @@ describe('DirectorListSm', () => {
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
+      click('.panel-header-btn')
       expect(vm.directors.length).toEqual(2)
       expect(vm.directors[0].mailingAddress).toBeDefined()
       expect(vm.$el.querySelectorAll('.address-panel').length).toEqual(2)
+      expect(vm.$el.querySelector('.address-panel').textContent).toContain('Same as above')
 
       wrapper.destroy()
       done()

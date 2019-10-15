@@ -1,7 +1,7 @@
 <template>
   <v-expansion-panels class="list list-container" accordion multiple>
     <v-expansion-panel class="address-panel" v-for="director in directors" v-bind:key="director.id">
-      <v-expansion-panel-header>
+      <v-expansion-panel-header class="panel-header-btn">
         <v-avatar color="primary" size="25">
           <span class="">{{ director.officer.firstName.substring(0,1)}}</span>
         </v-avatar>
@@ -25,7 +25,7 @@
           <div class="director-info">
             <div class="list-item_title">Mailing Address</div>
             <div class="list-item__subtitle">
-              <span v-if="isSameAddress(director.deliveryAddress, director.mailingAddress)">
+              <span id="address-equiv" v-if="isSameAddress(director.deliveryAddress, director.mailingAddress)">
                 Same as above
               </span>
               <ul v-else class="address-details" >
