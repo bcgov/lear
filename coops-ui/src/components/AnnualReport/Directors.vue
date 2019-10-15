@@ -128,6 +128,9 @@
                   -->
 
                   <div class="form__row form__btns">
+                    <v-btn color="error" disabled>
+                      <span>Remove</span>
+                    </v-btn>
                     <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
                     <v-btn @click="cancelNewDirector">Cancel</v-btn>
                   </div>
@@ -256,7 +259,7 @@
                               <v-list-item-title>Change address</v-list-item-title>
                             </v-list-item>
                             <v-list-item @click="editDirectorName(index)">
-                              <v-list-item-title>Change of legal name</v-list-item-title>
+                              <v-list-item-title>Change legal name</v-list-item-title>
                             </v-list-item>
                           </v-list>
                         </v-menu>
@@ -740,11 +743,15 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     this.draftDate = date
   }
 
+  public getOriginalDirectors () {
+    this.getDirectors(true)
+  }
+
   /**
    * Function called internall and externally to fetch the list of directors.
    * TODO: change this to a prop?
    */
-  public getDirectors (): void {
+  public getDirectors (getOrigOnly: Boolean = false): void {
     if (this.entityIncNo && this.asOfDate) {
       var url = this.entityIncNo + '/directors?date=' + this.asOfDate
       axios.get(url)
@@ -774,10 +781,10 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
             }
 
             // save to component data now that extra attributes are added
-            this.directors = directors
+            if (!getOrigOnly) this.directors = directors
 
             // save version of directors before changes (deep copy, not reference)
-            this.directorsOriginal = JSON.parse(JSON.stringify(this.directors))
+            this.directorsOriginal = JSON.parse(JSON.stringify(directors))
           } else {
             console.log('getDirectors() error - invalid response data')
           }
@@ -1172,11 +1179,11 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   private onAsOfDate (newVal: string, oldVal: string): void {
     // reload the directors list when as-of date changes EXCEPT WHEN...
     if (this.currentFilingStatus === 'DRAFT' && oldVal === null) {
-      // this is a draft but the component hasn't quite loaded yet - do nothing
-
+      // this is a draft but the component hasn't quite loaded yet - only set original directors
+      this.getOriginalDirectors()
     } else if (this.currentFilingStatus === 'DRAFT' && this.directorsChange && this.draftDate === newVal) {
-      // this is a draft, there were director changes loaded, and the date hasn't changed - do nothing
-
+      // this is a draft, there were director changes loaded, and the date hasn't changed - only set original directors
+      this.getOriginalDirectors()
     } else {
       this.getDirectors()
     }

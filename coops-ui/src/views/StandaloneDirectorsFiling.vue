@@ -34,7 +34,7 @@
       <v-container id="standalone-directors-container" class="view-container">
         <article id="standalone-directors-article">
           <header>
-            <h1 id="filing-header">Change of Directors</h1>
+            <h1 id="filing-header">Director Change</h1>
 
             <v-alert type="info" :value="true" icon="mdi-information" outlined class="white-background">
               Director changes can be made as far back as {{ earliestDateToSet }}.
