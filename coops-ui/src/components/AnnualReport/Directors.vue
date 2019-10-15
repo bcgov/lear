@@ -618,7 +618,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    */
   private get directorsFreeChange (): boolean {
     return this.directors.filter(director =>
-      director.actions.indexOf(NAMECHANGED) >= 0 || director.actions.indexOf(ADDRESSCHANGED) >= 0
+      this.isNameChanged(director) || this.isAddressChanged(director)
     ).length > 0
   }
 
@@ -743,7 +743,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     this.draftDate = date
   }
 
-  public getOriginalDirectors () {
+  private getOriginalDirectors () {
     this.getDirectors(true)
   }
 
