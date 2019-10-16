@@ -30,7 +30,7 @@ class Director:
 
     officer = None
     delivery_address = None
-    # mailing_address = None
+    mailing_address = None
     title = None
     appointment_date = None
     cessation_date = None
@@ -45,7 +45,7 @@ class Director:
         return {
             'officer': self.officer,
             'deliveryAddress': self.delivery_address,
-            # 'mailingAddress': self.mailing_address,
+            'mailingAddress': self.mailing_address,
             'title': self.title,
             'appointmentDate': self.appointment_date,
             'cessationDate': self.cessation_date,
@@ -64,7 +64,7 @@ class Director:
             cursor = DB.connection.cursor()
             cursor.execute(
                 """
-                select first_nme, middle_nme, last_nme, delivery_addr_id, appointment_dt, cessation_dt, start_event_id,
+                select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt, start_event_id,
                 end_event_id
                 from corp_party
                 where end_event_id is NULL and corp_num=:identifier and party_typ_cd='DIR'
@@ -123,7 +123,7 @@ class Director:
             cursor = DB.connection.cursor()
             cursor.execute(
                 """
-                select first_nme, middle_nme, last_nme, delivery_addr_id, appointment_dt, cessation_dt, start_event_id,
+                select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt, start_event_id,
                 end_event_id
                 from corp_party
                 where ((start_event_id<=:event_id and end_event_id is null) or (start_event_id<=:event_id and
@@ -207,8 +207,11 @@ class Director:
         # validate appointment + cessation dates
 
         # create new address
-        addr_id = Address.create_new_address(cursor=cursor, address_info=director['deliveryAddress'])
+        delivery_addr_id = Address.create_new_address(cursor=cursor, address_info=director['deliveryAddress'])
+        mailing_addr_id = delivery_addr_id
 
+        if 'mailingAddress' in director:
+            mailing_addr_id = Address.create_new_address(cursor=cursor, address_info=director['mailingAddress'])
         # create new corp party entry
         try:
             cursor.execute("""select noncorp_party_seq.NEXTVAL from dual""")
@@ -227,8 +230,8 @@ class Director:
                 :middle_nme, :first_nme, :business_nme, :bus_company_num)
                 """,
                            corp_party_id=corp_party_id,
-                           mailing_addr_id=addr_id,
-                           delivery_addr_id=addr_id,
+                           mailing_addr_id=mailing_addr_id,
+                           delivery_addr_id=delivery_addr_id,
                            corp_num=business['business']['identifier'],
                            party_typ_cd='DIR',
                            start_event_id=event_id,
@@ -265,6 +268,7 @@ class Director:
                                 'middleInitial': row['middle_nme'] if row['middle_nme'] else ''}
 
             director.delivery_address = Address.get_by_address_id(row['delivery_addr_id']).as_dict()
+            director.mailing_address = Address.get_by_address_id(row['mailing_addr_id']).as_dict()
             director.appointment_date = convert_to_json_date(row['appointment_dt']) if row['appointment_dt'] else None
             director.cessation_date = convert_to_json_date(row['cessation_dt']) if row['cessation_dt'] else None
             director.start_event_id = row['start_event_id'] if row['start_event_id'] else ''

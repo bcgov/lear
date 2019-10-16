@@ -39,7 +39,7 @@ def process(business: Business, filing: Filing):
         if any([action != 'appointed' for action in new_director['actions']]):
             # get name of director in json for comparison *
             new_director_name = \
-                new_director['officer'].get('firstName') + new_director['officer'].get('middleInitial') + \
+                new_director['officer'].get('firstName') + new_director['officer'].get('middleInitial','') + \
                 new_director['officer'].get('lastName') \
                 if 'nameChanged' not in new_director['actions'] \
                 else new_director['officer'].get('prevFirstName') + \
