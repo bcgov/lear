@@ -6,6 +6,7 @@ import flushPromises from 'flush-promises'
 
 import store from '@/store/store'
 import AGMDate from '@/components/AnnualReport/AGMDate.vue'
+import { EntityTypes } from '@/enums'
 
 // NB: test util async issue
 // in some cases, the elements are not updated during the test
@@ -34,6 +35,7 @@ describe('AGMDate', () => {
     store.state.entityIncNo = 'CP0001191'
     store.state.currentDate = '2019/07/15'
     store.state.ARFilingYear = 2019
+    store.state.entityType = EntityTypes.Coop
 
     wrapper = mount(AGMDate, { store, vuetify })
     vm = wrapper.vm as any

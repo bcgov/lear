@@ -94,7 +94,6 @@ describe('DirectorListSm', () => {
   })
 
   it('displays multiple directors as a bcorp', done => {
-
     function click (id) {
       const button = vm.$el.querySelector(id)
       const window = button.ownerDocument.defaultView

@@ -37,7 +37,7 @@
 
 <script>
 import { mapActions, mapState } from 'vuex'
-import DateMixin from '@/mixins/date-mixin'
+import { DateMixin, AddressMixin, CommonMixin } from '@/mixins'
 import axios from '@/axios-auth'
 import DashboardUnavailableDialog from '@/components/Dashboard/DashboardUnavailableDialog.vue'
 import AccountAuthorizationDialog from '@/components/Dashboard/AccountAuthorizationDialog.vue'
@@ -49,7 +49,7 @@ import { EntityTypes } from '@/enums'
 export default {
   name: 'App',
 
-  mixins: [DateMixin],
+  mixins: [DateMixin, AddressMixin, CommonMixin],
 
   data () {
     return {
@@ -285,12 +285,12 @@ export default {
 
     storeAddresses (response) {
       if (response && response.data && response.data.mailingAddress) {
-        this.setMailingAddress(response.data.mailingAddress)
+        this.setMailingAddress(this.omitProp(response.data.mailingAddress, ['addressType']))
       } else {
         throw new Error('invalid mailing address')
       }
       if (response && response.data && response.data.deliveryAddress) {
-        this.setDeliveryAddress(response.data.deliveryAddress)
+        this.setDeliveryAddress(this.omitProp(response.data.deliveryAddress, ['addressType']))
       } else {
         throw new Error('invalid delivery address')
       }
