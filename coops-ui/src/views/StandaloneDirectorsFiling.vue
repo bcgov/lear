@@ -70,7 +70,7 @@
 
         <aside>
           <affix relative-element-selector="#standalone-directors-article" :offset="{ top: 120, bottom: 40 }">
-            <sbc-fee-summary v-bind:filingData="[...filingDataForWidget]" v-bind:payURL="payAPIURL"/>
+            <sbc-fee-summary v-bind:filingData="[...filingData]" v-bind:payURL="payAPIURL"/>
           </affix>
         </aside>
       </v-container>
@@ -201,11 +201,6 @@ export default {
 
     payAPIURL () {
       return sessionStorage.getItem('PAY_API_URL')
-    },
-
-    filingDataForWidget () {
-      // filing data for pricing widget, without free filing code
-      return this.filingData.filter(el => el.filingTypeCode !== 'OTFDR')
     },
 
     isPaidFiling () {

@@ -125,7 +125,7 @@
 
         <aside>
           <affix relative-element-selector="#annual-report-article" :offset="{ top: 120, bottom: 40 }">
-            <sbc-fee-summary v-bind:filingData="[...filingDataForWidget]" v-bind:payURL="payAPIURL"/>
+            <sbc-fee-summary v-bind:filingData="[...filingData]" v-bind:payURL="payAPIURL"/>
           </affix>
         </aside>
       </v-container>
@@ -297,16 +297,6 @@ export default {
 
     isSaveButtonEnabled () {
       return this.agmDateValid && this.addressesFormValid && this.directorFormValid && !this.directorEditInProgress
-    },
-
-    filingDataForWidget () {
-      // filing data for pricing widget, without free filing code
-      return this.filingData.filter(el => el.filingTypeCode !== 'OTFDR')
-    },
-
-    isPaidFiling () {
-      // true if there is a charge for this filing
-      return this.filingData.filter(el => el.filingTypeCode === 'OTCDR').length > 0
     }
   },
 
@@ -515,22 +505,18 @@ export default {
       const filing = await this.saveFiling(false)
       // on success, redirect to Pay URL
       if (filing && filing.header) {
-        const filingId = +filing.header.filingId
-        if (this.isPaidFiling) {
-          const root = window.location.origin || ''
-          const path = process.env.VUE_APP_PATH
-          const origin = `${root}/${path}`
+        const root = window.location.origin || ''
+        const path = process.env.VUE_APP_PATH
+        const origin = `${root}/${path}`
 
-          const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
-          let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
-          if (!(authStub.endsWith('/'))) { authStub += '/' }
-          const paymentToken = filing.header.paymentToken
-          const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
-          // assume Pay URL is always reachable
-          window.location.assign(payURL)
-        } else {
-          this.$router.push('/dashboard?filing_id=' + filingId)
-        }
+        const filingId = +filing.header.filingId
+        const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
+        let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
+        if (!(authStub.endsWith('/'))) { authStub += '/' }
+        const paymentToken = filing.header.paymentToken
+        const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
+        // assume Pay URL is always reachable
+        window.location.assign(payURL)
       }
       this.filingPaying = false
       return true
