@@ -243,6 +243,7 @@ def test_process_cod_filing(app, session):
     directors = Director.get_active_directors(business.id, end_date)
     check_directors(business, directors, director_ceased_id, ceased_directors, active_directors)
 
+
 def test_process_cod_mailing_address(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
     import copy
@@ -279,20 +280,20 @@ def test_process_cod_mailing_address(app, session):
     business = Business.find_by_internal_id(business_id)
 
     directors = Director.get_active_directors(business.id, end_date)
-    
-    has_mailing = list(filter(lambda x: x.mailing_address != None, directors))
-    no_mailing = list(filter(lambda x: x.mailing_address == None, directors))
-    
+
+    has_mailing = list(filter(lambda x: x.mailing_address is not None, directors))
+    no_mailing = list(filter(lambda x: x.mailing_address is None, directors))
+
     assert len(has_mailing) == 1
     assert has_mailing[0].mailing_address.street == 'test mailing 1'
-    assert no_mailing[0].mailing_address == None
+    assert no_mailing[0].mailing_address is None
 
     # Add/update mailing address to a director
 
     del filing_data['filing']['changeOfDirectors']['directors'][0]
     filing_data['filing']['changeOfDirectors']['directors'][0]['actions'] = ['addressChanged']
 
-    MAILING_ADDRESS = {
+    mailing_address = {
                         'streetAddress': 'test mailing 2',
                         'streetAddressAdditional': 'test line 1',
                         'addressCity': 'testcity',
@@ -302,7 +303,7 @@ def test_process_cod_mailing_address(app, session):
                         'deliveryInstructions': 'director1'
                     }
 
-    filing_data['filing']['changeOfDirectors']['directors'][0]['mailingAddress'] = MAILING_ADDRESS
+    filing_data['filing']['changeOfDirectors']['directors'][0]['mailingAddress'] = mailing_address
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     create_filing(payment_id, filing_data, business.id)
@@ -319,12 +320,12 @@ def test_process_cod_mailing_address(app, session):
     business = Business.find_by_internal_id(business_id)
 
     # check it out
-    assert len(list(filter(lambda x: x.mailing_address != None, directors))) == 2
+    assert len(list(filter(lambda x: x.mailing_address is not None, directors))) == 2
     assert filing.transaction_id
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
 
-    directors = Director.get_active_directors(business.id, end_date)    
+    directors = Director.get_active_directors(business.id, end_date)
 
 
 def test_process_combined_filing(app, session):
