@@ -49,8 +49,6 @@ def extract_payment_token(msg: nats.aio.client.Msg) -> dict:
 def get_filing_by_payment_id(payment_id: int) -> Filing:
     """Return the outcome of Filing.get_filing_by_payment_token."""
     filing = Filing.get_filing_by_payment_token(str(payment_id))
-    if not filing:
-        raise FilingException
 
 
 def process_filing(payment_token, flask_app):
@@ -60,6 +58,11 @@ def process_filing(payment_token, flask_app):
 
     with flask_app.app_context():
         filing_submission = get_filing_by_payment_id(payment_token['paymentToken'].get('id'))
+        try:
+            status = filing_submission.status
+        except AttributeError:
+            raise FilingException
+
 
         if filing_submission.status == Filing.Status.COMPLETED.value:
             logger.warning('Queue: Attempting to reprocess business.id=%s, filing.id=%s payment=%s',
@@ -121,7 +124,6 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         logger.error('Queue Blocked - Database Issue: %s', json.dumps(payment_token), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue
     except FilingException:
-
         service.publish_message(payment_token)
         capture_message('Queue Filing Error:' + json.dumps(payment_token), level='error')
         logger.error('Queue Filing Error: %s', json.dumps(payment_token), exc_info=True)
