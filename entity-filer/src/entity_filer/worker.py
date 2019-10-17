@@ -126,7 +126,7 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
     except FilingException:
         logger.debug('got FilingException, now going to call publish_message with payment_token:')
         logger.debug(payment_token)
-        service.publish_message(payment_token)
+        await service.publish_message(payment_token)
         capture_message('Queue Filing Error:' + json.dumps(payment_token), level='error')
         logger.error('Queue Filing Error: %s', json.dumps(payment_token), exc_info=True)
     except (QueueException, Exception):  # pylint: disable=broad-except
