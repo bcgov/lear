@@ -31,7 +31,7 @@ from .director import Director  # noqa: F401 pylint: disable=unused-import; need
 from .address import Address  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
-
+from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 
 class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages all of the base data about a business.
@@ -64,15 +64,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
-    mailing_address = db.relationship('Address',
-                                      lazy='dynamic',
-                                      primaryjoin='and_(Business.id==Address.business_id, '
-                                      f"Address.address_type=='{Address.MAILING}')")
-    delivery_address = db.relationship('Address',
-                                       lazy='dynamic',
-                                       primaryjoin='and_(Business.id==Address.business_id, '
-                                       f"Address.address_type=='{Address.DELIVERY}')")
     directors = db.relationship('Director', lazy='dynamic')
+    offices = db.relationship('Office', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):
@@ -95,6 +88,26 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             last_anniversary = self.last_ar_date
 
         return last_anniversary + datedelta.datedelta(years=1)
+
+    @property
+    def mailing_address(self):
+        registered_office = db.session.query(Office).filter(Office.business_id == self.id).\
+            filter(Office.office_type == 'registeredOffice').one_or_none()
+        if registered_office:
+            return registered_office.addresses.filter(Address.address_type == 'mailing')
+
+        return db.session.query(Address).filter(Address.business_id == self.id).\
+            filter(Address.address_type == Address.MAILING)
+
+    @property
+    def delivery_address(self):
+        registered_office = db.session.query(Office).filter(Office.business_id == self.id).\
+            filter(Office.office_type == 'registeredOffice').one_or_none()
+        if registered_office:
+            return registered_office.addresses.filter(Address.address_type == 'delivery')
+
+        return db.session.query(Address).filter(Address.business_id == self.id).\
+            filter(Address.address_type == Address.DELIVERY)
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):
