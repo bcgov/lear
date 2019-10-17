@@ -16,7 +16,7 @@
 This suite should have at least 1 test for every filing type allowed.
 """
 from registry_schemas import validate
-from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS
+from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS, CHANGE_OF_DIRECTORS_MAILING
 
 
 def test_valid_ar_filing():
@@ -107,6 +107,37 @@ def test_valid_cod_filing():
                 'legalName': 'legal name - CP1234567'
             },
             'changeOfDirectors': CHANGE_OF_DIRECTORS
+        }
+    }
+
+    is_valid, errors = validate(filing, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert is_valid
+
+
+def test_valid_cod_filing_with_mailing_address():
+    """Assert that the Change of Directors filing schema is performing as expected."""
+    filing = {
+        'filing': {
+            'header': {
+                'name': 'changeOfDirectors',
+                'date': '2019-04-08',
+                'certifiedBy': 'full legal name',
+                'email': 'no_one@never.get'
+            },
+            'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP1234567',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'legal name - CP1234567'
+            },
+            'changeOfDirectors': CHANGE_OF_DIRECTORS_MAILING
         }
     }
 

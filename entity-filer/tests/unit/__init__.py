@@ -255,6 +255,80 @@ COD_FILING = {
     }
 }
 
+COD_FILING_TWO_ADDRESSES = {
+    'filing': {
+        'header': {
+            'name': 'changeOfDirectors',
+            'date': '2019-07-29',
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get'
+        },
+        'business': {
+            'cacheId': 1,
+            'foundingDate': '2007-04-08',
+            'identifier': 'CP1234567',
+            'last_agm_date': '2018-04-08',
+            'legalName': 'legal name - CP1234567'
+        },
+        'changeOfDirectors': {
+            'directors': [
+                {
+                    'title': '',
+                    'appointmentDate': '2017-01-01',
+                    'cessationDate': None,
+                    'officer': {
+                        'firstName': 'director1',
+                        'lastName': 'test1',
+                        'middleInitial': 'd',
+                    },
+                    'deliveryAddress': {
+                        'streetAddress': 'test lane',
+                        'streetAddressAdditional': 'test line 1',
+                        'addressCity': 'testcity',
+                        'addressCountry': 'Canada',
+                        'addressRegion': 'BC',
+                        'postalCode': 'T3S T3R',
+                        'deliveryInstructions': 'director1'
+                    },
+                    'mailingAddress': {
+                        'streetAddress': 'test mailing 1',
+                        'streetAddressAdditional': 'test line 1',
+                        'addressCity': 'testcity',
+                        'addressCountry': 'Canada',
+                        'addressRegion': 'BC',
+                        'postalCode': 'T3S T3R',
+                        'deliveryInstructions': 'director1'
+                    },
+                    'actions': []
+                },
+                {
+                    'title': 'title',
+                    'appointmentDate': '2018-01-01',
+                    'cessationDate': None,
+                    'officer': {
+                        'firstName': 'director2',
+                        'lastName': 'test2',
+                        'middleInitial': 'd',
+                        'prevFirstName': 'shouldchange',
+                        'prevMiddleInitial': '',
+                        'prevLastName': 'shouldchange',
+                    },
+                    'deliveryAddress': {
+                        'streetAddress': 'test lane',
+                        'streetAddressAdditional': 'test line 1',
+                        'addressCity': 'testcity',
+                        'addressCountry': 'Canada',
+                        'addressRegion': 'BC',
+                        'postalCode': 'T3S T3R',
+                        'deliveryInstructions': 'director2'
+                    },
+                    'actions': []
+                }
+            ],
+        }
+    }
+}
+
 COMBINED_FILING = {
     'filing': {
         'header': {

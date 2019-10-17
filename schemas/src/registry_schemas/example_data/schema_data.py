@@ -162,6 +162,65 @@ CHANGE_OF_DIRECTORS = {
     ]
 }
 
+CHANGE_OF_DIRECTORS_MAILING = {
+    'directors': [
+        {
+            'officer': {
+                'firstName': 'Peter',
+                'lastName': 'Griffin',
+                'prevFirstName': 'Peter',
+                'prevMiddleInitial': 'G',
+                'prevLastName': 'Griffin'
+            },
+            'deliveryAddress': {
+                'streetAddress': 'mailing_address - address line one',
+                'addressCity': 'mailing_address city',
+                'addressCountry': 'mailing_address country',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line #2',
+                'additionalStreetAddress': 'Kirkintiloch',
+                'addressCity': 'Glasgow',
+                'addressCountry': 'UK',
+                'postalCode': 'H0H 0H0',
+                'addressRegion': 'SC'
+            },
+            'appointmentDate': '2018-01-01',
+            'cessationDate': '2019-04-03',
+            'actions': ['addressChanged', 'nameChanged']
+        },
+        {
+            'officer': {
+                'firstName': 'Joe',
+                'middleInitial': 'P',
+                'lastName': 'Swanson'
+            },
+            'deliveryAddress': {
+                'streetAddress': 'mailing_address - address line #1',
+                'additionalStreetAddress': 'Kirkintiloch',
+                'addressCity': 'Glasgow',
+                'addressCountry': 'UK',
+                'postalCode': 'H0H 0H0',
+                'addressRegion': 'SC'
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line #2',
+                'additionalStreetAddress': 'Kirkintiloch',
+                'addressCity': 'Glasgow',
+                'addressCountry': 'UK',
+                'postalCode': 'H0H 0H0',
+                'addressRegion': 'SC'
+            },
+            'title': 'Treasurer',
+            'cessationDate': None,
+            'appointmentDate': '2018-01-01',
+            'actions': []
+        }
+    ]
+}
+
 CHANGE_OF_ADDRESS = {
     'deliveryAddress': {
         'streetAddress': 'delivery_address - address line one',

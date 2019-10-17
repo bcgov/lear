@@ -22,6 +22,9 @@ from sqlalchemy import Date, cast, or_
 from .db import db
 
 
+from .address import Address  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+
+
 class Director(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages all of the business directors."""
 
