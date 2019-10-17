@@ -106,26 +106,31 @@ COA_FILING = {
             'legalName': 'legal name - CP1234567'
         },
         'changeOfAddress': {
-            'deliveryAddress': {
-                'streetAddress': 'test lane',
-                'streetAddressAdditional': 'test line 1',
-                'addressCity': 'testcity',
-                'addressCountry': 'Canada',
-                'addressRegion': 'BC',
-                'postalCode': 'T3S T3R',
-                'deliveryInstructions': 'Test address delivery',
-                'actions': ['addressChanged']
-            },
-            'mailingAddress': {
-                'streetAddress': 'test lane',
-                'streetAddressAdditional': 'test line 1',
-                'addressCity': 'testcity',
-                'addressCountry': 'Canada',
-                'addressRegion': 'BC',
-                'postalCode': 'T3S T3R',
-                'deliveryInstructions': 'Test address mailing',
-                'actions': ['addressChanged']
-            },
+            'legalType': 'CP',
+            'offices': {
+                'registeredOffice': {
+                    'deliveryAddress': {
+                        'streetAddress': 'test lane',
+                        'streetAddressAdditional': 'test line 1',
+                        'addressCity': 'testcity',
+                        'addressCountry': 'Canada',
+                        'addressRegion': 'BC',
+                        'postalCode': 'T3S T3R',
+                        'deliveryInstructions': 'Test address delivery',
+                        'actions': ['addressChanged']
+                    },
+                    'mailingAddress': {
+                        'streetAddress': 'test lane',
+                        'streetAddressAdditional': 'test line 1',
+                        'addressCity': 'testcity',
+                        'addressCountry': 'Canada',
+                        'addressRegion': 'BC',
+                        'postalCode': 'T3S T3R',
+                        'deliveryInstructions': 'Test address mailing',
+                        'actions': ['addressChanged']
+                    }
+                }
+            }
         }
     }
 }
@@ -348,8 +353,8 @@ COMBINED_FILING = {
             'annualGeneralMeetingDate': '2019-04-08',
             'annualReportDate': '2018-04-08',
             'directors': COD_FILING['filing']['changeOfDirectors']['directors'],
-            'deliveryAddress': COA_FILING['filing']['changeOfAddress']['deliveryAddress'],
-            'mailingAddress': COA_FILING['filing']['changeOfAddress']['mailingAddress']
+            'deliveryAddress': COA_FILING['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress'],
+            'mailingAddress': COA_FILING['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']
         },
         'changeOfAddress': COA_FILING['filing']['changeOfAddress'],
         'changeOfDirectors': COD_FILING['filing']['changeOfDirectors']
@@ -384,22 +389,45 @@ def create_business(identifier):
     return business
 
 
-def create_business_address(business, type):
+def create_office(business, office_type=None):
+    from legal_api.models import Office
+    if office_type == None:
+        office_type = 'registeredOffice'
+
+    office = list(filter(lambda x:x.office_type==office_type, business.offices))
+
+    if len(office) == 0:
+        office = Office(office_type='registeredOffice')
+    
+        if office_type:
+            office = Office(office_type=office_type)
+    
+        business.offices.append(office)
+        business.save()
+    return business
+
+
+def create_business_address(business, type, office = None):
     """Create an address."""
-    from legal_api.models import Address
+    from legal_api.models import Address, Office
     address = Address(
         city='Test City',
         street=f'{business.identifier}-Test Street',
         postal_code='T3S3T3',
         country='TA',
         region='BC',
+        business_id=business.id
     )
+
+    if office == None:
+        office = create_office(business, 'registeredOffice').offices.one_or_none()
+
     if type == 'mailing':
         address.address_type = Address.MAILING
-        business.mailing_address.append(address)
     else:
         address.address_type = Address.DELIVERY
-        business.delivery_address.append(address)
+    
+    office.addresses.append(address)
     business.save()
     return business
 
