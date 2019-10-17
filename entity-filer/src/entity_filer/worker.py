@@ -29,6 +29,7 @@ import datetime
 import json
 
 import nats
+from . import service
 from flask import Flask
 from legal_api import db
 from legal_api.models import Business, Filing
@@ -58,18 +59,8 @@ def process_filing(payment_token, flask_app):
 
     with flask_app.app_context():
         filing_submission = get_filing_by_payment_id(payment_token['paymentToken'].get('id'))
-        logger.debug('------------------->>>')
-        logger.debug(filing_submission)
         if not filing_submission:
-            logger.debug('------------------->>> Its NONE')
             raise FilingException
-        logger.debug('------------------->>> Not NONE')
-
-        # try:
-        #     status = filing_submission.status
-        # except AttributeError:
-        #     raise FilingException
-
 
         if filing_submission.status == Filing.Status.COMPLETED.value:
             logger.warning('Queue: Attempting to reprocess business.id=%s, filing.id=%s payment=%s',
@@ -118,7 +109,6 @@ FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(get_named_config('production'))
 db.init_app(FLASK_APP)
 
-from . import service
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
     """Use Callback to process Queue Msg objects."""
@@ -131,13 +121,10 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         logger.error('Queue Blocked - Database Issue: %s', json.dumps(payment_token), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue
     except FilingException:
-        logger.debug('got FilingException, now going to call publish_message with payment_token:')
-        logger.debug(payment_token)
-        await service.publish_message(payment_token)
         capture_message('Queue Filing Error:' + json.dumps(payment_token), level='error')
         logger.error('Queue Filing Error: %s', json.dumps(payment_token), exc_info=True)
+        await service.publish_message(payment_token)
     except (QueueException, Exception):  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
         capture_message('Queue Error:' + json.dumps(payment_token), level='error')
         logger.error('Queue Error: %s', json.dumps(payment_token), exc_info=True)
-
