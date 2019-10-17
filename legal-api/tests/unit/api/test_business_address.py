@@ -19,7 +19,7 @@ Test-Suite to ensure that the /businesses../addresses endpoint is working as exp
 from http import HTTPStatus
 
 from legal_api.services.authz import STAFF_ROLE
-from tests.unit.models import Address, factory_business
+from tests.unit.models import Address, Office, factory_business
 from tests.unit.services.utils import create_header
 
 
@@ -29,9 +29,13 @@ def test_get_business_addresses(session, client, jwt):
     identifier = 'CP7654321'
     business = factory_business(identifier)
     mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
-    business.mailing_address.append(mailing_address)
+    #business.mailing_address.append(mailing_address)
     delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
-    business.delivery_address.append(delivery_address)
+    #business.delivery_address.append(delivery_address)
+    office = Office(office_type='registeredOffice')
+    office.addresses.append(mailing_address)
+    office.addresses.append(delivery_address)
+    business.offices.append(office)
     business.save()
 
     # test
@@ -40,8 +44,9 @@ def test_get_business_addresses(session, client, jwt):
                     )
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert 'mailingAddress' in rv.json
-    assert 'deliveryAddress' in rv.json
+    assert 'registeredOffice' in rv.json
+    assert 'mailingAddress' in rv.json['registeredOffice']
+    assert 'deliveryAddress' in rv.json['registeredOffice']
 
 
 def test_get_business_no_addresses(session, client, jwt):
@@ -64,8 +69,11 @@ def test_get_business_addresses_by_id(session, client, jwt):
     # setup
     identifier = 'CP7654321'
     business = factory_business(identifier)
-    mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
-    business.mailing_address.append(mailing_address)
+    mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING, \
+     business_id=business.id)
+    office = Office(office_type='registeredOffice')
+    office.addresses.append(mailing_address)
+    business.offices.append(office)
     business.save()
 
     # test
@@ -101,8 +109,11 @@ def test_get_business_mailing_addresses_by_type(session, client, jwt):
     # setup
     identifier = 'CP7654321'
     business = factory_business(identifier)
-    mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
-    business.mailing_address.append(mailing_address)
+    mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING, \
+    business_id=business.id)
+    office = Office(office_type='registeredOffice')
+    office.addresses.append(mailing_address)
+    business.offices.append(office)
     business.save()
 
     # test
@@ -119,8 +130,11 @@ def test_get_business_delivery_addresses_by_type_missing_address(session, client
     # setup
     identifier = 'CP7654321'
     business = factory_business(identifier)
-    delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
-    business.delivery_address.append(delivery_address)
+    delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY, \
+    business_id=business.id)
+    office = Office(office_type='registeredOffice')
+    office.addresses.append(delivery_address)
+    business.offices.append(office)
     business.save()
 
     # test
@@ -137,8 +151,11 @@ def test_get_business_delivery_addresses_by_type(session, client, jwt):
     # setup
     identifier = 'CP7654321'
     business = factory_business(identifier)
-    delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
-    business.delivery_address.append(delivery_address)
+    delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY, \
+    business_id=business.id)
+    office = Office(office_type='registeredOffice')
+    office.addresses.append(delivery_address)
+    business.offices.append(office)
     business.save()
 
     # test

@@ -26,6 +26,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_DIRECTORS_MAILING,
+    CORP_CHANGE_OF_ADDRESS,
     FILING_HEADER,
 )
 
