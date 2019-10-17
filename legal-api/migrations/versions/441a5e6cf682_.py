@@ -54,7 +54,7 @@ def upgrade():
 
     meta = MetaData(bind=op.get_bind())
     meta.reflect(only=('office_types',))
-    
+
     office_types_table = Table('office_types', meta)
 
     op.bulk_insert(
