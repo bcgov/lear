@@ -48,7 +48,7 @@ def extract_payment_token(msg: nats.aio.client.Msg) -> dict:
 
 def get_filing_by_payment_id(payment_id: int) -> Filing:
     """Return the outcome of Filing.get_filing_by_payment_token."""
-    filing = Filing.get_filing_by_payment_token(str(payment_id))
+    return Filing.get_filing_by_payment_token(str(payment_id))
 
 
 def process_filing(payment_token, flask_app):
@@ -58,10 +58,17 @@ def process_filing(payment_token, flask_app):
 
     with flask_app.app_context():
         filing_submission = get_filing_by_payment_id(payment_token['paymentToken'].get('id'))
-        try:
-            status = filing_submission.status
-        except AttributeError:
+        logger.debug('------------------->>>')
+        logger.debug(filing_submission)
+        if not filing_submission:
+            logger.debug('------------------->>> Its NONE')
             raise FilingException
+        logger.debug('------------------->>> Not NONE')
+
+        # try:
+        #     status = filing_submission.status
+        # except AttributeError:
+        #     raise FilingException
 
 
         if filing_submission.status == Filing.Status.COMPLETED.value:
