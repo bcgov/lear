@@ -16,7 +16,8 @@
 This suite should have at least 1 test for every filing type allowed.
 """
 from registry_schemas import validate
-from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS
+from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS, \
+    CORP_CHANGE_OF_ADDRESS
 
 
 def test_valid_ar_filing():
@@ -87,6 +88,70 @@ def test_valid_coa_filing():
     print(errors)
 
     assert is_valid
+
+
+def test_valid_coa_filing_bcorp():
+    """Assert that the Change of Address filing schema is performing as expected."""
+    iar = {
+        'filing': {
+            'header': {
+                'name': 'changeOfAddress',
+                'date': '2019-04-08',
+                'certifiedBy': 'full legal name',
+                'email': 'no_one@never.get'
+            },
+            'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP1234567',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'lastPreBobFilingTimestamp': '',
+                'legalName': 'legal name - CP1234567'
+            },
+            'changeOfAddress': CORP_CHANGE_OF_ADDRESS
+        }
+    }
+    is_valid, errors = validate(iar, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert is_valid
+
+
+def test_invalid_coa_filing_bcorp():
+    """Assert that the Change of Address filing schema conditionals are performing as expected."""
+    coa_arr = CHANGE_OF_ADDRESS
+    coa_arr['legalType'] = 'BC'
+    iar = {
+        'filing': {
+            'header': {
+                'name': 'changeOfAddress',
+                'date': '2019-04-08',
+                'certifiedBy': 'full legal name',
+                'email': 'no_one@never.get'
+            },
+            'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP1234567',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'lastPreBobFilingTimestamp': '',
+                'legalName': 'legal name - CP1234567'
+            },
+            'changeOfAddress': coa_arr
+        }
+    }
+    is_valid, errors = validate(iar, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert not is_valid
 
 
 def test_valid_cod_filing():
