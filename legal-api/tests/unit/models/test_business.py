@@ -252,7 +252,7 @@ def test_business_json(session):
 
 def test_business_relationships_json(session):
     """Assert that the business model is saved correctly."""
-    from legal_api.models import Address
+    from legal_api.models import Address, Office
 
     business = Business(legal_name='legal_name',
                         founding_date=EPOCH_DATETIME,
@@ -260,14 +260,18 @@ def test_business_relationships_json(session):
                         identifier='CP1234567',
                         last_modified=EPOCH_DATETIME)
 
-    mailing_address = Address(city='Test City', address_type=Address.MAILING)
-    business.mailing_address.append(mailing_address)
+    office = Office(office_type='registeredOffice')
+    mailing_address = Address(city='Test City', address_type=Address.MAILING, \
+    business_id=business.id)
+    office.addresses.append(mailing_address)
+    business.offices.append(office)
     business.save()
 
     assert business.mailing_address.one_or_none()
 
-    delivery_address = Address(city='Test City', address_type=Address.DELIVERY)
-    business.delivery_address.append(delivery_address)
+    delivery_address = Address(city='Test City', address_type=Address.DELIVERY, \
+    business_id=business.id)
+    office.addresses.append(delivery_address)
     business.save()
 
     assert business.delivery_address.one_or_none()
