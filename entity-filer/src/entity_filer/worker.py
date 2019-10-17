@@ -38,7 +38,7 @@ from sqlalchemy_continuum import versioning_manager
 
 from entity_filer.config import get_named_config
 from entity_filer.filing_processors import annual_report, change_of_address, change_of_directors
-from entity_filer.service_utils import QueueException, logger
+from entity_filer.service_utils import FilingException, QueueException, logger
 
 
 def extract_payment_token(msg: nats.aio.client.Msg) -> dict:
@@ -48,7 +48,9 @@ def extract_payment_token(msg: nats.aio.client.Msg) -> dict:
 
 def get_filing_by_payment_id(payment_id: int) -> Filing:
     """Return the outcome of Filing.get_filing_by_payment_token."""
-    return Filing.get_filing_by_payment_token(str(payment_id))
+    filing = Filing.get_filing_by_payment_token(str(payment_id))
+    if not filing:
+        raise FilingException
 
 
 def process_filing(payment_token, flask_app):
@@ -106,6 +108,7 @@ FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(get_named_config('production'))
 db.init_app(FLASK_APP)
 
+from . import service
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
     """Use Callback to process Queue Msg objects."""
@@ -117,7 +120,13 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
     except OperationalError as err:
         logger.error('Queue Blocked - Database Issue: %s', json.dumps(payment_token), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue
+    except FilingException:
+
+        service.publish_message(payment_token)
+        capture_message('Queue Filing Error:' + json.dumps(payment_token), level='error')
+        logger.error('Queue Filing Error: %s', json.dumps(payment_token), exc_info=True)
     except (QueueException, Exception):  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
         capture_message('Queue Error:' + json.dumps(payment_token), level='error')
         logger.error('Queue Error: %s', json.dumps(payment_token), exc_info=True)
+
