@@ -136,12 +136,14 @@ class ServiceWorker():
 
     async def publish(self, payload):
         """Publish to the queue."""
+        logger.debug('got to publish()')
         try:
             self.sc.publish(subject=self.config.SUBSCRIPTION_OPTIONS.get('subject'),
                              payload=payload.encode('utf-8'))
+            logger.debug('done publishing')
 
         except Exception as err:  # pylint: disable=broad-except; catch all errors to log out when closing the service.
-            logger.debug('error when closing the streams: %s', err, stack_info=True)
+            logger.debug('error in ServiceWorker.publish(): %s', err, stack_info=True)
 
     async def close(self):
         """Close the stream and nats connections."""
@@ -152,8 +154,11 @@ class ServiceWorker():
             logger.debug('error when closing the streams: %s', err, stack_info=True)
 
 async def publish_message(payload):
+    logger.debug('got to publish_message()')
     service = ServiceWorker.get_instance()
+    logger.debug('service=' + service)
     service.publish(payload)
+    logger.debug('done publish_message()')
 
 async def run(loop):  # pylint: disable=too-many-locals
     """Run the main application loop for the service.
