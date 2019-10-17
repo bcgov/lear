@@ -342,7 +342,9 @@
                     :key="activeIndex"
                   />
 
-                  <div class="form__row" v-if="entityFilter(EntityTypes.BCorp)">
+                  <div class="form__row" v-if="entityFilter(EntityTypes.BCorp)"
+                   v-show="editFormShowHide.showAddress"
+                  >
                     <v-checkbox
                       class="inherit-checkbox"
                       label="Mailing Address same as Delivery Address"
