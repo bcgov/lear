@@ -20,7 +20,6 @@ import datetime
 from http import HTTPStatus
 
 from legal_api.services.authz import STAFF_ROLE
-from legal_api.resources.business import business_directors
 from tests.unit.models import Address, Director, factory_business
 from tests.unit.services.utils import create_header
 
@@ -52,6 +51,7 @@ def test_get_business_directors(session, client, jwt):
     assert 'directors' in rv.json
     assert rv.json['directors'][0]['deliveryAddress']['addressCity'] == 'Test Mailing City'
 
+
 def test_bcorp_get_business_directors(session, client, jwt):
     """Assert that business directors are returned."""
     # setup
@@ -80,6 +80,7 @@ def test_bcorp_get_business_directors(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
     assert 'directors' in rv.json
     assert rv.json['directors'][0]['mailingAddress']['addressCity'] == 'Test Mailing City'
+
 
 def test_get_business_no_directors(session, client, jwt):
     """Assert that business directors are not returned."""
