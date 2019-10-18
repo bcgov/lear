@@ -22,9 +22,8 @@ router.afterEach((to, from) => {
     if (redirected !== 'true') {
       if (!sessionStorage.getItem('KEYCLOAK_TOKEN')) {
         sessionStorage.setItem('REDIRECTED', 'true')
-        const origin = sessionStorage.getItem('ORIGIN') || ''
-        const authStub = sessionStorage.getItem('AUTH_STUB') || ''
-        const authUrl = origin + authStub
+        const authUrl = sessionStorage.getItem('AUTH_URL')
+        // assume Auth URL is always reachable
         window.location.assign(authUrl)
       }
     }
