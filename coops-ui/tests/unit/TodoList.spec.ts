@@ -605,7 +605,7 @@ describe('TodoList - Click Tests', () => {
   it('redirects to Pay URL when \'Resume Payment\' is clicked', done => {
     // set necessary session variables
     sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_AUTH_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
 
     // init store
     store.state.tasks = [
@@ -657,7 +657,7 @@ describe('TodoList - Click Tests', () => {
   it('redirects to Pay URL when \'Retry Payment\' is clicked', done => {
     // set necessary session variables
     sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_AUTH_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
 
     // init store
     store.state.tasks = [

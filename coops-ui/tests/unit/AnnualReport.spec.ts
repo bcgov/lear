@@ -562,7 +562,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
     async () => {
       // set necessary session variables
       sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-      sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_AUTH_PATH}/`)
+      sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
 
       const localVue = createLocalVue()
       localVue.use(VueRouter)
@@ -627,7 +627,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
     async () => {
       // set necessary session variables
       sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-      sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_AUTH_PATH}/`)
+      sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
 
       const localVue = createLocalVue()
       localVue.use(VueRouter)
