@@ -215,7 +215,6 @@ def test_business_json(session):
                         )
     # basic json
     d = {
-        'availableOnPaperOnly': False,
         'legalName': 'legal_name',
         'legalType': 'CP',
         'identifier': 'CP1234567',
