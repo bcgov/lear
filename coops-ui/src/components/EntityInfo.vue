@@ -89,9 +89,8 @@ export default class EntityInfo extends Vue {
    * Redirects the user to the Auth UI to update their business profile.
    */
   private editBusinessProfile (): void {
-    const origin = sessionStorage.getItem('ORIGIN') || ''
-    const authStub = sessionStorage.getItem('AUTH_STUB') || ''
-    const businessProfileUrl = origin + authStub + 'businessprofile'
+    const authUrl = sessionStorage.getItem('AUTH_URL')
+    const businessProfileUrl = authUrl + 'businessprofile'
 
     // assume Business Profile URL is always reachable
     window.location.assign(businessProfileUrl)

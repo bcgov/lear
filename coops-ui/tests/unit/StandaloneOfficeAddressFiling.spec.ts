@@ -371,6 +371,10 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
 
   it('saves a new filing and redirects to Pay URL when this is a new AR and the File & Pay button is clicked',
     async () => {
+      // set necessary session variables
+      sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
+      sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_AUTH_PATH}/`)
+
       const localVue = createLocalVue()
       localVue.use(VueRouter)
       const router = mockRouter.mock()
@@ -420,7 +424,8 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
       // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
       // verify redirection
-      const payURL = 'makepayment/321/' + encodeURIComponent('dashboard?filing_id=123')
+      const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
+        encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
@@ -430,6 +435,10 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
   it('updates an existing filing and redirects to Pay URL when this is a draft filing and the ' +
     'File & Pay button is clicked',
   async () => {
+    // set necessary session variables
+    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_AUTH_PATH}/`)
+
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
@@ -478,7 +487,8 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
     // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
     // verify redirection
-    const payURL = 'makepayment/321/' + encodeURIComponent('dashboard?filing_id=123')
+    const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
+      encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
     wrapper.destroy()

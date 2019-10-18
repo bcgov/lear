@@ -603,6 +603,10 @@ describe('TodoList - Click Tests', () => {
   })
 
   it('redirects to Pay URL when \'Resume Payment\' is clicked', done => {
+    // set necessary session variables
+    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_AUTH_PATH}/`)
+
     // init store
     store.state.tasks = [
       {
@@ -641,7 +645,8 @@ describe('TodoList - Click Tests', () => {
       await button.click()
 
       // verify redirection
-      const payURL = 'makepayment/654/' + encodeURIComponent('dashboard?filing_id=456')
+      const payURL = 'myhost/cooperatives/auth/makepayment/654/' +
+        encodeURIComponent('myhost/cooperatives/dashboard?filing_id=456')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
@@ -650,6 +655,10 @@ describe('TodoList - Click Tests', () => {
   })
 
   it('redirects to Pay URL when \'Retry Payment\' is clicked', done => {
+    // set necessary session variables
+    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_AUTH_PATH}/`)
+
     // init store
     store.state.tasks = [
       {
@@ -686,7 +695,8 @@ describe('TodoList - Click Tests', () => {
       await button.click()
 
       // verify redirection
-      const payURL = 'makepayment/987/' + encodeURIComponent('dashboard?filing_id=789')
+      const payURL = 'myhost/cooperatives/auth/makepayment/987/' +
+        encodeURIComponent('myhost/cooperatives/dashboard?filing_id=789')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
