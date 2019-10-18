@@ -314,10 +314,9 @@ export default {
 
         // if filing needs to be paid, redirect to Pay URL
         if (this.isPaidFiling) {
-          const origin = sessionStorage.getItem('ORIGIN') || ''
-          const authStub = sessionStorage.getItem('AUTH_STUB') || ''
-          const authUrl = origin + authStub
-          const returnURL = encodeURIComponent(origin + 'dashboard?filing_id=' + filingId)
+          const baseUrl = sessionStorage.getItem('BASE_URL')
+          const returnURL = encodeURIComponent(baseUrl + 'dashboard?filing_id=' + filingId)
+          const authUrl = sessionStorage.getItem('AUTH_URL')
           const payURL = authUrl + 'makepayment/' + paymentToken + '/' + returnURL
 
           // assume Pay URL is always reachable
