@@ -845,12 +845,18 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
               directors[i].officer.prevLastName = directors[i].officer.lastName
               directors[i].officer.prevMiddleInitial = directors[i].officer.middleInitial
 
+              // if this is a Coop, copy delivery address to mailing address - directors only have delivery addresses
+              if (this.entityFilter(EntityTypes.Coop)) {
+                directors[i].mailingAddress = directors[i].deliveryAddress
+              }
+
               // ensure there is complete address data including missing/blank fields
               directors[i].deliveryAddress = this.formatAddress(directors[i].deliveryAddress)
               if (directors[i].mailingAddress) {
                 directors[i].mailingAddress = this.formatAddress(directors[i].mailingAddress)
               }
             }
+
             // save to component data now that extra attributes are added
             if (!getOrigOnly) this.directors = directors
 
