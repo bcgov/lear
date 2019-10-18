@@ -56,7 +56,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
     _identifier = db.Column('identifier', db.String(10), index=True)
-    paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
 
@@ -147,7 +146,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         None fields are not included.
         """
         d = {
-            'availableOnPaperOnly': self.paper_only if self.paper_only else False,
             'foundingDate': self.founding_date.isoformat(),
             'identifier': self.identifier,
             'lastModified': self.last_modified.isoformat(),

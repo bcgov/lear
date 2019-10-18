@@ -33,7 +33,6 @@ def factory_business(designation: str = '001'):
                     last_ledger_timestamp=datetime.utcfromtimestamp(0),
                     dissolution_date=None,
                     identifier='CP1234567',
-                    paper_only=False,
                     tax_id=f'BN0000{designation}',
                     fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
 
@@ -213,7 +212,6 @@ def test_business_json(session):
                         last_modified=EPOCH_DATETIME,
                         last_ar_date=EPOCH_DATETIME,
                         last_agm_date=EPOCH_DATETIME,
-                        paper_only=False
                         )
     # basic json
     d = {
