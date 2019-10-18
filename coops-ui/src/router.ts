@@ -22,7 +22,10 @@ router.afterEach((to, from) => {
     if (redirected !== 'true') {
       if (!sessionStorage.getItem('KEYCLOAK_TOKEN')) {
         sessionStorage.setItem('REDIRECTED', 'true')
-        window.location.href = sessionStorage.getItem('AUTH_URL')
+        const origin = sessionStorage.getItem('ORIGIN') || ''
+        const authStub = sessionStorage.getItem('AUTH_STUB') || ''
+        const authUrl = origin + authStub
+        window.location.assign(authUrl)
       }
     }
   }

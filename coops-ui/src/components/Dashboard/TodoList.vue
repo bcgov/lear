@@ -347,21 +347,21 @@ export default {
       }
     },
 
-    // this is called to either Resume Payment or Retry Payment
+    // this is called for both Resume Payment and Retry Payment
     doResumePayment (item) {
       // staff are not allowed to resume or retry payment
       if (this.isRoleStaff) return false
 
-      const root = window.location.origin || ''
-      const path = process.env.VUE_APP_PATH
-      const origin = `${root}/${path}`
-
       const filingId = item.id
-      const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
-      let authStub = sessionStorage.getItem('AUTH_URL') || ''
-      if (!(authStub.endsWith('/'))) { authStub += '/' }
       const paymentToken = item.paymentToken
-      const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
+
+      const origin = sessionStorage.getItem('ORIGIN') || ''
+      const authStub = sessionStorage.getItem('AUTH_STUB') || ''
+      const authUrl = origin + authStub
+      const returnURL = encodeURIComponent(origin + 'dashboard?filing_id=' + filingId)
+      const payURL = authUrl + 'makepayment/' + paymentToken + '/' + returnURL
+
+      // assume Pay URL is always reachable
       window.location.assign(payURL)
       return true
     },

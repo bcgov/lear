@@ -12,6 +12,15 @@ export default {
       'Cache-Control': 'no-cache'
     }
 
+    // get 'origin' just once for the app
+    {
+      const root = window.location.origin || ''
+      const path = process.env.VUE_APP_PATH
+      const origin = `${root}/${path}/`
+      sessionStorage.setItem('ORIGIN', origin)
+      console.log('Set Origin to: ' + origin)
+    }
+
     return axios
       .get(url, { headers })
       .then(response => {
@@ -19,9 +28,9 @@ export default {
         axios.defaults.baseURL = apiUrl
         console.log('Set Base URL to: ' + apiUrl)
 
-        const authUrl = response.data['AUTH_URL']
-        sessionStorage.setItem('AUTH_URL', authUrl)
-        console.log('Set Auth URL to: ' + authUrl)
+        const authStub = response.data['AUTH_URL']
+        sessionStorage.setItem('AUTH_STUB', authStub)
+        console.log('Set Auth Stub to: ' + authStub)
 
         const authApiUrl = response.data['AUTH_API_URL']
         sessionStorage.setItem('AUTH_API_URL', authApiUrl)

@@ -450,7 +450,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
       // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
       // verify redirection
-      const payURL = '/makepayment/321/' + encodeURIComponent('/cooperatives/dashboard?filing_id=123')
+      const payURL = 'makepayment/321/' + encodeURIComponent('dashboard?filing_id=123')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
@@ -507,7 +507,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
     // verify redirection
-    const payURL = '/makepayment/321/' + encodeURIComponent('/cooperatives/dashboard?filing_id=123')
+    const payURL = 'makepayment/321/' + encodeURIComponent('dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
     wrapper.destroy()

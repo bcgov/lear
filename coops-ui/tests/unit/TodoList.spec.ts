@@ -641,7 +641,7 @@ describe('TodoList - Click Tests', () => {
       await button.click()
 
       // verify redirection
-      const payURL = '/makepayment/654/' + encodeURIComponent('/cooperatives/dashboard?filing_id=456')
+      const payURL = 'makepayment/654/' + encodeURIComponent('dashboard?filing_id=456')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()
@@ -686,7 +686,7 @@ describe('TodoList - Click Tests', () => {
       await button.click()
 
       // verify redirection
-      const payURL = '/makepayment/987/' + encodeURIComponent('/cooperatives/dashboard?filing_id=789')
+      const payURL = 'makepayment/987/' + encodeURIComponent('dashboard?filing_id=789')
       expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
       wrapper.destroy()

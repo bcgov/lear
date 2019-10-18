@@ -344,19 +344,19 @@ export default {
       if (this.busySaving) return true
 
       this.filingPaying = true
-      const filing = await this.saveFiling(false)
+      const filing = await this.saveFiling(false) // not a draft
+
       // on success, redirect to Pay URL
       if (filing && filing.header) {
-        const root = window.location.origin || ''
-        const path = process.env.VUE_APP_PATH
-        const origin = `${root}/${path}`
-
         const filingId = +filing.header.filingId
-        const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
-        let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
-        if (!(authStub.endsWith('/'))) { authStub += '/' }
         const paymentToken = filing.header.paymentToken
-        const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
+
+        const origin = sessionStorage.getItem('ORIGIN') || ''
+        const authStub = sessionStorage.getItem('AUTH_STUB') || ''
+        const authUrl = origin + authStub
+        const returnURL = encodeURIComponent(origin + 'dashboard?filing_id=' + filingId)
+        const payURL = authUrl + 'makepayment/' + paymentToken + '/' + returnURL
+
         // assume Pay URL is always reachable
         window.location.assign(payURL)
       }
