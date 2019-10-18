@@ -2,7 +2,7 @@ module.exports = {
   configureWebpack: {
     devtool: 'source-map'
   },
-  transpileDependencies: ['vuex-persist', 'vuetify'],
+  transpileDependencies: ['vuetify'],
   publicPath: process.env.VUE_APP_PATH,
   pwa: {
     workboxPluginMode: 'InjectManifest',
