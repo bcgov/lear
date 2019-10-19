@@ -27,6 +27,7 @@ to be pursued.
 """
 import datetime
 import json
+from time import sleep
 
 import nats
 from flask import Flask
@@ -67,6 +68,7 @@ def process_filing(payment_token, flask_app):
         while not filing_submission and counter <= 5:
             filing_submission = get_filing_by_payment_id(payment_token['paymentToken'].get('id'))
             counter += 1
+            sleep(0.2)
         if not filing_submission:
             raise FilingException
 
