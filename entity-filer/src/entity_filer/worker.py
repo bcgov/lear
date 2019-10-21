@@ -27,6 +27,7 @@ to be pursued.
 """
 import datetime
 import json
+from time import sleep
 
 import nats
 from flask import Flask
@@ -38,7 +39,9 @@ from sqlalchemy_continuum import versioning_manager
 
 from entity_filer.config import get_named_config
 from entity_filer.filing_processors import annual_report, change_of_address, change_of_directors
-from entity_filer.service_utils import QueueException, logger
+from entity_filer.service_utils import FilingException, QueueException, logger
+
+from . import service
 
 
 def extract_payment_token(msg: nats.aio.client.Msg) -> dict:
@@ -57,7 +60,17 @@ def process_filing(payment_token, flask_app):
         raise QueueException('Flask App not available.')
 
     with flask_app.app_context():
-        filing_submission = get_filing_by_payment_id(payment_token['paymentToken'].get('id'))
+
+        # try to find the filing 5 times before putting back on the queue - in case payment token ends up on the queue
+        # before it is assigned to filing.
+        counter = 1
+        filing_submission = None
+        while not filing_submission and counter <= 5:
+            filing_submission = get_filing_by_payment_id(payment_token['paymentToken'].get('id'))
+            counter += 1
+            sleep(0.2)
+        if not filing_submission:
+            raise FilingException
 
         if filing_submission.status == Filing.Status.COMPLETED.value:
             logger.warning('Queue: Attempting to reprocess business.id=%s, filing.id=%s payment=%s',
@@ -117,6 +130,10 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
     except OperationalError as err:
         logger.error('Queue Blocked - Database Issue: %s', json.dumps(payment_token), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue
+    except FilingException:
+        capture_message('Queue Filing Error:' + json.dumps(payment_token), level='error')
+        logger.error('Queue Filing Error: %s', json.dumps(payment_token), exc_info=True)
+        await service.publish_message(payment_token)
     except (QueueException, Exception):  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
         capture_message('Queue Error:' + json.dumps(payment_token), level='error')
