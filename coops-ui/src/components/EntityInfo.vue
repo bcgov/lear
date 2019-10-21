@@ -20,9 +20,9 @@
       <div class="business-info">
         <dl>
           <dt>Business No:</dt>
-          <dd class="ml-2">{{ entityBusinessNo || 'Not Available' }}</dd>
+          <dd class="ml-2 business-number">{{ entityBusinessNo || 'Not Available' }}</dd>
           <dt>Incorporation No:</dt>
-          <dd class="ml-2">{{ entityIncNo || 'Not Available' }}</dd>
+          <dd class="ml-2 incorp-number">{{ entityIncNo || 'Not Available' }}</dd>
         </dl>
 
         <div class="business-info__contact">

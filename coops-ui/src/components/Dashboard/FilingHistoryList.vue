@@ -25,7 +25,7 @@
 
     <v-expansion-panels v-if="filedItems && filedItems.length > 0" v-model="panel" accordion>
       <v-expansion-panel
-        class="align-items-top"
+        class="align-items-top filing-history-item"
         v-for="(item, index) in filedItems"
         v-bind:key="index">
         <v-expansion-panel-header>

@@ -85,7 +85,7 @@ describe('Dashboard - Click Tests', () => {
 
     Vue.nextTick(async () => {
       const button = vm.$el.querySelector('#btn-standalone-addresses')
-      expect(button.querySelector('.v-btn__content').textContent).toContain('EDIT')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Change')
       await button.click()
 
       // verify routing to Standalone Office Address Filing page with id=0
@@ -110,7 +110,7 @@ describe('Dashboard - Click Tests', () => {
 
     Vue.nextTick(async () => {
       const button = vm.$el.querySelector('#btn-standalone-directors')
-      expect(button.querySelector('.v-btn__content').textContent).toContain('EDIT')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Change')
       await button.click()
 
       // verify routing to Standalone Directors Filing page with id=0

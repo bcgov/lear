@@ -51,9 +51,9 @@ describe('AddressListSm', () => {
     Vue.nextTick(() => {
       expect(vm.mailingAddress).not.toBeNull()
       expect(vm.deliveryAddress).toBeNull()
-      expect(vm.$el.querySelectorAll('.list-item').length).toEqual(1)
-      expect(vm.$el.querySelector('.list-item__title').textContent).toBe('Mailing Address')
-      expect(vm.$el.querySelector('.address-details').textContent).toContain('Victoria BC')
+      expect(vm.$el.querySelectorAll('.v-list-item').length).toEqual(1)
+      expect(vm.$el.querySelector('.v-list-item__title').textContent).toBe('Mailing Address')
+      expect(vm.$el.querySelector('.address-info').textContent).toContain('Victoria BC')
 
       done()
     })
@@ -73,9 +73,9 @@ describe('AddressListSm', () => {
     Vue.nextTick(() => {
       expect(vm.mailingAddress).toBeNull()
       expect(vm.deliveryAddress).not.toBeNull()
-      expect(vm.$el.querySelectorAll('.list-item').length).toEqual(1)
-      expect(vm.$el.querySelector('.list-item__title').textContent).toBe('Delivery Address')
-      expect(vm.$el.querySelector('.address-details').textContent).toContain('Glasgow Scotland')
+      expect(vm.$el.querySelectorAll('.v-list-item').length).toEqual(1)
+      expect(vm.$el.querySelector('.v-list-item__title').textContent).toBe('Delivery Address')
+      expect(vm.$el.querySelector('.address-info').textContent).toContain('Glasgow Scotland')
 
       done()
     })
