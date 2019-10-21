@@ -29,6 +29,17 @@ class Office:
     mailing_address = None
     event_id = None
 
+    # TODO - Remove hardcoded dictionary
+    office_codes = {
+        'registeredOffice' : {
+            'code' : 'RG',
+            'description' : 'Registered Office'
+        },
+        'recordsOffice' : {
+            'code' : 'RC',
+            'description' : 'Records Office'
+        }
+    }
     def __init__(self):
         """Initialize with all values None."""
 
