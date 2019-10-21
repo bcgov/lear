@@ -1,31 +1,31 @@
 @import "theme.scss";
 
-// @font-face{
-//   font-family: 'BCSans';
-//   font-style: normal;
-//   font-weight: 400;
-//   src: url('assets/fonts/BCSans/BCSans-Regular.woff2') format('woff2'), /* Optimized for very modern browsers */
-//        url('assets/fonts/BCSans/BCSans-Regular.woff') format('woff'), /* Modern Browsers */
-// }
-// @font-face{
-//   font-family: 'BCSans';
-//   font-style: italic;
-//   src: url('assets/fonts/BCSans/BCSans-Italic.woff2') format('woff2'), /* Optimized for very modern browsers */
-//        url('assets/fonts/BCSans/BCSans-Italic.woff') format('woff'); /* Modern Browsers */
-// }
-// @font-face{
-//   font-family: 'BCSans';
-//   font-weight: 700; 
-//   src: url('assets/fonts/BCSans/BCSans-Bold.woff') format('woff2'), /* Modern Browsers */
-//        url('assets/fonts/BCSans/BCSans-Bold.woff2') format('woff'); /* Optimized for very modern browsers */
-// }
-// @font-face{
-//   font-family: 'BCSans';
-//   font-style: italic;
-//   font-weight: 700; 
-//   src: url('assets/fonts/BCSans/BCSans-BoldItalic.woff') format('woff2'), /* Modern Browsers */
-//        url('assets/fonts/BCSans/BCSans-BoldItalic.woff2') format('woff'); /* Optimized for very modern browsers */
-// }
+@font-face{
+  font-family: 'BCSans';
+  font-style: normal;
+  font-weight: 400;
+  src: url('assets/fonts/BCSans/BCSans-Regular.woff2') format('woff2'), /* Optimized for very modern browsers */
+       url('assets/fonts/BCSans/BCSans-Regular.woff') format('woff'), /* Modern Browsers */
+}
+@font-face{
+  font-family: 'BCSans';
+  font-style: italic;
+  src: url('assets/fonts/BCSans/BCSans-Italic.woff2') format('woff2'), /* Optimized for very modern browsers */
+       url('assets/fonts/BCSans/BCSans-Italic.woff') format('woff'); /* Modern Browsers */
+}
+@font-face{
+  font-family: 'BCSans';
+  font-weight: 700; 
+  src: url('assets/fonts/BCSans/BCSans-Bold.woff') format('woff2'), /* Modern Browsers */
+       url('assets/fonts/BCSans/BCSans-Bold.woff2') format('woff'); /* Optimized for very modern browsers */
+}
+@font-face{
+  font-family: 'BCSans';
+  font-style: italic;
+  font-weight: 700; 
+  src: url('assets/fonts/BCSans/BCSans-BoldItalic.woff') format('woff2'), /* Modern Browsers */
+       url('assets/fonts/BCSans/BCSans-BoldItalic.woff2') format('woff'); /* Optimized for very modern browsers */
+}
 
 html,
 body {
@@ -43,52 +43,38 @@ html {
 }
 
 body {
-  // NB: Vuetify font is set on .v-application class (see below)
-  // font-family: 'BCSans', sans-serif;
-  font-family: 'Roboto', sans-serif;
   font-size: 1rem;
+}
+
+h1, h2, h3, h4 {
+  color: $gray9;
+}
+
+h1, h2 {
+  letter-spacing: -0.03rem;
+  font-weight: 700;
 }
 
 h1 {
-  margin-bottom: 1rem;
-  line-height: 2rem;
-  letter-spacing: -0.01rem;
-  font-size: 1.75rem;
-  font-weight: 500;
-}
-
-h2 {
-  margin-bottom: 0.75rem;
-  letter-spacing: -0.01rem;
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-h3 {
-  letter-spacing: -0.01rem;
-  font-size: 1rem;
-  font-weight: 500;
+  line-height: 2.25rem;
+  font-size: 2.0625rem; // 33px based off of 1rem = 16px
 }
 
 p {
-  margin-bottom: 1.5rem;
-  font-size: 1rem;
-  font-weight: 400
+  font-weight: 400;
 }
 
-hr {
-  margin-top: 2rem;
-  margin-bottom: 2rem;
-  border-color: $gray4;
-  border-style: solid;
+.v-application {
+  font-family: 'BCSans', Verdana, Arial, sans-serif;  // BC Government Font
+}
+
+.theme--light.v-application {
+  color: $gray7;
+  background-color: $gray1;
 }
 
 .container {
   padding: 1.25rem;
-}
-
-.app-container.theme--light {
-  background: $gray1;
 }
 
 .form-input {
@@ -231,7 +217,7 @@ hr {
 }
 
 // Common
-.list {
+ul.list {
   margin: 0;
   padding: 0;
   list-style-type: none;
@@ -242,7 +228,6 @@ hr {
   flex-direction: row;
   align-items: center;
   padding: 1rem 1.25rem;
-  font-size: 0.875rem;
   line-height: 1.25rem;
 }
 
@@ -251,7 +236,6 @@ hr {
 }
 
 .list-item__icon {
-  margin-top: -1px;
   margin-right: 0.5rem;
 }
 
@@ -261,7 +245,6 @@ hr {
 
 .list-item__subtitle {
   color: $gray6;
-  font-weight: 300;
 }
 
 .list-item__actions {
@@ -291,12 +274,6 @@ hr {
   color: $gray6;
   font-size: 0.875rem;
   font-weight: 500;
-}
-
-.v-application {
-  // override the default Vuetify font
-  // font-family: 'BCSans', sans-serif;
-  font-family: 'Roboto', sans-serif;
 }
 
 .inline-div{

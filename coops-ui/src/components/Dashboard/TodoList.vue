@@ -18,25 +18,31 @@
         :class="{ 'disabled': !item.enabled, 'draft': isDraft(item) }">
         <v-expansion-panel-header class="no-dropdown">
           <div class="list-item">
-            <div class="list-item__title">{{item.title}}</div>
+            <div class="filing-type">
+              <div class="list-item__title">{{item.title}}</div>
+            </div>
 
             <div class="list-item__subtitle" v-if="isNew(item)">
               <span v-if="item.subtitle">{{item.subtitle}}</span>
             </div>
+
             <template v-else>
-              <div class="list-item__status1">
+              <div class="filing-status-1">
                 <span v-if="isDraft(item)">DRAFT</span>
                 <span v-else-if="isPending(item)">FILING PENDING</span>
                 <span v-else-if="isError(item)">FILING PENDING</span>
               </div>
-
-              <div class="list-item__status2">
-                <span v-if="isPending(item)">
-                  PAYMENT INCOMPLETE<v-btn text icon color="black"><v-icon>mdi-information-outline</v-icon></v-btn>
+              <div class="filing-status-2" v-if="isPending(item)">
+                <span>
+                  PAYMENT INCOMPLETE
                 </span>
-                <span v-else-if="isError(item)">
-                  PAYMENT UNSUCCESSFUL<v-btn text icon color="black"><v-icon>mdi-information-outline</v-icon></v-btn>
+                <v-btn small icon color="black" class="info-btn"><v-icon>mdi-information-outline</v-icon></v-btn>
+              </div>
+              <div class="filing-status-2" v-else-if="isError(item)">
+                <span>
+                  PAYMENT UNSUCCESSFUL
                 </span>
+                <v-btn small icon color="black" class="info-btn"><v-icon>mdi-information-outline</v-icon></v-btn>
               </div>
             </template>
 
@@ -450,66 +456,17 @@ export default {
 <style lang="scss" scoped>
 @import "../../assets/styles/theme.scss";
 
-.todo-list.draft .v-expansion-panel__body {
-  display: none;
-}
-
 .todo-list {
   // disable expansion
   pointer-events: none;
 }
 
-.todo-list .list-item {
-  padding: 0;
-
-  .list-item__title {
-    width: 25%;
-  }
-
-  .list-item__subtitle {
-    font-size: 0.75rem;
-  }
-
-  .list-item__status1 {
-    width: 20%;
-    color: $gray7;
-  }
-
-  .list-item__status2 {
-    width: 36%;
-    color: $gray7;
-
-    .v-btn {
-      margin: 0;
-    }
-  }
-
-  .list-item__actions {
-    .v-btn {
-      min-width: 142px;
-    }
-
-    #btn-draft-resume {
-      min-width: 103px;
-      border-top-right-radius: 0;
-      border-bottom-right-radius: 0;
-    }
-  }
-}
-
 .todo-list.disabled {
-  background-color: $gray0;
+  opacity: 0.6;
 
-  .list-item__title,
-  .list-item__subtitle,
-  .list-item__status1,
-  .list-item__status2 {
-    color: $gray6;
-
-    .v-btn {
-      // enable expansion buttons
-      pointer-events: auto;
-    }
+  .v-btn {
+    // enable expansion butto
+    pointer-events: auto;
   }
 }
 
@@ -517,6 +474,23 @@ export default {
   .v-btn {
     // enable action buttons
     pointer-events: auto;
+  }
+}
+
+.todo-list.draft .v-expansion-panel__body {
+  display: none;
+}
+
+.todo-list .list-item {
+  padding: 0;
+  justify-content: space-evenly;
+}
+
+.todo-list .list-item .list-item__actions {
+  #btn-draft-resume {
+    min-width: 103px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
   }
 }
 
@@ -531,4 +505,23 @@ export default {
 .actions__more-actions {
   padding: 0;
 }
+
+.filing-type {
+  flex: 1 1 auto;
+}
+
+.filing-status-1 {
+  flex: 1 1 auto;
+}
+
+.filing-status-2 {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+}
+
+.info-btn {
+  margin-left: 0.25rem;
+}
+
 </style>

@@ -10,14 +10,13 @@
           <div class="dashboard-content__main">
             <section>
               <header>
-                <h2>To Do <span class="text-muted">({{todoCount}})</span></h2>
+                <h2 class="mb-3">To Do <span class="text-muted">({{todoCount}})</span></h2>
               </header>
               <todo-list @todo-count="todoCount = $event" @has-blocker-filing="hasBlockerFiling = $event" />
             </section>
-
             <section>
               <header>
-                <h2>Recent Filing History <span class="text-muted">({{filedCount}})</span></h2>
+                <h2 class="mb-3">Recent Filing History <span class="text-muted">({{filedCount}})</span></h2>
               </header>
               <filing-history-list @filed-count="filedCount = $event"/>
             </section>
@@ -25,12 +24,12 @@
 
           <aside class="dashboard-content__aside">
             <section>
-              <header>
+              <header class="aside-header mb-3">
                 <h2>Office Addresses</h2>
-                <v-btn id="btn-standalone-addresses" text small color="primary" :disabled="hasBlockerFiling"
+                <v-btn text small color="primary" id="btn-standalone-addresses" :disabled="hasBlockerFiling"
                       @click.native.stop="goToStandaloneAddresses()">
                   <v-icon small>mdi-pencil</v-icon>
-                  <span>EDIT</span>
+                  <span>Change</span>
                 </v-btn>
               </header>
               <v-card flat>
@@ -39,12 +38,12 @@
             </section>
 
             <section>
-              <header>
+              <header class="aside-header mb-3">
                 <h2>Current Directors</h2>
-                <v-btn id="btn-standalone-directors" text small color="primary" :disabled="hasBlockerFiling"
+                <v-btn text small color="primary" id="btn-standalone-directors" :disabled="hasBlockerFiling"
                       @click.native.stop="goToStandaloneDirectors()">
                   <v-icon small>mdi-pencil</v-icon>
-                  <span>EDIT</span>
+                  <span>Change</span>
                 </v-btn>
               </header>
               <v-card flat>
@@ -100,37 +99,27 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  @import "../assets/styles/theme.scss";
+  section header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
 
-  .text-muted{
-    color: $gray5;
+    h2 {
+      font-size: 1.125rem;
+    }
   }
 
-  h1{
-    margin-bottom: 0
-  }
-
-  .dashboard-content{
+  .dashboard-content {
     display: flex
   }
 
-  .dashboard-content__main{
+  .dashboard-content__main {
     flex: 1 1 auto;
     z-index: 1
   }
 
-  .dashboard-content__aside{
+  .dashboard-content__aside {
     margin-left: 2rem
-  }
-
-  section header{
-    display: flex;
-    flex-direction: row;
-
-    .v-btn{
-      margin-top: 0;
-      margin-right: 0;
-      margin-left: auto;
-    }
   }
 </style>
