@@ -1,5 +1,7 @@
 <template>
+
   <div>
+    <!-- Dialogs -->
     <ConfirmDialog ref="confirm" />
 
     <ResumeErrorDialog
@@ -22,132 +24,233 @@
       @exit="navigateToDashboard"
     />
 
-    <div id="standalone-directors" ref="standaloneDirectors">
-      <!-- Initial Page Load Transition -->
-      <div class="loading-container fade-out">
-        <div class="loading__content">
-          <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-          <div class="loading-msg">Preparing Your Filing</div>
+    <!-- Change of Directors Filing -->
+    <div v-show="!inFilingReview">
+      <div>
+        <div id="standalone-directors" ref="standaloneDirectors">
+          <!-- Initial Page Load Transition -->
+          <div class="loading-container fade-out">
+            <div class="loading__content">
+              <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
+              <div class="loading-msg">Preparing Your Filing</div>
+            </div>
+          </div>
+
+          <v-container id="standalone-directors-container" class="view-container">
+            <article id="standalone-directors-article">
+              <header>
+                <h1 id="filing-header">Change of Directors</h1>
+                <p>Please verify or change the information of the directors.</p>
+
+                <v-alert
+                  type="info"
+                  :value="true"
+                  icon="mdi-information"
+                  outlined class="white-background"
+                  v-if="!entityFilter(EntityTypes.BCorp)">
+                  Director changes can be made as far back as {{ earliestDateToSet }}.
+                </v-alert>
+              </header>
+
+              <!-- Director Information -->
+              <section>
+                <Directors ref="directorsList"
+                  @directorsChange="directorsChange"
+                  @directorsFreeChange="directorsFreeChange"
+                  @earliestDateToSet="earliestDateToSet=$event"
+                  @directorFormValid="directorFormValid=$event"
+                  @allDirectors="allDirectors=$event"
+                  @directorEditAction="directorEditInProgress=$event"
+                  :asOfDate="currentDate"
+                  />
+              </section>
+
+              <!-- Certify -->
+              <section>
+                <header>
+                  <h2 id="AR-step-4-header">Certify Correct</h2>
+                  <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+                </header>
+                <Certify
+                  :isCertified.sync="isCertified"
+                  :certifiedBy.sync="certifiedBy"
+                  :currentDate="this.currentDate"
+                  @valid="certifyFormValid=$event"
+                />
+              </section>
+            </article>
+
+            <aside>
+              <affix relative-element-selector="#standalone-directors-article" :offset="{ top: 120, bottom: 40 }">
+                <sbc-fee-summary v-bind:filingData="[...filingData]" v-bind:payURL="payAPIURL"/>
+              </affix>
+            </aside>
+          </v-container>
+
+          <v-container id="buttons-container" class="list-item">
+            <div class="buttons-left">
+              <v-btn id="cod-save-btn" large
+                :disabled="!isSaveButtonEnabled || busySaving"
+                :loading="saving"
+                @click="onClickSave">
+                Save
+              </v-btn>
+              <v-btn id="cod-save-resume-btn" large
+                :disabled="!isSaveButtonEnabled || busySaving"
+                :loading="savingResuming"
+                @click="onClickSaveResume">
+                Save &amp; Resume Later
+              </v-btn>
+            </div>
+
+            <div class="buttons-right">
+              <v-tooltip top color="#3b6cff">
+                 <template v-slot:activator="{ on }">
+                  <div v-on="on" class="inline-div">
+                    <v-btn
+                      id="cod-next-btn"
+                      color="primary"
+                      large
+                      :depressed="isRoleStaff"
+                      :ripple="!isRoleStaff"
+                      :disabled="!validated || busySaving"
+                      :loading="filingPaying"
+                      @click="showSummary()">
+                      Next
+                    </v-btn>
+                  </div>
+                 </template>
+                <span v-if="isRoleStaff">Staff are not allowed to file.</span>
+                <span v-else>Proceed to Filing Summary</span>
+              </v-tooltip>
+              <v-btn
+                id="cod-cancel-btn"
+                large
+                to="/dashboard">
+                Cancel
+              </v-btn>
+            </div>
+          </v-container>
         </div>
       </div>
+    </div>
 
-      <v-container id="standalone-directors-container" class="view-container">
-        <article id="standalone-directors-article">
-          <header>
-            <h1 id="filing-header">Director Change</h1>
+    <!-- Directors Filing In Review -->
+    <div v-if="inFilingReview">
+      <div id="standalone-directors-review" ref="standaloneDirectors">
+        <!-- Initial Page Load Transition -->
+        <div class="loading-container fade-out">
+          <div class="loading__content">
+            <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
+            <div class="loading-msg">Preparing Your Filing</div>
+          </div>
+        </div>
 
-            <v-alert type="info" :value="true" icon="mdi-information" outlined class="white-background">
-              Director changes can be made as far back as {{ earliestDateToSet }}.
-            </v-alert>
-          </header>
-
-          <!-- Director Information -->
-          <section>
-            <Directors ref="directorsList"
-              @directorsChange="directorsChange"
-              @directorsFreeChange="directorsFreeChange"
-              @earliestDateToSet="earliestDateToSet=$event"
-              @directorFormValid="directorFormValid=$event"
-              @allDirectors="allDirectors=$event"
-              @directorEditAction="directorEditInProgress=$event"
-              :asOfDate="currentDate"
-              />
-          </section>
-
-          <!-- Certify -->
-          <section>
+        <v-container id="standalone-directors-container" class="view-container">
+          <article id="standalone-directors-article-review">
             <header>
-              <h2 id="AR-step-4-header">Certify Correct</h2>
-              <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+              <h1 id="filing-header-review">Review: Change of Directors </h1>
             </header>
-            <Certify
-              :isCertified.sync="isCertified"
-              :certifiedBy.sync="certifiedBy"
-              @valid="certifyFormValid=$event"
-            />
-          </section>
-        </article>
 
-        <aside>
-          <affix relative-element-selector="#standalone-directors-article" :offset="{ top: 120, bottom: 40 }">
-            <sbc-fee-summary v-bind:filingData="[...filingData]" v-bind:payURL="payAPIURL"/>
-          </affix>
-        </aside>
-      </v-container>
+            <!-- Director Information -->
+            <section>
+              <SummaryDirectors ref="directorsList"
+                :directors="allDirectors"
+              />
+            </section>
 
-      <v-container id="buttons-container" class="list-item">
-        <div class="buttons-left">
-          <v-btn id="cod-save-btn" large
-            :disabled="!isSaveButtonEnabled || busySaving"
-            :loading="saving"
-            @click="onClickSave">
-            Save
-          </v-btn>
-          <v-btn id="cod-save-resume-btn" large
-            :disabled="!isSaveButtonEnabled || busySaving"
-            :loading="savingResuming"
-            @click="onClickSaveResume">
-            Save &amp; Resume Later
-          </v-btn>
-        </div>
+            <!-- Certify -->
+            <section>
+              <SummaryCertify
+                :isCertified.sync="isCertified"
+                :certifiedBy.sync="certifiedBy"
+                :currentDate="this.currentDate"
+                @valid="certifyFormValid=$event"
+              />
+            </section>
+          </article>
 
-        <div class="buttons-right">
-          <v-tooltip top color="#3b6cff">
-             <template v-slot:activator="{ on }">
-              <div v-on="on" class="inline-div">
-                <v-btn
-                  id="cod-file-pay-btn"
-                  color="primary"
-                  large
-                  :depressed="isRoleStaff"
-                  :ripple="!isRoleStaff"
-                  :disabled="!validated || busySaving"
-                  :loading="filingPaying"
-                  @click="onClickFilePay">
-                  File &amp; Pay
-                </v-btn>
-              </div>
-             </template>
-            <span v-if="isRoleStaff">Staff are not allowed to file.</span>
-            <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
-              There is no opportunity to change information beyond this point.</span>
-          </v-tooltip>
-          <v-btn
-            id="cod-cancel-btn"
-            large
-            to="/dashboard">
-            Cancel
-          </v-btn>
-        </div>
-      </v-container>
+          <aside>
+            <affix relative-element-selector="#standalone-directors-article" :offset="{ top: 120, bottom: 40 }">
+              <sbc-fee-summary v-bind:filingData="[...filingData]" v-bind:payURL="payAPIURL"/>
+            </affix>
+          </aside>
+        </v-container>
+
+        <v-container id="buttons-container" class="list-item">
+          <div class="buttons-left">
+            <v-btn
+              id="cod-back-btn"
+              large
+              @click="returnToFiling()">
+              Back
+            </v-btn>
+          </div>
+
+          <div class="buttons-right">
+            <v-tooltip top color="#3b6cff">
+              <template v-slot:activator="{ on }">
+                <div v-on="on" class="inline-div">
+                  <v-btn
+                    id="cod-file-pay-btn"
+                    color="primary"
+                    large
+                    :depressed="isRoleStaff"
+                    :ripple="!isRoleStaff"
+                    :disabled="!validated || busySaving"
+                    :loading="filingPaying"
+                    @click="onClickFilePay">
+                    File &amp; Pay
+                  </v-btn>
+                </div>
+              </template>
+              <span v-if="isRoleStaff">Staff are not allowed to file.</span>
+              <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
+                  There is no opportunity to change information beyond this point.</span>
+            </v-tooltip>
+          </div>
+        </v-container>
+      </div>
     </div>
   </div>
+
 </template>
 
 <script lang="ts">
+// Libraries
 import axios from '@/axios-auth'
-import Directors from '@/components/AnnualReport/Directors.vue'
 import { Affix } from 'vue-affix'
-import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapGetters } from 'vuex'
 import { BAD_REQUEST, PAYMENT_REQUIRED } from 'http-status-codes'
+
+// Components
+import Directors from '@/components/AnnualReport/Directors.vue'
+import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
+import { SummaryDirectors, SummaryCertify } from '@/components/Common'
+
+// Dialog Components
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
 
-// action constants
-const APPOINTED = 'appointed'
-const CEASED = 'ceased'
-const NAMECHANGED = 'nameChanged'
-const ADDRESSCHANGED = 'addressChanged'
+// Mixins
+import { EntityFilterMixin } from '@/mixins'
+
+// Enums
+import { EntityTypes } from '@/enums'
+
+// Constants
+import { DirectorConst } from '@/constants'
 
 export default {
   name: 'StandaloneDirectorsFiling',
 
   components: {
     Directors,
+    SummaryDirectors,
+    SummaryCertify,
     SbcFeeSummary,
     Affix,
     Certify,
@@ -157,6 +260,8 @@ export default {
     SaveErrorDialog
   },
 
+  mixins: [EntityFilterMixin],
+
   data () {
     return {
       allDirectors: [],
@@ -165,6 +270,7 @@ export default {
       saveErrorDialog: false,
       paymentErrorDialog: false,
       earliestDateToSet: 'your last filing',
+      inFilingReview: false,
       isCertified: false,
       certifiedBy: '',
       certifyFormValid: false,
@@ -176,7 +282,9 @@ export default {
       filingPaying: false,
       haveChanges: false,
       saveErrors: [],
-      saveWarnings: []
+      saveWarnings: [],
+      EntityTypes,
+      DirectorConst
     }
   },
 
@@ -217,7 +325,6 @@ export default {
         event.returnValue = 'You have unsaved changes. Are you sure you want to leave?'
       }
     }
-
     // NB: filing id of 0 means "new"
     // otherwise it's a draft filing id
     this.filingId = this.$route.params.id
@@ -275,7 +382,6 @@ export default {
     async onClickSave () {
       // prevent double saving
       if (this.busySaving) return
-
       this.saving = true
       const filing = await this.saveFiling(true)
       if (filing) {
@@ -473,14 +579,16 @@ export default {
 
                 // add filing code for paid changes
                 if (changeOfDirectors.directors.filter(
-                  director => this.hasAction(director, CEASED) || this.hasAction(director, APPOINTED)
+                  director => this.hasAction(director, DirectorConst.CEASED) ||
+                    this.hasAction(director, DirectorConst.APPOINTED)
                 ).length > 0) {
                   this.toggleFiling('add', 'OTCDR')
                 }
 
                 // add filing code for free changes
                 if (changeOfDirectors.directors.filter(
-                  director => this.hasAction(director, NAMECHANGED) || this.hasAction(director, ADDRESSCHANGED)
+                  director => this.hasAction(director, DirectorConst.NAMECHANGED) ||
+                    this.hasAction(director, DirectorConst.ADDRESSCHANGED)
                 ).length > 0) {
                   this.toggleFiling('add', 'OTFDR')
                 }
@@ -513,6 +621,23 @@ export default {
     hasAction (director, action) {
       if (director.actions.indexOf(action) >= 0) return true
       else return false
+    },
+
+    /**
+      * Local method to change the state of the view and render the summary content
+      * & relocate window to the top of page
+      */
+    showSummary (): void {
+      this.inFilingReview = true
+      document.body.scrollTop = 0 // For Safari
+      document.documentElement.scrollTop = 0 // For Chrome, Firefox and IE
+    },
+
+    /**
+     * Local method to change the state of the view and render the editable directors list
+     */
+    returnToFiling (): void {
+      this.inFilingReview = false
     }
   },
 

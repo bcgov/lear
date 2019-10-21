@@ -2,7 +2,6 @@
 -r prod.txt
 
 # Testing
-attrs<=19.1.0
 coverage
 freezegun
 hypothesis<=4.38.1

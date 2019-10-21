@@ -42,9 +42,9 @@
         <ul class="list new-director" v-show="showNewDirectorForm">
           <li class="container">
             <div class="meta-container">
-              <label>Appoint New Director</label>
               <div class="meta-container__inner">
-                <v-form ref="newDirectorForm" v-on:submit.prevent="addNewDirector" v-model="directorFormValid"
+                <label class="appoint-header">Appoint New Director</label>
+                <v-form class="appoint-form" ref="newDirectorForm" v-on:submit.prevent="addNewDirector" v-model="directorFormValid"
                         lazy-validation>
                   <div class="form__row three-column">
                     <v-text-field filled class="item" label="First Name" id="new-director__first-name"
@@ -147,11 +147,8 @@
                   -->
 
                   <div class="form__row form__btns">
-                    <v-btn color="error" disabled>
-                      <span>Remove</span>
-                    </v-btn>
+                    <v-btn class="form-cancel-btn" @click="cancelNewDirector">Cancel</v-btn>
                     <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
-                    <v-btn @click="cancelNewDirector">Cancel</v-btn>
                   </div>
                 </v-form>
               </div>
@@ -199,13 +196,13 @@
                 </v-scale-transition>
                 <v-scale-transition>
                   <v-chip x-small label color="blue" text-color="white"
-                          v-show="isNameChanged(director)">
+                          v-if="isNameChanged(director)">
                     Name Changed
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
                   <v-chip x-small label color="blue" text-color="white"
-                          v-show="isAddressChanged(director)">
+                          v-if="isAddressChanged(director)">
                     Address Changed
                   </v-chip>
                 </v-scale-transition>
@@ -430,10 +427,10 @@
                       @click="deleteDirector(director.id)">
                       <span>Remove</span>
                     </v-btn>
+                    <v-btn class="form-cancel-btn" @click="cancelEditDirector()">Cancel</v-btn>
                     <v-btn class="form-primary-btn" color="primary"
                       @click="saveEditDirector(index, director.id)">
                       Done</v-btn>
-                    <v-btn @click="cancelEditDirector()">Cancel</v-btn>
                   </div>
                 </v-form>
               </v-expand-transition>
@@ -448,29 +445,26 @@
 </template>
 
 <script lang="ts">
-
+// Libraries
 import { Component, Mixins, Vue, Prop, Watch, Emit } from 'vue-property-decorator'
 import axios from '@/axios-auth'
 import { mapState, mapGetters } from 'vuex'
 import { required, maxLength } from 'vuelidate/lib/validators'
+
+// Components
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
+
+// Mixins
 import { DateMixin, ExternalMixin, EntityFilterMixin, AddressMixin } from '@/mixins'
+
+// Enums
 import { EntityTypes } from '@/enums'
 
-// action constants
-const APPOINTED = 'appointed'
-const CEASED = 'ceased'
-const NAMECHANGED = 'nameChanged'
-const ADDRESSCHANGED = 'addressChanged'
+// Constants
+import { DirectorConst } from '@/constants'
 
-interface FormType extends Vue {
-  reset(): void
-  validate(): boolean
-}
-
-interface BaseAddressType extends Vue {
-  $refs: any
-}
+// Interfaces
+import { FormsIF, AddressesIF } from '@/interfaces'
 
 @Component({
   components: {
@@ -486,12 +480,12 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   // To fix "property X does not exist on type Y" errors, annotate types for referenced components.
   // ref: https://github.com/vuejs/vetur/issues/1414
   $refs!: {
-    newDirectorForm: FormType,
-    baseAddressNew: BaseAddressType,
-    mailAddressNew: BaseAddressType,
-    editDirectorForm: Array<FormType>,
-    baseAddressEdit: Array<BaseAddressType>
-    mailAddressEdit: Array<BaseAddressType>
+    newDirectorForm: FormsIF.FormType,
+    baseAddressNew: AddressesIF.BaseAddressType,
+    mailAddressNew: AddressesIF.BaseAddressType,
+    editDirectorForm: Array<FormsIF.FormType>,
+    baseAddressEdit: Array<AddressesIF.BaseAddressType>
+    mailAddressEdit: Array<AddressesIF.BaseAddressType>
   }
 
   // Props passed into this component.
@@ -951,7 +945,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     }
 
     let newDirector = {
-      actions: [APPOINTED],
+      actions: [DirectorConst.APPOINTED],
       id: this.directors.length + 1,
       isDirectorActionable: true,
       isFeeApplied: true,
@@ -968,7 +962,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
 
     // if there is also a cease date on this new director, add the ceased action
     if (this.director.cessationDate !== null && this.director.cessationDate !== undefined) {
-      this.addAction(newDirector, CEASED)
+      this.addAction(newDirector, DirectorConst.CEASED)
     }
     this.directors.push(newDirector)
   }
@@ -984,7 +978,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     else director.isFeeApplied = false
 
     // reverse "ceased" action
-    this.toggleAction(director, CEASED)
+    this.toggleAction(director, DirectorConst.CEASED)
 
     // either set or undo cessation date
     if (director.cessationDate === null) {
@@ -1086,22 +1080,22 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
       }
 
       /* COMPARE changes to original director data, for existing directors */
-      if (director.actions.indexOf(APPOINTED) < 0) {
+      if (director.actions.indexOf(DirectorConst.APPOINTED) < 0) {
         const origDirector = this.directorsOriginal.filter(el => el.id === id)[0]
 
         // check whether address has changed
         if ((JSON.stringify(origDirector.deliveryAddress) !== JSON.stringify(director.deliveryAddress)) ||
           (JSON.stringify(origDirector.mailingAddress) !== JSON.stringify(director.mailingAddress))) {
-          this.addAction(director, ADDRESSCHANGED)
+          this.addAction(director, DirectorConst.ADDRESSCHANGED)
         } else {
-          this.removeAction(director, ADDRESSCHANGED)
+          this.removeAction(director, DirectorConst.ADDRESSCHANGED)
         }
 
         // check whether name has changed
         if (JSON.stringify(origDirector.officer) !== JSON.stringify(director.officer)) {
-          this.addAction(director, NAMECHANGED)
+          this.addAction(director, DirectorConst.NAMECHANGED)
         } else {
-          this.removeAction(director, NAMECHANGED)
+          this.removeAction(director, DirectorConst.NAMECHANGED)
         }
       }
 
@@ -1215,7 +1209,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    */
   private isNew (director): boolean {
     // helper function - was the director added in this filing?
-    return (director.actions.indexOf(APPOINTED) >= 0)
+    return (director.actions.indexOf(DirectorConst.APPOINTED) >= 0)
   }
 
   /**
@@ -1224,7 +1218,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * @returns Whether the director has had the name changed.
    */
   private isNameChanged (director): boolean {
-    return (director.actions.indexOf(NAMECHANGED) >= 0)
+    return (director.actions.indexOf(DirectorConst.NAMECHANGED) >= 0)
   }
 
   /**
@@ -1233,7 +1227,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * @returns Whether the director has had the address changed.
    */
   private isAddressChanged (director): boolean {
-    return (director.actions.indexOf(ADDRESSCHANGED) >= 0)
+    return (director.actions.indexOf(DirectorConst.ADDRESSCHANGED) >= 0)
   }
 
   /**
@@ -1243,7 +1237,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    */
   private isActive (director): boolean {
     // helper function - is the director active, ie: not ceased?
-    return (director.actions.indexOf(CEASED) < 0)
+    return (director.actions.indexOf(DirectorConst.CEASED) < 0)
   }
 
   /**
@@ -1377,7 +1371,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     margin: 0;
     padding: 0;
     list-style-type: none;
-    min-width: 54rem;
+    min-width: 56rem;
   }
 
   .meta-container{
@@ -1414,6 +1408,10 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     line-height: 1.5rem;
   }
 
+  .appoint-form {
+    margin-top: 2rem;
+  }
+
   .address-sub-header {
     padding-bottom: 1.5rem;
     font-size: 1rem;
@@ -1430,8 +1428,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
 
       > label:first-child {
         flex: 0 0 auto;
-        padding-right: 2rem;
-        width: 14rem;
+        margin-right: 1rem;
+        width: 12rem;
       }
     }
   }
@@ -1460,7 +1458,10 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   // Address Block Layout
   .address {
     display: flex;
-    width: 14rem;
+    width: 12rem;
+    padding-right: 1rem;
+    padding-left: 1rem;
+    margin-right: 2rem;
   }
 
   .address__row {
@@ -1516,6 +1517,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
 
   .director_dates {
     font-size: 0.8rem;
+    padding-left: 1rem;
   }
 
   .actions .v-btn.actions__more-actions__btn {
@@ -1533,6 +1535,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     position: absolute;
     z-index: 99;
   }
+
   .director-header {
     padding: 1.25rem;
     display: flex;
@@ -1548,8 +1551,15 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
         line-height: 1.1875rem;
       }
   }
+
   .editFormStyle {
     border: 1px solid red;
     padding: 1rem;
+  }
+
+  .form-cancel-btn {
+    position: absolute;
+    right: 0;
+    margin-right: 5rem;
   }
 </style>

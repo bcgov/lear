@@ -4485,7 +4485,7 @@ ALTER TABLE ONLY public.filings
 -- PostgreSQL database dump complete
 --
 
-update public.businesses set legal_type = 'BC' where id in (select id from public.businesses order by founding_date asc limit 25);
+update public.businesses set legal_type = 'CP' where id in (select id from public.businesses order by founding_date asc limit 25);
 update public.businesses set legal_type = 'CP' where id in (select id from public.businesses order by founding_date desc limit 25);
 update public.businesses set founding_date = now() - interval '366 days';
 update public.businesses_version set legal_type=public.businesses.legal_type from public.businesses  where public.businesses_version.id = public.businesses.id;

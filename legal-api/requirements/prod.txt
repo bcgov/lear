@@ -9,7 +9,6 @@ Flask-SQLAlchemy
 SQLAlchemy-Continuum
 asyncio-nats-client
 asyncio-nats-streaming
-attrs<=19.1.0
 flask-jwt-oidc>=0.1.5
 datedelta
 dpath
