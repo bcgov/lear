@@ -247,7 +247,8 @@ CHANGE_OF_ADDRESS = {
 }
 
 VOLUNTARY_DISSOLUTION = {
-    'dissolutionDate': '2018-04-08'
+    'dissolutionDate': '2018-04-08',
+    'hasLiabilities': True
 }
 
 SPECIAL_RESOLUTION = {

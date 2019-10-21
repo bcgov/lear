@@ -11,12 +11,16 @@
         "voluntaryDissolution": {
             "type": "object",
             "required": [
-                "dissolutionDate"
+                "dissolutionDate",
+                "hasLiabilities"
             ],
             "properties": {
                 "dissolutionDate": {
                     "type": "string",
                     "format": "date"
+                },
+                "hasLiabilities": {
+                    "type": "boolean"
                 }
             }
         }
