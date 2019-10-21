@@ -23,7 +23,7 @@
       </v-card>
     </v-dialog>
 
-    <v-expansion-panels class="filing-history" v-if="filedItems && filedItems.length > 0" v-model="panel" accordion >
+    <v-expansion-panels v-if="filedItems && filedItems.length > 0" v-model="panel" accordion>
       <v-expansion-panel
         class="align-items-top"
         v-for="(item, index) in filedItems"
@@ -376,23 +376,6 @@ export default {
     width: 30%;
     text-align: right;
     font-weight: 700;
-  }
-
-// Filing History List
-  .filing-history-list {
-    .list-item {
-      flex-direction: row;
-      align-items: flex-start;
-      padding: 0
-    }
-
-    .status {
-      color: $gray6;
-    }
-
-    .view-document-label {
-      font-weight: 700;
-    }
   }
 
    // Document List
