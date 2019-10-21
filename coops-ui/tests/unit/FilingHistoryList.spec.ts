@@ -24,7 +24,7 @@ describe('FilingHistoryList', () => {
 
     Vue.nextTick(() => {
       expect(vm.filedItems.length).toEqual(0)
-      expect(vm.$el.querySelectorAll('.filing-history-list').length).toEqual(0)
+      expect(vm.$el.querySelectorAll('.filing-history-item').length).toEqual(0)
       expect(wrapper.emitted('filed-count')).toEqual([[0]])
       expect(vm.panel).toBeNull() // no row is expanded
       expect(vm.$el.querySelector('.no-results')).not.toBeNull()
@@ -87,7 +87,7 @@ describe('FilingHistoryList', () => {
 
     Vue.nextTick(() => {
       expect(vm.filedItems.length).toEqual(3)
-      expect(vm.$el.querySelectorAll('.filing-history-list').length).toEqual(3)
+      expect(vm.$el.querySelectorAll('.filing-history-item').length).toEqual(3)
       expect(wrapper.emitted('filed-count')).toEqual([[3]])
       expect(vm.panel).toBeNull() // no row is expanded
       expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -149,7 +149,7 @@ describe('FilingHistoryList', () => {
 
     Vue.nextTick(() => {
       expect(vm.filedItems.length).toEqual(3)
-      expect(vm.$el.querySelectorAll('.filing-history-list').length).toEqual(3)
+      expect(vm.$el.querySelectorAll('.filing-history-item').length).toEqual(3)
       expect(wrapper.emitted('filed-count')).toEqual([[3]])
       expect(vm.panel).toEqual(1) // second row is expanded
       expect(vm.$el.querySelector('.no-results')).toBeNull()

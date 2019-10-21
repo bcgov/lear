@@ -23,20 +23,22 @@
       </v-card>
     </v-dialog>
 
-    <v-expansion-panels v-if="filedItems && filedItems.length > 0" v-model="panel" accordion >
+    <v-expansion-panels v-if="filedItems && filedItems.length > 0" v-model="panel" accordion>
       <v-expansion-panel
-        class="filing-history-list"
+        class="align-items-top filing-history-item"
         v-for="(item, index) in filedItems"
         v-bind:key="index">
         <v-expansion-panel-header>
           <div class="list-item">
-            <div class="list-item__title">{{item.name}}</div>
-            <div class="list-item__subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
-          </div>
-          <div class="v-expansion-panel-header__status">FILED AND PAID</div>
-          <div class="v-expansion-panel-header__icon">
-            <span v-if="panel === index">Hide Documents</span>
-            <span v-else>View Documents</span>
+            <div class="filing-type">
+              <div class="list-item__title mb-1">{{item.name}}</div>
+              <div class="list-item__subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
+            </div>
+            <div class="filing-status">FILED AND PAID</div>
+            <div class="filing-view-docs mr-3">
+              <span v-if="panel === index">Hide Documents</span>
+              <span v-else>View Documents</span>
+            </div>
           </div>
         </v-expansion-panel-header>
         <v-expansion-panel-content>
@@ -352,24 +354,28 @@ export default {
 <style lang="scss" scoped>
   @import "../../assets/styles/theme.scss";
 
-  // Filing History List
-  .filing-history-list {
-    .list-item {
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 0
-    }
+  .list-item {
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 0;
+    font-size: 0.9375rem;
+  }
 
-    .v-expansion-panel-header__status {
-      font-size: 0.875rem;
-      color: $gray6;
-      vertical-align: top
-    }
+  .filing-type {
+    flex-basis: 33.3333%;
+    flex: 1 1 auto;
+  }
 
-    .v-expansion-panel-header__icon {
-      font-size: 0.875rem;
-      font-weight: 700;
-    }
+  .filing-status {
+    width: 25%;
+    color: $gray6;
+  }
+
+  .filing-view-docs {
+    flex: 0 0 auto;
+    width: 30%;
+    text-align: right;
+    font-weight: 700;
   }
 
    // Document List
@@ -377,21 +383,23 @@ export default {
     border-top: 1px solid $gray3;
     padding-left: 0;
 
-    .list-item__btn {
-      margin: 0.25rem 0;
+    .list-item {
+      padding: 0.25rem 0;
+    }
+
+    .v-btn {
       padding: 0 0.5rem 0 0.25rem;
     }
   }
 
    // Documents Actions Bar
   .documents-actions-bar {
-    padding-top: 1rem;
     display: flex;
+    justify-content: flex-end;
+    padding-top: 1rem;
     border-top: 1px solid $gray3;
 
     .download-all-btn {
-      margin-left: auto;
-      margin-right: 0;
       min-width: 8rem;
     }
   }
