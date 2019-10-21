@@ -7,64 +7,90 @@
           <p class="genErr">We were unable to download your filing history document(s).</p>
           <p class="genErr">If this error persists, please contact us.</p>
           <p class="genErr">
-            <v-icon small>phone</v-icon>
+            <v-icon small>mdi-phone</v-icon>
             <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
           </p>
           <p class="genErr">
-            <v-icon small>email</v-icon>
+            <v-icon small>mdi-email</v-icon>
             <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
               >SBC_ITOperationsSupport@gov.bc.ca</a>
           </p>
         </v-card-text>
         <v-divider class="my-0"></v-divider>
         <v-card-actions>
-          <v-btn color="primary" flat @click="downloadErrorDialog = false">Close</v-btn>
+          <v-btn color="primary" text @click="downloadErrorDialog = false">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <v-expansion-panel v-if="filedItems && filedItems.length > 0" v-model="panel">
-      <v-expansion-panel-content
+    <v-expansion-panels v-if="filedItems && filedItems.length > 0" v-model="panel" accordion >
+      <v-expansion-panel
         class="filing-history-list"
         v-for="(item, index) in filedItems"
         v-bind:key="index">
-        <template v-slot:header>
+        <v-expansion-panel-header>
           <div class="list-item">
-            <div class="list-item__title">{{item.name}}</div>
+            <div v-if="!item.paperOnly" class="list-item__title">{{item.name}}</div>
+            <div v-else class="list-item__title">{{item.name}} ({{item.filingYear}})</div>
             <div class="list-item__subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
           </div>
-          <div class="v-expansion-panel__header__status">FILED AND PAID</div>
-          <div class="v-expansion-panel__header__icon">
-            <span v-if="panel === index">Hide Documents</span>
-            <span v-else>View Documents</span>
+          <div class="v-expansion-panel-header__status">FILED AND PAID</div>
+          <div class="v-expansion-panel-header__icon align-right">
+            <div v-if="panel === index && !item.paperOnly">Hide Documents</div>
+            <div v-else-if="panel === index && item.paperOnly">Close</div>
+            <div v-else-if="item.paperOnly">Request a Copy</div>
+            <div v-else>View Documents</div>
           </div>
-        </template>
-        <ul class="list document-list">
-          <li class="list-item"
-            v-for="(document, index) in item.filingDocuments"
-            v-bind:key="index">
-            <v-btn class="list-item__btn" flat color="primary" @click="downloadDocument(document)"
-              :disabled="loadingDocument" :loading="loadingDocument">
-              <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
-              <div class="list-item__title">{{document.name}}</div>
+        </v-expansion-panel-header>
+        <v-expansion-panel-content>
+          <ul v-if="!item.paperOnly" class="list document-list">
+            <li class="list-item"
+              v-for="(document, index) in item.filingDocuments"
+              v-bind:key="index">
+              <v-btn class="list-item__btn" text color="primary" @click="downloadDocument(document)"
+                :disabled="loadingDocument" :loading="loadingDocument">
+                <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
+                <div class="list-item__title">{{document.name}}</div>
+              </v-btn>
+            </li>
+            <li class="list-item">
+              <v-btn class="list-item__btn" text color="primary" @click="downloadReceipt(item)"
+                :disabled="loadingReceipt" :loading="loadingReceipt">
+                <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
+                <div class="list-item__title">Receipt</div>
+              </v-btn>
+            </li>
+          </ul>
+          <div v-if="!item.paperOnly" class="documents-actions-bar">
+            <v-btn class="download-all-btn" color="primary" @click="downloadAll(item)"
+              :disabled="loadingAll" :loading="loadingAll">
+              Download All
             </v-btn>
-          </li>
-          <li class="list-item">
-            <v-btn class="list-item__btn" flat color="primary" @click="downloadReceipt(item)"
-              :disabled="loadingReceipt" :loading="loadingReceipt">
-              <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
-              <div class="list-item__title">Receipt</div>
-            </v-btn>
-          </li>
-        </ul>
-        <div class="documents-actions-bar">
-          <v-btn class="download-all-btn" color="primary" @click="downloadAll(item)"
-            :disabled="loadingAll" :loading="loadingAll">
-            Download All
-          </v-btn>
-        </div>
-      </v-expansion-panel-content>
-    </v-expansion-panel>
+          </div>
+          <v-card v-if="item.paperOnly" class="paper-filings" flat>
+            <v-card-text>
+              <div class="paper-filings__text">
+                Filings completed <b>before March 10, 2019</b> are only available from the BC Registry as paper
+                documents.
+                <br><br>
+                To request copies of paper documents, contact BC Registry Staff with the document you require and
+                the name and incorporation number of your associtation:
+                <br><br>
+                <p class="paper-filings__text">
+                  <v-icon medium>mdi-phone</v-icon>
+                  <a href="tel:+1-877-526-1526">1 877 526-1526</a>
+                </p>
+                <p class="paper-filings__text">
+                  <v-icon medium>mdi-email</v-icon>
+                  <a href="mailto:BCRegistries@gov.bc.ca"
+                    >BCRegistries@gov.bc.ca</a>
+                </p>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+    </v-expansion-panels>
 
     <!-- No Results Message -->
     <v-card class="no-results" flat v-if="filedItems && filedItems.length === 0">
@@ -74,16 +100,6 @@
       </v-card-text>
     </v-card>
 
-    <!-- Past Filings Message -->
-    <v-card class="past-filings" flat>
-      <v-card-text>
-        <div class="past-filings__text">
-          Filings completed before August 21, 2019 will be available from the BC Registry as printed
-          documents.<br>Please contact us at <a href="tel:+1-877-526-1526">1-877-526-1526</a> to request
-          paper copies of these past filings.
-        </div>
-      </v-card-text>
-    </v-card>
   </div>
 </template>
 
@@ -125,19 +141,23 @@ export default {
       for (let i = 0; i < this.filings.length; i++) {
         const filing = this.filings[i].filing
         if (filing && filing.header) {
-          switch (filing.header.name) {
-            case 'annualReport':
-              this.loadAnnualReport(filing)
-              break
-            case 'changeOfDirectors':
-              this.loadChangeOfDirectors(filing)
-              break
-            case 'changeOfAddress':
-              this.loadChangeOfAddress(filing)
-              break
-            default:
-              console.log('ERROR - got unknown filing name =', filing)
-              break
+          if (filing.header.date < '2019-03-08') {
+            this.loadPaperFiling(filing)
+          } else {
+            switch (filing.header.name) {
+              case 'annualReport':
+                this.loadAnnualReport(filing)
+                break
+              case 'changeOfDirectors':
+                this.loadChangeOfDirectors(filing)
+                break
+              case 'changeOfAddress':
+                this.loadChangeOfAddress(filing)
+                break
+              default:
+                this.loadPaperFiling(filing)
+                break
+            }
           }
         } else {
           console.log('ERROR - invalid filing or filing header =', filing)
@@ -166,7 +186,8 @@ export default {
               filingId: filing.header.filingId,
               name: 'Annual Report',
               documentName: `${this.entityIncNo} - Annual Report (${agmYear}) - ${filing.header.date}.pdf`
-            }]
+            }],
+            paperOnly: false
           }
           this.filedItems.push(item)
         } else {
@@ -188,7 +209,8 @@ export default {
             filingId: filing.header.filingId,
             name: 'Director Change',
             documentName: `${this.entityIncNo} - Director Change - ${filing.header.date}.pdf`
-          }]
+          }],
+          paperOnly: false
         }
         this.filedItems.push(item)
       } else {
@@ -207,11 +229,36 @@ export default {
             filingId: filing.header.filingId,
             name: 'Address Change',
             documentName: `${this.entityIncNo} - Address Change - ${filing.header.date}.pdf`
-          }]
+          }],
+          paperOnly: false
         }
         this.filedItems.push(item)
       } else {
         console.log('ERROR - invalid changeOfAddress in filing =', filing)
+      }
+    },
+
+    loadPaperFiling (filing) {
+      if (filing.header && filing.header.availableOnPaperOnly) {
+        // split name on camelcase and capitalize first letters
+        let name = filing.header.name.split(/(?=[A-Z])/).join(' ')
+        name = name.charAt(0).toLocaleUpperCase() + name.slice(1)
+        const item = {
+          name: name,
+          filingAuthor: 'Registry Staff',
+          filingDate: filing.header.date,
+          filingYear: filing.header.date.slice(0, 4),
+          paymentToken: null,
+          filingDocuments: [{
+            filingId: filing.header.filingId,
+            name: name,
+            documentName: null
+          }],
+          paperOnly: true
+        }
+        this.filedItems.push(item)
+      } else {
+        console.log('ERROR - invalid paper filing =', filing)
       }
     },
 
@@ -347,51 +394,83 @@ export default {
 }
 </script>
 
-<style lang="stylus" scoped>
-  @import "../../assets/styles/theme.styl"
+<style lang="scss" scoped>
+  @import "../../assets/styles/theme.scss";
 
   // Filing History List
-  .filing-history-list
-    .list-item
-      flex-direction column
-      align-items flex-start
-      padding 0
+  .filing-history-list {
+    .list-item {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0;
+    }
 
-    .v-expansion-panel__header__status
-      font-size 0.875rem
-      color $gray6
+    .v-expansion-panel-header__status {
+      font-size: 0.875rem;
+      color: $gray6;
+      vertical-align: top;
+      width: 20%;
+    }
 
-    .v-expansion-panel__header__icon
-      font-size 0.875rem
-      font-weight 700
+    .v-expansion-panel-header__icon {
+      font-size: 0.875rem;
+      font-weight: 700;
+      display: block;
+      width: 20%;
+    }
+  }
 
    // Document List
-  .document-list
-    border-top 1px solid $gray3
+  .document-list {
+    border-top: 1px solid $gray3;
+    padding-left: 0;
 
-    .list-item__btn
-      margin 0.25rem 0
-      padding 0 0.5rem 0 0.25rem
+    .list-item__btn {
+      margin: 0.25rem 0;
+      padding: 0 0.5rem 0 0.25rem;
+    }
+  }
 
    // Documents Actions Bar
-  .documents-actions-bar
-    padding-top 1rem
-    display flex
-    border-top 1px solid $gray3
+  .documents-actions-bar {
+    padding-top: 1rem;
+    display: flex;
+    border-top: 1px solid $gray3;
 
-    .download-all-btn
-      margin-left auto
-      margin-right 0
-      min-width 8rem
+    .download-all-btn {
+      margin-left: auto;
+      margin-right: 0;
+      min-width: 8rem;
+    }
+  }
 
   // Past Filings
-  .past-filings
-    border-top 1px solid $gray3
-    text-align center
+  .past-filings {
+    border-top: 1px solid $gray3;
+    text-align: center;
 
-    .past-filings__text
-      margin-top 0.25rem
-      color $gray6
-      font-size 0.875rem
-      font-weight 500
+    .past-filings__text {
+      margin-top: 0.25rem;
+      color: $gray6;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+  }
+  .paper-filings {
+    border-top: 1px solid $gray3;
+    text-align: left;
+
+    .paper-filings__text {
+      margin-top: 0.2rem;
+      color: $gray9;
+      font-size: 0.8rem;
+      font-weight: 400;
+      line-height: 1rem;
+
+      a {
+        color: $gray7;
+        margin-left: 1rem;
+      }
+    }
+  }
 </style>

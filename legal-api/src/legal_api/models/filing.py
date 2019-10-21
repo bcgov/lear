@@ -59,6 +59,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
     colin_event_id = db.Column('colin_event_id', db.Integer)
     _status = db.Column('status', db.String(10), default='DRAFT')
+    paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
 
     # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
@@ -200,6 +201,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             json_submission['filing']['header']['name'] = self.filing_type
             json_submission['filing']['header']['colinId'] = self.colin_event_id
             json_submission['filing']['header']['status'] = self.status
+            json_submission['filing']['header']['availableOnPaperOnly'] = self.paper_only
 
             if self._payment_token:
                 json_submission['filing']['header']['paymentToken'] = self.payment_token
@@ -230,7 +232,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         """Return the filings with statuses in the status array input."""
         query = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
-            filter(Filing._status.in_(status))
+            filter(Filing._status.in_(status)). \
+            order_by(desc(Filing.filing_date))
 
         if after_date:
             query = query.filter(Filing._filing_date >= after_date)
