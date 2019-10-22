@@ -31,7 +31,8 @@
               </div>
 
               <div class="list-item__status2">
-                <span v-if="isPending(item)">
+                <span v-if="inProcessFiling === item.id && item.id !== undefined">PROCESSING...</span>
+                <span v-else-if="isPending(item)">
                   PAYMENT INCOMPLETE<v-btn text icon color="black"><v-icon>mdi-information-outline</v-icon></v-btn>
                 </span>
                 <span v-else-if="isError(item)">
@@ -41,7 +42,12 @@
             </template>
 
             <div class="list-item__actions">
-              <span v-if="isDraft(item)">
+              <span v-if="inProcessFiling === item.id && item.id !== undefined">
+                <!-- hidden button to maintain layout -->
+                <v-btn style="visibility: hidden"></v-btn>
+              </span>
+
+              <span v-else-if="isDraft(item)">
                 <v-btn id="btn-draft-resume"
                   color="primary"
                   :disabled="!item.enabled"
@@ -161,6 +167,10 @@ export default {
     }
   },
 
+  props: {
+    inProcessFiling: null
+  },
+
   computed: {
     ...mapState(['tasks', 'entityIncNo']),
 
@@ -190,6 +200,7 @@ export default {
       })
 
       this.$emit('todo-count', this.taskItems.length)
+      this.$emit('todo-filings', this.taskItems)
 
       // if this is a draft/pending/error item, emit the has-blocker-filings event to the parent component
       // this indicates that a new filing cannot be started because this one has to be completed first

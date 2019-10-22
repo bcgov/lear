@@ -69,6 +69,33 @@ describe('Dashboard - UI', () => {
     expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
       .getAttribute('disabled')).toBeTruthy()
   })
+
+  it('marks filing as PROCESSING when expecting completed filing', () => {
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'dashboard', query: { filing_id: '123' } })
+    const wrapper = mount(Dashboard, { localVue, store, router, vuetify })
+    const vm = wrapper.vm as any
+
+    // push filing ID in URL to indicate that we've returned from the dashboard from a filing (file pay, not save draft)
+    expect(vm.$route.query.filing_id).toBe('123')
+
+    // emit to-do list from to-do component with the filing marked as pending
+    wrapper.find(TodoList).vm.$emit('todo-filings', [
+      {
+        'type': 'changeOfDirectors',
+        'id': 123,
+        'status': 'PENDING',
+        'enabled': true,
+        'order': 1
+      }])
+
+    // emit filing list from Filing History component without the completed filing
+    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [{}])
+
+    expect(vm.inProcessFiling).toEqual(123)
+  })
 })
 
 describe('Dashboard - Click Tests', () => {
