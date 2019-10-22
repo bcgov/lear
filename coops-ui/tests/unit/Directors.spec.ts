@@ -7,6 +7,7 @@ import axios from '@/axios-auth'
 import store from '@/store/store'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import { EntityTypes } from '@/enums'
+import {mount, shallowMount, Wrapper} from "@vue/test-utils";
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -20,6 +21,7 @@ document.body.append(app)
 
 describe('Directors as a COOP', () => {
   let vm
+  let vm2
 
   function click (id) {
     const button = vm.$el.querySelector(id)
@@ -83,12 +85,13 @@ describe('Directors as a COOP', () => {
     const instance = new Constructor({ store: store, vuetify })
     vm = instance.$mount()
 
+    // set vm2 for draft test (setup is different and does not fire the 'asOfDate' watcher)
+    store.state.currentFilingStatus = 'DRAFT'
+    const instance2 = new Constructor({ store: store, vuetify, propsData: { asOfDate: '2019-04-01' } })
+    vm2 = instance2.$mount()
+
     // set as-of date
     vm.asOfDate = '2019-04-01'
-
-    // call getDirectors() since it won't be triggered from parent component
-    vm.getDirectors()
-
     Vue.nextTick(() => {
       done()
     })
@@ -254,6 +257,16 @@ describe('Directors as a COOP', () => {
 
         done()
       })
+    })
+  })
+
+  it('initializes the original directors when status is DRAFT', done => {
+    // need to setup the instance differently for this test otherwise populated by watcher fn on 'asOfDate'
+    Vue.nextTick(() => {
+      // check that ui got the original directors
+      expect(vm2.directorsOriginal.length).toBeGreaterThan(0)
+
+      done()
     })
   })
 
