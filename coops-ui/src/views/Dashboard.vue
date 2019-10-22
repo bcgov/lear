@@ -12,13 +12,14 @@
               <header>
                 <h2 class="mb-3">To Do <span class="text-muted">({{todoCount}})</span></h2>
               </header>
-              <todo-list @todo-count="todoCount = $event" @has-blocker-filing="hasBlockerFiling = $event" />
+              <todo-list @todo-count="todoCount = $event" @has-blocker-filing="hasBlockerFiling = $event"
+                         @todo-filings="todoListFilings = $event" :inProcessFiling="inProcessFiling" />
             </section>
             <section>
               <header>
                 <h2 class="mb-3">Recent Filing History <span class="text-muted">({{filedCount}})</span></h2>
               </header>
-              <filing-history-list @filed-count="filedCount = $event"/>
+              <filing-history-list @filed-count="filedCount = $event" @filings-list="historyFilings = $event" />
             </section>
           </div>
 
@@ -58,6 +59,7 @@
 </template>
 
 <script>
+import axios from '@/axios-auth'
 import TodoList from '@/components/Dashboard/TodoList.vue'
 import FilingHistoryList from '@/components/Dashboard/FilingHistoryList.vue'
 import AddressListSm from '@/components/Dashboard/AddressListSm.vue'
@@ -78,12 +80,21 @@ export default {
     return {
       todoCount: 0,
       hasBlockerFiling: false,
-      filedCount: 0
+      filedCount: 0,
+      historyFilings: [],
+      todoListFilings: [],
+      refreshTimer: null,
+      checkFilingStatusCount: 0,
+      inProcessFiling: null
     }
   },
 
+  computed: {
+    ...mapState(['entityIncNo'])
+  },
+
   methods: {
-    ...mapActions(['setCurrentFilingStatus']),
+    ...mapActions(['setCurrentFilingStatus', 'setTriggerDashboardReload']),
 
     goToStandaloneDirectors () {
       this.setCurrentFilingStatus('NEW')
@@ -93,7 +104,82 @@ export default {
     goToStandaloneAddresses () {
       this.setCurrentFilingStatus('NEW')
       this.$router.push({ name: 'standalone-addresses', params: { id: 0 } }) // 0 means "new COA filing"
+    },
+
+    checkToReloadDashboard () {
+      // cancel any existing timer so we can start fresh here
+      clearTimeout(this.refreshTimer)
+
+      let filingId = null
+      if (this.$route !== undefined) filingId = +this.$route.query.filing_id // if missing, this is NaN
+
+      // only consider refreshing the dashboard if we came from a filing
+      if (!filingId) return
+
+      let isInFilingHistory = this.historyFilings.filter(el => el.filingId === filingId).length > 0
+      let isInTodoList = this.todoListFilings.filter(el => el.id === filingId).length > 0
+
+      // if this filing is NOT in the to-do list and IS in the filing history list, do nothing - there is no problem
+      if (!isInTodoList && isInFilingHistory) return
+
+      // if this filing is in the to-do list, mark it as in-progress for to-do list to format differently
+      if (isInTodoList) {
+        this.inProcessFiling = filingId
+      }
+
+      // check for updated status to reload dashboard
+      this.checkFilingStatusCount = 0
+      this.checkFilingStatus(filingId)
+    },
+
+    checkFilingStatus (filingId) {
+      // check whether this filing's status has changed - recursive, runs approx. every 1 second for up to 10 seconds
+
+      this.checkFilingStatusCount++
+
+      // stop this cycle after 10 iterations
+      if (this.checkFilingStatusCount > 10) {
+        this.inProcessFiling = null
+        return
+      }
+
+      // get current filing status
+      let url = this.entityIncNo + '/filings/' + filingId
+      axios.get(url).then(res => {
+        if (!res) {
+          // quietly fail - this error is not worth showing the customer an error
+          return false
+        }
+        // if the filing status is now COMPLETE, reload the dashboard
+        if (res.data.filing.header.status === 'COMPLETED') {
+          this.setTriggerDashboardReload(true)
+        } else {
+          // call this function again in 1 second
+          let vue = this
+          this.refreshTimer = setTimeout(() => {
+            vue.checkFilingStatus(filingId)
+          }, 1000)
+        }
+      }).catch(() => {
+        // quietly fail - this error is not worth showing the customer an error
+        return false
+      })
     }
+  },
+  mounted () {
+    this.checkToReloadDashboard()
+  },
+  watch: {
+    historyFilings () {
+      this.checkToReloadDashboard()
+    },
+    todoListFilings () {
+      this.checkToReloadDashboard()
+    }
+  },
+  destroyed () {
+    // kill the refresh timer if it is running
+    clearTimeout(this.refreshTimer)
   }
 }
 </script>
