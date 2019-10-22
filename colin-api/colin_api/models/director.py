@@ -25,7 +25,7 @@ from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date
 
 
-class Director:
+class Director: # pylint: disable=too-many-instance-attributes; need all these fields
     """Director object."""
 
     officer = None
@@ -64,8 +64,8 @@ class Director:
             cursor = DB.connection.cursor()
             cursor.execute(
                 """
-                select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt, start_event_id,
-                end_event_id
+                select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,
+                start_event_id, end_event_id
                 from corp_party
                 where end_event_id is NULL and corp_num=:identifier and party_typ_cd='DIR'
                 """,
@@ -123,8 +123,8 @@ class Director:
             cursor = DB.connection.cursor()
             cursor.execute(
                 """
-                select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt, start_event_id,
-                end_event_id
+                select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,
+                start_event_id, end_event_id
                 from corp_party
                 where ((start_event_id<=:event_id and end_event_id is null) or (start_event_id<=:event_id and
                 cessation_dt is not null and end_event_id>=:event_id) or (start_event_id<:event_id and
