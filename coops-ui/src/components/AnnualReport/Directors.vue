@@ -830,7 +830,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
             // otherwise new attributes are not reflected in initial draw of HTML list.
 
             var directors = response.data.directors
-
             for (var i = 0; i < directors.length; i++) {
               directors[i].id = i + 1
               directors[i].isFeeApplied = directors[i].isFeeApplied !== undefined ? directors[i].isFeeApplied : false

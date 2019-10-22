@@ -7,6 +7,7 @@ import axios from '@/axios-auth'
 import store from '@/store/store'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import { EntityTypes } from '@/enums'
+import {mount, shallowMount, Wrapper} from "@vue/test-utils";
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
