@@ -25,7 +25,7 @@ from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date
 
 
-class Director: # pylint: disable=too-many-instance-attributes; need all these fields
+class Director:  # pylint: disable=too-many-instance-attributes; need all these fields
     """Director object."""
 
     officer = None
