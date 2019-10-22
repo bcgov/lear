@@ -396,12 +396,13 @@ export default {
       this.$refs.confirm.open(
         'Delete Draft?',
         'Delete your ' + item.draftTitle + '? Any changes you\'ve made will be lost.',
-        { width: '40rem',
+        {
+          width: '40rem',
           persistent: true,
           yes: 'Delete',
           no: null,
-          cancel: 'Don\'t delete',
-          className: 'delete-draft-confirmation-dialog' }
+          cancel: 'Don\'t delete'
+        }
       ).then(async (confirm) => {
         // if we get here, Yes or No was clicked
         if (confirm) {
