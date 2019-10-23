@@ -116,8 +116,8 @@ export default {
       // only consider refreshing the dashboard if we came from a filing
       if (!filingId) return
 
-      let isInFilingHistory = this.historyFilings.filter(el => el.filingId === filingId).length > 0
-      let isInTodoList = this.todoListFilings.filter(el => el.id === filingId).length > 0
+      const isInFilingHistory = this.historyFilings.filter(el => el.filingId === filingId).length > 0
+      const isInTodoList = this.todoListFilings.filter(el => el.id === filingId).length > 0
 
       // if this filing is NOT in the to-do list and IS in the filing history list, do nothing - there is no problem
       if (!isInTodoList && isInFilingHistory) return

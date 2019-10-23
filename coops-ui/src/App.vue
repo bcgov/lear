@@ -4,7 +4,7 @@
     <!-- Initial Page Load Transition -->
     <div class="loading-container fade-out">
       <div class="loading__content">
-        <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
+        <v-progress-circular color="primary" size="50" indeterminate />
         <div class="loading-msg">Loading Your Dashboard</div>
       </div>
     </div>
