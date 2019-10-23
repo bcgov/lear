@@ -552,14 +552,6 @@ h2{
   }
 }
 
-.genErr{
-  font-size: 0.9rem;
-}
-
-.error-dialog-padding{
-  margin-left: 1rem;
-}
-
 #coa-cancel-btn{
    margin-left: 0.5rem;
 }

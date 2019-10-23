@@ -12,15 +12,23 @@
           <br />Saturday: 12:00am to 7:00pm
           <br />Sunday: 12:00pm to 12:00am
         </p>
-        <p class="genErr">
-          <v-icon small>mdi-phone</v-icon>
-          <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
-        </p>
-        <p class="genErr">
-          <v-icon small>mdi-email</v-icon>
-          <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
-            >SBC_ITOperationsSupport@gov.bc.ca</a>
-        </p>
+        <ul class="pl-0">
+          <li class="genErr contact-container">
+            <v-icon small class="contact-icon">mdi-phone</v-icon>
+            <span class="font-weight-bold contact-item">Canada &amp; U.S. Toll Free:</span>
+            <a href="tel:+1-877-526-1526" class="contact-detail">1-877-526-1526</a>
+          </li>
+          <li class="genErr contact-container">
+            <v-icon small class="contact-icon">mdi-phone</v-icon>
+            <span class="font-weight-bold contact-item">Victoria Office:</span>
+            <a href="tel:+1-250-952-0568" class="contact-detail">250 952-0568</a>
+          </li>
+          <li class="genErr contact-container">
+            <v-icon small class="contact-icon">mdi-email</v-icon>
+            <span class="font-weight-bold contact-item">BC Registries Email:</span>
+            <a href="mailto:bcregistries@gov.bc.ca" class="contact-detail">bcregistries@gov.bc.ca</a>
+          </li>
+        </ul>
       </v-card-text>
       <v-divider class="my-0"></v-divider>
       <v-card-actions>
@@ -51,7 +59,20 @@ export default class PaymentErrorDialog extends Vue {
   font-size: 0.9rem;
 }
 
-.error-dialog-padding{
-  margin-left: 1rem;
+.contact-container {
+  display: flex;
+
+  .contact-icon {
+    flex: 0 0 2rem;
+    justify-content: flex-start;
+  }
+
+  .contact-item {
+    width: 12rem;
+  }
+
+  .contact-detail {
+    flex: 1 1;
+  }
 }
 </style>
