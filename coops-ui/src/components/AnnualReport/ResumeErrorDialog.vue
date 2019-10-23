@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="dialog" width="50rem" persistent>
+  <v-dialog v-model="dialog" width="45rem" persistent>
     <v-card>
       <v-card-title>Unable to Resume Filing</v-card-title>
       <v-card-text>

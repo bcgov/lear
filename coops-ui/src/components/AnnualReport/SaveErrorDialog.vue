@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="dialog" width="50rem">
+  <v-dialog v-model="dialog" width="60rem">
       <v-card>
         <v-card-title id="error-dialogue-title" v-if="errors.length > 0 || warnings.length < 1">
           Unable to Save Filing

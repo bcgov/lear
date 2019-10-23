@@ -17,10 +17,10 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="primary" @click="deleteDirector(activeDirectorToDelete.id)">
-           Remove
+            Remove
           </v-btn>
           <v-btn color="default" @click="showPopup = false; activeDirectorToDelete = null">
-           Cancel
+            Cancel
           </v-btn>
         </v-card-actions>
       </v-card>
