@@ -81,7 +81,15 @@
                         "date": {
                             "type": "string",
                             "format": "date",
-                            "title": "The submission date of the final version of the filing."
+                            "title": "The UTC submission date of the final version of the filing."
+                        },
+                        "futureEffectiveDate": {
+                            "type": "string",
+                            "format": "date-time",
+                            "title": "A future UTC date and time that the filing should become valid and applied.",
+                            "examples": [
+                                "2019-04-15T20:05:49.068272+00:00"
+                            ]
                         },
                         "certifiedBy": {
                             "type": "string"
