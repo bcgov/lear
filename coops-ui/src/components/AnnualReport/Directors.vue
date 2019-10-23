@@ -781,8 +781,9 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * Lifecycle hook to load initial data.
    */
   private mounted (): void {
-    if (this.currentFilingStatus === 'NEW') {
-      this.getDirectors()
+    if (['NEW', 'DRAFT'].includes(this.currentFilingStatus)) {
+      // if draft: get original directors but doesn't overwrite this.directors
+      this.getDirectors(this.currentFilingStatus === 'DRAFT')
     }
   }
 
