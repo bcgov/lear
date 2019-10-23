@@ -41,8 +41,6 @@ from entity_filer.config import get_named_config
 from entity_filer.filing_processors import annual_report, change_of_address, change_of_directors
 from entity_filer.service_utils import FilingException, QueueException, logger
 
-from . import service
-
 
 def extract_payment_token(msg: nats.aio.client.Msg) -> dict:
     """Return a dict of the json string in the Msg.data."""
@@ -130,10 +128,11 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
     except OperationalError as err:
         logger.error('Queue Blocked - Database Issue: %s', json.dumps(payment_token), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue
-    except FilingException:
-        capture_message('Queue Filing Error:' + json.dumps(payment_token), level='error')
-        logger.error('Queue Filing Error: %s', json.dumps(payment_token), exc_info=True)
-        await service.publish_message(payment_token)
+    except FilingException as err:
+        logger.error('Queue Error - cannot find filing: %s'
+                     '\n\nThis message has been put back on the queue for reprocessing.',
+                     json.dumps(payment_token), exc_info=True)
+        raise err  # we don't want to handle the error, so that the message gets put back on the queue
     except (QueueException, Exception):  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
         capture_message('Queue Error:' + json.dumps(payment_token), level='error')

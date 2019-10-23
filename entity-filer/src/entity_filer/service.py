@@ -32,13 +32,6 @@ from entity_filer.worker import cb_subscription_handler  # noqa I001; sort issue
 class ServiceWorker():
     """Wrap a service that will listen to the Queue Stream."""
 
-    _instance = None
-
-    @staticmethod
-    def get_instance():
-        """Get this ServiceWorker instance."""
-        return ServiceWorker._instance
-
     def __init__(self, *,
                  loop=None,
                  cb_handler=None,
@@ -69,7 +62,6 @@ class ServiceWorker():
                     continue
                 break
         self._stan_conn_lost_cb = conn_lost_cb
-        _instance = self  # noqa: F841
 
     @property
     async def is_healthy(self):
@@ -134,14 +126,6 @@ class ServiceWorker():
                     subscription_options.get('cb').__name__ if subscription_options.get('cb') else 'no_call_back',
                     subscription_options.get('queue'))
 
-    async def publish(self, payload):
-        """Publish to the queue."""
-        try:
-            self.sc.publish(subject=self.config.SUBSCRIPTION_OPTIONS.get('subject'), payload=payload.encode('utf-8'))
-
-        except Exception as err:  # pylint: disable=broad-except; catch all errors to log out when closing the service.
-            logger.debug('error in ServiceWorker.publish(): %s', err, stack_info=True)
-
     async def close(self):
         """Close the stream and nats connections."""
         try:
@@ -149,12 +133,6 @@ class ServiceWorker():
             await self.nc.close()
         except Exception as err:  # pylint: disable=broad-except; catch all errors to log out when closing the service.
             logger.debug('error when closing the streams: %s', err, stack_info=True)
-
-
-async def publish_message(payload):
-    """Publish to the queue."""
-    service = ServiceWorker.get_instance()
-    service.publish(payload)
 
 
 async def run(loop):  # pylint: disable=too-many-locals
