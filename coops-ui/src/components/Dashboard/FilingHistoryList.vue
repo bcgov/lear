@@ -32,9 +32,10 @@
           <div class="list-item">
             <div class="filing-type">
               <div class="list-item__title mb-1">{{item.name}}</div>
-              <div class="list-item__subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
+              <div class="list-item__subtitle">
+                FILED AND PAID (filed by {{item.filingAuthor}} on {{item.filingDate}})
+              </div>
             </div>
-            <div class="filing-status">FILED AND PAID</div>
             <div class="filing-view-docs mr-3">
               <span v-if="panel === index">Hide Documents</span>
               <span v-else>View Documents</span>
