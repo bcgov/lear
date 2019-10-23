@@ -37,7 +37,7 @@
                   PROCESSING...
                 </span>
               </div>
-              <div class="filing-status-2" v-if="isPending(item)">
+              <div class="filing-status-2" v-else-if="isPending(item)">
                 <span>
                   PAYMENT INCOMPLETE
                 </span>
