@@ -114,11 +114,11 @@ describe('Dashboard - UI', () => {
     // emit filing list from Filing History component with the completed filing
     wrapper.find(FilingHistoryList).vm.$emit('filings-list', [
       {
-        'name':'Director Change',
-        'filingId':123,
-        'filingAuthor':'fS',
-        'filingDate':'2019-10-17',
-        'paymentToken':'661'
+        'name': 'Director Change',
+        'filingId': 123,
+        'filingAuthor': 'fS',
+        'filingDate': '2019-10-17',
+        'paymentToken': '661'
       }
     ])
 
