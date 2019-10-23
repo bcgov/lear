@@ -15,11 +15,4 @@
 
 These can be used in other tests as basis for the JSON filings.
 """
-from .schema_data import (
-    ANNUAL_REPORT,
-    BUSINESS,
-    CHANGE_OF_ADDRESS,
-    CHANGE_OF_DIRECTORS,
-    CHANGE_OF_DIRECTORS_MAILING,
-    FILING_HEADER
-)
+from .schema_data import ANNUAL_REPORT, BUSINESS, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS, FILING_HEADER, CHANGE_OF_DIRECTORS_MAILING
