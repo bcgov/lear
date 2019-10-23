@@ -149,6 +149,7 @@ export default {
       }
 
       this.$emit('filed-count', this.filedItems.length)
+      this.$emit('filings-list', this.filedItems)
 
       // if needed, highlight a specific filing
       // NB: use unary plus operator to cast string to number
@@ -163,6 +164,7 @@ export default {
           const agmYear = +date.substring(0, 4)
           const item = {
             name: `Annual Report (${agmYear})`,
+            filingId: filing.header.filingId,
             filingAuthor: filing.header.certifiedBy,
             filingDate: filing.header.date,
             paymentToken: filing.header.paymentToken,
@@ -185,6 +187,7 @@ export default {
       if (filing.changeOfDirectors) {
         const item = {
           name: 'Director Change',
+          filingId: filing.header.filingId,
           filingAuthor: filing.header.certifiedBy,
           filingDate: filing.header.date,
           paymentToken: filing.header.paymentToken,
@@ -204,6 +207,7 @@ export default {
       if (filing.changeOfAddress) {
         const item = {
           name: 'Address Change',
+          filingId: filing.header.filingId,
           filingAuthor: filing.header.certifiedBy,
           filingDate: filing.header.date,
           paymentToken: filing.header.paymentToken,
