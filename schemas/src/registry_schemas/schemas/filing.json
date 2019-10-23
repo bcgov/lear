@@ -98,6 +98,15 @@
                                 "1200"
                             ]
                         },
+                        "futureEffectiveDate": {
+                            "type": "string",
+                            "format": "date-time",
+                            "title": "The future date and time a filing should become valid and applied.",
+                            "default": "",
+                            "examples": [
+                                "1970-01-01T00:00:00+00:00"
+                            ]
+                        },
                         "paymentToken": {
                             "type": "string",
                             "title": "A valid payment token for this filing against this business."

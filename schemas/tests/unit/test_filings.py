@@ -53,7 +53,7 @@ def test_invalid_ar_filing():
             },
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP1234567',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
@@ -81,7 +81,7 @@ def test_invalid_cod_filing():
             },
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP1234567',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
@@ -129,7 +129,7 @@ def test_valid_multi_filing():
             },
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP1234567',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
