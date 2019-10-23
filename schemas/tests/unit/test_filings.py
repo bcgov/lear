@@ -15,8 +15,17 @@
 
 This suite should have at least 1 test for every filing type allowed.
 """
+import copy
+from datetime import datetime
+
 from registry_schemas import validate
-from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS, CHANGE_OF_DIRECTORS_MAILING
+from registry_schemas.example_data import (
+    ANNUAL_REPORT,
+    CHANGE_OF_ADDRESS,
+    CHANGE_OF_DIRECTORS,
+    CHANGE_OF_DIRECTORS_MAILING,
+    FILING_HEADER
+)
 
 
 def test_valid_ar_filing():
@@ -41,7 +50,7 @@ def test_invalid_ar_filing():
             },
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP1234567',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
@@ -70,10 +79,9 @@ def test_valid_coa_filing():
             },
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP1234567',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-                'lastPreBobFilingTimestamp': '',
                 'legalName': 'legal name - CP1234567'
             },
             'changeOfAddress': CHANGE_OF_ADDRESS
@@ -101,7 +109,7 @@ def test_valid_cod_filing():
             },
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP1234567',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
@@ -132,7 +140,7 @@ def test_valid_cod_filing_with_mailing_address():
             },
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP1234567',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
@@ -161,7 +169,7 @@ def test_invalid_cod_filing():
             },
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP1234567',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
@@ -211,7 +219,7 @@ def test_valid_multi_filing():
             },
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP1234567',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
@@ -230,3 +238,31 @@ def test_valid_multi_filing():
     print(errors)
 
     assert is_valid
+
+
+def test_future_effective_date():
+    """Assert that the future effective date is working correctly from a structural POV."""
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+
+    filing['filing']['header']['futureEffectiveDate'] = datetime.utcnow().isoformat() + 'Z'
+
+    is_valid, errors = validate(filing, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert is_valid
+
+    filing['filing']['header']['futureEffectiveDate'] = 'this should fail'
+
+    is_valid, errors = validate(filing, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert not is_valid

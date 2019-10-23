@@ -19,11 +19,12 @@ FILING_HEADER = {
             'date': '2019-04-08',
             'certifiedBy': 'full name',
             'email': 'no_one@never.get',
-            'filingId': 1
+            'filingId': 1,
+            'futureEffectiveDate': '2019-04-15T00:00:00+00:00'
         },
         'business': {
             'cacheId': 1,
-            'foundingDate': '2007-04-08',
+            'foundingDate': '2007-04-08T00:00:00+00:00',
             'identifier': 'CP1234567',
             'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
             'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',
@@ -35,7 +36,7 @@ FILING_HEADER = {
 
 BUSINESS = {
     'cacheId': 1,
-    'foundingDate': '2007-04-08',
+    'foundingDate': '2007-04-08T00:00:00+00:00',
     'identifier': 'CP1234567',
     'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
     'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',
@@ -53,7 +54,7 @@ ANNUAL_REPORT = {
         },
         'business': {
             'cacheId': 1,
-            'foundingDate': '2007-04-08',
+            'foundingDate': '2007-04-08T00:00:00+00:00',
             'identifier': 'CP1234567',
             'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
             'lastPreBobFilingTimestamp': '2019-01-01T20:05:49.068272+00:00',
