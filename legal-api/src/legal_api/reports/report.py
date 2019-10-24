@@ -100,6 +100,9 @@ class Report:  # pylint: disable=too-few-public-methods
             'logo',
             'macros',
             'style',
+            'dissolution',
+            'legalNameChange',
+            'resolution'
         ]
 
         # substitute template parts - marked up by [[filename]]
