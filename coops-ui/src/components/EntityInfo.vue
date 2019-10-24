@@ -18,19 +18,21 @@
 
       <!-- Business Numbers, Contact Info -->
       <div class="business-info">
-        <dl>
-          <dt>Business No:</dt>
-          <dd class="ml-2 business-number">{{ entityBusinessNo || 'Not Available' }}</dd>
-          <dt>Incorporation No:</dt>
-          <dd class="ml-2 incorp-number">{{ entityIncNo || 'Not Available' }}</dd>
-        </dl>
+        <div class="business-info__meta">
+          <dl>
+            <dt>Business No:</dt>
+            <dd class="ml-2 business-number">{{ entityBusinessNo || 'Not Available' }}</dd>
+            <dt>Incorporation No:</dt>
+            <dd class="ml-2 incorp-number">{{ entityIncNo || 'Not Available' }}</dd>
+          </dl>
+        </div>
 
         <div class="business-info__contact">
           <dl>
-            <dt class="sr-only">Business Email:</dt>
+            <dt></dt>
             <dd class="business-email" aria-label="Business Email">{{businessEmail || 'Unknown Email'}}</dd>
             <template v-if="fullPhoneNumber">
-              <dt class="sr-only">Business Phone:</dt>
+              <dt></dt>
               <dd class="business-phone bulletBefore" aria-label="Business Phone">{{fullPhoneNumber}}</dd>
             </template>
           </dl>
