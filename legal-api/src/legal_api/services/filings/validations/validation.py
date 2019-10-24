@@ -20,7 +20,10 @@ from legal_api.models import Business, Filing
 from .annual_report import validate as annual_report_validate
 from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
+from .change_of_name import validate as con_validate
 from .schemas import validate_against_schema
+from .special_resolution import validate as special_resolution_validate
+from .voluntary_dissolution import validate as voluntary_dissolution_validate
 
 
 def validate(business: Business, filing_json: Dict) -> Error:
@@ -47,6 +50,15 @@ def validate(business: Business, filing_json: Dict) -> Error:
 
             elif k == Filing.FILINGS['changeOfDirectors'].get('name'):
                 err = cod_validate(business, filing_json)
+
+            elif k == Filing.FILINGS['changeOfName'].get('name'):
+                err = con_validate(business, filing_json)
+
+            elif k == Filing.FILINGS['specialResolution'].get('name'):
+                err = special_resolution_validate(business, filing_json)
+
+            elif k == Filing.FILINGS['voluntaryDissolution'].get('name'):
+                err = voluntary_dissolution_validate(business, filing_json)
 
             if err:
                 return err
