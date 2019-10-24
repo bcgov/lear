@@ -147,8 +147,8 @@ describe('TodoList - UI', () => {
       const item = vm.$el.querySelector('.list-item')
       expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
       expect(item.querySelector('.list-item__subtitle').textContent).toBe('(including Address and/or Director Change)')
-      expect(item.querySelector('.list-item__status1')).toBeNull()
-      expect(item.querySelector('.list-item__status2')).toBeNull()
+      expect(item.querySelector('.filing-status-1')).toBeNull()
+      expect(item.querySelector('.filing-status-2')).toBeNull()
 
       const button = item.querySelector('.list-item__actions .v-btn')
       expect(button.disabled).toBe(false)
@@ -195,8 +195,8 @@ describe('TodoList - UI', () => {
       const item = vm.$el.querySelector('.list-item')
       expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
       expect(item.querySelector('.list-item__subtitle')).toBeNull()
-      expect(item.querySelector('.list-item__status1').textContent).toContain('DRAFT')
-      expect(item.querySelector('.list-item__status2').textContent).toEqual('')
+      expect(item.querySelector('.filing-status-1').textContent).toContain('DRAFT')
+      expect(item.querySelector('.filing-status-2')).toBeNull()
 
       const button = item.querySelector('.list-item__actions .v-btn')
       expect(button.disabled).toBe(false)
@@ -239,8 +239,8 @@ describe('TodoList - UI', () => {
       const item = vm.$el.querySelector('.list-item')
       expect(item.querySelector('.list-item__title').textContent).toEqual('File Address Change')
       expect(item.querySelector('.list-item__subtitle')).toBeNull()
-      expect(item.querySelector('.list-item__status1').textContent).toContain('DRAFT')
-      expect(item.querySelector('.list-item__status2').textContent).toEqual('')
+      expect(item.querySelector('.filing-status-1').textContent).toContain('DRAFT')
+      expect(item.querySelector('.filing-status-2')).toBeNull()
 
       const button = item.querySelector('.list-item__actions .v-btn')
       expect(button.disabled).toBe(false)
@@ -283,8 +283,8 @@ describe('TodoList - UI', () => {
       const item = vm.$el.querySelector('.list-item')
       expect(item.querySelector('.list-item__title').textContent).toEqual('File Director Change')
       expect(item.querySelector('.list-item__subtitle')).toBeNull()
-      expect(item.querySelector('.list-item__status1').textContent).toContain('DRAFT')
-      expect(item.querySelector('.list-item__status2').textContent).toEqual('')
+      expect(item.querySelector('.filing-status-1').textContent).toContain('DRAFT')
+      expect(item.querySelector('.filing-status-2')).toBeNull()
 
       const button = item.querySelector('.list-item__actions .v-btn')
       expect(button.disabled).toBe(false)
@@ -332,8 +332,8 @@ describe('TodoList - UI', () => {
       const item = vm.$el.querySelector('.list-item')
       expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
       expect(item.querySelector('.list-item__subtitle')).toBeNull()
-      expect(item.querySelector('.list-item__status1').textContent).toContain('FILING PENDING')
-      expect(item.querySelector('.list-item__status2').textContent).toContain('PAYMENT INCOMPLETE')
+      expect(item.querySelector('.filing-status-1').textContent).toContain('FILING PENDING')
+      expect(item.querySelector('.filing-status-2').textContent).toContain('PAYMENT INCOMPLETE')
 
       const button = item.querySelector('.list-item__actions .v-btn')
       expect(button.disabled).toBe(false)
@@ -381,12 +381,106 @@ describe('TodoList - UI', () => {
       const item = vm.$el.querySelector('.list-item')
       expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
       expect(item.querySelector('.list-item__subtitle')).toBeNull()
-      expect(item.querySelector('.list-item__status1').textContent).toContain('FILING PENDING')
-      expect(item.querySelector('.list-item__status2').textContent).toContain('PAYMENT UNSUCCESSFUL')
+      expect(item.querySelector('.filing-status-1').textContent).toContain('FILING PENDING')
+      expect(item.querySelector('.filing-status-2').textContent).toContain('PAYMENT UNSUCCESSFUL')
 
       const button = item.querySelector('.list-item__actions .v-btn')
       expect(button.disabled).toBe(false)
       expect(button.querySelector('.v-btn__content').textContent).toContain('Retry Payment')
+
+      wrapper.destroy()
+      done()
+    })
+  })
+
+  it('displays a PROCESSING message on a filing that is expected to be complete', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'changeOfDirectors',
+              'status': 'PENDING',
+              'paymentToken': 12345678,
+              'filingId': 123
+            },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store, vuetify })
+    const vm = wrapper.vm as any
+
+    wrapper.setProps({ inProcessFiling: 123 })
+
+    Vue.nextTick(() => {
+      expect(vm.taskItems.length).toEqual(1)
+      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+      expect(wrapper.emitted('todo-count')).toEqual([[1]])
+      expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+      expect(vm.$el.querySelector('.no-results')).toBeNull()
+
+      const item = vm.$el.querySelector('.list-item')
+      expect(vm.taskItems[0].id).toEqual(wrapper.props('inProcessFiling'))
+      expect(item.querySelector('.list-item__title').textContent).toEqual('File Director Change')
+      expect(item.querySelector('.list-item__subtitle')).toBeNull()
+      expect(item.querySelector('.filing-status-1').textContent).toContain('FILING PENDING')
+      expect(item.querySelector('.filing-status-2').textContent).toContain('PROCESSING...')
+
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.getAttribute('style')).toContain('visibility: hidden')
+
+      wrapper.destroy()
+      done()
+    })
+  })
+  it('does not break if a filing is marked as processing, that is not in the to-do list', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'changeOfDirectors',
+              'status': 'PENDING',
+              'paymentToken': 12345678,
+              'filingId': 123
+            },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store, vuetify })
+    const vm = wrapper.vm as any
+
+    wrapper.setProps({ inProcessFiling: 456 })
+
+    Vue.nextTick(() => {
+      expect(vm.taskItems.length).toEqual(1)
+      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+      expect(wrapper.emitted('todo-count')).toEqual([[1]])
+      expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+      expect(vm.$el.querySelector('.no-results')).toBeNull()
+
+      const item = vm.$el.querySelector('.list-item')
+      expect(vm.taskItems[0].id).not.toEqual(wrapper.props('inProcessFiling'))
+      expect(item.querySelector('.list-item__title').textContent).toEqual('File Director Change')
+      expect(item.querySelector('.list-item__subtitle')).toBeNull()
+      expect(item.querySelector('.filing-status-1').textContent).toContain('FILING PENDING')
+      expect(item.querySelector('.filing-status-2').textContent).toContain('PAYMENT INCOMPLETE')
+
+      const button = item.querySelector('.list-item__actions .v-btn')
+      expect(button.disabled).toBe(false)
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Resume Payment')
 
       wrapper.destroy()
       done()

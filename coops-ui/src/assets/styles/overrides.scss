@@ -37,36 +37,21 @@
   font-weight: 300;
 }
 
-// Expansion Panel
-.v-expansion-panel::before {
+// Expansion Panels
+.v-expansion-panel:before {
   box-shadow: none;
-} 
+}
 
-.v-expansion-panel {
-  box-shadow: none;
+.v-expansion-panel.align-items-top {
+  .v-expansion-panel-header__icon {
+    align-self: flex-start;
+    margin-top: 0;
+  }
 }
  
-.v-expansion-panel-header {
-  padding: 1.25rem 1.25rem;
-}
-
 .v-expansion-panel-header.no-dropdown {
   .v-expansion-panel-header__icon{
     display: none;
-  }
-}
-
-.v-expansion-panel-content {
-  padding-right: 1.25rem;
-  padding-left: 1.25rem;
-  padding-bottom: 1.25rem;
-
-  .v-expansion-panel-content__wrap {
-    padding: 0;
-  }
-
-  p:last-of-type {
-    margin-bottom: 0;
   }
 }
 

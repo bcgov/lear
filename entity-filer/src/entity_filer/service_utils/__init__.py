@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Callbacks and utility functions used to support the service loop."""
-from .exceptions import QueueException
+from .exceptions import FilingException, QueueException
 from .handlers import error_cb, signal_handler
 from .run_version import get_run_version
 from .service_logger import logger

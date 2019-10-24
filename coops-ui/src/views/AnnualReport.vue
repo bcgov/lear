@@ -713,66 +713,60 @@ export default {
 <style lang="scss" scoped>
 @import '../assets/styles/theme.scss';
 
-article{
-  .v-card{
+article {
+  .v-card {
     line-height: 1.2rem;
     font-size: 0.875rem;
   }
 }
 
-section p{
-  // font-size 0.875rem
+section p {
   color: $gray6;
 }
 
-section + section{
+section + section {
   margin-top: 3rem;
 }
 
-h2{
+h2 {
   margin-bottom: 0.25rem;
+  margin-top: 3rem;
+  font-size: 1.125rem;
 }
 
-#AR-header{
+#AR-header {
   margin-bottom: 1.25rem;
   line-height: 2rem;
   letter-spacing: -0.01rem;
 }
 
-#AR-step-1-header, #AR-step-1-header-BC, #AR-step-2-header, #AR-step-3-header, #AR-step-4-header{
-  margin-bottom: 0.25rem;
-  margin-top: 3rem;
-  font-size: 1.125rem;
-  font-weight: 500;
-}
-
-.title-container{
+.title-container {
   margin-bottom: 0.5rem;
 }
 
-.agm-date{
+.agm-date {
   margin-left: 0.25rem;
   font-weight: 300;
 }
 
 // Save & Filing Buttons
-#buttons-container{
+#buttons-container {
   padding-top: 2rem;
   border-top: 1px solid $gray5;
 
-  .buttons-left{
+  .buttons-left {
     width: 50%;
   }
 
-  .buttons-right{
+  .buttons-right {
     margin-left: auto
   }
 
-  .v-btn + .v-btn{
+  .v-btn + .v-btn {
     margin-left: 0.5rem;
   }
 
-  #ar-cancel-btn{
+  #ar-cancel-btn {
     margin-left: 0.5rem;
   }
 }
