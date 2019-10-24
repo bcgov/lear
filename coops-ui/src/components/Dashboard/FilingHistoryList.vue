@@ -36,13 +36,15 @@
             </div>
             <div class="filing-status">FILED AND PAID</div>
             <div class="filing-view-docs mr-3">
-              <span v-if="panel === index">Hide Documents</span>
+              <span v-if="panel === index && !item.paperOnly">Hide Documents</span>
+              <span v-else-if="panel === index && item.paperOnly">Close</span>
+              <span v-else-if="item.paperOnly">Request a Copy</span>
               <span v-else>View Documents</span>
             </div>
           </div>
         </v-expansion-panel-header>
         <v-expansion-panel-content>
-          <ul class="list document-list">
+          <ul v-if="!item.paperOnly" class="list document-list">
             <li class="list-item"
               v-for="(document, index) in item.filingDocuments"
               v-bind:key="index">
@@ -60,12 +62,33 @@
               </v-btn>
             </li>
           </ul>
-          <div class="documents-actions-bar">
+          <div v-if="!item.paperOnly" class="documents-actions-bar">
             <v-btn class="download-all-btn" color="primary" @click="downloadAll(item)"
               :disabled="loadingAll" :loading="loadingAll">
               Download All
             </v-btn>
           </div>
+          <v-card v-if="item.paperOnly" class="paper-filings" flat>
+            <v-card-text>
+              <div class="paper-filings__text">
+                Filings completed <b>before March 10, 2019</b> are only available from the BC Registry as paper
+                documents.
+                <br><br>
+                To request copies of paper documents, contact BC Registry Staff with the document you require and
+                the name and incorporation number of your associtation:
+                <br><br>
+                <p class="paper-filings__text">
+                  <v-icon medium>mdi-phone</v-icon>
+                  <a href="tel:+1-877-526-1526">1 877 526-1526</a>
+                </p>
+                <p class="paper-filings__text">
+                  <v-icon medium>mdi-email</v-icon>
+                  <a href="mailto:BCRegistries@gov.bc.ca"
+                    >BCRegistries@gov.bc.ca</a>
+                </p>
+              </div>
+            </v-card-text>
+          </v-card>
         </v-expansion-panel-content>
       </v-expansion-panel>
     </v-expansion-panels>
@@ -78,16 +101,6 @@
       </v-card-text>
     </v-card>
 
-    <!-- Past Filings Message -->
-    <v-card class="past-filings" flat>
-      <v-card-text>
-        <div class="past-filings__text">
-          Filings completed before August 21, 2019 will be available from the BC Registry as printed
-          documents.<br>Please contact us at <a href="tel:+1-877-526-1526">1-877-526-1526</a> to request
-          paper copies of these past filings.
-        </div>
-      </v-card-text>
-    </v-card>
   </div>
 </template>
 
@@ -129,19 +142,23 @@ export default {
       for (let i = 0; i < this.filings.length; i++) {
         const filing = this.filings[i].filing
         if (filing && filing.header) {
-          switch (filing.header.name) {
-            case 'annualReport':
-              this.loadAnnualReport(filing)
-              break
-            case 'changeOfDirectors':
-              this.loadChangeOfDirectors(filing)
-              break
-            case 'changeOfAddress':
-              this.loadChangeOfAddress(filing)
-              break
-            default:
-              console.log('ERROR - got unknown filing name =', filing)
-              break
+          if (filing.header.date < '2019-03-08') {
+            this.loadPaperFiling(filing)
+          } else {
+            switch (filing.header.name) {
+              case 'annualReport':
+                this.loadAnnualReport(filing)
+                break
+              case 'changeOfDirectors':
+                this.loadChangeOfDirectors(filing)
+                break
+              case 'changeOfAddress':
+                this.loadChangeOfAddress(filing)
+                break
+              default:
+                this.loadPaperFiling(filing)
+                break
+            }
           }
         } else {
           console.log('ERROR - invalid filing or filing header =', filing)
@@ -172,7 +189,8 @@ export default {
               filingId: filing.header.filingId,
               name: 'Annual Report',
               documentName: `${this.entityIncNo} - Annual Report (${agmYear}) - ${filing.header.date}.pdf`
-            }]
+            }],
+            paperOnly: false
           }
           this.filedItems.push(item)
         } else {
@@ -195,7 +213,8 @@ export default {
             filingId: filing.header.filingId,
             name: 'Director Change',
             documentName: `${this.entityIncNo} - Director Change - ${filing.header.date}.pdf`
-          }]
+          }],
+          paperOnly: false
         }
         this.filedItems.push(item)
       } else {
@@ -215,11 +234,36 @@ export default {
             filingId: filing.header.filingId,
             name: 'Address Change',
             documentName: `${this.entityIncNo} - Address Change - ${filing.header.date}.pdf`
-          }]
+          }],
+          paperOnly: false
         }
         this.filedItems.push(item)
       } else {
         console.log('ERROR - invalid changeOfAddress in filing =', filing)
+      }
+    },
+
+    loadPaperFiling (filing) {
+      if (filing.header && filing.header.availableOnPaperOnly) {
+        // split name on camelcase and capitalize first letters
+        let name = filing.header.name.split(/(?=[A-Z])/).join(' ')
+        name = name.charAt(0).toLocaleUpperCase() + name.slice(1)
+        const item = {
+          name: name,
+          filingAuthor: 'Registry Staff',
+          filingDate: filing.header.date,
+          filingYear: filing.header.date.slice(0, 4),
+          paymentToken: null,
+          filingDocuments: [{
+            filingId: filing.header.filingId,
+            name: name,
+            documentName: null
+          }],
+          paperOnly: true
+        }
+        this.filedItems.push(item)
+      } else {
+        console.log('ERROR - invalid paper filing =', filing)
       }
     },
 
@@ -418,6 +462,23 @@ export default {
       color: $gray6;
       font-size: 0.875rem;
       font-weight: 500;
+    }
+  }
+  .paper-filings {
+    border-top: 1px solid $gray3;
+    text-align: left;
+
+    .paper-filings__text {
+      margin-top: 0.2rem;
+      color: $gray9;
+      font-size: 0.8rem;
+      font-weight: 400;
+      line-height: 1rem;
+
+      a {
+        color: $gray7;
+        margin-left: 1rem;
+      }
     }
   }
 </style>

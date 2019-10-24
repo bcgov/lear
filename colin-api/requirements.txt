@@ -2,14 +2,14 @@ Click==7.0
 Flask-Moment==0.9.0
 Flask-Script==2.0.6
 Flask==1.1.1
-Jinja2==2.10.1
+Jinja2==2.10.3
 MarkupSafe==1.1.1
-Werkzeug==0.15.6
+Werkzeug==0.16.0
 aniso8601==8.0.0
 attrs==19.1.0
 blinker==1.4
 certifi==2019.9.11
-cx-Oracle==7.2.2
+cx-Oracle==7.2.3
 ecdsa==0.13.2
 flask-jwt-oidc==0.1.5
 flask-restplus==0.13.0
@@ -25,7 +25,7 @@ python-dotenv==0.10.3
 python-jose==3.0.1
 pytz==2019.2
 rsa==4.0
-sentry-sdk==0.11.2
+sentry-sdk==0.12.3
 six==1.12.0
-urllib3==1.25.3
+urllib3==1.25.6
 git+https://github.com/bcgov/lear.git#egg=registry_schemas&subdirectory=schemas

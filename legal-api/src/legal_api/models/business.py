@@ -94,7 +94,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         if self.last_ar_date:
             last_anniversary = self.last_ar_date
 
-        return last_anniversary+datedelta.datedelta(years=1)
+        return last_anniversary + datedelta.datedelta(years=1)
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):

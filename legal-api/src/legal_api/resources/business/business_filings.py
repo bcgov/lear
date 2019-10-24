@@ -76,8 +76,7 @@ class ListFilingResource(Resource):
                 HTTPStatus.NOT_ACCEPTABLE
 
         rv = []
-        go_live_date = datetime.date.fromisoformat(current_app.config.get('GO_LIVE_DATE'))
-        filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value], go_live_date)
+        filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
         for filing in filings:
             rv.append(filing.json)
 
