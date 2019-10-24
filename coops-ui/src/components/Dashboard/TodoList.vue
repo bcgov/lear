@@ -30,7 +30,7 @@
                 <div v-else-if="isPending(item)" class="todo-status">
                   <div>FILING PENDING</div>
                   <div class="vert-pipe">&nbsp;</div>
-                  <div class="payment-status" v-if="inProcessFiling === item.id">
+                  <div class="payment-status" v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
                     PROCESSING...
                   </div>
                   <div class="payment-status" v-else>
@@ -42,7 +42,7 @@
                 <div v-else-if="isError(item)" class="todo-status">
                   <div>FILING PENDING</div>
                   <div class="vert-pipe">&nbsp;</div>
-                  <div class="payment-status" v-if="inProcessFiling === item.id">
+                  <div class="payment-status" v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
                     PROCESSING...
                   </div>
                   <div class="payment-status" v-else>
@@ -55,8 +55,8 @@
 
             <div class="list-item__actions">
               <!-- pre-empt any buttons below -->
-              <span v-if="inProcessFiling === item.id">
-                <v-btn text="" loading="true" disabled=true />
+              <span v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
+                <v-btn text loading disabled />
               </span>
 
               <span v-else-if="isDraft(item)">
@@ -496,7 +496,7 @@ export default {
   }
 }
 
-.todo-list.draft .v-expansion-panel__body {
+.todo-list.draft .v-expansion-panel-content {
   display: none;
 }
 
