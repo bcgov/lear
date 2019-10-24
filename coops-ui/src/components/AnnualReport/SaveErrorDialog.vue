@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="dialog" width="50rem">
+  <v-dialog v-model="dialog" width="60rem">
       <v-card>
         <v-card-title id="error-dialogue-title" v-if="errors.length > 0 || warnings.length < 1">
           Unable to Save Filing
@@ -28,15 +28,8 @@
             {{warning.warning}}
           </p>
 
-          <p class="genErr">
-            <v-icon small>mdi-phone</v-icon>
-            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
-          </p>
-          <p class="genErr">
-            <v-icon small>mdi-email</v-icon>
-            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
-              >SBC_ITOperationsSupport@gov.bc.ca</a>
-          </p>
+          <ErrorContact />
+
         </v-card-text>
         <v-divider class="my-0"></v-divider>
         <v-card-actions v-if="errors.length + warnings.length < 1">
@@ -50,10 +43,14 @@
       </v-card>
     </v-dialog>
 </template>
+
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
+import ErrorContact from '@/components/ErrorContact.vue'
 
-@Component
+@Component({
+  components: { ErrorContact }
+})
 export default class SaveErrorDialog extends Vue {
   // Prop to display the dialog.
   @Prop() private dialog: boolean
@@ -61,10 +58,10 @@ export default class SaveErrorDialog extends Vue {
   // Prop to disable the Retry button.
   @Prop() private disableRetry: boolean
 
-  // Prop containing error messages
+  // Prop containing error messages.
   @Prop() private errors: object[]
 
-  // Prop containing warning messages
+  // Prop containing warning messages.
   @Prop() private warnings: object[]
 
   // Pass click events to parent.
@@ -75,13 +72,9 @@ export default class SaveErrorDialog extends Vue {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/styles/theme.scss';
+@import '@/assets/styles/theme.scss';
 
 .genErr{
   font-size: 0.9rem;
-}
-
-.error-dialog-padding{
-  margin-left: 1rem;
 }
 </style>

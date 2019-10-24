@@ -37,7 +37,6 @@
 </template>
 
 <script lang="ts">
-
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 
 @Component
@@ -89,17 +88,17 @@ export default class Certify extends Vue {
     return val
   }
 }
-
 </script>
 
 <style lang="scss" scoped>
 @import '../../assets/styles/theme.scss';
 
-.certifiedby-container{
+.certifiedby-container {
   display: flex;
   flex-flow: column nowrap;
   position: relative;
-  > label:first-child{
+
+  > label:first-child {
     font-weight: 500;
   }
 }
@@ -107,6 +106,7 @@ export default class Certify extends Vue {
 @media (min-width: 768px) {
   .certifiedby-container {
     flex-flow: row nowrap;
+
     > label:first-child {
       flex: 0 0 auto;
       padding-right: 2rem;
@@ -115,23 +115,23 @@ export default class Certify extends Vue {
   }
 }
 
-.value.certifiedby{
+.value.certifiedby {
   min-width: 35rem
 }
 
-.certify-clause{
+.certify-clause {
   padding-left: 2rem;
   color: black;
   font-size: 0.875rem;
 }
 
-.certify-stmt{
+.certify-stmt {
   display:inline;
   font-size: 0.875rem;
   color: black
 }
 
-#AR-step-4-container{
+#AR-step-4-container {
   margin-top: 1rem;
   padding-bottom: 0.5rem;
   padding-top: 1rem;
