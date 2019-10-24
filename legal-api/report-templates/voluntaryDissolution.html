@@ -1,0 +1,65 @@
+[[macros.html]]
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>{{ meta_title }}</title>
+    <meta charset="UTF-8">
+    <meta name="author" content="BC Registries and Online Services">
+    <meta name="description" content="{{ meta_subject }}">
+
+[[style.html]]
+
+  </head>
+
+  <body>
+
+  [[logo.html]]
+
+    <div class="column-report">
+      <div class="column-report-headspace"></div>
+      <div class="header-blue">
+        VOLUNTARY DISSOLUTION
+      </div>
+      <div class="header-gold">
+        BC Cooperative &bull; Cooperative Association Act
+      </div>
+
+      <div class="column-report-inner">
+        <div class="entity-name">
+          {{ business.legalName }}
+        </div>
+
+        <!-- Struggling doing this with CSS, because weasyprint isn't laying it out the same as a browser. -->
+        <div class="section-data">
+          <table class="section-data-table">
+            <tr>
+              <td class="table-name">Incorporation Number:</td>
+              <td class="table-value">{{ business.identifier }}</td>
+            </tr>
+            <tr>
+              <td class="table-name">Business Number:</td>
+              <td class="table-value">{{ business.tax_id }}</td>
+            </tr>
+            <tr>
+              <td class="table-name">Filing Date and Time:</td>
+              <td class="table-value">{{ filing_date_time }}</td>
+            </tr>
+            <tr>
+              <td class="table-name">Date Resolution Passed:</td>
+              <td class="table-value">{{ voluntaryDissolution.dissolutionDate }}</td>
+            </tr>
+          </table>
+        </div>
+
+        [[dissolution.html]]
+
+        [[certification.html]]
+
+      </div>
+    </div>
+
+[[footer.html]]
+
+  </body>
+</html>
