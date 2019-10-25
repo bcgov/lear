@@ -1257,7 +1257,7 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
     wrapper.find('#ar-file-pay-btn').trigger('click')
     // work-around because click trigger isn't working
     await vm.onClickFilePay()
-
+    await flushPromises()
     expect(vm.saveErrorDialog).toBe(true)
     expect(vm.saveErrors.length).toBe(1)
     expect(vm.saveErrors[0].error).toBe('err msg post')
@@ -1289,7 +1289,7 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
     wrapper.find('#ar-file-pay-btn').trigger('click')
     // work-around because click trigger isn't working
     await vm.onClickFilePay()
-
+    await flushPromises()
     expect(vm.saveErrorDialog).toBe(true)
     expect(vm.saveErrors.length).toBe(1)
     expect(vm.saveErrors[0].error).toBe('err msg put')
@@ -1344,7 +1344,7 @@ describe('AnnualReport - Part 7 - Save through multiple tabs', () => {
               'tasks': [
                 {
                   'task': {
-                    'todo': {
+                    'filing': {
                       'header': {
                         'name': 'annualReport',
                         'ARFilingYear': 2017,
@@ -1375,17 +1375,15 @@ describe('AnnualReport - Part 7 - Save through multiple tabs', () => {
     vm.directorEditInProgress = false
 
     // stub address data
-    vm.addresses = { deliveryAddress: {}, mailingAddress: {} }
-
-    const button = wrapper.find('#ar-file-pay-btn')
-    expect(button.attributes('disabled')).toBeUndefined()
-
+    vm.addresses = { deliveryAddress: {}, mailingAddress: {} }   
     
-    // click the File & Pay button
-    button.trigger('click')
+    // click the Save button
+    wrapper.find('#ar-file-pay-btn').trigger('click')     
     await flushPromises()
-
-    expect(vm.saveErrorDialog).toBe(true)
-    expect(vm.saveErrors.length).toBe(1)
+    setTimeout(() => {
+      expect(vm.saveErrorDialog).toBe(true)
+      expect(vm.saveErrors.length).toBe(1)  
+      expect(vm.saveErrors[0].error).toBe('Another draft filing already exists. Please complete it before creating a new filing')
+    }, 1000)    
   })
 })
