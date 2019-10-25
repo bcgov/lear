@@ -54,7 +54,7 @@
                 <div class="list-item__title">{{document.name}}</div>
               </v-btn>
             </li>
-            <li class="list-item">
+            <li class="list-item"  v-if="item.paymentToken">
               <v-btn class="list-item__btn" text color="primary" @click="downloadReceipt(item)"
                 :disabled="loadingReceipt" :loading="loadingReceipt">
                 <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
@@ -142,7 +142,7 @@ export default {
       for (let i = 0; i < this.filings.length; i++) {
         const filing = this.filings[i].filing
         if (filing && filing.header) {
-          if (filing.header.date < '2019-03-08') {
+          if (filing.header.date < '2019-03-08' || filing.header.availableOnPaperOnly) {
             this.loadPaperFiling(filing)
           } else {
             switch (filing.header.name) {
@@ -154,6 +154,15 @@ export default {
                 break
               case 'changeOfAddress':
                 this.loadChangeOfAddress(filing)
+                break
+              case 'changeOfName':
+                this.loadChangeOfName(filing)
+                break
+              case 'specialResolution':
+                this.loadSpecialResolution(filing)
+                break
+              case 'voluntaryDissolution':
+                this.loadVoluntaryDissolution(filing)
                 break
               default:
                 this.loadPaperFiling(filing)
@@ -242,29 +251,84 @@ export default {
         console.log('ERROR - invalid changeOfAddress in filing =', filing)
       }
     },
-
-    loadPaperFiling (filing) {
-      if (filing.header && filing.header.availableOnPaperOnly) {
-        // split name on camelcase and capitalize first letters
-        let name = filing.header.name.split(/(?=[A-Z])/).join(' ')
-        name = name.charAt(0).toLocaleUpperCase() + name.slice(1)
+    loadChangeOfName (filing) {
+      if (filing.changeOfName) {
         const item = {
-          name: name,
+          name: 'Legal Name Change',
           filingAuthor: 'Registry Staff',
           filingDate: filing.header.date,
-          filingYear: filing.header.date.slice(0, 4),
           paymentToken: null,
           filingDocuments: [{
             filingId: filing.header.filingId,
-            name: name,
-            documentName: null
+            name: 'Legal Name Change',
+            documentName: `${this.entityIncNo} - Legal Name Change - ${filing.header.date}.pdf`
           }],
-          paperOnly: true
+          paperOnly: false
         }
         this.filedItems.push(item)
       } else {
-        console.log('ERROR - invalid paper filing =', filing)
+        console.log('ERROR - invalid changeOfName in filing =', filing)
       }
+    },
+
+    loadSpecialResolution (filing) {
+      if (filing.specialResolution) {
+        const item = {
+          name: 'Special Resolution',
+          filingAuthor: 'Registry Staff',
+          filingDate: filing.header.date,
+          paymentToken: null,
+          filingDocuments: [{
+            filingId: filing.header.filingId,
+            name: 'Special Resolution',
+            documentName: `${this.entityIncNo} - Special Resolution - ${filing.header.date}.pdf`
+          }],
+          paperOnly: false
+        }
+        this.filedItems.push(item)
+      } else {
+        console.log('ERROR - invalid special resolution in filing =', filing)
+      }
+    },
+
+    loadVoluntaryDissolution (filing) {
+      if (filing.voluntaryDissolution) {
+        const item = {
+          name: 'Voluntary Dissolution',
+          filingAuthor: 'Registry Staff',
+          filingDate: filing.header.date,
+          paymentToken: null,
+          filingDocuments: [{
+            filingId: filing.header.filingId,
+            name: 'Voluntary Dissolution',
+            documentName: `${this.entityIncNo} - Voluntary Dissolution - ${filing.header.date}.pdf`
+          }],
+          paperOnly: false
+        }
+        this.filedItems.push(item)
+      } else {
+        console.log('ERROR - invalid Voluntary Dissolution in filing =', filing)
+      }
+    },
+
+    loadPaperFiling (filing) {
+      // split name on camelcase and capitalize first letters
+      let name = filing.header.name.split(/(?=[A-Z])/).join(' ')
+      name = name.charAt(0).toLocaleUpperCase() + name.slice(1)
+      const item = {
+        name: name,
+        filingAuthor: 'Registry Staff',
+        filingDate: filing.header.date,
+        filingYear: filing.header.date.slice(0, 4),
+        paymentToken: null,
+        filingDocuments: [{
+          filingId: filing.header.filingId,
+          name: name,
+          documentName: null
+        }],
+        paperOnly: true
+      }
+      this.filedItems.push(item)
     },
 
     highlightFiling (highlightId) {
@@ -384,7 +448,9 @@ export default {
         await this.downloadOneDocument(filing.filingDocuments[i])
       }
       // finally download receipt
-      await this.downloadOneReceipt(filing)
+      if (filing.paymentToken) {
+        await this.downloadOneReceipt(filing)
+      }
       this.loadingAll = false
     }
   },
