@@ -1297,3 +1297,95 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
     expect(vm.saveWarnings[0].warning).toBe('warn msg put')
   })
 })
+
+describe('AnnualReport - Part 7 - Save through multiple tabs', () => {
+  let wrapper
+  let vm
+
+  store.state.entityName = 'Legal Name - CP0001191'
+  store.state.ARFilingYear = 2017
+  store.state.currentFilingStatus = 'NEW'
+  store.state.entityIncNo = 'CP0001191'
+
+  beforeEach(async () => {
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'annual-report', params: { id: '0' } }) // new filing id
+    wrapper = mount(AnnualReport, {
+      store,
+      localVue,
+      router,
+      stubs: {
+        ARDate: true,
+        AGMDate: true,
+        RegisteredOfficeAddress: true,
+        Directors: true,
+        Certify: true,
+        Affix: true,
+        SbcFeeSummary: true,
+        ConfirmDialog: true,
+        PaymentErrorDialog: true,
+        ResumeErrorDialog: true,
+        SaveErrorDialog: true
+      },
+      vuetify
+    })
+    vm = wrapper.vm as any
+
+    // mock "save draft" endpoint
+    sinon
+      .stub(axios, 'get')
+      .withArgs('CP0001191/tasks')
+      .returns(        
+        new Promise(resolve =>
+          resolve({
+            data: {
+              'tasks': [
+                {
+                  'task': {
+                    'todo': {
+                      'header': {
+                        'name': 'annualReport',
+                        'ARFilingYear': 2017,
+                        'status': 'DRAFT'
+                      }
+                    }
+                  },
+                  'enabled': true,
+                  'order': 1
+                }
+              ]
+            }
+          })
+        )
+      )
+  })
+
+  afterEach(() => {
+    sinon.restore()
+    wrapper.destroy()
+  })
+
+  it('shows duplicate filing popup if a todo not in NEW status exist', async () => {     
+    vm.agmDateValid = true
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
+    vm.directorEditInProgress = false
+
+    // stub address data
+    vm.addresses = { deliveryAddress: {}, mailingAddress: {} }
+
+    const button = wrapper.find('#ar-file-pay-btn')
+    expect(button.attributes('disabled')).toBeUndefined()
+
+    
+    // click the File & Pay button
+    button.trigger('click')
+    await flushPromises()
+
+    expect(vm.saveErrorDialog).toBe(true)
+    expect(vm.saveErrors.length).toBe(1)
+  })
+})
