@@ -16,6 +16,7 @@
 Provides all the search and retrieval from the business entity datastore.
 """
 import datetime
+import datedelta
 from http import HTTPStatus
 from typing import Tuple
 
@@ -145,7 +146,7 @@ class ListFilingResource(Resource):
                 reply = filing.json
                 reply['errors'] = [err_msg, ]
                 return jsonify(reply), err_code
-
+            ListFilingResource._set_effective_date(business, filing)
         # all done
         return jsonify(filing.json),\
             (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
@@ -362,18 +363,34 @@ class ListFilingResource(Resource):
             return None, None
         return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
+    @staticmethod
+    def _set_effective_date(business: Business, filing: Filing):
+        filing_type = filing.filing_json['filing']['header']['name']
+        if business.legal_type is not 'CP':
+            if filing_type == 'changeOfAddress':
+                effective_date = datetime.datetime.combine(datetime.date.today() + datedelta.datedelta(days=1), \
+                    datetime.datetime.min.time())
+                filing.effective_date = effective_date
+                filing.save()
+
 
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')
 @API.route('/internal/filings', methods=['GET', 'OPTIONS'])
+@API.route('/internal/filings/<string:status>', methods=['GET', 'OPTIONS'])
 @API.route('/internal/filings/<int:filing_id>', methods=['PATCH', 'OPTIONS'])
 class InternalFilings(Resource):
     """Internal Filings service for cron jobs."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def get():
+    def get(status=None):
         """Get filings to send to colin."""
-        pending_filings = Filing.get_completed_filings_for_colin()
+        filings = []
+        if status:
+            pending_filings = Filing.get_all_filings_by_status(status)
+        else:
+            pending_filings = Filing.get_completed_filings_for_colin()
+
         filings = [x.json for x in pending_filings]
         return jsonify(filings), HTTPStatus.OK
 

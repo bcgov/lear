@@ -94,19 +94,21 @@ def process_filing(payment_token, flask_app):
                 logger.error('Unknown payment status given: %s', payment_token['paymentToken'].get('statusCode'))
                 raise QueueException
 
-            business = Business.find_by_internal_id(filing_submission.business_id)
+            if filing_submission.effective_date and filing_submission.status == Filing.Status.PENDING.value:
+                filing_submission.status = Filing.Status.FUTURE
+            else:
+                business = Business.find_by_internal_id(filing_submission.business_id)
 
-            for filing in legal_filings:
-                if filing.get('annualReport'):
-                    annual_report.process(business, filing)
-                if filing.get('changeOfAddress'):
-                    change_of_address.process(business, filing)
-                if filing.get('changeOfDirectors'):
-                    change_of_directors.process(business, filing)
+                for filing in legal_filings:
+                    if filing.get('annualReport'):
+                        annual_report.process(business, filing)
+                    if filing.get('changeOfAddress'):
+                        change_of_address.process(business, filing)
+                    if filing.get('changeOfDirectors'):
+                        change_of_directors.process(business, filing)
 
-            filing_submission.transaction_id = transaction.id
-            db.session.add(business)
-
+                db.session.add(business)
+        filing_submission.transaction_id = transaction.id
         filing_submission.payment_completion_date = datetime.datetime.utcnow()
         db.session.add(filing_submission)
         db.session.commit()

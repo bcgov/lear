@@ -42,6 +42,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         PENDING = 'PENDING'
         DRAFT = 'DRAFT'
         ERROR = 'ERROR'
+        FUTURE = 'FUTURE'
 
     FILINGS = {'annualReport': {'name': 'annualReport', 'title': 'Annual Report Filing', 'code': 'OTANN'},
                'changeOfAddress': {'name': 'changeOfAddress', 'title': 'Change of Address Filing', 'code': 'OTADD'},
@@ -61,6 +62,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
     _status = db.Column('status', db.String(10), default='DRAFT')
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
 
+    effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=None)
     # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
                                db.ForeignKey('transaction.id'))
@@ -112,7 +114,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         if self.locked or \
                 (self._payment_token and self._filing_json):
             self._payment_completion_date = value
-            self._status = Filing.Status.COMPLETED.value
         else:
             raise BusinessException(
                 error="Payment Dates cannot set for unlocked filings unless the filing hasn't been saved yet.",
@@ -123,6 +124,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
     def status(self):
         """Property containing the filing status."""
         return self._status
+
+    @status.setter
+    def status(self, value: Status):
+        self._status = value.value
 
     @hybrid_property
     def filing_json(self):
@@ -273,6 +278,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
                    Filing._status == Filing.Status.COMPLETED.value).all()
         return filings
 
+    @staticmethod
+    def get_all_filings_by_status(status):
+        """Return all filings based on status."""
+        filings = db.session.query(Filing). \
+            filter(Filing._status == status).all()  # pylint: disable=singleton-comparison # noqa: E711;    
+        return filings
+
     def save(self):
         """Save and commit immediately."""
         db.session.add(self)
@@ -331,7 +343,10 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     # changes are part of the class and are not externalized
     if filing.payment_token and filing.filing_json:
         if filing.payment_completion_date and filing.transaction_id:
-            filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
+            if filing.effective_date:
+                filing._status = Filing.Status.FUTURE.value
+            else:
+                filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
         elif filing.payment_completion_date:
             filing._status = Filing.Status.ERROR.value  # pylint: disable=protected-access
         else:

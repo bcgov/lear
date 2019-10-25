@@ -113,8 +113,14 @@
                                 "DRAFT",
                                 "PENDING",
                                 "COMPLETED",
-                                "ERROR"
+                                "ERROR",
+                                "FUTURE"
                             ]
+                        },
+                        "effectiveDate": {
+                            "type": "string",
+                            "format": "date",
+                            "title": "The date the filing is to be applied and take effect."
                         }
                     }
                 }
