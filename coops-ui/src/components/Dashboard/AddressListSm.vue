@@ -21,7 +21,7 @@
                   <li>
                     {{ registeredAddress.deliveryAddress.addressCity }}
                     {{ registeredAddress.deliveryAddress.addressRegion }}
-                  &nbsp;&nbsp;{{ registeredAddress.deliveryAddress.postalCode}}
+                  &nbsp;&nbsp;{{ registeredAddress.deliveryAddress.postalCode }}
                   </li>
                   <li>{{ getCountryName(registeredAddress.deliveryAddress.addressCountry) }}</li>
                 </ul>
@@ -45,7 +45,7 @@
                   <li>
                     {{ registeredAddress.mailingAddress.addressCity }}
                     {{ registeredAddress.mailingAddress.addressRegion }}
-                    {{ registeredAddress.mailingAddress.postalCode}}
+                    {{ registeredAddress.mailingAddress.postalCode }}
                   </li>
                   <li>{{ getCountryName(registeredAddress.mailingAddress.addressCountry) }}</li>
                 </ul>
@@ -78,8 +78,10 @@
                 <ul class="address-info">
                   <li>{{ recordsAddress.deliveryAddress.streetAddress }}</li>
                   <li class="pre-wrap" v-html="recordsAddress.deliveryAddress.streetAddressAdditional"></li>
-                  <li>{{ recordsAddress.deliveryAddress.addressCity }} {{ recordsAddress.deliveryAddress.addressRegion }}
-                    &nbsp;&nbsp;{{ recordsAddress.deliveryAddress.postalCode}}</li>
+                  <li>{{ recordsAddress.deliveryAddress.addressCity }}
+                      {{ recordsAddress.deliveryAddress.addressRegion }}
+                    &nbsp;&nbsp;{{ recordsAddress.deliveryAddress.postalCode }}
+                  </li>
                   <li>{{ getCountryName(recordsAddress.deliveryAddress.addressCountry) }}</li>
                 </ul>
               </v-list-item-subtitle>
@@ -99,8 +101,10 @@
                 <ul class="address-info" v-else>
                   <li>{{ recordsAddress.mailingAddress.streetAddress }}</li>
                   <li class="pre-wrap" v-html="recordsAddress.mailingAddress.streetAddressAdditional"></li>
-                  <li>{{ recordsAddress.mailingAddress.addressCity }} {{ recordsAddress.mailingAddress.addressRegion }}
-                    &nbsp;&nbsp;{{ recordsAddress.mailingAddress.postalCode}}</li>
+                  <li>{{ recordsAddress.mailingAddress.addressCity }}
+                      {{ recordsAddress.mailingAddress.addressRegion }}
+                    &nbsp;&nbsp;{{ recordsAddress.mailingAddress.postalCode }}
+                  </li>
                   <li>{{ getCountryName(recordsAddress.mailingAddress.addressCountry) }}</li>
                 </ul>
               </v-list-item-subtitle>
@@ -117,10 +121,9 @@
 // Libraries
 import { Component, Mixins } from 'vue-property-decorator'
 import { mapState } from 'vuex'
-import CountriesProvincesMixin from '@/mixins/countries-provinces-mixin'
 
 // Mixins
-import { EntityFilterMixin, AddressMixin } from '@/mixins'
+import { EntityFilterMixin, AddressMixin, CountriesProvincesMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'
@@ -134,8 +137,7 @@ import { BaseAddressObjIF } from '@/interfaces/address-interfaces'
     ...mapState(['registeredAddress', 'recordsAddress'])
   }
 })
-
-export default class AddressListSm extends Mixins(EntityFilterMixin, AddressMixin) {
+export default class AddressListSm extends Mixins(EntityFilterMixin, AddressMixin, CountriesProvincesMixin) {
   // Base Address properties
   private registeredAddress: BaseAddressObjIF
   private recordsAddress: BaseAddressObjIF
@@ -151,26 +153,26 @@ export default class AddressListSm extends Mixins(EntityFilterMixin, AddressMixi
 // Variables
 $icon-width: 2.75rem;
 
-  .panel-wrapper {
-    margin-left: -1.5rem;
-  }
-  .panel-header-btn {
-    padding-left: .85rem;
-  }
+.panel-wrapper {
+  margin-left: -1.5rem;
+}
+.panel-header-btn {
+  padding-left: .85rem;
+}
 
-  .v-list-item {
-    padding: 0 1rem;
-  }
+.v-list-item {
+  padding: 0 1rem;
+}
 
-  .v-list-item__icon {
-    margin-top: 0.7rem;
-    margin-right: 0;
-  }
+.v-list-item__icon {
+  margin-top: 0.7rem;
+  margin-right: 0;
+}
 
-  .v-list-item__title {
-    font-size: 0.875rem;
-    font-weight: 400;
-  }
+.v-list-item__title {
+  font-size: 0.875rem;
+  font-weight: 400;
+}
 
 .address-icon {
   width: $icon-width;
