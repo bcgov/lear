@@ -272,7 +272,7 @@ FILING_TEMPLATE = {
         },
         'business': {
             'cacheId': 1,
-            'foundingDate': '2007-04-08',
+            'foundingDate': '2007-04-08T00:00:00+00:00',
             'identifier': 'CP1234567',
             'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
             'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',

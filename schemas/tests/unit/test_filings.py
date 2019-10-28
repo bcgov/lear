@@ -16,6 +16,7 @@
 This suite should have at least 1 test for every filing type allowed.
 """
 import copy
+from datetime import datetime
 
 import pytest
 
@@ -38,6 +39,9 @@ def test_valid_filing(filing_data):
     # print filing name for easier debugging
     print(filing_data['filing']['header']['name'])
 
+    if errors:
+        for err in errors:
+            print(err.message)
     print(errors)
 
     assert is_valid
