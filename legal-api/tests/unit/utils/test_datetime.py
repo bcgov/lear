@@ -11,12 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The schemas and utilities to use them are maintained in this module.
 
-TODO: This should be pulled out to a common library.
-"""
-from .utils import get_schema, get_schema_store, validate
-from .version import __version__
+"""Tests to ensure the datetime wrappers are working as expected."""
+from datetime import datetime, timezone
+
+from freezegun import freeze_time
+
+from legal_api.utils.datetime import utcnow_tz
 
 
-__all__ = ['get_schema', 'get_schema_store', 'validate', '__version__']
+def test_utcnow_tz():
+    """Assert that the utcnow call includes the utc timezone."""
+    now = datetime(2020, 9, 17, 0, 0, 0, 0)
+
+    with freeze_time(now):
+        d = utcnow_tz()
+        assert d == now.replace(tzinfo=timezone.utc)
