@@ -150,19 +150,19 @@ export default {
                 this.loadAnnualReport(filing)
                 break
               case 'changeOfDirectors':
-                this.loadChangeOfDirectors(filing)
+                this.loadReport('Director Change', filing, filing.changeOfDirectors)
                 break
               case 'changeOfAddress':
-                this.loadChangeOfAddress(filing)
+                this.loadReport('Address Change', filing, filing.changeOfAddress)
                 break
               case 'changeOfName':
-                this.loadChangeOfName(filing)
+                this.loadReport('Legal Name Change', filing, filing.changeOfName)
                 break
               case 'specialResolution':
-                this.loadSpecialResolution(filing)
+                this.loadReport('Special Resolution', filing, filing.specialResolution)
                 break
               case 'voluntaryDissolution':
-                this.loadVoluntaryDissolution(filing)
+                this.loadReport('Voluntary Dissolution', filing, filing.voluntaryDissolution)
                 break
               default:
                 this.loadPaperFiling(filing)
@@ -210,104 +210,24 @@ export default {
       }
     },
 
-    loadChangeOfDirectors (filing) {
-      if (filing.changeOfDirectors) {
+    loadReport (title, filing, section) {
+      if (section) {
         const item = {
-          name: 'Director Change',
+          name: title,
           filingId: filing.header.filingId,
           filingAuthor: filing.header.certifiedBy,
           filingDate: filing.header.date,
           paymentToken: filing.header.paymentToken,
           filingDocuments: [{
             filingId: filing.header.filingId,
-            name: 'Director Change',
-            documentName: `${this.entityIncNo} - Director Change - ${filing.header.date}.pdf`
+            name: title,
+            documentName: `${this.entityIncNo} - ${title} - ${filing.header.date}.pdf`
           }],
           paperOnly: false
         }
         this.filedItems.push(item)
       } else {
-        console.log('ERROR - invalid changeOfDirectors in filing =', filing)
-      }
-    },
-
-    loadChangeOfAddress (filing) {
-      if (filing.changeOfAddress) {
-        const item = {
-          name: 'Address Change',
-          filingId: filing.header.filingId,
-          filingAuthor: filing.header.certifiedBy,
-          filingDate: filing.header.date,
-          paymentToken: filing.header.paymentToken,
-          filingDocuments: [{
-            filingId: filing.header.filingId,
-            name: 'Address Change',
-            documentName: `${this.entityIncNo} - Address Change - ${filing.header.date}.pdf`
-          }],
-          paperOnly: false
-        }
-        this.filedItems.push(item)
-      } else {
-        console.log('ERROR - invalid changeOfAddress in filing =', filing)
-      }
-    },
-    loadChangeOfName (filing) {
-      if (filing.changeOfName) {
-        const item = {
-          name: 'Legal Name Change',
-          filingAuthor: 'Registry Staff',
-          filingDate: filing.header.date,
-          paymentToken: null,
-          filingDocuments: [{
-            filingId: filing.header.filingId,
-            name: 'Legal Name Change',
-            documentName: `${this.entityIncNo} - Legal Name Change - ${filing.header.date}.pdf`
-          }],
-          paperOnly: false
-        }
-        this.filedItems.push(item)
-      } else {
-        console.log('ERROR - invalid changeOfName in filing =', filing)
-      }
-    },
-
-    loadSpecialResolution (filing) {
-      if (filing.specialResolution) {
-        const item = {
-          name: 'Special Resolution',
-          filingAuthor: 'Registry Staff',
-          filingDate: filing.header.date,
-          paymentToken: null,
-          filingDocuments: [{
-            filingId: filing.header.filingId,
-            name: 'Special Resolution',
-            documentName: `${this.entityIncNo} - Special Resolution - ${filing.header.date}.pdf`
-          }],
-          paperOnly: false
-        }
-        this.filedItems.push(item)
-      } else {
-        console.log('ERROR - invalid special resolution in filing =', filing)
-      }
-    },
-
-    loadVoluntaryDissolution (filing) {
-      if (filing.voluntaryDissolution) {
-        const item = {
-          name: 'Voluntary Dissolution',
-          filingAuthor: 'Registry Staff',
-          filingDate: filing.header.date,
-          paymentToken: null,
-          filingDocuments: [{
-            filingId: filing.header.filingId,
-            name: 'Voluntary Dissolution',
-            documentName: `${this.entityIncNo} - Voluntary Dissolution - ${filing.header.date}.pdf`
-          }],
-          paperOnly: false
-        }
-        this.filedItems.push(item)
-      } else {
-        console.log('ERROR - invalid Voluntary Dissolution in filing =', filing)
+        console.log(`ERROR - invalid ${title} in filing =`, filing)
       }
     },
 
