@@ -17,7 +17,12 @@ This service registers interest in listening to a Queue and processing received 
 """
 import asyncio
 import functools
+<<<<<<< HEAD:queue_services/common/src/entity_queue_common/service.py
 import json
+=======
+import os
+import random
+>>>>>>> 1eea666... Get both publishing and subscriptions working:entity-filer/src/entity_filer/service.py
 import signal
 from typing import Dict
 
@@ -84,6 +89,7 @@ class ServiceWorker:
             return True
         return False
 
+<<<<<<< HEAD:queue_services/common/src/entity_queue_common/service.py
     @property
     def name(self):
         """Return worker name of this service."""
@@ -105,6 +111,9 @@ class ServiceWorker:
         self._version = value
 
     async def connect(self):
+=======
+    async def connect(self, subject=None):
+>>>>>>> 1eea666... Get both publishing and subscriptions working:entity-filer/src/entity_filer/service.py
         """Connect the service worker to th3e NATS/STAN Queue.
 
         Also handles reconnecting when the network has dropped the connection.
@@ -140,13 +149,15 @@ class ServiceWorker:
             **{'nats': self.nc,
                'conn_lost_cb': self._stan_conn_lost_cb,
                'loop': self._loop},
-            **self.stan_connection_options
+            **self.stan_connection_options,
+            'client_id': str(random.SystemRandom().getrandbits(0x58))
         }
 
         subscription_options = {
             **self.config.SUBSCRIPTION_OPTIONS,
             **{'cb': self.cb_handler},
-            **self.subscription_options
+            **self.subscription_options,
+            'subject': os.getenv(subject, '')
         }
 
         await self.nc.connect(**nats_connection_options)
@@ -174,10 +185,18 @@ class ServiceWorker:
 class QueueServiceManager:
     """Manages the running of the Queue Client and Probes."""
 
+<<<<<<< HEAD:queue_services/common/src/entity_queue_common/service.py
     def __init__(self):
         """Initialize the manager and declaring placeholders for the service & probe."""
         self.service = None
         self.probe = None
+=======
+    This runs the main top level service functions for working with the Queue.
+    """
+    service = ServiceWorker(loop=loop, cb_handler=cb_subscription_handler)
+    processor = ServiceWorker(loop=loop, cb_handler=cb_subscription_handler)
+    probe = Probes(components=[service], loop=loop)
+>>>>>>> 1eea666... Get both publishing and subscriptions working:entity-filer/src/entity_filer/service.py
 
     async def close(self):
         """Close all of the services as cleanly as possible."""
@@ -187,6 +206,7 @@ class QueueServiceManager:
         await asyncio.sleep(0.1, loop=my_loop)
         my_loop.stop()
 
+<<<<<<< HEAD:queue_services/common/src/entity_queue_common/service.py
     async def run(self, loop, config, callback):  # pylint: disable=too-many-locals
         """Run the main application loop for the service.
 
@@ -219,3 +239,29 @@ class QueueServiceManager:
     #     logger.error('problem in running the service: %s', err, stack_info=True, exc_info=True)
     # finally:
     #     event_loop.close()
+=======
+    try:
+        await probe.start()
+        await service.connect('NATS_SUBJECT')
+        await processor.connect('NATS_FILER_SUBJECT')
+        # register the signal handler
+        for sig in ('SIGINT', 'SIGTERM'):
+            loop.add_signal_handler(getattr(signal, sig),
+                                    functools.partial(signal_handler, sig_loop=loop, task=close)
+                                    )
+
+    except Exception as e:  # pylint: disable=broad-except
+        # TODO tighten this error and decide when to bail on the infinite reconnect
+        logger.error(e)
+
+
+if __name__ == '__main__':
+    try:
+        event_loop = asyncio.get_event_loop()
+        event_loop.run_until_complete(run(event_loop))
+        event_loop.run_forever()
+    except Exception as err:  # pylint: disable=broad-except; Catching all errors from the frameworks
+        logger.error('problem in running the service: %s', err, stack_info=True, exc_info=True)
+    finally:
+        event_loop.close()
+>>>>>>> 1eea666... Get both publishing and subscriptions working:entity-filer/src/entity_filer/service.py

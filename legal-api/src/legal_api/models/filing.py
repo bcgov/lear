@@ -41,12 +41,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         COMPLETED = 'COMPLETED'
         DRAFT = 'DRAFT'
         ERROR = 'ERROR'
-<<<<<<< HEAD
         PAID = 'PAID'
         PENDING = 'PENDING'
-=======
         FUTURE = 'FUTURE'
->>>>>>> 445f2fc... incremental
 
     FILINGS = {'annualReport': {'name': 'annualReport', 'title': 'Annual Report Filing', 'code': 'OTANN'},
                'changeOfAddress': {'name': 'changeOfAddress', 'title': 'Change of Address Filing', 'code': 'OTADD'},
@@ -228,7 +225,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             json_submission['filing']['header']['availableOnPaperOnly'] = self.paper_only
 
             if self.effective_date:
+<<<<<<< HEAD
                 json_submission['filing']['header']['effectiveDate'] = self.effective_date
+=======
+                json_submission['filing']['header']['futureEffectiveDate'] = str(self.effective_date)
+>>>>>>> 1eea666... Get both publishing and subscriptions working
             if self._payment_token:
                 json_submission['filing']['header']['paymentToken'] = self.payment_token
             if self.submitter_id:
@@ -368,10 +369,10 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
 =======
     if filing.payment_token and filing.filing_json:
         if filing.payment_completion_date and filing.transaction_id:
-            if filing.effective_date:
-                filing._status = Filing.Status.FUTURE.value
+            if filing._status == Filing.Status.FUTURE.value:
+                filing._status = Filing.Status.COMPLETED.value
             else:
-                filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
+                filing._status = Filing.Status.FUTURE.value  # pylint: disable=protected-access
         elif filing.payment_completion_date:
             filing._status = Filing.Status.ERROR.value  # pylint: disable=protected-access
         else:
@@ -388,3 +389,4 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
 
     else:
         filing._status = Filing.Status.DRAFT.value  # pylint: disable=protected-access
+
