@@ -17,6 +17,8 @@ This service registers interest in listening to a Queue and processing received 
 """
 import asyncio
 import functools
+import os
+import random
 import signal
 
 
@@ -77,7 +79,7 @@ class ServiceWorker():
             return True
         return False
 
-    async def connect(self):
+    async def connect(self, subject=None):
         """Connect the service worker to th3e NATS/STAN Queue.
 
         Also handles reconnecting when the network has dropped the connection.
@@ -109,13 +111,15 @@ class ServiceWorker():
             **{'nats': self.nc,
                'conn_lost_cb': self._stan_conn_lost_cb,
                'loop': self._loop},
-            **self.stan_connection_options
+            **self.stan_connection_options,
+            'client_id': str(random.SystemRandom().getrandbits(0x58))
         }
 
         subscription_options = {
             **self.config.SUBSCRIPTION_OPTIONS,
             **{'cb': self.cb_handler},
-            **self.subscription_options
+            **self.subscription_options,
+            'subject': os.getenv(subject, '')
         }
 
         await self.nc.connect(**nats_connection_options)
@@ -141,6 +145,7 @@ async def run(loop):  # pylint: disable=too-many-locals
     This runs the main top level service functions for working with the Queue.
     """
     service = ServiceWorker(loop=loop, cb_handler=cb_subscription_handler)
+    processor = ServiceWorker(loop=loop, cb_handler=cb_subscription_handler)
     probe = Probes(components=[service], loop=loop)
 
     async def close():
@@ -151,8 +156,8 @@ async def run(loop):  # pylint: disable=too-many-locals
 
     try:
         await probe.start()
-        await service.connect()
-
+        await service.connect('NATS_SUBJECT')
+        await processor.connect('NATS_FILER_SUBJECT')
         # register the signal handler
         for sig in ('SIGINT', 'SIGTERM'):
             loop.add_signal_handler(getattr(signal, sig),
