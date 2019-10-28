@@ -25,7 +25,7 @@ FILING_HEADER = {
             'certifiedBy': 'full name',
             'email': 'no_one@never.get',
             'filingId': 1,
-            'futureEffectiveDate': '2019-04-15T00:00:00+00:00'
+            'effectiveDate': '2019-04-15T00:00:00+00:00'
         },
         'business': {
             'cacheId': 1,

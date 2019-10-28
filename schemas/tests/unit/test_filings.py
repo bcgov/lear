@@ -154,7 +154,24 @@ def test_filing_paper():
     """Assert that a Paper Only filing is valid."""
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['availableOnPaperOnly'] = True
+
     # filing['filing']['available'] = 'available on paper only.'
+    is_valid, errors = validate(filing, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert is_valid
+
+
+def test_effective_date():
+    """Assert that the effective date is working correctly from a structural POV."""
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+
+    filing['filing']['header']['effectiveDate'] = datetime.utcnow().isoformat() + 'Z'
 
     is_valid, errors = validate(filing, 'filing')
 
@@ -164,3 +181,14 @@ def test_filing_paper():
     print(errors)
 
     assert is_valid
+
+    filing['filing']['header']['effectiveDate'] = 'this should fail'
+
+    is_valid, errors = validate(filing, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert not is_valid
