@@ -4,7 +4,7 @@ apiVersion: "v1"
 metadata:
   name: "future-effective-filings"
   annotations:
-    description: "Scheduled task to update colin-api with completed filings from legal-api"
+    description: "Scheduled task to send future effective filings to the entity filer queue"
     tags: "cronjob"
 objects:
 - kind: "CronJob"
