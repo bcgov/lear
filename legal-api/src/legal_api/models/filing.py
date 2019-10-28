@@ -195,6 +195,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         return False
 
     def set_processed(self):
+        """Assign the completion date, unless it is already set."""
         if not self._completion_date:
             self._completion_date = datetime.utcnow()
 
@@ -218,6 +219,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             json_submission['filing']['header']['status'] = self.status
             json_submission['filing']['header']['availableOnPaperOnly'] = self.paper_only
 
+            if self.effective_date:
+                json_submission['filing']['header']['effectiveDate'] = self.effective_date
             if self._payment_token:
                 json_submission['filing']['header']['paymentToken'] = self.payment_token
             if self.submitter_id:
