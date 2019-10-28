@@ -105,8 +105,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     NATS_SERVERS = os.getenv('NATS_SERVERS')
     NATS_CLIENT_NAME = os.getenv('NATS_CLIENT_NAME', 'entity.legal_api')
     NATS_CLUSTER_ID = os.getenv('NATS_CLUSTER_ID', 'test-cluster')
-    NATS_COLIN_SUBJECT = os.getenv('NATS_COLIN_SUBJECT', 'entity.filing.colin.incoming')
-    NATS_QUEUE = os.getenv('NATS_QUEUE', 'colin-filing-worker')
+    NATS_FILER_SUBJECT = os.getenv('NATS_FILER_SUBJECT', 'entity.filing.filer')
+    NATS_QUEUE = os.getenv('NATS_QUEUE', 'entity-filer-worker')
 
     TESTING = False
     DEBUG = False

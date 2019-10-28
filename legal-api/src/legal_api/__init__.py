@@ -24,6 +24,7 @@ from http import HTTPStatus
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 from flask import redirect, Flask  # noqa: I001
+from registry_schemas import __version__ as registry_schemas_version
 from registry_schemas.flask import SchemaServices  # noqa: I001
 
 from legal_api import config, errorhandlers, models
@@ -72,6 +73,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     def add_version(response):  # pylint: disable=unused-variable
         version = get_run_version()
         response.headers['API'] = f'legal_api/{version}'
+        response.headers['SCHEMAS'] = f'registry_schemas/{registry_schemas_version}'
         return response
 
     register_shellcontext(app)

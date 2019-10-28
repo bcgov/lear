@@ -185,7 +185,7 @@ def test_get_internal_filings(session, client, jwt):
     # draft with no colin_event_id
     assert filing4.status == Filing.Status.DRAFT.value
     # error with no colin_event_id
-    assert filing5.status == Filing.Status.ERROR.value
+    assert filing5.status == Filing.Status.PAID.value
 
     # test endpoint returned filing1 only (completed with no colin id set)
     rv = client.get(f'/api/v1/businesses/internal/filings')

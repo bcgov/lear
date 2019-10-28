@@ -27,8 +27,8 @@ JWT_OIDC_JWKS_CACHE_TIMEOUT=300
 NATS_SERVERS=nats://localhost:4222
 NATS_CLIENT_NAME=entity.legal_api
 NATS_CLUSTER_ID=test-cluster
-NATS_COLIN_SUBJECT=entity.filing.colin.incoming
-NATS_QUEUE=colin-filing-worker
+NATS_FILER_SUBJECT=entity.filing.filer
+NATS_QUEUE=entity-filer-worker
 
 # ## MVP Settings
 GO_LIVE_DATE=2019-08-12

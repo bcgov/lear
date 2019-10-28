@@ -11,12 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The schemas and utilities to use them are maintained in this module.
-
-TODO: This should be pulled out to a common library.
-"""
-from .utils import get_schema, get_schema_store, validate
-from .version import __version__
+"""Date time utilities."""
+from datetime import datetime, timezone
 
 
-__all__ = ['get_schema', 'get_schema_store', 'validate', '__version__']
+def utcnow_tz() -> datetime:
+    """Return the current UTC time with associated UTC timezone."""
+    utc_date = datetime.utcnow().replace(tzinfo=timezone.utc)
+    return utc_date
