@@ -32,21 +32,17 @@ from nats.aio.client import Client as NATS, DEFAULT_CONNECT_TIMEOUT  # noqa N814
 from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 import pytz
 
-import config
 import requests
-
-from registry_schemas import validate
-from utils.logging import setup_logging
 from dotenv import find_dotenv, load_dotenv
+import config
+
+
+from utils.logging import setup_logging
+
+setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), \
+    'logging.conf'))  # important to do this first
 
 class QueueHelper():
-    
-    name = ''
-    nats_options = {}
-    stan_options = {}
-    loop = None
-    nats_servers = None
-    subject = None
 
     def __init__(self, loop=None):
         """Initialize, supports setting the app context on instantiation."""
@@ -57,23 +53,28 @@ class QueueHelper():
         self.loop = loop
         self.nats_servers = None
         self.subject = None
-
+        self.nats = None
+        self.stan = None
         self.logger = logging.getLogger()
 
     def on_error(self):
-        pass
+        """Error callback for nats streaming."""
+        return
 
     def on_close(self):
-        pass
+        """Connection closed callback for nats streaming."""
+        return
 
     def on_disconnect(self):
-        pass
+        """Connection disconnected callback for nats streaming."""
+        return
 
     def on_reconnect(self):
-        pass
+        """Connection reconnected callback for nats streaming."""
+        return
 
     def setup_queue(self):
-    
+
         self.name = os.getenv('NATS_CLIENT_NAME', '')
         self.loop = asyncio.get_event_loop()
         self.nats_servers = os.getenv('NATS_SERVERS', '').split(',')
@@ -83,7 +84,7 @@ class QueueHelper():
             'name': self.name,
             'io_loop': self.loop,
             'servers': self.nats_servers,
-            'connect_timeout': os.getenv('NATS_CONNECT_TIMEOUT', 2),
+            'connect_timeout': os.getenv('NATS_CONNECT_TIMEOUT', str(DEFAULT_CONNECT_TIMEOUT)),
             # NATS handlers
             'error_cb': self.on_error,
             'closed_cb': self.on_close,
@@ -112,7 +113,7 @@ class QueueHelper():
         """Connect to the queueing service."""
         #ctx = _app_ctx_stack.top
         #if ctx:
-        if not hasattr(self, 'nats'):
+        if self.nats is None:
             self.nats = NATS()
             self.stan = STAN()
 
@@ -120,10 +121,19 @@ class QueueHelper():
             self.stan_options = {**self.stan_options, **{'nats': self.nats}}
             await self.nats.connect(**self.nats_options)
             await self.stan.connect(**self.stan_options)
-    
+
     async def async_publish_filing(self, filing_id, status, payment_id):
         """Publish the json payload to the Queue Service."""
-        message = {'statusChanged': {'id' : filing_id, 'newStatus' : status}, 'paymentToken' : {'id' : payment_id, 'statusCode' : status}}
+        message = {
+            'statusChanged' : {
+                'id' : filing_id,
+                'newStatus' : status
+                },
+            'paymentToken' : {
+                'id' : payment_id,
+                'statusCode' : status
+                }
+            }
         if not self.nats.is_connected:
             await self.connect()
 
@@ -132,8 +142,6 @@ class QueueHelper():
 
 # this will load all the envars from a .env file located in the project root
 load_dotenv(find_dotenv())
-
-setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
 # lower case name as used by convention in most Flask apps
 jwt = JwtManager()  # pylint: disable=invalid-name
@@ -181,25 +189,31 @@ def get_filings(app: Flask = None):
     """Get a filing with filing_id."""
     r = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings/FUTURE')
     if not r or r.status_code != 200:
-        app.logger.error(f'Failed to collect filings from legal-api. {r} {r.json()} {r.status_code}')
+        app.logger.error(f'Failed to collect filings from legal-api. \
+            {r} {r.json()} {r.status_code}')
         raise Exception
     return r.json()
 
-async def run(loop):
+async def run(loop, application: Flask = None):
     application = create_app()
-    queue =  QueueHelper(loop)
+    queue = QueueHelper(loop)
     queue.setup_queue()
     await queue.connect()
     with application.app_context():
         try:
             # get updater-job token
-            creds = {'username': application.config['USERNAME'], 'password': application.config['PASSWORD']}
-            auth = requests.post(application.config['AUTH_URL'], json=creds, headers={
-                'Content-Type': 'application/json'})
+            creds = {'username': application.config['USERNAME'],
+                     'password': application.config['PASSWORD']
+                     }
+            auth = requests.post(application.config['AUTH_URL'],
+                                 json=creds,
+                                 headers={
+                                     'Content-Type': 'application/json'}
+                                )
             if auth.status_code != 200:
-                application.logger.error(f'colin-updater failed to authenticate {auth.json()} {auth.status_code}')
+                application.logger.error(f'file_future_effective failed to authenticate {auth.json()} {auth.status_code}')
                 raise Exception
-            token = dict(auth.json())['access_token']
+            # TODO token = dict(auth.json())['access_token']
 
             filings = get_filings(app=application)
             if not filings:
@@ -209,7 +223,8 @@ async def run(loop):
                 payment_id = filing["filing"]["header"]["paymentToken"]
                 effective_date = filing["filing"]["header"]["futureEffectiveDate"]
                 # TODO Use UTC time?
-                now = pytz.UTC.localize(datetime.now())
+                utc = pytz.UTC()
+                now = utc.localize(datetime.now())
                 valid = effective_date and parse(effective_date) <= now
                 if valid:
                     await queue.async_publish_filing(filing_id, 'COMPLETED', payment_id)
