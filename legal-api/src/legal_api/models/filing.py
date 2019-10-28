@@ -39,9 +39,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         """Render an Enum of the Filing Statuses."""
 
         COMPLETED = 'COMPLETED'
-        PENDING = 'PENDING'
         DRAFT = 'DRAFT'
         ERROR = 'ERROR'
+        PAID = 'PAID'
+        PENDING = 'PENDING'
 
     FILINGS = {'annualReport': {'name': 'annualReport', 'title': 'Annual Report Filing', 'code': 'OTANN'},
                'changeOfAddress': {'name': 'changeOfAddress', 'title': 'Change of Address Filing', 'code': 'OTADD'},
@@ -55,9 +56,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
     __tablename__ = 'filings'
 
     id = db.Column(db.Integer, primary_key=True)
+    _completion_date = db.Column('completion_date', db.DateTime(timezone=True))
     _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _filing_type = db.Column('filing_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
+    effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _payment_token = db.Column('payment_id', db.String(4096))
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
     colin_event_id = db.Column('colin_event_id', db.Integer)
@@ -77,6 +80,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
                                        foreign_keys=[submitter_id])
 
     # properties
+    @property
+    def completion_date(self):
+        """Property containing the filing type."""
+        return self._completion_date
+
     @hybrid_property
     def filing_date(self):
         """Property containing the date a filing was submitted."""
@@ -185,6 +193,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             return True
 
         return False
+
+    def set_processed(self):
+        if not self._completion_date:
+            self._completion_date = datetime.utcnow()
 
     @staticmethod
     def _raise_default_lock_exception():
@@ -332,14 +344,15 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     """Set the state of the filing, based upon column values."""
     filing = target
     # changes are part of the class and are not externalized
-    if filing.payment_token and filing.filing_json:
-        if filing.payment_completion_date and filing.transaction_id:
-            filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
-        elif filing.payment_completion_date:
-            filing._status = Filing.Status.ERROR.value  # pylint: disable=protected-access
-        else:
-            filing._status = Filing.Status.PENDING.value  # pylint: disable=protected-access
-    elif filing.colin_event_id:
+
+    if filing.transaction_id:
         filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
+
+    elif filing.payment_completion_date:
+        filing._status = Filing.Status.PAID.value  # pylint: disable=protected-access
+
+    elif filing.payment_token or filing.colin_event_id:
+        filing._status = Filing.Status.PENDING.value  # pylint: disable=protected-access
+
     else:
         filing._status = Filing.Status.DRAFT.value  # pylint: disable=protected-access

@@ -1,0 +1,12 @@
+2019-10-21 23:24:41,546 INFO No binary specified, looking for `pyre.bin` in PATH
+2019-10-21 23:24:41,546 INFO Found: `/Users/thor/Developer/thorwolpert/ServiceBC/lear/legal-api/venv/bin/pyre.bin`
+2019-10-21 23:24:41,546 INFO No typeshed specified, looking for it
+2019-10-21 23:24:41,546 DEBUG Trying with: `/Users/thor/Developer/thorwolpert/ServiceBC/lear/legal-api/venv/lib/python3.7/site-packages/pyre_check/client/pyre_check/typeshed/`
+2019-10-21 23:24:41,546 DEBUG Trying with: `/Users/thor/Developer/thorwolpert/ServiceBC/lear/legal-api/venv/lib/python3.7/site-packages/pyre_check/pyre_check/typeshed/`
+2019-10-21 23:24:41,546 DEBUG Trying with: `/Users/thor/Developer/thorwolpert/ServiceBC/lear/legal-api/venv/lib/python3.7/site-packages/pyre_check/typeshed/`
+2019-10-21 23:24:41,547 DEBUG Trying with: `/Users/thor/Developer/thorwolpert/ServiceBC/lear/legal-api/venv/lib/python3.7/pyre_check/typeshed/`
+2019-10-21 23:24:41,547 DEBUG Trying with: `/Users/thor/Developer/thorwolpert/ServiceBC/lear/legal-api/venv/lib/pyre_check/typeshed/`
+2019-10-21 23:24:41,547 INFO Found: `/Users/thor/Developer/thorwolpert/ServiceBC/lear/legal-api/venv/lib/pyre_check/typeshed/`
+2019-10-21 23:24:41,549 INFO Constructing shared directory `/Users/thor/Developer/thorwolpert/ServiceBC/lear/legal-api/tests/.pyre/shared_analysis_directory_59700`
+2019-10-21 23:24:41,550 ERROR No targets or source directories to analyze.
+

@@ -423,7 +423,7 @@ def test_get_a_businesses_most_recent_filing_of_a_type(session):
 
 
 def test_save_filing_with_colin_id(session):
-    """Assert that saving a filing with a colin event id is set to completed."""
+    """Assert that saving a filing with a colin event id is set to pending."""
     from legal_api.models import Filing
     # setup
     filing = Filing()
@@ -432,4 +432,4 @@ def test_save_filing_with_colin_id(session):
     assert filing.status == Filing.Status.DRAFT.value
     filing.colin_event_id = 1234
     filing.save()
-    assert filing.status == Filing.Status.COMPLETED.value
+    assert filing.status == Filing.Status.PENDING.value

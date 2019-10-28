@@ -55,7 +55,7 @@ class QueueService():
         self.name = app.config.get('NATS_CLIENT_NAME')
         self.loop = loop or asyncio.get_event_loop()
         self.nats_servers = app.config.get('NATS_SERVERS').split(',')
-        self.subject = app.config.get('NATS_COLIN_SUBJECT')
+        self.subject = app.config.get('NATS_FILER_SUBJECT')
 
         default_nats_options = {
             'name': self.name,
