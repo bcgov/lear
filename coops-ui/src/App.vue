@@ -91,7 +91,7 @@ export default {
     ...mapActions(['setKeycloakRoles', 'setAuthRoles', 'setBusinessEmail', 'setBusinessPhone',
       'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityType', 'setEntityStatus',
       'setEntityBusinessNo', 'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate',
-      'setNextARDate', 'setTasks', 'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors',
+      'setNextARDate', 'setTasks', 'setFilings', 'setRegisteredAddress', 'setRecordsAddress', 'setDirectors',
       'setTriggerDashboardReload']),
 
     fetchData () {
@@ -117,18 +117,18 @@ export default {
         Promise.all([
           this.getBusinessInfo(businessId),
           axios.get(businessId),
-          axios.get(businessId + '/tasks'),
-          axios.get(businessId + '/filings'),
+          // axios.get(businessId + '/tasks'),
+          // axios.get(businessId + '/filings'),
           axios.get(businessId + '/addresses'),
           axios.get(businessId + '/directors')
         ]).then(data => {
-          if (!data || data.length !== 6) throw new Error('incomplete data')
+          if (!data || data.length !== 4) throw new Error('incomplete data')
           this.storeBusinessInfo(data[0])
           this.storeEntityInfo(data[1])
-          this.storeTasks(data[2])
-          this.storeFilings(data[3])
-          this.storeAddresses(data[4])
-          this.storeDirectors(data[5])
+          // this.storeTasks(data[2])
+          // this.storeFilings(data[3])
+          this.storeAddresses(data[2])
+          this.storeDirectors(data[3])
           this.dataLoaded = true
         }).catch(error => {
           console.error(error) // eslint-disable-line no-console
@@ -283,15 +283,15 @@ export default {
     },
 
     storeAddresses (response) {
-      if (response && response.data && response.data.mailingAddress) {
-        this.setMailingAddress(this.omitProp(response.data.mailingAddress, ['addressType']))
+      if (response && response.data) {
+        if (response.data.registeredOffice) {
+          this.setRegisteredAddress(this.omitProp(response.data.registeredOffice, ['addressType']))
+        }
+        if (response.data.recordsOffice) {
+          this.setRecordsAddress(this.omitProp(response.data.recordsOffice, ['addressType']))
+        }
       } else {
-        throw new Error('invalid mailing address')
-      }
-      if (response && response.data && response.data.deliveryAddress) {
-        this.setDeliveryAddress(this.omitProp(response.data.deliveryAddress, ['addressType']))
-      } else {
-        throw new Error('invalid delivery address')
+        throw new Error('invalid office addresses')
       }
     },
 

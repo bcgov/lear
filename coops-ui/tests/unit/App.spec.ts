@@ -8,6 +8,7 @@ import { createLocalVue, shallowMount } from '@vue/test-utils'
 import axios from '@/axios-auth'
 import store from '@/store/store'
 import App from '@/App.vue'
+import { EntityTypes } from '@/enums'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -188,22 +189,44 @@ describe('App', () => {
       .returns(new Promise((resolve) => resolve({
         data:
           {
-            'mailingAddress': {
-              'streetAddress': '1012 Douglas St',
-              'addressCity': 'Victoria',
-              'addressRegion': 'BC',
-              'addressType': 'mailing',
-              'postalCode': 'V8W 2C3',
-              'addressCountry': 'CA'
-            },
-            'deliveryAddress': {
-              'streetAddress': '220 Buchanan St',
-              'addressCity': 'Glasgow',
-              'addressRegion': 'Scotland',
-              'addressType': 'delivery',
-              'postalCode': 'G1 2FFF',
-              'addressCountry': 'UK'
-            }
+            'registeredOffice':
+              {
+                'mailingAddress': {
+                  'streetAddress': '1012 Douglas St',
+                  'addressCity': 'Victoria',
+                  'addressRegion': 'BC',
+                  'addressType': 'mailing',
+                  'postalCode': 'V8W 2C3',
+                  'addressCountry': 'CA'
+                },
+                'deliveryAddress': {
+                  'streetAddress': '220 Buchanan St',
+                  'addressCity': 'Glasgow',
+                  'addressRegion': 'Scotland',
+                  'addressType': 'delivery',
+                  'postalCode': 'G1 2FFF',
+                  'addressCountry': 'UK'
+                }
+              },
+            'recordsOffice':
+              {
+                'mailingAddress': {
+                  'streetAddress': '1012 Douglas St',
+                  'addressCity': 'Vancouver',
+                  'addressRegion': 'BC',
+                  'addressType': 'mailing',
+                  'postalCode': 'V8W 2C3',
+                  'addressCountry': 'CA'
+                },
+                'deliveryAddress': {
+                  'streetAddress': '220 Buchanan St',
+                  'addressCity': 'Glasgow',
+                  'addressRegion': 'Scotland',
+                  'addressType': 'delivery',
+                  'postalCode': 'G1 2FFF',
+                  'addressCountry': 'UK'
+                }
+              }
           }
       })))
 
@@ -306,12 +329,15 @@ describe('App', () => {
   })
 
   it('fetches Addresses properly', () => {
-    expect(vm.$store.state.mailingAddress.addressCity).toBe('Victoria')
-    expect(vm.$store.state.deliveryAddress.addressCity).toBe('Glasgow')
+    expect(vm.$store.state.registeredAddress.mailingAddress.addressCity).toBe('Victoria')
+    expect(vm.$store.state.registeredAddress.deliveryAddress.addressCity).toBe('Glasgow')
+
+    expect(vm.$store.state.recordsAddress.mailingAddress.addressCity).toBe('Vancouver')
+    expect(vm.$store.state.recordsAddress.deliveryAddress.addressCity).toBe('Glasgow')
 
     // These values have been assigned in the mockResponse but are expected to be filtered out by front-end logic.
-    expect(vm.$store.state.mailingAddress.addressType).toBeUndefined()
-    expect(vm.$store.state.deliveryAddress.addressType).toBeUndefined()
+    expect(vm.$store.state.registeredAddress.addressType).toBeUndefined()
+    expect(vm.$store.state.recordsAddress.addressType).toBeUndefined()
   })
 
   it('fetches Directors properly', () => {
