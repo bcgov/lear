@@ -25,9 +25,8 @@ from flask import current_app
 from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS, FILING_HEADER
 
 from legal_api.resources.business.business_filings import Filing, ListFilingResource
-from legal_api.services import QueueService
-from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE
-from tests import integration_nats, integration_payment
+from legal_api.services.authz import BASIC_USER, STAFF_ROLE
+from tests import integration_payment
 from tests.unit.services.utils import create_header
 from tests.unit.models import factory_business_mailing_address, factory_business, factory_completed_filing, factory_filing  # noqa:E501,I001
 
@@ -526,7 +525,7 @@ def test_update_ar_with_missing_json_body_fails(session, client, jwt):
 def test_file_ar_no_agm_coop(session, client, jwt):
     """Assert that filing AR as COOP with no AGM date fails."""
     identifier = 'CP7654399'
-    b = factory_business(identifier, (datetime.utcnow()-datedelta.YEAR))
+    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR))
     factory_business_mailing_address(b)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
@@ -547,7 +546,7 @@ def test_file_ar_no_agm_coop(session, client, jwt):
 def test_file_ar_no_agm_bcorp(session, client, jwt):
     """Assert that filing AR as BCORP with no AGM date succeeds."""
     identifier = 'CP7654399'
-    b = factory_business(identifier, (datetime.utcnow()-datedelta.YEAR), None, 'B')
+    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'B')
     factory_business_mailing_address(b)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
@@ -565,7 +564,7 @@ def test_file_ar_no_agm_bcorp(session, client, jwt):
 def test_calc_annual_report_date(session, client, jwt):
     """Assert that nextAnnualReport is the anniversary of the business recognition."""
     identifier = 'CP7654399'
-    b = factory_business(identifier, (datetime.utcnow()-datedelta.YEAR), None, 'B')
+    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'B')
     factory_business_mailing_address(b)
     assert b.next_anniversary.date().isoformat() == datetime.utcnow().date().isoformat()
 
