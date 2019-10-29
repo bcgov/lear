@@ -6,15 +6,9 @@
         <p class="genErr">This account appears to be unable to access this business. You can
           retry to access this business now, or you can exit and return to the login page.</p>
         <p class="genErr">If this error persists, please contact us.</p>
-        <p class="genErr">
-          <v-icon small>mdi-phone</v-icon>
-          <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
-        </p>
-        <p class="genErr">
-          <v-icon small>mdi-email</v-icon>
-          <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
-            >SBC_ITOperationsSupport@gov.bc.ca</a>
-        </p>
+
+        <ErrorContact />
+
       </v-card-text>
       <v-divider></v-divider>
       <v-card-actions>
@@ -28,8 +22,11 @@
 
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
+import ErrorContact from '@/components/ErrorContact.vue'
 
-@Component
+@Component({
+  components: { ErrorContact }
+})
 export default class AccountAuthorizationDialog extends Vue {
   // Prop to display the dialog.
   @Prop() private dialog: boolean
@@ -41,13 +38,9 @@ export default class AccountAuthorizationDialog extends Vue {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/styles/theme.scss';
+@import '@/assets/styles/theme.scss';
 
 .genErr{
   font-size: 0.9rem;
-}
-
-.error-dialog-padding{
-  margin-left: 1rem;
 }
 </style>

@@ -22,27 +22,26 @@ app.setAttribute('data-app', 'true')
 document.body.append(app)
 
 describe('TodoList - UI', () => {
-  it('handles empty data', done => {
+  it('handles empty data', async () => {
     // init store
     store.state.tasks = []
 
     const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
-    Vue.nextTick(() => {
-      expect(vm.taskItems.length).toEqual(0)
-      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(0)
-      expect(wrapper.emitted('todo-count')).toEqual([[0]])
-      expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
-      expect(vm.$el.querySelector('.no-results')).not.toBeNull()
-      expect(vm.$el.querySelector('.no-results').textContent).toContain('You don\'t have anything to do yet')
+    await flushPromises()
 
-      wrapper.destroy()
-      done()
-    })
+    expect(vm.taskItems.length).toEqual(0)
+    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(0)
+    expect(wrapper.emitted('todo-count')).toEqual([[0]])
+    expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
+    expect(vm.$el.querySelector('.no-results')).not.toBeNull()
+    expect(vm.$el.querySelector('.no-results').textContent).toContain('You don\'t have anything to do yet')
+
+    wrapper.destroy()
   })
 
-  it('displays multiple task items', done => {
+  it('displays multiple task items', async () => {
     // init store
     store.state.tasks = [
       {
@@ -89,34 +88,33 @@ describe('TodoList - UI', () => {
     const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
-    Vue.nextTick(() => {
-      expect(vm.taskItems.length).toEqual(3)
-      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(3)
-      expect(wrapper.emitted('todo-count')).toEqual([[3]])
-      expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
-      expect(vm.$el.querySelector('.no-results')).toBeNull()
+    await flushPromises()
 
-      // verify that first task is enabled and other 2 are disabled
-      const item1 = vm.$el.querySelectorAll('.todo-list')[0]
-      const item2 = vm.$el.querySelectorAll('.todo-list')[1]
-      const item3 = vm.$el.querySelectorAll('.todo-list')[2]
+    expect(vm.taskItems.length).toEqual(3)
+    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(3)
+    expect(wrapper.emitted('todo-count')).toEqual([[3]])
+    expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
+    expect(vm.$el.querySelector('.no-results')).toBeNull()
 
-      // check list items
-      expect(item1.classList.contains('disabled')).toBe(false)
-      expect(item2.classList.contains('disabled')).toBe(true)
-      expect(item3.classList.contains('disabled')).toBe(true)
+    // verify that first task is enabled and other 2 are disabled
+    const item1 = vm.$el.querySelectorAll('.todo-list')[0]
+    const item2 = vm.$el.querySelectorAll('.todo-list')[1]
+    const item3 = vm.$el.querySelectorAll('.todo-list')[2]
 
-      // check action buttons
-      expect(item1.querySelector('.list-item__actions .v-btn').disabled).toBe(false)
-      expect(item2.querySelector('.list-item__actions .v-btn').disabled).toBe(true)
-      expect(item3.querySelector('.list-item__actions .v-btn').disabled).toBe(true)
+    // check list items
+    expect(item1.classList.contains('disabled')).toBe(false)
+    expect(item2.classList.contains('disabled')).toBe(true)
+    expect(item3.classList.contains('disabled')).toBe(true)
 
-      wrapper.destroy()
-      done()
-    })
+    // check action buttons
+    expect(item1.querySelector('.list-item__actions .v-btn').disabled).toBe(false)
+    expect(item2.querySelector('.list-item__actions .v-btn').disabled).toBe(true)
+    expect(item3.querySelector('.list-item__actions .v-btn').disabled).toBe(true)
+
+    wrapper.destroy()
   })
 
-  it('displays a NEW \'Annual Report\' task', done => {
+  it('displays a NEW \'Annual Report\' task', async () => {
     // init store
     store.state.tasks = [
       {
@@ -137,29 +135,27 @@ describe('TodoList - UI', () => {
     const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
-    Vue.nextTick(() => {
-      expect(vm.taskItems.length).toEqual(1)
-      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
-      expect(wrapper.emitted('todo-count')).toEqual([[1]])
-      expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
-      expect(vm.$el.querySelector('.no-results')).toBeNull()
+    await flushPromises()
 
-      const item = vm.$el.querySelector('.list-item')
-      expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
-      expect(item.querySelector('.list-item__subtitle').textContent).toBe('(including Address and/or Director Change)')
-      expect(item.querySelector('.filing-status-1')).toBeNull()
-      expect(item.querySelector('.filing-status-2')).toBeNull()
+    expect(vm.taskItems.length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(wrapper.emitted('todo-count')).toEqual([[1]])
+    expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
+    expect(vm.$el.querySelector('.no-results')).toBeNull()
 
-      const button = item.querySelector('.list-item__actions .v-btn')
-      expect(button.disabled).toBe(false)
-      expect(button.querySelector('.v-btn__content').textContent).toContain('File Now')
+    const item = vm.$el.querySelector('.list-item')
+    expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
+    expect(item.querySelector('.list-item__subtitle').textContent)
+      .toContain('(including Address and/or Director Change)')
 
-      wrapper.destroy()
-      done()
-    })
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button.disabled).toBe(false)
+    expect(button.querySelector('.v-btn__content').textContent).toContain('File Now')
+
+    wrapper.destroy()
   })
 
-  it('displays a DRAFT \'Annual Report\' task', done => {
+  it('displays a DRAFT \'Annual Report\' task', async () => {
     // init store
     store.state.tasks = [
       {
@@ -185,29 +181,26 @@ describe('TodoList - UI', () => {
     const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
-    Vue.nextTick(() => {
-      expect(vm.taskItems.length).toEqual(1)
-      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
-      expect(wrapper.emitted('todo-count')).toEqual([[1]])
-      expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
-      expect(vm.$el.querySelector('.no-results')).toBeNull()
+    await flushPromises()
 
-      const item = vm.$el.querySelector('.list-item')
-      expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
-      expect(item.querySelector('.list-item__subtitle')).toBeNull()
-      expect(item.querySelector('.filing-status-1').textContent).toContain('DRAFT')
-      expect(item.querySelector('.filing-status-2')).toBeNull()
+    expect(vm.taskItems.length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(wrapper.emitted('todo-count')).toEqual([[1]])
+    expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+    expect(vm.$el.querySelector('.no-results')).toBeNull()
 
-      const button = item.querySelector('.list-item__actions .v-btn')
-      expect(button.disabled).toBe(false)
-      expect(button.querySelector('.v-btn__content').textContent).toContain('Resume')
+    const item = vm.$el.querySelector('.list-item')
+    expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
+    expect(item.querySelector('.list-item__subtitle').textContent).toContain('DRAFT')
 
-      wrapper.destroy()
-      done()
-    })
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button.disabled).toBe(false)
+    expect(button.querySelector('.v-btn__content').textContent).toContain('Resume')
+
+    wrapper.destroy()
   })
 
-  it('displays a DRAFT \'Address Change\' task', done => {
+  it('displays a DRAFT \'Address Change\' task', async () => {
     // init store
     store.state.tasks = [
       {
@@ -229,29 +222,26 @@ describe('TodoList - UI', () => {
     const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
-    Vue.nextTick(() => {
-      expect(vm.taskItems.length).toEqual(1)
-      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
-      expect(wrapper.emitted('todo-count')).toEqual([[1]])
-      expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
-      expect(vm.$el.querySelector('.no-results')).toBeNull()
+    await flushPromises()
 
-      const item = vm.$el.querySelector('.list-item')
-      expect(item.querySelector('.list-item__title').textContent).toEqual('File Address Change')
-      expect(item.querySelector('.list-item__subtitle')).toBeNull()
-      expect(item.querySelector('.filing-status-1').textContent).toContain('DRAFT')
-      expect(item.querySelector('.filing-status-2')).toBeNull()
+    expect(vm.taskItems.length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(wrapper.emitted('todo-count')).toEqual([[1]])
+    expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+    expect(vm.$el.querySelector('.no-results')).toBeNull()
 
-      const button = item.querySelector('.list-item__actions .v-btn')
-      expect(button.disabled).toBe(false)
-      expect(button.querySelector('.v-btn__content').textContent).toContain('Resume')
+    const item = vm.$el.querySelector('.list-item')
+    expect(item.querySelector('.list-item__title').textContent).toEqual('File Address Change')
+    expect(item.querySelector('.list-item__subtitle').textContent).toContain('DRAFT')
 
-      wrapper.destroy()
-      done()
-    })
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button.disabled).toBe(false)
+    expect(button.querySelector('.v-btn__content').textContent).toContain('Resume')
+
+    wrapper.destroy()
   })
 
-  it('displays a DRAFT \'Director Change\' task', done => {
+  it('displays a DRAFT \'Director Change\' task', async () => {
     // init store
     store.state.tasks = [
       {
@@ -273,29 +263,26 @@ describe('TodoList - UI', () => {
     const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
-    Vue.nextTick(() => {
-      expect(vm.taskItems.length).toEqual(1)
-      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
-      expect(wrapper.emitted('todo-count')).toEqual([[1]])
-      expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
-      expect(vm.$el.querySelector('.no-results')).toBeNull()
+    await flushPromises()
 
-      const item = vm.$el.querySelector('.list-item')
-      expect(item.querySelector('.list-item__title').textContent).toEqual('File Director Change')
-      expect(item.querySelector('.list-item__subtitle')).toBeNull()
-      expect(item.querySelector('.filing-status-1').textContent).toContain('DRAFT')
-      expect(item.querySelector('.filing-status-2')).toBeNull()
+    expect(vm.taskItems.length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(wrapper.emitted('todo-count')).toEqual([[1]])
+    expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+    expect(vm.$el.querySelector('.no-results')).toBeNull()
 
-      const button = item.querySelector('.list-item__actions .v-btn')
-      expect(button.disabled).toBe(false)
-      expect(button.querySelector('.v-btn__content').textContent).toContain('Resume')
+    const item = vm.$el.querySelector('.list-item')
+    expect(item.querySelector('.list-item__title').textContent).toEqual('File Director Change')
+    expect(item.querySelector('.list-item__subtitle').textContent).toContain('DRAFT')
 
-      wrapper.destroy()
-      done()
-    })
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button.disabled).toBe(false)
+    expect(button.querySelector('.v-btn__content').textContent).toContain('Resume')
+
+    wrapper.destroy()
   })
 
-  it('displays a FILING PENDING - PAYMENT INCOMPLETE task', done => {
+  it('displays a FILING PENDING - PAYMENT INCOMPLETE task', async () => {
     // init store
     store.state.tasks = [
       {
@@ -322,29 +309,27 @@ describe('TodoList - UI', () => {
     const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
-    Vue.nextTick(() => {
-      expect(vm.taskItems.length).toEqual(1)
-      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
-      expect(wrapper.emitted('todo-count')).toEqual([[1]])
-      expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
-      expect(vm.$el.querySelector('.no-results')).toBeNull()
+    await flushPromises()
 
-      const item = vm.$el.querySelector('.list-item')
-      expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
-      expect(item.querySelector('.list-item__subtitle')).toBeNull()
-      expect(item.querySelector('.filing-status-1').textContent).toContain('FILING PENDING')
-      expect(item.querySelector('.filing-status-2').textContent).toContain('PAYMENT INCOMPLETE')
+    expect(vm.taskItems.length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(wrapper.emitted('todo-count')).toEqual([[1]])
+    expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+    expect(vm.$el.querySelector('.no-results')).toBeNull()
 
-      const button = item.querySelector('.list-item__actions .v-btn')
-      expect(button.disabled).toBe(false)
-      expect(button.querySelector('.v-btn__content').textContent).toContain('Resume Payment')
+    const item = vm.$el.querySelector('.list-item')
+    expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
+    expect(item.querySelector('.list-item__subtitle').textContent).toContain('FILING PENDING')
+    expect(item.querySelector('.list-item__subtitle').textContent).toContain('PAYMENT INCOMPLETE')
 
-      wrapper.destroy()
-      done()
-    })
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button.disabled).toBe(false)
+    expect(button.querySelector('.v-btn__content').textContent).toContain('Resume Payment')
+
+    wrapper.destroy()
   })
 
-  it('displays a FILING PENDING - PAYMENT UNSUCCESSFUL task', done => {
+  it('displays a FILING PENDING - PAYMENT UNSUCCESSFUL task', async () => {
     // init store
     store.state.tasks = [
       {
@@ -371,29 +356,27 @@ describe('TodoList - UI', () => {
     const wrapper = mount(TodoList, { store, vuetify })
     const vm = wrapper.vm as any
 
-    Vue.nextTick(() => {
-      expect(vm.taskItems.length).toEqual(1)
-      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
-      expect(wrapper.emitted('todo-count')).toEqual([[1]])
-      expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
-      expect(vm.$el.querySelector('.no-results')).toBeNull()
+    await flushPromises()
 
-      const item = vm.$el.querySelector('.list-item')
-      expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
-      expect(item.querySelector('.list-item__subtitle')).toBeNull()
-      expect(item.querySelector('.filing-status-1').textContent).toContain('FILING PENDING')
-      expect(item.querySelector('.filing-status-2').textContent).toContain('PAYMENT UNSUCCESSFUL')
+    expect(vm.taskItems.length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(wrapper.emitted('todo-count')).toEqual([[1]])
+    expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+    expect(vm.$el.querySelector('.no-results')).toBeNull()
 
-      const button = item.querySelector('.list-item__actions .v-btn')
-      expect(button.disabled).toBe(false)
-      expect(button.querySelector('.v-btn__content').textContent).toContain('Retry Payment')
+    const item = vm.$el.querySelector('.list-item')
+    expect(item.querySelector('.list-item__title').textContent).toEqual('File 2019 Annual Report')
+    expect(item.querySelector('.list-item__subtitle').textContent).toContain('FILING PENDING')
+    expect(item.querySelector('.list-item__subtitle').textContent).toContain('PAYMENT UNSUCCESSFUL')
 
-      wrapper.destroy()
-      done()
-    })
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button.disabled).toBe(false)
+    expect(button.querySelector('.v-btn__content').textContent).toContain('Retry Payment')
+
+    wrapper.destroy()
   })
 
-  it('displays a PROCESSING message on a filing that is expected to be complete', done => {
+  it('displays a PROCESSING message on a filing that is expected to be complete', async () => {
     // init store
     store.state.tasks = [
       {
@@ -418,28 +401,27 @@ describe('TodoList - UI', () => {
 
     wrapper.setProps({ inProcessFiling: 123 })
 
-    Vue.nextTick(() => {
-      expect(vm.taskItems.length).toEqual(1)
-      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
-      expect(wrapper.emitted('todo-count')).toEqual([[1]])
-      expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
-      expect(vm.$el.querySelector('.no-results')).toBeNull()
+    await flushPromises()
 
-      const item = vm.$el.querySelector('.list-item')
-      expect(vm.taskItems[0].id).toEqual(wrapper.props('inProcessFiling'))
-      expect(item.querySelector('.list-item__title').textContent).toEqual('File Director Change')
-      expect(item.querySelector('.list-item__subtitle')).toBeNull()
-      expect(item.querySelector('.filing-status-1').textContent).toContain('FILING PENDING')
-      expect(item.querySelector('.filing-status-2').textContent).toContain('PROCESSING...')
+    expect(vm.taskItems.length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(wrapper.emitted('todo-count')).toEqual([[1]])
+    expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+    expect(vm.$el.querySelector('.no-results')).toBeNull()
 
-      const button = item.querySelector('.list-item__actions .v-btn')
-      expect(button.getAttribute('style')).toContain('visibility: hidden')
+    const item = vm.$el.querySelector('.list-item')
+    expect(vm.taskItems[0].id).toEqual(wrapper.props('inProcessFiling'))
+    expect(item.querySelector('.list-item__title').textContent).toEqual('File Director Change')
+    expect(item.querySelector('.list-item__subtitle').textContent).toContain('FILING PENDING')
+    expect(item.querySelector('.list-item__subtitle').textContent).toContain('PROCESSING...')
 
-      wrapper.destroy()
-      done()
-    })
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button.getAttribute('disabled')).toBe('disabled')
+
+    wrapper.destroy()
   })
-  it('does not break if a filing is marked as processing, that is not in the to-do list', done => {
+
+  it('does not break if a filing is marked as processing, that is not in the to-do list', async () => {
     // init store
     store.state.tasks = [
       {
@@ -464,30 +446,28 @@ describe('TodoList - UI', () => {
 
     wrapper.setProps({ inProcessFiling: 456 })
 
-    Vue.nextTick(() => {
-      expect(vm.taskItems.length).toEqual(1)
-      expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
-      expect(wrapper.emitted('todo-count')).toEqual([[1]])
-      expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
-      expect(vm.$el.querySelector('.no-results')).toBeNull()
+    await flushPromises()
 
-      const item = vm.$el.querySelector('.list-item')
-      expect(vm.taskItems[0].id).not.toEqual(wrapper.props('inProcessFiling'))
-      expect(item.querySelector('.list-item__title').textContent).toEqual('File Director Change')
-      expect(item.querySelector('.list-item__subtitle')).toBeNull()
-      expect(item.querySelector('.filing-status-1').textContent).toContain('FILING PENDING')
-      expect(item.querySelector('.filing-status-2').textContent).toContain('PAYMENT INCOMPLETE')
+    expect(vm.taskItems.length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(wrapper.emitted('todo-count')).toEqual([[1]])
+    expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+    expect(vm.$el.querySelector('.no-results')).toBeNull()
 
-      const button = item.querySelector('.list-item__actions .v-btn')
-      expect(button.disabled).toBe(false)
-      expect(button.querySelector('.v-btn__content').textContent).toContain('Resume Payment')
+    const item = vm.$el.querySelector('.list-item')
+    expect(vm.taskItems[0].id).not.toEqual(wrapper.props('inProcessFiling'))
+    expect(item.querySelector('.list-item__title').textContent).toEqual('File Director Change')
+    expect(item.querySelector('.list-item__subtitle').textContent).toContain('FILING PENDING')
+    expect(item.querySelector('.list-item__subtitle').textContent).toContain('PAYMENT INCOMPLETE')
 
-      wrapper.destroy()
-      done()
-    })
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button.disabled).toBe(false)
+    expect(button.querySelector('.v-btn__content').textContent).toContain('Resume Payment')
+
+    wrapper.destroy()
   })
 
-  it('disables Resume Payment button if user has \'staff\' role', done => {
+  it('disables Resume Payment button if user has \'staff\' role', async () => {
     // init store
     store.state.keycloakRoles = ['staff']
     store.state.tasks = [
@@ -516,27 +496,26 @@ describe('TodoList - UI', () => {
     const wrapper = mount(TodoList, { store, vuetify, sync: false })
     const vm = wrapper.vm as any
 
-    Vue.nextTick(async () => {
-      expect(vm.isRoleStaff).toBe(true)
+    await flushPromises()
 
-      // sanity checks
-      expect(vm.taskItems.length).toEqual(1)
-      const item = vm.$el.querySelector('.list-item')
-      const button = item.querySelector('.list-item__actions .v-btn')
-      expect(button.querySelector('.v-btn__content').textContent).toContain('Resume Payment')
+    expect(vm.isRoleStaff).toBe(true)
 
-      // verify that doResumePayment() does nothing
-      expect(await vm.doResumePayment()).toBe(false)
+    // sanity checks
+    expect(vm.taskItems.length).toEqual(1)
+    const item = vm.$el.querySelector('.list-item')
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button.querySelector('.v-btn__content').textContent).toContain('Resume Payment')
 
-      // NB: cannot verify v-tooltip text as Vue puts it in a div outside this component
+    // verify that doResumePayment() does nothing
+    expect(await vm.doResumePayment()).toBe(false)
 
-      store.state.keycloakRoles = [] // cleanup
-      wrapper.destroy()
-      done()
-    })
+    // NB: cannot verify v-tooltip text as Vue puts it in a div outside this component
+
+    store.state.keycloakRoles = [] // cleanup
+    wrapper.destroy()
   })
 
-  it('disables Retry Payment button if user has \'staff\' role', done => {
+  it('disables Retry Payment button if user has \'staff\' role', async () => {
     // init store
     store.state.keycloakRoles = ['staff']
     store.state.tasks = [
@@ -564,24 +543,24 @@ describe('TodoList - UI', () => {
 
     const wrapper = mount(TodoList, { store, vuetify, sync: false })
     const vm = wrapper.vm as any
-    Vue.nextTick(async () => {
-      expect(vm.isRoleStaff).toBe(true)
 
-      // sanity checks
-      expect(vm.taskItems.length).toEqual(1)
-      const item = vm.$el.querySelector('.list-item')
-      const button = item.querySelector('.list-item__actions .v-btn')
-      expect(button.querySelector('.v-btn__content').textContent).toContain('Retry Payment')
+    await flushPromises()
 
-      // verify that doResumePayment() does nothing
-      expect(await vm.doResumePayment()).toBe(false)
+    expect(vm.isRoleStaff).toBe(true)
 
-      // NB: cannot verify v-tooltip text as Vue puts it in a div outside this component
+    // sanity checks
+    expect(vm.taskItems.length).toEqual(1)
+    const item = vm.$el.querySelector('.list-item')
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button.querySelector('.v-btn__content').textContent).toContain('Retry Payment')
 
-      store.state.keycloakRoles = [] // cleanup
-      wrapper.destroy()
-      done()
-    })
+    // verify that doResumePayment() does nothing
+    expect(await vm.doResumePayment()).toBe(false)
+
+    // NB: cannot verify v-tooltip text as Vue puts it in a div outside this component
+
+    store.state.keycloakRoles = [] // cleanup
+    wrapper.destroy()
   })
 })
 

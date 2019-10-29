@@ -116,8 +116,8 @@ export default {
       // only consider refreshing the dashboard if we came from a filing
       if (!filingId) return
 
-      let isInFilingHistory = this.historyFilings.filter(el => el.filingId === filingId).length > 0
-      let isInTodoList = this.todoListFilings.filter(el => el.id === filingId).length > 0
+      const isInFilingHistory = this.historyFilings.filter(el => el.filingId === filingId).length > 0
+      const isInTodoList = this.todoListFilings.filter(el => el.id === filingId).length > 0
 
       // if this filing is NOT in the to-do list and IS in the filing history list, do nothing - there is no problem
       if (!isInTodoList && isInFilingHistory) return
@@ -146,12 +146,9 @@ export default {
       // get current filing status
       let url = this.entityIncNo + '/filings/' + filingId
       axios.get(url).then(res => {
-        if (!res) {
-          // quietly fail - this error is not worth showing the customer an error
-          return false
-        }
         // if the filing status is now COMPLETE, reload the dashboard
-        if (res.data.filing.header.status === 'COMPLETED') {
+        if (res && res.data && res.data.filing && res.data.filing.header &&
+          res.data.filing.header.status === 'COMPLETED') {
           this.setTriggerDashboardReload(true)
         } else {
           // call this function again in 1 second
@@ -161,8 +158,11 @@ export default {
           }, 1000)
         }
       }).catch(() => {
-        // quietly fail - this error is not worth showing the customer an error
-        return false
+        // call this function again in 1 second
+        let vue = this
+        this.refreshTimer = setTimeout(() => {
+          vue.checkFilingStatus(filingId)
+        }, 1000)
       })
     }
   },

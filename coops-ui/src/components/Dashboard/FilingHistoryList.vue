@@ -1,27 +1,9 @@
 <template>
   <div>
-    <v-dialog v-model="downloadErrorDialog" width="30rem">
-      <v-card>
-        <v-card-title>Unable to Download Document</v-card-title>
-        <v-card-text>
-          <p class="genErr">We were unable to download your filing history document(s).</p>
-          <p class="genErr">If this error persists, please contact us.</p>
-          <p class="genErr">
-            <v-icon small>mdi-phone</v-icon>
-            <a href="tel:+1-250-952-0568" class="error-dialog-padding">250 952-0568</a>
-          </p>
-          <p class="genErr">
-            <v-icon small>mdi-email</v-icon>
-            <a href="mailto:SBC_ITOperationsSupport@gov.bc.ca" class="error-dialog-padding"
-              >SBC_ITOperationsSupport@gov.bc.ca</a>
-          </p>
-        </v-card-text>
-        <v-divider class="my-0"></v-divider>
-        <v-card-actions>
-          <v-btn color="primary" text @click="downloadErrorDialog = false">Close</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <DownloadErrorDialog
+      :dialog="downloadErrorDialog"
+      @close="downloadErrorDialog = false"
+    />
 
     <v-expansion-panels v-if="filedItems && filedItems.length > 0" v-model="panel" accordion>
       <v-expansion-panel
@@ -32,9 +14,10 @@
           <div class="list-item">
             <div class="filing-type">
               <div class="list-item__title mb-1">{{item.name}}</div>
-              <div class="list-item__subtitle">Filed by {{item.filingAuthor}} on {{item.filingDate}}</div>
+              <div class="list-item__subtitle">
+                FILED AND PAID (filed by {{item.filingAuthor}} on {{item.filingDate}})
+              </div>
             </div>
-            <div class="filing-status">FILED AND PAID</div>
             <div class="filing-view-docs mr-3">
               <span v-if="panel === index && !item.paperOnly">Hide Documents</span>
               <span v-else-if="panel === index && item.paperOnly">Close</span>
@@ -108,11 +91,16 @@
 import ExternalMixin from '@/mixins/external-mixin'
 import axios from '@/axios-auth'
 import { mapState } from 'vuex'
+import DownloadErrorDialog from '@/components/Dashboard/DownloadErrorDialog.vue'
 
 export default {
   name: 'FilingHistoryList',
 
   mixins: [ExternalMixin],
+
+  components: {
+    DownloadErrorDialog
+  },
 
   data () {
     return {

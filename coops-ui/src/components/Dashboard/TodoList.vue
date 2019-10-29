@@ -20,41 +20,43 @@
           <div class="list-item">
             <div class="filing-type">
               <div class="list-item__title">{{item.title}}</div>
-            </div>
+              <div class="list-item__subtitle">
+                <div v-if="item.subtitle" class="todo-status">{{item.subtitle}}</div>
 
-            <div class="list-item__subtitle" v-if="isNew(item)">
-              <span v-if="item.subtitle">{{item.subtitle}}</span>
-            </div>
+                <div v-if="isDraft(item)" class="todo-status">
+                  DRAFT
+                </div>
 
-            <template v-else>
-              <div class="filing-status-1">
-                <span v-if="isDraft(item)">DRAFT</span>
-                <span v-else-if="isPending(item)">FILING PENDING</span>
-                <span v-else-if="isError(item)">FILING PENDING</span>
+                <div v-else-if="isPending(item)" class="todo-status">
+                  <div>FILING PENDING</div>
+                  <div class="vert-pipe">&nbsp;</div>
+                  <div class="payment-status" v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
+                    PROCESSING...
+                  </div>
+                  <div class="payment-status" v-else>
+                    <span>PAYMENT INCOMPLETE</span>
+                    <v-btn small icon color="black" class="info-btn"><v-icon>mdi-information-outline</v-icon></v-btn>
+                  </div>
+                </div>
+
+                <div v-else-if="isError(item)" class="todo-status">
+                  <div>FILING PENDING</div>
+                  <div class="vert-pipe">&nbsp;</div>
+                  <div class="payment-status" v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
+                    PROCESSING...
+                  </div>
+                  <div class="payment-status" v-else>
+                    <span>PAYMENT UNSUCCESSFUL</span>
+                    <v-btn small icon color="black" class="info-btn"><v-icon>mdi-information-outline</v-icon></v-btn>
+                  </div>
+                </div>
               </div>
-              <div class="filing-status-2" v-if="inProcessFiling === item.id && item.id !== undefined">
-                <span>
-                  PROCESSING...
-                </span>
-              </div>
-              <div class="filing-status-2" v-if="isPending(item)">
-                <span>
-                  PAYMENT INCOMPLETE
-                </span>
-                <v-btn small icon color="black" class="info-btn"><v-icon>mdi-information-outline</v-icon></v-btn>
-              </div>
-              <div class="filing-status-2" v-else-if="isError(item)">
-                <span>
-                  PAYMENT UNSUCCESSFUL
-                </span>
-                <v-btn small icon color="black" class="info-btn"><v-icon>mdi-information-outline</v-icon></v-btn>
-              </div>
-            </template>
+            </div>
 
             <div class="list-item__actions">
-              <span v-if="inProcessFiling === item.id && item.id !== undefined">
-                <!-- hidden button to maintain layout -->
-                <v-btn style="visibility: hidden"></v-btn>
+              <!-- pre-empt any buttons below -->
+              <span v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
+                <v-btn text loading disabled />
               </span>
 
               <span v-else-if="isDraft(item)">
@@ -65,10 +67,10 @@
                   Resume
                 </v-btn>
                 <!-- more DRAFT actions menu -->
-                <v-menu offset-y left >
+                <v-menu offset-y left>
                   <template v-slot:activator="{ on }">
                     <v-btn color="primary" class="actions__more-actions__btn"
-                      v-on="on" id="menu-activator">
+                      v-on="on" id="menu-activator" :disabled="!item.enabled">
                       <v-icon>mdi-menu-down</v-icon>
                     </v-btn>
                   </template>
@@ -95,6 +97,7 @@
                  </template>
                 <span>Staff are not allowed to Resume Payment.</span>
               </v-tooltip>
+
               <v-tooltip v-else-if="isError(item)" top color="#3b6cff" :disabled="!isRoleStaff">
                  <template v-slot:activator="{ on }">
                   <v-btn
@@ -110,6 +113,7 @@
                  </template>
                 <span>Staff are not allowed to Retry Payment.</span>
               </v-tooltip>
+
               <v-btn v-else-if="!isCompleted(item)"
                 color="primary"
                 :disabled="!item.enabled"
@@ -156,7 +160,7 @@ import axios from '@/axios-auth'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import ExternalMixin from '@/mixins/external-mixin'
 import { mapState, mapActions, mapGetters } from 'vuex'
-import DeleteErrorDialog from '../AnnualReport/DeleteErrorDialog'
+import DeleteErrorDialog from '@/components/Dashboard/DeleteErrorDialog'
 
 export default {
   name: 'TodoList',
@@ -480,8 +484,8 @@ export default {
 .todo-list.disabled {
   opacity: 0.6;
 
-  .v-btn {
-    // enable expansion butto
+  .info-btn {
+    // enable expansion button
     pointer-events: auto;
   }
 }
@@ -493,7 +497,7 @@ export default {
   }
 }
 
-.todo-list.draft .v-expansion-panel__body {
+.todo-list.draft .v-expansion-panel-content {
   display: none;
 }
 
@@ -526,18 +530,28 @@ export default {
   flex: 1 1 auto;
 }
 
-.filing-status-1 {
-  flex: 1 1 auto;
-}
-
-.filing-status-2 {
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-}
-
 .info-btn {
   margin-left: 0.25rem;
+}
+
+.todo-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.payment-status {
+  display: flex;
+  align-items: center;
+  height: 28px; // for consistent height with and without icon button
+}
+
+.vert-pipe {
+  margin-top: 0.1rem;
+  margin-left: 0.75rem;
+  margin-right: 0.75rem;
+  height: 1rem;
+  border-left: 1px solid $gray6
 }
 
 </style>
