@@ -83,37 +83,6 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
         return directors_list
 
     @classmethod
-    def get_events(cls, identifier: str = None):
-        """Get all event ids of change of directors filings for this corp."""
-        if not identifier:
-            return None
-
-        try:
-            cursor = DB.connection.cursor()
-            cursor.execute(
-                """
-                select event.event_id, event_timestmp
-                from event
-                join filing on event.event_id = filing.event_id
-                where corp_num=:identifier and filing_typ_cd=:filing_type
-                """,
-                filing_type='OTCDR',
-                identifier=identifier
-            )
-
-            events = cursor.fetchall()
-            event_list = []
-            for row in events:
-                row = dict(zip([x[0].lower() for x in cursor.description], row))
-                event_list.append({'id': row['event_id'], 'date': row['event_timestmp']})
-
-        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
-            current_app.logger.error('error getting director events for {}'.format(identifier))
-            raise err
-
-        return event_list
-
-    @classmethod
     def get_by_event(cls, identifier: str = None, event_id: int = None):
         """Get all directors active or deleted during this event."""
         if not event_id:
