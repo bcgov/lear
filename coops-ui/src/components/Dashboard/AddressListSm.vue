@@ -87,6 +87,7 @@ export default class AddressListSm extends CountriesProvincesMixin {
     margin: 0;
     padding: 0;
     list-style-type: none;
+  }
 
   .pre-wrap {
     white-space: pre-wrap;
