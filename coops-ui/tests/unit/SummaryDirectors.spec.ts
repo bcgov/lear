@@ -313,7 +313,6 @@ describe.only('Directors as a BCORP', () => {
     expect(vm.directorSummary[0].mailingAddress.streetAddress).toEqual('mailing_address - address line one')
     expect(vm.directorSummary[1].mailingAddress.streetAddress).toEqual('1234 Clover St')
     expect(vm.directorsCeased[0].mailingAddress.streetAddress).toEqual('Somewhere-address')
-
   })
 
   it('displays the list of directors', () => {
@@ -330,6 +329,5 @@ describe.only('Directors as a BCORP', () => {
 
     // Check output when mailing and delivery address match
     expect(directorListUI[1].querySelector('.same-address').textContent).toContain('Same as Delivery')
-
   })
 })
