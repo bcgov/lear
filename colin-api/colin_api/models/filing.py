@@ -232,7 +232,6 @@ class Filing:
                                identifier: str = None, event_id: str = None, filing_type_cd: str = None,
                                year: int = None):
         """Get the basic filing info that we care about for all filings."""
-
         # build base querystring
         querystring = ("""
             select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt,
@@ -303,7 +302,6 @@ class Filing:
     @classmethod
     def _get_ar(cls, identifier: str = None, filing_event_info: dict = None):
         """Return annual report filing."""
-
         # get directors and registered office as of this filing
         director_events = cls._get_events(identifier=identifier, filing_type_code=filing_event_info['filing_type_code'])
         office_events = cls._get_events(identifier=identifier, filing_type_code=filing_event_info['filing_type_code'])
@@ -358,7 +356,6 @@ class Filing:
     @classmethod
     def _get_coa(cls, identifier: str = None, filing_event_info: dict = None):
         """Get change of address filing."""
-
         registered_office_obj = Office.get_by_event(filing_event_info['event_id'])
 
         if not registered_office_obj:
@@ -377,7 +374,6 @@ class Filing:
     @classmethod
     def _get_cod(cls, identifier: str = None, filing_event_info: dict = None):
         """Get change of directors filing."""
-
         director_objs = Director.get_by_event(identifier, filing_event_info['event_id'])
         if len(director_objs) < 3:
             current_app.logger.error('Less than 3 directors for {}'.format(identifier))
@@ -394,7 +390,6 @@ class Filing:
     @classmethod
     def _get_con(cls, identifier: str = None, filing_event_info: dict = None):
         """Get change of name filing."""
-
         name_obj = EntityName.get_by_event(identifier=identifier, event_id=filing_event_info['event_id'])
         if not name_obj:
             raise FilingNotFoundException(identifier=identifier, filing_type='change_of_name',
@@ -411,7 +406,6 @@ class Filing:
     @classmethod
     def _get_sr(cls, identifier: str = None, filing_event_info: dict = None):
         """Get special resolution filing."""
-
         querystring = ("""
             select filing.event_id, filing.effective_dt, ledger_text.notation
             from filing
@@ -447,7 +441,6 @@ class Filing:
     @classmethod
     def _get_vd(cls, identifier: str = None, filing_event_info: dict = None):
         """Get voluntary dissolution filing."""
-
         querystring = ("""
                 select filing.event_id, filing.effective_dt
                 from filing
@@ -488,7 +481,7 @@ class Filing:
             identifier = business.get_corp_num()
 
             # get the filing types corresponding filing code
-            code = [key for key in cls.FILING_TYPES.keys() if cls.FILING_TYPES[key] == filing_type]
+            code = [key for key in cls.FILING_TYPES if cls.FILING_TYPES[key] == filing_type]
             if len(code) < 1:
                 raise InvalidFilingTypeException(filing_type=filing_type)
 

@@ -40,7 +40,6 @@ class EntityName:
     @classmethod
     def _create_name_obj(cls, cursor, identifier: str = None):
         """Return a EntityName obj by parsing cursor."""
-
         corp_name_info = cursor.fetchone()
         if not corp_name_info:
             raise GenericException(error=f'{identifier} name not found', status_code=404)
