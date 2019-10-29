@@ -8,8 +8,10 @@
         <div class="value certifiedby">
           <v-text-field
             filled
+            persistent-hint
             id="certified-by-textfield"
-            label="Name of current director, officer, or lawyer of the association"
+            label="Enter Legal Name"
+            hint="Legal name of current director, officer, or lawyer of the association"
             :value="certifiedBy"
             @input="emitCertifiedBy"
           />
