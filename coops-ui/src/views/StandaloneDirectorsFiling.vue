@@ -242,20 +242,24 @@ export default {
 
     // open confirmation dialog and wait for response
     this.$refs.confirm.open(
-      'Save Your Changes to Your Change of Directors?',
-      'You have unsaved changes in your Change of Directors. Do you want to save your changes?',
-      { width: '40rem', persistent: true, yes: 'Save', no: 'Don\'t save' }
-    ).then(async (confirm) => {
-      // if we get here, Yes or No was clicked
-      if (confirm) {
-        await this.onClickSave()
-      } else {
-        this.haveChanges = false
+      'Unsaved Changes',
+      'You have unsaved changes in your Change of Directors. Do you want to exit your filing?',
+      {
+        width: '40rem',
+        persistent: true,
+        yes: 'Return to my filing',
+        no: null,
+        cancel: 'Exit without saving'
       }
-      next()
+    ).then(async (confirm) => {
+      // if we get here, Yes was clicked
+      if (confirm) {
+        next(false)
+      }
     }).catch(() => {
       // if we get here, Cancel was clicked
-      next(false)
+      this.haveChanges = false
+      next()
     })
   },
 
