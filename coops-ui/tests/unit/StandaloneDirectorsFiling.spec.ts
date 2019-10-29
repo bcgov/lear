@@ -158,6 +158,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     localVue.use(VueRouter)
     const router = mockRouter.mock()
     router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
+
     const wrapper = mount(StandaloneDirectorsFiling, {
       store,
       localVue,
@@ -177,6 +178,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set flag
+    vm.inFilingReview = true
     vm.directorFormValid = true
     vm.certifyFormValid = true
 
@@ -194,6 +196,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     localVue.use(VueRouter)
     const router = mockRouter.mock()
     router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
+
     const wrapper = mount(StandaloneDirectorsFiling, {
       store,
       localVue,
@@ -212,6 +215,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     })
     const vm: any = wrapper.vm
     // set flag
+    vm.inFilingReview = true
     vm.directorFormValid = true
     vm.certifyFormValid = false
 
@@ -429,6 +433,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
       const vm: any = wrapper.vm as any
 
       // make sure form is validated
+      vm.inFilingReview = true
       vm.directorFormValid = true
       vm.certifyFormValid = true
       vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'CP' }] // dummy data
@@ -440,7 +445,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
       // TODO: verify that new filing was created
 
       const button = wrapper.find('#cod-file-pay-btn')
-      expect(button.attributes('disabled')).toBeUndefined()
+      expect(button.attributes('disabled')).not.toBe('true')
 
       // click the File & Pay button
       button.trigger('click')
@@ -492,6 +497,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     const vm: any = wrapper.vm as any
 
     // make sure form is validated
+    vm.inFilingReview = true
     vm.directorFormValid = true
     vm.certifyFormValid = true
     vm.filingData = [{}] // dummy data
@@ -503,7 +509,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     // TODO: verify that draft filing was fetched
 
     const button = wrapper.find('#cod-file-pay-btn')
-    expect(button.attributes('disabled')).toBeUndefined()
+    expect(button.attributes('disabled')).not.toBe('true')
 
     // click the File & Pay button
     button.trigger('click')
@@ -550,6 +556,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     const vm: any = wrapper.vm as any
 
     // make sure form is validated
+    vm.inFilingReview = true
     vm.directorFormValid = true
     vm.certifyFormValid = true
     vm.filingData = [{}] // dummy data
@@ -658,6 +665,7 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
     const vm = wrapper.vm as any
 
     // make sure form is validated
+    vm.inFilingReview = true
     vm.directorFormValid = true
     vm.certifyFormValid = true
 
@@ -949,6 +957,7 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
       })
       const vm: any = wrapper.vm as any
       // make sure form is validated
+      vm.inFilingReview = true
       vm.directorFormValid = true
       vm.certifyFormValid = true
 
@@ -997,6 +1006,7 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
       })
       const vm: any = wrapper.vm as any
       // make sure form is validated
+      vm.inFilingReview = true
       vm.directorFormValid = true
       vm.certifyFormValid = true
 
