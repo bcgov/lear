@@ -124,6 +124,7 @@ export default class DirectorListSm extends Mixins(CountriesProvincesMixin, Enti
     padding: 0;
     list-style-type: none;
     line-height: 1.25rem;
+  }
 
   .pre-wrap {
     white-space: pre-wrap;
