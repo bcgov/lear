@@ -44,8 +44,8 @@
             <div class="meta-container">
               <div class="meta-container__inner">
                 <label class="appoint-header">Appoint New Director</label>
-                <v-form class="appoint-form" ref="newDirectorForm" v-on:submit.prevent="addNewDirector" v-model="directorFormValid"
-                        lazy-validation>
+                <v-form class="appoint-form" ref="newDirectorForm" v-on:submit.prevent="addNewDirector"
+                        v-model="directorFormValid" lazy-validation>
                   <div class="form__row three-column">
                     <v-text-field filled class="item" label="First Name" id="new-director__first-name"
                       v-model="director.officer.firstName"
