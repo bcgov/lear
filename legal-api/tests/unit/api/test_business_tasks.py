@@ -90,7 +90,7 @@ def test_bcorps_get_tasks_no_filings(session, client):
 def test_get_tasks_current_year_filing_exists(session, client):
     """Assert that only the filing for the current year is returned when only current year filing exists."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_business(identifier=identifier, last_ar_date='2019-08-13')
     filings = factory_filing(b, AR_FILING_CURRENT_YEAR)
 
     print('test_get_all_business_filings - filing:', filings)
@@ -104,7 +104,7 @@ def test_get_tasks_current_year_filing_exists(session, client):
 def test_get_tasks_prev_year_incomplete_filing_exists(session, client):
     """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_business(identifier, last_ar_date='2018-03-03')
     filings = factory_filing(b, AR_FILING_PREVIOUS_YEAR)
 
     print('test_get_all_business_filings - filing:', filings)
@@ -118,7 +118,7 @@ def test_get_tasks_prev_year_incomplete_filing_exists(session, client):
 def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client):
     """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""
     identifier = 'CP7654321'
-    b = factory_business(identifier, datetime.now()-datedelta.datedelta(years=2))
+    b = factory_business(identifier, datetime.now()-datedelta.datedelta(years=2), last_ar_date='2018-03-03')
     filings = factory_filing(b, AR_FILING_PREVIOUS_YEAR)
 
     print('test_get_all_business_filings - filing:', filings)
@@ -145,7 +145,7 @@ def test_get_tasks_error_filings(session, client, jwt):
     from tests.unit.models import AR_FILING, factory_business_mailing_address, factory_error_filing
     # setup
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_business(identifier, last_ar_date='2019-08-13')
     factory_business_mailing_address(b)
     filing = factory_error_filing(b, AR_FILING)
     filing.save()

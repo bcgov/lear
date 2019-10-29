@@ -17,8 +17,11 @@ import Vuetify from 'vuetify'
 import { mount, Wrapper } from '@vue/test-utils'
 
 import Certify from '@/components/AnnualReport/Certify.vue'
+import store from '@/store/store'
 
 Vue.use(Vuetify)
+
+let vuetify = new Vuetify({})
 
 // Input field selectors to test changes to the DOM elements.
 const certifiedBySelector: string = 'input[type=text]'
@@ -54,14 +57,27 @@ function getLastEvent (wrapper: Wrapper<Certify>, name: string): any {
  */
 function createComponent (certifiedBy: string = undefined, isCertified: boolean = undefined,
   currentDate: string = defaultDate): Wrapper<Certify> {
-  return mount(Certify, { propsData: {
-    'certifiedBy': certifiedBy,
-    'currentDate': currentDate,
-    'isCertified': isCertified
-  } })
+  return mount(Certify, { sync: false,
+    propsData: {
+      'certifiedBy': certifiedBy,
+      'currentDate': currentDate,
+      'isCertified': isCertified
+    } })
 }
 
 describe('Certified.vue', () => {
+  let vm
+
+  beforeEach(done => {
+    const Constructor = Vue.extend(Certify)
+    const instance = new Constructor({ store: store, vuetify })
+    vm = instance.$mount()
+
+    Vue.nextTick(() => {
+      done()
+    })
+  })
+
   it('has date displayed', () => {
     const wrapper: Wrapper<Certify> = createComponent()
 

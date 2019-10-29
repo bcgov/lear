@@ -95,6 +95,7 @@
               </header>
               <Directors ref="directorsList"
                 @directorsChange="directorsChange"
+                @directorsFreeChange="directorsFreeChange"
                 @allDirectors="allDirectors=$event"
                 @directorFormValid="directorFormValid=$event"
                 @directorEditAction="directorEditInProgress=$event"
@@ -149,19 +150,22 @@
 
         <div class="buttons-right">
           <v-tooltip top color="#3b6cff">
-            <v-btn
-              slot="activator"
-              v-if="isAnnualReportEditable"
-              id="ar-file-pay-btn"
-              color="primary"
-              large
-              :depressed="isRoleStaff"
-              :ripple="!isRoleStaff"
-              :disabled="!validated || busySaving"
-              :loading="filingPaying"
-              @click="onClickFilePay">
-              File &amp; Pay
-            </v-btn>
+            <template v-slot:activator="{ on }">
+              <div v-on="on" class="inline-div">
+                <v-btn
+                  v-if="isAnnualReportEditable"
+                  id="ar-file-pay-btn"
+                  color="primary"
+                  large
+                  :depressed="isRoleStaff"
+                  :ripple="!isRoleStaff"
+                  :disabled="!validated || busySaving"
+                  :loading="filingPaying"
+                  @click="onClickFilePay">
+                  File &amp; Pay
+                </v-btn>
+              </div>
+            </template>
             <span v-if="isRoleStaff">Staff are not allowed to file.</span>
             <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
               There is no opportunity to change information beyond this point.</span>
@@ -196,6 +200,12 @@ import DateMixin from '@/mixins/date-mixin'
 import EntityFilterMixin from '@/mixins/entityFilter-mixin'
 import { EntityTypes } from '@/enums'
 import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
+
+// action constants
+const APPOINTED = 'appointed'
+const CEASED = 'ceased'
+const NAMECHANGED = 'nameChanged'
+const ADDRESSCHANGED = 'addressChanged'
 
 export default {
   name: 'AnnualReport',
@@ -326,20 +336,24 @@ export default {
 
     // open confirmation dialog and wait for response
     this.$refs.confirm.open(
-      'Save Your Changes to Your Annual Report?',
-      'You have unsaved changes in your Annual Report. Do you want to save your changes?',
-      { width: '40rem', persistent: true, yes: 'Save', no: 'Don\'t save' }
-    ).then(async (confirm) => {
-      // if we get here, Yes or No was clicked
-      if (confirm) {
-        await this.onClickSave()
-      } else {
-        this.haveChanges = false
+      'Unsaved Changes',
+      'You have unsaved changes in your Annual Report. Do you want to exit your filing?',
+      {
+        width: '40rem',
+        persistent: true,
+        yes: 'Return to my filing',
+        no: null,
+        cancel: 'Exit without saving'
       }
-      next()
+    ).then(async (confirm) => {
+      // if we get here, Yes was clicked
+      if (confirm) {
+        next(false)
+      }
     }).catch(() => {
       // if we get here, Cancel was clicked
-      next(false)
+      this.haveChanges = false
+      next()
     })
   },
 
@@ -384,7 +398,20 @@ export default {
                 if (this.$refs.directorsList && this.$refs.directorsList.setAllDirectors) {
                   this.$refs.directorsList.setAllDirectors(changeOfDirectors.directors)
                 }
-                this.toggleFiling('add', 'OTCDR')
+
+                // add filing code for paid changes
+                if (changeOfDirectors.directors.filter(
+                  director => this.hasAction(director, CEASED) || this.hasAction(director, APPOINTED)
+                ).length > 0) {
+                  this.toggleFiling('add', 'OTCDR')
+                }
+
+                // add filing code for free changes
+                if (changeOfDirectors.directors.filter(
+                  director => this.hasAction(director, NAMECHANGED) || this.hasAction(director, ADDRESSCHANGED)
+                ).length > 0) {
+                  this.toggleFiling('add', 'OTFDR')
+                }
               } else {
                 throw new Error('invalid change of directors')
               }
@@ -440,6 +467,12 @@ export default {
       this.toggleFiling(modified ? 'add' : 'remove', 'OTCDR')
     },
 
+    directorsFreeChange (modified: boolean) {
+      this.haveChanges = true
+      // when directors change (free filing), update filing data
+      this.toggleFiling(modified ? 'add' : 'remove', 'OTFDR')
+    },
+
     async onClickSave () {
       // prevent double saving
       if (this.busySaving) return
@@ -473,19 +506,18 @@ export default {
       if (this.busySaving) return true
 
       this.filingPaying = true
-      const filing = await this.saveFiling(false)
+      const filing = await this.saveFiling(false) // not a draft
+
       // on success, redirect to Pay URL
       if (filing && filing.header) {
-        const root = window.location.origin || ''
-        const path = process.env.VUE_APP_PATH
-        const origin = `${root}/${path}`
-
         const filingId = +filing.header.filingId
-        const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
-        let authStub: string = sessionStorage.getItem('AUTH_URL') || ''
-        if (!(authStub.endsWith('/'))) { authStub += '/' }
         const paymentToken = filing.header.paymentToken
-        const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
+
+        const baseUrl = sessionStorage.getItem('BASE_URL')
+        const returnURL = encodeURIComponent(baseUrl + 'dashboard?filing_id=' + filingId)
+        const authUrl = sessionStorage.getItem('AUTH_URL')
+        const payURL = authUrl + 'makepayment/' + paymentToken + '/' + returnURL
+
         // assume Pay URL is always reachable
         window.location.assign(payURL)
       }
@@ -525,7 +557,7 @@ export default {
         }
       }
 
-      if (this.isDataChanged('OTCDR')) {
+      if (this.isDataChanged('OTCDR') || this.isDataChanged('OTFDR')) {
         changeOfDirectors = {
           changeOfDirectors: {
             directors: this.allDirectors
@@ -650,6 +682,11 @@ export default {
         earliestAllowedDate = this.lastPreLoadFilingDate
       }
       return this.agmDateValid && this.compareDates(this.agmDate, earliestAllowedDate, '>=')
+    },
+
+    hasAction (director, action) {
+      if (director.actions.indexOf(action) >= 0) return true
+      else return false
     }
   },
 
@@ -677,55 +714,64 @@ export default {
 }
 </script>
 
-<style lang="stylus" scoped>
-@import '../assets/styles/theme.styl'
+<style lang="scss" scoped>
+@import '../assets/styles/theme.scss';
 
-article
-  .v-card
+article {
+  .v-card {
     line-height: 1.2rem;
     font-size: 0.875rem;
+  }
+}
 
-section p
-  // font-size 0.875rem
+section p {
   color: $gray6;
+}
 
-section + section
+section + section {
   margin-top: 3rem;
+}
 
-h2
-  margin-bottom: 0.25rem;
-
-#AR-header
-  margin-bottom: 1.25rem;
-  line-height: 2rem;
-  letter-spacing: -0.01rem;
-  font-size: 2rem;
-  font-weight: 500;
-
-#AR-step-1-header, #AR-step-1-header-BC, #AR-step-2-header, #AR-step-3-header, #AR-step-4-header
+h2 {
   margin-bottom: 0.25rem;
   margin-top: 3rem;
   font-size: 1.125rem;
-  font-weight: 500;
+}
 
-.title-container
+#AR-header {
+  margin-bottom: 1.25rem;
+  line-height: 2rem;
+  letter-spacing: -0.01rem;
+}
+
+.title-container {
   margin-bottom: 0.5rem;
+}
 
-.agm-date
+.agm-date {
   margin-left: 0.25rem;
   font-weight: 300;
+}
 
 // Save & Filing Buttons
-#buttons-container
+#buttons-container {
   padding-top: 2rem;
   border-top: 1px solid $gray5;
 
-  .buttons-left
+  .buttons-left {
     width: 50%;
+  }
 
-  .buttons-right
-    margin-left auto
+  .buttons-right {
+    margin-left: auto
+  }
 
-  .v-btn + .v-btn
+  .v-btn + .v-btn {
     margin-left: 0.5rem;
+  }
+
+  #ar-cancel-btn {
+    margin-left: 0.5rem;
+  }
+}
 </style>

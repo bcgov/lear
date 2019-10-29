@@ -12,10 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Sample data used across many tests."""
+
+import copy
+
+
 FILING_HEADER = {
     'filing': {
         'header': {
             'name': 'annualReport',
+            'availableOnPaperOnly': False,
             'date': '2019-04-08',
             'certifiedBy': 'full name',
             'email': 'no_one@never.get',
@@ -47,6 +52,7 @@ ANNUAL_REPORT = {
     'filing': {
         'header': {
             'name': 'annualReport',
+            'availableOnPaperOnly': False,
             'certifiedBy': 'full name',
             'email': 'no_one@never.get',
             'date': '2019-04-08'
@@ -162,6 +168,65 @@ CHANGE_OF_DIRECTORS = {
     ]
 }
 
+CHANGE_OF_DIRECTORS_MAILING = {
+    'directors': [
+        {
+            'officer': {
+                'firstName': 'Peter',
+                'lastName': 'Griffin',
+                'prevFirstName': 'Peter',
+                'prevMiddleInitial': 'G',
+                'prevLastName': 'Griffin'
+            },
+            'deliveryAddress': {
+                'streetAddress': 'mailing_address - address line one',
+                'addressCity': 'mailing_address city',
+                'addressCountry': 'mailing_address country',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line #2',
+                'additionalStreetAddress': 'Kirkintiloch',
+                'addressCity': 'Glasgow',
+                'addressCountry': 'UK',
+                'postalCode': 'H0H 0H0',
+                'addressRegion': 'SC'
+            },
+            'appointmentDate': '2018-01-01',
+            'cessationDate': '2019-04-03',
+            'actions': ['addressChanged', 'nameChanged']
+        },
+        {
+            'officer': {
+                'firstName': 'Joe',
+                'middleInitial': 'P',
+                'lastName': 'Swanson'
+            },
+            'deliveryAddress': {
+                'streetAddress': 'mailing_address - address line #1',
+                'additionalStreetAddress': 'Kirkintiloch',
+                'addressCity': 'Glasgow',
+                'addressCountry': 'UK',
+                'postalCode': 'H0H 0H0',
+                'addressRegion': 'SC'
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line #2',
+                'additionalStreetAddress': 'Kirkintiloch',
+                'addressCity': 'Glasgow',
+                'addressCountry': 'UK',
+                'postalCode': 'H0H 0H0',
+                'addressRegion': 'SC'
+            },
+            'title': 'Treasurer',
+            'cessationDate': None,
+            'appointmentDate': '2018-01-01',
+            'actions': []
+        }
+    ]
+}
+
 CHANGE_OF_ADDRESS = {
     'legalType': 'CP',
     'offices': {
@@ -227,3 +292,77 @@ CORP_CHANGE_OF_ADDRESS = {
         }
     }
 }
+
+VOLUNTARY_DISSOLUTION = {
+    'dissolutionDate': '2018-04-08',
+    'hasLiabilities': True
+}
+
+SPECIAL_RESOLUTION = {
+    'meetingDate': '2018-04-08',
+    'resolution': 'Be in resolved that cookies are delicious.\n\nNom nom nom...'
+}
+
+CHANGE_OF_NAME = {
+    'legalName': 'My New Entity Name'
+}
+
+FILING_TEMPLATE = {
+    'filing': {
+        'header': {
+            'name': None,
+            'date': '2019-04-08',
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get',
+            'filingId': 1
+        },
+        'business': {
+            'cacheId': 1,
+            'foundingDate': '2007-04-08',
+            'identifier': 'CP1234567',
+            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+            'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',
+            'legalName': 'legal name - CP1234567',
+            'legalType': 'CP'
+        }
+    }
+}
+
+
+STUB_FILING = {
+}
+
+# build complete list of filings with names, for use in the generic test_valid_filing() test
+# - not including AR because it's already a complete filing rather than the others that are snippets without header and
+#   business elements; prepended to list afterwards.
+FILINGS_WITH_TYPES = [
+    ('changeOfDirectors', CHANGE_OF_DIRECTORS),
+    ('changeOfAddress', CHANGE_OF_ADDRESS),
+    ('voluntaryDissolution', VOLUNTARY_DISSOLUTION),
+    ('specialResolution', SPECIAL_RESOLUTION),
+    ('changeOfName', CHANGE_OF_NAME),
+    ('incorporationApplication', STUB_FILING),
+    ('amalgamationApplication', STUB_FILING),
+    ('dissolved', STUB_FILING),
+    ('amendedAGM', STUB_FILING),
+    ('restorationApplication', STUB_FILING),
+    ('amendedAnnualReport', STUB_FILING),
+    ('amendedChangeOfDirectors', STUB_FILING),
+    ('voluntaryLiquidation', STUB_FILING),
+    ('appointReceiver', STUB_FILING),
+    ('continuedOut', STUB_FILING),
+    ('changeOfDirectors', CHANGE_OF_DIRECTORS_MAILING),  # corp/bcorp
+    ('changeOfAddress', CORP_CHANGE_OF_ADDRESS),  # corp/bcorp
+]
+
+
+def _build_complete_filing(name, snippet):
+    """Util function to build complete filing from filing template and snippet."""
+    complete_dict = copy.deepcopy(FILING_TEMPLATE)
+    complete_dict['filing']['header']['name'] = name
+    complete_dict['filing'][name] = snippet
+    return complete_dict
+
+
+ALL_FILINGS = [_build_complete_filing(f[0], f[1]) for f in FILINGS_WITH_TYPES]
+ALL_FILINGS.insert(0, ANNUAL_REPORT)

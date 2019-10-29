@@ -1,9 +1,11 @@
 <template>
   <div class="entity-info" :class="{ 'staff': isRoleStaff }">
     <v-container>
+
+      <!-- Business Name, Business Status -->
       <div class="title-container">
-        <div class="entity-name">{{ entityName || 'Not Available' }}</div>
-        <v-chip class="entity-status" label small disabled text-color="white" v-if="entityStatus"
+        <div class="entity-name mb-1">{{ entityName || 'Not Available' }}</div>
+        <v-chip class="entity-status" small label text-color="white" v-if="entityStatus"
           :class="{
             'blue' : entityStatus === 'GOODSTANDING',
             'red' : entityStatus === 'PENDINGDISSOLUTION' | 'NOTINCOMPLIANCE',
@@ -14,18 +16,17 @@
         </v-chip>
       </div>
 
+      <!-- Business Numbers, Contact Info -->
       <div class="business-info">
-        <div class="info-left">
-          <dl class="meta-container">
-            <dt>Business No:</dt>
-            <dd class="business-number ml-2">{{ entityBusinessNo || 'Not Available' }}</dd>
-            <dt class="bulletBefore">Incorporation No:</dt>
-            <dd class="incorp-number ml-2">{{ entityIncNo || 'Not Available' }}</dd>
-          </dl>
-        </div>
+        <dl>
+          <dt>Business No:</dt>
+          <dd class="ml-2 business-number">{{ entityBusinessNo || 'Not Available' }}</dd>
+          <dt>Incorporation No:</dt>
+          <dd class="ml-2 incorp-number">{{ entityIncNo || 'Not Available' }}</dd>
+        </dl>
 
-        <div class="info-right">
-          <dl class="meta-container">
+        <div class="business-info__contact">
+          <dl>
             <dt class="sr-only">Business Email:</dt>
             <dd class="business-email" aria-label="Business Email">{{businessEmail || 'Unknown Email'}}</dd>
             <template v-if="fullPhoneNumber">
@@ -35,14 +36,14 @@
           </dl>
           <v-menu bottom left offset-y content-class="v-menu">
             <template v-slot:activator="{ on }">
-              <v-btn small flat v-on="on" color="primary">
-                <v-icon small>settings</v-icon>
+              <v-btn small icon color="primary" class="business-info__settings-btn" v-on="on">
+                <v-icon small>mdi-settings</v-icon>
               </v-btn>
             </template>
-            <v-list>
-              <v-list-tile @click="editBusinessProfile">
-                <v-list-tile-title>Update business profile</v-list-tile-title>
-              </v-list-tile>
+            <v-list class="pt-0 pb-0">
+              <v-list-item @click="editBusinessProfile">
+                <v-list-item-title>Update business profile</v-list-item-title>
+              </v-list-item>
             </v-list>
           </v-menu>
         </div>
@@ -89,82 +90,77 @@ export default class EntityInfo extends Vue {
    * Redirects the user to the Auth UI to update their business profile.
    */
   private editBusinessProfile (): void {
-    let authStub = sessionStorage.getItem('AUTH_URL') || ''
-    if (!(authStub.endsWith('/'))) { authStub += '/' }
-    const authURL = authStub + 'businessprofile'
-    // assume Auth URL is always reachable
-    window.location.assign(authURL)
+    const authUrl = sessionStorage.getItem('AUTH_URL')
+    const businessProfileUrl = authUrl + 'businessprofile'
+
+    // assume Business Profile URL is always reachable
+    window.location.assign(businessProfileUrl)
   }
 }
 </script>
 
 <!-- eslint-disable max-len -->
-<style lang="stylus" scoped>
-  // TODO: Explore how to expose this globally without having to include in each module
-  @import "../assets/styles/theme.styl"
+<style lang="scss" scoped>
+// TODO: Explore how to expose this globally without having to include in each module
+@import "../assets/styles/theme.scss";
 
-  .entity-info
-    background #ffffff
+.entity-info {
+  background: #ffffff;
+}
 
-  .entity-info.staff
-    // background-image url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='105' height='100'><text x='0' y='105' font-size='30' transform='rotate(-45 10,40)' opacity='0.1'>STAFF</text></svg>")
-    // background-repeat repeat-x
+.container {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
 
-  .container
-    padding-top 1.5rem
-    padding-bottom 1.5rem
+.entity-name {
+  display: inline-block;
+  color: $gray9;
+  letter-spacing: -0.01rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
 
-  .title-container
-    margin-top -0.2rem
+.entity-status {
+  margin-top: 0.25rem;
+  margin-left: 0.5rem;
+  vertical-align: top;
+}
 
-  .entity-name
-    margin-top 0.125rem
-    margin-bottom 0.25rem
-    display inline-block
-    font-size 1.125rem
-    font-weight 600
+.business-info {
+  display: flex;
+  direction: row;
+  justify-content: space-between;
+}
 
-  .entity-status
-    margin-top: 0.25rem
-    margin-left 0.5rem
-    vertical-align top
+dl {
+  display: inline-block;
+  overflow: hidden;
+  color: $gray6;
+}
 
-  .business-info
-    display flex
-    direction row
+dd, dt {
+  float: left;
+}
 
-    .info-right
-      margin-top 0
-      margin-right 0
-      margin-left auto
+dt {
+  position: relative;
+}
 
-  .meta-container
-    display inline-block
-    overflow hidden
-    color $gray6
-    font-size 0.875rem
+dd + dt:before {
+  content: "•";
+    display: inline-block;
+    margin-right: 0.75rem;
+    margin-left: 0.75rem;
+}
 
-  dd, dt
-    float left
+.business-info__contact {
+  display: flex;
+  align-items: center;
+}
 
-  dt
-    position relative
-
-  .bulletBefore
-    &:before
-      content '•'
-      display inline-block
-      margin-right 0.75rem
-      margin-left 0.75rem
-
-  .v-btn
-    margin 0 0 0 0.5rem
-    bottom 0.5rem
-
-  .v-menu
-    .v-list
-      padding 0
-
-      .v-list__tile__title
-        font-size 0.875rem
+.business-info__settings-btn {
+  margin-top: 0.1rem;
+  margin-left: 0.25rem;
+}
 </style>

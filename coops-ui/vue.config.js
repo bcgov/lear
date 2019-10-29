@@ -2,5 +2,12 @@ module.exports = {
   configureWebpack: {
     devtool: 'source-map'
   },
-  publicPath: process.env.VUE_APP_PATH
+  transpileDependencies: ['vuex-persist', 'vuetify'],
+  publicPath: process.env.VUE_APP_PATH,
+  pwa: {
+    workboxPluginMode: 'InjectManifest',
+    workboxOptions: {
+      swSrc: 'src/service-worker.js'
+    }
+  }
 }

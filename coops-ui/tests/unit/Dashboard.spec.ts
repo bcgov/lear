@@ -15,6 +15,8 @@ import DirectorListSm from '@/components/Dashboard/DirectorListSm.vue'
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
+let vuetify = new Vuetify({})
+
 // Boilerplate to prevent the complaint "[Vuetify] Unable to locate target [data-app]"
 const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
@@ -26,7 +28,7 @@ describe('Dashboard - UI', () => {
   beforeEach(() => {
     // create wrapper for Dashboard
     // this stubs out the 4 sub-components
-    wrapper = shallowMount(Dashboard)
+    wrapper = shallowMount(Dashboard, { vuetify })
   })
 
   afterEach(() => {
@@ -67,6 +69,61 @@ describe('Dashboard - UI', () => {
     expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
       .getAttribute('disabled')).toBeTruthy()
   })
+
+  it('marks filing as PROCESSING when expecting completed filing and dashboard does not reflect this', () => {
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'dashboard', query: { filing_id: '123' } })
+    const wrapper = mount(Dashboard, { localVue, store, router, vuetify })
+    const vm = wrapper.vm as any
+
+    // push filing ID in URL to indicate that we've returned from the dashboard from a filing (file pay, not save draft)
+    expect(vm.$route.query.filing_id).toBe('123')
+
+    // emit to-do list from to-do component with the filing marked as pending
+    wrapper.find(TodoList).vm.$emit('todo-filings', [
+      {
+        'type': 'changeOfDirectors',
+        'id': 123,
+        'status': 'PENDING',
+        'enabled': true,
+        'order': 1
+      }])
+
+    // emit filing list from Filing History component without the completed filing
+    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [])
+
+    expect(vm.inProcessFiling).toEqual(123)
+  })
+
+  it('does not mark filing as PROCESSING when expecting completed filing and dashboard reflects this', () => {
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'dashboard', query: { filing_id: '123' } })
+    const wrapper = mount(Dashboard, { localVue, store, router, vuetify })
+    const vm = wrapper.vm as any
+
+    // push filing ID in URL to indicate that we've returned from the dashboard from a filing (file pay, not save draft)
+    expect(vm.$route.query.filing_id).toBe('123')
+
+    // emit to-do list from to-do component without the filing marked as pending
+    wrapper.find(TodoList).vm.$emit('todo-filings', [])
+
+    // emit filing list from Filing History component with the completed filing
+    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [
+      {
+        'name': 'Director Change',
+        'filingId': 123,
+        'filingAuthor': 'fS',
+        'filingDate': '2019-10-17',
+        'paymentToken': '661'
+      }
+    ])
+
+    expect(vm.inProcessFiling).toBeNull()
+  })
 })
 
 describe('Dashboard - Click Tests', () => {
@@ -78,12 +135,12 @@ describe('Dashboard - Click Tests', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
-    const wrapper = mount(Dashboard, { localVue, store, router })
+    const wrapper = mount(Dashboard, { localVue, store, router, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
       const button = vm.$el.querySelector('#btn-standalone-addresses')
-      expect(button.querySelector('.v-btn__content').textContent).toContain('EDIT')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Change')
       await button.click()
 
       // verify routing to Standalone Office Address Filing page with id=0
@@ -103,12 +160,12 @@ describe('Dashboard - Click Tests', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
-    const wrapper = mount(Dashboard, { localVue, store, router })
+    const wrapper = mount(Dashboard, { localVue, store, router, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
       const button = vm.$el.querySelector('#btn-standalone-directors')
-      expect(button.querySelector('.v-btn__content').textContent).toContain('EDIT')
+      expect(button.querySelector('.v-btn__content').textContent).toContain('Change')
       await button.click()
 
       // verify routing to Standalone Directors Filing page with id=0

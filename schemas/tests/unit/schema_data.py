@@ -26,5 +26,9 @@ TEST_SCHEMAS_DATA = [
     ('change_of_directors.json'),
     ('task.json'),
     ('todo.json'),
-    ('office.json')
+    ('voluntary_dissolution.json'),
+    ('special_resolution.json'),
+    ('change_of_name.json'),
+    ('stub_filing.json'),
+    ('office.json'),
 ]

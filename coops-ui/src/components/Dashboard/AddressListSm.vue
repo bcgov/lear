@@ -1,39 +1,42 @@
 <template>
-  <ul class="list">
-    <li class="list-item" v-if="mailingAddress">
-      <v-avatar>
-        <v-icon color="primary">mail_outline</v-icon>
-      </v-avatar>
-      <div class="address">
-        <div class="list-item__title">Mailing Address</div>
-        <div class="list-item__subtitle">
-          <ul class="address-details">
+  <v-list>
+    <v-list-item v-if="mailingAddress">
+      <v-list-item-icon class="address-icon mr-0">
+        <v-icon color="primary">mdi-email-outline</v-icon>
+      </v-list-item-icon>
+      <v-list-item-content>
+        <v-list-item-title class="mb-2">Mailing Address</v-list-item-title>
+        <v-list-item-subtitle>
+          <ul class="address-info">
             <li>{{ mailingAddress.streetAddress }}</li>
             <li>{{ mailingAddress.addressCity }} {{ mailingAddress.addressRegion }}
               &nbsp;&nbsp;{{ mailingAddress.postalCode}}</li>
             <li>{{ mailingAddress.addressCountry }}</li>
           </ul>
-        </div>
-      </div>
-    </li>
+        </v-list-item-subtitle>
+      </v-list-item-content>
+    </v-list-item>
 
-    <li class="list-item" v-if="deliveryAddress">
-      <v-avatar>
-        <v-icon color="primary">local_shipping</v-icon>
-      </v-avatar>
-      <div class="address">
-        <div class="list-item__title">Delivery Address</div>
-        <div class="list-item__subtitle">
-          <ul class="address-details">
+    <v-divider></v-divider>
+
+    <v-list-item v-if="deliveryAddress">
+      <v-list-item-icon class="address-icon mr-0">
+        <v-icon color="primary">mdi-truck</v-icon>
+      </v-list-item-icon>
+      <v-list-item-content>
+        <v-list-item-title class="mb-2">Delivery Address</v-list-item-title>
+        <v-list-item-subtitle>
+          <ul class="address-info">
             <li>{{ deliveryAddress.streetAddress }}</li>
             <li>{{ deliveryAddress.addressCity }} {{ deliveryAddress.addressRegion }}
               &nbsp;&nbsp;{{ deliveryAddress.postalCode}}</li>
             <li>{{ deliveryAddress.addressCountry }}</li>
           </ul>
-        </div>
-      </div>
-    </li>
-  </ul>
+        </v-list-item-subtitle>
+      </v-list-item-content>
+    </v-list-item>
+  </v-list>
+
 </template>
 
 <script lang="ts">
@@ -51,15 +54,34 @@ export default class AddressListSm extends Vue {
 }
 </script>
 
-<style lang="stylus" scoped>
-  .address-details
-    padding 0
-    list-style-type none
+<style lang="scss" scoped>
+  @import "../../assets/styles/theme.scss";
 
-  .list-item
-    flex-direction row
-    align-items flex-start
+  // Variables
+  $icon-width: 2.75rem;
 
-  .v-icon
-    margin-right 1.25rem
+  .v-list-item__icon {
+    margin-top: 0.7rem;
+    margin-right: 0;
+  }
+
+  .v-list-item__title {
+    font-size: 0.875rem;
+    font-weight: 700;
+  }
+
+  .v-divider {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .address-icon {
+    width: $icon-width;
+  }
+
+  .address-info {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+  }
 </style>

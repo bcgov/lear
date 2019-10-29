@@ -45,22 +45,24 @@ class Flags():
         self.app = app
         self.sdk_key = app.config.get('LD_SDK_KEY')
 
-        if app.env == 'production':
-            config = Config(sdk_key=self.sdk_key,
-                            connect_timeout=5)
-        else:
-            factory = FileDataSource.factory(paths=['flags.json'],
-                                             auto_update=True)
-            config = Config(sdk_key=self.sdk_key,
-                            update_processor_class=factory,
-                            send_events=False)
+        if self.sdk_key or app.env != 'production':
 
-        ldclient_set_config(config)
-        client = ldclient_get()
+            if app.env == 'production':
+                config = Config(sdk_key=self.sdk_key,
+                                connect_timeout=5)
+            else:
+                factory = FileDataSource.factory(paths=['flags.json'],
+                                                 auto_update=True)
+                config = Config(sdk_key=self.sdk_key,
+                                update_processor_class=factory,
+                                send_events=False)
 
-        app.extensions['featureflags'] = client
+            ldclient_set_config(config)
+            client = ldclient_get()
 
-        app.teardown_appcontext(self.teardown)
+            app.extensions['featureflags'] = client
+
+            app.teardown_appcontext(self.teardown)
 
     def teardown(self, exception):  # pylint: disable=unused-argument,no-self-use; flask method signature
         """Destroy all objects created by this extension."""
@@ -71,8 +73,11 @@ class Flags():
         try:
             client = current_app.extensions['featureflags']
         except KeyError:
-            self.init_app(current_app)
-            client = current_app.extensions['featureflags']
+            try:
+                self.init_app(current_app)
+                client = current_app.extensions['featureflags']
+            except KeyError:
+                client = None
 
         return client
 

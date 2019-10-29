@@ -9,40 +9,55 @@
       @okay="resetErrors"
     />
 
-    <v-expansion-panel v-if="taskItems && taskItems.length > 0">
-      <v-expansion-panel-content
+    <v-expansion-panels v-if="taskItems && taskItems.length > 0" accordion>
+      <v-expansion-panel
         class="todo-list"
         v-for="(item, index) in orderBy(taskItems, 'order')"
         v-bind:key="index"
         expand-icon=""
         :class="{ 'disabled': !item.enabled, 'draft': isDraft(item) }">
-
-        <template v-slot:header>
+        <v-expansion-panel-header class="no-dropdown">
           <div class="list-item">
-            <div class="list-item__title">{{item.title}}</div>
+            <div class="filing-type">
+              <div class="list-item__title">{{item.title}}</div>
+            </div>
 
             <div class="list-item__subtitle" v-if="isNew(item)">
               <span v-if="item.subtitle">{{item.subtitle}}</span>
             </div>
+
             <template v-else>
-              <div class="list-item__status1">
+              <div class="filing-status-1">
                 <span v-if="isDraft(item)">DRAFT</span>
                 <span v-else-if="isPending(item)">FILING PENDING</span>
                 <span v-else-if="isError(item)">FILING PENDING</span>
               </div>
-
-              <div class="list-item__status2">
-                <span v-if="isPending(item)">
-                  PAYMENT INCOMPLETE<v-btn flat icon color="black"><v-icon>info_outline</v-icon></v-btn>
+              <div class="filing-status-2" v-if="inProcessFiling === item.id && item.id !== undefined">
+                <span>
+                  PROCESSING...
                 </span>
-                <span v-else-if="isError(item)">
-                  PAYMENT UNSUCCESSFUL<v-btn flat icon color="black"><v-icon>info_outline</v-icon></v-btn>
+              </div>
+              <div class="filing-status-2" v-if="isPending(item)">
+                <span>
+                  PAYMENT INCOMPLETE
                 </span>
+                <v-btn small icon color="black" class="info-btn"><v-icon>mdi-information-outline</v-icon></v-btn>
+              </div>
+              <div class="filing-status-2" v-else-if="isError(item)">
+                <span>
+                  PAYMENT UNSUCCESSFUL
+                </span>
+                <v-btn small icon color="black" class="info-btn"><v-icon>mdi-information-outline</v-icon></v-btn>
               </div>
             </template>
 
             <div class="list-item__actions">
-              <span v-if="isDraft(item)">
+              <span v-if="inProcessFiling === item.id && item.id !== undefined">
+                <!-- hidden button to maintain layout -->
+                <v-btn style="visibility: hidden"></v-btn>
+              </span>
+
+              <span v-else-if="isDraft(item)">
                 <v-btn id="btn-draft-resume"
                   color="primary"
                   :disabled="!item.enabled"
@@ -50,44 +65,49 @@
                   Resume
                 </v-btn>
                 <!-- more DRAFT actions menu -->
-                <v-menu offset-y left>
+                <v-menu offset-y left >
                   <template v-slot:activator="{ on }">
                     <v-btn color="primary" class="actions__more-actions__btn"
-                      v-on="on"
-                    >
-                      <v-icon>arrow_drop_down</v-icon>
+                      v-on="on" id="menu-activator">
+                      <v-icon>mdi-menu-down</v-icon>
                     </v-btn>
                   </template>
                   <v-list ref="draft_actions" class="actions__more-actions">
-                    <v-list-tile id="btn-delete-draft" @click="confirmDeleteDraft(item)">
-                      <v-list-tile-title>Delete Draft</v-list-tile-title>
-                    </v-list-tile>
+                    <v-list-item id="btn-delete-draft" @click="confirmDeleteDraft(item)">
+                      <v-list-item-title>Delete Draft</v-list-item-title>
+                    </v-list-item>
                   </v-list>
                 </v-menu>
               </span>
 
               <v-tooltip v-else-if="isPending(item)" top color="#3b6cff" :disabled="!isRoleStaff">
-                <v-btn
-                  color="primary"
-                  slot="activator"
-                  :depressed="isRoleStaff"
-                  :ripple="!isRoleStaff"
-                  :disabled="!item.enabled"
-                  @click.native.stop="doResumePayment(item)">
-                  Resume Payment
-                </v-btn>
+                 <template v-slot:activator="{ on }">
+                  <v-btn
+                    color="primary"
+                    slot="activator"
+                    v-on="on"
+                    :depressed="isRoleStaff"
+                    :ripple="!isRoleStaff"
+                    :disabled="!item.enabled"
+                    @click.native.stop="doResumePayment(item)">
+                    Resume Payment
+                  </v-btn>
+                 </template>
                 <span>Staff are not allowed to Resume Payment.</span>
               </v-tooltip>
               <v-tooltip v-else-if="isError(item)" top color="#3b6cff" :disabled="!isRoleStaff">
-                <v-btn
-                  color="primary"
-                  slot="activator"
-                  :depressed="isRoleStaff"
-                  :ripple="!isRoleStaff"
-                  :disabled="!item.enabled"
-                  @click.native.stop="doResumePayment(item)">
-                  Retry Payment
-                </v-btn>
+                 <template v-slot:activator="{ on }">
+                  <v-btn
+                    v-on="on"
+                    color="primary"
+                    slot="activator"
+                    :depressed="isRoleStaff"
+                    :ripple="!isRoleStaff"
+                    :disabled="!item.enabled"
+                    @click.native.stop="doResumePayment(item)">
+                    Retry Payment
+                  </v-btn>
+                 </template>
                 <span>Staff are not allowed to Retry Payment.</span>
               </v-tooltip>
               <v-btn v-else-if="!isCompleted(item)"
@@ -98,28 +118,28 @@
               </v-btn>
             </div>
           </div>
-        </template>
 
-        <v-card v-if="isPending(item)">
-          <v-card-text>
-            <p class="bold">Payment Incomplete</P>
-            <p>This filing is pending payment. The payment may still be in progress or may have been
-              interrupted for some reason.<p>
-            <p>You may continue this filing by selecting "Resume Payment".</p>
-          </v-card-text>
-        </v-card>
-
-        <v-card v-if="isError(item)">
-          <v-card-text>
-            <p class="bold">Payment Unsuccessful</p>
-            <p>This filing is pending payment. The payment appears to have been unsuccessful for some
-              reason.</p>
-            <p>You may continue this filing by selecting "Retry Payment".</p>
-          </v-card-text>
-        </v-card>
-
-      </v-expansion-panel-content>
-    </v-expansion-panel>
+        </v-expansion-panel-header>
+        <v-expansion-panel-content>
+            <v-card v-if="isPending(item)">
+              <v-card-text>
+                <p class="font-weight-bold black--text">Payment Incomplete</P>
+                <p>This filing is pending payment. The payment may still be in progress or may have been
+                  interrupted for some reason.<p>
+                <p>You may continue this filing by selecting "Resume Payment".</p>
+              </v-card-text>
+            </v-card>
+            <v-card v-if="isError(item)">
+              <v-card-text>
+                <p class="font-weight-bold black--text">Payment Unsuccessful</p>
+                <p>This filing is pending payment. The payment appears to have been unsuccessful for some
+                  reason.</p>
+                <p>You may continue this filing by selecting "Retry Payment".</p>
+              </v-card-text>
+            </v-card>
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+    </v-expansion-panels>
 
     <!-- No Results Message -->
     <v-card class="no-results" flat v-if="taskItems && taskItems.length === 0">
@@ -157,6 +177,10 @@ export default {
     }
   },
 
+  props: {
+    inProcessFiling: null
+  },
+
   computed: {
     ...mapState(['tasks', 'entityIncNo']),
 
@@ -186,6 +210,7 @@ export default {
       })
 
       this.$emit('todo-count', this.taskItems.length)
+      this.$emit('todo-filings', this.taskItems)
 
       // if this is a draft/pending/error item, emit the has-blocker-filings event to the parent component
       // this indicates that a new filing cannot be started because this one has to be completed first
@@ -343,21 +368,20 @@ export default {
       }
     },
 
-    // this is called to either Resume Payment or Retry Payment
+    // this is called for both Resume Payment and Retry Payment
     doResumePayment (item) {
       // staff are not allowed to resume or retry payment
       if (this.isRoleStaff) return false
 
-      const root = window.location.origin || ''
-      const path = process.env.VUE_APP_PATH
-      const origin = `${root}/${path}`
-
       const filingId = item.id
-      const returnURL = encodeURIComponent(origin + '/dashboard?filing_id=' + filingId)
-      let authStub = sessionStorage.getItem('AUTH_URL') || ''
-      if (!(authStub.endsWith('/'))) { authStub += '/' }
       const paymentToken = item.paymentToken
-      const payURL = authStub + 'makepayment/' + paymentToken + '/' + returnURL
+
+      const baseUrl = sessionStorage.getItem('BASE_URL')
+      const returnURL = encodeURIComponent(baseUrl + 'dashboard?filing_id=' + filingId)
+      const authUrl = sessionStorage.getItem('AUTH_URL')
+      const payURL = authUrl + 'makepayment/' + paymentToken + '/' + returnURL
+
+      // assume Pay URL is always reachable
       window.location.assign(payURL)
       return true
     },
@@ -387,12 +411,13 @@ export default {
       this.$refs.confirm.open(
         'Delete Draft?',
         'Delete your ' + item.draftTitle + '? Any changes you\'ve made will be lost.',
-        { width: '40rem',
+        {
+          width: '40rem',
           persistent: true,
           yes: 'Delete',
           no: null,
-          cancel: 'Don\'t delete',
-          className: 'delete-draft-confirmation-dialog' }
+          cancel: 'Don\'t delete'
+        }
       ).then(async (confirm) => {
         // if we get here, Yes or No was clicked
         if (confirm) {
@@ -444,78 +469,75 @@ export default {
 }
 </script>
 
-<style lang="stylus">
+<style lang="scss" scoped>
+@import "../../assets/styles/theme.scss";
 
+.todo-list {
   // disable expansion
-  .todo-list.draft .v-expansion-panel__body
-    display none
+  pointer-events: none;
+}
 
-</style>
+.todo-list.disabled {
+  opacity: 0.6;
 
-<style lang="stylus" scoped>
-@import "../../assets/styles/theme.styl"
+  .v-btn {
+    // enable expansion butto
+    pointer-events: auto;
+  }
+}
 
-.todo-list
-  // disable expansion
-  pointer-events none
-
-.todo-list .list-item
-  padding 0
-
-  .list-item__title
-    width 25%
-
-  .list-item__subtitle
-    font-size 0.75rem
-
-  .list-item__status1
-    width 20%
-    color $gray7
-
-  .list-item__status2
-    width 36%
-    color $gray7
-
-    .v-btn
-      margin 0
-
-  .list-item__actions
-    .v-btn
-      min-width 142px
-
-    #btn-draft-resume
-      min-width 103px
-      border-top-right-radius 0
-      border-bottom-right-radius 0
-
-.todo-list.disabled
-  background-color $gray0
-
-  .list-item__title,
-  .list-item__subtitle,
-  .list-item__status1,
-  .list-item__status2
-    color $gray6
-
-    .v-btn
-      // enable expansion buttons
-      pointer-events auto
-
-.todo-list:not(.disabled)
-  .v-btn
+.todo-list:not(.disabled) {
+  .v-btn {
     // enable action buttons
-    pointer-events auto
+    pointer-events: auto;
+  }
+}
 
-p.bold
-  font-weight 500
+.todo-list.draft .v-expansion-panel__body {
+  display: none;
+}
 
-.list-item__actions .v-btn.actions__more-actions__btn
-  min-width 38px !important
-  width 38px
-  border-top-left-radius 0
-  border-bottom-left-radius 0
-  margin-left 1px
+.todo-list .list-item {
+  padding: 0;
+  justify-content: space-evenly;
+}
 
-.actions__more-actions
-  padding 0
+.todo-list .list-item .list-item__actions {
+  #btn-draft-resume {
+    min-width: 103px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}
+
+.list-item__actions .v-btn.actions__more-actions__btn {
+  min-width: 38px !important;
+  width: 38px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: 1px;
+}
+
+.actions__more-actions {
+  padding: 0;
+}
+
+.filing-type {
+  flex: 1 1 auto;
+}
+
+.filing-status-1 {
+  flex: 1 1 auto;
+}
+
+.filing-status-2 {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+}
+
+.info-btn {
+  margin-left: 0.25rem;
+}
+
 </style>

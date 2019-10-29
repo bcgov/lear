@@ -1,5 +1,4 @@
 {
-    "definitions": {},
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "https://bcrs.gov.bc.ca/.well_known/schemas/business",
     "type": "object",
@@ -7,6 +6,17 @@
     "required": [
         "business"
     ],
+    "definitions": {
+        "legalName": {
+            "type": "string",
+            "title": "The Legal_name Schema",
+            "default": "",
+            "examples": [
+                "legal_name"
+            ],
+            "pattern": "^(.*)$"
+        }
+    },
     "properties": {
         "business": {
             "$id": "#/properties/business",
@@ -80,13 +90,7 @@
                     "pattern": "^(CP)[0-9]{7}$"
                 },
                 "legalName": {
-                    "type": "string",
-                    "title": "The Legal_name Schema",
-                    "default": "",
-                    "examples": [
-                        "legal_name"
-                    ],
-                    "pattern": "^(.*)$"
+                    "$ref": "#/definitions/legalName"
                 },
                 "legalType": {
                     "type": "string",

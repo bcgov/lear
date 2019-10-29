@@ -28,9 +28,9 @@
 
     <v-expand-transition>
       <div v-show="!showNewDirectorForm">
-        <v-btn class="new-director-btn" outline color="primary" :disabled="!componentEnabled || directorEditInProgress"
+        <v-btn class="new-director-btn" outlined color="primary" :disabled="!componentEnabled || directorEditInProgress"
           @click="addNewDirector">
-          <v-icon>add</v-icon>
+          <v-icon>mdi-plus</v-icon>
           <span>Appoint New Director</span>
         </v-btn>
       </div>
@@ -47,25 +47,44 @@
                 <v-form ref="newDirectorForm" v-on:submit.prevent="addNewDirector" v-model="directorFormValid"
                         lazy-validation>
                   <div class="form__row three-column">
-                    <v-text-field box class="item" label="First Name" id="new-director__first-name"
+                    <v-text-field filled class="item" label="First Name" id="new-director__first-name"
                       v-model="director.officer.firstName"
                       :rules="directorFirstNameRules"
                       required></v-text-field>
-                    <v-text-field box label="Initial" class="item director-initial"
+                    <v-text-field filled label="Initial" class="item director-initial"
                       v-model="director.officer.middleInitial"
                     ></v-text-field>
-                    <v-text-field box class="item" label="Last Name"
+                    <v-text-field filled class="item" label="Last Name"
                       v-model="director.officer.lastName"
                       :rules="directorLastNameRules"
                       required></v-text-field>
                   </div>
 
-                  <BaseAddress ref="baseAddressNew"
-                    :address="director.deliveryAddress"
-                    :editing="true"
-                    :schema="addressSchema"
-                    @update:address="baseAddressWatcher"
-                  />
+                  <label class="address-sub-header">Delivery Address</label>
+                  <div class="address-wrapper">
+                    <BaseAddress ref="baseAddressNew"
+                       v-bind:editing="true"
+                       :schema="addressSchema"
+                       @update:address="baseAddressWatcher"
+                    />
+                  </div>
+                  <div class="form__row" v-if="entityFilter(EntityTypes.BCorp)">
+                    <v-checkbox
+                      class="inherit-checkbox"
+                      label="Mailing Address same as Delivery Address"
+                      v-model="inheritDeliveryAddress"
+                    ></v-checkbox>
+                    <div v-if="!inheritDeliveryAddress">
+                      <label class="address-sub-header">Mailing Address</label>
+                      <div class="address-wrapper">
+                        <BaseAddress ref="mailAddressNew"
+                          v-bind:editing="true"
+                          :schema="addressSchema"
+                          @update:address="mailingAddressWatcher"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
                   <!-- removed until release 2 -->
                   <!--
@@ -128,6 +147,9 @@
                   -->
 
                   <div class="form__row form__btns">
+                    <v-btn color="error" disabled>
+                      <span>Remove</span>
+                    </v-btn>
                     <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
                     <v-btn @click="cancelNewDirector">Cancel</v-btn>
                   </div>
@@ -140,33 +162,51 @@
 
       <!-- Current Director List -->
       <ul class="list director-list">
+        <v-subheader v-if="this.directors.length && !directorEditInProgress" class="director-header">
+          <span>Names</span>
+          <span>Delivery Address</span>
+          <span v-if="entityFilter(EntityTypes.BCorp)">Mailing Address</span>
+          <span>Appointed/Elected</span>
+        </v-subheader>
         <li class="container"
           :id="'director-' + director.id"
           v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
           v-for="(director, index) in orderBy(directors, 'id', -1)"
           v-bind:key="index">
           <div class="meta-container">
-            <div :class="{ 'editFormStyle': activeIndex === index }">
             <label>
               <span>{{director.officer.firstName}} </span>
               <span>{{director.officer.middleInitial}} </span>
               <span>{{director.officer.lastName}}</span>
               <div class="director-status">
                 <v-scale-transition>
-                  <v-chip small label disabled color="blue" text-color="white"
+                  <v-chip x-small label color="blue" text-color="white"
                           v-show="isNew(director) && !director.cessationDate">
                     New
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
-                  <v-chip small label disabled v-show="!isActive(director) || !isActionable(director)">
+                  <v-chip x-small label text-color="rgba(0,0,0,.38)"
+                          v-show="!isActive(director) || !isActionable(director)">
                     Ceased
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
-                  <v-chip small label disabled color="blue lighten-2" text-color="white"
+                  <v-chip x-small label color="blue lighten-2" text-color="white"
                           v-show="isNew(director) && director.cessationDate">
-                    Appointed & Ceased
+                    Appointed &amp; Ceased
+                  </v-chip>
+                </v-scale-transition>
+                <v-scale-transition>
+                  <v-chip x-small label color="blue" text-color="white"
+                          v-show="isNameChanged(director)">
+                    Name Changed
+                  </v-chip>
+                </v-scale-transition>
+                <v-scale-transition>
+                  <v-chip x-small label color="blue" text-color="white"
+                          v-show="isAddressChanged(director)">
+                    Address Changed
                   </v-chip>
                 </v-scale-transition>
               </div>
@@ -177,8 +217,13 @@
                   <div class="address">
                     <BaseAddress v-bind:address="director.deliveryAddress" />
                   </div>
+                  <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
+                    <span v-if="isSameAddress(director.deliveryAddress, director.mailingAddress)">
+                      Same as Delivery Address
+                    </span>
+                    <BaseAddress v-else v-bind:address="director.mailingAddress" />
+                  </div>
                   <div class="director_dates">
-                    <div>Appointed/Elected</div>
                     <div class="director_dates__date">{{ director.appointmentDate }}</div>
                     <div v-if="director.cessationDate">Ceased</div>
                     <div class="director_dates__date">{{ director.cessationDate }}</div>
@@ -187,10 +232,10 @@
 
                     <!-- Edit menu -->
                     <span v-show="isNew(director)">
-                      <v-btn small flat color="primary" :disabled="!componentEnabled || directorEditInProgress"
+                      <v-btn small text color="primary" :disabled="!componentEnabled || directorEditInProgress"
                         :id="'director-' + director.id + '-change-btn'"
                         @click="editDirector(index)">
-                        <v-icon small>edit</v-icon>
+                        <v-icon small>mdi-pencil</v-icon>
                         <span>Edit</span>
                       </v-btn>
 
@@ -199,7 +244,7 @@
                       <!--
                       <v-menu offset-y>
                         <template v-slot:activator="{ on }">
-                          <v-btn flat small class="actions__more-actions__btn"
+                          <v-btn text small class="actions__more-actions__btn"
                             v-on="on"
                           >
                             <v-icon>arrow_drop_down</v-icon>
@@ -216,39 +261,39 @@
 
                     <!-- Cease menu -->
                     <span v-show="!isNew(director)">
-                      <v-btn small flat color="primary" :disabled="!componentEnabled || directorEditInProgress"
+                      <v-btn small text color="primary" :disabled="!componentEnabled || directorEditInProgress"
                         class="cease-btn"
                         :id="'director-' + director.id + '-cease-btn'"
                         @click="ceaseDirector(director)">
-                        <v-icon small>{{isActive(director) ? 'close':'undo'}}</v-icon>
+                        <v-icon small>{{isActive(director) ? 'mdi-close':'mdi-undo'}}</v-icon>
                         <span>{{isActive(director) ? 'Cease':'Undo'}}</span>
                       </v-btn>
                       <!-- more actions menu -->
-                      <!-- removed until release 2 -->
-                      <!--
                       <span v-show="isActive(director)">
                         <v-menu offset-y>
                           <template v-slot:activator="{ on }">
-                            <v-btn flat small class="actions__more-actions__btn"
+                            <v-btn text small class="actions__more-actions__btn"
                               v-on="on"
                             >
-                              <v-icon>arrow_drop_down</v-icon>
+                              <v-icon>mdi-menu-down</v-icon>
                             </v-btn>
                           </template>
                           <v-list class="actions__more_actions">
+                            <!-- removed until release 2 -->
+                            <!--
                             <v-list-tile @click="cessationDateTemp = asOfDate; activeIndexCustomCease = index;">
                               <v-list-tile-title>Set custom cessation date</v-list-tile-title>
                             </v-list-tile>
-                            <v-list-tile @click="editDirectorAddress(index)">
-                              <v-list-tile-title>Change address</v-list-tile-title>
-                            </v-list-tile>
-                            <v-list-tile @click="editDirectorName(index)">
-                              <v-list-tile-title>Change of legal name</v-list-tile-title>
-                            </v-list-tile>
+                            -->
+                            <v-list-item @click="editDirectorAddress(index)">
+                              <v-list-item-title>Change address</v-list-item-title>
+                            </v-list-item>
+                            <v-list-item @click="editDirectorName(index)">
+                              <v-list-item-title>Change legal name</v-list-item-title>
+                            </v-list-item>
                           </v-list>
                         </v-menu>
                       </span>
-                      -->
                     </span>
                   </div>
 
@@ -274,15 +319,15 @@
                   v-show="activeIndex === index"
                   v-model="directorFormValid" lazy-validation>
                   <div class="form__row three-column" v-show="editFormShowHide.showName">
-                    <v-text-field box label="First Name" class="item"
+                    <v-text-field filled label="First Name" class="item"
                       v-model="director.officer.firstName"
                       :rules="directorFirstNameRules"
                       required
                     ></v-text-field>
-                    <v-text-field box label="Initial" class="item director-initial"
+                    <v-text-field filled label="Initial" class="item director-initial"
                       v-model="director.officer.middleInitial"
                     ></v-text-field>
-                    <v-text-field box label="Last Name" class="item"
+                    <v-text-field filled label="Last Name" class="item"
                       v-model="director.officer.lastName"
                       :rules="directorLastNameRules"
                     ></v-text-field>
@@ -296,6 +341,28 @@
                     @update:address="baseAddressWatcher"
                     :key="activeIndex"
                   />
+
+                  <div class="form__row" v-if="entityFilter(EntityTypes.BCorp)"
+                   v-show="editFormShowHide.showAddress"
+                  >
+                    <v-checkbox
+                      class="inherit-checkbox"
+                      label="Mailing Address same as Delivery Address"
+                      v-model="inheritDeliveryAddress"
+                    ></v-checkbox>
+                    <div v-if="!inheritDeliveryAddress">
+                      <label class="address-sub-header">Mailing Address</label>
+                      <div class="address-wrapper">
+                        <BaseAddress ref="mailAddressEdit"
+                          :address="director.mailingAddress"
+                          :editing="true"
+                          :schema="addressSchema"
+                          @update:address="mailingAddressWatcher"
+                          :key="activeIndex"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
                   <!-- removed until release 2 -->
                   <!--
@@ -372,7 +439,6 @@
               </v-expand-transition>
               <!-- END edit director form -->
             </div>
-            </div>
           </div>
         </li>
       </ul>
@@ -388,8 +454,8 @@ import axios from '@/axios-auth'
 import { mapState, mapGetters } from 'vuex'
 import { required, maxLength } from 'vuelidate/lib/validators'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
-import DateMixin from '@/mixins/date-mixin'
-import ExternalMixin from '@/mixins/external-mixin'
+import { DateMixin, ExternalMixin, EntityFilterMixin, AddressMixin } from '@/mixins'
+import { EntityTypes } from '@/enums'
 
 // action constants
 const APPOINTED = 'appointed'
@@ -410,21 +476,22 @@ interface BaseAddressType extends Vue {
   components: {
     BaseAddress
   },
-  mixins: [DateMixin, ExternalMixin],
   computed: {
     // Property definitions for runtime environment.
     ...mapState(['entityIncNo', 'lastPreLoadFilingDate', 'currentDate', 'currentFilingStatus']),
     ...mapGetters(['lastCODFilingDate'])
   }
 })
-export default class Directors extends Mixins(DateMixin, ExternalMixin) {
+export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFilterMixin, AddressMixin) {
   // To fix "property X does not exist on type Y" errors, annotate types for referenced components.
   // ref: https://github.com/vuejs/vetur/issues/1414
   $refs!: {
     newDirectorForm: FormType,
     baseAddressNew: BaseAddressType,
+    mailAddressNew: BaseAddressType,
     editDirectorForm: Array<FormType>,
     baseAddressEdit: Array<BaseAddressType>
+    mailAddressEdit: Array<BaseAddressType>
   }
 
   // Props passed into this component.
@@ -460,17 +527,33 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
       addressCountry: '',
       deliveryInstructions: ''
     },
+    mailingAddress: {
+      streetAddress: '',
+      streetAddressAdditional: '',
+      addressCity: '',
+      addressRegion: '',
+      postalCode: '',
+      addressCountry: '',
+      deliveryInstructions: ''
+    },
     appointmentDate: this.asOfDate,
     cessationDate: null,
     cessationDateTemp: null
   }
   private inProgressAddress = null
+  private inProgressMailAddress = null
   private editFormShowHide = {
     showAddress: true,
     showName: true,
     showDates: true
   }
   private directorFormValid = true // used for New and Edit forms
+
+  // State of the form checkbox for determining whether or not the mailing address is the same as the delivery address.
+  private inheritDeliveryAddress: boolean = true
+
+  // EntityTypes Enum
+  private EntityTypes: {} = EntityTypes
 
   // The Address schema containing Vuelidate rules.
   // NB: This should match the subject JSON schema.
@@ -600,6 +683,16 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
 
   /**
    * Computed value.
+   * @returns Whether at least one director has a free change (name change, address change) applied.
+   */
+  private get directorsFreeChange (): boolean {
+    return this.directors.filter(director =>
+      this.isNameChanged(director) || this.isAddressChanged(director)
+    ).length > 0
+  }
+
+  /**
+   * Computed value.
    * @returns The array of validation rules for director appointment date.
    */
   private get directorAppointmentDateRules (): Array<Function> {
@@ -688,8 +781,9 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    * Lifecycle hook to load initial data.
    */
   private mounted (): void {
-    if (this.currentFilingStatus === 'NEW') {
-      this.getDirectors()
+    if (['NEW', 'DRAFT'].includes(this.currentFilingStatus)) {
+      // if draft: get original directors but doesn't overwrite this.directors
+      this.getDirectors(this.currentFilingStatus === 'DRAFT')
     }
   }
 
@@ -702,7 +796,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
       'addressCity': address.addressCity || '',
       'addressCountry': address.addressCountry || '',
       'addressRegion': address.addressRegion || '',
-      'addressType': address.addressType || '',
       'deliveryInstructions': address.deliveryInstructions || '',
       'postalCode': address.postalCode || '',
       'streetAddress': address.streetAddress || '',
@@ -719,11 +812,15 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     this.draftDate = date
   }
 
+  private getOriginalDirectors () {
+    this.getDirectors(true)
+  }
+
   /**
    * Function called internall and externally to fetch the list of directors.
    * TODO: change this to a prop?
    */
-  public getDirectors (): void {
+  public getDirectors (getOrigOnly: Boolean = false): void {
     if (this.entityIncNo && this.asOfDate) {
       var url = this.entityIncNo + '/directors?date=' + this.asOfDate
       axios.get(url)
@@ -733,6 +830,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
             // otherwise new attributes are not reflected in initial draw of HTML list.
 
             var directors = response.data.directors
+
             for (var i = 0; i < directors.length; i++) {
               directors[i].id = i + 1
               directors[i].isFeeApplied = directors[i].isFeeApplied !== undefined ? directors[i].isFeeApplied : false
@@ -748,15 +846,23 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
               directors[i].officer.prevLastName = directors[i].officer.lastName
               directors[i].officer.prevMiddleInitial = directors[i].officer.middleInitial
 
+              // if this is a Coop, copy delivery address to mailing address - directors only have delivery addresses
+              if (this.entityFilter(EntityTypes.Coop)) {
+                directors[i].mailingAddress = directors[i].deliveryAddress
+              }
+
               // ensure there is complete address data including missing/blank fields
               directors[i].deliveryAddress = this.formatAddress(directors[i].deliveryAddress)
+              if (directors[i].mailingAddress) {
+                directors[i].mailingAddress = this.formatAddress(directors[i].mailingAddress)
+              }
             }
 
             // save to component data now that extra attributes are added
-            this.directors = directors
+            if (!getOrigOnly) this.directors = directors
 
             // save version of directors before changes (deep copy, not reference)
-            this.directorsOriginal = JSON.parse(JSON.stringify(this.directors))
+            this.directorsOriginal = JSON.parse(JSON.stringify(directors))
           } else {
             console.log('getDirectors() error - invalid response data')
           }
@@ -771,6 +877,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   private addNewDirector (): void {
     this.showNewDirectorForm = true
     this.activeIndex = null
+    this.directorEditInProgress = true
   }
 
   /**
@@ -780,9 +887,13 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     this.showNewDirectorForm = false
     this.$refs.newDirectorForm.reset()
     this.$refs.baseAddressNew.$refs.addressForm.reset()
+    if (this.$refs.mailAddressNew) {
+      this.$refs.mailAddressNew.$refs.addressForm.reset()
+    }
 
     // set form to initial director data again
     this.director.appointmentDate = this.asOfDate
+    this.directorEditInProgress = false
   }
 
   /**
@@ -816,9 +927,17 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   private validateNewDirectorForm (): void {
     var mainFormIsValid = this.$refs.newDirectorForm.validate()
     var addressFormIsValid = this.$refs.baseAddressNew.$refs.addressForm.validate()
-    if (mainFormIsValid && addressFormIsValid) {
-      this.pushNewDirectorData()
-      this.cancelNewDirector()
+    if (this.$refs.mailAddressNew) {
+      var mailAddressFormIsValid = this.$refs.mailAddressNew.$refs.addressForm.validate()
+      if (mainFormIsValid && addressFormIsValid && mailAddressFormIsValid) {
+        this.pushNewDirectorData()
+        this.cancelNewDirector()
+      }
+    } else {
+      if (mainFormIsValid && addressFormIsValid) {
+        this.pushNewDirectorData()
+        this.cancelNewDirector()
+      }
     }
     // else do nothing - validator handles validation messaging
   }
@@ -827,6 +946,10 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    * Local helper push the current director data into the list.
    */
   private pushNewDirectorData (): void {
+    if (this.inheritDeliveryAddress) {
+      this.inProgressMailAddress = { ...this.inProgressAddress }
+    }
+
     let newDirector = {
       actions: [APPOINTED],
       id: this.directors.length + 1,
@@ -837,16 +960,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
         middleInitial: this.director.officer.middleInitial,
         lastName: this.director.officer.lastName
       },
-      deliveryAddress: {
-        streetAddress: this.inProgressAddress.streetAddress,
-        streetAddressAdditional: this.inProgressAddress.streetAddressAdditional,
-        addressCity: this.inProgressAddress.addressCity,
-        addressRegion: this.inProgressAddress.addressRegion,
-        postalCode: this.inProgressAddress.postalCode,
-        addressCountry: this.inProgressAddress.addressCountry,
-        deliveryInstructions: this.inProgressAddress.deliveryInstructions
-
-      },
+      deliveryAddress: { ...this.inProgressAddress },
+      mailingAddress: { ...this.inProgressMailAddress },
       appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
       cessationDate: null // when implemented: this.director.cessationDate
     }
@@ -855,7 +970,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
     if (this.director.cessationDate !== null && this.director.cessationDate !== undefined) {
       this.addAction(newDirector, CEASED)
     }
-
     this.directors.push(newDirector)
   }
 
@@ -889,6 +1003,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   private editDirector (index): void {
     // clear in-progress director data from form in BaseAddress component - ie: start fresh
     this.inProgressAddress = {}
+    this.inProgressMailAddress = {}
     this.directorEditInProgress = true
     this.activeIndex = index
     this.cancelNewDirector()
@@ -947,6 +1062,14 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
 
     var mainFormIsValid = this.$refs.editDirectorForm[index].validate()
     var addressFormIsValid = this.$refs.baseAddressEdit[index].$refs.addressForm.validate()
+
+    if (this.$refs.mailAddressEdit && this.$refs.mailAddressEdit[index]) {
+      var mailAddressFormIsValid = this.$refs.mailAddressEdit[index].$refs.addressForm.validate()
+      if (!mailAddressFormIsValid) {
+        addressFormIsValid = mailAddressFormIsValid
+      }
+    }
+
     if (mainFormIsValid && addressFormIsValid) {
       // save data from BaseAddress component
       // - only save address if a change was made, ie there is an in-progress address from the component
@@ -954,12 +1077,21 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
         director.deliveryAddress = this.inProgressAddress
       }
 
+      if (!Object.values(this.inProgressMailAddress).every(el => el === undefined)) {
+        director.mailingAddress = this.inProgressMailAddress
+      }
+
+      if (this.inheritDeliveryAddress) {
+        director.mailingAddress = director.deliveryAddress
+      }
+
       /* COMPARE changes to original director data, for existing directors */
       if (director.actions.indexOf(APPOINTED) < 0) {
         const origDirector = this.directorsOriginal.filter(el => el.id === id)[0]
 
         // check whether address has changed
-        if (JSON.stringify(origDirector.deliveryAddress) !== JSON.stringify(director.deliveryAddress)) {
+        if ((JSON.stringify(origDirector.deliveryAddress) !== JSON.stringify(director.deliveryAddress)) ||
+          (JSON.stringify(origDirector.mailingAddress) !== JSON.stringify(director.mailingAddress))) {
           this.addAction(director, ADDRESSCHANGED)
         } else {
           this.removeAction(director, ADDRESSCHANGED)
@@ -1001,6 +1133,15 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    */
   private baseAddressWatcher (val): void {
     this.inProgressAddress = val
+  }
+
+  /**
+   * Local helper to watch changes to the mailing address data in BaseAddress component, and to update
+   * our inProgressMailAddress holder. To be used when we want to save the data.
+   * @param val The new value.
+   */
+  private mailingAddressWatcher (val): void {
+    this.inProgressMailAddress = val
   }
 
   /**
@@ -1078,6 +1219,24 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   }
 
   /**
+   * Local helper to check if a director has the name changed.
+   * @param director The director to check.
+   * @returns Whether the director has had the name changed.
+   */
+  private isNameChanged (director): boolean {
+    return (director.actions.indexOf(NAMECHANGED) >= 0)
+  }
+
+  /**
+   * Local helper to check if a director has the address changed.
+   * @param director The director to check.
+   * @returns Whether the director has had the address changed.
+   */
+  private isAddressChanged (director): boolean {
+    return (director.actions.indexOf(ADDRESSCHANGED) >= 0)
+  }
+
+  /**
    * Local helper to check if a director is active in this filing.
    * @param director The director to check.
    * @returns Whether the director is active (ie, not ceased).
@@ -1097,7 +1256,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   }
 
   /**
-   * If we have director changes (add or cease) add a single fee to the filing.
+   * If we have paid director changes (add or cease) add a single fee to the filing.
    * - when we've made one change, add the fee
    * - when we've removed/undone all changes, remove the fee
    */
@@ -1105,6 +1264,15 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   private onDirectorsChange (val: boolean): void {
     // emit event back up to parent
     this.emitDirectorsChange(val)
+  }
+
+  /**
+   * If we have free director changes (add or cease) add a single free fee code to the filing.
+   */
+  @Watch('directorsFreeChange')
+  private onDirectorsFreeChange (val: boolean): void {
+    // emit event back up to parent
+    this.emitDirectorsFreeChange(val)
   }
 
   /**
@@ -1120,7 +1288,14 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
    */
   @Watch('asOfDate')
   private onAsOfDate (newVal: string, oldVal: string): void {
-    if (!(this.currentFilingStatus === 'DRAFT' && (this.draftDate === newVal || oldVal === null))) {
+    // reload the directors list when as-of date changes EXCEPT WHEN...
+    if (this.currentFilingStatus === 'DRAFT' && oldVal === null) {
+      // this is a draft but the component hasn't quite loaded yet - only set original directors
+      this.getOriginalDirectors()
+    } else if (this.currentFilingStatus === 'DRAFT' && this.directorsChange && this.draftDate === newVal) {
+      // this is a draft, there were director changes loaded, and the date hasn't changed - only set original directors
+      this.getOriginalDirectors()
+    } else {
       this.getDirectors()
     }
   }
@@ -1153,6 +1328,12 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
   private emitDirectorsChange (val: boolean): void { }
 
   /**
+   * Emits an event containing this component's free filing change state.
+   */
+  @Emit('directorsFreeChange')
+  private emitDirectorsFreeChange (val: boolean): void { }
+
+  /**
    * Emits an event containing the director form's validity.
    */
   @Emit('directorFormValid')
@@ -1179,153 +1360,196 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin) {
 
 </script>
 
-<style lang="stylus" scoped>
-  @import "../../assets/styles/theme.styl"
+<style lang="scss" scoped>
+  @import "../../assets/styles/theme.scss";
 
-  .v-card
-    line-height 1.2rem
-    font-size 0.875rem
+  .v-card {
+    line-height: 1.2rem;
+    font-size: 0.875rem;
+  }
 
-  .v-btn
-    margin 0
-    text-transform none
+  .v-btn {
+    margin: 0;
+    text-transform: none;
+  }
 
-  ul
-    margin 0
-    padding 0
-    list-style-type none
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    min-width: 54rem;
+  }
 
-  .meta-container
-    display flex
-    flex-flow column nowrap
-    position relative
+  .meta-container{
+    display: flex;
+    flex-flow: column nowrap;
+    position: relative;
 
-    > label:first-child
-      font-weight 500
+    > label:first-child{
+      font-weight: 500;
+    }
 
-    &__inner
-      flex 1 1 auto
+    &__inner {
+      flex: 1 1 auto;
+    }
 
-    .actions
-      position absolute
-      top 0
-      right 0
+    .actions {
+      position: absolute;
+      top: 0;
+      right: 0;
 
-      .v-btn
-        min-width 4rem
+      .v-btn {
+        min-width: 4rem;
+      }
 
-      .v-btn + .v-btn
-        margin-left 0.5rem
+      .v-btn + .v-btn {
+        margin-left: 0.5rem;
+      }
+    }
+  }
 
-  @media (min-width 768px)
-    .meta-container
-      flex-flow row nowrap
+  .appoint-header {
+    font-size: 1rem;
+    font-weight: bold;
+    line-height: 1.5rem;
+  }
 
-      > label:first-child
-        flex 0 0 auto
-        padding-right: 2rem
-        width 12rem
+  .address-sub-header {
+    padding-bottom: 1.5rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .address-wrapper {
+    margin-top: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .meta-container {
+      flex-flow: row nowrap;
+
+      > label:first-child {
+        flex: 0 0 auto;
+        padding-right: 2rem;
+        width: 14rem;
+      }
+    }
+  }
 
   // List Layout
-  .list
-    li
-      border-bottom 1px solid $gray3
+  .list {
+    li {
+      border-bottom: 1px solid $gray3;
+    }
+  }
 
-  .form__row.three-column
-    display flex
-    flex-flow row nowrap
-    align-items stretch
-    margin-right -0.5rem
-    margin-left -0.5rem
-    .item
-      flex 1 1 auto
-      flex-basis 0
-      margin-right 0.5rem
-      margin-left 0.5rem
+  .form__row.three-column {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: stretch;
+    margin-right: -0.5rem;
+    margin-left: -0.5rem;
+    .item {
+      flex: 1 1 auto;
+      flex-basis: 0;
+      margin-right: 0.5rem;
+      margin-left: 0.5rem;
+    }
+  }
 
   // Address Block Layout
-  .address
-    display flex
-    flex-direction column
-    width 10rem
+  .address {
+    display: flex;
+    width: 14rem;
+  }
 
-  .address__row
-    flex 1 1 auto
+  .address__row {
+    flex: 1 1 auto;
+  }
 
   // Director Display
-  .director-info
-    display flex
-    color $gray6
+  .director-info {
+    display: flex;
+    color: $gray6;
 
-    .status
-      flex 1 1 auto
+    .status {
+      flex: 1 1 auto;
+    }
 
-    .actions
-      flex 0 0 auto
+    .actions {
+      flex: 0 0 auto;
+    }
+  }
 
-  .director-initial
-    max-width 6rem
+  .director-initial {
+    max-width: 6rem;
+  }
 
-  .new-director-btn
-    margin-bottom 1.5rem !important
+  .new-director-btn {
+    margin-bottom: 1.5rem !important;
 
-    .v-icon
-      margin-left -0.5rem
+    .v-icon {
+      margin-left: -0.5rem;
+    }
+  }
 
   // V-chip customization
-  .v-chip--small
-    height 1.2rem !important
-    margin 0
-    margin-top 0.5rem
-    padding 0
-    text-transform uppercase
-    font-size 0.65rem
-    font-weight 700
-    vertical-align top
+  .v-size--x-small {
+    height: 1.25rem;
+    margin-top: 0.5rem;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
 
-  .remove, .remove .director-info
-    color $gray5 !important
+  .remove, .remove .director-info {
+    color: $gray5 !important;
+  }
 
   .new-director .meta-container,
-  .meta-container.new-director
+  .meta-container.new-director {
     flex-flow column nowrap
-    > label:first-child
-      margin-bottom 1.5rem
+    > label:first-child {
+      margin-bottom: 1.5rem;
+    }
+  }
 
-  .director_dates
-    font-size 0.8rem
-    margin-left 100px
+  .director_dates {
+    font-size: 0.8rem;
+  }
 
-    .director_dates__date
-      margin-left 20px
+  .actions .v-btn.actions__more-actions__btn {
+    min-width: 25px;
+    border-left: 1px solid $gray3;
+    border-radius: 0;
+    margin-left: 1px !important;
+    padding: 0 5px;
+    color: $gray6;
+  }
 
-  .actions .v-btn.actions__more-actions__btn
-    min-width 25px
-    border-left 1px solid $gray3
-    border-radius 0
-    margin-left 5px !important
-    padding 0 5px
-    color $gray6
+  .standalone__cessation-date__datepicker {
+    margin-top: 25px;
+    right: 0;
+    position: absolute;
+    z-index: 99;
+  }
+  .director-header {
+    padding: 1.25rem;
+    display: flex;
+    justify-content: flex-start;
+    height: 3rem;
+    background-color: rgba(77, 112, 147, 0.15);
 
-  .standalone__cessation-date__datepicker
-    margin-top 25px
-    right 0
-    position absolute
-    z-index 99
-
-  .editFormStyle
-    border 1px solid red
-    padding 1rem
+      span {
+        width: 14rem;
+        color: #000014;
+        font-size: 0.875rem;
+        font-weight: 600;
+        line-height: 1.1875rem;
+      }
+  }
+  .editFormStyle {
+    border: 1px solid red;
+    padding: 1rem;
+  }
 </style>
-
-<!-- TODO: WHERE DOES THIS BELONG?
-<style lang="stylus">
-  @import "../../assets/styles/theme.styl"
-
-  .actions__more_actions .v-list__tile
-    color $gray6
-    font-size 8pt
-    height 28px
-    font-weight 500
-</style>
--->

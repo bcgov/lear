@@ -1,11 +1,14 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
-import EntityInfo from '@/components/EntityInfo.vue'
+
 import store from '@/store/store'
+import EntityInfo from '@/components/EntityInfo.vue'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
+
+let vuetify = new Vuetify({})
 
 // Boilerplate to prevent the complaint "[Vuetify] Unable to locate target [data-app]"
 const app: HTMLDivElement = document.createElement('div')
@@ -17,7 +20,7 @@ describe('EntityInfo', () => {
 
   beforeEach(done => {
     const Constructor = Vue.extend(EntityInfo)
-    const instance = new Constructor({ store: store })
+    const instance = new Constructor({ store: store, vuetify })
     vm = instance.$mount()
 
     Vue.nextTick(() => {
