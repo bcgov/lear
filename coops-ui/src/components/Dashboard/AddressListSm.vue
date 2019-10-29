@@ -9,9 +9,10 @@
         <v-list-item-subtitle>
           <ul class="address-info">
             <li>{{ mailingAddress.streetAddress }}</li>
+            <li class="pre-wrap" v-html="mailingAddress.streetAddressAdditional"></li>
             <li>{{ mailingAddress.addressCity }} {{ mailingAddress.addressRegion }}
               &nbsp;&nbsp;{{ mailingAddress.postalCode}}</li>
-            <li>{{ mailingAddress.addressCountry }}</li>
+            <li>{{ getCountryName(mailingAddress.addressCountry) }}</li>
           </ul>
         </v-list-item-subtitle>
       </v-list-item-content>
@@ -28,9 +29,10 @@
         <v-list-item-subtitle>
           <ul class="address-info">
             <li>{{ deliveryAddress.streetAddress }}</li>
+            <li class="pre-wrap" v-html="deliveryAddress.streetAddressAdditional"></li>
             <li>{{ deliveryAddress.addressCity }} {{ deliveryAddress.addressRegion }}
               &nbsp;&nbsp;{{ deliveryAddress.postalCode}}</li>
-            <li>{{ deliveryAddress.addressCountry }}</li>
+            <li>{{ getCountryName(deliveryAddress.addressCountry) }}</li>
           </ul>
         </v-list-item-subtitle>
       </v-list-item-content>
@@ -42,13 +44,15 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
 import { mapState } from 'vuex'
+import CountriesProvincesMixin from '@/mixins/countries-provinces-mixin'
 
 @Component({
+  mixins: [CountriesProvincesMixin],
   computed: {
     ...mapState(['mailingAddress', 'deliveryAddress'])
   }
 })
-export default class AddressListSm extends Vue {
+export default class AddressListSm extends CountriesProvincesMixin {
   readonly mailingAddress: object
   readonly deliveryAddress: object
 }
@@ -83,5 +87,9 @@ export default class AddressListSm extends Vue {
     margin: 0;
     padding: 0;
     list-style-type: none;
+  }
+
+  .pre-wrap {
+    white-space: pre-wrap;
   }
 </style>

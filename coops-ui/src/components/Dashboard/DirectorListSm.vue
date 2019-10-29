@@ -9,6 +9,7 @@
         </div>
         <div class="list-item__title">{{ director.officer.firstName }} {{ director.officer.lastName }}</div>
       </v-expansion-panel-header>
+
       <v-expansion-panel-content>
         <v-list class="pt-0 pb-0">
 
@@ -18,9 +19,10 @@
               <v-list-item-subtitle>
                 <ul class="address-info">
                   <li>{{ director.deliveryAddress.streetAddress }}</li>
+                  <li class="pre-wrap" v-html="director.deliveryAddress.streetAddressAdditional"></li>
                   <li>{{ director.deliveryAddress.addressCity }} {{ director.deliveryAddress.addressRegion }}
                     {{ director.deliveryAddress.postalCode }}</li>
-                  <li>{{ director.deliveryAddress.addressCountry }}</li>
+                  <li>{{ getCountryName(director.deliveryAddress.addressCountry) }}</li>
                 </ul>
               </v-list-item-subtitle>
             </v-list-item-content>
@@ -35,9 +37,10 @@
                 </div>
                 <ul v-else class="address-info">
                   <li>{{ director.mailingAddress.streetAddress }}</li>
+                  <li class="pre-wrap" v-html="director.mailingAddress.streetAddressAdditional"></li>
                   <li>{{ director.mailingAddress.addressCity }} {{ director.mailingAddress.addressRegion }}
                     {{ director.mailingAddress.postalCode }}</li>
-                  <li>{{ director.mailingAddress.addressCountry }}</li>
+                  <li>{{ getCountryName(director.mailingAddress.addressCountry) }}</li>
                 </ul>
               </v-list-item-subtitle>
             </v-list-item-content>
@@ -50,13 +53,12 @@
 </template>
 
 <script lang="ts">
-
 // Vue Libraries
 import { Component, Mixins } from 'vue-property-decorator'
 import { mapState } from 'vuex'
 
 // Mixins
-import { EntityFilterMixin, AddressMixin } from '@/mixins'
+import { CountriesProvincesMixin, EntityFilterMixin, AddressMixin } from '@/mixins'
 
 // Constants
 import { EntityTypes } from '@/enums'
@@ -65,9 +67,9 @@ import { EntityTypes } from '@/enums'
   computed: {
     ...mapState(['directors'])
   },
-  mixins: [EntityFilterMixin, AddressMixin]
+  mixins: [CountriesProvincesMixin, EntityFilterMixin, AddressMixin]
 })
-export default class DirectorListSm extends Mixins(EntityFilterMixin, AddressMixin) {
+export default class DirectorListSm extends Mixins(CountriesProvincesMixin, EntityFilterMixin, AddressMixin) {
   readonly directors: Array<object>
 
   // EntityTypes Enum
@@ -124,4 +126,7 @@ export default class DirectorListSm extends Mixins(EntityFilterMixin, AddressMix
     line-height: 1.25rem;
   }
 
+  .pre-wrap {
+    white-space: pre-wrap;
+  }
 </style>

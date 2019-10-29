@@ -165,12 +165,14 @@ export default class RegisteredOfficeAddress extends Mixins(AddressMixin, Common
       maxLength: maxLength(40)
     },
     addressCountry: {
-      required
-      // isCanada: (val) => (val.toLower() === 'canada') // FUTURE
+      required,
+      // FUTURE: create new validation function isCountry('CA')
+      isCanada: (val) => Boolean(val === 'CA')
     },
     addressRegion: {
-      required,
-      maxLength: maxLength(2)
+      maxLength: maxLength(2),
+      // FUTURE: create new validation function isRegion('BC')
+      isBC: (val) => Boolean(val === 'BC')
     },
     postalCode: {
       required,

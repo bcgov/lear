@@ -82,11 +82,10 @@ class TaskListResource(Resource):
         # the latest date of filing
         annual_report_filings = Filing.get_filings_by_type(business.id, 'annualReport')
         if annual_report_filings:
-            last_filing = annual_report_filings[0].filing_json['filing']['annualReport']
 
             if check_agm:
-                last_agm_date = datetime.strptime(last_filing['annualGeneralMeetingDate'], '%Y-%m-%d')
-                todo_start_date = (datetime(last_agm_date.year+1, 1, 1)).date()
+                last_ar_date = business.last_ar_date
+                todo_start_date = (datetime(last_ar_date.year+1, 1, 1)).date()
             else:
                 todo_start_date = business.next_anniversary.date()
 
