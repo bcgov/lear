@@ -13,9 +13,7 @@
             "required": [
                 "annualGeneralMeetingDate",
                 "annualReportDate",
-                "directors",
-                "mailingAddress",
-                "deliveryAddress"
+                "directors"
             ],
             "properties": {
                 "annualGeneralMeetingDate": {

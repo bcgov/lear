@@ -52,14 +52,21 @@ class AddressResource(Resource):
 
         # return all active addresses
         rv = {}
-        mailing = business.mailing_address.one_or_none()
-        if mailing:
-            rv[Address.JSON_MAILING] = mailing.json
-        delivery = business.delivery_address.one_or_none()
-        if delivery:
-            rv[Address.JSON_DELIVERY] = delivery.json
-        if not rv:
-            return jsonify({'message': f'{identifier} address not found'}), HTTPStatus.NOT_FOUND
+        officelist = business.offices.all()
+        if officelist:
+            for i in officelist:
+                rv[i.office_type] = {}
+                for address in i.addresses:
+                    rv[i.office_type][f'{address.address_type}Address'] = address.json
+        else:
+            mailing = business.mailing_address.one_or_none()
+            if mailing:
+                rv[Address.JSON_MAILING] = mailing.json
+            delivery = business.delivery_address.one_or_none()
+            if delivery:
+                rv[Address.JSON_DELIVERY] = delivery.json
+            if not rv:
+                return jsonify({'message': f'{identifier} address not found'}), HTTPStatus.NOT_FOUND
         return jsonify(rv)
 
     @staticmethod

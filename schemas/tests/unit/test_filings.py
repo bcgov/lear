@@ -25,8 +25,8 @@ from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
-    CHANGE_OF_DIRECTORS_MAILING,
     FILING_HEADER,
+    CORP_CHANGE_OF_ADDRESS,
 )
 
 
@@ -58,6 +58,39 @@ def test_invalid_ar_filing():
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
             }
+        }
+    }
+    is_valid, errors = validate(iar, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert not is_valid
+
+
+def test_invalid_coa_filing_bcorp():
+    """Assert that the Change of Address filing schema conditionals are performing as expected."""
+    coa_arr = CHANGE_OF_ADDRESS
+    coa_arr['legalType'] = 'BC'
+    iar = {
+        'filing': {
+            'header': {
+                'name': 'changeOfAddress',
+                'date': '2019-04-08',
+                'certifiedBy': 'full legal name',
+                'email': None  # email is required
+            },
+            'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP1234567',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'lastPreBobFilingTimestamp': '',
+                'legalName': 'legal name - CP1234567'
+            },
+            'changeOfAddress': coa_arr
         }
     }
     is_valid, errors = validate(iar, 'filing')

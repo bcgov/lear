@@ -228,21 +228,68 @@ CHANGE_OF_DIRECTORS_MAILING = {
 }
 
 CHANGE_OF_ADDRESS = {
-    'deliveryAddress': {
-        'streetAddress': 'delivery_address - address line one',
-        'addressCity': 'delivery_address city',
-        'addressCountry': 'delivery_address country',
-        'postalCode': 'H0H0H0',
-        'addressRegion': 'BC',
-        'actions': []
-    },
-    'mailingAddress': {
-        'streetAddress': 'mailing_address - address line one',
-        'addressCity': 'mailing_address city',
-        'addressCountry': 'mailing_address country',
-        'postalCode': 'H0H0H0',
-        'addressRegion': 'BC',
-        'actions': ['addressChanged']
+    'legalType': 'CP',
+    'offices': {
+        'registeredOffice': {
+            'deliveryAddress': {
+                'streetAddress': 'delivery_address - address line one',
+                'addressCity': 'delivery_address city',
+                'addressCountry': 'delivery_address country',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC',
+                'actions': []
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line one',
+                'addressCity': 'mailing_address city',
+                'addressCountry': 'mailing_address country',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC',
+                'actions': ['addressChanged']
+            }
+        }
+    }
+}
+
+CORP_CHANGE_OF_ADDRESS = {
+    'legalType': 'BC',
+    'offices': {
+        'registeredOffice': {
+            'deliveryAddress': {
+                'streetAddress': 'delivery_address - address line one',
+                'addressCity': 'delivery_address city',
+                'addressCountry': 'delivery_address country',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC',
+                'actions': []
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line one',
+                'addressCity': 'mailing_address city',
+                'addressCountry': 'mailing_address country',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC',
+                'actions': ['addressChanged']
+            }
+        },
+        'recordsOffice': {
+            'deliveryAddress': {
+                'streetAddress': 'delivery_address - address line one',
+                'addressCity': 'delivery_address city',
+                'addressCountry': 'delivery_address country',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC',
+                'actions': []
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line one',
+                'addressCity': 'mailing_address city',
+                'addressCountry': 'mailing_address country',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC',
+                'actions': ['addressChanged']
+            }
+        }
     }
 }
 
@@ -303,7 +350,9 @@ FILINGS_WITH_TYPES = [
     ('amendedChangeOfDirectors', STUB_FILING),
     ('voluntaryLiquidation', STUB_FILING),
     ('appointReceiver', STUB_FILING),
-    ('continuedOut', STUB_FILING)
+    ('continuedOut', STUB_FILING),
+    ('changeOfDirectors', CHANGE_OF_DIRECTORS_MAILING),  # corp/bcorp
+    ('changeOfAddress', CORP_CHANGE_OF_ADDRESS),  # corp/bcorp
 ]
 
 
