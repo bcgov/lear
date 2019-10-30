@@ -289,7 +289,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['currentDate', 'entityName', 'entityIncNo', 'entityFoundingDate']),
+    ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo', 'entityFoundingDate']),
 
     ...mapGetters(['isRoleStaff']),
 
@@ -477,7 +477,6 @@ export default {
           changeOfDirectors
         )
       }
-
       if (this.filingId > 0) {
         // we have a filing id, so we are updating an existing filing
         let url = this.entityIncNo + '/filings/' + this.filingId
@@ -544,7 +543,7 @@ export default {
         }
       }
       if (setting === 'add' && !added) {
-        this.filingData.push({ filingTypeCode: filing, entityType: 'CP' })
+        this.filingData.push({ filingTypeCode: filing, entityType: this.entityType })
       }
     },
 
