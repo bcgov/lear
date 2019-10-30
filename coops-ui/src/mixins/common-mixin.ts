@@ -4,7 +4,7 @@ import omit from 'lodash.omit'
 /**
  * Mixin that provides some useful common utilities.
  */
-@Component
+@Component({})
 export default class CommonMixin extends Vue {
   /**
    * Removes the specified property from an object

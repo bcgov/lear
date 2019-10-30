@@ -1,5 +1,4 @@
 <template>
-
   <div>
     <!-- Dialogs -->
     <ConfirmDialog ref="confirm" />
@@ -47,7 +46,8 @@
                   :value="true"
                   icon="mdi-information"
                   outlined class="white-background"
-                  v-if="!entityFilter(EntityTypes.BCorp)">
+                  v-if="!entityFilter(EntityTypes.BCorp)"
+                >
                   Director changes can be made as far back as {{ earliestDateToSet }}.
                 </v-alert>
               </header>
@@ -62,7 +62,7 @@
                   @allDirectors="allDirectors=$event"
                   @directorEditAction="directorEditInProgress=$event"
                   :asOfDate="currentDate"
-                  />
+                />
               </section>
 
               <!-- Certify -->
@@ -78,11 +78,26 @@
                   @valid="certifyFormValid=$event"
                 />
               </section>
+
+              <!-- Staff Payment -->
+              <section v-if="isRoleStaff && isPayRequired">
+                <header>
+                  <h2 id="AR-step-5-header">Staff Payment</h2>
+                </header>
+                <StaffPayment
+                  :value.sync="routingSlipNumber"
+                  @valid="staffPaymentFormValid=$event"
+                />
+              </section>
             </article>
 
             <aside>
               <affix relative-element-selector="#standalone-directors-article" :offset="{ top: 120, bottom: 40 }">
-                <sbc-fee-summary v-bind:filingData="[...filingData]" v-bind:payURL="payAPIURL"/>
+                <sbc-fee-summary
+                  v-bind:filingData="[...filingData]"
+                  v-bind:payURL="payAPIURL"
+                  @total-fee="totalFee=$event"
+                />
               </affix>
             </aside>
           </v-container>
@@ -92,13 +107,15 @@
               <v-btn id="cod-save-btn" large
                 :disabled="!isSaveButtonEnabled || busySaving"
                 :loading="saving"
-                @click="onClickSave">
+                @click="onClickSave"
+              >
                 Save
               </v-btn>
               <v-btn id="cod-save-resume-btn" large
                 :disabled="!isSaveButtonEnabled || busySaving"
                 :loading="savingResuming"
-                @click="onClickSaveResume">
+                @click="onClickSaveResume"
+              >
                 Save &amp; Resume Later
               </v-btn>
             </div>
@@ -111,22 +128,21 @@
                       id="cod-next-btn"
                       color="primary"
                       large
-                      :depressed="isRoleStaff"
-                      :ripple="!isRoleStaff"
                       :disabled="!validated || busySaving"
                       :loading="filingPaying"
-                      @click="showSummary()">
+                      @click="showSummary()"
+                    >
                       Next
                     </v-btn>
                   </div>
                  </template>
-                <span v-if="isRoleStaff">Staff are not allowed to file.</span>
-                <span v-else>Proceed to Filing Summary</span>
+                <span>Proceed to Filing Summary</span>
               </v-tooltip>
               <v-btn
                 id="cod-cancel-btn"
                 large
-                to="/dashboard">
+                to="/dashboard"
+              >
                 Cancel
               </v-btn>
             </div>
@@ -161,6 +177,9 @@
 
             <!-- Certify -->
             <section>
+              <header>
+                <h2>Certify Correct</h2>
+              </header>
               <SummaryCertify
                 :isCertified.sync="isCertified"
                 :certifiedBy.sync="certifiedBy"
@@ -168,11 +187,24 @@
                 @valid="certifyFormValid=$event"
               />
             </section>
+
+            <!-- Staff Payment -->
+            <section v-if="isRoleStaff && isPayRequired">
+              <header>
+                <h2>Staff Payment</h2>
+              </header>
+              <SummaryStaffPayment
+                :value="routingSlipNumber"
+              />
+            </section>
           </article>
 
           <aside>
             <affix relative-element-selector="#standalone-directors-article" :offset="{ top: 120, bottom: 40 }">
-              <sbc-fee-summary v-bind:filingData="[...filingData]" v-bind:payURL="payAPIURL"/>
+              <sbc-fee-summary
+                v-bind:filingData="[...filingData]"
+                v-bind:payURL="payAPIURL"
+              />
             </affix>
           </aside>
         </v-container>
@@ -182,7 +214,8 @@
             <v-btn
               id="cod-back-btn"
               large
-              @click="returnToFiling()">
+              @click="returnToFiling()"
+            >
               Back
             </v-btn>
           </div>
@@ -195,25 +228,22 @@
                     id="cod-file-pay-btn"
                     color="primary"
                     large
-                    :depressed="isRoleStaff"
-                    :ripple="!isRoleStaff"
                     :disabled="!validated || busySaving"
                     :loading="filingPaying"
-                    @click="onClickFilePay">
-                    File &amp; Pay
+                    @click="onClickFilePay"
+                  >
+                    {{ isPayRequired ? "File &amp; Pay" : "File" }}
                   </v-btn>
                 </div>
               </template>
-              <span v-if="isRoleStaff">Staff are not allowed to file.</span>
-              <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
-                  There is no opportunity to change information beyond this point.</span>
+              <span>Ensure all of your information is entered correctly before you File.<br>
+                There is no opportunity to change information beyond this point.</span>
             </v-tooltip>
           </div>
         </v-container>
       </div>
     </div>
   </div>
-
 </template>
 
 <script lang="ts">
@@ -225,9 +255,10 @@ import { BAD_REQUEST, PAYMENT_REQUIRED } from 'http-status-codes'
 
 // Components
 import Directors from '@/components/AnnualReport/Directors.vue'
-import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
-import { SummaryDirectors, SummaryCertify } from '@/components/Common'
+import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
+import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
+import { SummaryDirectors, SummaryCertify, SummaryStaffPayment } from '@/components/Common'
 
 // Dialog Components
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -251,9 +282,11 @@ export default {
     Directors,
     SummaryDirectors,
     SummaryCertify,
+    SummaryStaffPayment,
     SbcFeeSummary,
     Affix,
     Certify,
+    StaffPayment,
     ConfirmDialog,
     PaymentErrorDialog,
     ResumeErrorDialog,
@@ -283,6 +316,13 @@ export default {
       haveChanges: false,
       saveErrors: [],
       saveWarnings: [],
+
+      // properties for Staff Payment component
+      routingSlipNumber: null,
+      staffPaymentFormValid: false,
+      totalFee: 0,
+
+      // Enums and Constants
       EntityTypes,
       DirectorConst
     }
@@ -294,12 +334,15 @@ export default {
     ...mapGetters(['isRoleStaff']),
 
     validated () {
-      return (this.certifyFormValid && this.directorFormValid && this.filingData.length > 0 &&
-      !this.directorEditInProgress)
+      const staffPaymentValid = (!this.isRoleStaff || !this.isPayRequired || this.staffPaymentFormValid)
+      const filingDataValid = (this.filingData.length > 0)
+
+      return (staffPaymentValid && this.certifyFormValid && this.directorFormValid && filingDataValid &&
+        !this.directorEditInProgress)
     },
 
     busySaving () {
-      return this.saving || this.savingResuming || this.filingPaying
+      return (this.saving || this.savingResuming || this.filingPaying)
     },
 
     isSaveButtonEnabled () {
@@ -313,6 +356,11 @@ export default {
     isPaidFiling () {
       // true if there is a charge for this filing
       return this.filingData.filter(el => el.filingTypeCode === 'OTCDR').length > 0
+    },
+
+    isPayRequired () {
+      // FUTURE: modify rule here as needed
+      return (this.totalFee > 0)
     }
   },
 
@@ -408,9 +456,6 @@ export default {
     },
 
     async onClickFilePay () {
-      // staff are not allowed to file
-      if (this.isRoleStaff) return false
-
       // prevent double saving
       if (this.busySaving) return true
 
@@ -459,6 +504,10 @@ export default {
             email: 'no_one@never.get',
             date: this.currentDate
           }
+        }
+        // only save this if it's not null
+        if (this.routingSlipNumber) {
+          header.header['routingSlipNumber'] = this.routingSlipNumber
         }
 
         const business = {
@@ -582,6 +631,7 @@ export default {
             if (filing.business.legalName !== this.entityName) throw new Error('invalid business legal name')
 
             this.certifiedBy = filing.header.certifiedBy
+            this.routingSlipNumber = filing.header.routingSlipNumber
 
             const changeOfDirectors = filing.changeOfDirectors
             if (changeOfDirectors) {
@@ -683,6 +733,10 @@ export default {
 
     certifiedBy (val) {
       this.haveChanges = true
+    },
+
+    routingSlipNumber (val) {
+      this.haveChanges = true
     }
   }
 }
@@ -691,8 +745,8 @@ export default {
 <style lang="scss" scoped>
 @import '../assets/styles/theme.scss';
 
-article{
-  .v-card{
+article {
+  .v-card {
     line-height: 1.2rem;
     font-size: 0.875rem;
   }
@@ -702,53 +756,54 @@ article{
   background-color: white !important;
 }
 
-section p{
-  // font-size 0.875rem
+section p {
   color: $gray6;
 }
 
-section + section{
+section + section {
   margin-top: 3rem;
 }
 
-h2{
+h2 {
   margin-bottom: 0.25rem;
+  margin-top: 3rem;
+  font-size: 1.125rem;
 }
 
-#filing-header{
+#filing-header {
   margin-bottom: 1.25rem;
   line-height: 2rem;
   letter-spacing: -0.01rem;
 }
 
-.title-container{
+.title-container {
   margin-bottom: 0.5rem;
 }
 
-.agm-date{
+.agm-date {
   margin-left: 0.25rem;
   font-weight: 300;
 }
 
 // Save & Filing Buttons
-#buttons-container{
+#buttons-container {
   padding-top: 2rem;
   border-top: 1px solid $gray5;
 
-  .buttons-left{
+  .buttons-left {
     width: 50%;
   }
 
-  .buttons-right{
-    margin-left: auto
+  .buttons-right {
+    margin-left: auto;
   }
 
-  .v-btn + .v-btn{
+  .v-btn + .v-btn {
     margin-left: 0.5rem;
   }
-}
 
-#cod-cancel-btn{
-  margin-left: 0.5rem;
+  #cod-cancel-btn {
+    margin-left: 0.5rem;
+  }
 }
 </style>

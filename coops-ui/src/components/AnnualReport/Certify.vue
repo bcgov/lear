@@ -41,7 +41,7 @@
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 
-@Component
+@Component({})
 export default class Certify extends Vue {
   // Props passed into this component.
   @Prop({ default: '' })
@@ -95,6 +95,14 @@ export default class Certify extends Vue {
 <style lang="scss" scoped>
 @import '../../assets/styles/theme.scss';
 
+#AR-step-4-container {
+  margin-top: 1rem;
+  padding-bottom: 0.5rem;
+  padding-top: 1rem;
+  line-height: 1.2rem;
+  font-size: 0.875rem;
+}
+
 .certifiedby-container {
   display: flex;
   flex-flow: column nowrap;
@@ -113,6 +121,7 @@ export default class Certify extends Vue {
       flex: 0 0 auto;
       padding-right: 2rem;
       width: 12rem;
+      font-weight: 700;
     }
   }
 }
@@ -131,13 +140,5 @@ export default class Certify extends Vue {
   display:inline;
   font-size: 0.875rem;
   color: black
-}
-
-#AR-step-4-container {
-  margin-top: 1rem;
-  padding-bottom: 0.5rem;
-  padding-top: 1rem;
-  line-height: 1.2rem;
-  font-size: 0.875rem;
 }
 </style>

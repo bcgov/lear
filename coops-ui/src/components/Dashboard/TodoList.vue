@@ -16,6 +16,7 @@
         v-bind:key="index"
         expand-icon=""
         :class="{ 'disabled': !item.enabled, 'draft': isDraft(item) }">
+
         <v-expansion-panel-header class="no-dropdown">
           <div class="list-item">
             <div class="filing-type">
@@ -59,18 +60,20 @@
                 <v-btn text loading disabled />
               </span>
 
-              <span v-else-if="isDraft(item)">
+              <template v-else-if="isDraft(item)">
                 <v-btn id="btn-draft-resume"
                   color="primary"
                   :disabled="!item.enabled"
-                  @click.native.stop="doResumeFiling(item)">
+                  @click.native.stop="doResumeFiling(item)"
+                >
                   Resume
                 </v-btn>
                 <!-- more DRAFT actions menu -->
                 <v-menu offset-y left>
                   <template v-slot:activator="{ on }">
                     <v-btn color="primary" class="actions__more-actions__btn"
-                      v-on="on" id="menu-activator" :disabled="!item.enabled">
+                      v-on="on" id="menu-activator" :disabled="!item.enabled"
+                    >
                       <v-icon>mdi-menu-down</v-icon>
                     </v-btn>
                   </template>
@@ -80,50 +83,35 @@
                     </v-list-item>
                   </v-list>
                 </v-menu>
-              </span>
+              </template>
 
-              <v-tooltip v-else-if="isPending(item)" top color="#3b6cff" :disabled="!isRoleStaff">
-                 <template v-slot:activator="{ on }">
-                  <v-btn
-                    color="primary"
-                    slot="activator"
-                    v-on="on"
-                    :depressed="isRoleStaff"
-                    :ripple="!isRoleStaff"
-                    :disabled="!item.enabled"
-                    @click.native.stop="doResumePayment(item)">
-                    Resume Payment
-                  </v-btn>
-                 </template>
-                <span>Staff are not allowed to Resume Payment.</span>
-              </v-tooltip>
+              <v-btn v-else-if="isPending(item)"
+                color="primary"
+                :disabled="!item.enabled"
+                @click.native.stop="doResumePayment(item)"
+              >
+                Resume Payment
+              </v-btn>
 
-              <v-tooltip v-else-if="isError(item)" top color="#3b6cff" :disabled="!isRoleStaff">
-                 <template v-slot:activator="{ on }">
-                  <v-btn
-                    v-on="on"
-                    color="primary"
-                    slot="activator"
-                    :depressed="isRoleStaff"
-                    :ripple="!isRoleStaff"
-                    :disabled="!item.enabled"
-                    @click.native.stop="doResumePayment(item)">
-                    Retry Payment
-                  </v-btn>
-                 </template>
-                <span>Staff are not allowed to Retry Payment.</span>
-              </v-tooltip>
+              <v-btn v-else-if="isError(item)"
+                color="primary"
+                :disabled="!item.enabled"
+                @click.native.stop="doResumePayment(item)"
+              >
+                Retry Payment
+              </v-btn>
 
               <v-btn v-else-if="!isCompleted(item)"
                 color="primary"
                 :disabled="!item.enabled"
-                @click.native.stop="doFileNow(item)">
+                @click.native.stop="doFileNow(item)"
+              >
                 File Now
               </v-btn>
             </div>
           </div>
-
         </v-expansion-panel-header>
+
         <v-expansion-panel-content>
             <v-card v-if="isPending(item)">
               <v-card-text>
@@ -142,6 +130,7 @@
               </v-card-text>
             </v-card>
         </v-expansion-panel-content>
+
       </v-expansion-panel>
     </v-expansion-panels>
 
@@ -159,7 +148,7 @@
 import axios from '@/axios-auth'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import ExternalMixin from '@/mixins/external-mixin'
-import { mapState, mapActions, mapGetters } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 import DeleteErrorDialog from '@/components/Dashboard/DeleteErrorDialog'
 
 export default {
@@ -186,9 +175,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['tasks', 'entityIncNo']),
-
-    ...mapGetters(['isRoleStaff'])
+    ...mapState(['tasks', 'entityIncNo'])
   },
 
   created () {
@@ -374,9 +361,6 @@ export default {
 
     // this is called for both Resume Payment and Retry Payment
     doResumePayment (item) {
-      // staff are not allowed to resume or retry payment
-      if (this.isRoleStaff) return false
-
       const filingId = item.id
       const paymentToken = item.paymentToken
 

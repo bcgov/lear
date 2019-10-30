@@ -16,7 +16,7 @@ window['countryRegionsCache'] = {}
  * @link https://www.npmjs.com/package/country-list
  * @lint https://www.npmjs.com/package/provinces
  */
-@Component
+@Component({})
 export default class CountriesProvincesMixin extends Vue {
   /**
    * Helper function to return a list of countries.

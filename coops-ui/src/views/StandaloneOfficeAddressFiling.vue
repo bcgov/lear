@@ -1,5 +1,6 @@
 <template>
   <div>
+    <!-- Dialogs -->
     <ConfirmDialog ref="confirm" />
 
     <ResumeErrorDialog
@@ -44,7 +45,8 @@
               :legalEntityNumber="entityIncNo"
               :addresses.sync="addresses"
               @modified="officeModifiedEventHandler($event)"
-              @valid="officeAddressFormValid = $event" />
+              @valid="officeAddressFormValid = $event"
+            />
           </section>
 
           <!-- Certify -->
@@ -59,11 +61,26 @@
               @valid="certifyFormValid=$event"
             />
           </section>
+
+          <!-- Staff Payment -->
+          <section v-if="isRoleStaff && isPayRequired">
+            <header>
+              <h2 id="AR-step-5-header">Staff Payment</h2>
+            </header>
+            <StaffPayment
+              :value.sync="routingSlipNumber"
+              @valid="staffPaymentFormValid=$event"
+            />
+          </section>
         </article>
 
         <aside>
           <affix relative-element-selector="#standalone-office-address-article" :offset="{ top: 120, bottom: 40 }">
-            <sbc-fee-summary v-bind:filingData="[...filingData]" v-bind:payURL="payAPIURL"/>
+            <sbc-fee-summary
+              v-bind:filingData="[...filingData]"
+              v-bind:payURL="payAPIURL"
+              @total-fee="totalFee=$event"
+            />
           </affix>
         </aside>
       </v-container>
@@ -73,13 +90,15 @@
           <v-btn id="coa-save-btn" large
             :disabled="!saveAsDraftEnabled || busySaving"
             :loading="saving"
-            @click="onClickSave">
+            @click="onClickSave"
+          >
             Save
           </v-btn>
           <v-btn id="coa-save-resume-btn" large
             :disabled="!saveAsDraftEnabled || busySaving"
             :loading="savingResuming"
-            @click="onClickSaveResume">
+            @click="onClickSaveResume"
+          >
             Save &amp; Resume Later
           </v-btn>
         </div>
@@ -92,23 +111,22 @@
                 id="coa-file-pay-btn"
                 color="primary"
                 large
-                :depressed="isRoleStaff"
-                :ripple="!isRoleStaff"
                 :disabled="!validated || busySaving"
                 :loading="filingPaying"
-                @click="onClickFilePay">
-                File &amp; Pay
+                @click="onClickFilePay"
+              >
+                {{ isPayRequired ? "File &amp; Pay" : "File" }}
               </v-btn>
               </div>
             </template>
-            <span v-if="isRoleStaff">Staff are not allowed to file.</span>
-            <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
+            <span>Ensure all of your information is entered correctly before you File.<br>
               There is no opportunity to change information beyond this point.</span>
           </v-tooltip>
           <v-btn
             id="coa-cancel-btn"
             large
-            to="/dashboard">
+            to="/dashboard"
+          >
             Cancel
           </v-btn>
         </div>
@@ -125,6 +143,7 @@ import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vu
 import { mapState, mapGetters } from 'vuex'
 import { PAYMENT_REQUIRED, BAD_REQUEST } from 'http-status-codes'
 import Certify from '@/components/AnnualReport/Certify.vue'
+import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
@@ -138,6 +157,7 @@ export default {
     SbcFeeSummary,
     Affix,
     Certify,
+    StaffPayment,
     ConfirmDialog,
     PaymentErrorDialog,
     ResumeErrorDialog,
@@ -162,7 +182,12 @@ export default {
       filingPaying: false,
       haveChanges: false,
       saveErrors: [],
-      saveWarnings: []
+      saveWarnings: [],
+
+      // properties for Staff Payment component
+      routingSlipNumber: null,
+      staffPaymentFormValid: false,
+      totalFee: 0
     }
   },
 
@@ -172,19 +197,28 @@ export default {
     ...mapGetters(['isRoleStaff']),
 
     validated () {
-      return (this.certifyFormValid && this.officeAddressFormValid && this.filingData.length > 0)
+      const staffPaymentValid = (!this.isRoleStaff || !this.isPayRequired || this.staffPaymentFormValid)
+      const filingDataValid = (this.filingData.length > 0)
+
+      return (staffPaymentValid && this.certifyFormValid && this.officeAddressFormValid && filingDataValid)
     },
 
     busySaving () {
-      return this.saving || this.savingResuming || this.filingPaying
+      return (this.saving || this.savingResuming || this.filingPaying)
     },
 
     saveAsDraftEnabled () {
-      return (this.officeAddressFormValid && this.filingData.length > 0)
+      const filingDataValid = (this.filingData.length > 0)
+      return (this.officeAddressFormValid && filingDataValid)
     },
 
     payAPIURL () {
       return sessionStorage.getItem('PAY_API_URL')
+    },
+
+    isPayRequired () {
+      // FUTURE: modify rule here as needed
+      return (this.totalFee > 0)
     }
   },
 
@@ -273,6 +307,7 @@ export default {
             if (filing.business.legalName !== this.entityName) throw new Error('invalid business legal name')
 
             this.certifiedBy = filing.header.certifiedBy
+            this.routingSlipNumber = filing.header.routingSlipNumber
 
             // load Annual Report fields
             if (!filing.changeOfAddress) throw new Error('Missing change of address')
@@ -341,9 +376,6 @@ export default {
     },
 
     async onClickFilePay () {
-      // staff are not allowed to file
-      if (this.isRoleStaff) return false
-
       // prevent double saving
       if (this.busySaving) return true
 
@@ -386,6 +418,10 @@ export default {
             email: 'no_one@never.get',
             date: this.currentDate
           }
+        }
+        // only save this if it's not null
+        if (this.routingSlipNumber) {
+          header.header['routingSlipNumber'] = this.routingSlipNumber
         }
 
         const business = {
@@ -531,6 +567,10 @@ export default {
 
     certifiedBy (val) {
       this.haveChanges = true
+    },
+
+    routingSlipNumber (val) {
+      this.haveChanges = true
     }
   }
 }
@@ -539,55 +579,56 @@ export default {
 <style lang="scss" scoped>
 @import '../assets/styles/theme.scss';
 
-article{
-  .v-card{
+article {
+  .v-card {
     line-height: 1.2rem;
     font-size: 0.875rem;
   }
 }
 
-section p{
-  // font-size 0.875rem
+section p {
   color: $gray6;
 }
 
-section + section{
+section + section {
   margin-top: 3rem;
 }
 
-h2{
+h2 {
   margin-bottom: 0.25rem;
+  margin-top: 3rem;
+  font-size: 1.125rem;
 }
 
-#filing-header{
+#filing-header {
   margin-bottom: 1.25rem;
   line-height: 2rem;
   letter-spacing: -0.01rem;
 }
 
-.title-container{
+.title-container {
   margin-bottom: 0.5rem;
 }
 
 // Save & Filing Buttons
-#buttons-container{
+#buttons-container {
   padding-top: 2rem;
   border-top: 1px solid $gray5;
 
-  .buttons-left{
+  .buttons-left {
     width: 50%;
   }
 
-  .buttons-right{
-    margin-left: auto
+  .buttons-right {
+    margin-left: auto;
   }
 
-  .v-btn + .v-btn{
+  .v-btn + .v-btn {
     margin-left: 0.5rem;
   }
-}
 
-#coa-cancel-btn{
-   margin-left: 0.5rem;
+  #coa-cancel-btn {
+    margin-left: 0.5rem;
+  }
 }
 </style>

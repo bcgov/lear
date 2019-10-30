@@ -1,5 +1,6 @@
 <template>
   <div>
+    <!-- Dialogs -->
     <ConfirmDialog ref="confirm" />
 
     <ResumeErrorDialog
@@ -41,7 +42,6 @@
           </header>
 
           <div v-if="isAnnualReportEditable">
-
             <!-- Annual General Meeting Date ( COOP ) -->
             <section v-if="entityFilter(EntityTypes.Coop)">
               <header>
@@ -117,15 +117,28 @@
                 @valid="certifyFormValid=$event"
               />
             </section>
+
+            <!-- Staff Payment -->
+            <section v-if="isRoleStaff && isPayRequired">
+              <header>
+                <h2 id="AR-step-5-header">5. Staff Payment</h2>
+              </header>
+              <StaffPayment
+                :value.sync="routingSlipNumber"
+                @valid="staffPaymentFormValid=$event"
+              />
+            </section>
+
           </div>
-          <!-- <div v-else>
-            <ARComplete/>
-          </div> -->
         </article>
 
         <aside>
           <affix relative-element-selector="#annual-report-article" :offset="{ top: 120, bottom: 40 }">
-            <sbc-fee-summary v-bind:filingData="[...filingData]" v-bind:payURL="payAPIURL"/>
+            <sbc-fee-summary
+              v-bind:filingData="[...filingData]"
+              v-bind:payURL="payAPIURL"
+              @total-fee="totalFee=$event"
+            />
           </affix>
         </aside>
       </v-container>
@@ -136,14 +149,16 @@
             v-if="isAnnualReportEditable"
             :disabled="!isSaveButtonEnabled || busySaving"
             :loading="saving"
-            @click="onClickSave">
+            @click="onClickSave"
+          >
             Save
           </v-btn>
           <v-btn id="ar-save-resume-btn" large
             v-if="isAnnualReportEditable"
             :disabled="!isSaveButtonEnabled || busySaving"
             :loading="savingResuming"
-            @click="onClickSaveResume">
+            @click="onClickSaveResume"
+          >
             Save &amp; Resume Later
           </v-btn>
         </div>
@@ -157,23 +172,22 @@
                   id="ar-file-pay-btn"
                   color="primary"
                   large
-                  :depressed="isRoleStaff"
-                  :ripple="!isRoleStaff"
                   :disabled="!validated || busySaving"
                   :loading="filingPaying"
-                  @click="onClickFilePay">
-                  File &amp; Pay
+                  @click="onClickFilePay"
+                >
+                  {{ isPayRequired ? "File &amp; Pay" : "File" }}
                 </v-btn>
               </div>
             </template>
-            <span v-if="isRoleStaff">Staff are not allowed to file.</span>
-            <span v-else>Ensure all of your information is entered correctly before you File &amp; Pay.<br>
+            <span>Ensure all of your information is entered correctly before you File.<br>
               There is no opportunity to change information beyond this point.</span>
           </v-tooltip>
           <v-btn
             id="ar-cancel-btn"
             large
-            to="/dashboard">
+            to="/dashboard"
+          >
             Cancel
           </v-btn>
         </div>
@@ -185,6 +199,7 @@
 <script lang="ts">
 import axios from '@/axios-auth'
 import AGMDate from '@/components/AnnualReport/AGMDate.vue'
+import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
 import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import { Affix } from 'vue-affix'
@@ -192,6 +207,7 @@ import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vu
 import { mapState, mapGetters } from 'vuex'
 import { BAD_REQUEST, PAYMENT_REQUIRED } from 'http-status-codes'
 import Certify from '@/components/AnnualReport/Certify.vue'
+import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
@@ -199,7 +215,6 @@ import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
 import DateMixin from '@/mixins/date-mixin'
 import EntityFilterMixin from '@/mixins/entityFilter-mixin'
 import { EntityTypes } from '@/enums'
-import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
 
 // action constants
 const APPOINTED = 'appointed'
@@ -218,6 +233,7 @@ export default {
     RegisteredOfficeAddress,
     Directors,
     Certify,
+    StaffPayment,
     Affix,
     SbcFeeSummary,
     ConfirmDialog,
@@ -247,6 +263,11 @@ export default {
       certifiedBy: '',
       isCertified: false,
       certifyFormValid: null,
+
+      // properties for Staff Payment component
+      routingSlipNumber: null,
+      staffPaymentFormValid: false,
+      totalFee: 0,
 
       // flags for displaying dialogs
       resumeErrorDialog: false,
@@ -287,16 +308,23 @@ export default {
     },
 
     validated () {
-      return this.agmDateValid && this.addressesFormValid && this.directorFormValid &&
-      this.certifyFormValid && !this.directorEditInProgress
+      const staffPaymentValid = (!this.isRoleStaff || !this.isPayRequired || this.staffPaymentFormValid)
+
+      return (staffPaymentValid && this.agmDateValid && this.addressesFormValid && this.directorFormValid &&
+        this.certifyFormValid && !this.directorEditInProgress)
     },
 
     busySaving () {
-      return this.saving || this.savingResuming || this.filingPaying
+      return (this.saving || this.savingResuming || this.filingPaying)
     },
 
     isSaveButtonEnabled () {
-      return this.agmDateValid && this.addressesFormValid && this.directorFormValid && !this.directorEditInProgress
+      return (this.agmDateValid && this.addressesFormValid && this.directorFormValid && !this.directorEditInProgress)
+    },
+
+    isPayRequired () {
+      // FUTURE: modify rule here as needed
+      return (this.totalFee > 0)
     }
   },
 
@@ -374,6 +402,7 @@ export default {
             if (filing.business.legalName !== this.entityName) throw new Error('invalid business legal name')
 
             this.certifiedBy = filing.header.certifiedBy
+            this.routingSlipNumber = filing.header.routingSlipNumber
 
             // load Annual Report fields
             const annualReport = filing.annualReport
@@ -499,9 +528,6 @@ export default {
     },
 
     async onClickFilePay () {
-      // staff are not allowed to file
-      if (this.isRoleStaff) return false
-
       // prevent double saving
       if (this.busySaving) return true
 
@@ -545,6 +571,10 @@ export default {
             email: 'no_one@never.get',
             date: this.currentDate
           }
+        }
+        // only save this if it's not null
+        if (this.routingSlipNumber) {
+          header.header['routingSlipNumber'] = this.routingSlipNumber
         }
 
         const business = {
@@ -740,6 +770,10 @@ export default {
 
     certifiedBy (val: string) {
       this.haveChanges = true
+    },
+
+    routingSlipNumber (val) {
+      this.haveChanges = true
     }
   }
 }
@@ -794,7 +828,7 @@ h2 {
   }
 
   .buttons-right {
-    margin-left: auto
+    margin-left: auto;
   }
 
   .v-btn + .v-btn {
