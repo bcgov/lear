@@ -369,10 +369,10 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
 =======
     if filing.payment_token and filing.filing_json:
         if filing.payment_completion_date and filing.transaction_id:
-            if filing._status == Filing.Status.FUTURE.value:
-                filing._status = Filing.Status.COMPLETED.value
+            if filing._status == Filing.Status.PENDING.value and filing.effective_date:
+                filing._status = Filing.Status.FUTURE.value
             else:
-                filing._status = Filing.Status.FUTURE.value  # pylint: disable=protected-access
+                filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
         elif filing.payment_completion_date:
             filing._status = Filing.Status.ERROR.value  # pylint: disable=protected-access
         else:
@@ -389,4 +389,3 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
 
     else:
         filing._status = Filing.Status.DRAFT.value  # pylint: disable=protected-access
-

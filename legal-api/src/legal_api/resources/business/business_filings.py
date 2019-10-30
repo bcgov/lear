@@ -372,7 +372,7 @@ class ListFilingResource(Resource):
     @staticmethod
     def _set_effective_date(business: Business, filing: Filing):
         filing_type = filing.filing_json['filing']['header']['name']
-        if business.legal_type is not 'CP':
+        if business.legal_type != 'CP':
             if filing_type == 'changeOfAddress':
                 effective_date = datetime.datetime.combine(datetime.date.today() + datedelta.datedelta(days=1), \
                     datetime.datetime.min.time())
