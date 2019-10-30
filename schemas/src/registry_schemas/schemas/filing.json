@@ -105,7 +105,8 @@
                         "routingSlipNumber": {
                             "type": "string",
                             "title": "A valid routing slip number in case of a staff filing.",
-                            "maxLength": 9
+                            "maxLength": 9,
+                            "pattern": "^[0-9]+$"
                         },
                         "submitter": {
                             "type": "string",
