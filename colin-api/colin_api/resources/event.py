@@ -28,7 +28,7 @@ class EventInfo(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     def get(corp_type, event_id):
-        """Return all event_ids of the given corp_type above the given event_id."""
+        """Return all event_ids of the corp_type that are greater than the given event_id."""
         try:
             cursor = DB.connection.cursor()
             cursor.execute(

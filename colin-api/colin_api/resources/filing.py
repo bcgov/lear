@@ -20,7 +20,8 @@ from flask_restplus import Resource, cors
 from registry_schemas import validate
 
 from colin_api.exceptions import FilingNotFoundException, GenericException
-from colin_api.models import Business, Filing
+from colin_api.models import Business
+from colin_api.models.filing import Filing
 from colin_api.resources.business import API
 from colin_api.utils.util import cors_preflight
 
