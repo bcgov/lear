@@ -264,6 +264,7 @@ def test_post_colin_last_update(session, client, jwt):
     assert rv.json == {'maxId': colin_id}
 
 def test_future_filing_coa(session, client, jwt):
+    import pytz
     from legal_api.models import Filing
     from tests.unit.models import factory_error_filing, factory_pending_filing
     # setup
@@ -282,7 +283,7 @@ def test_future_filing_coa(session, client, jwt):
     filing.save()
     assert filing.status == Filing.Status.PENDING.value
 
-    filing.payment_completion_date = datetime.utcnow()
+    filing.payment_completion_date = pytz.utc.localize(datetime.utcnow())
     factory_add_transaction_id(filing)
     filing.save()
 
