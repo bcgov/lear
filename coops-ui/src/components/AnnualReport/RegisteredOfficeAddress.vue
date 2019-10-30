@@ -9,7 +9,7 @@
               :address="deliveryAddress"
               :editing="showAddressForm"
               :schema="addressSchema"
-              v-on:update:address="updateDelivery($event)"
+              @update:address="updateDelivery"
               @valid="isDeliveryValid"
             />
             <v-expand-transition>
@@ -35,7 +35,9 @@
                   small
                   v-if="!showAddressForm && modified"
                   @click="resetAddress"
-                >Reset</v-btn>
+                >
+                  Reset
+                </v-btn>
               </div>
             </v-expand-transition>
           </div>
@@ -52,14 +54,14 @@
                 label="Same as Delivery Address"
                 v-if="showAddressForm"
                 v-model="inheritDeliveryAddress"
-              ></v-checkbox>
+              />
             </div>
             <mailing-address
               v-if="!showAddressForm || !inheritDeliveryAddress"
               :address="mailingAddress"
               :editing="showAddressForm"
               :schema="addressSchema"
-              v-on:update:address="updateMailing($event)"
+              @update:address="updateMailing"
               @valid="isMailingValid"
             />
             <div
@@ -72,7 +74,9 @@
                 id="reg-off-update-addr-btn"
                 :disabled="!formValid"
                 @click="updateAddress"
-              >Update Addresses</v-btn>
+              >
+                Update Addresses
+              </v-btn>
               <v-btn id="reg-off-cancel-addr-btn" @click="cancelEditAddress">Cancel</v-btn>
             </div>
           </div>
@@ -286,8 +290,8 @@ export default class RegisteredOfficeAddress extends Mixins(AddressMixin, Common
    * @param address the object containing the new address.
    */
   private updateDelivery (address: object): void {
-    // Note that we do a copy of the fields (rather than change the object reference) to prevent an infinite loop with
-    // the property.
+    // Note that we do a copy of the fields (rather than change the object reference)
+    // to prevent an infinite loop with the property.
     Object.assign(this.deliveryAddress, address)
   }
 
@@ -307,8 +311,8 @@ export default class RegisteredOfficeAddress extends Mixins(AddressMixin, Common
    * @param address the object containing the new address.
    */
   private updateMailing (address: object): void {
-    // Note that we do a copy of the fields (rather than change the object reference) to prevent an infinite loop with
-    // the property.
+    // Note that we do a copy of the fields (rather than change the object reference)
+    // to prevent an infinite loop with the property.
     Object.assign(this.mailingAddress, address)
   }
 
