@@ -172,3 +172,9 @@ def factory_error_filing(business, data_dict):
     filing.payment_token = 5
     filing.payment_completion_date = datetime.now()
     return filing
+
+def factory_add_transaction_id(filing):
+    """Add transaction to a pending filing."""
+    uow = versioning_manager.unit_of_work(db.session)
+    transaction = uow.create_transaction(db.session)
+    filing.transaction_id = transaction.id
