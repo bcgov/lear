@@ -43,8 +43,8 @@
         <ul class="list new-director" v-show="showNewDirectorForm">
           <li class="container">
             <div class="meta-container">
+              <label class="appoint-header">Appoint New Director</label>
               <div class="meta-container__inner">
-                <label class="appoint-header">Appoint New Director</label>
                 <v-form class="appoint-form" ref="newDirectorForm" v-on:submit.prevent="addNewDirector"
                   v-model="directorFormValid" lazy-validation
                 >
@@ -150,8 +150,11 @@
                   -->
 
                   <div class="form__row form__btns">
-                    <v-btn class="form-cancel-btn" @click="cancelNewDirector">Cancel</v-btn>
+                    <v-btn color="error" disabled>
+                      <span>Remove</span>
+                    </v-btn>
                     <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
+                    <v-btn class="form-cancel-btn" @click="cancelNewDirector">Cancel</v-btn>
                   </div>
                 </v-form>
               </div>
@@ -435,11 +438,11 @@
                     >
                       <span>Remove</span>
                     </v-btn>
-                    <v-btn class="form-cancel-btn" @click="cancelEditDirector()">Cancel</v-btn>
                     <v-btn class="form-primary-btn" color="primary"
                       @click="saveEditDirector(index, director.id)"
                     >
                       Done</v-btn>
+                    <v-btn class="form-cancel-btn" @click="cancelEditDirector()">Cancel</v-btn>
                   </div>
                 </v-form>
               </v-expand-transition>
@@ -1366,10 +1369,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     line-height: 1.5rem;
   }
 
-  .appoint-form {
-    margin-top: 2rem;
-  }
-
   .address-sub-header {
     padding-bottom: 1.5rem;
     font-size: 1rem;
@@ -1513,11 +1512,5 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   .editFormStyle {
     border: 1px solid red;
     padding: 1rem;
-  }
-
-  .form-cancel-btn {
-    position: absolute;
-    right: 0;
-    margin-right: 5rem;
   }
 </style>
