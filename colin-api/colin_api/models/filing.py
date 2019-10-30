@@ -20,7 +20,7 @@ import datetime
 from flask import current_app
 
 from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
-from colin_api.models import Address, Business, Director, Office
+from colin_api.models import Address, Business, Director, EntityName, Office
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date
 
@@ -76,7 +76,7 @@ class Filing:
                 'business': self.business.business,
             }
         }
-        possible_filings = [Filing.FILING_TYPES[key] for key in Filing.FILING_TYPES]
+        possible_filings = [self.FILING_TYPES[key] for key in self.FILING_TYPES]
         entered_filings = [x for x in self.body.keys() if x in possible_filings]
 
         if entered_filings:  # filing object possibly storing multiple filings
@@ -112,6 +112,37 @@ class Filing:
             raise err
 
         return event_id
+
+    @classmethod
+    def _get_events(cls, identifier: str = None, filing_type_code: str = None):
+        """Get all event ids of filings for given filing type for this corp."""
+        if not identifier or not filing_type_code:
+            return None
+
+        try:
+            cursor = DB.connection.cursor()
+            cursor.execute(
+                """
+                select event.event_id, event_timestmp
+                from event
+                join filing on event.event_id = filing.event_id
+                where corp_num=:identifier and filing_typ_cd=:filing_type
+                """,
+                filing_type=filing_type_code,
+                identifier=identifier
+            )
+
+            events = cursor.fetchall()
+            event_list = []
+            for row in events:
+                row = dict(zip([x[0].lower() for x in cursor.description], row))
+                event_list.append({'id': row['event_id'], 'date': row['event_timestmp']})
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            current_app.logger.error('error getting director events for {}'.format(identifier))
+            raise err
+
+        return event_list
 
     @classmethod
     def _create_filing(cls, cursor, event_id, corp_num, ar_date,  # pylint: disable=too-many-arguments;
@@ -198,18 +229,18 @@ class Filing:
 
     @classmethod
     def _get_filing_event_info(cls,  # pylint: disable=too-many-arguments,too-many-branches;
-                               identifier: str = None, event_id: str = None, filing_type_cd1: str = None,
-                               filing_type_cd2: str = 'empty', year: int = None):
-
+                               identifier: str = None, event_id: str = None, filing_type_cd: str = None,
+                               year: int = None):
+        """Get the basic filing info that we care about for all filings."""
         # build base querystring
         querystring = ("""
-                select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt,
-                agm_date, effective_dt, event.corp_num
-                from event
-                join filing on filing.event_id = event.event_id
-                left join filing_user on event.event_id = filing_user.event_id
-                where (filing_typ_cd=:filing_type_cd1 or filing_typ_cd=:filing_type_cd2)
-                """)
+            select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt,
+            agm_date, effective_dt, event.corp_num
+            from event
+            join filing on filing.event_id = event.event_id
+            left join filing_user on event.event_id = filing_user.event_id
+            where (filing_typ_cd=:filing_type_cd)
+            """)
 
         if identifier:
             querystring += ' AND event.corp_num=:identifier'
@@ -227,22 +258,20 @@ class Filing:
             if event_id:
                 if year:
                     cursor.execute(querystring, identifier=identifier, event_id=event_id,
-                                   filing_type_cd1=filing_type_cd1, filing_type_cd2=filing_type_cd2, year=year)
+                                   filing_type_cd=filing_type_cd, year=year)
                 else:
                     cursor.execute(querystring, identifier=identifier, event_id=event_id,
-                                   filing_type_cd1=filing_type_cd1, filing_type_cd2=filing_type_cd2)
+                                   filing_type_cd=filing_type_cd)
             else:
                 if year:
-                    cursor.execute(querystring, identifier=identifier, filing_type_cd1=filing_type_cd1,
-                                   filing_type_cd2=filing_type_cd2, year=year)
+                    cursor.execute(querystring, identifier=identifier, filing_type_cd=filing_type_cd, year=year)
                 else:
-                    cursor.execute(querystring, identifier=identifier, filing_type_cd1=filing_type_cd1,
-                                   filing_type_cd2=filing_type_cd2)
+                    cursor.execute(querystring, identifier=identifier, filing_type_cd=filing_type_cd)
 
             event_info = cursor.fetchone()
 
             if not event_info:
-                raise FilingNotFoundException(identifier=identifier, filing_type=filing_type_cd1, event_id=event_id)
+                raise FilingNotFoundException(identifier=identifier, filing_type=filing_type_cd, event_id=event_id)
 
             event_info = dict(zip([x[0].lower() for x in cursor.description], event_info))
 
@@ -260,6 +289,7 @@ class Filing:
 
             event_info['certifiedBy'] = filing_user_name
             event_info['email'] = filing_email
+            event_info['filing_type_code'] = filing_type_cd
             return event_info
 
         except Exception as err:
@@ -270,21 +300,11 @@ class Filing:
             raise err
 
     @classmethod
-    def _get_ar(cls, identifier: str = None, event_id: str = None,  # pylint: disable=too-many-locals,too-many-branches;
-                year: int = None):
+    def _get_ar(cls, identifier: str = None, filing_event_info: dict = None):
         """Return annual report filing."""
-        if event_id:
-            filing_event_info = cls._get_filing_event_info(identifier=identifier, event_id=event_id,
-                                                           filing_type_cd1='OTANN', year=year)
-        else:
-            filing_event_info = cls._get_filing_event_info(identifier=identifier, filing_type_cd1='OTANN', year=year)
-
-        if not filing_event_info:
-            raise FilingNotFoundException(identifier=identifier, filing_type='annualReport', event_id=event_id)
-
         # get directors and registered office as of this filing
-        director_events = Director.get_events(identifier=identifier)
-        office_events = Office.get_events(identifier=identifier)
+        director_events = cls._get_events(identifier=identifier, filing_type_code=filing_event_info['filing_type_code'])
+        office_events = cls._get_events(identifier=identifier, filing_type_code=filing_event_info['filing_type_code'])
         director_event_id = None
         office_event_id = None
 
@@ -318,18 +338,10 @@ class Filing:
             reg_office = Office.get_current(identifier=identifier)
         reg_office = reg_office.as_dict()
         # convert dates and date-times to correct json format
-        filing_event_info['event_timestmp'] = convert_to_json_date(filing_event_info['event_timestmp'])
         agm_date = convert_to_json_date(filing_event_info.get('agm_date', None))
         ar_date = convert_to_json_date(filing_event_info['period_end_dt'])
 
         filing_obj = Filing()
-
-        filing_obj.header = {
-            'date': filing_event_info['event_timestmp'],
-            'name': 'annualReport',
-            'certifiedBy': filing_event_info['certifiedBy'],
-            'email': filing_event_info['email']
-        }
         filing_obj.body = {
             'annualGeneralMeetingDate': agm_date,
             'annualReportDate': ar_date,
@@ -338,33 +350,19 @@ class Filing:
             **reg_office
         }
         filing_obj.filing_type = 'annualReport'
-        filing_obj.event_id = filing_event_info['event_id']  # pylint: disable=attribute-defined-outside-init
 
         return filing_obj
 
     @classmethod
-    def _get_coa(cls, identifier: str = None, event_id: str = None,
-                 year: int = None):  # pylint: disable=unused-argument; will use year later
+    def _get_coa(cls, identifier: str = None, filing_event_info: dict = None):
         """Get change of address filing."""
-        if event_id:
-            filing_event_info = cls._get_filing_event_info(identifier=identifier, event_id=event_id,
-                                                           filing_type_cd1='OTADD', filing_type_cd2='OTARG')
-        else:
-            filing_event_info = cls._get_filing_event_info(identifier=identifier, filing_type_cd1='OTADD',
-                                                           filing_type_cd2='OTARG')
-
         registered_office_obj = Office.get_by_event(filing_event_info['event_id'])
 
         if not registered_office_obj:
-            raise FilingNotFoundException(identifier=identifier, filing_type='change_of_address', event_id=event_id)
+            raise FilingNotFoundException(identifier=identifier, filing_type='change_of_address',
+                                          event_id=filing_event_info['event_id'])
 
         filing_obj = Filing()
-        filing_obj.header = {
-            'date': convert_to_json_date(filing_event_info['event_timestmp']),
-            'name': 'changeOfAddress',
-            'certifiedBy': filing_event_info['certifiedBy'],
-            'email': filing_event_info['email']
-        }
         filing_obj.body = {
             **registered_office_obj.as_dict(),
             'eventId': filing_event_info['event_id']
@@ -374,29 +372,13 @@ class Filing:
         return filing_obj
 
     @classmethod
-    def _get_cod(cls, identifier: str = None, event_id: str = None,
-                 year: int = None):  # pylint: disable=unused-argument; will use year later
+    def _get_cod(cls, identifier: str = None, filing_event_info: dict = None):
         """Get change of directors filing."""
-        filing_obj = Filing()
-
-        if event_id:
-            filing_event_info = cls._get_filing_event_info(identifier=identifier, event_id=event_id,
-                                                           filing_type_cd1='OTCDR', filing_type_cd2='OTADR')
-        else:
-            filing_event_info = cls._get_filing_event_info(identifier=identifier, filing_type_cd1='OTCDR',
-                                                           filing_type_cd2='OTADR')
-
         director_objs = Director.get_by_event(identifier, filing_event_info['event_id'])
         if len(director_objs) < 3:
             current_app.logger.error('Less than 3 directors for {}'.format(identifier))
 
-        filing_obj.header = {
-            'date': convert_to_json_date(filing_event_info['event_timestmp']),
-            'name': 'changeOfDirectors',
-            'certifiedBy': filing_event_info['certifiedBy'],
-            'email': filing_event_info['email']
-        }
-
+        filing_obj = Filing()
         filing_obj.body = {
             'directors': [x.as_dict() for x in director_objs],
             'eventId': filing_event_info['event_id']
@@ -404,6 +386,90 @@ class Filing:
         filing_obj.filing_type = 'changeOfDirectors'
 
         return filing_obj
+
+    @classmethod
+    def _get_con(cls, identifier: str = None, filing_event_info: dict = None):
+        """Get change of name filing."""
+        name_obj = EntityName.get_by_event(identifier=identifier, event_id=filing_event_info['event_id'])
+        if not name_obj:
+            raise FilingNotFoundException(identifier=identifier, filing_type='change_of_name',
+                                          event_id=filing_event_info['event_id'])
+
+        filing_obj = Filing()
+        filing_obj.body = {
+            **name_obj.as_dict()
+        }
+        filing_obj.filing_type = 'changeOfName'
+
+        return filing_obj
+
+    @classmethod
+    def _get_sr(cls, identifier: str = None, filing_event_info: dict = None):
+        """Get special resolution filing."""
+        querystring = ("""
+            select filing.event_id, filing.effective_dt, ledger_text.notation
+            from filing
+            join ledger_text on ledger_text.event_id = filing.event_id
+            where filing.event_id=:event_id
+            """)
+
+        try:
+            cursor = DB.connection.cursor()
+            cursor.execute(querystring, event_id=filing_event_info['event_id'])
+            sr_info = cursor.fetchone()
+            if not sr_info:
+                raise FilingNotFoundException(identifier=identifier,
+                                              filing_type=cls.FILING_TYPES[filing_event_info['filing_type_code']],
+                                              event_id=filing_event_info['event_id']
+                                              )
+
+            sr_info = dict(zip([x[0].lower() for x in cursor.description], sr_info))
+            filing_obj = Filing()
+            filing_obj.body = {
+                'eventId': sr_info['event_id'],
+                'filedDate': convert_to_json_date(sr_info['effective_dt']),
+                'resolution': sr_info['notation'],
+            }
+            filing_obj.filing_type = 'specialResolution'
+
+            return filing_obj
+
+        except Exception as err:
+            current_app.logger.error('error getting special resolution filing for corp: {}'.format(identifier))
+            raise err
+
+    @classmethod
+    def _get_vd(cls, identifier: str = None, filing_event_info: dict = None):
+        """Get voluntary dissolution filing."""
+        querystring = ("""
+                select filing.event_id, filing.effective_dt
+                from filing
+                where filing.event_id=:event_id
+                """)
+
+        try:
+            cursor = DB.connection.cursor()
+            cursor.execute(querystring, event_id=filing_event_info['event_id'])
+            vd_info = cursor.fetchone()
+            if not vd_info:
+                raise FilingNotFoundException(identifier=identifier,
+                                              filing_type=cls.FILING_TYPES[filing_event_info['filing_type_code']],
+                                              event_id=filing_event_info['event_id']
+                                              )
+
+            vd_info = dict(zip([x[0].lower() for x in cursor.description], vd_info))
+            filing_obj = Filing()
+            filing_obj.body = {
+                'eventId': vd_info['event_id'],
+                'dissolutionDate': convert_to_json_date(vd_info['effective_dt'])
+            }
+            filing_obj.filing_type = 'voluntaryDissolution'
+
+            return filing_obj
+
+        except Exception as err:
+            current_app.logger.error('error voluntary dissolution filing for corp: {}'.format(identifier))
+            raise err
 
     @classmethod
     def get_filing(cls, business: Business = None, event_id: str = None, filing_type: str = None, year: int = None):
@@ -414,18 +480,45 @@ class Filing:
         try:
             identifier = business.get_corp_num()
 
+            # get the filing types corresponding filing code
+            code = [key for key in cls.FILING_TYPES if cls.FILING_TYPES[key] == filing_type]
+            if len(code) < 1:
+                raise InvalidFilingTypeException(filing_type=filing_type)
+
+            # get the filing event info
+            filing_event_info = cls._get_filing_event_info(identifier=identifier, event_id=event_id,
+                                                           filing_type_cd=code[0], year=year)
+            if not filing_event_info:
+                raise FilingNotFoundException(identifier=identifier, filing_type=filing_type, event_id=event_id)
+
             if filing_type == 'annualReport':
-                filing_obj = cls._get_ar(identifier=identifier, event_id=event_id, year=year)
+                filing_obj = cls._get_ar(identifier=identifier, filing_event_info=filing_event_info)
 
             elif filing_type == 'changeOfAddress':
-                filing_obj = cls._get_coa(identifier=identifier, event_id=event_id, year=year)
+                filing_obj = cls._get_coa(identifier=identifier, filing_event_info=filing_event_info)
 
             elif filing_type == 'changeOfDirectors':
-                filing_obj = cls._get_cod(identifier=identifier, event_id=event_id, year=year)
+                filing_obj = cls._get_cod(identifier=identifier, filing_event_info=filing_event_info)
+
+            elif filing_type == 'changeOfName':
+                filing_obj = cls._get_con(identifier=identifier, filing_event_info=filing_event_info)
+
+            elif filing_type == 'specialResolution':
+                filing_obj = cls._get_sr(identifier=identifier, filing_event_info=filing_event_info)
+
+            elif filing_type == 'voluntaryDissolution':
+                filing_obj = cls._get_vd(identifier=identifier, filing_event_info=filing_event_info)
 
             else:
                 raise InvalidFilingTypeException(filing_type=filing_type)
 
+            filing_obj.header = {
+                'date': convert_to_json_date(filing_event_info['event_timestmp']),
+                'name': filing_type,
+                'certifiedBy': filing_event_info['certifiedBy'],
+                'email': filing_event_info['email'],
+                'availableOnPaperOnly': filing_obj.filing_type in ['voluntaryDissolution', 'specialResolution']
+            }
             filing_obj.business = business
 
             return filing_obj
@@ -462,9 +555,9 @@ class Filing:
             for filing_info in cursor:
                 filings_info_list.append(dict(zip([x[0].lower() for x in cursor.description], filing_info)))
             for filing_info in filings_info_list:
-                if not Filing.FILING_TYPES[filing_info['filing_typ_cd']]:
+                if not cls.FILING_TYPES[filing_info['filing_typ_cd']]:
                     raise InvalidFilingTypeException(filing_type=filing_info['filing_typ_cd'])
-                filing_info['filing_type'] = Filing.FILING_TYPES[filing_info['filing_typ_cd']]
+                filing_info['filing_type'] = cls.FILING_TYPES[filing_info['filing_typ_cd']]
                 date = convert_to_json_date(filing_info['event_timestmp'])
                 if date < '2019-03-08':
                     filing = Filing()
