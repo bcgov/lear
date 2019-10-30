@@ -385,15 +385,23 @@ export default {
       // on success, redirect to Pay URL
       if (filing && filing.header) {
         const filingId = +filing.header.filingId
-        const paymentToken = filing.header.paymentToken
+        const paymentStatus = filing.header.paymentStatus
 
-        const baseUrl = sessionStorage.getItem('BASE_URL')
-        const returnURL = encodeURIComponent(baseUrl + 'dashboard?filing_id=' + filingId)
-        const authUrl = sessionStorage.getItem('AUTH_URL')
-        const payURL = authUrl + 'makepayment/' + paymentToken + '/' + returnURL
+        // if filing needs to be paid, redirect to Pay URL
+        if (paymentStatus !== 'COMPLETED') {
+          const paymentToken = filing.header.paymentToken
+          const baseUrl = sessionStorage.getItem('BASE_URL')
+          const returnURL = encodeURIComponent(baseUrl + 'dashboard?filing_id=' + filingId)
+          const authUrl = sessionStorage.getItem('AUTH_URL')
+          const payURL = authUrl + 'makepayment/' + paymentToken + '/' + returnURL
 
-        // assume Pay URL is always reachable
-        window.location.assign(payURL)
+          // assume Pay URL is always reachable
+          // otherwise, user will have to retry payment later
+          window.location.assign(payURL)
+        } else {
+          // route directly to dashboard
+          this.$router.push('/dashboard?filing_id=' + filingId)
+        }
       }
       this.filingPaying = false
       return true
