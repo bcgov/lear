@@ -20,7 +20,6 @@ Flask config, rather than reading environment variables directly
 or by accessing this configuration directly.
 """
 import os
-import random
 
 from dotenv import find_dotenv, load_dotenv
 

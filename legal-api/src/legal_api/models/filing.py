@@ -127,7 +127,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             self._payment_completion_date = value
             if self.effective_date is None or \
                 self.effective_date <= self._payment_completion_date:
-                    self._status = Filing.Status.COMPLETED.value
+                self._status = Filing.Status.COMPLETED.value
         else:
             raise BusinessException(
                 error="Payment Dates cannot set for unlocked filings unless the filing hasn't been saved yet.",
@@ -228,11 +228,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             json_submission['filing']['header']['availableOnPaperOnly'] = self.paper_only
 
             if self.effective_date:
-<<<<<<< HEAD
                 json_submission['filing']['header']['effectiveDate'] = self.effective_date
-=======
-                json_submission['filing']['header']['futureEffectiveDate'] = str(self.effective_date)
->>>>>>> 1eea666... Get both publishing and subscriptions working
             if self._payment_token:
                 json_submission['filing']['header']['paymentToken'] = self.payment_token
             if self.submitter_id:
@@ -307,7 +303,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
     def get_all_filings_by_status(status):
         """Return all filings based on status."""
         filings = db.session.query(Filing). \
-            filter(Filing._status == status).all()  # pylint: disable=singleton-comparison # noqa: E711;    
+            filter(Filing._status == status).all()  # pylint: disable=singleton-comparison # noqa: E711;
         return filings
 
     def save(self):
@@ -366,22 +362,8 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     """Set the state of the filing, based upon column values."""
     filing = target
     # changes are part of the class and are not externalized
-<<<<<<< HEAD
 
     if filing.transaction_id:
-=======
-    if filing.payment_token and filing.filing_json:
-        if filing.payment_completion_date and filing.transaction_id:
-            if filing._status == Filing.Status.PENDING.value and filing.effective_date:
-                filing._status = Filing.Status.FUTURE.value
-            else:
-                filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
-        elif filing.payment_completion_date:
-            filing._status = Filing.Status.ERROR.value  # pylint: disable=protected-access
-        else:
-            filing._status = Filing.Status.PENDING.value  # pylint: disable=protected-access
-    elif filing.colin_event_id:
->>>>>>> 445f2fc... incremental
         filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
 
     elif filing.payment_completion_date:
