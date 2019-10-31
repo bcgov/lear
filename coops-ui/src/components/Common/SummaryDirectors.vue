@@ -1,5 +1,4 @@
 <template>
-
   <div id="directors">
     <v-card flat>
       <!-- Current Director List -->
@@ -167,7 +166,6 @@
       </v-expand-transition>
     </v-card>
   </div>
-
 </template>
 
 <script lang="ts">
@@ -281,147 +279,145 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
     return director.isDirectorActionable !== undefined ? director.isDirectorActionable : true
   }
 }
-
 </script>
 
 <style lang="scss" scoped>
-  @import "../../assets/styles/theme.scss";
+@import '@/assets/styles/theme.scss';
 
-  .v-card {
-    line-height: 1.2rem;
-    font-size: 0.875rem;
+.v-card {
+  line-height: 1.2rem;
+  font-size: 0.875rem;
+}
+
+.v-btn {
+  margin: 0;
+  text-transform: none;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+.meta-container{
+  display: flex;
+  flex-flow: column nowrap;
+  position: relative;
+
+  > label:first-child{
+    font-weight: 700;
   }
 
-  .v-btn {
-    margin: 0;
-    text-transform: none;
-  }
-
-  ul {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-  }
-
-  .meta-container{
-    display: flex;
-    flex-flow: column nowrap;
-    position: relative;
-
-    > label:first-child{
-      font-weight: 500;
-    }
-
-    &__inner {
-      flex: 1 1 auto;
-    }
-  }
-
-  @media (min-width: 768px) {
-    .meta-container {
-      flex-flow: row nowrap;
-
-      > label:first-child {
-        flex: 0 0 auto;
-        padding-right: 2rem;
-        width: 14rem;
-      }
-    }
-  }
-
-  // List Layout
-  .list {
-    li {
-      border-bottom: 1px solid $gray3;
-    }
-  }
-
-  .form__row.three-column {
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: stretch;
-    margin-right: -0.5rem;
-    margin-left: -0.5rem;
-    .item {
-      flex: 1 1 auto;
-      flex-basis: 0;
-      margin-right: 0.5rem;
-      margin-left: 0.5rem;
-    }
-  }
-
-  // Address Block Layout
-  .address {
-    display: flex;
-    width: 14rem;
-  }
-
-  .address__row {
+  &__inner {
     flex: 1 1 auto;
   }
+}
 
-  // Director Display
-  .director-info {
-    display: flex;
-    color: $gray6;
+@media (min-width: 768px) {
+  .meta-container {
+    flex-flow: row nowrap;
 
-    .status {
-      flex: 1 1 auto;
-    }
-  }
-
-  .director-initial {
-    max-width: 6rem;
-  }
-
-  .new-director-btn {
-    margin-bottom: 1.5rem !important;
-
-    .v-icon {
-      margin-left: -0.5rem;
-    }
-  }
-
-  // V-chip customization
-  .remove, .remove .director-info {
-    color: $gray5 !important;
-  }
-
-  .new-director .meta-container,
-  .meta-container.new-director {
-    flex-flow column nowrap
     > label:first-child {
-      margin-bottom: 1.5rem;
-    }
-  }
-
-  .director_dates {
-    font-size: 0.8rem;
-  }
-
-  .director-header {
-    padding: 1.25rem;
-    display: flex;
-    justify-content: flex-start;
-    height: 3rem;
-    background-color: rgba(77, 112, 147, 0.15);
-
-    span {
+      flex: 0 0 auto;
+      padding-right: 2rem;
       width: 14rem;
-      color: #000014;
-      font-size: 0.875rem;
-      font-weight: 600;
-      line-height: 1.1875rem;
     }
   }
+}
 
-  .editFormStyle {
-    border: 1px solid red;
-    padding: 1rem;
+// List Layout
+.list {
+  li {
+    border-bottom: 1px solid $gray3;
   }
+}
 
-  .cease-Btn {
-    color: #1876D2;
+.form__row.three-column {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: stretch;
+  margin-right: -0.5rem;
+  margin-left: -0.5rem;
+  .item {
+    flex: 1 1 auto;
+    flex-basis: 0;
+    margin-right: 0.5rem;
+    margin-left: 0.5rem;
   }
+}
 
+// Address Block Layout
+.address {
+  display: flex;
+  width: 14rem;
+}
+
+.address__row {
+  flex: 1 1 auto;
+}
+
+// Director Display
+.director-info {
+  display: flex;
+  color: $gray6;
+
+  .status {
+    flex: 1 1 auto;
+  }
+}
+
+.director-initial {
+  max-width: 6rem;
+}
+
+.new-director-btn {
+  margin-bottom: 1.5rem !important;
+
+  .v-icon {
+    margin-left: -0.5rem;
+  }
+}
+
+// V-chip customization
+.remove, .remove .director-info {
+  color: $gray5 !important;
+}
+
+.new-director .meta-container,
+.meta-container.new-director {
+  flex-flow column nowrap
+  > label:first-child {
+    margin-bottom: 1.5rem;
+  }
+}
+
+.director_dates {
+  font-size: 0.8rem;
+}
+
+.director-header {
+  padding: 1.25rem;
+  display: flex;
+  justify-content: flex-start;
+  height: 3rem;
+  background-color: rgba(77, 112, 147, 0.15);
+
+  span {
+    width: 14rem;
+    color: #000014;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.1875rem;
+  }
+}
+
+.editFormStyle {
+  border: 1px solid red;
+  padding: 1rem;
+}
+
+.cease-Btn {
+  color: #1876D2;
+}
 </style>

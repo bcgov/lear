@@ -87,7 +87,6 @@
 </template>
 
 <script lang="ts">
-
 import { Component, Vue, Emit, Prop, Watch, Mixins } from 'vue-property-decorator'
 import axios from '@/axios-auth'
 import isEmpty from 'lodash.isempty'
@@ -469,7 +468,6 @@ export default class RegisteredOfficeAddress extends Mixins(AddressMixin, Common
     address.actions = address.actions.filter(el => el !== val)
   }
 }
-
 </script>
 
 <style lang="scss" scoped>
@@ -496,7 +494,8 @@ export default class RegisteredOfficeAddress extends Mixins(AddressMixin, Common
 }
 
 label:first-child {
-  font-weight: 500;
+  font-weight: 700;
+
   &__inner {
     flex: 1 1 auto;
   }
@@ -516,6 +515,7 @@ label:first-child {
     margin-top: 0;
   }
 }
+
 // List Layout
 .list {
   li {

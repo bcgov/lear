@@ -68,7 +68,7 @@ interface OptionsObject {
   cancel?: string
 }
 
-@Component
+@Component({})
 export default class ConfirmDialog extends Vue {
   // Whether the subject dialog is currently displayed
   private dialog: boolean = false

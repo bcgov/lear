@@ -220,6 +220,7 @@
                 </v-scale-transition>
               </div>
             </label>
+
             <div class="meta-container__inner">
               <v-expand-transition>
                 <div class="director-info" v-show="activeIndex !== index">
@@ -1312,205 +1313,206 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   @Emit('directorEditAction')
   private emitDirectorEditInProgress (val: boolean): void { }
 }
-
 </script>
 
 <style lang="scss" scoped>
-  @import "../../assets/styles/theme.scss";
+@import "../../assets/styles/theme.scss";
 
-  .v-card {
-    line-height: 1.2rem;
-    font-size: 0.875rem;
-  }
+.v-card {
+  line-height: 1.2rem;
+  font-size: 0.875rem;
+}
 
-  .v-btn {
-    margin: 0;
-    text-transform: none;
-  }
+.v-btn {
+  margin: 0;
+  text-transform: none;
+}
 
-  ul {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-    min-width: 56rem;
-  }
+ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  min-width: 56rem;
+}
 
-  .meta-container{
-    display: flex;
-    flex-flow: column nowrap;
-    position: relative;
+.meta-container{
+  display: flex;
+  flex-flow: column nowrap;
+  position: relative;
 
-    > label:first-child{
-      font-weight: 500;
-    }
-
-    &__inner {
-      flex: 1 1 auto;
-    }
-
-    .actions {
-      position: absolute;
-      top: 0;
-      right: 0;
-
-      .v-btn {
-        min-width: 4rem;
-      }
-
-      .v-btn + .v-btn {
-        margin-left: 0.5rem;
-      }
-    }
-  }
-
-  .appoint-header {
-    font-size: 1rem;
-    font-weight: bold;
-    line-height: 1.5rem;
-  }
-
-  .address-sub-header {
-    padding-bottom: 1.5rem;
-    font-size: 1rem;
-    line-height: 1.5rem;
-  }
-
-  .address-wrapper {
-    margin-top: 1.5rem;
-  }
-
-  @media (min-width: 768px) {
-    .meta-container {
-      flex-flow: row nowrap;
-
-      > label:first-child {
-        flex: 0 0 auto;
-        margin-right: 1rem;
-        width: 12rem;
-      }
-    }
-  }
-
-  // List Layout
-  .list {
-    li {
-      border-bottom: 1px solid $gray3;
-    }
-  }
-
-  .form__row.three-column {
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: stretch;
-    margin-right: -0.5rem;
-    margin-left: -0.5rem;
-    .item {
-      flex: 1 1 auto;
-      flex-basis: 0;
-      margin-right: 0.5rem;
-      margin-left: 0.5rem;
-    }
-  }
-
-  // Address Block Layout
-  .address {
-    display: flex;
-    width: 12rem;
-    padding-right: 1rem;
-    padding-left: 1rem;
-    margin-right: 2rem;
-  }
-
-  .address__row {
-    flex: 1 1 auto;
-  }
-
-  // Director Display
-  .director-info {
-    display: flex;
-    color: $gray6;
-
-    .status {
-      flex: 1 1 auto;
-    }
-
-    .actions {
-      flex: 0 0 auto;
-    }
-  }
-
-  .director-initial {
-    max-width: 6rem;
-  }
-
-  .new-director-btn {
-    margin-bottom: 1.5rem !important;
-
-    .v-icon {
-      margin-left: -0.5rem;
-    }
-  }
-
-  // V-chip customization
-  .v-size--x-small {
-    height: 1.25rem;
-    margin-top: 0.5rem;
-    font-size: 0.65rem;
-    text-transform: uppercase;
+  > label:first-child{
     font-weight: 700;
   }
 
-  .remove, .remove .director-info {
-    color: $gray5 !important;
+  &__inner {
+    flex: 1 1 auto;
   }
 
-  .new-director .meta-container,
-  .meta-container.new-director {
-    flex-flow column nowrap
-    > label:first-child {
-      margin-bottom: 1.5rem;
+  .actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+
+    .v-btn {
+      min-width: 4rem;
+    }
+
+    .v-btn + .v-btn {
+      margin-left: 0.5rem;
     }
   }
+}
 
-  .director_dates {
-    font-size: 0.8rem;
-    padding-left: 1rem;
+.appoint-header {
+  font-size: 1rem;
+  font-weight: bold;
+  line-height: 1.5rem;
+}
+
+.address-sub-header {
+  padding-bottom: 1.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5rem;
+}
+
+.address-wrapper {
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .meta-container {
+    flex-flow: row nowrap;
+
+    > label:first-child {
+      flex: 0 0 auto;
+      margin-right: 1rem;
+      width: 12rem;
+    }
+  }
+}
+
+// List Layout
+.list {
+  li {
+    border-bottom: 1px solid $gray3;
+  }
+}
+
+.form__row.three-column {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: stretch;
+  margin-right: -0.5rem;
+  margin-left: -0.5rem;
+  .item {
+    flex: 1 1 auto;
+    flex-basis: 0;
+    margin-right: 0.5rem;
+    margin-left: 0.5rem;
+  }
+}
+
+// Address Block Layout
+.address {
+  display: flex;
+  width: 12rem;
+  padding-right: 1rem;
+  padding-left: 1rem;
+  margin-right: 2rem;
+}
+
+.address__row {
+  flex: 1 1 auto;
+}
+
+// Director Display
+.director-info {
+  display: flex;
+  color: $gray6;
+
+  .status {
+    flex: 1 1 auto;
   }
 
-  .actions .v-btn.actions__more-actions__btn {
-    min-width: 25px;
-    border-left: 1px solid $gray3;
-    border-radius: 0;
-    margin-left: 1px !important;
-    padding: 0 5px;
-    color: $gray6;
+  .actions {
+    flex: 0 0 auto;
   }
+}
 
-  .standalone__cessation-date__datepicker {
-    margin-top: 25px;
-    right: 0;
-    position: absolute;
-    z-index: 99;
+.director-initial {
+  max-width: 6rem;
+}
+
+.new-director-btn {
+  margin-bottom: 1.5rem !important;
+
+  .v-icon {
+    margin-left: -0.5rem;
   }
+}
 
-  .director-header {
-    padding: 1.25rem;
-    display: flex;
-    justify-content: flex-start;
-    height: 3rem;
-    background-color: rgba(77, 112, 147, 0.15);
+// V-chip customization
+.v-size--x-small {
+  height: 1.25rem;
+  margin-top: 0.5rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  font-weight: 700;
+}
 
-      span {
-        width: 14rem;
-        color: #000014;
-        font-size: 0.875rem;
-        font-weight: 600;
-        line-height: 1.1875rem;
-      }
+.remove, .remove .director-info {
+  color: $gray5 !important;
+}
+
+.new-director .meta-container,
+.meta-container.new-director {
+  flex-flow: column nowrap;
+
+  > label:first-child {
+    margin-bottom: 1.5rem;
   }
+}
 
-  .editFormStyle {
-    border: 1px solid red;
-    padding: 1rem;
+.director_dates {
+  font-size: 0.8rem;
+  padding-left: 1rem;
+}
+
+.actions .v-btn.actions__more-actions__btn {
+  min-width: 25px;
+  border-left: 1px solid $gray3;
+  border-radius: 0;
+  margin-left: 1px !important;
+  padding: 0 5px;
+  color: $gray6;
+}
+
+.standalone__cessation-date__datepicker {
+  margin-top: 25px;
+  right: 0;
+  position: absolute;
+  z-index: 99;
+}
+
+.director-header {
+  padding: 1.25rem;
+  display: flex;
+  justify-content: flex-start;
+  height: 3rem;
+  background-color: rgba(77, 112, 147, 0.15);
+
+  span {
+    width: 14rem;
+    color: #000014;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.1875rem;
   }
+}
+
+.editFormStyle {
+  border: 1px solid red;
+  padding: 1rem;
+}
 </style>

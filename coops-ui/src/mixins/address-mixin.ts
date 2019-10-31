@@ -4,7 +4,7 @@ import isEqual from 'lodash.isequal'
 /**
  * Mixin that provides some useful address utilities.
  */
-@Component
+@Component({})
 export default class AddressMixin extends Vue {
   /**
    * Compares two address objects and returns a boolean indicating

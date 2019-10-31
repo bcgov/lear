@@ -3,7 +3,7 @@ import { Component, Vue } from 'vue-property-decorator'
 /**
  * Mixin that provides some useful date utilities.
  */
-@Component
+@Component({})
 export default class DateMixin extends Vue {
   /**
    * Converts a JavaScript date object to a simple date string.

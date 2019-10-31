@@ -5,7 +5,7 @@ import Vue2Filters from 'vue2-filters'
  * Mixin that allows TS inheritance of specified external mixins.
  * @link https://github.com/vuejs/vue-class-component#using-mixins
  */
-@Component
+@Component({})
 export default class ExternalMixin extends Vue {
   limitBy (arr: any, n: number, offset: number): any {
     return Vue2Filters.mixin.methods.limitBy(arr, n, offset)
