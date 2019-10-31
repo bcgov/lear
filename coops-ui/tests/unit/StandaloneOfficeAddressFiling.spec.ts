@@ -518,8 +518,7 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
       // click the File & Pay button
       button.trigger('click')
       // work-around because click trigger isn't working
-      expect(await vm.onClickFilePay()).toBe(true)
-
+      await vm.onClickFilePay()
       await flushPromises()
 
       // verify v-tooltip text
@@ -546,7 +545,7 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
-    router.push({ name: 'standalone-addresses', params: { id: '123' } }) // new filing id
+    router.push({ name: 'standalone-addresses', params: { id: '123' } }) // existing filing id
     const wrapper = mount(StandaloneOfficeAddressFiling, {
       store,
       localVue,
@@ -584,8 +583,7 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
     // click the File & Pay button
     button.trigger('click')
     // work-around because click trigger isn't working
-    expect(await vm.onClickFilePay()).toBe(true)
-    await flushPromises()
+    await vm.onClickFilePay()
 
     // verify v-tooltip text - Todo: How to get the tool tip rendered outside the wrapper
     // const tooltipText = wrapper.find('#coa-file-pay-btn + span').text()
@@ -976,7 +974,7 @@ describe('Standalone Office Address Filing - Part 6 - Error/Warning dialogues', 
       const localVue = createLocalVue()
       localVue.use(VueRouter)
       const router = mockRouter.mock()
-      router.push({ name: 'standalone-addresses', params: { id: '123' } }) // new filing id
+      router.push({ name: 'standalone-addresses', params: { id: '123' } }) // existing filing id
       const wrapper = mount(StandaloneOfficeAddressFiling, {
         store,
         localVue,

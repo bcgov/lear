@@ -704,7 +704,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       button.trigger('click')
       await flushPromises()
       // work-around because click trigger isn't working
-      expect(await vm.onClickFilePay()).toBe(true)
+      await vm.onClickFilePay()
 
       // verify redirection
       const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
@@ -725,7 +725,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       const localVue = createLocalVue()
       localVue.use(VueRouter)
       const router = mockRouter.mock()
-      router.push({ name: 'annual-report', params: { id: '123' } }) // new filing id
+      router.push({ name: 'annual-report', params: { id: '123' } }) // existing filing id
       const wrapper = mount(AnnualReport, {
         store,
         localVue,
@@ -770,7 +770,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       // click the File & Pay button
       button.trigger('click')
       // work-around because click trigger isn't working
-      expect(await vm.onClickFilePay()).toBe(true)
+      await vm.onClickFilePay()
 
       // verify redirection
       const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
@@ -1308,7 +1308,7 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
     wrapper.destroy()
   })
 
-  it('sets the required fields to display errors from the api after a post call', async () => {
+  it('sets the required fields to display errors from the api after a POST call', async () => {
     // make sure form is validated
     vm.staffPaymentFormValid = true
     vm.agmDateValid = true
@@ -1341,7 +1341,7 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
     expect(vm.saveWarnings[0].warning).toBe('warn msg post')
   })
 
-  it('sets the required fields to display errors from the api after a put call', async () => {
+  it('sets the required fields to display errors from the api after a PUT call', async () => {
     // make sure form is validated
     vm.staffPaymentFormValid = true
     vm.agmDateValid = true
@@ -1360,13 +1360,16 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
       deliveryAddress: {},
       mailingAddress: {}
     }
+
     // set the filingId
     vm.filingId = 123
+
     // click the Save button
     wrapper.find('#ar-file-pay-btn').trigger('click')
     // work-around because click trigger isn't working
     await vm.onClickFilePay()
     await flushPromises()
+
     expect(vm.saveErrorDialog).toBe(true)
     expect(vm.saveErrors.length).toBe(1)
     expect(vm.saveErrors[0].error).toBe('err msg put')

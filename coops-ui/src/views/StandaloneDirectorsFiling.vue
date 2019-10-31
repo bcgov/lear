@@ -452,7 +452,7 @@ export default {
 
     async onClickFilePay () {
       // prevent double saving
-      if (this.busySaving) return true
+      if (this.busySaving) return
 
       this.filingPaying = true
       const filing = await this.saveFiling(false) // not a draft
@@ -479,7 +479,6 @@ export default {
         }
       }
       this.filingPaying = false
-      return true
     },
 
     async saveFiling (isDraft) {

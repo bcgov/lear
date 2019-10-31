@@ -4,7 +4,6 @@ import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
 import sinon from 'sinon'
 import { createLocalVue, shallowMount, mount } from '@vue/test-utils'
-import flushPromises from 'flush-promises'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
 import axios from '@/axios-auth'
@@ -360,7 +359,7 @@ describe('Standalone Directors Filing - Part 2 - Resuming', () => {
   })
 })
 
-describe('Standalone Directors Filing - Part 3 - Submitting', () => {
+describe('Standalone Directors Filing - Part 3A - Submitting filing that needs to be paid', () => {
   const { assign } = window.location
 
   beforeAll(() => {
@@ -378,30 +377,8 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
 
-    let s = sinon.stub(axios, 'get')
-
-    s.withArgs('CP0001191/tasks')
-      .returns(new Promise((resolve) => resolve({
-        data: {
-          'tasks': [
-            {
-              'task': {
-                'filing': {
-                  'header': {
-                    'name': 'annualReport',
-                    'ARFilingYear': 2017,
-                    'status': 'NEW'
-                  }
-                }
-              },
-              'enabled': true,
-              'order': 1
-            }
-          ]
-        }
-      })))
     // mock "fetch a draft filing" endpoint
-    s.withArgs('CP0001191/filings/123')
+    sinon.stub(axios, 'get').withArgs('CP0001191/filings/123')
       .returns(new Promise((resolve) => resolve({
         data:
           {
@@ -453,7 +430,8 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
                 'filingId': 123,
                 'certifiedBy': 'Full Name',
                 'email': 'no_one@never.get',
-                'paymentToken': '321'
+                'paymentToken': '321',
+                'paymentStatus': 'CREATED'
               }
             }
           }
@@ -483,7 +461,8 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
                 'filingId': 123,
                 'certifiedBy': 'Full Name',
                 'email': 'no_one@never.get',
-                'paymentToken': '321'
+                'paymentToken': '321',
+                'paymentStatus': 'CREATED'
               }
             }
           }
@@ -494,140 +473,138 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     sinon.restore()
   })
 
-  it('saves a new filing and redirects to Pay URL when this is a new AR and the File & Pay button is clicked as a Coop',
-    async () => {
-      // init store
-      store.state.entityType = EntityTypes.Coop
+  it('saves a new filing and redirects to Pay URL when this is a new filing and the File & Pay button ' +
+    'is clicked - as a Coop',
+  async () => {
+    // init store
+    store.state.entityType = EntityTypes.Coop
 
-      // set necessary session variables
-      sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-      sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+    // set necessary session variables
+    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
 
-      const localVue = createLocalVue()
-      localVue.use(VueRouter)
-      const router = mockRouter.mock()
-      router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
-      const wrapper = mount(StandaloneDirectorsFiling, {
-        store,
-        localVue,
-        router,
-        stubs: {
-          Directors: true,
-          Certify: true,
-          StaffPayment: true,
-          Affix: true,
-          SbcFeeSummary: true,
-          ConfirmDialog: true,
-          PaymentErrorDialog: true,
-          ResumeErrorDialog: true,
-          SaveErrorDialog: true
-        },
-        vuetify
-      })
-      const vm: any = wrapper.vm as any
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
+    const wrapper = mount(StandaloneDirectorsFiling, {
+      store,
+      localVue,
+      router,
+      stubs: {
+        Directors: true,
+        Certify: true,
+        StaffPayment: true,
+        Affix: true,
+        SbcFeeSummary: true,
+        ConfirmDialog: true,
+        PaymentErrorDialog: true,
+        ResumeErrorDialog: true,
+        SaveErrorDialog: true
+      },
+      vuetify
+    })
+    const vm: any = wrapper.vm as any
 
-      // make sure form is validated
-      vm.inFilingReview = true
-      vm.directorFormValid = true
-      vm.staffPaymentFormValid = true
-      vm.certifyFormValid = true
+    // make sure form is validated
+    vm.inFilingReview = true
+    vm.directorFormValid = true
+    vm.staffPaymentFormValid = true
+    vm.certifyFormValid = true
 
-      vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'CP' }] // dummy data
-      expect(vm.validated).toEqual(true)
+    vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'CP' }] // dummy data
+    expect(vm.validated).toEqual(true)
 
-      // sanity check
-      expect(jest.isMockFunction(window.location.assign)).toBe(true)
+    // sanity check
+    expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
-      // TODO: verify that new filing was created
+    // TODO: verify that new filing was created
 
-      const button = wrapper.find('#cod-file-pay-btn')
-      expect(button.attributes('disabled')).not.toBe('true')
+    const button = wrapper.find('#cod-file-pay-btn')
+    expect(button.attributes('disabled')).not.toBe('true')
 
-      // click the File & Pay button
-      button.trigger('click')
-      // work-around because click trigger isn't working
-      expect(await vm.onClickFilePay()).toBe(true)
-      await flushPromises()
+    // click the File & Pay button
+    button.trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickFilePay()
 
-      // verify v-tooltip text - Todo - Tool tip is outside the wrapper. Yet to find out how to get hold of that.
-      // const tooltipText = wrapper.find('#cod-file-pay-btn + span').text()
-      // expect(tooltipText).toContain('Ensure all of your information is entered correctly before you File & Pay.')
-      // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
+    // verify v-tooltip text - Todo - Tool tip is outside the wrapper. Yet to find out how to get hold of that.
+    // const tooltipText = wrapper.find('#cod-file-pay-btn + span').text()
+    // expect(tooltipText).toContain('Ensure all of your information is entered correctly before you File & Pay.')
+    // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
-      // verify redirection
-      const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
-        encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
-      expect(window.location.assign).toHaveBeenCalledWith(payURL)
+    // verify redirection
+    const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
+      encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
+    expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
-      wrapper.destroy()
-    }
-  )
+    wrapper.destroy()
+  })
 
-  it('saves a new filing and redirects to Pay URL when this is a new AR and the File & Pay button is clicked as a Bcorp',
-    async () => {
-      // init store
-      store.state.entityType = EntityTypes.BCorp
+  it('saves a new filing and redirects to Pay URL when this is a new filing and the File & Pay button ' +
+    'is clicked - as a Bcorp',
+  async () => {
+    // init store
+    store.state.entityType = EntityTypes.BCorp
 
-      // set necessary session variables
-      sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-      sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+    // set necessary session variables
+    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
 
-      const localVue = createLocalVue()
-      localVue.use(VueRouter)
-      const router = mockRouter.mock()
-      router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
-      const wrapper = mount(StandaloneDirectorsFiling, {
-        store,
-        localVue,
-        router,
-        stubs: {
-          Directors: true,
-          Certify: true,
-          Affix: true,
-          SbcFeeSummary: true,
-          ConfirmDialog: true,
-          PaymentErrorDialog: true,
-          ResumeErrorDialog: true,
-          SaveErrorDialog: true
-        },
-        vuetify
-      })
-      const vm: any = wrapper.vm as any
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
+    const wrapper = mount(StandaloneDirectorsFiling, {
+      store,
+      localVue,
+      router,
+      stubs: {
+        Directors: true,
+        Certify: true,
+        Affix: true,
+        SbcFeeSummary: true,
+        ConfirmDialog: true,
+        PaymentErrorDialog: true,
+        ResumeErrorDialog: true,
+        SaveErrorDialog: true
+      },
+      vuetify
+    })
+    const vm: any = wrapper.vm as any
 
-      // make sure form is validated
-      vm.inFilingReview = true
-      vm.directorFormValid = true
-      vm.certifyFormValid = true
-      vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'BC' }] // dummy data
-      expect(vm.validated).toEqual(true)
+    // make sure form is validated
+    vm.inFilingReview = true
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
+    vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'BC' }] // dummy data
+    expect(vm.validated).toEqual(true)
 
-      // sanity check
-      expect(jest.isMockFunction(window.location.assign)).toBe(true)
+    // sanity check
+    expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
-      // TODO: verify that new filing was created
+    // TODO: verify that new filing was created
 
-      const button = wrapper.find('#cod-file-pay-btn')
-      expect(button.attributes('disabled')).not.toBe('true')
+    const button = wrapper.find('#cod-file-pay-btn')
+    expect(button.attributes('disabled')).not.toBe('true')
 
-      // click the File & Pay button
-      button.trigger('click')
-      // work-around because click trigger isn't working
-      expect(await vm.onClickFilePay()).toBe(true)
-      await flushPromises()
+    // click the File & Pay button
+    button.trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickFilePay()
 
-      // verify v-tooltip text - Todo - Tool tip is outside the wrapper. Yet to find out how to get hold of that.
-      // const tooltipText = wrapper.find('#cod-file-pay-btn + span').text()
-      // expect(tooltipText).toContain('Ensure all of your information is entered correctly before you File & Pay.')
-      // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
+    // verify v-tooltip text - Todo - Tool tip is outside the wrapper. Yet to find out how to get hold of that.
+    // const tooltipText = wrapper.find('#cod-file-pay-btn + span').text()
+    // expect(tooltipText).toContain('Ensure all of your information is entered correctly before you File & Pay.')
+    // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
-      // verify redirection
-      const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
-        encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
-      expect(window.location.assign).toHaveBeenCalledWith(payURL)
+    // verify redirection
+    const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
+      encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
+    expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
-      wrapper.destroy()
-    }
-  )
+    wrapper.destroy()
+  })
 
   it('updates an existing filing and redirects to Pay URL when this is a draft filing and the ' +
     'File & Pay button is clicked',
@@ -639,7 +616,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
-    router.push({ name: 'standalone-directors', params: { id: '123' } }) // new filing id
+    router.push({ name: 'standalone-directors', params: { id: '123' } }) // existing filing id
     const wrapper = mount(StandaloneDirectorsFiling, {
       store,
       localVue,
@@ -679,7 +656,7 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     // click the File & Pay button
     button.trigger('click')
     // work-around because click trigger isn't working
-    expect(await vm.onClickFilePay()).toBe(true)
+    await vm.onClickFilePay()
 
     // verify v-tooltip text - To find out how to get the tool tip text outside the wrapper
     // const tooltipText = wrapper.find('#cod-file-pay-btn + span').text()
@@ -690,6 +667,104 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
       encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+    wrapper.destroy()
+  })
+})
+
+describe('Standalone Directors Filing - Part 3B - Submitting filing that doesn\'t need to be paid', () => {
+  beforeEach(async () => {
+    // init store
+    store.state.entityIncNo = 'CP0001191'
+    store.state.entityName = 'Legal Name - CP0001191'
+
+    // mock "save and file" endpoint
+    sinon.stub(axios, 'post').withArgs('CP0001191/filings')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filing': {
+              'changeOfDirectors': {
+                'directors': sampleDirectors
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'changeOfDirectors',
+                'date': '2017-06-06',
+                'submitter': 'cp0001191',
+                'status': 'PENDING',
+                'filingId': 123,
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
+                'paymentToken': '321',
+                'paymentStatus': 'COMPLETED'
+              }
+            }
+          }
+      })))
+
+    sinon.stub(axios, 'get').withArgs('CP0001191/tasks')
+      .returns(new Promise((resolve) => resolve({
+        data: {
+          'tasks': [
+            {
+              'task': {
+                'filing': {
+                  'header': {
+                    'name': 'annualReport',
+                    'ARFilingYear': 2017,
+                    'status': 'NEW'
+                  }
+                }
+              },
+              'enabled': true,
+              'order': 1
+            }
+          ]
+        }
+      })))
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  it('saves a new filing and routes to Dashboard URL when this is a new filing and the ' +
+    'File & Pay button is clicked',
+  async () => {
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
+
+    const wrapper = shallowMount(StandaloneDirectorsFiling, { store, localVue, router })
+    const vm: any = wrapper.vm as any
+
+    // make sure form is validated
+    vm.inFilingReview = true
+    vm.directorFormValid = true
+    vm.staffPaymentFormValid = true
+    vm.certifyFormValid = true
+    vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'CP' }] // dummy data
+
+    // go to summary page
+    vm.showSummary()
+
+    wrapper.find('#cod-file-pay-btn')
+    // work-around because click trigger isn't working
+    await vm.onClickFilePay()
+
+    // verify routing back to Dashboard URL
+    expect(vm.$route.name).toBe('dashboard')
+
+    // verify route param
+    expect(vm.$route.query).toEqual({ filing_id: '123' })
 
     wrapper.destroy()
   })
@@ -742,8 +817,7 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
           }
       })))
 
-    let s = sinon.stub(axios, 'get')
-    s.withArgs('CP0001191/tasks')
+    sinon.stub(axios, 'get').withArgs('CP0001191/tasks')
       .returns(new Promise((resolve) => resolve({
         data: {
           'tasks': [
@@ -1079,7 +1153,7 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
     sinon.restore()
   })
 
-  it('sets the required fields to display errors from the api after a post call',
+  it('sets the required fields to display errors from the api after a POST call',
     async () => {
       const localVue = createLocalVue()
       localVue.use(VueRouter)
@@ -1131,12 +1205,12 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
     }
   )
 
-  it('sets the required fields to display errors from the api after a put call',
+  it('sets the required fields to display errors from the api after a PUT call',
     async () => {
       const localVue = createLocalVue()
       localVue.use(VueRouter)
       const router = mockRouter.mock()
-      router.push({ name: 'standalone-directors', params: { id: '123' } }) // new filing id
+      router.push({ name: 'standalone-directors', params: { id: '123' } }) // existing filing id
       const wrapper = mount(StandaloneDirectorsFiling, {
         store,
         localVue,
