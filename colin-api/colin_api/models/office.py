@@ -28,6 +28,7 @@ class Office:
     delivery_address = None
     mailing_address = None
     event_id = None
+    office_type = None
 
     # TODO - Remove hardcoded dictionary
     office_codes = {
@@ -47,8 +48,9 @@ class Office:
         """Return dict camel case version of self."""
         return {
             'deliveryAddress': self.delivery_address,
-            'mailingAddress': self.mailing_address
-        }
+            'mailingAddress': self.mailing_address,
+            'officeType' : self.office_type
+        } 
 
     @classmethod
     def get_current(cls, identifier: str = None):
@@ -57,33 +59,42 @@ class Office:
             return None
 
         querystring = ("""
-            select start_event_id, mailing_addr_id, delivery_addr_id
+            select start_event_id, mailing_addr_id, delivery_addr_id, office_typ_cd
             from office
-            where corp_num=:identifier and end_event_id is null and office_typ_cd='RG'
+            where corp_num=:identifier and end_event_id is null
             """)
 
         try:
             cursor = DB.connection.cursor()
             cursor.execute(querystring, identifier=identifier)
 
-            office_info = cursor.fetchone()
+            office_info = cursor.fetchall()
+            office_arr = {}
+
             if not office_info:
                 raise OfficeNotFoundException(identifier=identifier)
+            
+            for office_item in office_info:
+  
+                office = dict(zip([x[0].lower() for x in cursor.description], office_item))
+                office_obj = Office()
+                office_obj.event_id = office['start_event_id']
+                office_obj.delivery_address = Address.get_by_address_id(office['delivery_addr_id']).as_dict()
+                office_obj.office_type = office['office_typ_cd']
 
-            test_second_office = cursor.fetchone()
-            if test_second_office:
-                current_app.logger.error('got more than 1 current registered office address for {}'.format(identifier))
-
-            office_info = dict(zip([x[0].lower() for x in cursor.description], office_info))
-            office_obj = Office()
-            office_obj.event_id = office_info['start_event_id']
-            office_obj.delivery_address = Address.get_by_address_id(office_info['delivery_addr_id']).as_dict()
-            if office_info['mailing_addr_id']:
-                office_obj.mailing_address = Address.get_by_address_id(office_info['mailing_addr_id']).as_dict()
-            else:
-                office_obj.mailing_address = office_obj.delivery_address
-            return office_obj
-
+                if office['mailing_addr_id']:
+                    office_obj.mailing_address = Address.get_by_address_id(office['mailing_addr_id']).as_dict()
+                else:
+                    office_obj.mailing_address = office_obj.delivery_address
+                
+                for item in office_obj.office_codes:
+                    k = office_obj.office_codes[item]['code']
+                    if k == office_obj.office_type:
+                        if item not in office_arr.keys():
+                            office_arr[item] = office_obj.as_dict()
+                        else:
+                            current_app.logger.error('got more than 1 current registered office address for {}'.format(identifier))
+            return office_arr            
         except Exception as err:
             current_app.logger.error('error getting office for corp: {}'.format(identifier))
             raise err
