@@ -30,9 +30,5 @@ TEST_SCHEMAS_DATA = [
     ('special_resolution.json'),
     ('change_of_name.json'),
     ('stub_filing.json'),
-<<<<<<< HEAD
-    ('office.json')
-=======
     ('office.json'),
->>>>>>> a964ab3e8d9738b4610e0cd52ecfa40976c82deb
 ]
