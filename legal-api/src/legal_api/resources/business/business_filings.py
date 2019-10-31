@@ -16,12 +16,12 @@
 Provides all the search and retrieval from the business entity datastore.
 """
 import datetime
-import datedelta
 from http import HTTPStatus
 from typing import Tuple
 
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
+import datedelta
 from flask import current_app, g, jsonify, request
 from flask_babel import _
 from flask_jwt_oidc import JwtManager

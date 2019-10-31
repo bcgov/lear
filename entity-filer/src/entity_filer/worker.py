@@ -52,7 +52,7 @@ def get_filing_by_payment_id(payment_id: int) -> Filing:
     return Filing.get_filing_by_payment_token(str(payment_id))
 
 
-def process_filing(payment_token, flask_app):
+def process_filing(payment_token, flask_app):  # pylint: disable=too-many-branches;
     """Render the filings contained in the submission."""
     if not flask_app:
         raise QueueException('Flask App not available.')
