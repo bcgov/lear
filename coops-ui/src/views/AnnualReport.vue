@@ -291,7 +291,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['currentDate', 'ARFilingYear', 'lastAgmDate', 'entityName',
+    ...mapState(['currentDate', 'ARFilingYear', 'lastAgmDate', 'entityType', 'entityName',
       'entityIncNo', 'entityFoundingDate', 'lastPreLoadFilingDate']),
 
     ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState', 'lastCOAFilingDate', 'lastCODFilingDate']),
@@ -690,7 +690,7 @@ export default {
         }
       }
       if (setting === 'add' && !added) {
-        this.filingData.push({ filingTypeCode: filing, entityType: 'CP' })
+        this.filingData.push({ filingTypeCode: filing, entityType: this.entityType })
       }
     },
 

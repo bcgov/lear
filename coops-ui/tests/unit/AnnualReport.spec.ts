@@ -652,6 +652,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       // set necessary session variables
       sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
       sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+      store.state.entityType = EntityTypes.Coop
 
       const localVue = createLocalVue()
       localVue.use(VueRouter)
