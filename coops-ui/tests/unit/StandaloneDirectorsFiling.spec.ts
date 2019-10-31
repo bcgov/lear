@@ -311,8 +311,30 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
 
+    let s = sinon.stub(axios, 'get')
+
+    s.withArgs('CP0001191/tasks')
+      .returns(new Promise((resolve) => resolve({
+        data: {
+          'tasks': [
+            {
+              'task': {
+                'filing': {
+                  'header': {
+                    'name': 'annualReport',
+                    'ARFilingYear': 2017,
+                    'status': 'NEW'
+                  }
+                }
+              },
+              'enabled': true,
+              'order': 1
+            }
+          ]
+        }
+      })))
     // mock "fetch a draft filing" endpoint
-    sinon.stub(axios, 'get').withArgs('CP0001191/filings/123')
+    s.withArgs('CP0001191/filings/123')
       .returns(new Promise((resolve) => resolve({
         data:
           {
@@ -690,6 +712,28 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
               }
             }
           }
+      })))
+
+    let s = sinon.stub(axios, 'get')
+    s.withArgs('CP0001191/tasks')
+      .returns(new Promise((resolve) => resolve({
+        data: {
+          'tasks': [
+            {
+              'task': {
+                'filing': {
+                  'header': {
+                    'name': 'annualReport',
+                    'ARFilingYear': 2017,
+                    'status': 'NEW'
+                  }
+                }
+              },
+              'enabled': true,
+              'order': 1
+            }
+          ]
+        }
       })))
   })
 

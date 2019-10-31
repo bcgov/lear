@@ -102,6 +102,12 @@
                             "type": "string",
                             "title": "A valid payment token for this filing against this business."
                         },
+                        "routingSlipNumber": {
+                            "type": "string",
+                            "title": "A valid routing slip number in case of a staff filing.",
+                            "maxLength": 9,
+                            "pattern": "^\\d{9}$"
+                        },
                         "submitter": {
                             "type": "string",
                             "title": "Account name of the person submitting this filing."

@@ -6,11 +6,11 @@
       <v-card>
         <v-card-text>
           Are you sure you want to remove
-            <span v-if="activeDirectorToDelete" class="font-weight-bold">
-              <span>{{activeDirectorToDelete.officer.firstName}} </span>
-              <span>{{activeDirectorToDelete.officer.middleInitial}} </span>
-              <span>{{activeDirectorToDelete.officer.lastName}}</span>
-            </span>
+          <span v-if="activeDirectorToDelete" class="font-weight-bold">
+            <span>{{activeDirectorToDelete.officer.firstName}} </span>
+            <span>{{activeDirectorToDelete.officer.middleInitial}} </span>
+            <span>{{activeDirectorToDelete.officer.lastName}}</span>
+          </span>
           from your Directors list?
         </v-card-text>
 
@@ -29,7 +29,8 @@
     <v-expand-transition>
       <div v-show="!showNewDirectorForm">
         <v-btn class="new-director-btn" outlined color="primary" :disabled="!componentEnabled || directorEditInProgress"
-          @click="addNewDirector">
+          @click="addNewDirector"
+        >
           <v-icon>mdi-plus</v-icon>
           <span>Appoint New Director</span>
         </v-btn>
@@ -42,30 +43,33 @@
         <ul class="list new-director" v-show="showNewDirectorForm">
           <li class="container">
             <div class="meta-container">
+              <label class="appoint-header">Appoint New Director</label>
               <div class="meta-container__inner">
-                <label class="appoint-header">Appoint New Director</label>
                 <v-form class="appoint-form" ref="newDirectorForm" v-on:submit.prevent="addNewDirector"
-                        v-model="directorFormValid" lazy-validation>
+                  v-model="directorFormValid" lazy-validation
+                >
                   <div class="form__row three-column">
                     <v-text-field filled class="item" label="First Name" id="new-director__first-name"
                       v-model="director.officer.firstName"
                       :rules="directorFirstNameRules"
-                      required></v-text-field>
+                      required
+                    />
                     <v-text-field filled label="Initial" class="item director-initial"
                       v-model="director.officer.middleInitial"
-                    ></v-text-field>
+                    />
                     <v-text-field filled class="item" label="Last Name"
                       v-model="director.officer.lastName"
                       :rules="directorLastNameRules"
-                      required></v-text-field>
+                      required
+                    />
                   </div>
 
                   <label class="address-sub-header">Delivery Address</label>
                   <div class="address-wrapper">
                     <BaseAddress ref="baseAddressNew"
-                       v-bind:editing="true"
-                       :schema="addressSchema"
-                       @update:address="baseAddressWatcher"
+                      :editing="true"
+                      :schema="addressSchema"
+                      @update:address="updateBaseAddress"
                     />
                   </div>
                   <div class="form__row" v-if="entityFilter(EntityTypes.BCorp)">
@@ -73,14 +77,14 @@
                       class="inherit-checkbox"
                       label="Mailing Address same as Delivery Address"
                       v-model="inheritDeliveryAddress"
-                    ></v-checkbox>
+                    />
                     <div v-if="!inheritDeliveryAddress">
                       <label class="address-sub-header">Mailing Address</label>
                       <div class="address-wrapper">
                         <BaseAddress ref="mailAddressNew"
-                          v-bind:editing="true"
+                          :editing="true"
                           :schema="addressSchema"
-                          @update:address="mailingAddressWatcher"
+                          @update:address="updateMailingAddress"
                         />
                       </div>
                     </div>
@@ -104,16 +108,15 @@
                           append-icon="event"
                           v-on="on"
                           :rules="directorAppointmentDateRules"
-                        >
-                        </v-text-field>
+                        />
                       </template>
                       <v-date-picker
                         id="new-director__appointment-date__datepicker"
                         v-model="director.appointmentDate"
                         :min="earliestDateToSet"
                         :max="currentDate"
-                        no-title>
-                      </v-date-picker>
+                        no-title
+                      />
                     </v-menu>
 
                     <v-menu
@@ -132,23 +135,26 @@
                           append-icon="event"
                           v-on="on"
                           :rules="directorCessationDateRules"
-                          box>
-                        </v-text-field>
+                          box
+                        />
                       </template>
                       <v-date-picker
                         id="new-director__cessation-date__datepicker"
                         v-model="director.cessationDate"
                         :min="earliestDateToSet"
                         :max="currentDate"
-                        no-title>
-                      </v-date-picker>
+                        no-title
+                      />
                     </v-menu>
                   </div>
                   -->
 
                   <div class="form__row form__btns">
-                    <v-btn class="form-cancel-btn" @click="cancelNewDirector">Cancel</v-btn>
+                    <v-btn color="error" disabled>
+                      <span>Remove</span>
+                    </v-btn>
                     <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
+                    <v-btn class="form-cancel-btn" @click="cancelNewDirector">Cancel</v-btn>
                   </div>
                 </v-form>
               </div>
@@ -169,7 +175,8 @@
           :id="'director-' + director.id"
           v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
           v-for="(director, index) in orderBy(directors, 'id', -1)"
-          v-bind:key="index">
+          v-bind:key="index"
+        >
           <div class="meta-container">
             <label>
               <span>{{director.officer.firstName}} </span>
@@ -178,31 +185,36 @@
               <div class="director-status">
                 <v-scale-transition>
                   <v-chip x-small label color="blue" text-color="white"
-                          v-show="isNew(director) && !director.cessationDate">
+                    v-show="isNew(director) && !director.cessationDate"
+                  >
                     New
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
                   <v-chip x-small label text-color="rgba(0,0,0,.38)"
-                          v-show="!isActive(director) || !isActionable(director)">
+                    v-show="!isActive(director) || !isActionable(director)"
+                  >
                     Ceased
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
                   <v-chip x-small label color="blue lighten-2" text-color="white"
-                          v-show="isNew(director) && director.cessationDate">
+                    v-show="isNew(director) && director.cessationDate"
+                  >
                     Appointed &amp; Ceased
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
                   <v-chip x-small label color="blue" text-color="white"
-                          v-if="isNameChanged(director)">
+                    v-if="isNameChanged(director)"
+                  >
                     Name Changed
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
                   <v-chip x-small label color="blue" text-color="white"
-                          v-if="isAddressChanged(director)">
+                    v-if="isAddressChanged(director)"
+                  >
                     Address Changed
                   </v-chip>
                 </v-scale-transition>
@@ -212,13 +224,13 @@
               <v-expand-transition>
                 <div class="director-info" v-show="activeIndex !== index">
                   <div class="address">
-                    <BaseAddress v-bind:address="director.deliveryAddress" />
+                    <BaseAddress :address="director.deliveryAddress" />
                   </div>
                   <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
                     <span v-if="isSameAddress(director.deliveryAddress, director.mailingAddress)">
                       Same as Delivery Address
                     </span>
-                    <BaseAddress v-else v-bind:address="director.mailingAddress" />
+                    <BaseAddress v-else :address="director.mailingAddress" />
                   </div>
                   <div class="director_dates">
                     <div class="director_dates__date">{{ director.appointmentDate }}</div>
@@ -231,7 +243,8 @@
                     <span v-show="isNew(director)">
                       <v-btn small text color="primary" :disabled="!componentEnabled || directorEditInProgress"
                         :id="'director-' + director.id + '-change-btn'"
-                        @click="editDirector(index)">
+                        @click="editDirector(index)"
+                      >
                         <v-icon small>mdi-pencil</v-icon>
                         <span>Edit</span>
                       </v-btn>
@@ -241,9 +254,7 @@
                       <!--
                       <v-menu offset-y>
                         <template v-slot:activator="{ on }">
-                          <v-btn text small class="actions__more-actions__btn"
-                            v-on="on"
-                          >
+                          <v-btn text small class="actions__more-actions__btn" v-on="on">
                             <v-icon>arrow_drop_down</v-icon>
                           </v-btn>
                         </template>
@@ -261,7 +272,8 @@
                       <v-btn small text color="primary" :disabled="!componentEnabled || directorEditInProgress"
                         class="cease-btn"
                         :id="'director-' + director.id + '-cease-btn'"
-                        @click="ceaseDirector(director)">
+                        @click="ceaseDirector(director)"
+                      >
                         <v-icon small>{{isActive(director) ? 'mdi-close':'mdi-undo'}}</v-icon>
                         <span>{{isActive(director) ? 'Cease':'Undo'}}</span>
                       </v-btn>
@@ -269,9 +281,7 @@
                       <span v-show="isActive(director)">
                         <v-menu offset-y>
                           <template v-slot:activator="{ on }">
-                            <v-btn text small class="actions__more-actions__btn"
-                              v-on="on"
-                            >
+                            <v-btn text small class="actions__more-actions__btn" v-on="on">
                               <v-icon>mdi-menu-down</v-icon>
                             </v-btn>
                           </template>
@@ -320,14 +330,14 @@
                       v-model="director.officer.firstName"
                       :rules="directorFirstNameRules"
                       required
-                    ></v-text-field>
+                    />
                     <v-text-field filled label="Initial" class="item director-initial"
                       v-model="director.officer.middleInitial"
-                    ></v-text-field>
+                    />
                     <v-text-field filled label="Last Name" class="item"
                       v-model="director.officer.lastName"
                       :rules="directorLastNameRules"
-                    ></v-text-field>
+                    />
                   </div>
 
                   <BaseAddress ref="baseAddressEdit"
@@ -335,7 +345,7 @@
                     :address="director.deliveryAddress"
                     :editing="true"
                     :schema="addressSchema"
-                    @update:address="baseAddressWatcher"
+                    @update:address="updateBaseAddress"
                     :key="activeIndex"
                   />
 
@@ -346,7 +356,7 @@
                       class="inherit-checkbox"
                       label="Mailing Address same as Delivery Address"
                       v-model="inheritDeliveryAddress"
-                    ></v-checkbox>
+                    />
                     <div v-if="!inheritDeliveryAddress">
                       <label class="address-sub-header">Mailing Address</label>
                       <div class="address-wrapper">
@@ -354,7 +364,7 @@
                           :address="director.mailingAddress"
                           :editing="true"
                           :schema="addressSchema"
-                          @update:address="mailingAddressWatcher"
+                          @update:address="updateMailingAddress"
                           :key="activeIndex"
                         />
                       </div>
@@ -380,16 +390,16 @@
                           append-icon="event"
                           v-on="on"
                           :rules="directorAppointmentDateRules"
-                          box>
-                        </v-text-field>
+                          box
+                        />
                       </template>
                       <v-date-picker
                         class="edit-director__appointment-date__datepicker"
                         v-model="director.appointmentDate"
                         :min="earliestDateToSet"
                         :max="currentDate"
-                        no-title>
-                      </v-date-picker>
+                        no-title
+                      />
                     </v-menu>
 
                     <v-menu
@@ -407,16 +417,16 @@
                           append-icon="event"
                           v-on="on"
                           :rules="directorCessationDateRules"
-                          box>
-                        </v-text-field>
+                          box
+                        />
                       </template>
                       <v-date-picker
                         class="edit-director__cessation-date__datepicker"
                         v-model="director.cessationDate"
                         :min="earliestDateToSet"
                         :max="currentDate"
-                        no-title>
-                      </v-date-picker>
+                        no-title
+                      />
                     </v-menu>
                   </div>
                   -->
@@ -424,13 +434,15 @@
                   <div class="form__row form__btns">
                     <v-btn color="error"
                       v-show="isNew(director)"
-                      @click="deleteDirector(director.id)">
+                      @click="deleteDirector(director.id)"
+                    >
                       <span>Remove</span>
                     </v-btn>
-                    <v-btn class="form-cancel-btn" @click="cancelEditDirector()">Cancel</v-btn>
                     <v-btn class="form-primary-btn" color="primary"
-                      @click="saveEditDirector(index, director.id)">
+                      @click="saveEditDirector(index, director.id)"
+                    >
                       Done</v-btn>
+                    <v-btn class="form-cancel-btn" @click="cancelEditDirector()">Cancel</v-btn>
                   </div>
                 </v-form>
               </v-expand-transition>
@@ -595,56 +607,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private get directorLastNameRules (): Array<Function> {
     return [
       v => !!v || 'A last name is required'
-    ]
-  }
-
-  /**
-   * Computed value.
-   * @returns The array of validations rules for a director's street address.
-   */
-  private get directorStreetRules (): Array<Function> {
-    return [
-      v => !!v || 'A street address is required'
-    ]
-  }
-
-  /**
-   * Computed value.
-   * @returns The array of validations rules for a director's city.
-   */
-  private get directorCityRules (): Array<Function> {
-    return [
-      v => !!v || 'A city is required'
-    ]
-  }
-
-  /**
-   * Computed value.
-   * @returns The array of validations rules for a director's region.
-   */
-  private get directorRegionRules (): Array<Function> {
-    return [
-      v => !!v || 'A region is required'
-    ]
-  }
-
-  /**
-   * Computed value.
-   * @returns The array of validations rules for a director's postal code.
-   */
-  private get directorPostalCodeRules (): Array<Function> {
-    return [
-      v => !!v || 'A postal code is required'
-    ]
-  }
-
-  /**
-   * Computed value.
-   * @returns The array of validations rules for a director's country.
-   */
-  private get directorCountryRules (): Array<Function> {
-    return [
-      v => !!v || 'A country is required'
     ]
   }
 
@@ -1124,7 +1086,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * our inProgressAddress holder. To be used when we want to save the data.
    * @param val The new value.
    */
-  private baseAddressWatcher (val): void {
+  private updateBaseAddress (val): void {
     this.inProgressAddress = val
   }
 
@@ -1133,7 +1095,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * our inProgressMailAddress holder. To be used when we want to save the data.
    * @param val The new value.
    */
-  private mailingAddressWatcher (val): void {
+  private updateMailingAddress (val): void {
     this.inProgressMailAddress = val
   }
 
@@ -1407,10 +1369,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     line-height: 1.5rem;
   }
 
-  .appoint-form {
-    margin-top: 2rem;
-  }
-
   .address-sub-header {
     padding-bottom: 1.5rem;
     font-size: 1rem;
@@ -1554,11 +1512,5 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   .editFormStyle {
     border: 1px solid red;
     padding: 1rem;
-  }
-
-  .form-cancel-btn {
-    position: absolute;
-    right: 0;
-    margin-right: 5rem;
   }
 </style>

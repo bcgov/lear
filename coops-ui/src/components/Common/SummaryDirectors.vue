@@ -11,10 +11,11 @@
           <span>Appointed/Elected</span>
         </v-subheader>
         <li class="container"
-            :id="'director-' + director.id"
-            v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
-            v-for="(director, index) in orderBy(directorSummary, 'id', -1)"
-            v-bind:key="index">
+          :id="'director-' + director.id"
+          v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
+          v-for="(director, index) in orderBy(directorSummary, 'id', -1)"
+          v-bind:key="index"
+        >
           <div class="meta-container">
             <label>
               <span>{{director.officer.firstName}} </span>
@@ -23,31 +24,36 @@
               <div class="director-status">
                 <v-scale-transition>
                   <v-chip x-small label color="blue" text-color="white"
-                          v-show="isNew(director) && !director.cessationDate">
+                    v-show="isNew(director) && !director.cessationDate"
+                  >
                     New
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
                   <v-chip x-small label text-color="rgba(0,0,0,.38)"
-                          v-show="!isActive(director) || !isActionable(director)">
+                    v-show="!isActive(director) || !isActionable(director)"
+                  >
                     Ceased
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
                   <v-chip x-small label color="blue lighten-2" text-color="white"
-                          v-show="isNew(director) && director.cessationDate">
+                    v-show="isNew(director) && director.cessationDate"
+                  >
                     Appointed &amp; Ceased
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
                   <v-chip x-small label color="blue" text-color="white"
-                          v-show="isNameChanged(director)">
+                    v-show="isNameChanged(director)"
+                  >
                     Name Changed
                   </v-chip>
                 </v-scale-transition>
                 <v-scale-transition>
                   <v-chip x-small label color="blue" text-color="white"
-                          v-show="isAddressChanged(director)">
+                    v-show="isAddressChanged(director)"
+                  >
                     Address Changed
                   </v-chip>
                 </v-scale-transition>
@@ -57,13 +63,13 @@
               <v-expand-transition>
                 <div class="director-info" >
                   <div class="address">
-                    <BaseAddress v-bind:address="director.deliveryAddress" />
+                    <BaseAddress :address="director.deliveryAddress" />
                   </div>
                   <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
                     <span v-if="isSameAddress(director.deliveryAddress, director.mailingAddress)">
                       Same as Delivery Address
                     </span>
-                    <BaseAddress v-else v-bind:address="director.mailingAddress" />
+                    <BaseAddress v-else :address="director.mailingAddress" />
                   </div>
                   <div class="director_dates">
                     <div class="director_dates__date">{{ director.appointmentDate }}</div>
@@ -87,10 +93,11 @@
       <v-expand-transition>
           <ul class="list director-list" v-show="expand">
             <li class="container"
-                :id="'director-' + director.id"
-                v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
-                v-for="(director, index) in orderBy(directorsCeased, 'id', -1)"
-                v-bind:key="index">
+              :id="'director-' + director.id"
+              v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
+              v-for="(director, index) in orderBy(directorsCeased, 'id', -1)"
+              v-bind:key="index"
+            >
               <div class="meta-container">
                 <label>
                   <span>{{director.officer.firstName}} </span>
@@ -99,31 +106,36 @@
                   <div class="director-status">
                     <v-scale-transition>
                       <v-chip x-small label color="blue" text-color="white"
-                              v-show="isNew(director) && !director.cessationDate">
+                        v-show="isNew(director) && !director.cessationDate"
+                      >
                         New
                       </v-chip>
                     </v-scale-transition>
                     <v-scale-transition>
                       <v-chip x-small label text-color="rgba(0,0,0,.38)"
-                              v-show="!isActive(director) || !isActionable(director)">
+                        v-show="!isActive(director) || !isActionable(director)"
+                      >
                         Ceased
                       </v-chip>
                     </v-scale-transition>
                     <v-scale-transition>
                       <v-chip x-small label color="blue lighten-2" text-color="white"
-                              v-show="isNew(director) && director.cessationDate">
+                        v-show="isNew(director) && director.cessationDate"
+                      >
                         Appointed &amp; Ceased
                       </v-chip>
                     </v-scale-transition>
                     <v-scale-transition>
                       <v-chip x-small label color="blue" text-color="white"
-                              v-show="isNameChanged(director)">
+                        v-show="isNameChanged(director)"
+                      >
                         Name Changed
                       </v-chip>
                     </v-scale-transition>
                     <v-scale-transition>
                       <v-chip x-small label color="blue" text-color="white"
-                              v-show="isAddressChanged(director)">
+                        v-show="isAddressChanged(director)"
+                      >
                         Address Changed
                       </v-chip>
                     </v-scale-transition>
@@ -133,13 +145,13 @@
                   <v-expand-transition>
                     <div class="director-info" >
                       <div class="address">
-                        <BaseAddress v-bind:address="director.deliveryAddress" />
+                        <BaseAddress :address="director.deliveryAddress" />
                       </div>
                       <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
                         <span v-if="isSameAddress(director.deliveryAddress, director.mailingAddress)">
                           Same as Delivery Address
                         </span>
-                        <BaseAddress v-else v-bind:address="director.mailingAddress" />
+                        <BaseAddress v-else :address="director.mailingAddress" />
                       </div>
                       <div class="director_dates">
                         <div class="director_dates__date">{{ director.appointmentDate }}</div>
