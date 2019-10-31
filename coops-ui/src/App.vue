@@ -56,7 +56,7 @@ export default {
       dashboardUnavailableDialog: false,
       accountAuthorizationDialog: false,
       dataLoaded: false,
-      EntityTypes
+      EntityTypes: EntityTypes
     }
   },
 
