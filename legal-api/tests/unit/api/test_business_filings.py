@@ -265,6 +265,56 @@ def test_post_only_validate_error_ar(session, client, jwt):
     assert rv.json['errors'][0]['error'] == "'name' is a required property"
 
 
+def test_post_only_validate_ar_invalid_routing_slip(session, client, jwt):
+    """Assert that a unpaid filing can be posted."""
+    import copy
+    identifier = 'CP7654321'
+    factory_business(identifier)
+
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['header']['routingSlipNumber'] = '1231313329988888'
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings?only_validate=true',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert rv.json.get('errors')
+    assert rv.json['errors'][0]['error'] == "'1231313329988888' is too long"
+
+    ar['filing']['header']['routingSlipNumber'] = '1'
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings?only_validate=true',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert rv.json.get('errors')
+
+
+def test_post_validate_ar_valid_routing_slip(session, client, jwt):
+    """Assert that a unpaid filing can be posted."""
+    identifier = 'CP7654321'
+    factory_business(identifier,
+                     last_ar_date=(datetime.utcnow() - datedelta.YEAR),  # last ar date = last year
+                     founding_date=(datetime.utcnow() - datedelta.YEAR - datedelta.YEAR)  # founding date = 2 years ago
+                     )
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['header']['routingSlipNumber'] = '123131332'
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings?only_validate=true',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.OK
+    assert not rv.json.get('errors')
+
+
 @integration_payment
 def test_post_valid_ar(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
@@ -277,6 +327,38 @@ def test_post_valid_ar(session, client, jwt):
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    # check return
+    assert rv.status_code == HTTPStatus.CREATED
+    assert not rv.json.get('errors')
+    assert rv.json['filing']['header']['filingId']
+    assert rv.json['filing']['header']['paymentToken']
+    assert rv.json['filing']['header']['paymentToken'] == '153'
+
+    # check stored filing
+    filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
+    assert filing
+    assert filing.status == Filing.Status.PENDING.value
+
+
+@integration_payment
+def test_post_valid_ar_with_routing_slip(session, client, jwt):
+    """Assert that a filing can be completed up to payment."""
+    from legal_api.models import Filing
+    identifier = 'CP7654321'
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['header']['routingSlipNumber'] = '123131332'
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=ar,
