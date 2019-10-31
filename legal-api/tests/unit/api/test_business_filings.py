@@ -272,7 +272,7 @@ def test_post_only_validate_ar_invalid_routing_slip(session, client, jwt):
     factory_business(identifier)
 
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['header']['routingSlipNumber'] = '12313133299'
+    ar['filing']['header']['routingSlipNumber'] = '1231313329988888'
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings?only_validate=true',
                      json=ar,
@@ -281,7 +281,17 @@ def test_post_only_validate_ar_invalid_routing_slip(session, client, jwt):
 
     assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     assert rv.json.get('errors')
-    assert rv.json['errors'][0]['error'] == "'12313133299' is too long"
+    assert rv.json['errors'][0]['error'] == "'1231313329988888' is too long"
+
+    ar['filing']['header']['routingSlipNumber'] = '1'
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings?only_validate=true',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert rv.json.get('errors')
 
 
 def test_post_validate_ar_valid_routing_slip(session, client, jwt):
