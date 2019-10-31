@@ -270,7 +270,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['currentDate', 'ARFilingYear', 'lastAgmDate', 'entityName',
+    ...mapState(['currentDate', 'ARFilingYear', 'lastAgmDate','entityType', 'entityName',
       'entityIncNo', 'entityFoundingDate', 'lastPreLoadFilingDate']),
 
     ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState', 'lastCOAFilingDate', 'lastCODFilingDate']),

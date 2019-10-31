@@ -167,7 +167,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['currentDate', 'entityName', 'entityIncNo', 'entityFoundingDate']),
+    ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo', 'entityFoundingDate']),
 
     ...mapGetters(['isRoleStaff']),
 
