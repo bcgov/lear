@@ -472,7 +472,7 @@ export default {
         }
       }
       if (setting === 'add' && !added) {
-        this.filingData.push({ filingTypeCode: filing, entityType: 'CP' })
+        this.filingData.push({ filingTypeCode: filing, entityType: this.entityType })
       }
     },
 
