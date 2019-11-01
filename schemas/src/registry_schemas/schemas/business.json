@@ -87,7 +87,7 @@
                     "examples": [
                         "CP1234567"
                     ],
-                    "pattern": "^(CP)[0-9]{7}$"
+                    "pattern": "^[A-Z]{1,3}[0-9]{7}$"
                 },
                 "legalName": {
                     "$ref": "#/definitions/legalName"
