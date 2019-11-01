@@ -114,7 +114,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['entityIncNo', 'filings'])
+    ...mapState(['entityIncNo', 'filings', 'entityName'])
   },
 
   created () {
@@ -319,7 +319,7 @@ export default {
     async downloadOneReceipt (filing) {
       const url = filing.paymentToken + '/receipts'
       const data = {
-        corpName: this.entityIncNo,
+        corpName: this.entityName,
         filingDateTime: filing.filingDate, // TODO: format as needed
         fileName: 'receipt' // not used
       }
