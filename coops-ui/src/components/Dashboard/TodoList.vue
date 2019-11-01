@@ -51,14 +51,26 @@
                     <v-btn small icon color="black" class="info-btn"><v-icon>mdi-information-outline</v-icon></v-btn>
                   </div>
                 </div>
+
+                <div v-else-if="isPaid(item)" class="todo-status">
+                  <div>FILING PENDING</div>
+                  <div class="vert-pipe">&nbsp;</div>
+                  <div class="payment-status" v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
+                    PROCESSING...
+                  </div>
+                  <div class="payment-status" v-else>
+                    <span>PAID</span>
+                    <v-btn small icon color="black" class="info-btn"><v-icon>mdi-information-outline</v-icon></v-btn>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div class="list-item__actions">
               <!-- pre-empt any buttons below -->
-              <span v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
+              <template v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
                 <v-btn text loading disabled />
-              </span>
+              </template>
 
               <template v-else-if="isDraft(item)">
                 <v-btn id="btn-draft-resume"
@@ -101,6 +113,10 @@
                 Retry Payment
               </v-btn>
 
+              <template v-else-if="isPaid(item)">
+                <!-- no action button in this case -->
+              </template>
+
               <v-btn v-else-if="!isCompleted(item)"
                 color="primary"
                 :disabled="!item.enabled"
@@ -121,12 +137,18 @@
                 <p>You may continue this filing by selecting "Resume Payment".</p>
               </v-card-text>
             </v-card>
-            <v-card v-if="isError(item)">
+            <v-card v-else-if="isError(item)">
               <v-card-text>
                 <p class="font-weight-bold black--text">Payment Unsuccessful</p>
                 <p>This filing is pending payment. The payment appears to have been unsuccessful for some
                   reason.</p>
                 <p>You may continue this filing by selecting "Retry Payment".</p>
+              </v-card-text>
+            </v-card>
+            <v-card v-else-if="isPaid(item)">
+              <v-card-text>
+                <p class="font-weight-bold black--text">Paid</p>
+                <p>This filing is paid but the filing is not yet complete. Please check again later.</p>
               </v-card-text>
             </v-card>
         </v-expansion-panel-content>
@@ -203,11 +225,11 @@ export default {
       this.$emit('todo-count', this.taskItems.length)
       this.$emit('todo-filings', this.taskItems)
 
-      // if this is a draft/pending/error item, emit the has-blocker-filings event to the parent component
-      // this indicates that a new filing cannot be started because this one has to be completed first
+      // If this is a draft/pending/error/paid item, emit the has-blocker-filings event to the parent component.
+      // This indicates that a new filing cannot be started because this one has to be completed first.
       this.$emit('has-blocker-filing',
         this.taskItems.filter(elem => {
-          return this.isDraft(elem) || this.isPending(elem) || this.isError(elem)
+          return this.isDraft(elem) || this.isPending(elem) || this.isError(elem) || this.isPaid(elem)
         }).length > 0
       )
     },
@@ -388,6 +410,10 @@ export default {
 
     isError (item) {
       return item.status === 'ERROR'
+    },
+
+    isPaid (item) {
+      return item.status === 'PAID'
     },
 
     isCompleted (item) {

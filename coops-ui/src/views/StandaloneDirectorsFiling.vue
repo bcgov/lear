@@ -460,10 +460,9 @@ export default {
       // on success, redirect to Pay URL
       if (filing && filing.header) {
         const filingId = +filing.header.filingId
-        const paymentStatus = filing.header.paymentStatus
 
         // if filing needs to be paid, redirect to Pay URL
-        if (paymentStatus !== 'COMPLETED') {
+        if (filing.header.status !== 'PAID') {
           const paymentToken = filing.header.paymentToken
           const baseUrl = sessionStorage.getItem('BASE_URL')
           const returnURL = encodeURIComponent(baseUrl + 'dashboard?filing_id=' + filingId)

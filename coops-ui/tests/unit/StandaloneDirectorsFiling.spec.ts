@@ -430,8 +430,7 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
                 'filingId': 123,
                 'certifiedBy': 'Full Name',
                 'email': 'no_one@never.get',
-                'paymentToken': '321',
-                'paymentStatus': 'CREATED'
+                'paymentToken': '321'
               }
             }
           }
@@ -461,8 +460,7 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
                 'filingId': 123,
                 'certifiedBy': 'Full Name',
                 'email': 'no_one@never.get',
-                'paymentToken': '321',
-                'paymentStatus': 'CREATED'
+                'paymentToken': '321'
               }
             }
           }
@@ -698,12 +696,11 @@ describe('Standalone Directors Filing - Part 3B - Submitting filing that doesn\'
                 'name': 'changeOfDirectors',
                 'date': '2017-06-06',
                 'submitter': 'cp0001191',
-                'status': 'PENDING',
+                'status': 'PAID',
                 'filingId': 123,
                 'certifiedBy': 'Full Name',
                 'email': 'no_one@never.get',
-                'paymentToken': '321',
-                'paymentStatus': 'COMPLETED'
+                'paymentToken': '321'
               }
             }
           }
@@ -751,7 +748,7 @@ describe('Standalone Directors Filing - Part 3B - Submitting filing that doesn\'
     vm.directorFormValid = true
     vm.staffPaymentFormValid = true
     vm.certifyFormValid = true
-    vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'CP' }] // dummy data
+    vm.filingData = [{ filingTypeCode: 'OTFDR', entityType: 'CP' }] // dummy data
 
     // go to summary page
     vm.showSummary()
