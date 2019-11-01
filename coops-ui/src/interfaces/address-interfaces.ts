@@ -4,6 +4,7 @@ export interface BaseAddressType extends Vue {
   $refs: any
 }
 
+// Base address Interface to match the address.json schema and it's optional fields.
 export interface AddressIF extends Vue {
   addressCity: string
   addressCountry: string
@@ -14,6 +15,7 @@ export interface AddressIF extends Vue {
   streetAddressAdditional?: string
 }
 
+// Interface to define the joint base address response
 export interface BaseAddressObjIF extends Vue {
   deliveryAddress: AddressIF,
   mailingAddress: AddressIF
