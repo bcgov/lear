@@ -1,33 +1,45 @@
 <template>
   <v-card flat>
     <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
+      <!-- REGISTERED OFFICE -->
       <li class="container">
         <div class="meta-container">
           <label>Registered Office</label>
           <div class="meta-container__inner">
-            <label>Delivery Address</label>
-            <delivery-address
-              :address="registeredAddress.deliveryAddress"
-              :editing="showAddressForm"
-              :schema="addressSchema"
-              v-on:update:address="updateDelivery($event)"
-              @valid="isDeliveryValid"
-            />
-            <label>Mailing Address</label>
-            <v-checkbox
-              class="inherit-checkbox"
-              label="Same as Delivery Address"
-              v-if="showAddressForm"
-              v-model="inheritDeliveryAddress"
-            ></v-checkbox>
-            <delivery-address
-              v-if="!showAddressForm || !inheritDeliveryAddress"
-              :address="registeredAddress.mailingAddress"
-              :editing="showAddressForm"
-              :schema="addressSchema"
-              v-on:update:address="updateMailing($event)"
-              @valid="isMailingValid"
-            />
+            <label class="address-header"><strong>Delivery Address</strong></label>
+            <div class="address-wrapper">
+              <delivery-address
+                :address="registeredAddress.deliveryAddress"
+                :editing="showAddressForm"
+                :schema="addressSchema"
+                v-on:update:address="updateDelivery($event)"
+                @valid="isDeliveryValid"
+              />
+            </div>
+            <div class="form__row">
+              <v-checkbox
+                class="inherit-checkbox"
+                label="Same as Delivery Address"
+                v-if="showAddressForm"
+                v-model="inheritDeliveryAddress"
+              ></v-checkbox>
+            </div>
+            <br />
+            <div v-if="!isSameAddress(registeredAddress.deliveryAddress, registeredAddress.mailingAddress)">
+              <label class="address-header"><strong>Mailing Address</strong></label>
+              <div class="address-wrapper">
+                <mailing-address
+                  v-if="!showAddressForm || !inheritDeliveryAddress"
+                  :address="registeredAddress.mailingAddress"
+                  :editing="showAddressForm"
+                  v-on:update:address="updateMailing($event)"
+                  @valid="isMailingValid"
+                ></mailing-address>
+              </div>
+            </div>
+            <div v-else>
+              <span>Mailing Address same as above</span>
+            </div>
             <v-expand-transition>
               <div class="address-block__actions">
                 <v-btn
@@ -36,7 +48,7 @@
                   id="reg-off-addr-change-btn"
                   small
                   v-if="!showAddressForm"
-                  :disabled="changeButtonDisabled"
+                  :disabled="false"
                   @click="editAddress"
                 >
                   <v-icon small>mdi-pencil</v-icon>
@@ -56,11 +68,23 @@
             </v-expand-transition>
           </div>
         </div>
+      </li>
 
+      <!-- RECORDS OFFICE -->
+<!--      <li class="container">-->
 <!--        <div class="meta-container">-->
 <!--          <label>Record Office</label>-->
 <!--          <div class="meta-container__inner">-->
-<!--            <label>Delivery Address</label>-->
+<!--            <label class="address-header"><strong>Delivery Address</strong></label>-->
+<!--            <div class="address-wrapper">-->
+<!--              <delivery-address-->
+<!--                :address="recordsAddress.deliveryAddress"-->
+<!--                :editing="showAddressForm"-->
+<!--                :schema="addressSchema"-->
+<!--                v-on:update:address="updateDelivery($event)"-->
+<!--                @valid="isDeliveryValid"-->
+<!--              />-->
+<!--            </div>-->
 <!--            <div class="form__row">-->
 <!--              <v-checkbox-->
 <!--                class="inherit-checkbox"-->
@@ -69,24 +93,26 @@
 <!--                v-model="inheritDeliveryAddress"-->
 <!--              ></v-checkbox>-->
 <!--            </div>-->
-<!--            <delivery-address-->
-<!--              v-if="!showAddressForm || !inheritDeliveryAddress"-->
-<!--              :address="recordsAddress.deliveryAddress"-->
-<!--              :editing="showAddressForm"-->
-<!--              :schema="addressSchema"-->
-<!--              v-on:update:address="updateMailing($event)"-->
-<!--              @valid="isMailingValid"-->
-<!--            />-->
-<!--            <label>Mailing Address</label>-->
-<!--            <mailing-address-->
-<!--              :address="recordsAddress.mailingAddress"-->
-<!--              :editing="showAddressForm"-->
-<!--              :schema="addressSchema"-->
-<!--              v-on:update:address="updateDelivery($event)"-->
-<!--              @valid="isDeliveryValid"-->
-<!--            />-->
+<!--            <br />-->
+<!--            <div v-if="!isSameAddress(recordsAddress.deliveryAddress, recordsAddress.mailingAddress)">-->
+<!--              <label class="address-header"><strong>Mailing Address</strong></label>-->
+<!--              <div class="address-wrapper">-->
+<!--                <mailing-address-->
+<!--                  v-if="!showAddressForm || !inheritDeliveryAddress"-->
+<!--                  :address="recordsAddress.mailingAddress"-->
+<!--                  :editing="showAddressForm"-->
+<!--                  v-on:update:address="updateMailing($event)"-->
+<!--                  @valid="isMailingValid"-->
+<!--                ></mailing-address>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--            <div v-else>-->
+<!--              <span>Mailing Address same as above</span>-->
+<!--            </div>-->
 <!--          </div>-->
 <!--        </div>-->
+<!--      </li>-->
+      <li>
         <div
           class="form__row form__btns"
           v-show="showAddressForm"
@@ -119,6 +145,9 @@ import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
 // Mixins
 import { AddressMixin, CommonMixin } from '@/mixins'
+import EntityFilterMixin from '@/mixins/entityFilter-mixin'
+
+import { EntityTypes } from '@/enums'
 
 // Interfaces
 import { BaseAddressObjIF } from '@/interfaces/address-interfaces'
@@ -136,7 +165,7 @@ interface AddressObject {
     'mailing-address': BaseAddress
   }
 })
-export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
+export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin, EntityFilterMixin) {
     /**
      * The identifier for the legal entity that is to have its addresses retrieved from the API.
      */
@@ -179,6 +208,9 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
 
     // State of the form checkbox for determining whether or not the mailing address is the same as the delivery address
     private inheritDeliveryAddress: boolean = true
+
+    // EntityTypes Enum
+    readonly EntityTypes: {} = EntityTypes
 
     // The Address schema containing Vuelidate rules.
     // NB: This should match the subject JSON schema.
@@ -246,10 +278,10 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
     @Emit('update:addresses')
     private emitAddresses (): object {
       console.log(this.registeredAddress)
-      console.log(this.recordsAddress)
 
       let registeredAddressFinal = Object.assign({}, this.registeredAddress)
       let recordsAddressFinal = Object.assign({}, this.recordsAddress)
+      console.log(registeredAddressFinal)
 
       // if the address has changed from the original, set action flag
       if (this.registeredModified) this.addAction(registeredAddressFinal, ADDRESSCHANGED)
@@ -378,11 +410,13 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
      * Updates the address data using what was entered on the forms.
      */
     private updateAddress (): void {
+      console.log(this.inheritDeliveryAddress)
       if (this.inheritDeliveryAddress) {
         this.recordsAddress = { ...this.registeredAddress }
       }
+
       this.showAddressForm = false
-      this.emitAddresses()
+      // this.emitAddresses()
       this.emitModified()
     }
 
@@ -392,7 +426,7 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
     private resetAddress (): void {
       this.registeredAddress = { ...this.registeredAddressOriginal }
       this.recordsAddress = { ...this.recordsAddressOriginal }
-      this.emitAddresses()
+      // this.emitAddresses()
       this.emitModified()
     }
 
@@ -428,7 +462,7 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
               const recordAddress = response.data.recordsOffice
               if (recordAddress) {
                 recordAddress.actions = []
-                console.log(recordAddress)
+
                 // this.registeredAddressOriginal = { ...this.omitProp(registeredAddress, ['deliveryAddress.addressType']) }
                 this.recordsAddressOriginal = recordAddress
 
@@ -525,7 +559,7 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
   }
 
   .meta-container__inner {
-    margin-top: 1rem;
+    margin-top: 0rem;
   }
 
   label:first-child {
@@ -545,14 +579,14 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
         width: 12rem;
       }
     }
-    .meta-container__inner {
-      margin-top: 0;
+    .meta-container__inner:nth-child(2) {
+      margin-top: 0rem;
     }
   }
   // List Layout
   .list {
     li {
-      border-bottom: 1px solid $gray3;
+      border-bottom: 0px solid $gray3;
     }
   }
 
@@ -567,6 +601,10 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
   }
 
   // Address Block Layout
+  .address-wrapper{
+    margin-top: .5rem;
+  }
+
   .address-block__actions {
     position: absolute;
     top: 0;

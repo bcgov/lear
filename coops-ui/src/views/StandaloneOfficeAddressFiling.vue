@@ -35,7 +35,18 @@
       <v-container id="standalone-office-address-container" class="view-container">
         <article id="standalone-office-address-article">
           <header>
-            <h1 id="filing-header">Address Change</h1>
+            <h1 id="filing-header">Change of Office Addresses</h1>
+            <p>Please change your Registered Office Address
+              <span v-if="entityFilter(EntityTypes.BCorp)">and Record Address</span>
+            </p>
+            <v-alert
+              v-if="entityFilter(EntityTypes.BCorp)"
+              type="info"
+              :value="true"
+              icon="mdi-information"
+              outlined class="white-background">
+              Any address update will be effective tomorrow.
+            </v-alert>
           </header>
 
           <!-- Registered Office Addresses -->
@@ -142,6 +153,7 @@ import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapGetters } from 'vuex'
 import { PAYMENT_REQUIRED, BAD_REQUEST } from 'http-status-codes'
+import { EntityFilterMixin } from '@/mixins'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -149,6 +161,7 @@ import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
 import { OfficeAddresses } from '@/components/Common'
+import { EntityTypes } from '@/enums'
 
 export default {
   name: 'StandaloneOfficeAddressFiling',
@@ -164,6 +177,7 @@ export default {
     ResumeErrorDialog,
     SaveErrorDialog
   },
+  mixins: [EntityFilterMixin],
 
   data () {
     return {
@@ -184,11 +198,11 @@ export default {
       haveChanges: false,
       saveErrors: [],
       saveWarnings: [],
-
       // properties for Staff Payment component
       routingSlipNumber: null,
       staffPaymentFormValid: false,
-      totalFee: 0
+      totalFee: 0,
+      EntityTypes
     }
   },
 
@@ -280,6 +294,7 @@ export default {
 
   methods: {
     formatAddress (address) {
+      console.log(address)
       return {
         'actions': address.actions || [],
         'addressCity': address.addressCity || '',
@@ -315,6 +330,7 @@ export default {
 
             const changeOfAddress = filing.changeOfAddress
             if (changeOfAddress) {
+              console.log(changeOfAddress)
               if (changeOfAddress.deliveryAddress && changeOfAddress.mailingAddress) {
                 this.addresses = {
                   deliveryAddress: changeOfAddress.deliveryAddress,
