@@ -34,6 +34,7 @@ class Probes():
                  ):
         """Initialize the probe."""
         self.app = None
+        self.site = None
         self.loop = loop
         logger.setLevel(logging.DEBUG)
         self.logger = logger
@@ -106,9 +107,14 @@ class Probes():
         runner = web.AppRunner(app)
 
         await runner.setup()
-        site = web.TCPSite(runner, self.host, self.port)
+        self.site = web.TCPSite(runner, self.host, self.port)
 
         self.logger.info("Liveliness probe listening at '%s : %s'", self.host, self.port)
-        await site.start()
+        await self.site.start()
 
         return {self.host, self.port}
+
+    async def stop(self):
+        """Stop the service."""
+        if self.site:
+            await self.site.stop()

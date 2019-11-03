@@ -101,7 +101,6 @@ mac-cov:	install-dev coverage-report
 ## run pylint on the package and tests
 pylint:
 	pylint --rcfile=setup.cfg \
-	 --load-plugins=pylint_flask \
 	 src/$(project_name)
 
 ## run flake8 on the package and tests

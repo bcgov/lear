@@ -122,6 +122,27 @@ async def test_probe_meta_web_no_components(loop):
             assert r_json == {'probe': probe.__version__}
 
 
+async def test_probe_meta_web_bad_component(loop):
+    """Assert that the web app can be started successfully."""
+    class Comp:
+        __version__ = 'component_version'
+
+        def __init__(self):
+            self.name = 'component_callback_name'
+            # self.version = 'component_callback_version'
+
+    probe = Probes(loop=loop, port=unused_port(), components=[Comp()])
+    info = await probe.start()
+    print(info)
+    async with ClientSession() as session:
+        async with session.get(f'http://{probe.host}:{str(probe.port)}/meta') as resp:
+            r_json = await resp.json()
+            print(r_json)
+            assert r_json == {'Comp': 'component_version',
+                              #   'component_callback_name': 'component_callback_version',
+                              'probe': probe.__version__}
+
+
 async def test_probe_meta_web(loop):
     """Assert that the web app can be started successfully."""
     class Comp:
@@ -141,3 +162,21 @@ async def test_probe_meta_web(loop):
             assert r_json == {'Comp': 'component_version',
                               'component_callback_name': 'component_callback_version',
                               'probe': probe.__version__}
+
+
+async def test_probe_stop_no_session(loop):
+    probe = Probes(loop=loop, port=unused_port())
+
+    await probe.stop()
+    # no exception was thrown
+    assert True
+
+
+async def test_probe_stop_with_session(loop):
+    """Assert that call to probe stop doesn't throw an exception."""
+    probe = Probes(loop=loop, port=unused_port())
+
+    info = await probe.start()
+    print(info)
+    await probe.stop()
+    assert True

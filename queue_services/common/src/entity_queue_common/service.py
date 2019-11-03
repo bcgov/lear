@@ -17,7 +17,9 @@ This service registers interest in listening to a Queue and processing received 
 """
 import asyncio
 import functools
+import json
 import signal
+from typing import Dict
 
 
 from nats.aio.client import Client as NATS  # noqa N814; by convention the name is NATS
@@ -28,7 +30,7 @@ from entity_queue_common.service_utils import error_cb, logger, signal_handler  
 from entity_queue_common.version import __version__  # noqa I001; sort issue due to comments on the NATS & STAN lines
 
 
-class ServiceWorker():
+class ServiceWorker:
     """Wrap a service that will listen to the Queue Stream."""
 
     __version__ = __version__
@@ -163,34 +165,49 @@ class ServiceWorker():
         except Exception as err:  # pylint: disable=broad-except; catch all errors to log out when closing the service.
             logger.debug('error when closing the streams: %s', err, stack_info=True)
 
+    async def publish(self, subject: str, msg: Dict):
+        """Publish the msg as a JSON struct to the subject, using the streaming NATS connection."""
+        await self.sc.publish(subject=subject,
+                              payload=json.dumps(msg).encode('utf-8'))
 
-async def run(loop, config, callback):  # pylint: disable=too-many-locals
-    """Run the main application loop for the service.
 
-    This runs the main top level service functions for working with the Queue.
-    """
-    service = ServiceWorker(loop=loop, cb_handler=callback, config=config)
-    probe = Probes(components=[service], loop=loop)
+class QueueServiceManager:
+    """Manages the running of the Queue Client and Probes."""
 
-    async def close():
-        await service.close()
+    def __init__(self):
+        """Initialize the manager and declaring placeholders for the service & probe."""
+        self.service = None
+        self.probe = None
+
+    async def close(self):
+        """Close all of the services as cleanly as possible."""
+        await self.service.close()
+        await self.probe.stop()
         my_loop = asyncio.get_running_loop()
         await asyncio.sleep(0.1, loop=my_loop)
         my_loop.stop()
 
-    try:
-        await probe.start()
-        await service.connect()
+    async def run(self, loop, config, callback):  # pylint: disable=too-many-locals
+        """Run the main application loop for the service.
 
-        # register the signal handler
-        for sig in ('SIGINT', 'SIGTERM'):
-            loop.add_signal_handler(getattr(signal, sig),
-                                    functools.partial(signal_handler, sig_loop=loop, task=close)
-                                    )
+        This runs the main top level service functions for working with the Queue.
+        """
+        self.service = ServiceWorker(loop=loop, cb_handler=callback, config=config)
+        self.probe = Probes(components=[self.service], loop=loop)
 
-    except Exception as e:  # pylint: disable=broad-except
-        # TODO tighten this error and decide when to bail on the infinite reconnect
-        logger.error(e)
+        try:
+            await self.probe.start()
+            await self.service.connect()
+
+            # register the signal handler
+            for sig in ('SIGINT', 'SIGTERM'):
+                loop.add_signal_handler(getattr(signal, sig),
+                                        functools.partial(signal_handler, sig_loop=loop, task=self.close)
+                                        )
+
+        except Exception as e:  # pylint: disable=broad-except
+            # TODO tighten this error and decide when to bail on the infinite reconnect
+            logger.error(e)
 
 
 # if __name__ == '__main__':
