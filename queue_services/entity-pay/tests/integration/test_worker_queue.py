@@ -13,10 +13,10 @@
 # limitations under the License.
 """Test Suite to ensure the worker routines are working as expected."""
 import asyncio
-import datetime
 import random
 
 import pytest
+
 from entity_queue_common.messages import get_filing_id_from_msg
 
 from .utils import helper_add_payment_to_queue, subscribe_to_queue
@@ -103,7 +103,7 @@ async def test_publish_filing(app, session, stan_server, event_loop, client_id, 
     # Call back for the subscription
     from entity_queue_common.service import ServiceWorker
     from entity_pay.worker import APP_CONFIG, publish_filing, qsm
-    from legal_api.models import Business, Filing
+    from legal_api.models import Filing
 
     # file handler callback
     msgs = []

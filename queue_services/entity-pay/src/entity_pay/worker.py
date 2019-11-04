@@ -37,9 +37,8 @@ from legal_api.models import Filing
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 from entity_queue_common.messages import create_filing_msg
-from entity_queue_common.service_utils import FilingException, QueueException, logger
 from entity_queue_common.service import QueueServiceManager
-
+from entity_queue_common.service_utils import FilingException, QueueException, logger
 
 from entity_pay import config
 
@@ -61,6 +60,7 @@ def get_filing_by_payment_id(payment_id: int) -> Filing:
 
 
 async def publish_filing(filing: Filing):
+    """Publish the filing message onto the NATS filing subject."""
     payload = create_filing_msg(filing.id)
     subject = APP_CONFIG.FILER_PUBLISH_OPTIONS['subject']
 
@@ -92,7 +92,8 @@ async def process_payment(payment_token, flask_app):
             # multiple retries are happening on something that should have been completed.
             logger.warning('Queue: Attempting to reprocess business.id=%s, filing.id=%s payment=%s',
                            filing_submission.business_id, filing_submission.id, payment_token)
-            capture_message(f'Queue Issue:Attempting to reprocess business.id={filing_submission.business_id}, filing.id={filing_submission.id} payment={payment_token}')
+            capture_message(f'Queue Issue: Attempting to reprocess business.id={filing_submission.business_id},'
+                            'filing.id={filing_submission.id} payment={payment_token}')
             return
 
         if payment_token['paymentToken'].get('statusCode') == 'TRANSACTION_FAILED':
@@ -107,8 +108,10 @@ async def process_payment(payment_token, flask_app):
 
             try:
                 await publish_filing(filing_submission)
-            except Exception as err:  # pylint: disable=broad-except, unused-variable; mark any failure for human review
-                capture_message('Queue Error: Failied to place filing:{filing_submission.id} on Queue with error:{err}', level='error')
+            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                # mark any failure for human review
+                capture_message('Queue Error: Failied to place filing:{filing_submission.id} on Queue with error:{err}',
+                                level='error')
 
             return
 

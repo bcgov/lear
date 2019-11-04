@@ -13,7 +13,6 @@
 # limitations under the License.
 """Utilities used by the integration tests."""
 import json
-import os
 from typing import Callable
 
 import stan

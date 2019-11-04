@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Test Suites to ensure that the worker is operating correctly."""
-import datetime
 import json
 import random
 
@@ -74,7 +73,7 @@ async def test_process_payment_missing_app(app, session):
 async def test_process_empty_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
     from entity_pay.worker import get_filing_by_payment_id, process_payment
-    from legal_api.models import Business, Filing
+    from legal_api.models import Filing
 
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
