@@ -96,7 +96,7 @@ if( triggerBuild(COMPONENT_NAME) == "" ) {
     stage('No changes. Run pipeline?') {
         try {
             timeout(time: 1, unit: 'DAYS') {
-                input message: "Run ${COMPONENT_NAME}-${TAG_NAME}-pipeline?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-admin,WalterMoar-admin'
+                input message: "Run ${COMPONENT_NAME}-${TAG_NAME}-pipeline?", id: "1234", submitter: 'admin,thorwolpert-admin,rarmitag-admin,kialj876-admin,katiemcgoff-admin,WalterMoar-admin,severinbeauvais-edit'
             }
         } catch (Exception e) {
             run_pipeline = false;
