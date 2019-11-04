@@ -106,12 +106,15 @@ async def process_payment(payment_token, flask_app):
             db.session.add(filing_submission)
             db.session.commit()
 
-            try:
-                await publish_filing(filing_submission)
-            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-                # mark any failure for human review
-                capture_message('Queue Error: Failied to place filing:{filing_submission.id} on Queue with error:{err}',
-                                level='error')
+            if not filing_submission.effective_date or \
+                    filing_submission.effective_date <= datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc):
+                # if we're not a future effective date, then submit for processing
+                try:
+                    await publish_filing(filing_submission)
+                except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                    # mark any failure for human review
+                    capture_message('Queue Error: Failied to place filing:{filing_submission.id} on Queue with error:{err}',
+                                    level='error')
 
             return
 

@@ -18,7 +18,7 @@
 import asyncio
 import os
 
-from entity_pay.worker import app_config, cb_subscription_handler, qsm
+from entity_pay.worker import APP_CONFIG, cb_subscription_handler, qsm
 
 if __name__ == '__main__':
 
@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     event_loop = asyncio.get_event_loop()
     event_loop.run_until_complete(qsm.run(loop=event_loop,
-                                          config=app_config,
+                                          config=APP_CONFIG,
                                           callback=cb_subscription_handler))
     try:
         event_loop.run_forever()
