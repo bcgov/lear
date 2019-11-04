@@ -569,7 +569,8 @@ class Filing:
                     office_desc = Office.office_codes[office]['description']
 
                     # update office table to include new addresses
-                    Office.update_office(cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, Office.office_codes[office]['code'])
+                    Office.update_office(cursor, event_id, corp_num, delivery_addr_id,
+                                         mailing_addr_id, Office.office_codes[office]['code'])
 
                     # create new ledger text for address change
                     cls._add_ledger_text(cursor, event_id, f'Change to the {office_desc}, effective on {date}')
