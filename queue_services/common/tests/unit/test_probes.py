@@ -165,6 +165,7 @@ async def test_probe_meta_web(loop):
 
 
 async def test_probe_stop_no_session(loop):
+    """Assert the probe stops without an exception being thrown."""
     probe = Probes(loop=loop, port=unused_port())
 
     await probe.stop()
