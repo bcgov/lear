@@ -84,7 +84,7 @@ class TaskListResource(Resource):
         if annual_report_filings:
 
             if check_agm:
-                last_ar_date = business.last_ar_date
+                last_ar_date = annual_report_filings[0].filing_date
                 todo_start_date = (datetime(last_ar_date.year+1, 1, 1)).date()
             else:
                 todo_start_date = business.next_anniversary.date()
