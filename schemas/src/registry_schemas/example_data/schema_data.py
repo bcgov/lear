@@ -315,7 +315,8 @@ FILINGS_WITH_TYPES = [
     ('amendedChangeOfDirectors', STUB_FILING),
     ('voluntaryLiquidation', STUB_FILING),
     ('appointReceiver', STUB_FILING),
-    ('continuedOut', STUB_FILING)
+    ('continuedOut', STUB_FILING),
+    ('changeOfDirectors', CHANGE_OF_DIRECTORS_MAILING),  # bcorp-specific version of filing
 ]
 
 
