@@ -1,0 +1,14 @@
+#=========================================================
+# Template parameters for:
+# Project:entity-pay 
+# Component: pipeline
+# Action: build
+# Template File: templates/entity-pay-build-pipeline.json
+#=========================================================
+NAME="entity-pay"
+PIPELINE_PURPOSE="build"
+GIT_REPO_URL="https://github.com/bcgov/lear.git"
+GIT_REF="master"
+SOURCE_CONTEXT_DIR="entity-pay"
+JENKINS_FILE="Jenkinsfiles/build.groovy"
+WEBHOOK="github-lear"
