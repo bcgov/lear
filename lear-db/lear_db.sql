@@ -4684,3 +4684,6 @@ update public.businesses_version set legal_type=public.businesses.legal_type fro
 --
 -- PostgreSQL database dump complete
 --
+
+insert into public.offices (office_type, business_id) values ('registeredOffice', 116);
+update public.addresses set office_id = 1 where business_id = 116;
