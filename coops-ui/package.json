@@ -54,6 +54,7 @@
     "typescript": "<3.6.0",
     "vue-class-component": "^7.1.0",
     "vue-cli-plugin-vuetify": "^0.5.0",
+    "vue-plugin-helper-decorator": "^0.0.11",
     "vue-property-decorator": "^8.2.2",
     "vue-template-compiler": "^2.6.10",
     "vue-test-utils-helpers": "git+https://github.com/AmpleOrganics/vue-test-utils-helpers.git",
