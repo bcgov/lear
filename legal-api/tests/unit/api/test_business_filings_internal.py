@@ -31,7 +31,7 @@ from legal_api.services import QueueService
 from legal_api.services.authz import COLIN_SVC_ROLE, STAFF_ROLE
 from tests import integration_nats, integration_payment
 from tests.unit.services.utils import create_header
-from tests.unit.models import factory_business_mailing_address, factory_business, factory_completed_filing, factory_filing, factory_add_transaction_id  # noqa:E501,I001
+from tests.unit.models import factory_business_mailing_address, factory_business, factory_completed_filing, factory_filing  # noqa:E501,I001
 
 
 @integration_nats
@@ -284,7 +284,7 @@ def test_future_filing_coa(session, client, jwt):
     assert filing.status == Filing.Status.PENDING.value
 
     filing.payment_completion_date = pytz.utc.localize(datetime.utcnow())
-    factory_add_transaction_id(filing)
     filing.save()
 
-    assert filing.status == Filing.Status.FUTURE.value
+    assert filing.status == Filing.Status.PAID.value
+    

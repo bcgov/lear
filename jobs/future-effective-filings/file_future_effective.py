@@ -221,10 +221,9 @@ async def run(loop, application: Flask = None):
             for filing in filings:
                 filing_id = filing["filing"]["header"]["filingId"]
                 payment_id = filing["filing"]["header"]["paymentToken"]
-                effective_date = filing["filing"]["header"]["futureEffectiveDate"]
+                effective_date = filing["filing"]["header"]["effectiveDate"]
                 # TODO Use UTC time?
-                utc = pytz.UTC()
-                now = utc.localize(datetime.now())
+                now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
                 valid = effective_date and parse(effective_date) <= now
                 if valid:
                     await queue.async_publish_filing(filing_id, 'COMPLETED', payment_id)

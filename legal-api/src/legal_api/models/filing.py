@@ -43,7 +43,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         ERROR = 'ERROR'
         PAID = 'PAID'
         PENDING = 'PENDING'
-        FUTURE = 'FUTURE'
 
     FILINGS = {'annualReport': {'name': 'annualReport', 'title': 'Annual Report Filing', 'code': 'OTANN'},
                'changeOfAddress': {'name': 'changeOfAddress', 'title': 'Change of Address Filing', 'code': 'OTADD'},
@@ -138,10 +137,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
     def status(self):
         """Property containing the filing status."""
         return self._status
-
-    @status.setter
-    def status(self, value: Status):
-        self._status = value.value
 
     @hybrid_property
     def filing_json(self):
