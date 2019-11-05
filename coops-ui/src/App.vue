@@ -244,8 +244,7 @@ export default {
         this.setEntityIncNo(response.data.business.identifier)
         this.setLastPreLoadFilingDate(response.data.business.lastLedgerTimestamp
           ? response.data.business.lastLedgerTimestamp.split('T')[0] : null)
-        this.setEntityFoundingDate(response.data.business.foundingDate
-          ? response.data.business.foundingDate.split('T')[0] : null)
+        this.setEntityFoundingDate(response.data.business.foundingDate) // datetime
         const date = response.data.business.lastAnnualGeneralMeetingDate
         if (
           date &&
