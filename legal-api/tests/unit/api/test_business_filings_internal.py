@@ -31,7 +31,7 @@ from legal_api.services import QueueService
 from legal_api.services.authz import COLIN_SVC_ROLE, STAFF_ROLE
 from tests import integration_nats, integration_payment
 from tests.unit.services.utils import create_header
-from tests.unit.models import factory_business_mailing_address, factory_business, factory_completed_filing, factory_filing  # noqa:E501,I001
+from tests.unit.models import factory_business_mailing_address, factory_business, factory_completed_filing, factory_filing, factory_epoch_filing  # noqa:E501,I001
 
 
 @integration_nats
@@ -50,20 +50,22 @@ async def test_colin_filing_failed_to_queue(app_ctx, session, client, jwt, stan_
     business = factory_business(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR)
                                 )
+    factory_epoch_filing(business)
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
 
     # POST the AR
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=ar,
-                     headers=create_header(jwt, [COLIN_SVC_ROLE], 'colin_service')
+                     headers=create_header(jwt, [COLIN_SVC_ROLE], 'coops-updater-job')
                      )
 
-    # Assure that the filing was accepted
+    # Assure that the filing was rejected
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert 'missing filing/header/colinId' in rv.json['errors']['message']
+    assert 'missing filing/header values' in rv.json['errors'][0]['message']
 
 
 @integration_nats
@@ -104,12 +106,13 @@ def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server):
         ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
         ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
         ar['filing']['header']['colinId'] = 1230 + i
+        ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
         ar['filing']['business']['identifier'] = identifier
 
         # POST the AR
         rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                          json=ar,
-                         headers=create_header(jwt, [COLIN_SVC_ROLE], 'colin_service')
+                         headers=create_header(jwt, [COLIN_SVC_ROLE], 'coops-updater-job')
                          )
 
         # Assure that the filing was accepted
