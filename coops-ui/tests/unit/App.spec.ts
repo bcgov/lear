@@ -287,7 +287,7 @@ describe('App', () => {
     expect(vm.$store.state.entityBusinessNo).toBe('123456789')
     expect(vm.$store.state.entityIncNo).toBe('CP0001867')
     expect(vm.$store.state.lastPreLoadFilingDate).toBe('2019-08-14')
-    expect(vm.$store.state.entityFoundingDate).toBe('2000-07-13')
+    expect(vm.$store.state.entityFoundingDate).toBe('2000-07-13T00:00:00+00:00')
     expect(vm.$store.state.lastAgmDate).toBe('2019-08-16')
   })
 
