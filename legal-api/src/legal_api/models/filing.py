@@ -40,6 +40,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
 
         COMPLETED = 'COMPLETED'
         DRAFT = 'DRAFT'
+        EPOCH = 'EPOCH'
         ERROR = 'ERROR'
         PAID = 'PAID'
         PENDING = 'PENDING'
@@ -348,7 +349,10 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     filing = target
     # changes are part of the class and are not externalized
 
-    if filing.transaction_id:
+    if filing.filing_type == 'lear_epoch':
+        filing._status = Filing.Status.EPOCH.value  # pylint: disable=protected-access
+
+    elif filing.transaction_id:
         filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
 
     elif filing.payment_completion_date:

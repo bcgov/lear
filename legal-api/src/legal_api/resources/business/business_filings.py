@@ -98,36 +98,38 @@ class ListFilingResource(Resource):
         # basic checks
         err_msg, err_code = ListFilingResource._put_basic_checks(identifier, filing_id, request)
         if err_msg:
+            print('error1')
             return jsonify({'errors': [err_msg, ]}), err_code
-
         json_input = request.get_json()
 
         # check authorization
         if not authorized(identifier, jwt, action=['edit']):
+            print('error2')
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED
-
         draft = (request.args.get('draft', None).lower() == 'true') \
             if request.args.get('draft', None) else False
         only_validate = (request.args.get('only_validate', None).lower() == 'true') \
             if request.args.get('only_validate', None) else False
-
         # validate filing
-        if not draft:
+        if not draft and not ListFilingResource._is_before_epoch_filing(json_input,
+                                                                        Business.find_by_identifier(identifier)):
             business = Business.find_by_identifier(identifier)
             err = validate(business, json_input)
             # err_msg, err_code = ListFilingResource._validate_filing_json(request)
             if err or only_validate:
+                print(err.msg)
+                print('error3')
                 if err:
                     json_input['errors'] = err.msg
                     return jsonify(json_input), err.code
                 return jsonify(json_input), HTTPStatus.OK
-
         # save filing, if it's draft only then bail
         user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
         business, filing, err_msg, err_code = ListFilingResource._save_filing(request, identifier, user, filing_id)
         if err_msg or draft:
+            print('error4')
             reply = filing.json if filing else json_input
             reply['errors'] = [err_msg, ]
             return jsonify(reply), err_code or \
@@ -135,7 +137,9 @@ class ListFilingResource(Resource):
 
         # if filing is from COLIN, place on queue and return
         if jwt.validate_roles([COLIN_SVC_ROLE]):
-            err_msg, err_code = ListFilingResource._process_colin_filing(identifier, json_input)
+            err_msg, err_code = ListFilingResource._process_colin_filing(identifier, filing, business)
+            print(err_msg)
+            print(err_code)
             return jsonify(err_msg), err_code
 
         # create invoice ??
@@ -203,10 +207,29 @@ class ListFilingResource(Resource):
         return None, None
 
     @staticmethod
-    def _process_colin_filing(identifier: str, json_input: dict) -> Tuple[dict, int]:
+    def _is_before_epoch_filing(filing_json: str, business: Business):
+        epoch_filing = Filing.get_filings_by_status(business_id=business.id, status=[Filing.Status.EPOCH.value])
+        if len(epoch_filing) != 1:
+            current_app.logger.error('Business:%s either none or too many epoch filings', business.identifier)
+            return {'errors': {'message': 'error no record of epoch filing'}}, HTTPStatus.FAILED_DEPENDENCY
+        filing_date = datetime.datetime.fromisoformat(
+            filing_json['filing']['header']['date']).replace(tzinfo=datetime.timezone.utc)
+        print(filing_date)
+        print(epoch_filing[0].filing_date)
+        return filing_date < epoch_filing[0].filing_date
+
+    @staticmethod
+    def _process_colin_filing(identifier: str, filing: Filing, business: Business) -> Tuple[dict, int]:
         try:
-            payload = {'colinFiling': {'id': json_input['filing']['header']['colinId']}}
-            queue.publish_json(payload)
+            if not ListFilingResource._is_before_epoch_filing(filing.filing_json, business):
+                payload = {'colinFiling': {'id': filing.colin_event_id}}
+                print(payload)
+            else:
+                epoch_filing = Filing.get_filings_by_status(business_id=business.id, status=[Filing.Status.EPOCH.value])
+                filing.transaction_id = epoch_filing[0].transaction_id
+                filing.save()
+                print('success')
+            # queue.publish_json(payload)
             return {}, HTTPStatus.CREATED
         except KeyError:
             current_app.logger.error('Business:%s missing filing/header/colinId, unable to post to queue',
@@ -259,8 +282,12 @@ class ListFilingResource(Resource):
 
         try:
             filing.submitter_id = user.id
-            filing.filing_date = datetime.datetime.utcnow()
             filing.filing_json = json_input
+            if user.username == 'coops-updater-job':
+                filing.filing_date = datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['date'])
+                filing.colin_event_id = filing.filing_json['filing']['header']['colinId']
+            else:
+                filing.filing_date = datetime.datetime.utcnow()
             filing.save()
         except BusinessException as err:
             return None, None, {'error': err.error}, err.status_code
