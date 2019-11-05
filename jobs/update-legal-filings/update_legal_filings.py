@@ -26,6 +26,7 @@ from flask_jwt_oidc import JwtManager
 import requests
 import config
 
+from colin_api.models.filing import Filing
 from registry_schemas import validate
 from utils.logging import setup_logging
 
@@ -82,10 +83,13 @@ def check_for_manual_filings(application: Flask = None):
 
     # get max colin event_id from legal
     r = requests.get(f'{application.config["LEGAL_URL"]}/internal/filings/colin_id')
-    if r.status_code != 200:
+    if r.status_code not in [200, 404]:
         application.logger.error(f'Error getting last updated colin id from legal: {r.status_code} {r.json()}')
     else:
-        last_event_id = dict(r.json())['maxId']
+        if r.status_code == 404:
+            last_event_id = 'earliest'
+        else:
+            last_event_id = dict(r.json())['maxId']
         if last_event_id:
             last_event_id = str(last_event_id)
             # get all cp event_ids greater than above
@@ -98,11 +102,11 @@ def check_for_manual_filings(application: Flask = None):
                 application.logger.error('Error getting event_ids from colin')
                 raise err
 
-            loaded_coops = application.config["LOADED_COOPS"]
             # for each event_id: if not in legal db table then add event_id to list
             for info in colin_events['events']:
                 # check that event is associated with one of the coops loaded into legal db
-                if info['corp_num'] in loaded_coops:
+                r = requests.get(f'{application.config["LEGAL_URL"]}/{info["corp_num"]}')
+                if r.status_code == 200:
                     # check legal table
                     r = requests.get(f'{application.config["LEGAL_URL"]}/internal/filings/colin_id/{info["event_id"]}')
                     if r.status_code == 404:
@@ -118,18 +122,12 @@ def check_for_manual_filings(application: Flask = None):
 
 def get_filing(event_info: dict = None, application: Flask = None):
     # call the colin api for the filing
-    if event_info['filing_typ_cd'] not in ['OTANN', 'OTADD', 'OTARG', 'OTCDR', 'OTADR']:
+    if event_info['filing_typ_cd'] not in Filing.FILING_TYPES.keys():
         application.logger.error('Error unknown filing type: {} for event id: {}'.format(
             event_info['filing_type'], event_info['event_id']))
 
-    filing_type_dict = {'OTANN': 'annualReport',
-                        'OTADD': 'changeOfAddress',
-                        'OTARG': 'changeOfAddress',  # correction
-                        'OTCDR': 'changeOfDirectors',
-                        'OTADR': 'changeOfDirectors'  # correction
-                        }
     r = requests.get(f'{application.config["COLIN_URL"]}/{event_info["corp_num"]}/filings/'
-                     f'{filing_type_dict[event_info["filing_typ_cd"]]}?eventId={event_info["event_id"]}')
+                     f'{Filing.FILING_TYPES[event_info["filing_typ_cd"]]}?eventId={event_info["event_id"]}')
     filing = dict(r.json())
     return filing
 
@@ -153,6 +151,7 @@ def run():
 
             if len(manual_filings_info) > 0:
                 for event_info in manual_filings_info:
+                    print(event_info)
                     filing = get_filing(event_info, application)
 
                     # validate schema
@@ -164,7 +163,6 @@ def run():
                     else:
                         # call legal api with filing
                         application.logger.debug('sending filing with event info: {} to legal api.'.format(event_info))
-
                         r = requests.post(application.config['LEGAL_URL'] + '/' + event_info['corp_num'] + '/filings',
                                           json=filing, headers={'Content-Type': 'application/json',
                                                                 'Authorization': f'Bearer {token}'})
@@ -181,7 +179,8 @@ def run():
             if max_event_id > 0:
                 # update max_event_id in legal_db
                 application.logger.debug('setting last_event_id in legal_db to {}'.format(max_event_id))
-                r = requests.post(f'{application.config["LEGAL_URL"]}/internal/filings/colin_id/{max_event_id}')
+                r = requests.post(f'{application.config["LEGAL_URL"]}/internal/filings/colin_id/{max_event_id}',
+                                  headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'})
                 if r.status_code != 201:
                     application.logger.error(f'Error adding {max_event_id} colin_last_update table in legal db '
                                              f'{r.status_code}')
