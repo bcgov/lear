@@ -187,7 +187,7 @@ def register_shellcontext(app):
 
 def get_filings(app: Flask = None):
     """Get a filing with filing_id."""
-    r = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings/FUTURE')
+    r = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings/PAID')
     if not r or r.status_code != 200:
         app.logger.error(f'Failed to collect filings from legal-api. \
             {r} {r.json()} {r.status_code}')
