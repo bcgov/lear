@@ -16,6 +16,7 @@
 This suite should have at least 1 test for every filing type allowed.
 """
 import copy
+from datetime import datetime
 
 import pytest
 
@@ -25,7 +26,6 @@ from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
-    CHANGE_OF_DIRECTORS_MAILING,
     FILING_HEADER,
 )
 
@@ -38,6 +38,9 @@ def test_valid_filing(filing_data):
     # print filing name for easier debugging
     print(filing_data['filing']['header']['name'])
 
+    if errors:
+        for err in errors:
+            print(err.message)
     print(errors)
 
     assert is_valid
@@ -53,7 +56,7 @@ def test_invalid_ar_filing():
             },
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP1234567',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
@@ -81,7 +84,7 @@ def test_invalid_cod_filing():
             },
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP1234567',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
@@ -129,7 +132,7 @@ def test_valid_multi_filing():
             },
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP1234567',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'legal name - CP1234567'
@@ -154,7 +157,24 @@ def test_filing_paper():
     """Assert that a Paper Only filing is valid."""
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['availableOnPaperOnly'] = True
+
     # filing['filing']['available'] = 'available on paper only.'
+    is_valid, errors = validate(filing, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert is_valid
+
+
+def test_effective_date():
+    """Assert that the effective date is working correctly from a structural POV."""
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+
+    filing['filing']['header']['effectiveDate'] = datetime.utcnow().isoformat() + 'Z'
 
     is_valid, errors = validate(filing, 'filing')
 
@@ -164,3 +184,14 @@ def test_filing_paper():
     print(errors)
 
     assert is_valid
+
+    filing['filing']['header']['effectiveDate'] = 'this should fail'
+
+    is_valid, errors = validate(filing, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert not is_valid

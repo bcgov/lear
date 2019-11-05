@@ -119,7 +119,6 @@ def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client):
     identifier = 'CP7654321'
     b = factory_business(identifier, datetime.now()-datedelta.datedelta(years=2), last_ar_date='2018-03-03')
     filings = factory_filing(b, AR_FILING_PREVIOUS_YEAR, datetime(2018, 8, 5, 7, 7, 58, 272362))
-
     print('test_get_all_business_filings - filing:', filings)
 
     rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
@@ -141,14 +140,14 @@ def test_get_404_filing_with_invalid_business(session, client):
 def test_get_tasks_error_filings(session, client, jwt):
     """Assert that to-do list returns the error filings."""
     from legal_api.models import Filing
-    from tests.unit.models import AR_FILING, factory_business_mailing_address, factory_error_filing
+    from tests.unit.models import AR_FILING, factory_business_mailing_address, factory_pending_filing
     # setup
     identifier = 'CP7654321'
     b = factory_business(identifier, last_ar_date='2019-08-13')
     factory_business_mailing_address(b)
-    filing = factory_error_filing(b, AR_FILING, datetime(2019, 8, 5, 7, 7, 58, 272362))
+    filing = factory_pending_filing(b, AR_FILING, datetime(2019, 8, 5, 7, 7, 58, 272362))
     filing.save()
-    assert filing.status == Filing.Status.ERROR.value
+    assert filing.status == Filing.Status.PENDING.value
 
     # test endpoint returned filing in tasks call
     rv = client.get(f'/api/v1/businesses/{identifier}/tasks')

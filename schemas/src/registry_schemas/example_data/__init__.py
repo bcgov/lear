@@ -16,6 +16,7 @@
 These can be used in other tests as basis for the JSON filings.
 """
 from .schema_data import (
+    ADDRESS,
     ALL_FILINGS,
     ANNUAL_REPORT,
     BUSINESS,

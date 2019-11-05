@@ -32,7 +32,7 @@ def test_nats_stan_config(app):
     assert app.config.get('NATS_SERVERS')
     assert app.config.get('NATS_CLIENT_NAME')
     assert app.config.get('NATS_CLUSTER_ID')
-    assert app.config.get('NATS_COLIN_SUBJECT')
+    assert app.config.get('NATS_FILER_SUBJECT')
     assert app.config.get('NATS_QUEUE')
 
 

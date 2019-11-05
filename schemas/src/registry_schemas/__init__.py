@@ -16,6 +16,7 @@
 TODO: This should be pulled out to a common library.
 """
 from .utils import get_schema, get_schema_store, validate
+from .version import __version__
 
 
-__all__ = ['get_schema', 'get_schema_store', 'validate']
+__all__ = ['get_schema', 'get_schema_store', 'validate', '__version__']

@@ -151,11 +151,11 @@ def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME):
     return filing
 
 
-def factory_pending_filing(business, data_dict):
+def factory_pending_filing(business, data_dict, filing_date=FROZEN_DATETIME):
     """Create a pending filing."""
     filing = Filing()
     filing.business_id = business.id
-    filing.filing_date = FROZEN_DATETIME
+    filing.filing_date = filing_date
     filing.filing_json = data_dict
     filing.payment_token = 2
     filing.save()

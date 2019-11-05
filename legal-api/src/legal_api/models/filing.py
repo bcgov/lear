@@ -39,22 +39,28 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         """Render an Enum of the Filing Statuses."""
 
         COMPLETED = 'COMPLETED'
-        PENDING = 'PENDING'
         DRAFT = 'DRAFT'
         ERROR = 'ERROR'
+        PAID = 'PAID'
+        PENDING = 'PENDING'
 
     FILINGS = {'annualReport': {'name': 'annualReport', 'title': 'Annual Report Filing', 'code': 'OTANN'},
                'changeOfAddress': {'name': 'changeOfAddress', 'title': 'Change of Address Filing', 'code': 'OTADD'},
                'changeOfDirectors': {'name': 'changeOfDirectors', 'title': 'Change of Directors Filing',
-                                     'code': 'OTCDR'}
+                                     'code': 'OTCDR'},
+               'changeOfName': {'name': 'changeOfName', 'title': 'Change of Name Filing'},
+               'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution'},
+               'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'}
                }
 
     __tablename__ = 'filings'
 
     id = db.Column(db.Integer, primary_key=True)
+    _completion_date = db.Column('completion_date', db.DateTime(timezone=True))
     _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _filing_type = db.Column('filing_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
+    effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _payment_token = db.Column('payment_id', db.String(4096))
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
     colin_event_id = db.Column('colin_event_id', db.Integer)
@@ -74,6 +80,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
                                        foreign_keys=[submitter_id])
 
     # properties
+    @property
+    def completion_date(self):
+        """Property containing the filing type."""
+        return self._completion_date
+
     @hybrid_property
     def filing_date(self):
         """Property containing the date a filing was submitted."""
@@ -183,6 +194,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
 
         return False
 
+    def set_processed(self):
+        """Assign the completion date, unless it is already set."""
+        if not self._completion_date:
+            self._completion_date = datetime.utcnow()
+
     @staticmethod
     def _raise_default_lock_exception():
         raise BusinessException(
@@ -203,6 +219,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             json_submission['filing']['header']['status'] = self.status
             json_submission['filing']['header']['availableOnPaperOnly'] = self.paper_only
 
+            if self.effective_date:
+                json_submission['filing']['header']['effectiveDate'] = self.effective_date
             if self._payment_token:
                 json_submission['filing']['header']['paymentToken'] = self.payment_token
             if self.submitter_id:
@@ -251,7 +269,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         return filings
 
     @staticmethod
-    def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str):
+    def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str,
+                                                      status: str):
         """Return the filings of a particular type."""
         max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
             filter(Filing._filing_type == filing_type). \
@@ -260,8 +279,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
 
         filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
             filter(Filing.business_id == business_id). \
-            filter(Filing._filing_type == filing_type). \
-            filter(Filing._status == Filing.Status.COMPLETED.value)
+            filter(Filing._filing_type == filing_type)
+
+        if status:
+            filing = filing.filter(Filing._status == status)
 
         return filing.one_or_none()
 
@@ -329,14 +350,15 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     """Set the state of the filing, based upon column values."""
     filing = target
     # changes are part of the class and are not externalized
-    if filing.payment_token and filing.filing_json:
-        if filing.payment_completion_date and filing.transaction_id:
-            filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
-        elif filing.payment_completion_date:
-            filing._status = Filing.Status.ERROR.value  # pylint: disable=protected-access
-        else:
-            filing._status = Filing.Status.PENDING.value  # pylint: disable=protected-access
-    elif filing.colin_event_id:
+
+    if filing.transaction_id:
         filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
+
+    elif filing.payment_completion_date:
+        filing._status = Filing.Status.PAID.value  # pylint: disable=protected-access
+
+    elif filing.payment_token or filing.colin_event_id:
+        filing._status = Filing.Status.PENDING.value  # pylint: disable=protected-access
+
     else:
         filing._status = Filing.Status.DRAFT.value  # pylint: disable=protected-access

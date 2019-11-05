@@ -85,10 +85,10 @@ class TaskListResource(Resource):
 
         # Retrieve all previous annual report filings. If there are existing AR filings, determine
         # the latest date of filing
-        annual_report_filings = Filing.get_filings_by_type(business.id, 'annualReport')
-        if annual_report_filings:
+        annual_report_filing = Filing.get_a_businesses_most_recent_filing_of_a_type(business.id, 'annualReport', None)
+        if annual_report_filing:
             if check_agm:
-                last_ar_date = annual_report_filings[0].filing_date
+                last_ar_date = annual_report_filing.filing_date
                 todo_start_date = (datetime(last_ar_date.year+1, 1, 1)).date()
 
         start_year = todo_start_date.year

@@ -25,7 +25,7 @@ def test_valid_todo():
         'todo': {
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP0002098',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'Legal Name - CP0002098'
@@ -54,7 +54,7 @@ def test_invalid_todo_name():
         'invalid': {
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP0002098',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'Legal Name - CP0002098'
@@ -105,7 +105,7 @@ def test_invalid_todo_missing_header():
         'todo': {
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP0002098',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'Legal Name - CP0002098'
@@ -129,7 +129,7 @@ def test_invalid_todo_invalid_header():
         'todo': {
             'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP0002098',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'Legal Name - CP0002098'

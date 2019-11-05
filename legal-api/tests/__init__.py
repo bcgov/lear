@@ -14,8 +14,14 @@
 """The Test Suites to ensure that the service is built and operating correctly."""
 import datetime
 
-
-from .pytest_marks import integration_authorization, integration_nats, integration_payment, integration_sentry, not_github_ci  # noqa: E501; flake doesn't like anyother setup
+from .pytest_marks import (
+    integration_authorization,
+    integration_colin,
+    integration_nats,
+    integration_payment,
+    integration_sentry,
+    not_github_ci
+)
 
 
 EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0)

@@ -37,7 +37,7 @@
                 <div class="list-item__title">{{document.name}}</div>
               </v-btn>
             </li>
-            <li class="list-item">
+            <li class="list-item"  v-if="item.paymentToken">
               <v-btn class="list-item__btn" text color="primary" @click="downloadReceipt(item)"
                 :disabled="loadingReceipt" :loading="loadingReceipt">
                 <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
@@ -130,7 +130,7 @@ export default {
       for (let i = 0; i < this.filings.length; i++) {
         const filing = this.filings[i].filing
         if (filing && filing.header) {
-          if (filing.header.date < '2019-03-08') {
+          if (filing.header.date < '2019-03-08' || filing.header.availableOnPaperOnly) {
             this.loadPaperFiling(filing)
           } else {
             switch (filing.header.name) {
@@ -138,10 +138,19 @@ export default {
                 this.loadAnnualReport(filing)
                 break
               case 'changeOfDirectors':
-                this.loadChangeOfDirectors(filing)
+                this.loadReport('Director Change', filing, filing.changeOfDirectors)
                 break
               case 'changeOfAddress':
-                this.loadChangeOfAddress(filing)
+                this.loadReport('Address Change', filing, filing.changeOfAddress)
+                break
+              case 'changeOfName':
+                this.loadReport('Legal Name Change', filing, filing.changeOfName)
+                break
+              case 'specialResolution':
+                this.loadReport('Special Resolution', filing, filing.specialResolution)
+                break
+              case 'voluntaryDissolution':
+                this.loadReport('Voluntary Dissolution', filing, filing.voluntaryDissolution)
                 break
               default:
                 this.loadPaperFiling(filing)
@@ -189,70 +198,45 @@ export default {
       }
     },
 
-    loadChangeOfDirectors (filing) {
-      if (filing.changeOfDirectors) {
+    loadReport (title, filing, section) {
+      if (section) {
         const item = {
-          name: 'Director Change',
+          name: title,
           filingId: filing.header.filingId,
           filingAuthor: filing.header.certifiedBy,
           filingDate: filing.header.date,
           paymentToken: filing.header.paymentToken,
           filingDocuments: [{
             filingId: filing.header.filingId,
-            name: 'Director Change',
-            documentName: `${this.entityIncNo} - Director Change - ${filing.header.date}.pdf`
+            name: title,
+            documentName: `${this.entityIncNo} - ${title} - ${filing.header.date}.pdf`
           }],
           paperOnly: false
         }
         this.filedItems.push(item)
       } else {
-        console.log('ERROR - invalid changeOfDirectors in filing =', filing)
-      }
-    },
-
-    loadChangeOfAddress (filing) {
-      if (filing.changeOfAddress) {
-        const item = {
-          name: 'Address Change',
-          filingId: filing.header.filingId,
-          filingAuthor: filing.header.certifiedBy,
-          filingDate: filing.header.date,
-          paymentToken: filing.header.paymentToken,
-          filingDocuments: [{
-            filingId: filing.header.filingId,
-            name: 'Address Change',
-            documentName: `${this.entityIncNo} - Address Change - ${filing.header.date}.pdf`
-          }],
-          paperOnly: false
-        }
-        this.filedItems.push(item)
-      } else {
-        console.log('ERROR - invalid changeOfAddress in filing =', filing)
+        console.log(`ERROR - invalid ${title} in filing =`, filing)
       }
     },
 
     loadPaperFiling (filing) {
-      if (filing.header && filing.header.availableOnPaperOnly) {
-        // split name on camelcase and capitalize first letters
-        let name = filing.header.name.split(/(?=[A-Z])/).join(' ')
-        name = name.charAt(0).toLocaleUpperCase() + name.slice(1)
-        const item = {
+      // split name on camelcase and capitalize first letters
+      let name = filing.header.name.split(/(?=[A-Z])/).join(' ')
+      name = name.charAt(0).toLocaleUpperCase() + name.slice(1)
+      const item = {
+        name: name,
+        filingAuthor: 'Registry Staff',
+        filingDate: filing.header.date,
+        filingYear: filing.header.date.slice(0, 4),
+        paymentToken: null,
+        filingDocuments: [{
+          filingId: filing.header.filingId,
           name: name,
-          filingAuthor: 'Registry Staff',
-          filingDate: filing.header.date,
-          filingYear: filing.header.date.slice(0, 4),
-          paymentToken: null,
-          filingDocuments: [{
-            filingId: filing.header.filingId,
-            name: name,
-            documentName: null
-          }],
-          paperOnly: true
-        }
-        this.filedItems.push(item)
-      } else {
-        console.log('ERROR - invalid paper filing =', filing)
+          documentName: null
+        }],
+        paperOnly: true
       }
+      this.filedItems.push(item)
     },
 
     highlightFiling (highlightId) {
@@ -372,7 +356,9 @@ export default {
         await this.downloadOneDocument(filing.filingDocuments[i])
       }
       // finally download receipt
-      await this.downloadOneReceipt(filing)
+      if (filing.paymentToken) {
+        await this.downloadOneReceipt(filing)
+      }
       this.loadingAll = false
     }
   },
