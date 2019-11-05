@@ -820,10 +820,10 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
             // save version of directors before changes (deep copy, not reference)
             this.directorsOriginal = JSON.parse(JSON.stringify(directors))
           } else {
-            console.log('getDirectors() error - invalid response data')
+            console.log('getDirectors() error - invalid response data') // eslint-disable-line no-console
           }
         })
-        .catch(error => console.error('getDirectors() error =', error))
+        .catch(error => console.error('getDirectors() error =', error)) // eslint-disable-line no-console
     }
   }
 
