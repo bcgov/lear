@@ -196,6 +196,15 @@
                                         }
                                     },
                                     {
+                                        "name": "NATS_FILER_SUBJECT",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NATS_FILER_SUBJECT"
+                                            }
+                                        }
+                                    },
+                                    {
                                         "name": "NATS_QUEUE",
                                         "valueFrom": {
                                             "configMapKeyRef": {
@@ -238,6 +247,7 @@
                 "NATS_CLUSTER_ID": "${NATS_CLUSTER_ID}",
                 "NATS_CLIENT_NAME": "${NATS_CLIENT_NAME}",
                 "NATS_SUBJECT": "${NATS_SUBJECT}",
+                "NATS_FILER_SUBJECT": "${NATS_FILER_SUBJECT}",
                 "NATS_QUEUE": "${NATS_QUEUE}"
             }
         }
@@ -312,6 +322,13 @@
             "description": "A unique NATS subject name that is set to receive payment tokens.",
             "required": true,
             "value": "entity.filing.payment"
+        },
+        {
+            "name": "NATS_FILER_SUBJECT",
+            "displayName": "NATS Filer Subject Name",
+            "description": "A unique NATS subject name that publishes to the filing processor.",
+            "required": true,
+            "value": "entity.filing.filer"
         },
         {
             "name": "NATS_QUEUE",
