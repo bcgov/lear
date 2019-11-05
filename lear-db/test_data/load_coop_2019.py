@@ -190,6 +190,7 @@ with open('coop_2019_test_data.csv', 'r') as csvfile:
                                            {'name': 'lear_epoch'}
                                            }}
                     filing.transaction_id = transaction.id
+                    filing.business_id = business.id
                     db.session.add(filing)
                     db.session.commit()
                 else:
