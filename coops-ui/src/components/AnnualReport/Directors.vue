@@ -1465,10 +1465,7 @@ ul {
   color: $gray5 !important;
 }
 
-.new-director .meta-container,
-.meta-container.new-director {
-  flex-flow: column nowrap;
-
+.new-director .meta-container {
   > label:first-child {
     margin-bottom: 1.5rem;
   }
