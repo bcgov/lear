@@ -376,6 +376,46 @@ describe('TodoList - UI', () => {
     wrapper.destroy()
   })
 
+  it('displays a FILING PENDING - PAID task', async () => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'changeOfDirectors',
+              'status': 'PAID',
+              'paymentToken': 12345678
+            },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store, vuetify })
+    const vm = wrapper.vm as any
+
+    await flushPromises()
+
+    expect(vm.taskItems.length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(wrapper.emitted('todo-count')).toEqual([[1]])
+    expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
+    expect(vm.$el.querySelector('.no-results')).toBeNull()
+
+    const item = vm.$el.querySelector('.list-item')
+    expect(item.querySelector('.list-item__title').textContent).toEqual('File Director Change')
+    expect(item.querySelector('.list-item__subtitle').textContent).toContain('PAID')
+
+    const button = item.querySelector('.list-item__actions .v-btn')
+    expect(button).toBeNull()
+
+    wrapper.destroy()
+  })
+
   it('displays a PROCESSING message on a filing that is expected to be complete', async () => {
     // init store
     store.state.tasks = [

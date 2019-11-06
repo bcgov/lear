@@ -471,74 +471,8 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
     sinon.restore()
   })
 
-  it('saves a new filing and redirects to Pay URL when this is a new AR and the File & Pay button is clicked',
-    async () => {
-      // set necessary session variables
-      sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-      sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
-
-      const localVue = createLocalVue()
-      localVue.use(VueRouter)
-      const router = mockRouter.mock()
-      router.push({ name: 'standalone-addresses', params: { id: '0' } }) // new filing id
-      const wrapper = mount(StandaloneOfficeAddressFiling, {
-        store,
-        localVue,
-        router,
-        stubs: {
-          RegisteredOfficeAddress: true,
-          Certify: true,
-          StaffPayment: true,
-          Affix: true,
-          SbcFeeSummary: true,
-          ConfirmDialog: true,
-          PaymentErrorDialog: true,
-          ResumeErrorDialog: true,
-          SaveErrorDialog: true
-        },
-        vuetify
-      })
-      const vm: any = wrapper.vm
-
-      // make sure form is validated
-      vm.officeAddressFormValid = true
-      vm.staffPaymentFormValid = true
-      vm.certifyFormValid = true
-      vm.filingData = [{}] // dummy data
-      expect(vm.validated).toEqual(true)
-
-      // sanity check
-      expect(jest.isMockFunction(window.location.assign)).toBe(true)
-
-      // TODO: verify that new filing was created
-
-      const button = wrapper.find('#coa-file-pay-btn')
-      expect(button.attributes('disabled')).toBeUndefined()
-
-      // click the File & Pay button
-      button.trigger('click')
-      // work-around because click trigger isn't working
-      expect(await vm.onClickFilePay()).toBe(true)
-
-      await flushPromises()
-
-      // verify v-tooltip text
-      // const tooltipText = wrapper.find('#coa-file-pay-btn + span').text()
-      // expect(tooltipText).toContain('Ensure all of your information is entered correctly before you File & Pay.')
-      // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
-
-      // verify redirection
-      const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
-        encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
-      expect(window.location.assign).toHaveBeenCalledWith(payURL)
-
-      wrapper.destroy()
-    }
-  )
-
-  it('updates an existing filing and redirects to Pay URL when this is a draft filing and the ' +
-    'File & Pay button is clicked',
-  async () => {
+  it('saves a new filing and redirects to Pay URL when this is a new filing and the File & Pay button ' +
+    'is clicked', async () => {
     // set necessary session variables
     sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
     sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
@@ -546,7 +480,7 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
-    router.push({ name: 'standalone-addresses', params: { id: '123' } }) // new filing id
+    router.push({ name: 'standalone-addresses', params: { id: '0' } }) // new filing id
     const wrapper = mount(StandaloneOfficeAddressFiling, {
       store,
       localVue,
@@ -573,6 +507,75 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
     vm.filingData = [{}] // dummy data
     expect(vm.validated).toEqual(true)
 
+    // make sure a fee is required
+    vm.totalFee = 100
+
+    // sanity check
+    expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+    // TODO: verify that new filing was created
+
+    const button = wrapper.find('#coa-file-pay-btn')
+    expect(button.attributes('disabled')).toBeUndefined()
+
+    // click the File & Pay button
+    button.trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickFilePay()
+    await flushPromises()
+
+    // verify v-tooltip text
+    // const tooltipText = wrapper.find('#coa-file-pay-btn + span').text()
+    // expect(tooltipText).toContain('Ensure all of your information is entered correctly before you File & Pay.')
+    // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
+
+    // verify redirection
+    const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
+      encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
+    expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+    wrapper.destroy()
+  })
+
+  it('updates an existing filing and redirects to Pay URL when this is a draft filing and the File & Pay button ' +
+    'is clicked', async () => {
+    // set necessary session variables
+    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'standalone-addresses', params: { id: '123' } }) // existing filing id
+    const wrapper = mount(StandaloneOfficeAddressFiling, {
+      store,
+      localVue,
+      router,
+      stubs: {
+        RegisteredOfficeAddress: true,
+        Certify: true,
+        StaffPayment: true,
+        Affix: true,
+        SbcFeeSummary: true,
+        ConfirmDialog: true,
+        PaymentErrorDialog: true,
+        ResumeErrorDialog: true,
+        SaveErrorDialog: true
+      },
+      vuetify
+    })
+    const vm: any = wrapper.vm
+
+    // make sure form is validated
+    vm.officeAddressFormValid = true
+    vm.staffPaymentFormValid = true
+    vm.certifyFormValid = true
+    vm.filingData = [{}] // dummy data
+    expect(vm.validated).toEqual(true)
+
+    // make sure a fee is required
+    vm.totalFee = 100
+
     // sanity check
     expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
@@ -584,8 +587,7 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
     // click the File & Pay button
     button.trigger('click')
     // work-around because click trigger isn't working
-    expect(await vm.onClickFilePay()).toBe(true)
-    await flushPromises()
+    await vm.onClickFilePay()
 
     // verify v-tooltip text - Todo: How to get the tool tip rendered outside the wrapper
     // const tooltipText = wrapper.find('#coa-file-pay-btn + span').text()
@@ -676,7 +678,7 @@ describe('Standalone Office Address Filing - Part 4 - Saving', () => {
     sinon.restore()
   })
 
-  it('saves a new filing when this is a new AR and the Save button is clicked',
+  it('saves a new filing when this is a new filing and the Save button is clicked',
     async () => {
       const $route = { params: { id: 0 } } // new filing id
       const wrapper = shallowMount(StandaloneOfficeAddressFiling, { store, mocks: { $route }, vuetify })
@@ -976,7 +978,7 @@ describe('Standalone Office Address Filing - Part 6 - Error/Warning dialogues', 
       const localVue = createLocalVue()
       localVue.use(VueRouter)
       const router = mockRouter.mock()
-      router.push({ name: 'standalone-addresses', params: { id: '123' } }) // new filing id
+      router.push({ name: 'standalone-addresses', params: { id: '123' } }) // existing filing id
       const wrapper = mount(StandaloneOfficeAddressFiling, {
         store,
         localVue,
