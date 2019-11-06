@@ -67,6 +67,40 @@
                             {
                                 "name": "${NAME}-${TAG_NAME}",
                                 "image": "docker-registry.default.svc:5000/${IMAGE_NAMESPACE}/${NAME}:${TAG_NAME}",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/healthz",
+                                        "port": 7070,
+                                        "scheme": "HTTP"
+                                    },
+                                    "initialDelaySeconds": 60,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/readyz",
+                                        "port": 7070,
+                                        "scheme": "HTTP"
+                                    },
+                                    "initialDelaySeconds": 60,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "${CPU_LIMIT}",
+                                        "memory": "${MEMORY_LIMIT}"
+                                    },
+                                    "requests": {
+                                        "cpu": "${CPU_REQUEST}",
+                                        "memory": "${MEMORY_REQUEST}"
+                                    }
+                                },
                                 "ports": [
                                     {
                                         "containerPort": 8080,
@@ -377,7 +411,7 @@
             "displayName": "Resources Memory Limit",
             "description": "The resources Memory limit (in Mi, Gi, etc) for this build.",
             "required": true,
-            "value": "4Gi"
+            "value": "200Mi"
         },
         {
             "name": "REPLICAS",
