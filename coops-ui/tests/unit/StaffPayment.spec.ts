@@ -39,7 +39,9 @@ describe('StaffPayment', () => {
     // 1. value is initially set
     // 2. component is initially valid
     expect(wrapper.emitted('update:value')).toEqual([['123456789']])
-    expect(wrapper.emitted('valid')).toEqual([[true]])
+    setTimeout(() => {
+      expect(wrapper.emitted('valid')).toEqual([[true]])
+    }, 100)
 
     wrapper.destroy()
   })
@@ -59,8 +61,9 @@ describe('StaffPayment', () => {
     // 3. component was initially invalid
     // 4. component became valid
     expect(wrapper.emitted('update:value')).toEqual([[null], ['123456789']])
-    expect(wrapper.emitted('valid')).toEqual([[false], [true]])
-
+    setTimeout(() => {
+      expect(wrapper.emitted('valid')).toEqual([[false], [true]])
+    }, 100)
     wrapper.destroy()
   })
 
@@ -81,7 +84,9 @@ describe('StaffPayment', () => {
     // 3. component was initially valid
     // 4. component became invalid
     expect(wrapper.emitted('update:value')).toEqual([['123456789'], [null]])
-    expect(wrapper.emitted('valid')).toEqual([[true], [false]])
+    setTimeout(() => {
+      expect(wrapper.emitted('valid')).toEqual([[true], [false]])
+    }, 100)
 
     wrapper.destroy()
   })
@@ -101,8 +106,9 @@ describe('StaffPayment', () => {
     // 3. component was initially invalid
     // 4. component became valid
     expect(wrapper.emitted('update:value')).toEqual([[null], ['123456789']])
-    expect(wrapper.emitted('valid')).toEqual([[false], [true]])
-
+    setTimeout(() => {
+      expect(wrapper.emitted('valid')).toEqual([[false], [true]])
+    }, 100)
     wrapper.destroy()
   })
 
@@ -123,7 +129,9 @@ describe('StaffPayment', () => {
     // 3. component was initially valid
     // 4. component became invalid
     expect(wrapper.emitted('update:value')).toEqual([['123456789'], [null]])
-    expect(wrapper.emitted('valid')).toEqual([[true], [false]])
+    setTimeout(() => {
+      expect(wrapper.emitted('valid')).toEqual([[true], [false]])
+    }, 100)
 
     wrapper.destroy()
   })

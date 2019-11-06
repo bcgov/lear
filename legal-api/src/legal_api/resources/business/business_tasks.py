@@ -71,23 +71,26 @@ class TaskListResource(Resource):
         # Retrieve filings that are either incomplete, or drafts
         pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
                                                                      Filing.Status.PENDING.value,
-                                                                     Filing.Status.ERROR.value])
+                                                                     Filing.Status.ERROR.value,
+                                                                     Filing.Status.PAID.value])
         # Create a todo item for each pending filing
         for filing in pending_filings:
             task = {'task': filing.json, 'order': order, 'enabled': True}
             tasks.append(task)
             order += 1
 
+        if check_agm:
+            last_ar_date = business.last_ar_date
+            if last_ar_date:
+                todo_start_date = (datetime(last_ar_date.year + 1, 1, 1)).date()
+
         # Retrieve all previous annual report filings. If there are existing AR filings, determine
         # the latest date of filing
-        annual_report_filings = Filing.get_filings_by_type(business.id, 'annualReport')
-        if annual_report_filings:
-
+        annual_report_filing = Filing.get_a_businesses_most_recent_filing_of_a_type(business.id, 'annualReport', None)
+        if annual_report_filing:
             if check_agm:
-                last_ar_date = business.last_ar_date
+                last_ar_date = annual_report_filing.filing_date
                 todo_start_date = (datetime(last_ar_date.year+1, 1, 1)).date()
-            else:
-                todo_start_date = business.next_anniversary.date()
 
         start_year = todo_start_date.year
 
