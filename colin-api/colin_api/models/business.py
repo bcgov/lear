@@ -119,7 +119,7 @@ class Business:
 
             # convert dates and date-times to correct json format and convert to camel case for schema names
 
-            business['foundingDate'] = convert_to_json_date(business['founding_date'])
+            business['foundingDate'] = convert_to_json_datetime(business['founding_date'])
             business['lastAgmDate'] = convert_to_json_date(business['last_agm_date'])
             business['lastArDate'] = convert_to_json_date(business['last_ar_date']) if business['last_ar_date'] \
                 else business['lastAgmDate']

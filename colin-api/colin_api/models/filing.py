@@ -343,7 +343,7 @@ class Filing:
 
         filing_obj = Filing()
         filing_obj.body = {
-            'annualGeneralMeetingDate': agm_date,
+            'annualGeneralMeetingDate': agm_date if agm_date else ar_date,
             'annualReportDate': ar_date,
             'directors': directors,
             'eventId': filing_event_info['event_id'],
@@ -517,7 +517,8 @@ class Filing:
                 'name': filing_type,
                 'certifiedBy': filing_event_info['certifiedBy'],
                 'email': filing_event_info['email'],
-                'availableOnPaperOnly': filing_obj.filing_type in ['voluntaryDissolution', 'specialResolution']
+                'availableOnPaperOnly': filing_obj.filing_type in ['voluntaryDissolution', 'specialResolution'],
+                'colinId': filing_obj.body['eventId']
             }
             filing_obj.business = business
 

@@ -8,3 +8,4 @@ python-dotenv
 sentry-sdk[flask]
 
 git+https://github.com/bcgov/lear.git#egg=registry_schemas&subdirectory=schemas
+git+https://github.com/bcgov/lear.git#subdirectory=colin-api

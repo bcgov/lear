@@ -29,18 +29,22 @@ class EventInfo(Resource):
     @cors.crossdomain(origin='*')
     def get(corp_type, event_id):
         """Return all event_ids of the corp_type that are greater than the given event_id."""
+        querystring = ("""
+            select event.event_id, corp_num, filing.filing_typ_cd
+            from event
+            join filing on event.event_id = filing.event_id
+            where corp_num like :corp_type
+            """)
+
         try:
             cursor = DB.connection.cursor()
-            cursor.execute(
-                """
-                select event.event_id, corp_num, filing.filing_typ_cd
-                from event
-                join filing on event.event_id = filing.event_id
-                where event.event_id > :max_event_id and corp_num like :corp_type
-                """,
-                max_event_id=event_id,
-                corp_type=corp_type + '%'
-            )
+            if event_id != 'earliest':
+                querystring += 'and event.event_id > :max_event_id'
+                cursor.execute(querystring, max_event_id=event_id, corp_type=corp_type + '%')
+            else:
+                querystring += f"and event_timestmp > TO_DATE('2019-03-08', 'yyyy-mm-dd')"
+                cursor.execute(querystring, corp_type=corp_type + '%')
+
             event_info = cursor.fetchall()
             event_list = []
             for event in event_info:

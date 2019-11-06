@@ -172,3 +172,16 @@ def factory_error_filing(business, data_dict):
     filing.payment_token = 5
     filing.payment_completion_date = datetime.now()
     return filing
+
+
+def factory_epoch_filing(business):
+    """Create an error filing."""
+    filing = Filing()
+    filing.business_id = business.id
+    uow = versioning_manager.unit_of_work(db.session)
+    transaction = uow.create_transaction(db.session)
+    filing.transaction_id = transaction.id
+    filing.filing_date = FROZEN_DATETIME
+    filing.filing_json = {'filing': {'header': {'name': 'lear_epoch'}}}
+    filing.save()
+    return filing
