@@ -44,17 +44,28 @@
               type="info"
               :value="true"
               icon="mdi-information"
-              outlined class="white-background">
+              outlined
+              class="white-background">
               Any address update will be effective tomorrow.
             </v-alert>
           </header>
 
           <!-- Registered Office Addresses -->
           <section>
-            <OfficeAddresses
+            <RegisteredOffice
+              v-if="entityFilter(EntityTypes.Coop)"
               :changeButtonDisabled="false"
               :legalEntityNumber="entityIncNo"
               :addresses.sync="addresses"
+              @modified="officeModifiedEventHandler($event)"
+              @valid="officeAddressFormValid = $event"
+            />
+            <OfficeAddresses
+              v-if="entityFilter(EntityTypes.BCorp)"
+              :changeButtonDisabled="false"
+              :addresses.sync="addresses"
+              :registeredAddress.sync="registeredAddress"
+              :recordsAddress.sync="recordsAddress"
               @modified="officeModifiedEventHandler($event)"
               @valid="officeAddressFormValid = $event"
             />
@@ -160,13 +171,14 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
-import { OfficeAddresses } from '@/components/Common'
+import { OfficeAddresses, RegisteredOffice } from '@/components/Common'
 import { EntityTypes } from '@/enums'
 
 export default {
   name: 'StandaloneOfficeAddressFiling',
 
   components: {
+    RegisteredOffice,
     OfficeAddresses,
     SbcFeeSummary,
     Affix,
@@ -182,6 +194,9 @@ export default {
   data () {
     return {
       addresses: null,
+      editing: null,
+      editClose: null,
+      registeredAddresses: null,
       filingId: null,
       showLoading: false,
       filingData: [],
@@ -198,16 +213,24 @@ export default {
       haveChanges: false,
       saveErrors: [],
       saveWarnings: [],
+<<<<<<< HEAD
       // properties for Staff Payment component
       routingSlipNumber: null,
       staffPaymentFormValid: false,
       totalFee: 0,
       EntityTypes
+=======
+      EntityTypes: EntityTypes
+>>>>>>> Ongoin COA Filing. Address Complete
     }
   },
 
   computed: {
+<<<<<<< HEAD
     ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo', 'entityFoundingDate']),
+=======
+    ...mapState(['currentDate', 'entityName', 'entityIncNo', 'entityFoundingDate', 'registeredAddress', 'recordsAddress']),
+>>>>>>> Ongoin COA Filing. Address Complete
 
     ...mapGetters(['isRoleStaff']),
 
@@ -294,7 +317,6 @@ export default {
 
   methods: {
     formatAddress (address) {
-      console.log(address)
       return {
         'actions': address.actions || [],
         'addressCity': address.addressCity || '',
@@ -330,7 +352,6 @@ export default {
 
             const changeOfAddress = filing.changeOfAddress
             if (changeOfAddress) {
-              console.log(changeOfAddress)
               if (changeOfAddress.deliveryAddress && changeOfAddress.mailingAddress) {
                 this.addresses = {
                   deliveryAddress: changeOfAddress.deliveryAddress,
@@ -594,9 +615,15 @@ export default {
     certifiedBy (val) {
       this.haveChanges = true
     },
+<<<<<<< HEAD
 
     routingSlipNumber (val) {
       this.haveChanges = true
+=======
+    addresses (val) {
+      console.log('Address watcher')
+      console.log(this.addresses)
+>>>>>>> Ongoin COA Filing. Address Complete
     }
   }
 }
@@ -656,5 +683,13 @@ h2 {
   #coa-cancel-btn {
     margin-left: 0.5rem;
   }
+}
+
+// Bcorp Alert
+.v-application .info--text {
+  padding: 0.5rem!important;
+  color: #000014 !important;
+  border-color: #2196f3 !important;
+  caret-color: #2196f3 !important;
 }
 </style>
