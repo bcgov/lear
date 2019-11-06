@@ -1,6 +1,6 @@
 <template>
   <v-card flat id="AR-step-5-container">
-    <v-form class="container">
+    <v-form class="container" v-model="formValid">
       <div class="routingslipnumber-container">
         <label>
           <span>Routing Slip Number</span>
@@ -30,6 +30,8 @@ export default class StaffPayment extends Vue {
   @Prop({ default: null })
   private value: string
 
+  private formValid : boolean = false
+
   // Local copy of the prop, initialized to initial prop value.
   private routingSlipNumber: string = this.value
 
@@ -39,16 +41,10 @@ export default class StaffPayment extends Vue {
     v => /^\d{9}$/.test(v) || 'Routing Slip Number must be 9 digits'
   ]
 
-  // Boolean getter representing the validity of the form.
-  // NB: needed because Vuetify form validity can't be tested
-  private get valid () : boolean {
-    return !!this.routingSlipNumber
-  }
-
   // Notifies parent of initial state.
   private created (): void {
     this.emitUpdateValue(this.routingSlipNumber)
-    this.emitValid(this.valid)
+    this.emitValid(this.formValid)
   }
 
   // Watches for change to prop and updates local copy.
@@ -64,9 +60,9 @@ export default class StaffPayment extends Vue {
   }
 
   // Watches for change to form validity and notifies parent.
-  @Watch('valid')
+  @Watch('formValid')
   private onValidChanged (val: boolean): void {
-    this.emitValid(this.valid)
+    this.emitValid(this.formValid)
   }
 
   // Emits an event to inform parent of new Routing Slip Number.
