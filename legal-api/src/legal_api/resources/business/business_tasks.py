@@ -71,7 +71,8 @@ class TaskListResource(Resource):
         # Retrieve filings that are either incomplete, or drafts
         pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
                                                                      Filing.Status.PENDING.value,
-                                                                     Filing.Status.ERROR.value])
+                                                                     Filing.Status.ERROR.value,
+                                                                     Filing.Status.PAID.value])
         # Create a todo item for each pending filing
         for filing in pending_filings:
             task = {'task': filing.json, 'order': order, 'enabled': True}
