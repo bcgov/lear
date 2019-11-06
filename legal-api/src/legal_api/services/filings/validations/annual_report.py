@@ -38,7 +38,7 @@ def validate(business: Business, annual_report: Dict) -> Error:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
 
     last_filing = Filing.get_a_businesses_most_recent_filing_of_a_type(
-        business.id, Filing.FILINGS['annualReport']['name'], Filing.Status.COMPLETED.value)
+        business.id, Filing.FILINGS['annualReport']['name'])
     err = validate_ar_year(business=business,
                            previous_annual_report=last_filing,
                            current_annual_report=annual_report)

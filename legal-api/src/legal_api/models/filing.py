@@ -269,8 +269,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         return filings
 
     @staticmethod
-    def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str,
-                                                      status: str):
+    def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str):
         """Return the filings of a particular type."""
         max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
             filter(Filing._filing_type == filing_type). \
@@ -279,10 +278,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
 
         filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
             filter(Filing.business_id == business_id). \
-            filter(Filing._filing_type == filing_type)
-
-        if status:
-            filing = filing.filter(Filing._status == status)
+            filter(Filing._filing_type == filing_type). \
+            filter(Filing._status == Filing.Status.COMPLETED.value)
 
         return filing.one_or_none()
 
