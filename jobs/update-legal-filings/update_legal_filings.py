@@ -151,7 +151,6 @@ def run():
 
             if len(manual_filings_info) > 0:
                 for event_info in manual_filings_info:
-                    print(event_info)
                     filing = get_filing(event_info, application)
 
                     # validate schema
