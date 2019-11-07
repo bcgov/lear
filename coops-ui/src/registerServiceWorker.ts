@@ -40,9 +40,12 @@ if (process.env.NODE_ENV === 'production') {
   })
 
   let refreshing
-  navigator.serviceWorker.addEventListener('controllerchange', e => {
-    if (refreshing) return
-    window.location.reload()
-    refreshing = true
-  })
+  // safety check for IE11
+  if (navigator && navigator.serviceWorker) {
+    navigator.serviceWorker.addEventListener('controllerchange', e => {
+      if (refreshing) return
+      window.location.reload()
+      refreshing = true
+    })
+  }
 }

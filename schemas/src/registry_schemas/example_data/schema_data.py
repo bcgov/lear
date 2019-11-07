@@ -263,7 +263,6 @@ VOLUNTARY_DISSOLUTION = {
 }
 
 SPECIAL_RESOLUTION = {
-    'meetingDate': '2018-04-08',
     'resolution': 'Be in resolved that cookies are delicious.\n\nNom nom nom...'
 }
 

@@ -104,7 +104,7 @@ export default {
         businessId = this.getBusinessId()
         this.updateCurrentDate()
       } catch (error) {
-        console.error(error)
+        console.error(error) // eslint-disable-line no-console
         this.dashboardUnavailableDialog = true
         return // do not execute remaining code
       }
@@ -131,11 +131,11 @@ export default {
           this.storeDirectors(data[5])
           this.dataLoaded = true
         }).catch(error => {
-          console.error(error)
+          console.error(error) // eslint-disable-line no-console
           this.dashboardUnavailableDialog = true
         })
       }).catch(error => {
-        console.error(error)
+        console.error(error) // eslint-disable-line no-console
         this.accountAuthorizationDialog = true
       })
     },
@@ -244,8 +244,7 @@ export default {
         this.setEntityIncNo(response.data.business.identifier)
         this.setLastPreLoadFilingDate(response.data.business.lastLedgerTimestamp
           ? response.data.business.lastLedgerTimestamp.split('T')[0] : null)
-        this.setEntityFoundingDate(response.data.business.foundingDate
-          ? response.data.business.foundingDate.split('T')[0] : null)
+        this.setEntityFoundingDate(response.data.business.foundingDate) // datetime
         const date = response.data.business.lastAnnualGeneralMeetingDate
         if (
           date &&

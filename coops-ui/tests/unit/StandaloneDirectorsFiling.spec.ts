@@ -563,71 +563,70 @@ describe('Standalone Directors Filing - Part 3 - Submitting', () => {
     }
   )
 
-  it('saves a new filing and redirects to Pay URL when this is a new AR and the File & Pay button is clicked as a Bcorp',
-    async () => {
-      // init store
-      store.state.entityType = EntityTypes.BCorp
+  it('saves a new filing and redirects to Pay URL when this is a new AR and the File & Pay button is clicked ' +
+    'as a Bcorp', async () => {
+    // init store
+    store.state.entityType = EntityTypes.BCorp
 
-      // set necessary session variables
-      sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-      sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+    // set necessary session variables
+    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
 
-      const localVue = createLocalVue()
-      localVue.use(VueRouter)
-      const router = mockRouter.mock()
-      router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
-      const wrapper = mount(StandaloneDirectorsFiling, {
-        store,
-        localVue,
-        router,
-        stubs: {
-          Directors: true,
-          Certify: true,
-          Affix: true,
-          SbcFeeSummary: true,
-          ConfirmDialog: true,
-          PaymentErrorDialog: true,
-          ResumeErrorDialog: true,
-          SaveErrorDialog: true
-        },
-        vuetify
-      })
-      const vm: any = wrapper.vm as any
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
+    const wrapper = mount(StandaloneDirectorsFiling, {
+      store,
+      localVue,
+      router,
+      stubs: {
+        Directors: true,
+        Certify: true,
+        Affix: true,
+        SbcFeeSummary: true,
+        ConfirmDialog: true,
+        PaymentErrorDialog: true,
+        ResumeErrorDialog: true,
+        SaveErrorDialog: true
+      },
+      vuetify
+    })
+    const vm: any = wrapper.vm as any
 
-      // make sure form is validated
-      vm.inFilingReview = true
-      vm.directorFormValid = true
-      vm.certifyFormValid = true
-      vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'BC' }] // dummy data
-      expect(vm.validated).toEqual(true)
+    // make sure form is validated
+    vm.inFilingReview = true
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
+    vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'BC' }] // dummy data
+    expect(vm.validated).toEqual(true)
 
-      // sanity check
-      expect(jest.isMockFunction(window.location.assign)).toBe(true)
+    // sanity check
+    expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
-      // TODO: verify that new filing was created
+    // TODO: verify that new filing was created
 
-      const button = wrapper.find('#cod-file-pay-btn')
-      expect(button.attributes('disabled')).not.toBe('true')
+    const button = wrapper.find('#cod-file-pay-btn')
+    expect(button.attributes('disabled')).not.toBe('true')
 
-      // click the File & Pay button
-      button.trigger('click')
-      // work-around because click trigger isn't working
-      expect(await vm.onClickFilePay()).toBe(true)
-      await flushPromises()
+    // click the File & Pay button
+    button.trigger('click')
+    // work-around because click trigger isn't working
+    expect(await vm.onClickFilePay()).toBe(true)
+    await flushPromises()
 
-      // verify v-tooltip text - Todo - Tool tip is outside the wrapper. Yet to find out how to get hold of that.
-      // const tooltipText = wrapper.find('#cod-file-pay-btn + span').text()
-      // expect(tooltipText).toContain('Ensure all of your information is entered correctly before you File & Pay.')
-      // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
+    // verify v-tooltip text - Todo - Tool tip is outside the wrapper. Yet to find out how to get hold of that.
+    // const tooltipText = wrapper.find('#cod-file-pay-btn + span').text()
+    // expect(tooltipText).toContain('Ensure all of your information is entered correctly before you File & Pay.')
+    // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
-      // verify redirection
-      const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
+    // verify redirection
+    const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
         encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
-      expect(window.location.assign).toHaveBeenCalledWith(payURL)
+    expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
-      wrapper.destroy()
-    }
-  )
+    wrapper.destroy()
+  })
 
   it('updates an existing filing and redirects to Pay URL when this is a draft filing and the ' +
     'File & Pay button is clicked',
