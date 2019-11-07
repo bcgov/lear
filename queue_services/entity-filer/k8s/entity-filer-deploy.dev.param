@@ -17,6 +17,7 @@ NATS_SERVERS="nats://nats-streaming.<namespace>.svc:4222"
 NATS_CLUSTER_ID="test-cluster"
 NATS_CLIENT_NAME="entity.filing.filer.worker"
 NATS_SUBJECT="entity.filing.filer"
+NATS_FILER_SUBJECT=entity.filing.filer
 NATS_QUEUE="filing-worker"
 IMAGE_NAMESPACE="<namespace>"
 TAG_NAME="dev"
