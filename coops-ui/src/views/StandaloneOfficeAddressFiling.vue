@@ -52,7 +52,7 @@
 
           <!-- Registered Office Addresses -->
           <section>
-            <RegisteredOffice
+            <RegisteredOfficeAddress
               v-if="entityFilter(EntityTypes.Coop)"
               :changeButtonDisabled="false"
               :legalEntityNumber="entityIncNo"
@@ -159,7 +159,6 @@
 
 <script lang="ts">
 import axios from '@/axios-auth'
-import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapGetters } from 'vuex'
@@ -171,14 +170,14 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
-import { OfficeAddresses, RegisteredOffice } from '@/components/Common'
+import { OfficeAddresses, RegisteredOfficeAddress } from '@/components/Common'
 import { EntityTypes } from '@/enums'
 
 export default {
   name: 'StandaloneOfficeAddressFiling',
 
   components: {
-    RegisteredOffice,
+    RegisteredOfficeAddress,
     OfficeAddresses,
     SbcFeeSummary,
     Affix,
@@ -213,25 +212,16 @@ export default {
       haveChanges: false,
       saveErrors: [],
       saveWarnings: [],
-<<<<<<< HEAD
       // properties for Staff Payment component
       routingSlipNumber: null,
       staffPaymentFormValid: false,
       totalFee: 0,
-      EntityTypes
-=======
       EntityTypes: EntityTypes
->>>>>>> Ongoin COA Filing. Address Complete
     }
   },
 
   computed: {
-<<<<<<< HEAD
-    ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo', 'entityFoundingDate']),
-=======
-    ...mapState(['currentDate', 'entityName', 'entityIncNo', 'entityFoundingDate', 'registeredAddress', 'recordsAddress']),
->>>>>>> Ongoin COA Filing. Address Complete
-
+    ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo', 'entityFoundingDate', 'registeredAddress', 'recordsAddress']),
     ...mapGetters(['isRoleStaff']),
 
     validated () {
@@ -271,7 +261,7 @@ export default {
     }
 
     // NB: filing id of 0 means "new"
-    // otherwise it's a draft filing id
+    // otherwise it's a draft filing id2
     this.filingId = this.$route.params.id
 
     // if tombstone data isn't set, route to home
@@ -331,6 +321,7 @@ export default {
     },
 
     fetchChangeOfAddressFiling () {
+      console.log('Change of address filing Called')
       const url = this.entityIncNo + '/filings/' + this.filingId
       axios.get(url).then(response => {
         if (response && response.data) {
@@ -389,14 +380,17 @@ export default {
     },
 
     async onClickSave () {
+      console.log('Save filing called')
       // prevent double saving
       if (this.busySaving) return
 
       this.saving = true
       const filing = await this.saveFiling(true)
+      console.log(filing)
       if (filing) {
         this.filingId = +filing.header.filingId
       }
+      console.log(this.filingId)
       this.saving = false
     },
 
@@ -406,6 +400,7 @@ export default {
 
       this.savingResuming = true
       const filing = await this.saveFiling(true)
+      console.log(filing)
       // on success, route to Home URL
       if (filing) {
         this.$router.push('/')
@@ -479,74 +474,104 @@ export default {
           }
         }
 
+        // <<<<<<< HEAD
+        //         if (this.isDataChanged('OTADD') && this.addresses) {
+        //           changeOfAddress = {
+        //             changeOfAddress: {
+        //               deliveryAddress: this.formatAddress(this.addresses['deliveryAddress']),
+        //               mailingAddress: this.formatAddress(this.addresses['mailingAddress'])
+        // =======
         if (this.isDataChanged('OTADD') && this.addresses) {
+          console.log(this.addresses)
+
+          // changeOfAddress = {
+          //   changeOfAddress: {
+          //     deliveryAddress: this.formatAddress(this.addresses['deliveryAddress']),
+          //     mailingAddress: this.formatAddress(this.addresses['mailingAddress'])
+          //   }
+          // }
+
           changeOfAddress = {
             changeOfAddress: {
-              deliveryAddress: this.formatAddress(this.addresses['deliveryAddress']),
-              mailingAddress: this.formatAddress(this.addresses['mailingAddress'])
+              registeredOffice: {
+                deliveryAddress: this.formatAddress(this.addresses.registeredOffice['deliveryAddress']),
+                mailingAddress: this.formatAddress(this.addresses.registeredOffice['mailingAddress'])
+              },
+              recordsOffice: {
+                deliveryAddress: this.formatAddress(this.addresses.recordsOffice['deliveryAddress']),
+                mailingAddress: this.formatAddress(this.addresses.recordsOffice['mailingAddress'])
+              }
             }
           }
-        }
 
-        const filingData = {
-          filing: Object.assign(
-            {},
-            header,
-            business,
-            changeOfAddress
-          )
-        }
+          const filingData = {
+            filing: Object.assign(
+              {},
+              header,
+              business,
+              changeOfAddress
+            )
+          }
 
-        if (this.filingId > 0) {
-        // we have a filing id, so we are updating an existing filing
-          let url = this.entityIncNo + '/filings/' + this.filingId
-          if (isDraft) { url += '?draft=true' }
-          let filing = null
-          await axios.put(url, filingData).then(res => {
-            if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
-            filing = res.data.filing
-            this.haveChanges = false
-          }).catch(error => {
-            if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
-              this.paymentErrorDialog = true
-            } else if (error && error.response && error.response.status === BAD_REQUEST) {
-              if (error.response.data.errors) {
-                this.saveErrors = error.response.data.errors
-              }
-              if (error.response.data.warnings) {
-                this.saveWarnings = error.response.data.warnings
-              }
-              this.saveErrorDialog = true
-            } else {
-              this.saveErrorDialog = true
+          if (this.filingId > 0) {
+            // we have a filing id, so we are updating an existing filing
+            let url = this.entityIncNo + '/filings/' + this.filingId
+            if (isDraft) {
+              url += '?draft=true'
             }
-          })
-          return filing
-        } else {
-        // filing id is 0, so we are saving a new filing
-          let url = this.entityIncNo + '/filings'
-          if (isDraft) { url += '?draft=true' }
-          let filing = null
-          await axios.post(url, filingData).then(res => {
-            if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
-            filing = res.data.filing
-            this.haveChanges = false
-          }).catch(error => {
-            if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
-              this.paymentErrorDialog = true
-            } else if (error && error.response && error.response.status === BAD_REQUEST) {
-              if (error.response.data.errors) {
-                this.saveErrors = error.response.data.errors
+            let filing = null
+            await axios.put(url, filingData).then(res => {
+              if (!res || !res.data || !res.data.filing) {
+                throw new Error('invalid API response')
               }
-              if (error.response.data.warnings) {
-                this.saveWarnings = error.response.data.warnings
+              filing = res.data.filing
+              this.haveChanges = false
+            }).catch(error => {
+              if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
+                this.paymentErrorDialog = true
+              } else if (error && error.response && error.response.status === BAD_REQUEST) {
+                if (error.response.data.errors) {
+                  this.saveErrors = error.response.data.errors
+                }
+                if (error.response.data.warnings) {
+                  this.saveWarnings = error.response.data.warnings
+                }
+                this.saveErrorDialog = true
+              } else {
+                this.saveErrorDialog = true
               }
-              this.saveErrorDialog = true
-            } else {
-              this.saveErrorDialog = true
+            })
+            return filing
+          } else {
+            // filing id is 0, so we are saving a new filing
+            let url = this.entityIncNo + '/filings'
+            if (isDraft) {
+              url += '?draft=true'
             }
-          })
-          return filing
+            let filing = null
+            await axios.post(url, filingData).then(res => {
+              if (!res || !res.data || !res.data.filing) {
+                throw new Error('invalid API response')
+              }
+              filing = res.data.filing
+              this.haveChanges = false
+            }).catch(error => {
+              if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
+                this.paymentErrorDialog = true
+              } else if (error && error.response && error.response.status === BAD_REQUEST) {
+                if (error.response.data.errors) {
+                  this.saveErrors = error.response.data.errors
+                }
+                if (error.response.data.warnings) {
+                  this.saveWarnings = error.response.data.warnings
+                }
+                this.saveErrorDialog = true
+              } else {
+                this.saveErrorDialog = true
+              }
+            })
+            return filing
+          }
         }
       }
     },
@@ -615,15 +640,12 @@ export default {
     certifiedBy (val) {
       this.haveChanges = true
     },
-<<<<<<< HEAD
-
     routingSlipNumber (val) {
       this.haveChanges = true
-=======
+    },
     addresses (val) {
       console.log('Address watcher')
       console.log(this.addresses)
->>>>>>> Ongoin COA Filing. Address Complete
     }
   }
 }
