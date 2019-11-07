@@ -65,9 +65,12 @@ import FilingHistoryList from '@/components/Dashboard/FilingHistoryList.vue'
 import AddressListSm from '@/components/Dashboard/AddressListSm.vue'
 import DirectorListSm from '@/components/Dashboard/DirectorListSm.vue'
 import { mapState, mapActions } from 'vuex'
+import { withFlags } from 'ld-vue'
 
 export default {
   name: 'Dashboard',
+
+  mixins: [withFlags],
 
   components: {
     TodoList,
@@ -167,6 +170,8 @@ export default {
     }
   },
   mounted () {
+    // Flag Usage Example.
+    // console.log(this.flags.coopsVersion)
     this.checkToReloadDashboard()
   },
   watch: {
