@@ -25,7 +25,7 @@ export default class ARDate extends DateMixin {
 </script>
 
 <style lang="scss" scoped>
-@import '../../../assets/styles/theme.scss';
+@import '@/assets/styles/theme.scss';
 
 .container {
   background: #ffffff;

@@ -104,7 +104,7 @@ export default class EntityInfo extends Vue {
 <!-- eslint-disable max-len -->
 <style lang="scss" scoped>
 // TODO: Explore how to expose this globally without having to include in each module
-@import "../assets/styles/theme.scss";
+@import '@/assets/styles/theme.scss';
 
 .entity-info {
   background: #ffffff;

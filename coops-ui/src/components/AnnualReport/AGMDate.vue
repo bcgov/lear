@@ -284,7 +284,7 @@ export default class AGMDate extends Mixins(DateMixin) {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/styles/theme.scss";
+@import "@/assets/styles/theme.scss";
 
 .validationErrorInfo{
   color: red;

@@ -1316,7 +1316,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/styles/theme.scss";
+@import "@/assets/styles/theme.scss";
 
 .v-card {
   line-height: 1.2rem;

@@ -185,27 +185,27 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  section header {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+section header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
 
-    h2 {
-      font-size: 1.125rem;
-    }
+  h2 {
+    font-size: 1.125rem;
   }
+}
 
-  .dashboard-content {
-    display: flex
-  }
+.dashboard-content {
+  display: flex
+}
 
-  .dashboard-content__main {
-    flex: 1 1 auto;
-    z-index: 1
-  }
+.dashboard-content__main {
+  flex: 1 1 auto;
+  z-index: 1
+}
 
-  .dashboard-content__aside {
-    margin-left: 2rem
-  }
+.dashboard-content__aside {
+  margin-left: 2rem
+}
 </style>

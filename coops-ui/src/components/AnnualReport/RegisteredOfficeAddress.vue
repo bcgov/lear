@@ -471,7 +471,7 @@ export default class RegisteredOfficeAddress extends Mixins(AddressMixin, Common
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/styles/theme.scss';
+@import '@/assets/styles/theme.scss';
 
 .v-btn {
   margin: 0;

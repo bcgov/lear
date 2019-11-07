@@ -374,85 +374,85 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  @import "../../assets/styles/theme.scss";
+@import "@/assets/styles/theme.scss";
+
+.list-item {
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0;
+  font-size: 0.96rem;
+}
+
+.filing-type {
+  flex-basis: 33.3333%;
+  flex: 1 1 auto;
+}
+
+.filing-status {
+  width: 25%;
+  color: $gray6;
+}
+
+.filing-view-docs {
+  flex: 0 0 auto;
+  width: 30%;
+  text-align: right;
+  font-weight: 700;
+}
+
+  // Document List
+.document-list {
+  border-top: 1px solid $gray3;
+  padding-left: 0;
 
   .list-item {
-    align-items: flex-start;
-    justify-content: space-between;
-    padding: 0;
-    font-size: 0.96rem;
+    padding: 0.25rem 0;
   }
 
-  .filing-type {
-    flex-basis: 33.3333%;
-    flex: 1 1 auto;
+  .v-btn {
+    padding: 0 0.5rem 0 0.25rem;
   }
+}
 
-  .filing-status {
-    width: 25%;
+  // Documents Actions Bar
+.documents-actions-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid $gray3;
+
+  .download-all-btn {
+    min-width: 8rem;
+  }
+}
+
+// Past Filings
+.past-filings {
+  border-top: 1px solid $gray3;
+  text-align: center;
+
+  .past-filings__text {
+    margin-top: 0.25rem;
     color: $gray6;
+    font-size: 0.875rem;
+    font-weight: 500;
   }
+}
+.paper-filings {
+  border-top: 1px solid $gray3;
+  text-align: left;
 
-  .filing-view-docs {
-    flex: 0 0 auto;
-    width: 30%;
-    text-align: right;
-    font-weight: 700;
-  }
+  .paper-filings__text {
+    margin-top: 0.2rem;
+    color: $gray9;
+    font-size: 0.8rem;
+    font-weight: 400;
+    line-height: 1rem;
 
-   // Document List
-  .document-list {
-    border-top: 1px solid $gray3;
-    padding-left: 0;
-
-    .list-item {
-      padding: 0.25rem 0;
-    }
-
-    .v-btn {
-      padding: 0 0.5rem 0 0.25rem;
+    a {
+      color: $gray7;
+      margin-left: 1rem;
     }
   }
-
-   // Documents Actions Bar
-  .documents-actions-bar {
-    display: flex;
-    justify-content: flex-end;
-    padding-top: 1rem;
-    border-top: 1px solid $gray3;
-
-    .download-all-btn {
-      min-width: 8rem;
-    }
-  }
-
-  // Past Filings
-  .past-filings {
-    border-top: 1px solid $gray3;
-    text-align: center;
-
-    .past-filings__text {
-      margin-top: 0.25rem;
-      color: $gray6;
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-  }
-  .paper-filings {
-    border-top: 1px solid $gray3;
-    text-align: left;
-
-    .paper-filings__text {
-      margin-top: 0.2rem;
-      color: $gray9;
-      font-size: 0.8rem;
-      font-weight: 400;
-      line-height: 1rem;
-
-      a {
-        color: $gray7;
-        margin-left: 1rem;
-      }
-    }
-  }
+}
 </style>

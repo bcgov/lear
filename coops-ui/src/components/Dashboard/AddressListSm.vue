@@ -59,37 +59,37 @@ export default class AddressListSm extends CountriesProvincesMixin {
 </script>
 
 <style lang="scss" scoped>
-  @import "../../assets/styles/theme.scss";
+@import "@/assets/styles/theme.scss";
 
-  // Variables
-  $icon-width: 2.75rem;
+// Variables
+$icon-width: 2.75rem;
 
-  .v-list-item__icon {
-    margin-top: 0.7rem;
-    margin-right: 0;
-  }
+.v-list-item__icon {
+  margin-top: 0.7rem;
+  margin-right: 0;
+}
 
-  .v-list-item__title {
-    font-size: 0.875rem;
-    font-weight: 700;
-  }
+.v-list-item__title {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
 
-  .v-divider {
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
+.v-divider {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
 
-  .address-icon {
-    width: $icon-width;
-  }
+.address-icon {
+  width: $icon-width;
+}
 
-  .address-info {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-  }
+.address-info {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
 
-  .pre-wrap {
-    white-space: pre-wrap;
-  }
+.pre-wrap {
+  white-space: pre-wrap;
+}
 </style>
