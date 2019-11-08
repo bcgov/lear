@@ -93,7 +93,7 @@ export default class Certify extends Vue {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/styles/theme.scss';
+@import '@/assets/styles/theme.scss';
 
 #AR-step-4-container {
   margin-top: 1rem;

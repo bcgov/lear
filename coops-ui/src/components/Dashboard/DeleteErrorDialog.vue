@@ -60,7 +60,7 @@ export default class DeleteErrorDialog extends Vue {
 <style lang="scss" scoped>
 @import '@/assets/styles/theme.scss';
 
-.genErr{
+.genErr {
   font-size: 0.9rem;
 }
 </style>

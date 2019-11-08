@@ -78,55 +78,55 @@ export default class DirectorListSm extends Mixins(CountriesProvincesMixin, Enti
 </script>
 
 <style lang="scss" scoped>
-  @import "../../assets/styles/theme.scss";
+@import "@/assets/styles/theme.scss";
 
-  // Variables
-  $avatar-width: 2.75rem;
+// Variables
+$avatar-width: 2.75rem;
 
-  // Expansion Panel Customization
-  .v-expansion-panel-header {
-    padding: 1rem;
-  }
+// Expansion Panel Customization
+.v-expansion-panel-header {
+  padding: 1rem;
+}
 
-  .v-expansion-panel-header > .avatar-container {
-    flex: 0 0 auto;
-    width: $avatar-width;
-  }
+.v-expansion-panel-header > .avatar-container {
+  flex: 0 0 auto;
+  width: $avatar-width;
+}
 
-  ::v-deep .v-expansion-panel-content__wrap {
-    padding-right: 1rem;
-    padding-left: 1rem;
-    padding-bottom: 1rem;
-  }
+::v-deep .v-expansion-panel-content__wrap {
+  padding-right: 1rem;
+  padding-left: 1rem;
+  padding-bottom: 1rem;
+}
 
-  .v-avatar {
-    flex: 0 0 auto;
-    color: $gray0;
-    font-size: 0.85rem;
-  }
+.v-avatar {
+  flex: 0 0 auto;
+  color: $gray0;
+  font-size: 0.85rem;
+}
 
-  // Director Address Information
-  .v-list-item {
-    padding: 0;
-  }
+// Director Address Information
+.v-list-item {
+  padding: 0;
+}
 
-  .v-list-item__title {
-    font-size: 0.875rem;
-    font-weight: 400;
-  }
+.v-list-item__title {
+  font-size: 0.875rem;
+  font-weight: 400;
+}
 
-  .v-list-item__content {
-    padding: 0;
-    margin-left: $avatar-width;
-  }
+.v-list-item__content {
+  padding: 0;
+  margin-left: $avatar-width;
+}
 
-  .address-info {
-    padding: 0;
-    list-style-type: none;
-    line-height: 1.25rem;
-  }
+.address-info {
+  padding: 0;
+  list-style-type: none;
+  line-height: 1.25rem;
+}
 
-  .pre-wrap {
-    white-space: pre-wrap;
-  }
+.pre-wrap {
+  white-space: pre-wrap;
+}
 </style>
