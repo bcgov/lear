@@ -268,7 +268,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         filings = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type == filing_type). \
-            order_by(desc(Filing.id)). \
+            order_by(desc(Filing._filing_date)). \
             all()
         return filings
 
