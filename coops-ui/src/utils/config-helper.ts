@@ -38,6 +38,10 @@ export default {
         const addressCompleteKey = response.data['ADDRESS_COMPLETE_KEY']
         window['addressCompleteKey'] = addressCompleteKey
         console.log('Set Address Complete Key.')
+
+        const ldClientId = response.data['LD_CLIENT_ID']
+        window['ldClientId'] = ldClientId
+        console.log('Set LD Client Id.')
       })
   }
 }

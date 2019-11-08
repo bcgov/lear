@@ -1,5 +1,6 @@
 import 'core-js/stable' // to polyfill ECMAScript features
 import 'regenerator-runtime/runtime' // to use transpiled generator functions
+import '@mdi/font/css/materialdesignicons.css'
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
@@ -11,6 +12,7 @@ import router from '@/router'
 import store from '@/store/store'
 import configHelper from '@/utils/config-helper'
 import '@/registerServiceWorker'
+import { withFlagProvider } from 'ld-vue'
 
 const opts = { iconfont: 'mdi' }
 
@@ -23,12 +25,14 @@ Vue.config.productionTip = false
 /**
  * first fetch config from server, then load Vue
  */
+
 configHelper.fetchConfig()
   .then(() => {
     new Vue({
       vuetify: new Vuetify(opts),
       router,
       store,
+      mixins: [withFlagProvider({ clientSideId: window['ldClientId'] })],
       render: h => h(App)
     }).$mount('#app')
   })
