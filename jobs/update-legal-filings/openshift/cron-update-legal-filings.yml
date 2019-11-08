@@ -57,8 +57,8 @@ objects:
                     secretKeyRef:
                       key: PASSWORD
                       name: updater-job
-            restartPolicy: "Never"
-            concurrencyPolicy: "Forbid"
+          restartPolicy: "Never"
+          concurrencyPolicy: "Forbid"
 parameters: [
         {
           "name": "ENV_TAG",
