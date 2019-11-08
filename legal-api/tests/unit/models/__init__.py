@@ -35,6 +35,7 @@ AR_FILING = {
         },
         'annualReport': {
             'annualGeneralMeetingDate': '2019-04-08',
+            'annualReportDate': '2019-04-08',
             'certifiedBy': 'full name',
             'email': 'no_one@never.get',
             'directors': [
