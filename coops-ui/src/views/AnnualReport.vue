@@ -529,7 +529,7 @@ export default {
 
     async onClickFilePay () {
       // prevent double saving
-      if (this.busySaving) return true
+      if (this.busySaving) return
 
       this.filingPaying = true
       const filing = await this.saveFiling(false) // not a draft
@@ -537,18 +537,27 @@ export default {
       // on success, redirect to Pay URL
       if (filing && filing.header) {
         const filingId = +filing.header.filingId
-        const paymentToken = filing.header.paymentToken
 
-        const baseUrl = sessionStorage.getItem('BASE_URL')
-        const returnURL = encodeURIComponent(baseUrl + 'dashboard?filing_id=' + filingId)
-        const authUrl = sessionStorage.getItem('AUTH_URL')
-        const payURL = authUrl + 'makepayment/' + paymentToken + '/' + returnURL
+        // whether this is a staff or no-fee filing
+        const prePaidFiling = (this.isRoleStaff || !this.isPayRequired)
 
-        // assume Pay URL is always reachable
-        window.location.assign(payURL)
+        // if filing needs to be paid, redirect to Pay URL
+        if (!prePaidFiling) {
+          const paymentToken = filing.header.paymentToken
+          const baseUrl = sessionStorage.getItem('BASE_URL')
+          const returnURL = encodeURIComponent(baseUrl + 'dashboard?filing_id=' + filingId)
+          const authUrl = sessionStorage.getItem('AUTH_URL')
+          const payURL = authUrl + 'makepayment/' + paymentToken + '/' + returnURL
+
+          // assume Pay URL is always reachable
+          // otherwise, user will have to retry payment later
+          window.location.assign(payURL)
+        } else {
+          // route directly to dashboard
+          this.$router.push('/dashboard?filing_id=' + filingId)
+        }
       }
       this.filingPaying = false
-      return true
     },
 
     async saveFiling (isDraft) {

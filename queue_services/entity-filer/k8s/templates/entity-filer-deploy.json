@@ -67,6 +67,40 @@
                             {
                                 "name": "${NAME}-${TAG_NAME}",
                                 "image": "docker-registry.default.svc:5000/${IMAGE_NAMESPACE}/${NAME}:${TAG_NAME}",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/healthz",
+                                        "port": 7070,
+                                        "scheme": "HTTP"
+                                    },
+                                    "initialDelaySeconds": 60,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/readyz",
+                                        "port": 7070,
+                                        "scheme": "HTTP"
+                                    },
+                                    "initialDelaySeconds": 60,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "${CPU_LIMIT}",
+                                        "memory": "${MEMORY_LIMIT}"
+                                    },
+                                    "requests": {
+                                        "cpu": "${CPU_REQUEST}",
+                                        "memory": "${MEMORY_REQUEST}"
+                                    }
+                                },
                                 "ports": [
                                     {
                                         "containerPort": 8080,
@@ -196,6 +230,15 @@
                                         }
                                     },
                                     {
+                                        "name": "NATS_FILER_SUBJECT",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NATS_FILER_SUBJECT"
+                                            }
+                                        }
+                                    },
+                                    {
                                         "name": "NATS_QUEUE",
                                         "valueFrom": {
                                             "configMapKeyRef": {
@@ -238,6 +281,7 @@
                 "NATS_CLUSTER_ID": "${NATS_CLUSTER_ID}",
                 "NATS_CLIENT_NAME": "${NATS_CLIENT_NAME}",
                 "NATS_SUBJECT": "${NATS_SUBJECT}",
+                "NATS_FILER_SUBJECT": "${NATS_FILER_SUBJECT}",
                 "NATS_QUEUE": "${NATS_QUEUE}"
             }
         }
@@ -314,6 +358,13 @@
             "value": "entity.filing.payment"
         },
         {
+            "name": "NATS_FILER_SUBJECT",
+            "displayName": "NATS Filer Subject Name",
+            "description": "A unique NATS subject name that is set to manage filing processing.",
+            "required": true,
+            "value": "entity.filing.filer"
+        },
+        {
             "name": "NATS_QUEUE",
             "displayName": "NATS Queue Name",
             "description": "A unique NATS queue name that is set to receive payment tokens.",
@@ -360,7 +411,7 @@
             "displayName": "Resources Memory Limit",
             "description": "The resources Memory limit (in Mi, Gi, etc) for this build.",
             "required": true,
-            "value": "4Gi"
+            "value": "200Mi"
         },
         {
             "name": "REPLICAS",

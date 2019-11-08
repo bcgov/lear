@@ -23,7 +23,7 @@ const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
 document.body.append(app)
 
-describe.only('Directors as a COOP', () => {
+describe('Directors as a COOP', () => {
   let vm
 
   beforeEach(done => {
@@ -160,7 +160,7 @@ describe.only('Directors as a COOP', () => {
   })
 })
 
-describe.only('Directors as a BCORP', () => {
+describe('Directors as a BCORP', () => {
   let vm
 
   beforeEach(done => {

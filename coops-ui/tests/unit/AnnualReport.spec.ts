@@ -647,139 +647,142 @@ describe('AnnualReport - Part 3 - Submitting', () => {
     sinon.restore()
   })
 
-  it('saves a new filing and redirects to Pay URL when this is a new AR and the File & Pay button is clicked',
-    async () => {
-      // set necessary session variables
-      sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-      sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
-      store.state.entityType = EntityTypes.Coop
+  it('saves a new filing and redirects to Pay URL when this is a new AR and the File & Pay button ' +
+    'is clicked', async () => {
+    // set necessary session variables
+    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+    store.state.entityType = EntityTypes.Coop
 
-      const localVue = createLocalVue()
-      localVue.use(VueRouter)
-      const router = mockRouter.mock()
-      router.push({ name: 'annual-report', params: { id: '0' } }) // new filing id
-      const wrapper = mount(AnnualReport, {
-        store,
-        localVue,
-        router,
-        stubs: {
-          ARDate: true,
-          AGMDate: true,
-          RegisteredOfficeAddress: true,
-          Directors: true,
-          Certify: true,
-          StaffPayment: true,
-          Affix: true,
-          SbcFeeSummary: true,
-          ConfirmDialog: true,
-          PaymentErrorDialog: true,
-          ResumeErrorDialog: true,
-          SaveErrorDialog: true
-        },
-        vuetify
-      })
-      const vm = wrapper.vm as any
-
-      // make sure form is validated
-      vm.staffPaymentFormValid = true
-      vm.agmDateValid = true
-      vm.addressesFormValid = true
-      vm.directorFormValid = true
-      vm.certifyFormValid = true
-      vm.directorEditInProgress = false
-
-      // stub address data
-      vm.addresses = {
-        deliveryAddress: {},
-        mailingAddress: {}
-      }
-
-      vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'CP' }] // dummy data
-      expect(jest.isMockFunction(window.location.assign)).toBe(true)
-
-      const button = wrapper.find('#ar-file-pay-btn')
-      expect(button.attributes('disabled')).toBeUndefined()
-
-      // click the File & Pay button
-      button.trigger('click')
-      await flushPromises()
-      // work-around because click trigger isn't working
-      expect(await vm.onClickFilePay()).toBe(true)
-
-      // verify redirection
-      const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
-        encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
-      expect(window.location.assign).toHaveBeenCalledWith(payURL)
-
-      wrapper.destroy()
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'annual-report', params: { id: '0' } }) // new filing id
+    const wrapper = mount(AnnualReport, {
+      store,
+      localVue,
+      router,
+      stubs: {
+        ARDate: true,
+        AGMDate: true,
+        RegisteredOfficeAddress: true,
+        Directors: true,
+        Certify: true,
+        StaffPayment: true,
+        Affix: true,
+        SbcFeeSummary: true,
+        ConfirmDialog: true,
+        PaymentErrorDialog: true,
+        ResumeErrorDialog: true,
+        SaveErrorDialog: true
+      },
+      vuetify
     })
+    const vm = wrapper.vm as any
 
-  it(
-    'updates an existing filing and redirects to Pay URL when this is a draft AR and the ' +
-      'File & Pay button is clicked',
-    async () => {
-      // set necessary session variables
-      sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-      sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+    // make sure form is validated
+    vm.staffPaymentFormValid = true
+    vm.agmDateValid = true
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
+    vm.directorEditInProgress = false
+    vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'CP' }] // dummy data
 
-      const localVue = createLocalVue()
-      localVue.use(VueRouter)
-      const router = mockRouter.mock()
-      router.push({ name: 'annual-report', params: { id: '123' } }) // new filing id
-      const wrapper = mount(AnnualReport, {
-        store,
-        localVue,
-        router,
-        stubs: {
-          ARDate: true,
-          AGMDate: true,
-          RegisteredOfficeAddress: true,
-          Directors: true,
-          Certify: true,
-          StaffPayment: true,
-          Affix: true,
-          SbcFeeSummary: true,
-          ConfirmDialog: true,
-          PaymentErrorDialog: true,
-          ResumeErrorDialog: true,
-          SaveErrorDialog: true
-        },
-        vuetify
-      })
-      const vm = wrapper.vm as any
-
-      // make sure form is validated
-      vm.staffPaymentFormValid = true
-      vm.agmDateValid = true
-      vm.addressesFormValid = true
-      vm.directorFormValid = true
-      vm.certifyFormValid = true
-
-      // stub address data
-      vm.addresses = {
-        deliveryAddress: {},
-        mailingAddress: {}
-      }
-
-      // sanity check
-      expect(jest.isMockFunction(window.location.assign)).toBe(true)
-
-      const button = wrapper.find('#ar-file-pay-btn')
-      expect(button.attributes('disabled')).toBeUndefined()
-
-      // click the File & Pay button
-      button.trigger('click')
-      // work-around because click trigger isn't working
-      expect(await vm.onClickFilePay()).toBe(true)
-
-      // verify redirection
-      const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
-        encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
-      expect(window.location.assign).toHaveBeenCalledWith(payURL)
-
-      wrapper.destroy()
+    // stub address data
+    vm.addresses = {
+      deliveryAddress: {},
+      mailingAddress: {}
     }
-  )
+
+    // make sure a fee is required
+    vm.totalFee = 100
+
+    expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+    const button = wrapper.find('#ar-file-pay-btn')
+    expect(button.attributes('disabled')).toBeUndefined()
+
+    // click the File & Pay button
+    button.trigger('click')
+    await flushPromises()
+    // work-around because click trigger isn't working
+    await vm.onClickFilePay()
+
+    // verify redirection
+    const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
+      encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
+    expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+    wrapper.destroy()
+  })
+
+  it('updates an existing filing and redirects to Pay URL when this is a draft AR and the File & Pay button ' +
+    'is clicked', async () => {
+    // set necessary session variables
+    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'annual-report', params: { id: '123' } }) // existing filing id
+    const wrapper = mount(AnnualReport, {
+      store,
+      localVue,
+      router,
+      stubs: {
+        ARDate: true,
+        AGMDate: true,
+        RegisteredOfficeAddress: true,
+        Directors: true,
+        Certify: true,
+        StaffPayment: true,
+        Affix: true,
+        SbcFeeSummary: true,
+        ConfirmDialog: true,
+        PaymentErrorDialog: true,
+        ResumeErrorDialog: true,
+        SaveErrorDialog: true
+      },
+      vuetify
+    })
+    const vm = wrapper.vm as any
+
+    // make sure form is validated
+    vm.staffPaymentFormValid = true
+    vm.agmDateValid = true
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
+
+    // stub address data
+    vm.addresses = {
+      deliveryAddress: {},
+      mailingAddress: {}
+    }
+
+    // make sure a fee is required
+    vm.totalFee = 100
+
+    // sanity check
+    expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+    const button = wrapper.find('#ar-file-pay-btn')
+    expect(button.attributes('disabled')).toBeUndefined()
+
+    // click the File & Pay button
+    button.trigger('click')
+    // work-around because click trigger isn't working
+    await vm.onClickFilePay()
+
+    // verify redirection
+    const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
+      encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
+    expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+    wrapper.destroy()
+  })
 })
 
 describe('AnnualReport - Part 4 - Saving', () => {
@@ -1308,7 +1311,7 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
     wrapper.destroy()
   })
 
-  it('sets the required fields to display errors from the api after a post call', async () => {
+  it('sets the required fields to display errors from the api after a POST call', async () => {
     // make sure form is validated
     vm.staffPaymentFormValid = true
     vm.agmDateValid = true
@@ -1341,7 +1344,7 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
     expect(vm.saveWarnings[0].warning).toBe('warn msg post')
   })
 
-  it('sets the required fields to display errors from the api after a put call', async () => {
+  it('sets the required fields to display errors from the api after a PUT call', async () => {
     // make sure form is validated
     vm.staffPaymentFormValid = true
     vm.agmDateValid = true
@@ -1360,13 +1363,16 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
       deliveryAddress: {},
       mailingAddress: {}
     }
+
     // set the filingId
     vm.filingId = 123
+
     // click the Save button
     wrapper.find('#ar-file-pay-btn').trigger('click')
     // work-around because click trigger isn't working
     await vm.onClickFilePay()
     await flushPromises()
+
     expect(vm.saveErrorDialog).toBe(true)
     expect(vm.saveErrors.length).toBe(1)
     expect(vm.saveErrors[0].error).toBe('err msg put')

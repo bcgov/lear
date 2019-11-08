@@ -190,6 +190,10 @@ with open('coop_2019_test_data.csv', 'r') as csvfile:
                                            {'name': 'lear_epoch'}
                                            }}
                     filing.transaction_id = transaction.id
+                    db.session.add(filing)
+                    db.session.commit()
+
+                    # assign filing to business (now that business record has been comitted and id exists)
                     filing.business_id = business.id
                     db.session.add(filing)
                     db.session.commit()

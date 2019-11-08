@@ -353,11 +353,6 @@ export default {
       return sessionStorage.getItem('PAY_API_URL')
     },
 
-    isPaidFiling () {
-      // true if there is a charge for this filing
-      return this.filingData.filter(el => el.filingTypeCode === 'OTCDR').length > 0
-    },
-
     isPayRequired () {
       // FUTURE: modify rule here as needed
       return (this.totalFee > 0)
@@ -457,7 +452,7 @@ export default {
 
     async onClickFilePay () {
       // prevent double saving
-      if (this.busySaving) return true
+      if (this.busySaving) return
 
       this.filingPaying = true
       const filing = await this.saveFiling(false) // not a draft
@@ -465,16 +460,20 @@ export default {
       // on success, redirect to Pay URL
       if (filing && filing.header) {
         const filingId = +filing.header.filingId
-        const paymentToken = filing.header.paymentToken
+
+        // whether this is a staff or no-fee filing
+        const prePaidFiling = (this.isRoleStaff || !this.isPayRequired)
 
         // if filing needs to be paid, redirect to Pay URL
-        if (this.isPaidFiling) {
+        if (!prePaidFiling) {
+          const paymentToken = filing.header.paymentToken
           const baseUrl = sessionStorage.getItem('BASE_URL')
           const returnURL = encodeURIComponent(baseUrl + 'dashboard?filing_id=' + filingId)
           const authUrl = sessionStorage.getItem('AUTH_URL')
           const payURL = authUrl + 'makepayment/' + paymentToken + '/' + returnURL
 
           // assume Pay URL is always reachable
+          // otherwise, user will have to retry payment later
           window.location.assign(payURL)
         } else {
           // route directly to dashboard
@@ -482,7 +481,6 @@ export default {
         }
       }
       this.filingPaying = false
-      return true
     },
 
     async saveFiling (isDraft) {

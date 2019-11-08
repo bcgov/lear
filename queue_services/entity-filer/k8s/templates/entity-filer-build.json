@@ -86,7 +86,7 @@
             "displayName": "Source Context Directory",
             "description": "The source context directory.",
             "required": false,
-            "value": "/entity-filer"
+            "value": "queue_services/entity-filer"
         },
         {
             "name": "SOURCE_IMAGE_KIND",
