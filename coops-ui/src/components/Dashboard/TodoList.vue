@@ -235,7 +235,6 @@ export default {
     },
 
     loadTodoItem (task) {
-      console.log('Load toDo Item called')
       const todo = task.task.todo
       if (todo && todo.header) {
         switch (todo.header.name) {
@@ -262,7 +261,6 @@ export default {
     },
 
     loadFilingItem (task) {
-      console.log('loadFilingCalled')
       const filing = task.task.filing
       if (filing && filing.header) {
         switch (filing.header.name) {
@@ -328,7 +326,6 @@ export default {
     },
 
     loadChangeOfAddress (task) {
-      console.log('Load Change of address called')
       const filing = task.task.filing
       if (filing && filing.header && filing.changeOfAddress) {
         this.taskItems.push({

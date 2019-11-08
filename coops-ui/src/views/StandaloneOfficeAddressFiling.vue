@@ -50,18 +50,9 @@
             </v-alert>
           </header>
 
-          <!-- Registered Office Addresses -->
+          <!-- Office Addresses -->
           <section>
-            <RegisteredOfficeAddress
-              v-if="entityFilter(EntityTypes.Coop)"
-              :changeButtonDisabled="false"
-              :legalEntityNumber="entityIncNo"
-              :addresses.sync="addresses"
-              @modified="officeModifiedEventHandler($event)"
-              @valid="officeAddressFormValid = $event"
-            />
             <OfficeAddresses
-              v-if="entityFilter(EntityTypes.BCorp)"
               :changeButtonDisabled="false"
               :addresses.sync="addresses"
               :registeredAddress.sync="registeredAddress"
@@ -170,14 +161,13 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
-import { OfficeAddresses, RegisteredOfficeAddress } from '@/components/Common'
+import { OfficeAddresses } from '@/components/Common'
 import { EntityTypes } from '@/enums'
 
 export default {
   name: 'StandaloneOfficeAddressFiling',
 
   components: {
-    RegisteredOfficeAddress,
     OfficeAddresses,
     SbcFeeSummary,
     Affix,
@@ -212,6 +202,7 @@ export default {
       haveChanges: false,
       saveErrors: [],
       saveWarnings: [],
+
       // properties for Staff Payment component
       routingSlipNumber: null,
       staffPaymentFormValid: false,
@@ -221,7 +212,8 @@ export default {
   },
 
   computed: {
-    ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo', 'entityFoundingDate', 'registeredAddress', 'recordsAddress']),
+    ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo',
+      'entityFoundingDate', 'registeredAddress', 'recordsAddress']),
     ...mapGetters(['isRoleStaff']),
 
     validated () {
@@ -341,21 +333,35 @@ export default {
             // load Annual Report fields
             if (!filing.changeOfAddress) throw new Error('Missing change of address')
 
-            const changeOfAddress = filing.changeOfAddress
+            const changeOfAddress = filing.changeOfAddress.offices
+            console.log(changeOfAddress)
             if (changeOfAddress) {
-              if (changeOfAddress.deliveryAddress && changeOfAddress.mailingAddress) {
+              if (changeOfAddress.recordsOffice) {
                 this.addresses = {
-                  deliveryAddress: changeOfAddress.deliveryAddress,
-                  mailingAddress: changeOfAddress.mailingAddress
+                  registeredOffice: {
+                    deliveryAddress: changeOfAddress.registeredOffice.deliveryAddress,
+                    mailingAddress: changeOfAddress.registeredOffice.mailingAddress
+                  },
+                  recordsOffice: {
+                    deliveryAddress: changeOfAddress.recordsOffice.deliveryAddress,
+                    mailingAddress: changeOfAddress.recordsOffice.mailingAddress
+                  }
                 }
                 this.toggleFiling('add', 'OTADD')
               } else {
-                throw new Error('invalid change of address')
+                this.addresses = {
+                  registeredOffice: {
+                    deliveryAddress: changeOfAddress.registeredOffice.deliveryAddress,
+                    mailingAddress: changeOfAddress.registeredOffice.mailingAddress
+                  }
+                }
+                this.toggleFiling('add', 'OTADD')
               }
             }
           } catch (err) {
             console.log(`fetchData() error - ${err.message}, filing =`, filing)
             this.resumeErrorDialog = true
+            throw new Error('invalid change of address')
           }
         } else {
           console.log('fetchData() error - invalid response =', response)
@@ -380,17 +386,15 @@ export default {
     },
 
     async onClickSave () {
-      console.log('Save filing called')
       // prevent double saving
       if (this.busySaving) return
-
+      console.log('ClickSave Called')
       this.saving = true
       const filing = await this.saveFiling(true)
       console.log(filing)
       if (filing) {
         this.filingId = +filing.header.filingId
       }
-      console.log(this.filingId)
       this.saving = false
     },
 
@@ -400,7 +404,6 @@ export default {
 
       this.savingResuming = true
       const filing = await this.saveFiling(true)
-      console.log(filing)
       // on success, route to Home URL
       if (filing) {
         this.$router.push('/')
@@ -474,32 +477,35 @@ export default {
           }
         }
 
-        // <<<<<<< HEAD
-        //         if (this.isDataChanged('OTADD') && this.addresses) {
-        //           changeOfAddress = {
-        //             changeOfAddress: {
-        //               deliveryAddress: this.formatAddress(this.addresses['deliveryAddress']),
-        //               mailingAddress: this.formatAddress(this.addresses['mailingAddress'])
-        // =======
         if (this.isDataChanged('OTADD') && this.addresses) {
           console.log(this.addresses)
 
-          // changeOfAddress = {
-          //   changeOfAddress: {
-          //     deliveryAddress: this.formatAddress(this.addresses['deliveryAddress']),
-          //     mailingAddress: this.formatAddress(this.addresses['mailingAddress'])
-          //   }
-          // }
-
-          changeOfAddress = {
-            changeOfAddress: {
-              registeredOffice: {
-                deliveryAddress: this.formatAddress(this.addresses.registeredOffice['deliveryAddress']),
-                mailingAddress: this.formatAddress(this.addresses.registeredOffice['mailingAddress'])
-              },
-              recordsOffice: {
-                deliveryAddress: this.formatAddress(this.addresses.recordsOffice['deliveryAddress']),
-                mailingAddress: this.formatAddress(this.addresses.recordsOffice['mailingAddress'])
+          if (this.addresses.recordsOffice) {
+            changeOfAddress = {
+              changeOfAddress: {
+                legalType: this.entityType,
+                offices: {
+                  registeredOffice: {
+                    deliveryAddress: this.formatAddress(this.addresses.registeredOffice['deliveryAddress']),
+                    mailingAddress: this.formatAddress(this.addresses.registeredOffice['mailingAddress'])
+                  },
+                  recordsOffice: {
+                    deliveryAddress: this.formatAddress(this.addresses.recordsOffice['deliveryAddress']),
+                    mailingAddress: this.formatAddress(this.addresses.recordsOffice['mailingAddress'])
+                  }
+                }
+              }
+            }
+          } else {
+            changeOfAddress = {
+              changeOfAddress: {
+                legalType: this.entityType,
+                offices: {
+                  registeredOffice: {
+                    deliveryAddress: this.formatAddress(this.addresses.registeredOffice['deliveryAddress']),
+                    mailingAddress: this.formatAddress(this.addresses.registeredOffice['mailingAddress'])
+                  }
+                }
               }
             }
           }

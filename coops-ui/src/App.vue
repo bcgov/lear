@@ -117,18 +117,18 @@ export default {
         Promise.all([
           this.getBusinessInfo(businessId),
           axios.get(businessId),
-          // axios.get(businessId + '/tasks'),
-          // axios.get(businessId + '/filings'),
+          axios.get(businessId + '/tasks'),
+          axios.get(businessId + '/filings'),
           axios.get(businessId + '/addresses'),
           axios.get(businessId + '/directors')
         ]).then(data => {
-          if (!data || data.length !== 4) throw new Error('incomplete data')
+          if (!data || data.length !== 6) throw new Error('incomplete data')
           this.storeBusinessInfo(data[0])
           this.storeEntityInfo(data[1])
-          // this.storeTasks(data[2])
-          // this.storeFilings(data[3])
-          this.storeAddresses(data[2])
-          this.storeDirectors(data[3])
+          this.storeTasks(data[2])
+          this.storeFilings(data[3])
+          this.storeAddresses(data[4])
+          this.storeDirectors(data[5])
           this.dataLoaded = true
         }).catch(error => {
           console.error(error) // eslint-disable-line no-console

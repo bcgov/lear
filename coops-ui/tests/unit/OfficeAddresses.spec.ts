@@ -5,7 +5,6 @@ import store from '@/store/store'
 
 import { OfficeAddresses } from '@/components/Common'
 import { mount, Wrapper } from '@vue/test-utils'
-import flushPromises from 'flush-promises';
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -66,12 +65,12 @@ describe('OfficeAddresses', () => {
   })
 
   const draftAddresses = {
-    registeredAddress: {
+    registeredOffice: {
       deliveryAddress: {
         addressCity: 'delCityDraft',
         addressCountry: 'delCountryDraft',
         addressRegion: 'delRegionDraft',
-        deliveryInstructions: 'delInstructionsDraft',
+        deliveryInstructions: 'delInstructionsDraft',w
         postalCode: 'delPostalDraft',
         streetAddress: 'delStreetDraft',
         streetAddressAdditional: 'delStreetAddDraft'
@@ -86,7 +85,7 @@ describe('OfficeAddresses', () => {
         streetAddressAdditional: 'mailStreetAddDraft'
       }
     },
-    recordsAddress: {
+    recordsOffice: {
       deliveryAddress: {
         addressCity: 'recDelCityDraft',
         addressCountry: 'recDelCountryDraft',
@@ -111,7 +110,10 @@ describe('OfficeAddresses', () => {
   it('loads the current office addresses properly', async done => {
     const Constructor = Vue.extend(OfficeAddresses)
     const instance = new Constructor({
-      propsData: { registeredAddress: store.state.registeredAddress, recordsAddress: store.state.recordsAddress },
+      propsData: {
+        registeredAddress: store.state.registeredAddress,
+        recordsAddress: store.state.recordsAddress
+      },
       vuetify
     })
     vm = instance.$mount()
@@ -161,15 +163,13 @@ describe('OfficeAddresses', () => {
     const Constructor = Vue.extend(OfficeAddresses)
     const instance = new Constructor({
       propsData: {
-        addresses: draftAddresses,
-        registeredAddress: null,
-        recordsAddress: null
+        addresses: draftAddresses
       },
       vuetify
     })
     vm = instance.$mount()
 
-    const deliveryAddress = vm.registeredAddress.deliveryAddress
+    const deliveryAddress = vm.addresses.registeredOffice.deliveryAddress
     expect(deliveryAddress['streetAddress']).toEqual('delStreetDraft')
     expect(deliveryAddress['streetAddressAdditional']).toEqual('delStreetAddDraft')
     expect(deliveryAddress['addressCity']).toEqual('delCityDraft')
@@ -178,7 +178,7 @@ describe('OfficeAddresses', () => {
     expect(deliveryAddress['addressCountry']).toEqual('delCountryDraft')
     expect(deliveryAddress['deliveryInstructions']).toEqual('delInstructionsDraft')
 
-    const mailingAddress = vm.registeredAddress.mailingAddress
+    const mailingAddress = vm.addresses.registeredOffice.mailingAddress
     expect(mailingAddress['streetAddress']).toEqual('mailStreetDraft')
     expect(mailingAddress['streetAddressAdditional']).toEqual('mailStreetAddDraft')
     expect(mailingAddress['addressCity']).toEqual('mailCityDraft')
@@ -187,7 +187,7 @@ describe('OfficeAddresses', () => {
     expect(mailingAddress['addressCountry']).toEqual('mailCountryDraft')
     expect(mailingAddress['deliveryInstructions']).toEqual('mailInstructionsDraft')
 
-    const recDeliveryAddress = vm.recordsAddress.deliveryAddress
+    const recDeliveryAddress = vm.addresses.recordsOffice.deliveryAddress
     expect(recDeliveryAddress['streetAddress']).toEqual('recDelStreetDraft')
     expect(recDeliveryAddress['streetAddressAdditional']).toEqual('recDelStreetAddDraft')
     expect(recDeliveryAddress['addressCity']).toEqual('recDelCityDraft')
@@ -196,7 +196,7 @@ describe('OfficeAddresses', () => {
     expect(recDeliveryAddress['addressCountry']).toEqual('recDelCountryDraft')
     expect(recDeliveryAddress['deliveryInstructions']).toEqual('recDelInstructionsDraft')
 
-    const recMailingAddress = vm.recordsAddress.mailingAddress
+    const recMailingAddress = vm.addresses.recordsOffice.mailingAddress
     expect(recMailingAddress['streetAddress']).toEqual('recMailStreetDraft')
     expect(recMailingAddress['streetAddressAdditional']).toEqual('recMailStreetAddDraft')
     expect(recMailingAddress['addressCity']).toEqual('recMailCityDraft')

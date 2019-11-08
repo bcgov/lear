@@ -94,87 +94,88 @@
       </li>
 
       <!---- Records Office Section ---->
-      <div class="address-edit-header"
-           v-if="showAddressForm">
-        <label class="address-edit-title">Record Office</label>
-          <v-checkbox
-            class="records-inherit-checkbox"
-            label="Same as Registered Office"
-            v-if="showAddressForm"
-            v-model="inheritRegisteredAddress"
-          />
-      </div>
-      <div v-if="!isSameAddress(registeredAddress, recordsAddress) || !inheritRegisteredAddress">
-        <!-- Records Delivery Address -->
-        <li class="container">
-          <div class="meta-container">
-            <label v-if="!showAddressForm">Record Office</label>
-            <label v-else>Delivery Address</label>
-            <div class="meta-container__inner">
-              <label v-if="!showAddressForm"><strong>Delivery Address</strong></label>
-              <div class="address-wrapper">
-                <delivery-address
-                  :address="recDeliveryAddress"
-                  :editing="showAddressForm"
-                  :schema="addressSchema"
-                  @update:address="updateBaseAddress(recDeliveryAddress, $event)"
-                  @valid="isBaseAddressValid('recDeliveryAddress', $event)"
-                />
+      <div v-if="entityFilter(EntityTypes.BCorp)">
+        <div class="address-edit-header"
+             v-if="showAddressForm">
+          <label class="address-edit-title">Record Office</label>
+            <v-checkbox
+              class="records-inherit-checkbox"
+              label="Same as Registered Office"
+              v-if="showAddressForm"
+              v-model="inheritRegisteredAddress"
+            />
+        </div>
+        <div v-if="!isSameAddress(registeredAddress, recordsAddress) || !inheritRegisteredAddress">
+          <!-- Records Delivery Address -->
+          <li class="container">
+            <div class="meta-container">
+              <label v-if="!showAddressForm">Record Office</label>
+              <label v-else>Delivery Address</label>
+              <div class="meta-container__inner">
+                <label v-if="!showAddressForm"><strong>Delivery Address</strong></label>
+                <div class="address-wrapper">
+                  <delivery-address
+                    :address="recDeliveryAddress"
+                    :editing="showAddressForm"
+                    :schema="addressSchema"
+                    @update:address="updateBaseAddress(recDeliveryAddress, $event)"
+                    @valid="isBaseAddressValid('recDeliveryAddress', $event)"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </li>
+          </li>
 
-        <!-- Records Mailing Address -->
-        <li class="container">
-          <div class="meta-container">
-            <label v-if="showAddressForm">Mailing Address</label>
-            <label v-else></label>
-            <div class="meta-container__inner">
-              <label
-                v-if="!isSameWithoutProp(recDeliveryAddress, recMailingAddress, 'actions') && !showAddressForm">
-                <strong>Mailing Address</strong>
-              </label>
-              <div class="form__row">
-                <v-checkbox
-                  class="inherit-checkbox"
-                  label="Same as Delivery Address"
-                  v-if="showAddressForm"
-                  v-model="inheritRecDeliveryAddress"
-                />
+          <!-- Records Mailing Address -->
+          <li class="container">
+            <div class="meta-container">
+              <label v-if="showAddressForm">Mailing Address</label>
+              <label v-else></label>
+              <div class="meta-container__inner">
+                <label
+                  v-if="!isSameWithoutProp(recDeliveryAddress, recMailingAddress, 'actions') && !showAddressForm">
+                  <strong>Mailing Address</strong>
+                </label>
+                <div class="form__row">
+                  <v-input
+                    class="inherit-checkbox"
+                    label="Same as Delivery Address"
+                    v-if="showAddressForm"
+                    v-model="inheritRecDeliveryAddress"
+                  />
+                </div>
+                <div class="address-wrapper"
+                     v-if="!isSameWithoutProp(recDeliveryAddress, recMailingAddress, 'actions') || showAddressForm"
+                >
+                  <mailing-address
+                    v-if="!showAddressForm || !inheritRecDeliveryAddress"
+                    :address="recMailingAddress"
+                    :editing="showAddressForm"
+                    :schema="addressSchema"
+                    @update:address="updateBaseAddress(recMailingAddress, $event)"
+                    @valid="isBaseAddressValid('recMailingAddress', $event)"
+                  />
+                </div>
+                <span v-else>
+                  Mailing Address same as above
+                </span>
               </div>
-              <div class="address-wrapper"
-                   v-if="!isSameWithoutProp(recDeliveryAddress, recMailingAddress, 'actions') || showAddressForm"
-              >
-                <mailing-address
-                  v-if="!showAddressForm || !inheritRecDeliveryAddress"
-                  :address="recMailingAddress"
-                  :editing="showAddressForm"
-                  :schema="addressSchema"
-                  @update:address="updateBaseAddress(recMailingAddress, $event)"
-                  @valid="isBaseAddressValid('recMailingAddress', $event)"
-                />
+            </div>
+          </li>
+        </div>
+        <div v-else>
+          <li class="container" v-if="!showAddressForm">
+            <div class="meta-container">
+              <label>Record Office</label>
+              <div class="meta-container__inner">
+                <span>
+                  Same as Registered Office
+                </span>
               </div>
-              <span v-else>
-                Mailing Address same as above
-              </span>
             </div>
-          </div>
-        </li>
+          </li>
+        </div>
       </div>
-      <div v-else>
-        <li class="container" v-if="!showAddressForm">
-          <div class="meta-container">
-            <label>Record Office</label>
-            <div class="meta-container__inner">
-              <span>
-                Same as Registered Office
-              </span>
-            </div>
-          </div>
-        </li>
-      </div>
-
       <!---- Form Btn Section ---->
       <li>
         <div
@@ -209,7 +210,7 @@ import { addressSchema } from '@/schemas'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
 // Mixins
-import { AddressMixin, CommonMixin } from '@/mixins'
+import { AddressMixin, CommonMixin, EntityFilterMixin } from '@/mixins'
 
 // Interfaces
 import { BaseAddressObjIF, BcorpAddressIf, AddressIF } from '@/interfaces/address-interfaces'
@@ -217,13 +218,16 @@ import { BaseAddressObjIF, BcorpAddressIf, AddressIF } from '@/interfaces/addres
 // Constants
 import { ADDRESSCHANGED } from '@/constants'
 
+// Enums
+import { EntityTypes } from '@/enums'
+
 @Component({
   components: {
     'delivery-address': BaseAddress,
     'mailing-address': BaseAddress
   }
 })
-export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
+export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin, EntityFilterMixin) {
     /**
      * Indicates whether the change button should be disabled or not
      */
@@ -246,32 +250,32 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
     private recordsAddress: BaseAddressObjIF
 
     // The two addresses that come from the store. These are used to reset the address.
-    private deliveryAddressOriginal: AddressIF | {} = {}
-    private mailingAddressOriginal: AddressIF | {} = {}
+    private deliveryAddressOriginal = {} as AddressIF
+    private mailingAddressOriginal = {} as AddressIF
 
     // The two addresses that come from the store. These are used to reset the address.
-    private recDeliveryAddressOriginal: AddressIF | {} = {}
-    private recMailingAddressOriginal: AddressIF | {} = {}
+    private recDeliveryAddressOriginal = {} as AddressIF
+    private recMailingAddressOriginal = {} as AddressIF
 
     // The two addresses that are the current state of the BaseAddress components.
-    private deliveryAddress: AddressIF | {} = {}
-    private mailingAddress: AddressIF | {} = {}
+    private deliveryAddress = {} as AddressIF
+    private mailingAddress = {} as AddressIF
 
     // The two addresses that are the current state of the BaseAddress components.
-    private recDeliveryAddress: AddressIF | {} = {}
-    private recMailingAddress: AddressIF | {} = {}
+    private recDeliveryAddress = {} as AddressIF
+    private recMailingAddress = {} as AddressIF
 
     // The two addresses for Registered Office where the above are stored prior to an edit. These allow a cancel to
     // the address prior to edit, which if there was a prior edit will not be the data that originally
     // came from the store.
-    private deliveryAddressTemp: AddressIF | {} = {}
-    private mailingAddressTemp: AddressIF | {} = {}
+    private deliveryAddressTemp = {} as AddressIF
+    private mailingAddressTemp = {} as AddressIF
 
     // The two addresses for Records Office where the above are stored prior to an edit. These allow a cancel to
     // the address prior to edit, which if there was a prior edit will not be the data that originally
     // came from the store.
-    private recDeliveryAddressTemp: AddressIF | {} = {}
-    private recMailingAddressTemp: AddressIF | {} = {}
+    private recDeliveryAddressTemp = {} as AddressIF
+    private recMailingAddressTemp = {} as AddressIF
 
     // Validation events from BaseAddress.
     private deliveryAddressValid: boolean = true
@@ -295,6 +299,9 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
 
     // The Address schema containing Vuelidate rules.
     private addressSchema: {} = addressSchema
+
+    // Entity Enum
+    private EntityTypes: {} = EntityTypes
 
     /**
      * Lifecycle callback to set up the component when it is mounted.
@@ -329,39 +336,58 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
      */
     @Emit('update:addresses')
     private emitAddresses (): object {
-      let deliveryAddressFinal: AddressIF | {} = Object.assign({}, this.deliveryAddress)
-      let mailingAddressFinal: AddressIF | {} = Object.assign({}, this.mailingAddress)
-      let recDeliveryAddressFinal: AddressIF | {} = Object.assign({}, this.recDeliveryAddress)
-      let recMailingAddressFinal: AddressIF | {} = Object.assign({}, this.recMailingAddress)
+      let deliveryAddressFinal = {} as AddressIF
+      let mailingAddressFinal = {} as AddressIF
+      let recDeliveryAddressFinal = {} as AddressIF
+      let recMailingAddressFinal = {} as AddressIF
 
-      // if the address has changed from the original, set action flag
-      this.addressModified(this.deliveryAddress, this.deliveryAddressOriginal)
-        ? this.addAction(deliveryAddressFinal, ADDRESSCHANGED)
-        : this.removeAction(deliveryAddressFinal, ADDRESSCHANGED)
+      if (this.registeredAddress) {
+        deliveryAddressFinal = { ...this.deliveryAddress }
+        mailingAddressFinal = { ...this.mailingAddress }
 
-      // if the address has changed from the original, set action flag
-      this.addressModified(this.mailingAddress, this.mailingAddressOriginal)
-        ? this.addAction(mailingAddressFinal, ADDRESSCHANGED)
-        : this.removeAction(mailingAddressFinal, ADDRESSCHANGED)
+        // if the adwdress has changed from the original, set action flag
+        this.addressModified(this.deliveryAddress, this.deliveryAddressOriginal)
+          ? this.addAction(deliveryAddressFinal, ADDRESSCHANGED)
+          : this.removeAction(deliveryAddressFinal, ADDRESSCHANGED)
 
-      // if the address has changed from the original, set action flag
-      this.addressModified(this.recDeliveryAddress, this.recDeliveryAddressOriginal)
-        ? this.addAction(recDeliveryAddressFinal, ADDRESSCHANGED)
-        : this.removeAction(recDeliveryAddressFinal, ADDRESSCHANGED)
+        // if the address has changed from the original, set action flag
+        this.addressModified(this.mailingAddress, this.mailingAddressOriginal)
+          ? this.addAction(mailingAddressFinal, ADDRESSCHANGED)
+          : this.removeAction(mailingAddressFinal, ADDRESSCHANGED)
+      }
 
-      // if the address has changed from the original, set action flag
-      this.addressModified(this.recMailingAddress, this.recMailingAddressOriginal)
-        ? this.addAction(recMailingAddressFinal, ADDRESSCHANGED)
-        : this.removeAction(recMailingAddressFinal, ADDRESSCHANGED)
+      if (this.recordsAddress) {
+        recDeliveryAddressFinal = { ...this.recDeliveryAddress }
+        recMailingAddressFinal = { ...this.recMailingAddress }
 
-      return {
-        registeredOffice: {
-          deliveryAddress: deliveryAddressFinal,
-          mailingAddress: mailingAddressFinal
-        },
-        recordsOffice: {
-          deliveryAddress: recDeliveryAddressFinal,
-          mailingAddress: recMailingAddressFinal
+        // if the address has changed from the original, set action flag
+        this.addressModified(this.recDeliveryAddress, this.recDeliveryAddressOriginal)
+          ? this.addAction(recDeliveryAddressFinal, ADDRESSCHANGED)
+          : this.removeAction(recDeliveryAddressFinal, ADDRESSCHANGED)
+
+        // if the address has changed from the original, set action flag
+        this.addressModified(this.recMailingAddress, this.recMailingAddressOriginal)
+          ? this.addAction(recMailingAddressFinal, ADDRESSCHANGED)
+          : this.removeAction(recMailingAddressFinal, ADDRESSCHANGED)
+      }
+
+      if (this.recordsAddress) {
+        return {
+          registeredOffice: {
+            deliveryAddress: deliveryAddressFinal,
+            mailingAddress: mailingAddressFinal
+          },
+          recordsOffice: {
+            deliveryAddress: recDeliveryAddressFinal,
+            mailingAddress: recMailingAddressFinal
+          }
+        }
+      } else {
+        return {
+          registeredOffice: {
+            deliveryAddress: deliveryAddressFinal,
+            mailingAddress: mailingAddressFinal
+          }
         }
       }
     }
@@ -371,11 +397,22 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
      */
     @Watch('addresses')
     onAddressesChanged (): void {
-      this.deliveryAddress = isEmpty(this.addresses) ? {} : this.addresses.registeredOffice['deliveryAddress']
-      this.mailingAddress = isEmpty(this.addresses) ? {} : this.addresses.registeredOffice['mailingAddress']
+      this.deliveryAddress = isEmpty(this.addresses)
+        ? {} as AddressIF
+        : this.addresses.registeredOffice['deliveryAddress']
+      this.mailingAddress = isEmpty(this.addresses)
+        ? {} as AddressIF
+        : this.addresses.registeredOffice['mailingAddress']
 
-      this.recDeliveryAddress = isEmpty(this.addresses) ? {} : this.addresses.recordsOffice['deliveryAddress']
-      this.recMailingAddress = isEmpty(this.addresses) ? {} : this.addresses.recordsOffice['mailingAddress']
+      if (this.recordsAddress) {
+        this.recDeliveryAddress = isEmpty(this.addresses)
+          ? {} as AddressIF
+          : this.addresses.recordsOffice['deliveryAddress']
+
+        this.recMailingAddress = isEmpty(this.addresses)
+          ? {} as AddressIF
+          : this.addresses.recordsOffice['mailingAddress']
+      }
     }
 
     /**
@@ -415,7 +452,7 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
      *
      * @returns a boolean that is true if the address has been modified, or false otherwise.
      */
-    private addressModified (address: {}, addressOriginal: {}): boolean {
+    private addressModified (address: AddressIF, addressOriginal: AddressIF): boolean {
       return !this.isSameAddress(address, addressOriginal)
     }
 
@@ -455,8 +492,11 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
      * Sets up the component for editing, retaining a copy of current state so that the user can cancel.
      */
     private editAddress (): void {
+      // Check for inherited values
       this.inheritDeliveryAddress = this.isSameAddress(this.mailingAddress, this.deliveryAddress)
       this.inheritRecDeliveryAddress = this.isSameAddress(this.recMailingAddress, this.recDeliveryAddress)
+
+      // Populate the appropriate editable fields with temperorary data
       this.deliveryAddressTemp = { ...this.deliveryAddress }
       this.mailingAddressTemp = { ...this.mailingAddress }
       this.recDeliveryAddressTemp = { ...this.recDeliveryAddress }
@@ -518,7 +558,7 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
      *
      * @return boolean A boolean indicating a match of addresses
      */
-    private isSameWithoutProp (addressA: {}, addressB: {}, ...prop: Array<string>): boolean {
+    private isSameWithoutProp (addressA: AddressIF, addressB: AddressIF, ...prop: Array<string>): boolean {
       return this.isSameAddress({ ...this.omitProp(addressA, [...prop]) }, { ...this.omitProp(addressB, [...prop]) })
     }
 
@@ -537,26 +577,18 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
     }
 
     /**
-     * Initialize Address Data
+     * Initialize and assign base states of Address Data
      *
      */
     private initAddresses (): void {
       // If loading loading from a draft filing
       if (this.addresses) {
-        this.addresses.registeredOffice
-          ? this.assignRegisteredAddresses(this.addresses.registeredOffice)
-          : console.log('Registered Office not found')
-        this.addresses.recordsOffice
-          ? this.assignRegisteredAddresses(this.addresses.registeredOffice)
-          : console.log('Records Office not found')
+        this.addresses.registeredOffice && this.assignRegisteredAddresses(this.addresses.registeredOffice)
+        this.addresses.recordsOffice && this.assignRecordAddresses(this.addresses.recordsOffice)
       } else {
-        // If
-        this.registeredAddress
-          ? this.assignRegisteredAddresses(this.registeredAddress)
-          : console.log('Registered Office not found')
-        this.recordsAddress
-          ? this.assignRecordAddresses(this.recordsAddress)
-          : console.log('Records Office not found')
+        // If new filing load from addresses from store
+        this.registeredAddress && this.assignRegisteredAddresses(this.registeredAddress)
+        this.recordsAddress && this.assignRecordAddresses(this.recordsAddress)
       }
 
       // emit address data back up so that parent data has data (needed for AR filing specifically)
@@ -566,15 +598,16 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
     /**
      * Assign the Registered address objects actions and omit the addressType
      *
+     * @param addressBase The base address object to be parsed and assigned to its Office Address class property
      */
     private assignRegisteredAddresses (addressBase: BaseAddressObjIF): void {
     // Assign Delivery Address
       const deliveryAddress = addressBase.deliveryAddress
       if (deliveryAddress) {
         deliveryAddress.actions = []
-        this.deliveryAddressOriginal = { ...this.omitProp(deliveryAddress, ['addressType']) }
+        this.deliveryAddressOriginal = { ...this.omitProp(deliveryAddress, ['addressType']) as AddressIF }
         if (isEmpty(this.deliveryAddress)) {
-          this.deliveryAddress = { ...this.omitProp(deliveryAddress, ['addressType']) }
+          this.deliveryAddress = { ...this.omitProp(deliveryAddress, ['addressType']) as AddressIF }
         }
       } else {
         console.log('invalid Delivery Address =', addressBase)
@@ -584,9 +617,9 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
       const mailingAddress = addressBase.mailingAddress
       if (mailingAddress) {
         mailingAddress.actions = []
-        this.mailingAddressOriginal = { ...this.omitProp(mailingAddress, ['addressType']) }
+        this.mailingAddressOriginal = { ...this.omitProp(mailingAddress, ['addressType']) as AddressIF }
         if (isEmpty(this.mailingAddress)) {
-          this.mailingAddress = { ...this.omitProp(mailingAddress, ['addressType']) }
+          this.mailingAddress = { ...this.omitProp(mailingAddress, ['addressType']) as AddressIF }
         }
       } else {
         console.log('invalid Mailing Address =', addressBase)
@@ -594,17 +627,18 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
     }
 
     /**
-     * Assign the Registered address objects actions and omit the addressType
+     * Assign the Records address objects actions and omit the addressType
      *
+     * @param addressBase The base address object to be parsed and assigned to its Office Address class property
      */
     private assignRecordAddresses (addressBase: BaseAddressObjIF): void {
     // Assign Delivery Address
       const deliveryAddress = addressBase.deliveryAddress
       if (deliveryAddress) {
         deliveryAddress.actions = []
-        this.recDeliveryAddressOriginal = { ...this.omitProp(deliveryAddress, ['addressType']) }
+        this.recDeliveryAddressOriginal = { ...this.omitProp(deliveryAddress, ['addressType']) as AddressIF }
         if (isEmpty(this.recDeliveryAddress)) {
-          this.recDeliveryAddress = { ...this.omitProp(deliveryAddress, ['addressType']) }
+          this.recDeliveryAddress = { ...this.omitProp(deliveryAddress, ['addressType']) as AddressIF }
         }
       } else {
         console.log('invalid Delivery Address =', addressBase)
@@ -614,9 +648,9 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
       const mailingAddress = addressBase.mailingAddress
       if (mailingAddress) {
         mailingAddress.actions = []
-        this.recMailingAddressOriginal = { ...this.omitProp(mailingAddress, ['addressType']) }
+        this.recMailingAddressOriginal = { ...this.omitProp(mailingAddress, ['addressType']) as AddressIF }
         if (isEmpty(this.recMailingAddress)) {
-          this.recMailingAddress = { ...this.omitProp(mailingAddress, ['addressType']) }
+          this.recMailingAddress = { ...this.omitProp(mailingAddress, ['addressType']) as AddressIF }
         }
       } else {
         console.log('invalid Mailing Address =', addressBase)
@@ -735,7 +769,12 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin) {
   .records-inherit-checkbox {
     margin-top: 0rem;
     margin-left: 6rem;
+    margin-bottom: -1.5rem;
     padding: 0;
+
+    .v-messages {
+      display: none!important;
+    }
   }
 
   // Registered Office Address Form Behavior
