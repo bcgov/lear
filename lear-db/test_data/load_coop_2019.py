@@ -115,7 +115,7 @@ def add_business_directors(business, directors_json):
 
 
 def historic_filings_exist(business_id):
-    filings = Filing.get_filings_by_status(business_id, [Filing.Status.DRAFT.value])
+    filings = Filing.get_filings_by_status(business_id, [Filing.Status.COMPLETED.value])
     for possible_historic in filings:
         if possible_historic.json['filing']['header']['date'] < '2019-03-08':
             return True
@@ -125,7 +125,7 @@ def historic_filings_exist(business_id):
 rowcount = 0
 TIMEOUT = 15
 
-with open('coop_2019_test_data.csv', 'r') as csvfile:
+with open('coops.csv', 'r') as csvfile:
     reader = csv.DictReader(csvfile)
     with FLASK_APP.app_context():
         for row in reader:
