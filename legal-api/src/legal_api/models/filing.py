@@ -269,7 +269,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type == filing_type). \
             filter(Filing._status != Filing.Status.COMPLETED.value). \
-            order_by(desc(Filing._filing_date)). \
+            order_by(desc(Filing.filing_date)). \
             all()
         return filings
 

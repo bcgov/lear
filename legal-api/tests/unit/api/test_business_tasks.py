@@ -38,6 +38,7 @@ AR_FILING_CURRENT_YEAR = {
         },
         'annualReport': {
             'annualGeneralMeetingDate': str(datetime.today()).split()[0],
+            'annualReportDate': str(datetime.today()).split()[0],
             'certifiedBy': 'full name',
             'email': 'no_one@never.get'
         }
@@ -58,6 +59,7 @@ AR_FILING_PREVIOUS_YEAR = {
         },
         'annualReport': {
             'annualGeneralMeetingDate': str(datetime.today() - datedelta.datedelta(years=1)).split()[0],
+            'annualReportDate': str(datetime.today() - datedelta.datedelta(years=1)).split()[0],
             'certifiedBy': 'full name',
             'email': 'no_one@never.get'
         }
