@@ -34,6 +34,7 @@
     "vuex": "^3.0.1"
   },
   "devDependencies": {
+    "@mdi/font": "^4.5.95",
     "@types/jest": "^24.0.18",
     "@types/vuelidate": "^0.7.4",
     "@typescript-eslint/eslint-plugin": "^2.3.1",
@@ -51,6 +52,8 @@
     "eslint": "^5.0.0",
     "eslint-plugin-vue": "^5.2.3",
     "flush-promises": "^1.0.2",
+    "sass": "^1.22.10",
+    "sass-loader": "^7.3.1",
     "ts-jest": "^24.0.2",
     "typescript": "<3.6.0",
     "vue-class-component": "^7.1.0",
@@ -58,8 +61,6 @@
     "vue-plugin-helper-decorator": "^0.0.11",
     "vue-property-decorator": "^8.2.2",
     "vue-template-compiler": "^2.6.10",
-    "vue-test-utils-helpers": "git+https://github.com/AmpleOrganics/vue-test-utils-helpers.git",
-    "sass": "^1.22.10",
-    "sass-loader": "^7.3.1"
+    "vue-test-utils-helpers": "git+https://github.com/AmpleOrganics/vue-test-utils-helpers.git"
   }
 }

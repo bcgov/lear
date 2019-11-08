@@ -1,5 +1,6 @@
 import 'core-js/stable' // to polyfill ECMAScript features
 import 'regenerator-runtime/runtime' // to use transpiled generator functions
+import '@mdi/font/css/materialdesignicons.css'
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
