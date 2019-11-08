@@ -89,7 +89,9 @@ class TaskListResource(Resource):
         annual_report_filings = Filing.get_filings_by_type(business.id, 'annualReport')
         if annual_report_filings:
             if check_agm:
-                last_ar_date = annual_report_filings[0].filing_date
+                last_ar_filing_json = annual_report_filings[0].filing_json
+                last_ar_date_str = last_ar_filing_json['filing']['annualReport']['annualReportDate']
+                last_ar_date = datetime.strptime(last_ar_date_str, '%Y-%m-%d')
                 todo_start_date = (datetime(last_ar_date.year+1, 1, 1)).date()
 
         start_year = todo_start_date.year
