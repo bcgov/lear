@@ -11,7 +11,7 @@ import axios from '@/axios-auth'
 import store from '@/store/store'
 import AnnualReport from '@/views/AnnualReport.vue'
 import AGMDate from '@/components/AnnualReport/AGMDate.vue'
-import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
+import { OfficeAddresses } from '@/components/Common'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
@@ -42,7 +42,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
 
     expect(wrapper.find(AGMDate).exists()).toBe(true)
-    expect(wrapper.find(RegisteredOfficeAddress).exists()).toBe(true)
+    expect(wrapper.find(OfficeAddresses).exists()).toBe(true)
     expect(wrapper.find(Directors).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)
     expect(wrapper.find(StaffPayment).exists()).toBe(false) // normally not rendered
@@ -56,7 +56,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
 
     expect(wrapper.find(ARDate).exists()).toBe(true)
-    expect(wrapper.find(RegisteredOfficeAddress).exists()).toBe(true)
+    expect(wrapper.find(OfficeAddresses).exists()).toBe(true)
     expect(wrapper.find(Directors).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)
     expect(wrapper.find(StaffPayment).exists()).toBe(false) // normally not rendered
@@ -368,7 +368,7 @@ describe('AnnualReport - Part 1 - UI', () => {
       stubs: {
         ARDate: true,
         AGMDate: true,
-        RegisteredOfficeAddress: true,
+        OfficeAddresses: true,
         Directors: true,
         Certify: true,
         StaffPayment: true,
@@ -410,7 +410,7 @@ describe('AnnualReport - Part 1 - UI', () => {
       stubs: {
         ARDate: true,
         AGMDate: true,
-        RegisteredOfficeAddress: true,
+        OfficeAddresses: true,
         Directors: true,
         Certify: true,
         StaffPayment: true,
@@ -652,7 +652,6 @@ describe('AnnualReport - Part 3 - Submitting', () => {
     // set necessary session variables
     sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
     sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
-    store.state.entityType = EntityTypes.Coop
 
     const localVue = createLocalVue()
     localVue.use(VueRouter)
@@ -665,7 +664,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       stubs: {
         ARDate: true,
         AGMDate: true,
-        RegisteredOfficeAddress: true,
+        OfficeAddresses: true,
         Directors: true,
         Certify: true,
         StaffPayment: true,
@@ -691,8 +690,26 @@ describe('AnnualReport - Part 3 - Submitting', () => {
 
     // stub address data
     vm.addresses = {
-      deliveryAddress: {},
-      mailingAddress: {}
+      'registeredOffice': {
+        'deliveryAddress': {
+          'streetAddress': 'delivery street address',
+          'streetAddressAdditional': null,
+          'addressCity': 'deliv address city',
+          'addressCountry': 'deliv country',
+          'postalCode': 'H0H0H0',
+          'addressRegion': 'BC',
+          'deliveryInstructions': null
+        },
+        'mailingAddress': {
+          'streetAddress': 'mailing street address',
+          'streetAddressAdditional': 'Kirkintiloch',
+          'addressCity': 'Glasgow',
+          'addressCountry': 'UK',
+          'postalCode': 'H0H 0H0',
+          'addressRegion': 'Scotland',
+          'deliveryInstructions': 'go to the back'
+        }
+      }
     }
 
     // make sure a fee is required
@@ -734,7 +751,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       stubs: {
         ARDate: true,
         AGMDate: true,
-        RegisteredOfficeAddress: true,
+        OfficeAddresses: true,
         Directors: true,
         Certify: true,
         StaffPayment: true,
@@ -758,8 +775,26 @@ describe('AnnualReport - Part 3 - Submitting', () => {
 
     // stub address data
     vm.addresses = {
-      deliveryAddress: {},
-      mailingAddress: {}
+      'registeredOffice': {
+        'deliveryAddress': {
+          'streetAddress': 'delivery street address',
+          'streetAddressAdditional': null,
+          'addressCity': 'deliv address city',
+          'addressCountry': 'deliv country',
+          'postalCode': 'H0H0H0',
+          'addressRegion': 'BC',
+          'deliveryInstructions': null
+        },
+        'mailingAddress': {
+          'streetAddress': 'mailing street address',
+          'streetAddressAdditional': 'Kirkintiloch',
+          'addressCity': 'Glasgow',
+          'addressCountry': 'UK',
+          'postalCode': 'H0H 0H0',
+          'addressRegion': 'Scotland',
+          'deliveryInstructions': 'go to the back'
+        }
+      }
     }
 
     // make sure a fee is required
@@ -855,8 +890,26 @@ describe('AnnualReport - Part 4 - Saving', () => {
 
     // stub address data
     vm.addresses = {
-      deliveryAddress: {},
-      mailingAddress: {}
+      'registeredOffice': {
+        'deliveryAddress': {
+          'streetAddress': 'delivery street address',
+          'streetAddressAdditional': null,
+          'addressCity': 'deliv address city',
+          'addressCountry': 'deliv country',
+          'postalCode': 'H0H0H0',
+          'addressRegion': 'BC',
+          'deliveryInstructions': null
+        },
+        'mailingAddress': {
+          'streetAddress': 'mailing street address',
+          'streetAddressAdditional': 'Kirkintiloch',
+          'addressCity': 'Glasgow',
+          'addressCountry': 'UK',
+          'postalCode': 'H0H 0H0',
+          'addressRegion': 'Scotland',
+          'deliveryInstructions': 'go to the back'
+        }
+      }
     }
 
     // click the Save button
@@ -878,8 +931,26 @@ describe('AnnualReport - Part 4 - Saving', () => {
 
     // stub address data
     vm.addresses = {
-      deliveryAddress: {},
-      mailingAddress: {}
+      'registeredOffice': {
+        'deliveryAddress': {
+          'streetAddress': 'delivery street address',
+          'streetAddressAdditional': null,
+          'addressCity': 'deliv address city',
+          'addressCountry': 'deliv country',
+          'postalCode': 'H0H0H0',
+          'addressRegion': 'BC',
+          'deliveryInstructions': null
+        },
+        'mailingAddress': {
+          'streetAddress': 'mailing street address',
+          'streetAddressAdditional': 'Kirkintiloch',
+          'addressCity': 'Glasgow',
+          'addressCountry': 'UK',
+          'postalCode': 'H0H 0H0',
+          'addressRegion': 'Scotland',
+          'deliveryInstructions': 'go to the back'
+        }
+      }
     }
 
     // click the Save & Resume Later button
@@ -1009,8 +1080,26 @@ describe('AnnualReport - Part 5 - Data', () => {
 
     // stub address data
     vm.addresses = {
-      deliveryAddress: {},
-      mailingAddress: {}
+      'registeredOffice': {
+        'deliveryAddress': {
+          'streetAddress': 'delivery street address',
+          'streetAddressAdditional': null,
+          'addressCity': 'deliv address city',
+          'addressCountry': 'deliv country',
+          'postalCode': 'H0H0H0',
+          'addressRegion': 'BC',
+          'deliveryInstructions': null
+        },
+        'mailingAddress': {
+          'streetAddress': 'mailing street address',
+          'streetAddressAdditional': 'Kirkintiloch',
+          'addressCity': 'Glasgow',
+          'addressCountry': 'UK',
+          'postalCode': 'H0H 0H0',
+          'addressRegion': 'Scotland',
+          'deliveryInstructions': 'go to the back'
+        }
+      }
     }
 
     // make sure form is validated
@@ -1036,7 +1125,6 @@ describe('AnnualReport - Part 5 - Data', () => {
     // - the first index (0) is to get the first call, where there could be many calls to the stubbed function
     // - the second index (1) is to get the second param - data - where the call is axios.post(url, data)
     const payload = spy.args[0][1]
-
     // basic tests to pass ensuring structure of payload is as expected
     expect(payload.filing).toBeDefined()
     expect(payload.filing.annualReport).toBeDefined()
@@ -1175,10 +1263,6 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
     window.location = { assign: jest.fn() } as any
   })
 
-  afterAll(() => {
-    window.location.assign = assign
-  })
-
   beforeEach(async () => {
     // init store
     store.state.entityIncNo = 'CP0001191'
@@ -1290,7 +1374,7 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
       stubs: {
         ARDate: true,
         AGMDate: true,
-        RegisteredOfficeAddress: true,
+        OfficeAddresses: true,
         Directors: true,
         Certify: true,
         StaffPayment: true,
@@ -1327,8 +1411,10 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
 
     // stub address data
     vm.addresses = {
-      deliveryAddress: {},
-      mailingAddress: {}
+      registeredOffice: {
+        deliveryAddress: {},
+        mailingAddress: {}
+      }
     }
 
     // click the Save button
@@ -1360,8 +1446,10 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
 
     // stub address data
     vm.addresses = {
-      deliveryAddress: {},
-      mailingAddress: {}
+      registeredOffice: {
+        deliveryAddress: {},
+        mailingAddress: {}
+      }
     }
 
     // set the filingId
@@ -1402,7 +1490,7 @@ describe('AnnualReport - Part 7 - Save through multiple tabs', () => {
       stubs: {
         ARDate: true,
         AGMDate: true,
-        RegisteredOfficeAddress: true,
+        OfficeAddresses: true,
         Directors: true,
         Certify: true,
         Affix: true,
@@ -1458,7 +1546,12 @@ describe('AnnualReport - Part 7 - Save through multiple tabs', () => {
     vm.directorEditInProgress = false
 
     // stub address data
-    vm.addresses = { deliveryAddress: {}, mailingAddress: {} }
+    vm.addresses = {
+      registeredOffice: {
+        deliveryAddress: {},
+        mailingAddress: {}
+      }
+    }
 
     // click the Save button
     wrapper.find('#ar-file-pay-btn').trigger('click')

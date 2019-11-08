@@ -5,6 +5,7 @@ import store from '@/store/store'
 
 import { OfficeAddresses } from '@/components/Common'
 import { mount, Wrapper } from '@vue/test-utils'
+import { EntityTypes } from '@/enums'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -16,11 +17,169 @@ const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
 document.body.append(app)
 
-describe('OfficeAddresses', () => {
+describe('OfficeAddresses as a COOP', () => {
   let vm
 
   beforeAll(() => {
     // init store
+    store.state.entityType = EntityTypes.Coop
+    store.state.registeredAddress = {
+      deliveryAddress: {
+        addressCity: 'delCity',
+        addressCountry: 'delCountry',
+        addressRegion: 'delRegion',
+        deliveryInstructions: 'delInstructions',
+        postalCode: 'delPostal',
+        streetAddress: 'delStreet',
+        streetAddressAdditional: 'delStreetAdd'
+      },
+      mailingAddress: {
+        addressCity: 'mailCity',
+        addressCountry: 'mailCountry',
+        addressRegion: 'mailRegion',
+        deliveryInstructions: 'mailInstructions',
+        postalCode: 'mailPostal',
+        streetAddress: 'mailStreet',
+        streetAddressAdditional: 'mailStreetAdd'
+      }
+    }
+  })
+
+  const draftAddresses = {
+    registeredOffice: {
+      deliveryAddress: {
+        addressCity: 'delCityDraft',
+        addressCountry: 'delCountryDraft',
+        addressRegion: 'delRegionDraft',
+        deliveryInstructions: 'delInstructionsDraft',
+        postalCode: 'delPostalDraft',
+        streetAddress: 'delStreetDraft',
+        streetAddressAdditional: 'delStreetAddDraft'
+      },
+      mailingAddress: {
+        addressCity: 'mailCityDraft',
+        addressCountry: 'mailCountryDraft',
+        addressRegion: 'mailRegionDraft',
+        deliveryInstructions: 'mailInstructionsDraft',
+        postalCode: 'mailPostalDraft',
+        streetAddress: 'mailStreetDraft',
+        streetAddressAdditional: 'mailStreetAddDraft'
+      }
+    }
+  }
+
+  it('loads the current office addresses properly', async done => {
+    const Constructor = Vue.extend(OfficeAddresses)
+    const instance = new Constructor({
+      propsData: {
+        registeredAddress: store.state.registeredAddress,
+        recordsAddress: store.state.recordsAddress
+      },
+      store,
+      vuetify
+    })
+    vm = instance.$mount()
+
+    const deliveryAddress = vm.registeredAddress.deliveryAddress
+    expect(deliveryAddress['streetAddress']).toEqual('delStreet')
+    expect(deliveryAddress['streetAddressAdditional']).toEqual('delStreetAdd')
+    expect(deliveryAddress['addressCity']).toEqual('delCity')
+    expect(deliveryAddress['addressRegion']).toEqual('delRegion')
+    expect(deliveryAddress['postalCode']).toEqual('delPostal')
+    expect(deliveryAddress['addressCountry']).toEqual('delCountry')
+    expect(deliveryAddress['deliveryInstructions']).toEqual('delInstructions')
+
+    const mailingAddress = vm.registeredAddress.mailingAddress
+    expect(mailingAddress['streetAddress']).toEqual('mailStreet')
+    expect(mailingAddress['streetAddressAdditional']).toEqual('mailStreetAdd')
+    expect(mailingAddress['addressCity']).toEqual('mailCity')
+    expect(mailingAddress['addressRegion']).toEqual('mailRegion')
+    expect(mailingAddress['postalCode']).toEqual('mailPostal')
+    expect(mailingAddress['addressCountry']).toEqual('mailCountry')
+    expect(mailingAddress['deliveryInstructions']).toEqual('mailInstructions')
+
+    Vue.nextTick(() => {
+      done()
+    })
+  })
+
+  it('loads the current office addresses properly from a draft filing', async done => {
+    const Constructor = Vue.extend(OfficeAddresses)
+    const instance = new Constructor({
+      propsData: {
+        addresses: draftAddresses
+      },
+      store,
+      vuetify
+    })
+    vm = instance.$mount()
+
+    const deliveryAddress = vm.addresses.registeredOffice.deliveryAddress
+    expect(deliveryAddress['streetAddress']).toEqual('delStreetDraft')
+    expect(deliveryAddress['streetAddressAdditional']).toEqual('delStreetAddDraft')
+    expect(deliveryAddress['addressCity']).toEqual('delCityDraft')
+    expect(deliveryAddress['addressRegion']).toEqual('delRegionDraft')
+    expect(deliveryAddress['postalCode']).toEqual('delPostalDraft')
+    expect(deliveryAddress['addressCountry']).toEqual('delCountryDraft')
+    expect(deliveryAddress['deliveryInstructions']).toEqual('delInstructionsDraft')
+
+    const mailingAddress = vm.addresses.registeredOffice.mailingAddress
+    expect(mailingAddress['streetAddress']).toEqual('mailStreetDraft')
+    expect(mailingAddress['streetAddressAdditional']).toEqual('mailStreetAddDraft')
+    expect(mailingAddress['addressCity']).toEqual('mailCityDraft')
+    expect(mailingAddress['addressRegion']).toEqual('mailRegionDraft')
+    expect(mailingAddress['postalCode']).toEqual('mailPostalDraft')
+    expect(mailingAddress['addressCountry']).toEqual('mailCountryDraft')
+    expect(mailingAddress['deliveryInstructions']).toEqual('mailInstructionsDraft')
+
+    Vue.nextTick(() => {
+      done()
+    })
+  })
+
+  it('has enabled Change button', done => {
+    const wrapper: Wrapper<OfficeAddresses> = mount(OfficeAddresses, {
+      sync: false,
+      propsData: {
+        changeButtonDisabled: false,
+        registeredAddress: store.state.registeredAddress
+      },
+      store,
+      vuetify
+    })
+
+    expect(wrapper.find('#reg-off-addr-change-btn').attributes('disabled')).toBeUndefined()
+
+    Vue.nextTick(() => {
+      done()
+    })
+  })
+
+  it('has disabled Change button', done => {
+    const wrapper: Wrapper<OfficeAddresses> = mount(OfficeAddresses, {
+      sync: false,
+      propsData: {
+        changeButtonDisabled: true,
+        registeredAddress: store.state.registeredAddress
+      },
+      store,
+      vuetify
+    })
+
+    expect(wrapper.find('#reg-off-addr-change-btn').attributes('disabled')).toBeDefined()
+
+    Vue.nextTick(() => {
+      done()
+    })
+  })
+})
+
+describe('OfficeAddresses as a BCORP', () => {
+  let vm
+
+  beforeAll(() => {
+    // init store
+    store.state.entityType = EntityTypes.BCorp
     store.state.registeredAddress = {
       deliveryAddress: {
         addressCity: 'delCity',
@@ -70,7 +229,7 @@ describe('OfficeAddresses', () => {
         addressCity: 'delCityDraft',
         addressCountry: 'delCountryDraft',
         addressRegion: 'delRegionDraft',
-        deliveryInstructions: 'delInstructionsDraft',w
+        deliveryInstructions: 'delInstructionsDraft',
         postalCode: 'delPostalDraft',
         streetAddress: 'delStreetDraft',
         streetAddressAdditional: 'delStreetAddDraft'
@@ -114,6 +273,7 @@ describe('OfficeAddresses', () => {
         registeredAddress: store.state.registeredAddress,
         recordsAddress: store.state.recordsAddress
       },
+      store,
       vuetify
     })
     vm = instance.$mount()
@@ -165,6 +325,7 @@ describe('OfficeAddresses', () => {
       propsData: {
         addresses: draftAddresses
       },
+      store,
       vuetify
     })
     vm = instance.$mount()
@@ -213,10 +374,12 @@ describe('OfficeAddresses', () => {
   it('has enabled Change button', done => {
     const wrapper: Wrapper<OfficeAddresses> = mount(OfficeAddresses, {
       sync: false,
-      propsData: { changeButtonDisabled: false,
+      propsData: {
+        changeButtonDisabled: false,
         registeredAddress: store.state.registeredAddress,
         recordsAddress: store.state.recordsAddress
       },
+      store,
       vuetify
     })
 
@@ -227,13 +390,15 @@ describe('OfficeAddresses', () => {
     })
   })
 
-  it('has enabled Change button', done => {
+  it('has disabled Change button', done => {
     const wrapper: Wrapper<OfficeAddresses> = mount(OfficeAddresses, {
       sync: false,
-      propsData: { changeButtonDisabled: true,
+      propsData: {
+        changeButtonDisabled: true,
         registeredAddress: store.state.registeredAddress,
         recordsAddress: store.state.recordsAddress
       },
+      store,
       vuetify
     })
 

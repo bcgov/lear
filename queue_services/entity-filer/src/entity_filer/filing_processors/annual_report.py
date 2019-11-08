@@ -22,6 +22,7 @@ from legal_api.models import Business, Filing
 
 from legal_api.services.filings import validations
 
+from entity_filer.service_utils import logger
 
 def process(business: Business, filing: Dict):
     """Render the annual_report onto the business model objects."""

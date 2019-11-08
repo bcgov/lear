@@ -22,6 +22,7 @@ export interface BaseAddressObjIF extends Vue {
   mailingAddress: AddressIF
 }
 
+// Interface to define the Bcorps address response
 export interface BcorpAddressIf extends Vue {
   registeredOffice: BaseAddressObjIF,
   recordsOffice: BaseAddressObjIF

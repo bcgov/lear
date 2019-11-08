@@ -21,7 +21,7 @@
                   <li>
                     {{ registeredAddress.deliveryAddress.addressCity }}
                     {{ registeredAddress.deliveryAddress.addressRegion }}
-                  &nbsp;&nbsp;{{ registeredAddress.deliveryAddress.postalCode }}
+                    {{ registeredAddress.deliveryAddress.postalCode }}
                   </li>
                   <li>{{ getCountryName(registeredAddress.deliveryAddress.addressCountry) }}</li>
                 </ul>
@@ -80,7 +80,7 @@
                   <li class="pre-wrap" v-html="recordsAddress.deliveryAddress.streetAddressAdditional"></li>
                   <li>{{ recordsAddress.deliveryAddress.addressCity }}
                       {{ recordsAddress.deliveryAddress.addressRegion }}
-                    &nbsp;&nbsp;{{ recordsAddress.deliveryAddress.postalCode }}
+                      {{ recordsAddress.deliveryAddress.postalCode }}
                   </li>
                   <li>{{ getCountryName(recordsAddress.deliveryAddress.addressCountry) }}</li>
                 </ul>
@@ -103,7 +103,7 @@
                   <li class="pre-wrap" v-html="recordsAddress.mailingAddress.streetAddressAdditional"></li>
                   <li>{{ recordsAddress.mailingAddress.addressCity }}
                       {{ recordsAddress.mailingAddress.addressRegion }}
-                    &nbsp;&nbsp;{{ recordsAddress.mailingAddress.postalCode }}
+                      {{ recordsAddress.mailingAddress.postalCode }}
                   </li>
                   <li>{{ getCountryName(recordsAddress.mailingAddress.addressCountry) }}</li>
                 </ul>

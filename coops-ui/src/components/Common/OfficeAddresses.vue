@@ -2,7 +2,7 @@
   <v-card flat>
     <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
 
-      <!---- Registered Office Section ---->
+      <!-- Registered Office Section -->
       <div class="address-edit-header"
         v-if="showAddressForm">
         <label class="address-edit-title">Registered Office</label>
@@ -93,7 +93,7 @@
         </div>
       </li>
 
-      <!---- Records Office Section ---->
+      <!-- Records Office Section -->
       <div v-if="entityFilter(EntityTypes.BCorp)">
         <div class="address-edit-header"
              v-if="showAddressForm">
@@ -137,7 +137,7 @@
                   <strong>Mailing Address</strong>
                 </label>
                 <div class="form__row">
-                  <v-input
+                  <v-checkbox
                     class="inherit-checkbox"
                     label="Same as Delivery Address"
                     v-if="showAddressForm"
@@ -176,7 +176,7 @@
           </li>
         </div>
       </div>
-      <!---- Form Btn Section ---->
+      <!-- Form Btn Section -->
       <li>
         <div
           class="form__row form__btns"
@@ -242,10 +242,15 @@ export default class OfficeAddresses extends Mixins(AddressMixin, CommonMixin, E
     @Prop({ default: null })
     readonly addresses: BcorpAddressIf | null
 
-    // Init Store properties
+    /**
+     * Registered Office address object passed in from the parent
+     */
     @Prop({ default: null })
     private registeredAddress: BaseAddressObjIF
 
+    /**
+     * Records Office address object passed in from the parent
+     */
     @Prop({ default: null })
     private recordsAddress: BaseAddressObjIF
 

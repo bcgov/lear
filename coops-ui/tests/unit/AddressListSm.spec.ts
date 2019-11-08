@@ -5,7 +5,7 @@ import Vuelidate from 'vuelidate'
 import store from '@/store/store'
 import AddressListSm from '@/components/Dashboard/AddressListSm.vue'
 import { mount } from '@vue/test-utils'
-import { EntityTypes } from '@/enums';
+import { EntityTypes } from '@/enums'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -39,7 +39,7 @@ describe('AddressListSm', () => {
           'addressCity': 'Glasgow',
           'addressRegion': 'Scotland',
           'postalCode': 'G1 2FFF',
-          'addressCountry': 'UK'
+          'addressCountry': 'CA'
         },
       'mailingAddress':
         {
@@ -47,7 +47,7 @@ describe('AddressListSm', () => {
           'addressCity': 'Glasgow',
           'addressRegion': 'Scotland',
           'postalCode': 'G1 2FFF',
-          'addressCountry': 'UK'
+          'addressCountry': 'CA'
         }
     }
     store.state.recordsAddress = null
@@ -61,7 +61,7 @@ describe('AddressListSm', () => {
       expect(vm.$el.querySelector(
         '.address-panel .address-info').textContent).toContain('Glasgow')
       expect(vm.$el.querySelector(
-        '.address-panel .address-info li:nth-child(3)').textContent).toContain('UK')
+        '.address-panel .address-info li:nth-child(4)').textContent).toContain('Canada')
 
       wrapper.destroy()
       done()
@@ -78,7 +78,7 @@ describe('AddressListSm', () => {
           'addressCity': 'Glasgow',
           'addressRegion': 'Scotland',
           'postalCode': 'G1 2FFF',
-          'addressCountry': 'UK'
+          'addressCountry': 'CA'
         },
       'mailingAddress':
         {
@@ -86,7 +86,7 @@ describe('AddressListSm', () => {
           'addressCity': 'Glasgow',
           'addressRegion': 'Scotland',
           'postalCode': 'G1 2FFF',
-          'addressCountry': 'UK'
+          'addressCountry': 'CA'
         }
     }
     store.state.recordsAddress = {
@@ -104,7 +104,7 @@ describe('AddressListSm', () => {
           'addressCity': 'Vancouver',
           'addressRegion': 'BC',
           'postalCode': 'G1 2FFF',
-          'addressCountry': 'Ca'
+          'addressCountry': 'CA'
         }
     }
 
@@ -122,12 +122,12 @@ describe('AddressListSm', () => {
       expect(vm.$el.querySelector(
         '.address-panel .address-info').textContent).toContain('Glasgow')
       expect(vm.$el.querySelector(
-        '.address-panel .address-info li:nth-child(3)').textContent).toContain('UK')
+        '.address-panel .address-info li:nth-child(4)').textContent).toContain('Canada')
 
       expect(vm.$el.querySelector(
         '.address-panel:nth-child(2) .address-info').textContent).toContain('Victoria')
       expect(vm.$el.querySelector(
-        '.address-panel:nth-child(2) .address-info li:nth-child(3)').textContent).toContain('CA')
+        '.address-panel:nth-child(2) .address-info li:nth-child(4)').textContent).toContain('Canada')
 
       wrapper.destroy()
       done()
