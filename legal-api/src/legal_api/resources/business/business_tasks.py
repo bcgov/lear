@@ -89,7 +89,16 @@ class TaskListResource(Resource):
         annual_report_filings = Filing.get_filings_by_type(business.id, 'annualReport')
         if annual_report_filings:
             if check_agm:
-                last_ar_date = datetime.fromisoformat(annual_report_filings[0].filing_json['filing']['annualReport']['annualReportDate'])
+                # get last AR date from annualReportDate; if not present in json, try annualGeneralMeetingDate and
+                # finally filing date
+                last_ar_date = \
+                    annual_report_filings[0].filing_json['filing']['annualReport'].get('annualReportDate', None)
+                if not last_ar_date:
+                    last_ar_date = annual_report_filings[0].filing_json['filing']['annualReport']\
+                        .get('annualGeneralMeetingDate', None)
+                if not last_ar_date:
+                    last_ar_date = annual_report_filings[0].filing_date
+                last_ar_date = datetime.fromisoformat(last_ar_date)
                 todo_start_date = (datetime(last_ar_date.year+1, 1, 1)).date()
 
         start_year = todo_start_date.year
