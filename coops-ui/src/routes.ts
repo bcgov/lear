@@ -46,6 +46,7 @@ export default [
   //   // route level code-splitting
   //   // this generates a separate chunk (about.[hash].js) for this route
   //   // which is lazy-loaded when the route is visited.
+  //   // ref: https://cli.vuejs.org/guide/html-and-static-assets.html#prefetch
   //   component: () => import(/* webpackChunkName: "about" */ './views/About.vue')
   // },
   {
