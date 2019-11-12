@@ -97,7 +97,7 @@ class TaskListResource(Resource):
                     last_ar_date = annual_report_filings[0].filing_json['filing']['annualReport']\
                         .get('annualGeneralMeetingDate', None)
                 if not last_ar_date:
-                    last_ar_date = annual_report_filings[0].filing_json['filing']['header']['date']
+                    last_ar_date = annual_report_filings[0].filing_date
                 last_ar_date = datetime.fromisoformat(last_ar_date)
                 todo_start_date = (datetime(last_ar_date.year+1, 1, 1)).date()
 
