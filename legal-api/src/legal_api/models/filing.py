@@ -58,10 +58,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
 
     id = db.Column(db.Integer, primary_key=True)
     _completion_date = db.Column('completion_date', db.DateTime(timezone=True))
-    _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.now)
     _filing_type = db.Column('filing_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
-    effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.now)
     _payment_token = db.Column('payment_id', db.String(4096))
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
     colin_event_id = db.Column('colin_event_id', db.Integer)
@@ -198,7 +198,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
     def set_processed(self):
         """Assign the completion date, unless it is already set."""
         if not self._completion_date:
-            self._completion_date = datetime.utcnow()
+            self._completion_date = datetime.now()
 
     @staticmethod
     def _raise_default_lock_exception():
