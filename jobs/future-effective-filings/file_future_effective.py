@@ -16,7 +16,7 @@
 This module is the API for the Legal Entity system.
 """
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import logging
 import os
@@ -38,107 +38,24 @@ import config
 
 
 from utils.logging import setup_logging
+from entity_queue_common.service import QueueServiceManager, ServiceWorker
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), \
     'logging.conf'))  # important to do this first
 
-class QueueHelper():
-
-    def __init__(self, loop=None):
-        """Initialize, supports setting the app context on instantiation."""
-        # Default NATS Options
-        self.name = 'default_api_client'
-        self.nats_options = {}
-        self.stan_options = {}
-        self.loop = loop
-        self.nats_servers = None
-        self.subject = None
-        self.nats = None
-        self.stan = None
-        self.logger = logging.getLogger()
-
-    def on_error(self):
-        """Error callback for nats streaming."""
-        return
-
-    def on_close(self):
-        """Connection closed callback for nats streaming."""
-        return
-
-    def on_disconnect(self):
-        """Connection disconnected callback for nats streaming."""
-        return
-
-    def on_reconnect(self):
-        """Connection reconnected callback for nats streaming."""
-        return
-
-    def setup_queue(self):
-
-        self.name = os.getenv('NATS_CLIENT_NAME', '')
-        self.loop = asyncio.get_event_loop()
-        self.nats_servers = os.getenv('NATS_SERVERS', '').split(',')
-        self.subject = os.getenv('NATS_FILER_SUBJECT', '')
-
-        default_nats_options = {
-            'name': self.name,
-            'io_loop': self.loop,
-            'servers': self.nats_servers,
-            'connect_timeout': os.getenv('NATS_CONNECT_TIMEOUT', str(DEFAULT_CONNECT_TIMEOUT)),
-            # NATS handlers
-            'error_cb': self.on_error,
-            'closed_cb': self.on_close,
-            'reconnected_cb': self.on_reconnect,
-            'disconnected_cb': self.on_disconnect,
+default_nats_options = {
+            'name': 'default_future_filing_job',
+            'servers':  os.getenv('NATS_SERVERS', '').split(','),
+            'connect_timeout': os.getenv('NATS_CONNECT_TIMEOUT', DEFAULT_CONNECT_TIMEOUT)
         }
 
-        self.nats_options = {**default_nats_options}
-
-        default_stan_options = {
+default_stan_options = {
             'cluster_id': os.getenv('NATS_CLUSTER_ID'),
             'client_id':
-            (self.name.
-             lower().
-             strip(string.whitespace)
-             ).translate({ord(c): '_' for c in string.punctuation})
-            + '_' + str(random.SystemRandom().getrandbits(0x58))
+             '_' + str(random.SystemRandom().getrandbits(0x58))
         }
 
-        if not self.stan_options:
-            stan_options = {}
-
-        self.stan_options = {**default_stan_options, **stan_options}
-
-    async def connect(self):
-        """Connect to the queueing service."""
-        #ctx = _app_ctx_stack.top
-        #if ctx:
-        if self.nats is None:
-            self.nats = NATS()
-            self.stan = STAN()
-
-        if not self.nats.is_connected:
-            self.stan_options = {**self.stan_options, **{'nats': self.nats}}
-            await self.nats.connect(**self.nats_options)
-            await self.stan.connect(**self.stan_options)
-
-    async def async_publish_filing(self, filing_id, status, payment_id):
-        """Publish the json payload to the Queue Service."""
-        message = {
-            'statusChanged' : {
-                'id' : filing_id,
-                'newStatus' : status
-                },
-            'paymentToken' : {
-                'id' : payment_id,
-                'statusCode' : status
-                }
-            }
-        if not self.nats.is_connected:
-            await self.connect()
-
-        await self.stan.publish(subject=self.subject,
-                                payload=json.dumps(message).encode('utf-8'))
+subject = os.getenv('NATS_FILER_SUBJECT', '')
 
 # this will load all the envars from a .env file located in the project root
 load_dotenv(find_dotenv())
@@ -150,6 +67,17 @@ SENTRY_LOGGING = LoggingIntegration(
     event_level=logging.ERROR  # send errors as events
 )
 
+def format_message(filing_id, payment_id, status):
+    return {
+        'statusChanged' : {
+            'id' : filing_id,
+            'newStatus' : status
+            },
+        'paymentToken' : {
+            'id' : payment_id,
+            'statusCode' : status
+        }
+    }
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
@@ -163,8 +91,6 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
 
     setup_jwt_manager(app, jwt)
 
-    register_shellcontext(app)
-
     return app
 
 def setup_jwt_manager(app, jwt_manager):
@@ -175,15 +101,6 @@ def setup_jwt_manager(app, jwt_manager):
 
     jwt_manager.init_app(app)
 
-def register_shellcontext(app):
-    """Register shell context objects."""
-    def shell_context():
-        """Shell context objects."""
-        return {
-            'app': app,
-            'jwt': jwt}  # pragma: no cover
-
-    app.shell_context_processor(shell_context)
 
 def get_filings(app: Flask = None):
     """Get a filing with filing_id."""
@@ -196,9 +113,11 @@ def get_filings(app: Flask = None):
 
 async def run(loop, application: Flask = None):
     application = create_app()
-    queue = QueueHelper(loop)
-    queue.setup_queue()
-    await queue.connect()
+    queue_service = ServiceWorker(loop=loop, nats_connection_options=default_nats_options,
+    stan_connection_options=default_stan_options, config=config.get_named_config('production'))
+
+    await queue_service.connect()
+
     with application.app_context():
         try:
             # get updater-job token
@@ -223,10 +142,12 @@ async def run(loop, application: Flask = None):
                 payment_id = filing["filing"]["header"]["paymentToken"]
                 effective_date = filing["filing"]["header"]["effectiveDate"]
                 # TODO Use UTC time?
-                now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+                now = datetime.utcnow().replace(tzinfo=timezone.utc)
                 valid = effective_date and parse(effective_date) <= now
                 if valid:
-                    await queue.async_publish_filing(filing_id, 'COMPLETED', payment_id)
+                    msg = format_message(filing_id, payment_id, 'COMPLETE')
+                    await queue_service.publish(subject, msg)
+                    #await queue.async_publish_filing(filing_id, 'COMPLETED', payment_id)
                     application.logger.error(f'Successfully updated filing {filing_id}')
         except Exception as err:
             application.logger.error(err)
@@ -237,6 +158,6 @@ if __name__ == "__main__":
         event_loop.run_until_complete(run(event_loop))
         event_loop.run_forever()
     except Exception as err:  # pylint: disable=broad-except; Catching all errors from the frameworks
-        logger.error('problem in running the service: %s', err, stack_info=True, exc_info=True)
+        print('problem in running the service: %s', err, stack_info=True, exc_info=True)
     finally:
         event_loop.close()

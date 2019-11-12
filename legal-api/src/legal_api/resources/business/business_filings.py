@@ -393,10 +393,11 @@ class InternalFilings(Resource):
     def get(status=None):
         """Get filings to send to colin."""
         filings = []
-        if status:
-            pending_filings = Filing.get_all_filings_by_status(status)
-        else:
+
+        if status is None:
             pending_filings = Filing.get_completed_filings_for_colin()
+        elif status == Filing.Status.PAID.value:
+            pending_filings = Filing.get_all_filings_by_status(status)
 
         filings = [x.json for x in pending_filings]
         return jsonify(filings), HTTPStatus.OK

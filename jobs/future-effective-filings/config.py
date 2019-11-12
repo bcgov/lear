@@ -20,6 +20,7 @@
 """
 
 import os
+import random
 import sys
 from dotenv import load_dotenv, find_dotenv
 
@@ -54,6 +55,29 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults
        for all the other configurations
     """
+
+    NATS_CONNECTION_OPTIONS = {
+        'servers': os.getenv('NATS_SERVERS', 'nats://127.0.0.1:4222').split(','),
+        'name': os.getenv('NATS_CLIENT_NAME', 'entity.filing.worker')
+
+    }
+    STAN_CONNECTION_OPTIONS = {
+        'cluster_id': os.getenv('NATS_CLUSTER_ID', 'test-cluster'),
+        'client_id': str(random.SystemRandom().getrandbits(0x58)),
+        'ping_interval': 1,
+        'ping_max_out': 5,
+    }
+
+    SUBSCRIPTION_OPTIONS = {
+        'subject': os.getenv('NATS_SUBJECT', 'entity.filings'),
+        'queue': os.getenv('NATS_QUEUE', 'filing-worker'),
+        'durable_name': os.getenv('NATS_QUEUE', 'filing-worker') + '_durable',
+    }
+
+    FILER_PUBLISH_OPTIONS = {
+        'subject': os.getenv('NATS_FILER_SUBJECT', 'entity.filing.filer'),
+    }
+
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     COLIN_URL = os.getenv('COLIN_URL', '')
