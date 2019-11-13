@@ -55,8 +55,6 @@ class DirectorResource(Resource):
                 del director_json['mailingAddress']
             res.append(director_json)
 
-        if not res:
-            return jsonify({'message': f'{identifier} directors not found'}), HTTPStatus.NOT_FOUND
         return jsonify(directors=res)
 
     @staticmethod
