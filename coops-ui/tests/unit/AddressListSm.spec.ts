@@ -4,6 +4,8 @@ import Vuelidate from 'vuelidate'
 
 import store from '@/store/store'
 import AddressListSm from '@/components/Dashboard/AddressListSm.vue'
+import { mount } from '@vue/test-utils'
+import { EntityTypes } from '@/enums';
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -11,72 +13,123 @@ Vue.use(Vuelidate)
 let vuetify = new Vuetify({})
 
 describe('AddressListSm', () => {
-  let vm
-
-  beforeEach(done => {
-    const Constructor = Vue.extend(AddressListSm)
-    const instance = new Constructor({ store: store, vuetify })
-    vm = instance.$mount()
-
-    Vue.nextTick(() => {
-      done()
-    })
-  })
-
   it('handles empty data', done => {
     // init store
-    store.state.mailingAddress = null
-    store.state.deliveryAddress = null
+    store.state.registeredAddress = null
+    store.state.recordsAddress = null
 
-    Vue.nextTick(() => {
-      expect(vm.mailingAddress).toBeNull()
-      expect(vm.deliveryAddress).toBeNull()
-      expect(vm.$el.querySelectorAll('.list-item').length).toEqual(0)
+    const wrapper = mount(AddressListSm, { store, vuetify })
+    const vm = wrapper.vm as any
 
+    Vue.nextTick(async () => {
+      expect(vm.registeredAddress).toBeNull()
+      expect(vm.recordsAddress).toBeNull()
+
+      wrapper.destroy()
       done()
     })
   })
 
-  it('displays the mailing address', done => {
-    // init store
-    store.state.mailingAddress = {
-      'streetAddress': '1012 Douglas St',
-      'addressCity': 'Victoria',
-      'addressRegion': 'BC',
-      'postalCode': 'V8W 2C3',
-      'addressCountry': 'CA'
+  it('displays registered office data when a Coop', done => {
+    // Init Store
+    store.state.registeredAddress = {
+      'deliveryAddress':
+        {
+          'streetAddress': '220 Buchanan St',
+          'addressCity': 'Glasgow',
+          'addressRegion': 'Scotland',
+          'postalCode': 'G1 2FFF',
+          'addressCountry': 'UK'
+        },
+      'mailingAddress':
+        {
+          'streetAddress': '220 Buchanan St',
+          'addressCity': 'Glasgow',
+          'addressRegion': 'Scotland',
+          'postalCode': 'G1 2FFF',
+          'addressCountry': 'UK'
+        }
     }
-    store.state.deliveryAddress = null
+    store.state.recordsAddress = null
 
-    Vue.nextTick(() => {
-      expect(vm.mailingAddress).not.toBeNull()
-      expect(vm.deliveryAddress).toBeNull()
-      expect(vm.$el.querySelectorAll('.v-list-item').length).toEqual(1)
-      expect(vm.$el.querySelector('.v-list-item__title').textContent).toBe('Mailing Address')
-      expect(vm.$el.querySelector('.address-info').textContent).toContain('Victoria BC')
+    const wrapper = mount(AddressListSm, { store, vuetify })
+    const vm = wrapper.vm as any
 
+    Vue.nextTick(async () => {
+      expect(vm.registeredAddress).toBeDefined()
+      expect(vm.recordsAddress).toBeNull()
+      expect(vm.$el.querySelector(
+        '.address-panel .address-info').textContent).toContain('Glasgow')
+      expect(vm.$el.querySelector(
+        '.address-panel .address-info li:nth-child(3)').textContent).toContain('UK')
+
+      wrapper.destroy()
       done()
     })
   })
 
-  it('displays the delivery address', done => {
-    // init store
-    store.state.mailingAddress = null
-    store.state.deliveryAddress = {
-      'streetAddress': '220 Buchanan St',
-      'addressCity': 'Glasgow',
-      'addressRegion': 'Scotland',
-      'postalCode': 'G1 2FFF',
-      'addressCountry': 'UK'
+  it('displays registered address and records address data when a Bcorp', async done => {
+    // Init Store
+    store.state.entityType = EntityTypes.BCorp
+    store.state.registeredAddress = {
+      'deliveryAddress':
+        {
+          'streetAddress': '220 Buchanan St',
+          'addressCity': 'Glasgow',
+          'addressRegion': 'Scotland',
+          'postalCode': 'G1 2FFF',
+          'addressCountry': 'UK'
+        },
+      'mailingAddress':
+        {
+          'streetAddress': '220 Buchanan St',
+          'addressCity': 'Glasgow',
+          'addressRegion': 'Scotland',
+          'postalCode': 'G1 2FFF',
+          'addressCountry': 'UK'
+        }
+    }
+    store.state.recordsAddress = {
+      'deliveryAddress':
+        {
+          'streetAddress': '123 Cloverdale St',
+          'addressCity': 'Victoria',
+          'addressRegion': 'BC',
+          'postalCode': 'G1 2FFF',
+          'addressCountry': 'CA'
+        },
+      'mailingAddress':
+        {
+          'streetAddress': '321 Burrard St',
+          'addressCity': 'Vancouver',
+          'addressRegion': 'BC',
+          'postalCode': 'G1 2FFF',
+          'addressCountry': 'Ca'
+        }
     }
 
-    Vue.nextTick(() => {
-      expect(vm.mailingAddress).toBeNull()
-      expect(vm.deliveryAddress).not.toBeNull()
-      expect(vm.$el.querySelectorAll('.v-list-item').length).toEqual(1)
-      expect(vm.$el.querySelector('.v-list-item__title').textContent).toBe('Delivery Address')
-      expect(vm.$el.querySelector('.address-info').textContent).toContain('Glasgow Scotland')
+    const wrapper = mount(AddressListSm, { store, vuetify })
+    const vm = wrapper.vm as any
 
+    // Click the records office tab to display the addresses
+    const button = vm.$el.querySelector('#record-office-panel')
+    await button.click()
+
+    Vue.nextTick(async () => {
+      expect(vm.registeredAddress).toBeDefined()
+      expect(vm.recordsAddress).toBeDefined()
+
+      expect(vm.$el.querySelector(
+        '.address-panel .address-info').textContent).toContain('Glasgow')
+      expect(vm.$el.querySelector(
+        '.address-panel .address-info li:nth-child(3)').textContent).toContain('UK')
+
+      expect(vm.$el.querySelector(
+        '.address-panel:nth-child(2) .address-info').textContent).toContain('Victoria')
+      expect(vm.$el.querySelector(
+        '.address-panel:nth-child(2) .address-info li:nth-child(3)').textContent).toContain('CA')
+
+      wrapper.destroy()
       done()
     })
   })
