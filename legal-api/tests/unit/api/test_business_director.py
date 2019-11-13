@@ -93,8 +93,8 @@ def test_get_business_no_directors(session, client, jwt):
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
                     )
     # check
-    assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json == {'message': f'{business.identifier} directors not found'}
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['directors'] == []
 
 
 def test_get_business_ceased_directors(session, client, jwt):
@@ -118,8 +118,8 @@ def test_get_business_ceased_directors(session, client, jwt):
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
                     )
     # check
-    assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json == {'message': f'{business.identifier} directors not found'}
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['directors'] == []
 
 
 def test_get_business_director_by_id(session, client, jwt):
