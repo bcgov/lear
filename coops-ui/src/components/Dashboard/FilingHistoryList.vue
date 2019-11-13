@@ -174,18 +174,20 @@ export default {
     loadAnnualReport (filing) {
       if (filing.annualReport) {
         const date = filing.annualReport.annualGeneralMeetingDate
+        const filingDate = filing.header.date.slice(0, 10)
         if (date) {
           const agmYear = +date.substring(0, 4)
           const item = {
             name: `Annual Report (${agmYear})`,
             filingId: filing.header.filingId,
             filingAuthor: filing.header.certifiedBy,
-            filingDate: filing.header.date,
+            filingDateTime: filing.header.date,
+            filingDate: filingDate,
             paymentToken: filing.header.paymentToken,
             filingDocuments: [{
               filingId: filing.header.filingId,
               name: 'Annual Report',
-              documentName: `${this.entityIncNo} - Annual Report (${agmYear}) - ${filing.header.date}.pdf`
+              documentName: `${this.entityIncNo} - Annual Report (${agmYear}) - ${filingDate}.pdf`
             }],
             paperOnly: false
           }
@@ -200,16 +202,18 @@ export default {
 
     loadReport (title, filing, section) {
       if (section) {
+        const filingDate = filing.header.date.slice(0, 10)
         const item = {
           name: title,
           filingId: filing.header.filingId,
           filingAuthor: filing.header.certifiedBy,
-          filingDate: filing.header.date,
+          filingDateTime: filing.header.date,
+          filingDate: filingDate,
           paymentToken: filing.header.paymentToken,
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: title,
-            documentName: `${this.entityIncNo} - ${title} - ${filing.header.date}.pdf`
+            documentName: `${this.entityIncNo} - ${title} - ${filingDate}.pdf`
           }],
           paperOnly: false
         }
@@ -226,7 +230,7 @@ export default {
       const item = {
         name: name,
         filingAuthor: 'Registry Staff',
-        filingDate: filing.header.date,
+        filingDate: filing.header.date.slice(0, 10),
         filingYear: filing.header.date.slice(0, 4),
         paymentToken: null,
         filingDocuments: [{
@@ -294,6 +298,17 @@ export default {
       })
     },
 
+    convertISOToCommonTime (isoTime) {
+      const groups = isoTime.split('T')
+      const date = groups[0]
+      var timeString = groups[1].split('.')[0]
+      var H = +timeString.substr(0, 2)
+      var h = H % 12 || 12
+      var ampm = (H < 12 || H === 24) ? 'AM' : 'PM'
+      timeString = h + timeString.substr(2, 3) + ampm
+      return date + ' ' + timeString
+    },
+
     async downloadReceipt (filing) {
       this.loadingReceipt = true
       await this.downloadOneReceipt(filing)
@@ -304,7 +319,7 @@ export default {
       const url = filing.paymentToken + '/receipts'
       const data = {
         corpName: this.entityName,
-        filingDateTime: filing.filingDate, // TODO: format as needed
+        filingDateTime: this.convertISOToCommonTime(filing.filingDateTime), // TODO: format as needed
         fileName: 'receipt' // not used
       }
       const config = {
