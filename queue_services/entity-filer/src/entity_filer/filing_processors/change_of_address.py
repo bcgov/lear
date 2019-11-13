@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of address."""
+import json
 from typing import Dict
 
 from legal_api.models import Business, Filing

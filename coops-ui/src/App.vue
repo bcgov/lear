@@ -97,7 +97,7 @@ export default {
     ...mapActions(['setKeycloakRoles', 'setAuthRoles', 'setBusinessEmail', 'setBusinessPhone',
       'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityType', 'setEntityStatus',
       'setEntityBusinessNo', 'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate',
-      'setNextARDate', 'setTasks', 'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors',
+      'setNextARDate', 'setTasks', 'setFilings', 'setRegisteredAddress', 'setRecordsAddress', 'setDirectors',
       'setTriggerDashboardReload']),
 
     fetchData () {
@@ -288,15 +288,15 @@ export default {
     },
 
     storeAddresses (response) {
-      if (response && response.data && response.data.mailingAddress) {
-        this.setMailingAddress(this.omitProp(response.data.mailingAddress, ['addressType']))
+      if (response && response.data) {
+        if (response.data.registeredOffice) {
+          this.setRegisteredAddress(this.omitProp(response.data.registeredOffice, ['addressType']))
+        }
+        if (response.data.recordsOffice) {
+          this.setRecordsAddress(this.omitProp(response.data.recordsOffice, ['addressType']))
+        }
       } else {
-        throw new Error('Invalid mailing address')
-      }
-      if (response && response.data && response.data.deliveryAddress) {
-        this.setDeliveryAddress(this.omitProp(response.data.deliveryAddress, ['addressType']))
-      } else {
-        throw new Error('Invalid delivery address')
+        throw new Error('invalid office addresses')
       }
     },
 
