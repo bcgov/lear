@@ -25,7 +25,7 @@ from http import HTTPStatus
 import datedelta
 import dpath.util
 import pytest
-from registry_schemas.example_data import ANNUAL_REPORT
+from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, FILING_HEADER
 
 from legal_api.services import QueueService
 from legal_api.services.authz import COLIN_SVC_ROLE, STAFF_ROLE
@@ -265,3 +265,29 @@ def test_post_colin_last_update(session, client, jwt):
                      )
     assert rv.status_code == HTTPStatus.CREATED
     assert rv.json == {'maxId': colin_id}
+
+def test_future_filing_coa(session, client, jwt):
+    import pytz
+    from legal_api.models import Filing
+    from tests.unit.models import factory_error_filing, factory_pending_filing
+    # setup
+    identifier = 'CP7654321'
+    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'BC')
+    factory_business_mailing_address(b)
+    coa = copy.deepcopy(FILING_HEADER)
+    coa['filing']['header']['name'] = 'changeOfAddress'
+    coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+    coa['filing']['changeOfAddress']['deliveryAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfAddress']['mailingAddress']['addressCountry'] = 'CA'
+    coa['filing']['business']['identifier'] = identifier
+    
+    filing = factory_pending_filing(b, coa)
+    filing.effective_date = datetime.utcnow()+datedelta.DAY
+    filing.save()
+    assert filing.status == Filing.Status.PENDING.value
+
+    filing.payment_completion_date = pytz.utc.localize(datetime.utcnow())
+    filing.save()
+
+    assert filing.status == Filing.Status.PAID.value
+    

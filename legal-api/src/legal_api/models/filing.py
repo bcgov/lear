@@ -124,7 +124,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         if self.locked or \
                 (self._payment_token and self._filing_json):
             self._payment_completion_date = value
-            self._status = Filing.Status.COMPLETED.value
+            if self.effective_date is None or \
+                self.effective_date <= self._payment_completion_date:
+                self._status = Filing.Status.COMPLETED.value
         else:
             raise BusinessException(
                 error="Payment Dates cannot set for unlocked filings unless the filing hasn't been saved yet.",
@@ -294,6 +296,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         filings = db.session.query(Filing). \
             filter(Filing.colin_event_id == None,  # pylint: disable=singleton-comparison # noqa: E711;
                    Filing._status == Filing.Status.COMPLETED.value).all()
+        return filings
+
+    @staticmethod
+    def get_all_filings_by_status(status):
+        """Return all filings based on status."""
+        filings = db.session.query(Filing). \
+            filter(Filing._status == status).all()  # pylint: disable=singleton-comparison # noqa: E711;
         return filings
 
     def save(self):

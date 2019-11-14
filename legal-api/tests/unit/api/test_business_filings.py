@@ -17,10 +17,11 @@
 Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import copy
-from datetime import datetime
+from datetime import datetime, date
 from http import HTTPStatus
 
 import datedelta
+from dateutil.parser import parse
 from flask import current_app
 from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS, FILING_HEADER
 
@@ -684,3 +685,43 @@ def test_get_correct_fee_codes(session):
     assert coa_fee_code == Filing.FILINGS['changeOfAddress'].get('code')
     assert cod_fee_code == Filing.FILINGS['changeOfDirectors'].get('code')
     assert free_cod_fee_code == 'OTFDR'
+
+
+def test_coa_future_effective(session, client, jwt):
+    """Assert future effective changes do not affect Coops, and that
+    BCORP change of address if future-effective."""
+     
+    import pytz
+
+    coa = copy.deepcopy(FILING_HEADER)
+    coa['filing']['header']['name'] = 'changeOfAddress'
+    coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+    coa['filing']['changeOfAddress']['deliveryAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfAddress']['mailingAddress']['addressCountry'] = 'CA'
+    identifier = 'CP1234567'
+    b = factory_business(identifier, (datetime.utcnow()-datedelta.YEAR), None)
+    factory_business_mailing_address(b)
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                 json=coa,
+                 headers=create_header(jwt, [STAFF_ROLE], identifier)
+                 )
+    assert rv.status_code == HTTPStatus.CREATED
+    assert 'effectiveDate' not in rv.json['filing']['header']
+
+    identifier = 'CP7654321'
+    bc = factory_business(identifier, (datetime.utcnow()-datedelta.YEAR), None, 'BC')
+    factory_business_mailing_address(bc)
+    coa['filing']['business']['identifier'] = identifier
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                 json=coa,
+                 headers=create_header(jwt, [STAFF_ROLE], identifier)
+                 )
+    
+    assert rv.status_code == HTTPStatus.CREATED
+    assert 'effectiveDate' in rv.json['filing']['header']
+    effective_date = parse(rv.json['filing']['header']['effectiveDate'])
+    valid_date = datetime.combine \
+        (date.today() + datedelta.datedelta(days=1), \
+            datetime.min.time())
+    assert effective_date == pytz.UTC.localize(valid_date)

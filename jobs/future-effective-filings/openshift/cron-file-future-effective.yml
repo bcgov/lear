@@ -1,0 +1,70 @@
+---
+kind: "Template"
+apiVersion: "v1"
+metadata:
+  name: "future-effective-filings"
+  annotations:
+    description: "Scheduled task to send future effective filings to the entity filer queue"
+    tags: "cronjob"
+objects:
+- kind: "CronJob"
+  apiVersion: "batch/v1beta1"
+  metadata:
+    name: "future-effective-filings"
+  spec:
+    schedule: "0 * * * *"
+    suspend: false
+    jobTemplate:
+      spec:
+        template:
+          spec:
+            containers:
+            - name: "future-effective-filings"
+              image: "docker-registry.default.svc:5000/gl2uos-tools/future-effective-filings:${ENV_TAG}"
+              imagePullPolicy: Always
+              args:
+              - /bin/sh
+              - -c
+              - cd /opt/app-root/src; ./run.sh
+              env:
+                - name: COLIN_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: ROUTE
+                      name: colin-api-dev-config
+                - name: LEGAL_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: ROUTE
+                      name: legal-api-dev-config
+                - name: AUTH_URL
+                  valueFrom:
+                    secretKeyRef:
+                      key: AUTH_URL
+                      name: updater-job
+                - name: USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      key: USERNAME
+                      name: updater-job
+                - name: PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: PASSWORD
+                      name: updater-job
+                - name: SENTRY_DSN
+                  valueFrom:
+                    configMapKeyRef:
+                      key: SENTRY_DSN
+                      name: updater-jobs-dev-config
+            restartPolicy: "Never"
+            concurrencyPolicy: "Forbid"
+parameters: [
+        {
+          "name": "ENV_TAG",
+          "displayName": "ENV_TAG",
+          "description": "the tag for the environment that the job image runs from.",
+          "required": true,
+          "value": "dev"
+        },
+]

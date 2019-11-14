@@ -21,6 +21,7 @@ from typing import Tuple
 
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
+import datedelta
 from flask import current_app, g, jsonify, request
 from flask_babel import _
 from flask_jwt_oidc import JwtManager
@@ -143,7 +144,7 @@ class ListFilingResource(Resource):
                 reply = filing.json
                 reply['errors'] = [err_msg, ]
                 return jsonify(reply), err_code
-
+            ListFilingResource._set_effective_date(business, filing)
         # all done
         return jsonify(filing.json),\
             (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
@@ -393,18 +394,36 @@ class ListFilingResource(Resource):
             return None, None
         return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
+    @staticmethod
+    def _set_effective_date(business: Business, filing: Filing):
+        filing_type = filing.filing_json['filing']['header']['name']
+        if business.legal_type != 'CP':
+            if filing_type == 'changeOfAddress':
+                effective_date = datetime.datetime.combine(datetime.date.today() + datedelta.datedelta(days=1), \
+                    datetime.datetime.min.time())
+                filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date
+                filing.effective_date = effective_date
+                filing.save()
+
 
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')
 @API.route('/internal/filings', methods=['GET', 'OPTIONS'])
+@API.route('/internal/filings/<string:status>', methods=['GET', 'OPTIONS'])
 @API.route('/internal/filings/<int:filing_id>', methods=['PATCH', 'OPTIONS'])
 class InternalFilings(Resource):
     """Internal Filings service for cron jobs."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def get():
+    def get(status=None):
         """Get filings to send to colin."""
-        pending_filings = Filing.get_completed_filings_for_colin()
+        filings = []
+
+        if status is None:
+            pending_filings = Filing.get_completed_filings_for_colin()
+        elif status == Filing.Status.PAID.value:
+            pending_filings = Filing.get_all_filings_by_status(status)
+
         filings = [x.json for x in pending_filings]
         return jsonify(filings), HTTPStatus.OK
 

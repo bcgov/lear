@@ -1,0 +1,11 @@
+gunicorn
+Flask
+Flask-Script
+Flask-Moment
+Flask-RESTplus
+flask-jwt-oidc>=0.1.5
+python-dotenv
+requests
+sentry-sdk[flask]
+
+git+https://github.com/bcgov/lear.git#egg=registry_schemas&subdirectory=schemas
