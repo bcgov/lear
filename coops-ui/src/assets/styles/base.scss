@@ -203,6 +203,16 @@ p {
   animation: fadeOut 2s forwards;
 }
 
+// styles for fade transitions
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity .5s;
+}
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}
+
 @keyframes fadeOut {
   0% {
     opacity: 1;
