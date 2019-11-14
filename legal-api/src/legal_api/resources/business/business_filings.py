@@ -285,7 +285,7 @@ class ListFilingResource(Resource):
                                              business.identifier)
                     return None, None, {'message': 'missing filing/header values'}, HTTPStatus.BAD_REQUEST
             else:
-                filing.filing_date = datetime.datetime.now()
+                filing.filing_date = datetime.datetime.utcnow()
             filing.save()
         except BusinessException as err:
             return None, None, {'error': err.error}, err.status_code
