@@ -82,6 +82,7 @@
         </li>
       </ul>
     </v-card>
+
     <br>
 
     <!-- Ceased Directors List -->

@@ -9,8 +9,8 @@
         <p class="genErr">PayBC is normally available:</p>
         <p class="genErr">
           Monday to Friday: 6:00am to 9:00pm
-          <br />Saturday: 12:00am to 7:00pm
-          <br />Sunday: 12:00pm to 12:00am
+          <br>Saturday: 12:00am to 7:00pm
+          <br>Sunday: 12:00pm to 12:00am
         </p>
 
         <ErrorContact />

@@ -26,7 +26,7 @@
                   <v-icon small>mdi-pencil</v-icon>
                   <span>Change</span>
                 </v-btn>
-                <br />
+                <br>
                 <v-btn
                   class="reset-btn"
                   color="red"

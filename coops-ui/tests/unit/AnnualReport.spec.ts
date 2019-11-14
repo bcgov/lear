@@ -1467,7 +1467,7 @@ describe('AnnualReport - Part 7 - Save through multiple tabs', () => {
       expect(vm.saveErrorDialog).toBe(true)
       expect(vm.saveErrors.length).toBe(1)
       expect(vm.saveErrors[0].error)
-        .toBe('Another draft filing already exists. Please complete it before creating a new filing')
+        .toBe('Another draft filing already exists. Please complete it before creating a new filing.')
     }, 1000)
   })
 })
