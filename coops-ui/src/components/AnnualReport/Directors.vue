@@ -557,7 +557,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private directorFormValid = true // used for New and Edit forms
 
   // State of the form checkbox for determining whether or not the mailing address is the same as the delivery address.
-  private inheritDeliveryAddress: boolean = true
+  private inheritDeliveryAddress: boolean = false
 
   // EntityTypes Enum
   private EntityTypes: {} = EntityTypes
