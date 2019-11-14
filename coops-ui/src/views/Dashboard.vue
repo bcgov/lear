@@ -190,6 +190,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import '@/assets/styles/theme.scss';
+
 section header {
   display: flex;
   flex-direction: row;

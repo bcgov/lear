@@ -2,12 +2,14 @@
   <v-app class="app-container theme--light" id="app">
 
     <!-- Initial Page Load Transition -->
-    <div class="loading-container fade-out">
-      <div class="loading__content">
-        <v-progress-circular color="primary" size="50" indeterminate />
-        <div class="loading-msg">Loading Your Dashboard</div>
+    <transition name="fade">
+      <div class="loading-container" v-show="!dataLoaded && !dashboardUnavailableDialog">
+        <div class="loading__content">
+          <v-progress-circular color="primary" size="50" indeterminate />
+          <div class="loading-msg">Loading Business Dashboard</div>
+        </div>
       </div>
-    </div>
+    </transition>
 
     <DashboardUnavailableDialog
       :dialog="dashboardUnavailableDialog"

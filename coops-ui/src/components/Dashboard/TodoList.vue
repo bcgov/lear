@@ -83,7 +83,7 @@
                 <!-- more DRAFT actions menu -->
                 <v-menu offset-y left>
                   <template v-slot:activator="{ on }">
-                    <v-btn color="primary" class="actions__more-actions__btn"
+                    <v-btn color="primary" class="actions__more-actions__btn px-0"
                       v-on="on" id="menu-activator" :disabled="!item.enabled"
                     >
                       <v-icon>mdi-menu-down</v-icon>

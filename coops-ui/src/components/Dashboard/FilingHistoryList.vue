@@ -380,7 +380,6 @@ export default {
   align-items: flex-start;
   justify-content: space-between;
   padding: 0;
-  font-size: 0.96rem;
 }
 
 .filing-type {
