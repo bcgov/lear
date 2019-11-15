@@ -59,22 +59,17 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     COLIN_URL = os.getenv('COLIN_URL', '')
     LEGAL_URL = os.getenv('LEGAL_URL', '')
     AUTH_URL = os.getenv('AUTH_URL', '')
-    USERNAME = os.getenv('USERNAME', '')
-    PASSWORD = os.getenv('PASSWORD', '')
+    USERNAME = os.getenv('AUTH_USERNAME', '')
+    PASSWORD = os.getenv('AUTH_PASSWORD', '')
     SENTRY_DSN = os.getenv('SENTRY_DSN', '')
+
+    print(USERNAME)
 
     SECRET_KEY = 'a secret'
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     ALEMBIC_INI = 'migrations/alembic.ini'
-
-    # POSTGRESQL
-    DB_USER = os.getenv('DATABASE_USERNAME', '')
-    DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')
-    DB_NAME = os.getenv('DATABASE_NAME', '')
-    DB_HOST = os.getenv('DATABASE_HOST', '')
-    DB_PORT = os.getenv('DATABASE_PORT', '5432')
 
     # JWT_OIDC Settings
     JWT_OIDC_WELL_KNOWN_CONFIG = os.getenv('JWT_OIDC_WELL_KNOWN_CONFIG')
