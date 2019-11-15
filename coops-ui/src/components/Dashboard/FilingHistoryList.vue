@@ -58,7 +58,7 @@
                 documents.
                 <br><br>
                 To request copies of paper documents, contact BC Registry Staff with the document you require and
-                the name and incorporation number of your associtation:
+                the name and incorporation number of your association:
                 <br><br>
                 <p class="paper-filings__text">
                   <v-icon medium>mdi-phone</v-icon>
