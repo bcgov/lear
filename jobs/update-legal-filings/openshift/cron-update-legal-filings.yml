@@ -31,17 +31,22 @@ objects:
                   valueFrom:
                     configMapKeyRef:
                       key: ROUTE
-                      name: colin-api-dev-config
+                      name: colin-api-${ENV_TAG}-config
+                - name: SENTRY_DSN
+                  valueFrom:
+                    configMapKeyRef:
+                      key: SENTRY_DSN
+                      name: updater-jobs-${ENV_TAG}-config
                 - name: LEGAL_URL
                   valueFrom:
                     configMapKeyRef:
                       key: ROUTE
-                      name: legal-api-dev-config
+                      name: legal-api-${ENV_TAG}-config
                 - name: AUTH_URL
                   valueFrom:
-                    secretKeyRef:
+                    configMapKeyRef:
                       key: AUTH_URL
-                      name: updater-job
+                      name: updater-jobs-${ENV_TAG}-config
                 - name: USERNAME
                   valueFrom:
                     secretKeyRef:
@@ -52,13 +57,8 @@ objects:
                     secretKeyRef:
                       key: PASSWORD
                       name: updater-job
-                - name: SENTRY_DSN
-                    valueFrom:
-                      configMapKeyRef:
-                        key: SENTRY_DSN
-                        name: updater-jobs-dev-config
-            restartPolicy: "Never"
-            concurrencyPolicy: "Forbid"
+          restartPolicy: "Never"
+          concurrencyPolicy: "Forbid"
 parameters: [
         {
           "name": "ENV_TAG",
