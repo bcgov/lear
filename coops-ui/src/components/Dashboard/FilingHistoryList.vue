@@ -131,7 +131,8 @@ export default {
       for (let i = 0; i < this.filings.length; i++) {
         const filing = this.filings[i].filing
         if (filing && filing.header) {
-          if (filing.header.date < '2019-03-08' || filing.header.availableOnPaperOnly) {
+          let filingDate = filing.header.date.slice(0, 10)
+          if (filingDate < '2019-03-08' || filing.header.availableOnPaperOnly) {
             this.loadPaperFiling(filing)
           } else {
             switch (filing.header.name) {
