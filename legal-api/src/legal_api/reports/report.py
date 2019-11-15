@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from http import HTTPStatus
 from pathlib import Path
 
+import pytz
 import requests
 from flask import current_app, jsonify
 
@@ -163,7 +164,8 @@ class Report:  # pylint: disable=too-few-public-methods
 
         # Get the string for the filing date and time - do not use a leading zero on the hour (04:30 PM) as it looks
         # too much like the 24 hour 4:30 AM. Also, we can't use "%-I" on Windows.
-        filing_datetime = self._filing.filing_date
+        local_timezone = pytz.timezone('America/Vancouver')
+        filing_datetime = self._filing.filing_date.astimezone(local_timezone)
         hour = filing_datetime.strftime('%I').lstrip('0')
         filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {hour}:%M %p Pacific Time')
 

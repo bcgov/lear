@@ -89,6 +89,7 @@
 
 <script lang="ts">
 import ExternalMixin from '@/mixins/external-mixin'
+import DateMixin from '@/mixins/date-mixin'
 import axios from '@/axios-auth'
 import { mapState } from 'vuex'
 import DownloadErrorDialog from '@/components/Dashboard/DownloadErrorDialog.vue'
@@ -96,7 +97,7 @@ import DownloadErrorDialog from '@/components/Dashboard/DownloadErrorDialog.vue'
 export default {
   name: 'FilingHistoryList',
 
-  mixins: [ExternalMixin],
+  mixins: [ExternalMixin, DateMixin],
 
   components: {
     DownloadErrorDialog
@@ -171,17 +172,26 @@ export default {
       if (highlightId) { this.highlightFiling(highlightId) }
     },
 
+    // Method to extract date from a local datetime string
+    formatDate (dateString) {
+      var dateStrParts = dateString.split(',')
+      var dateStr = dateStrParts[0]
+      var dateParts = dateStr.split('/')
+      return dateParts[2] + '-' + dateParts[0] + '-' + dateParts[1]
+    },
+
     loadAnnualReport (filing) {
       if (filing.annualReport) {
         const date = filing.annualReport.annualGeneralMeetingDate
-        const filingDate = filing.header.date.slice(0, 10)
+        const localDateTime = this.convertUTCTimeToLocalTime(filing.header.date)
+        const filingDate = this.formatDate(localDateTime)
         if (date) {
           const agmYear = +date.substring(0, 4)
           const item = {
             name: `Annual Report (${agmYear})`,
             filingId: filing.header.filingId,
             filingAuthor: filing.header.certifiedBy,
-            filingDateTime: filing.header.date,
+            filingDateTime: localDateTime,
             filingDate: filingDate,
             paymentToken: filing.header.paymentToken,
             filingDocuments: [{
@@ -202,12 +212,13 @@ export default {
 
     loadReport (title, filing, section) {
       if (section) {
-        const filingDate = filing.header.date.slice(0, 10)
+        const localDateTime = this.convertUTCTimeToLocalTime(filing.header.date)
+        const filingDate = this.formatDate(localDateTime)
         const item = {
           name: title,
           filingId: filing.header.filingId,
           filingAuthor: filing.header.certifiedBy,
-          filingDateTime: filing.header.date,
+          filingDateTime: localDateTime,
           filingDate: filingDate,
           paymentToken: filing.header.paymentToken,
           filingDocuments: [{
@@ -226,11 +237,13 @@ export default {
     loadPaperFiling (filing) {
       // split name on camelcase and capitalize first letters
       let name = filing.header.name.split(/(?=[A-Z])/).join(' ')
+      const localDateTime = this.convertUTCTimeToLocalTime(filing.header.date)
+      const filingDate = this.formatDate(localDateTime)
       name = name.charAt(0).toLocaleUpperCase() + name.slice(1)
       const item = {
         name: name,
         filingAuthor: 'Registry Staff',
-        filingDate: filing.header.date.slice(0, 10),
+        filingDate: filingDate,
         filingYear: filing.header.date.slice(0, 4),
         paymentToken: null,
         filingDocuments: [{
@@ -298,17 +311,6 @@ export default {
       })
     },
 
-    convertISOToCommonTime (isoTime) {
-      const groups = isoTime.split('T')
-      const date = groups[0]
-      var timeString = groups[1].split('.')[0]
-      var H = +timeString.substr(0, 2)
-      var h = H % 12 || 12
-      var ampm = (H < 12 || H === 24) ? 'AM' : 'PM'
-      timeString = h + timeString.substr(2, 3) + ampm
-      return date + ' ' + timeString
-    },
-
     async downloadReceipt (filing) {
       this.loadingReceipt = true
       await this.downloadOneReceipt(filing)
@@ -319,7 +321,7 @@ export default {
       const url = filing.paymentToken + '/receipts'
       const data = {
         corpName: this.entityName,
-        filingDateTime: this.convertISOToCommonTime(filing.filingDateTime), // TODO: format as needed
+        filingDateTime: filing.filingDateTime, // TODO: format as needed
         fileName: 'receipt' // not used
       }
       const config = {
