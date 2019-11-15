@@ -215,7 +215,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
         """Return a json representation of this object."""
         try:
             json_submission = copy.deepcopy(self.filing_json)
-            json_submission['filing']['header']['date'] = datetime.date(self.filing_date).isoformat()
+            json_submission['filing']['header']['date'] = self._filing_date.isoformat()
             json_submission['filing']['header']['filingId'] = self.id
             json_submission['filing']['header']['name'] = self.filing_type
             json_submission['filing']['header']['colinId'] = self.colin_event_id

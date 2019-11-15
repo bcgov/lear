@@ -29,9 +29,10 @@ export default {
 
     for (let i = 0; i < state.filings.length; i++) {
       let filing = state.filings[i].filing
+      let filingDate = filing.header.date.slice(0, 10)
       if (filing.hasOwnProperty('changeOfDirectors')) {
-        if (lastCOD === null || filing.header.date.split('-').join('') > lastCOD.split('-').join('')) {
-          lastCOD = filing.header.date
+        if (lastCOD === null || filingDate.split('-').join('') > lastCOD.split('-').join('')) {
+          lastCOD = filingDate
         }
       }
     }
@@ -44,9 +45,10 @@ export default {
 
     for (let i = 0; i < state.filings.length; i++) {
       let filing = state.filings[i].filing
+      let filingDate = filing.header.date.slice(0, 10)
       if (filing.hasOwnProperty('changeOfAddress')) {
-        if (lastCOA === null || filing.header.date.split('-').join('') > lastCOA.split('-').join('')) {
-          lastCOA = filing.header.date
+        if (lastCOA === null || filingDate.split('-').join('') > lastCOA.split('-').join('')) {
+          lastCOA = filingDate
         }
       }
     }
@@ -59,8 +61,9 @@ export default {
 
     for (let i = 0; i < state.filings.length; i++) {
       let filing = state.filings[i].filing
-      if (lastFilingDate === null || filing.header.date.split('-').join('') > lastFilingDate.split('-').join('')) {
-        lastFilingDate = filing.header.date
+      let filingDate = filing.header.date.slice(0, 10)
+      if (lastFilingDate === null || filingDate.split('-').join('') > lastFilingDate.split('-').join('')) {
+        lastFilingDate = filingDate
       }
     }
     return lastFilingDate

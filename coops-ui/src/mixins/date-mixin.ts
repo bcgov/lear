@@ -69,4 +69,20 @@ export default class DateMixin extends Vue {
     const regex = / (?!.* )/
     return formatDate.slice(1).join(' ').replace(regex, ', ')
   }
+
+  /**
+     * API always returns the UTC date time in ISO format. This needs to be
+     * converted to local time zone. Consistently in API and UI, America/Vancouver
+     * is the timezone to be used.
+     */
+  convertUTCTimeToLocalTime (date: string): String {
+    var dateTimeArray = date.split('.')
+    let UTCTime:string = dateTimeArray[0] + '.' + dateTimeArray[1].slice(0, 3) + 'Z'
+    return new Date(UTCTime).toLocaleDateString('en', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'America/Vancouver'
+    })
+  }
 }
