@@ -47,15 +47,15 @@ objects:
                     configMapKeyRef:
                       key: AUTH_URL
                       name: updater-jobs-${ENV_TAG}-config
-                - name: USERNAME
+                - name: AUTH_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      key: USERNAME
+                      key: AUTH_USERNAME
                       name: updater-job
-                - name: PASSWORD
+                - name: AUTH_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      key: PASSWORD
+                      key: AUTH_PASSWORD
                       name: updater-job
           restartPolicy: "Never"
           concurrencyPolicy: "Forbid"
