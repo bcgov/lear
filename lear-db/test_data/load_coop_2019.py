@@ -124,15 +124,18 @@ def historic_filings_exist(business_id):
 
 rowcount = 0
 TIMEOUT = 15
+FAILED_COOPS = []
 
 with open('coops.csv', 'r') as csvfile:
     reader = csv.DictReader(csvfile)
     with FLASK_APP.app_context():
         for row in reader:
+            added = False
             rowcount += 1
             print('loading: ', row['CORP_NUM'])
 
             try:
+                print(row)
                 business = Business.find_by_identifier(row['CORP_NUM'])
                 if not business:
                     try:
@@ -143,6 +146,7 @@ with open('coops.csv', 'r') as csvfile:
                             timeout=TIMEOUT)
                         if r.status_code != HTTPStatus.OK \
                                 or not r.json():
+                            FAILED_COOPS.append(row['CORP_NUM'])
                             print('skipping ' + row['CORP_NUM'] +
                                   ' business info not found')
                             continue
@@ -155,6 +159,7 @@ with open('coops.csv', 'r') as csvfile:
                             timeout=TIMEOUT)
                         if r.status_code != HTTPStatus.OK \
                                 or not r.json():
+                            FAILED_COOPS.append(row['CORP_NUM'])
                             print('skipping ' + row['CORP_NUM'] +
                                   ' business offices not found')
                             continue
@@ -167,6 +172,7 @@ with open('coops.csv', 'r') as csvfile:
                             timeout=TIMEOUT)
                         if r.status_code != HTTPStatus.OK \
                                 or not r.json():
+                            FAILED_COOPS.append(row['CORP_NUM'])
                             print('skipping ' + row['CORP_NUM'] +
                                   ' business directors not found')
                             continue
@@ -177,30 +183,34 @@ with open('coops.csv', 'r') as csvfile:
 
                     uow = versioning_manager.unit_of_work(db.session)
                     transaction = uow.create_transaction(db.session)
+                    try:
+                        business = create_business(db, business_json)
+                        add_business_addresses(business, offices_json)
+                        add_business_directors(business, directors_json)
+                        db.session.add(business)
+                        filing = Filing()
+                        # filing.filing_date = datetime.datetime.utcnow
+                        filing.filing_json = {'filing':
+                                              {'header':
+                                               {'name': 'lear_epoch'}
+                                               }}
+                        filing.transaction_id = transaction.id
+                        db.session.add(filing)
+                        db.session.commit()
 
-                    business = create_business(db, business_json)
-                    add_business_addresses(business, offices_json)
-                    add_business_directors(business, directors_json)
-                    db.session.add(business)
-
-                    filing = Filing()
-                    # filing.filing_date = datetime.datetime.utcnow
-                    filing.filing_json = {'filing':
-                                          {'header':
-                                           {'name': 'lear_epoch'}
-                                           }}
-                    filing.transaction_id = transaction.id
-                    db.session.add(filing)
-                    db.session.commit()
-
-                    # assign filing to business (now that business record has been comitted and id exists)
-                    filing.business_id = business.id
-                    db.session.add(filing)
-                    db.session.commit()
+                        # assign filing to business (now that business record has been comitted and id exists)
+                        filing.business_id = business.id
+                        db.session.add(filing)
+                        db.session.commit()
+                        added = True
+                    except:
+                        print(f'skipping {row["CORP_NUM"]} missing info')
+                        FAILED_COOPS.append(row['CORP_NUM'])
                 else:
+                    added = True
                     print('->business info already exists -- skipping corp load')
 
-                if not historic_filings_exist(business.id):
+                if added and not historic_filings_exist(business.id):
                     try:
                         # get historic filings
                         r = requests.get(COLIN_API + '/api/v1/businesses/' + row['CORP_NUM'] + '/filings/historic',
@@ -208,20 +218,21 @@ with open('coops.csv', 'r') as csvfile:
                         if r.status_code != HTTPStatus.OK or not r.json():
                             print(f'skipping history for {row["CORP_NUM"]} historic filings not found')
 
-                        for historic_filing in r.json():
-                            uow = versioning_manager.unit_of_work(db.session)
-                            transaction = uow.create_transaction(db.session)
-                            filing = Filing()
-                            filing_date = historic_filing['filing']['header']['date']
-                            filing.filing_date = datetime.datetime.strptime(filing_date, '%Y-%m-%d')
-                            filing.business_id = business.id
-                            filing.filing_json = historic_filing
-                            filing.transaction_id = transaction.id
-                            filing_type = historic_filing['filing']['header']['name']
-                            filing.colin_event_id = historic_filing['filing'][filing_type]['eventId']
-                            filing.paper_only = True
-                            db.session.add(filing)
-                            db.session.commit()
+                        else:
+                            for historic_filing in r.json():
+                                uow = versioning_manager.unit_of_work(db.session)
+                                transaction = uow.create_transaction(db.session)
+                                filing = Filing()
+                                filing_date = historic_filing['filing']['header']['date']
+                                filing.filing_date = datetime.datetime.strptime(filing_date, '%Y-%m-%d')
+                                filing.business_id = business.id
+                                filing.filing_json = historic_filing
+                                filing.transaction_id = transaction.id
+                                filing_type = historic_filing['filing']['header']['name']
+                                filing.colin_event_id = historic_filing['filing'][filing_type]['eventId']
+                                filing.paper_only = True
+                                db.session.add(filing)
+                                db.session.commit()
 
                     except requests.exceptions.Timeout as timeout:
                         print('colin_api request timed out getting historic filings.')
@@ -234,3 +245,4 @@ with open('coops.csv', 'r') as csvfile:
 
 
 print(f'processed: {rowcount} rows')
+print(f'failed to load {len(FAILED_COOPS)} coops: {FAILED_COOPS}')
