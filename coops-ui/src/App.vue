@@ -3,7 +3,7 @@
 
     <!-- Initial Page Load Transition -->
     <transition name="fade">
-      <div class="loading-container" v-show="!dataLoaded && !dashboardUnavailableDialog">
+      <div class="loading-container" v-show="showLoadingContainer">
         <div class="loading__content">
           <v-progress-circular color="primary" size="50" indeterminate />
           <div class="loading-msg">Loading Business Dashboard</div>
@@ -55,9 +55,9 @@ export default {
 
   data () {
     return {
+      dataLoaded: false,
       dashboardUnavailableDialog: false,
       accountAuthorizationDialog: false,
-      dataLoaded: false,
       EntityTypes
     }
   },
@@ -81,6 +81,10 @@ export default {
 
     authAPIURL () {
       return sessionStorage.getItem('AUTH_API_URL')
+    },
+
+    showLoadingContainer () {
+      return !this.dataLoaded && !this.dashboardUnavailableDialog && !this.accountAuthorizationDialog
     }
   },
 
@@ -97,9 +101,11 @@ export default {
       'setTriggerDashboardReload']),
 
     fetchData () {
+      this.dataLoaded = false
       let businessId
 
       try {
+        // get initial data
         const jwt = this.getJWT()
         const keycloakRoles = this.getKeycloakRoles(jwt)
         this.setKeycloakRoles(keycloakRoles)
@@ -124,7 +130,7 @@ export default {
           axios.get(businessId + '/addresses'),
           axios.get(businessId + '/directors')
         ]).then(data => {
-          if (!data || data.length !== 6) throw new Error('incomplete data')
+          if (!data || data.length !== 6) throw new Error('Incomplete data')
           this.storeBusinessInfo(data[0])
           this.storeEntityInfo(data[1])
           this.storeTasks(data[2])
@@ -146,9 +152,8 @@ export default {
       const token = sessionStorage.getItem('KEYCLOAK_TOKEN')
       if (token) {
         return this.parseJwt(token)
-      } else {
-        throw new Error('Keycloak Token is null')
       }
+      throw new Error('Error getting Keycloak token')
     },
 
     parseJwt (token) {
@@ -167,18 +172,16 @@ export default {
       const keycloakRoles = jwt.roles
       if (keycloakRoles && keycloakRoles.length > 0) {
         return keycloakRoles
-      } else {
-        throw new Error('Keycloak Role is null')
       }
+      throw new Error('Error getting Keycloak roles')
     },
 
     getBusinessId () {
       const businessId = sessionStorage.getItem('BUSINESS_IDENTIFIER')
       if (businessId) {
         return businessId
-      } else {
-        throw new Error('Business Identifier is null')
       }
+      throw new Error('Error getting business identifier')
     },
 
     updateCurrentDate () {
@@ -215,7 +218,7 @@ export default {
       if (authRoles && authRoles.length > 0) {
         this.setAuthRoles(authRoles)
       } else {
-        throw new Error('invalid auth roles')
+        throw new Error('Invalid auth roles')
       }
     },
 
@@ -232,7 +235,7 @@ export default {
           this.setBusinessPhoneExtension(contact.phoneExtension)
         }
       } else {
-        throw new Error('invalid business contact info')
+        throw new Error('Invalid business contact info')
       }
     },
 
@@ -260,7 +263,7 @@ export default {
           this.setLastAgmDate(null)
         }
       } else {
-        throw new Error('invalid entity info')
+        throw new Error('Invalid entity info')
       }
     },
 
@@ -268,7 +271,7 @@ export default {
       if (response && response.data && response.data.tasks) {
         this.setTasks(response.data.tasks)
       } else {
-        throw new Error('invalid tasks')
+        throw new Error('Invalid tasks')
       }
     },
 
@@ -280,7 +283,7 @@ export default {
         )
         this.setFilings(filings)
       } else {
-        throw new Error('invalid filings')
+        throw new Error('Invalid filings')
       }
     },
 
@@ -288,12 +291,12 @@ export default {
       if (response && response.data && response.data.mailingAddress) {
         this.setMailingAddress(this.omitProp(response.data.mailingAddress, ['addressType']))
       } else {
-        throw new Error('invalid mailing address')
+        throw new Error('Invalid mailing address')
       }
       if (response && response.data && response.data.deliveryAddress) {
         this.setDeliveryAddress(this.omitProp(response.data.deliveryAddress, ['addressType']))
       } else {
-        throw new Error('invalid delivery address')
+        throw new Error('Invalid delivery address')
       }
     },
 
@@ -307,7 +310,7 @@ export default {
         }
         this.setDirectors(directors)
       } else {
-        throw new Error('invalid directors')
+        throw new Error('Invalid directors')
       }
     },
 
@@ -317,7 +320,8 @@ export default {
 
     onClickRetry () {
       this.dashboardUnavailableDialog = false
-      this.$nextTick(() => this.fetchData())
+      this.accountAuthorizationDialog = false
+      this.fetchData()
     }
   },
 

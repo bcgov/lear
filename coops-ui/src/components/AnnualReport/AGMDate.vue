@@ -286,29 +286,29 @@ export default class AGMDate extends Mixins(DateMixin) {
 <style lang="scss" scoped>
 @import "@/assets/styles/theme.scss";
 
-.validationErrorInfo{
+.validationErrorInfo {
   color: red;
 }
 
-.value.date{
+.value.date {
   min-width: 24rem;
 }
 
-.meta-container{
+.meta-container {
   display: flex;
   flex-flow: column nowrap;
   position: relative;
 
-  > label:first-child{
+  > label:first-child {
     font-weight: 700;
   }
 }
 
-@media (min-width: 768px){
-  .meta-container{
+@media (min-width: 768px) {
+  .meta-container {
     flex-flow: row nowrap;
 
-    > label:first-child{
+    > label:first-child {
       flex: 0 0 auto;
       padding-right: 2rem;
       width: 12rem;
