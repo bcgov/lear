@@ -76,8 +76,7 @@ export default class DateMixin extends Vue {
      * is the timezone to be used.
      */
   convertUTCTimeToLocalTime (date: string): String {
-    var dateTimeArray = date.split('.')
-    let UTCTime:string = dateTimeArray[0] + '.' + dateTimeArray[1].slice(0, 3) + 'Z'
+    let UTCTime:string = date.slice(0, 19) + 'Z'
     return new Date(UTCTime).toLocaleDateString('en', {
       hour: 'numeric',
       minute: '2-digit',
