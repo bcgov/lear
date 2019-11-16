@@ -135,7 +135,6 @@ with open('coops.csv', 'r') as csvfile:
             print('loading: ', row['CORP_NUM'])
 
             try:
-                print(row)
                 business = Business.find_by_identifier(row['CORP_NUM'])
                 if not business:
                     try:
