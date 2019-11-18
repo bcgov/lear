@@ -28,7 +28,7 @@ from dotenv import load_dotenv, find_dotenv
 from flask import Flask
 from legal_api import db
 from legal_api.config import get_named_config
-from legal_api.models import Address, Business, Director, Filing
+from legal_api.models import Address, Business, Director, Filing, Office
 from sqlalchemy_continuum import versioning_manager
 from sqlalchemy import text
 
@@ -73,29 +73,41 @@ def create_delivery_address(delivery_json):
     delivery_address.street_additional = delivery_json['streetAddressAdditional']
     return delivery_address
 
+def create_office(business, addresses, office_type):
+    office = Office()
+    office.office_type = office_type
+    office.addresses = addresses
+
+    if business.offices is None:
+        business.offices = []
+
+    business.offices.append(office)
+    
 
 def add_business_addresses(business, offices_json):
 
-    delivery_address = create_delivery_address(offices_json['deliveryAddress'])
-    business.delivery_address.append(delivery_address)
+    for office_type in offices_json:
+        delivery_address = create_delivery_address(offices_json[office_type]['deliveryAddress'])
+        #business.delivery_address.append(delivery_address)
 
-    mailing_address = None
-    if offices_json['mailingAddress'] == None:
-        # clone delivery to mailing
-        mailing_address = copy.deepcopy(delivery_address)
-    else:
-        mailing_address = Address()
-        mailing_json = offices_json['mailingAddress']
-        mailing_address.city = mailing_json['addressCity']
-        mailing_address.country = pycountry.countries.search_fuzzy(
-            mailing_json['addressCountry'])[0].alpha_2
-        mailing_address.delivery_instructions = mailing_json['deliveryInstructions']
-        mailing_address.postal_code = mailing_json['postalCode']
-        mailing_address.region = mailing_json['addressRegion']
-        mailing_address.street = mailing_json['streetAddress']
-        mailing_address.street_additional = mailing_json['streetAddressAdditional']
-    mailing_address.address_type = Address.MAILING
-    business.mailing_address.append(mailing_address)
+        mailing_address = None
+        if offices_json[office_type]['mailingAddress'] == None:
+            # clone delivery to mailing
+            mailing_address = copy.deepcopy(delivery_address)
+        else:
+            mailing_address = Address()
+            mailing_json = offices_json[office_type]['mailingAddress']
+            mailing_address.city = mailing_json['addressCity']
+            mailing_address.country = pycountry.countries.search_fuzzy(
+                mailing_json['addressCountry'])[0].alpha_2
+            mailing_address.delivery_instructions = mailing_json['deliveryInstructions']
+            mailing_address.postal_code = mailing_json['postalCode']
+            mailing_address.region = mailing_json['addressRegion']
+            mailing_address.street = mailing_json['streetAddress']
+            mailing_address.street_additional = mailing_json['streetAddressAdditional']
+        mailing_address.address_type = Address.MAILING
+        create_office(business, [mailing_address, delivery_address], office_type)
+    # business.mailing_address.append(mailing_address)
 
 
 def add_business_directors(business, directors_json):
