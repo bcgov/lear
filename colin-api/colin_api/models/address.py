@@ -68,11 +68,13 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
                 """, address_id=address_id)
 
             address = cursor.fetchone()
+            print('address: ', address)
             address = dict(zip([x[0].lower() for x in cursor.description], address))
             address_obj = cls._build_address_obj(address)
             return address_obj
 
         except Exception as err:
+            print(address_id)
             current_app.logger.error(err.with_traceback(None))
             raise AddressNotFoundException(address_id=address_id)
 

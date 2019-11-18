@@ -139,7 +139,7 @@ class Filing:
                 event_list.append({'id': row['event_id'], 'date': row['event_timestmp']})
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
-            current_app.logger.error('error getting director events for {}'.format(identifier))
+            current_app.logger.error('error getting events for {}'.format(identifier))
             raise err
 
         return event_list
@@ -303,8 +303,11 @@ class Filing:
     def _get_ar(cls, identifier: str = None, filing_event_info: dict = None):
         """Return annual report filing."""
         # get directors and registered office as of this filing
-        director_events = cls._get_events(identifier=identifier, filing_type_code=filing_event_info['filing_type_code'])
-        office_events = cls._get_events(identifier=identifier, filing_type_code=filing_event_info['filing_type_code'])
+        print('type_code: ', filing_event_info['filing_type_code'])
+        director_events = cls._get_events(identifier=identifier, filing_type_code='OTCDR')
+        print('director events: ', director_events)
+        office_events = cls._get_events(identifier=identifier, filing_type_code='OTADD')
+        print('office events: ', office_events)
         director_event_id = None
         office_event_id = None
 
@@ -321,18 +324,22 @@ class Filing:
 
         if director_event_id:
             try:
+                print('try directors')
                 directors = Director.get_by_event(identifier=identifier, event_id=director_event_id)
             except:  # noqa B901; pylint: disable=bare-except;
                 # should only get here if event was before the bob date
+                print('getting current directors')
                 directors = Director.get_current(identifier=identifier)
         else:
             directors = Director.get_current(identifier=identifier)
         directors = [x.as_dict() for x in directors]
         if office_event_id:
             try:
+                print('try office')
                 reg_office = Office.get_by_event(event_id=office_event_id)
             except:  # noqa B901; pylint: disable=bare-except;
                 # should only get here if event was before the bob date
+                print('getting current office')
                 reg_office = Office.get_current(identifier=identifier)
         else:
             reg_office = Office.get_current(identifier=identifier)
