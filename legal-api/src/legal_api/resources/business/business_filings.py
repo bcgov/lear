@@ -218,13 +218,13 @@ class ListFilingResource(Resource):
             if not filing.colin_event_id:
                 raise KeyError
             if not ListFilingResource._is_before_epoch_filing(filing.filing_json, business):
-                payload = {'colinFiling': {'id': filing.colin_event_id}}
+                payload = {'filing': {'id': filing.id}}
                 queue.publish_json(payload)
             else:
                 epoch_filing = Filing.get_filings_by_status(business_id=business.id, status=[Filing.Status.EPOCH.value])
                 filing.transaction_id = epoch_filing[0].transaction_id
                 filing.save()
-            return {}, HTTPStatus.CREATED
+            return {'filing': {'id': filing.id}}, HTTPStatus.CREATED
         except KeyError:
             current_app.logger.error('Business:%s missing filing/header/colinId, unable to post to queue',
                                      identifier)

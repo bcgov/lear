@@ -75,6 +75,7 @@ def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server):
     import copy
     # SETUP
     msgs = []
+    filing_ids = []
     this_loop = asyncio.get_event_loop()
     # this_loop = event_loop
     future = asyncio.Future(loop=this_loop)
@@ -118,6 +119,8 @@ def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server):
         # Assure that the filing was accepted
         assert rv.status_code == HTTPStatus.CREATED
 
+        filing_ids.append(rv.json['filing']['id'])
+
     # Await all the messages were received
     try:
         this_loop.run_until_complete(asyncio.wait_for(future, 2, loop=this_loop))
@@ -128,9 +131,8 @@ def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server):
     assert len(msgs) == 5
     for i in range(0, 5):
         m = msgs[i]
-        assert 'colinFiling' in m.data.decode('utf-8')
-        assert 1230 + i == dpath.util.get(json.loads(m.data.decode('utf-8')),
-                                          'colinFiling/id')
+        assert 'filing' in m.data.decode('utf-8')
+        assert dpath.util.get(json.loads(m.data.decode('utf-8')), 'filing/id') in filing_ids
 
 
 @integration_payment
