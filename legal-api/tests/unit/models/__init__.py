@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """The Test-Suite used to ensure that the Model objects are working correctly."""
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy_continuum import versioning_manager
 
@@ -148,7 +148,8 @@ def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME):
     transaction = uow.create_transaction(db.session)
     filing.transaction_id = transaction.id
     filing.payment_token = 1
-    filing.payment_completion_date = datetime.now()
+    filing.payment_completion_date = (datetime.now()).replace(tzinfo=timezone.utc)
+    filing.save()
     return filing
 
 
@@ -171,7 +172,7 @@ def factory_error_filing(business, data_dict, filing_date=FROZEN_DATETIME):
     filing.filing_json = data_dict
     filing.save()
     filing.payment_token = 5
-    filing.payment_completion_date = datetime.now()
+    filing.payment_completion_date = (datetime.now()).replace(tzinfo=timezone.utc)
     return filing
 
 

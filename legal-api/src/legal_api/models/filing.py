@@ -13,7 +13,7 @@
 # limitations under the License
 """Filings are legal documents that alter the state of a business."""
 import copy
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from enum import Enum
 from http import HTTPStatus
 from typing import List
