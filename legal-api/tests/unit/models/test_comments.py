@@ -95,7 +95,7 @@ def test_comment_dump_json(session):
     assert c.json() == {'comment': 'a comment',
                         'id': None,
                         'staff': 'unknown',
-                        'timestamp': datetime.datetime(1970, 1, 1, 0, 0)}
+                        'timestamp': datetime.datetime(1970, 1, 1, 0, 0).replace(tzinfo=datetime.timezone.utc)}
 
 
 def test_comment_save_to_session(session):

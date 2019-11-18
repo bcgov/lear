@@ -244,8 +244,9 @@ def test_add_payment_completion_date_after_payment(session):
     assert filing.status == Filing.Status.PENDING.value
 
     filing.payment_completion_date = EPOCH_DATETIME
+    filing.save()
     print(filing.status)
-    assert filing.status == Filing.Status.COMPLETED.value
+    assert filing.status == Filing.Status.PAID.value
 
 
 def test_add_invalid_json_after_payment(session):

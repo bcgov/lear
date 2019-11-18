@@ -86,7 +86,7 @@ def test_get_business_no_directors(session, client, jwt):
     """Assert that business directors are not returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    factory_business(identifier)
 
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/directors',

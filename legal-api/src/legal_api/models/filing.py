@@ -29,7 +29,8 @@ from legal_api.schemas import rsbc_schemas
 from .db import db
 
 
-class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowing the model to be deep.
+class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
+    # allowing the model to be deep.
     """Immutable filing record.
 
     Manages the filing ledger for the associated business.
@@ -125,7 +126,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes; allowin
                 (self._payment_token and self._filing_json):
             self._payment_completion_date = value
             if self.effective_date is None or \
-                self.effective_date <= self._payment_completion_date:
+                    self.effective_date <= self._payment_completion_date:
                 self._status = Filing.Status.COMPLETED.value
         else:
             raise BusinessException(
