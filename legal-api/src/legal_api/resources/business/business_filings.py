@@ -399,8 +399,8 @@ class ListFilingResource(Resource):
         filing_type = filing.filing_json['filing']['header']['name']
         if business.legal_type != 'CP':
             if filing_type == 'changeOfAddress':
-                effective_date = datetime.datetime.combine(datetime.date.today() + datedelta.datedelta(days=1), \
-                    datetime.datetime.min.time())
+                effective_date = datetime.datetime.combine(datetime.date.today() + datedelta.datedelta(days=1),
+                                                           datetime.datetime.min.time())
                 filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date
                 filing.effective_date = effective_date
                 filing.save()

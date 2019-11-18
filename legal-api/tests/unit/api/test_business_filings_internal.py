@@ -266,10 +266,12 @@ def test_post_colin_last_update(session, client, jwt):
     assert rv.status_code == HTTPStatus.CREATED
     assert rv.json == {'maxId': colin_id}
 
+
 def test_future_filing_coa(session, client, jwt):
+    """Assert that future effective filings are saved and have the correct status changes."""
     import pytz
     from legal_api.models import Filing
-    from tests.unit.models import factory_error_filing, factory_pending_filing
+    from tests.unit.models import factory_pending_filing
     # setup
     identifier = 'CP7654321'
     b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'BC')
@@ -280,9 +282,9 @@ def test_future_filing_coa(session, client, jwt):
     coa['filing']['changeOfAddress']['deliveryAddress']['addressCountry'] = 'CA'
     coa['filing']['changeOfAddress']['mailingAddress']['addressCountry'] = 'CA'
     coa['filing']['business']['identifier'] = identifier
-    
+
     filing = factory_pending_filing(b, coa)
-    filing.effective_date = datetime.utcnow()+datedelta.DAY
+    filing.effective_date = datetime.utcnow() + datedelta.DAY
     filing.save()
     assert filing.status == Filing.Status.PENDING.value
 
@@ -290,4 +292,3 @@ def test_future_filing_coa(session, client, jwt):
     filing.save()
 
     assert filing.status == Filing.Status.PAID.value
-    
