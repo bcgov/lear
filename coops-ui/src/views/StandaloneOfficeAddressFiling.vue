@@ -37,7 +37,7 @@
           <section>
             <h1 id="filing-header">Change of Office Addresses</h1>
             <p>Please change your Registered Office Address
-              <span v-if="entityFilter(EntityTypes.BCorp)"> and Record Address.</span>
+              <span v-if="entityFilter(EntityTypes.BCorp)"> and Records Address.</span>
             </p>
             <v-alert
               v-if="entityFilter(EntityTypes.BCorp)"
