@@ -1,9 +1,3 @@
-import * as DirectorIF from './director-interfaces'
-import * as AddressesIF from './address-interfaces'
-import * as FormsIF from './form-interfaces'
-
-export {
-  DirectorIF,
-  AddressesIF,
-  FormsIF
-}
+export * from './director-interfaces'
+export * from './address-interfaces'
+export * from './form-interfaces'

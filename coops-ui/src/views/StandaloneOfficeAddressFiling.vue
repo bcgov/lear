@@ -35,16 +35,29 @@
 
       <v-container id="standalone-office-address-container" class="view-container">
         <article id="standalone-office-address-article">
-          <header>
-            <h1 id="filing-header">Address Change</h1>
-          </header>
-
-          <!-- Registered Office Addresses -->
           <section>
-            <RegisteredOfficeAddress
+            <h1 id="filing-header">Change of Office Addresses</h1>
+            <p>Please change your Registered Office Address
+              <span v-if="entityFilter(EntityTypes.BCorp)"> and Records Address.</span>
+            </p>
+            <v-alert
+              v-if="entityFilter(EntityTypes.BCorp)"
+              type="info"
+              icon="mdi-information"
+              outlined
+              class="white-background"
+            >
+              Any address update will be effective tomorrow.
+            </v-alert>
+          </section>
+
+          <!-- Office Addresses -->
+          <section>
+            <OfficeAddresses
               :changeButtonDisabled="false"
-              :legalEntityNumber="entityIncNo"
               :addresses.sync="addresses"
+              :registeredAddress.sync="registeredAddress"
+              :recordsAddress.sync="recordsAddress"
               @modified="officeModifiedEventHandler($event)"
               @valid="officeAddressFormValid = $event"
             />
@@ -137,24 +150,37 @@
 </template>
 
 <script lang="ts">
+// Libraries
 import axios from '@/axios-auth'
-import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
 import { Affix } from 'vue-affix'
-import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapGetters } from 'vuex'
-import { PAYMENT_REQUIRED, BAD_REQUEST } from 'http-status-codes'
-import Certify from '@/components/AnnualReport/Certify.vue'
-import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
+
+// Dialogs
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
 
+// Components
+import { OfficeAddresses } from '@/components/Common'
+import Certify from '@/components/AnnualReport/Certify.vue'
+import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
+import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
+
+// Constants
+import { PAYMENT_REQUIRED, BAD_REQUEST } from 'http-status-codes'
+
+// Mixins
+import { EntityFilterMixin } from '@/mixins'
+
+// Enums
+import { EntityTypes } from '@/enums'
+
 export default {
   name: 'StandaloneOfficeAddressFiling',
 
   components: {
-    RegisteredOfficeAddress,
+    OfficeAddresses,
     SbcFeeSummary,
     Affix,
     Certify,
@@ -164,6 +190,7 @@ export default {
     ResumeErrorDialog,
     SaveErrorDialog
   },
+  mixins: [EntityFilterMixin],
 
   data () {
     return {
@@ -188,13 +215,14 @@ export default {
       // properties for Staff Payment component
       routingSlipNumber: null,
       staffPaymentFormValid: false,
-      totalFee: 0
+      totalFee: 0,
+      EntityTypes
     }
   },
 
   computed: {
-    ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo', 'entityFoundingDate']),
-
+    ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo',
+      'entityFoundingDate', 'registeredAddress', 'recordsAddress']),
     ...mapGetters(['isRoleStaff']),
 
     validated () {
@@ -313,21 +341,34 @@ export default {
             // load Annual Report fields
             if (!filing.changeOfAddress) throw new Error('Missing change of address')
 
-            const changeOfAddress = filing.changeOfAddress
+            const changeOfAddress = filing.changeOfAddress.offices
             if (changeOfAddress) {
-              if (changeOfAddress.deliveryAddress && changeOfAddress.mailingAddress) {
+              if (changeOfAddress.recordsOffice) {
                 this.addresses = {
-                  deliveryAddress: changeOfAddress.deliveryAddress,
-                  mailingAddress: changeOfAddress.mailingAddress
+                  registeredOffice: {
+                    deliveryAddress: changeOfAddress.registeredOffice.deliveryAddress,
+                    mailingAddress: changeOfAddress.registeredOffice.mailingAddress
+                  },
+                  recordsOffice: {
+                    deliveryAddress: changeOfAddress.recordsOffice.deliveryAddress,
+                    mailingAddress: changeOfAddress.recordsOffice.mailingAddress
+                  }
                 }
                 this.toggleFiling('add', 'OTADD')
               } else {
-                throw new Error('invalid change of address')
+                this.addresses = {
+                  registeredOffice: {
+                    deliveryAddress: changeOfAddress.registeredOffice.deliveryAddress,
+                    mailingAddress: changeOfAddress.registeredOffice.mailingAddress
+                  }
+                }
+                this.toggleFiling('add', 'OTADD')
               }
             }
           } catch (err) {
             console.log(`fetchData() error - ${err.message}, filing =`, filing)
             this.resumeErrorDialog = true
+            throw new Error('invalid change of address')
           }
         } else {
           console.log('fetchData() error - invalid response =', response)
@@ -340,7 +381,7 @@ export default {
     },
 
     /**
-     * Callback method for the "modified" event from RegisteredOfficeAddress.
+     * Callback method for the "modified" event from OfficeAddresses component.
      *
      * @param modified a boolean indicating whether or not the office address(es) have been modified from their
      * original values.
@@ -354,9 +395,9 @@ export default {
     async onClickSave () {
       // prevent double saving
       if (this.busySaving) return
-
       this.saving = true
       const filing = await this.saveFiling(true)
+
       if (filing) {
         this.filingId = +filing.header.filingId
       }
@@ -444,14 +485,38 @@ export default {
         }
       }
 
-      if (this.isDataChanged('OTADD') && this.addresses) {
-        changeOfAddress = {
-          changeOfAddress: {
-            deliveryAddress: this.formatAddress(this.addresses['deliveryAddress']),
-            mailingAddress: this.formatAddress(this.addresses['mailingAddress'])
+        if (this.isDataChanged('OTADD') && this.addresses) {
+          if (this.addresses.recordsOffice) {
+            changeOfAddress = {
+              changeOfAddress: {
+                legalType: this.entityType,
+                offices: {
+                  registeredOffice: {
+                    deliveryAddress: this.formatAddress(this.addresses.registeredOffice['deliveryAddress']),
+                    mailingAddress: this.formatAddress(this.addresses.registeredOffice['mailingAddress'])
+                  },
+                  recordsOffice: {
+                    deliveryAddress: this.formatAddress(this.addresses.recordsOffice['deliveryAddress']),
+                    mailingAddress: this.formatAddress(this.addresses.recordsOffice['mailingAddress'])
+                  }
+                }
+              }
+            }
+          } else {
+            changeOfAddress = {
+              changeOfAddress: {
+                legalType: this.entityType,
+                offices: {
+                  registeredOffice: {
+                    deliveryAddress: this.formatAddress(this.addresses.registeredOffice['deliveryAddress']),
+                    mailingAddress: this.formatAddress(this.addresses.registeredOffice['mailingAddress'])
+                  }
+                }
+              }
+            }
           }
         }
-      }
+
 
       const filingData = {
         filing: Object.assign(
@@ -462,57 +527,65 @@ export default {
         )
       }
 
-      if (this.filingId > 0) {
-        // we have a filing id, so we are updating an existing filing
-        let url = this.entityIncNo + '/filings/' + this.filingId
-        if (isDraft) { url += '?draft=true' }
-        let filing = null
-        await axios.put(url, filingData).then(res => {
-          if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
-          filing = res.data.filing
-          this.haveChanges = false
-        }).catch(error => {
-          if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
-            this.paymentErrorDialog = true
-          } else if (error && error.response && error.response.status === BAD_REQUEST) {
-            if (error.response.data.errors) {
-              this.saveErrors = error.response.data.errors
-            }
-            if (error.response.data.warnings) {
-              this.saveWarnings = error.response.data.warnings
-            }
-            this.saveErrorDialog = true
-          } else {
-            this.saveErrorDialog = true
+        if (this.filingId > 0) {
+          // we have a filing id, so we are updating an existing filing
+          let url = this.entityIncNo + '/filings/' + this.filingId
+          if (isDraft) {
+            url += '?draft=true'
           }
-        })
-        return filing
-      } else {
-        // filing id is 0, so we are saving a new filing
-        let url = this.entityIncNo + '/filings'
-        if (isDraft) { url += '?draft=true' }
-        let filing = null
-        await axios.post(url, filingData).then(res => {
-          if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
-          filing = res.data.filing
-          this.haveChanges = false
-        }).catch(error => {
-          if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
-            this.paymentErrorDialog = true
-          } else if (error && error.response && error.response.status === BAD_REQUEST) {
-            if (error.response.data.errors) {
-              this.saveErrors = error.response.data.errors
+          let filing = null
+          await axios.put(url, filingData).then(res => {
+            if (!res || !res.data || !res.data.filing) {
+              throw new Error('invalid API response')
             }
-            if (error.response.data.warnings) {
-              this.saveWarnings = error.response.data.warnings
+            filing = res.data.filing
+            this.haveChanges = false
+          }).catch(error => {
+            if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
+              this.paymentErrorDialog = true
+            } else if (error && error.response && error.response.status === BAD_REQUEST) {
+              if (error.response.data.errors) {
+                this.saveErrors = error.response.data.errors
+              }
+              if (error.response.data.warnings) {
+                this.saveWarnings = error.response.data.warnings
+              }
+              this.saveErrorDialog = true
+            } else {
+              this.saveErrorDialog = true
             }
-            this.saveErrorDialog = true
-          } else {
-            this.saveErrorDialog = true
+          })
+          return filing
+        } else {
+          // filing id is 0, so we are saving a new filing
+          let url = this.entityIncNo + '/filings'
+          if (isDraft) {
+            url += '?draft=true'
           }
-        })
-        return filing
-      }
+          let filing = null
+          await axios.post(url, filingData).then(res => {
+            if (!res || !res.data || !res.data.filing) {
+              throw new Error('invalid API response')
+            }
+            filing = res.data.filing
+            this.haveChanges = false
+          }).catch(error => {
+            if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
+              this.paymentErrorDialog = true
+            } else if (error && error.response && error.response.status === BAD_REQUEST) {
+              if (error.response.data.errors) {
+                this.saveErrors = error.response.data.errors
+              }
+              if (error.response.data.warnings) {
+                this.saveWarnings = error.response.data.warnings
+              }
+              this.saveErrorDialog = true
+            } else {
+              this.saveErrorDialog = true
+            }
+          })
+          return filing
+        }
     },
 
     toggleFiling (setting, filing) {
@@ -579,7 +652,6 @@ export default {
     certifiedBy (val) {
       this.haveChanges = true
     },
-
     routingSlipNumber (val) {
       this.haveChanges = true
     }
@@ -641,5 +713,10 @@ h2 {
   #coa-cancel-btn {
     margin-left: 0.5rem;
   }
+}
+
+// Bcorp Alert
+.white-background {
+  background-color: white !important;
 }
 </style>

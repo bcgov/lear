@@ -5,11 +5,11 @@
       <v-expansion-panel-header class="panel-header-btn">
         <div class="list-item__title">Registered Office</div>
       </v-expansion-panel-header>
-      <v-expansion-panel-content class="panel-wrapper">
+      <v-expansion-panel-content class="panel-wrapper pt-0 pb-0">
         <v-list class="pt-0 pb-0" v-if="registeredAddress">
 
           <v-list-item v-if="registeredAddress.deliveryAddress">
-            <v-list-item-icon class="address-icon mr-0">
+            <v-list-item-icon class="address-icon mr-0 mt-0">
               <v-icon color="primary">mdi-truck</v-icon>
             </v-list-item-icon>
             <v-list-item-content>
@@ -21,7 +21,7 @@
                   <li>
                     {{ registeredAddress.deliveryAddress.addressCity }}
                     {{ registeredAddress.deliveryAddress.addressRegion }}
-                  &nbsp;&nbsp;{{ registeredAddress.deliveryAddress.postalCode}}
+                    {{ registeredAddress.deliveryAddress.postalCode }}
                   </li>
                   <li>{{ getCountryName(registeredAddress.deliveryAddress.addressCountry) }}</li>
                 </ul>
@@ -36,7 +36,7 @@
             <v-list-item-content>
               <v-list-item-title class="mb-2">Mailing Address</v-list-item-title>
               <v-list-item-subtitle>
-                <div v-if="isSameAddress(registeredAddress.deliveryAddress, registeredAddress.mailingAddress)">
+                <div v-if="isSame(registeredAddress.deliveryAddress, registeredAddress.mailingAddress)">
                   Same as above
                 </div>
                 <ul class="address-info" v-else>
@@ -45,7 +45,7 @@
                   <li>
                     {{ registeredAddress.mailingAddress.addressCity }}
                     {{ registeredAddress.mailingAddress.addressRegion }}
-                    {{ registeredAddress.mailingAddress.postalCode}}
+                    {{ registeredAddress.mailingAddress.postalCode }}
                   </li>
                   <li>{{ getCountryName(registeredAddress.mailingAddress.addressCountry) }}</li>
                 </ul>
@@ -63,7 +63,7 @@
       v-if="entityFilter(EntityTypes.BCorp)"
     >
       <v-expansion-panel-header class="panel-header-btn" id="record-office-panel">
-        <div class="list-item__title">Record Office</div>
+        <div class="list-item__title">Records Office</div>
       </v-expansion-panel-header>
       <v-expansion-panel-content class="panel-wrapper">
         <v-list class="pt-0 pb-0" v-if="recordsAddress">
@@ -78,8 +78,10 @@
                 <ul class="address-info">
                   <li>{{ recordsAddress.deliveryAddress.streetAddress }}</li>
                   <li class="pre-wrap" v-html="recordsAddress.deliveryAddress.streetAddressAdditional"></li>
-                  <li>{{ recordsAddress.deliveryAddress.addressCity }} {{ recordsAddress.deliveryAddress.addressRegion }}
-                    &nbsp;&nbsp;{{ recordsAddress.deliveryAddress.postalCode}}</li>
+                  <li>{{ recordsAddress.deliveryAddress.addressCity }}
+                      {{ recordsAddress.deliveryAddress.addressRegion }}
+                      {{ recordsAddress.deliveryAddress.postalCode }}
+                  </li>
                   <li>{{ getCountryName(recordsAddress.deliveryAddress.addressCountry) }}</li>
                 </ul>
               </v-list-item-subtitle>
@@ -93,14 +95,16 @@
             <v-list-item-content>
               <v-list-item-title class="mb-2">Mailing Address</v-list-item-title>
               <v-list-item-subtitle>
-                <div v-if="isSameAddress(recordsAddress.deliveryAddress, recordsAddress.mailingAddress)">
+                <div v-if="isSame(recordsAddress.deliveryAddress, recordsAddress.mailingAddress)">
                   Same as above
                 </div>
                 <ul class="address-info" v-else>
                   <li>{{ recordsAddress.mailingAddress.streetAddress }}</li>
                   <li class="pre-wrap" v-html="recordsAddress.mailingAddress.streetAddressAdditional"></li>
-                  <li>{{ recordsAddress.mailingAddress.addressCity }} {{ recordsAddress.mailingAddress.addressRegion }}
-                    &nbsp;&nbsp;{{ recordsAddress.mailingAddress.postalCode}}</li>
+                  <li>{{ recordsAddress.mailingAddress.addressCity }}
+                      {{ recordsAddress.mailingAddress.addressRegion }}
+                      {{ recordsAddress.mailingAddress.postalCode }}
+                  </li>
                   <li>{{ getCountryName(recordsAddress.mailingAddress.addressCountry) }}</li>
                 </ul>
               </v-list-item-subtitle>
@@ -117,25 +121,22 @@
 // Libraries
 import { Component, Mixins } from 'vue-property-decorator'
 import { mapState } from 'vuex'
-import CountriesProvincesMixin from '@/mixins/countries-provinces-mixin'
 
 // Mixins
-import { EntityFilterMixin, AddressMixin } from '@/mixins'
+import { EntityFilterMixin, CommonMixin, CountriesProvincesMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'
 
 // Interfaces
-import { BaseAddressObjIF } from '@/interfaces/address-interfaces'
+import { BaseAddressObjIF } from '@/interfaces'
 
 @Component({
-  mixins: [CountriesProvincesMixin],
   computed: {
     ...mapState(['registeredAddress', 'recordsAddress'])
   }
 })
-
-export default class AddressListSm extends Mixins(EntityFilterMixin, AddressMixin) {
+export default class AddressListSm extends Mixins(EntityFilterMixin, CommonMixin, CountriesProvincesMixin) {
   // Base Address properties
   private registeredAddress: BaseAddressObjIF
   private recordsAddress: BaseAddressObjIF
@@ -151,26 +152,34 @@ export default class AddressListSm extends Mixins(EntityFilterMixin, AddressMixi
 // Variables
 $icon-width: 2.75rem;
 
-  .panel-wrapper {
-    margin-left: -1.5rem;
-  }
-  .panel-header-btn {
-    padding-left: .85rem;
-  }
+.panel-wrapper {
+  margin-left: -1.5rem;
+}
+.panel-header-btn {
+  padding-left: .85rem;
+}
 
-  .v-list-item {
-    padding: 0 1rem;
-  }
+.v-list-item {
+  padding: 0 1rem;
+}
 
-  .v-list-item__icon {
-    margin-top: 0.7rem;
-    margin-right: 0;
-  }
+.v-list-item__icon {
+  margin-top: 0.7rem;
+  margin-right: 0;
+}
 
-  .v-list-item__title {
-    font-size: 0.875rem;
-    font-weight: 400;
-  }
+.v-list-item__title {
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.v-list-item__subtitle {
+  line-height: 1.25rem;
+}
+
+.v-list-item__content {
+  padding: 0 0 1rem 0;
+}
 
 .address-icon {
   width: $icon-width;

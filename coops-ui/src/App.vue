@@ -38,20 +38,29 @@
 </template>
 
 <script>
+// Libraries
 import { mapActions, mapState } from 'vuex'
-import { DateMixin, AddressMixin, CommonMixin } from '@/mixins'
 import axios from '@/axios-auth'
-import DashboardUnavailableDialog from '@/components/Dashboard/DashboardUnavailableDialog.vue'
-import AccountAuthorizationDialog from '@/components/Dashboard/AccountAuthorizationDialog.vue'
+
+// Components
 import SbcHeader from 'sbc-common-components/src/components/SbcHeader.vue'
 import SbcFooter from 'sbc-common-components/src/components/SbcFooter.vue'
 import EntityInfo from '@/components/EntityInfo.vue'
+
+// Dialogs
+import DashboardUnavailableDialog from '@/components/Dashboard/DashboardUnavailableDialog.vue'
+import AccountAuthorizationDialog from '@/components/Dashboard/AccountAuthorizationDialog.vue'
+
+// Mixins
+import { DateMixin, CommonMixin } from '@/mixins'
+
+// Enums
 import { EntityTypes } from '@/enums'
 
 export default {
   name: 'App',
 
-  mixins: [DateMixin, AddressMixin, CommonMixin],
+  mixins: [DateMixin, CommonMixin],
 
   data () {
     return {
@@ -290,10 +299,14 @@ export default {
     storeAddresses (response) {
       if (response && response.data) {
         if (response.data.registeredOffice) {
-          this.setRegisteredAddress(this.omitProp(response.data.registeredOffice, ['addressType']))
+          this.setRegisteredAddress(this.omitProps(response.data.registeredOffice,
+            ['deliveryAddress', 'mailingAddress'],
+            ['addressType']))
         }
         if (response.data.recordsOffice) {
-          this.setRecordsAddress(this.omitProp(response.data.recordsOffice, ['addressType']))
+          this.setRecordsAddress(this.omitProps(response.data.recordsOffice,
+            ['deliveryAddress', 'mailingAddress'],
+            ['addressType']))
         }
       } else {
         throw new Error('invalid office addresses')

@@ -24,7 +24,6 @@ from legal_api.services.filings import validations
 
 from entity_filer.service_utils import logger
 
-
 def process(business: Business, filing: Dict):
     """Render the annual_report onto the business model objects."""
     agm_date = filing['annualReport'].get('annualGeneralMeetingDate')
