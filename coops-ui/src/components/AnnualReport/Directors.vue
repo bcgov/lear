@@ -773,7 +773,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   }
 
   /**
-   * Function called internall and externally to fetch the list of directors.
+   * Function called internally and externally to fetch the list of directors.
    * TODO: change this to a prop?
    */
   public getDirectors (getOrigOnly: Boolean = false): void {
@@ -801,11 +801,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
               directors[i].officer.prevFirstName = directors[i].officer.firstName
               directors[i].officer.prevLastName = directors[i].officer.lastName
               directors[i].officer.prevMiddleInitial = directors[i].officer.middleInitial
-
-              // if this is a Coop, copy delivery address to mailing address - directors only have delivery addresses
-              if (this.entityFilter(EntityTypes.Coop)) {
-                directors[i].mailingAddress = directors[i].deliveryAddress
-              }
 
               // ensure there is complete address data including missing/blank fields
               directors[i].deliveryAddress = this.formatAddress(directors[i].deliveryAddress)
@@ -902,24 +897,41 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * Local helper push the current director data into the list.
    */
   private pushNewDirectorData (): void {
+    let newDirector
     if (this.inheritDeliveryAddress) {
       this.inProgressMailAddress = { ...this.inProgressAddress }
     }
-
-    let newDirector = {
-      actions: [DirectorConst.APPOINTED],
-      id: this.directors.length + 1,
-      isDirectorActionable: true,
-      isFeeApplied: true,
-      officer: {
-        firstName: this.director.officer.firstName,
-        middleInitial: this.director.officer.middleInitial,
-        lastName: this.director.officer.lastName
-      },
-      deliveryAddress: { ...this.inProgressAddress },
-      mailingAddress: { ...this.inProgressMailAddress },
-      appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
-      cessationDate: null // when implemented: this.director.cessationDate
+    if (this.entityFilter(EntityTypes.Coop)) {
+      newDirector = {
+        actions: [DirectorConst.APPOINTED],
+        id: this.directors.length + 1,
+        isDirectorActionable: true,
+        isFeeApplied: true,
+        officer: {
+          firstName: this.director.officer.firstName,
+          middleInitial: this.director.officer.middleInitial,
+          lastName: this.director.officer.lastName
+        },
+        deliveryAddress: { ...this.inProgressAddress },
+        appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
+        cessationDate: null // when implemented: this.director.cessationDate
+      }
+    } else {
+      newDirector = {
+        actions: [DirectorConst.APPOINTED],
+        id: this.directors.length + 1,
+        isDirectorActionable: true,
+        isFeeApplied: true,
+        officer: {
+          firstName: this.director.officer.firstName,
+          middleInitial: this.director.officer.middleInitial,
+          lastName: this.director.officer.lastName
+        },
+        deliveryAddress: { ...this.inProgressAddress },
+        mailingAddress: { ...this.inProgressMailAddress },
+        appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
+        cessationDate: null // when implemented: this.director.cessationDate
+      }
     }
 
     // if there is also a cease date on this new director, add the ceased action
