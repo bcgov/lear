@@ -228,7 +228,7 @@
                     <BaseAddress :address="director.deliveryAddress" />
                   </div>
                   <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
-                    <span v-if="isSameAddress(director.deliveryAddress, director.mailingAddress)">
+                    <span v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                       Same as Delivery Address
                     </span>
                     <BaseAddress v-else :address="director.mailingAddress" />
@@ -468,16 +468,16 @@ import { required, maxLength } from 'vuelidate/lib/validators'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
 // Mixins
-import { DateMixin, ExternalMixin, EntityFilterMixin, AddressMixin } from '@/mixins'
+import { DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'
 
 // Constants
-import { DirectorConst } from '@/constants'
+import { CEASED, NAMECHANGED, ADDRESSCHANGED, APPOINTED } from '@/constants'
 
 // Interfaces
-import { FormsIF, AddressesIF } from '@/interfaces'
+import { FormType, BaseAddressType } from '@/interfaces'
 
 @Component({
   components: {
@@ -489,16 +489,16 @@ import { FormsIF, AddressesIF } from '@/interfaces'
     ...mapGetters(['lastCODFilingDate'])
   }
 })
-export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFilterMixin, AddressMixin) {
+export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin) {
   // To fix "property X does not exist on type Y" errors, annotate types for referenced components.
   // ref: https://github.com/vuejs/vetur/issues/1414
   $refs!: {
-    newDirectorForm: FormsIF.FormType,
-    baseAddressNew: AddressesIF.BaseAddressType,
-    mailAddressNew: AddressesIF.BaseAddressType,
-    editDirectorForm: Array<FormsIF.FormType>,
-    baseAddressEdit: Array<AddressesIF.BaseAddressType>
-    mailAddressEdit: Array<AddressesIF.BaseAddressType>
+    newDirectorForm: FormType,
+    baseAddressNew: BaseAddressType,
+    mailAddressNew: BaseAddressType,
+    editDirectorForm: Array<FormType>,
+    baseAddressEdit: Array<BaseAddressType>
+    mailAddressEdit: Array<BaseAddressType>
   }
 
   // Props passed into this component.
@@ -907,7 +907,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     }
 
     let newDirector = {
-      actions: [DirectorConst.APPOINTED],
+      actions: [APPOINTED],
       id: this.directors.length + 1,
       isDirectorActionable: true,
       isFeeApplied: true,
@@ -924,7 +924,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
 
     // if there is also a cease date on this new director, add the ceased action
     if (this.director.cessationDate !== null && this.director.cessationDate !== undefined) {
-      this.addAction(newDirector, DirectorConst.CEASED)
+      this.addAction(newDirector, CEASED)
     }
     this.directors.push(newDirector)
   }
@@ -940,7 +940,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     else director.isFeeApplied = false
 
     // reverse "ceased" action
-    this.toggleAction(director, DirectorConst.CEASED)
+    this.toggleAction(director, CEASED)
 
     // either set or undo cessation date
     if (director.cessationDate === null) {
@@ -1042,22 +1042,22 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
       }
 
       /* COMPARE changes to original director data, for existing directors */
-      if (director.actions.indexOf(DirectorConst.APPOINTED) < 0) {
+      if (director.actions.indexOf(APPOINTED) < 0) {
         const origDirector = this.directorsOriginal.filter(el => el.id === id)[0]
 
         // check whether address has changed
         if ((JSON.stringify(origDirector.deliveryAddress) !== JSON.stringify(director.deliveryAddress)) ||
           (JSON.stringify(origDirector.mailingAddress) !== JSON.stringify(director.mailingAddress))) {
-          this.addAction(director, DirectorConst.ADDRESSCHANGED)
+          this.addAction(director, ADDRESSCHANGED)
         } else {
-          this.removeAction(director, DirectorConst.ADDRESSCHANGED)
+          this.removeAction(director, ADDRESSCHANGED)
         }
 
         // check whether name has changed
         if (JSON.stringify(origDirector.officer) !== JSON.stringify(director.officer)) {
-          this.addAction(director, DirectorConst.NAMECHANGED)
+          this.addAction(director, NAMECHANGED)
         } else {
-          this.removeAction(director, DirectorConst.NAMECHANGED)
+          this.removeAction(director, NAMECHANGED)
         }
       }
 
@@ -1171,7 +1171,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    */
   private isNew (director): boolean {
     // helper function - was the director added in this filing?
-    return (director.actions.indexOf(DirectorConst.APPOINTED) >= 0)
+    return (director.actions.indexOf(APPOINTED) >= 0)
   }
 
   /**
@@ -1180,7 +1180,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * @returns Whether the director has had the name changed.
    */
   private isNameChanged (director): boolean {
-    return (director.actions.indexOf(DirectorConst.NAMECHANGED) >= 0)
+    return (director.actions.indexOf(NAMECHANGED) >= 0)
   }
 
   /**
@@ -1189,7 +1189,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * @returns Whether the director has had the address changed.
    */
   private isAddressChanged (director): boolean {
-    return (director.actions.indexOf(DirectorConst.ADDRESSCHANGED) >= 0)
+    return (director.actions.indexOf(ADDRESSCHANGED) >= 0)
   }
 
   /**
@@ -1199,7 +1199,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    */
   private isActive (director): boolean {
     // helper function - is the director active, ie: not ceased?
-    return (director.actions.indexOf(DirectorConst.CEASED) < 0)
+    return (director.actions.indexOf(CEASED) < 0)
   }
 
   /**

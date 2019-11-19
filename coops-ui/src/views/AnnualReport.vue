@@ -453,17 +453,19 @@ export default {
             }
 
             // load Change of Address fields
-            const changeOfAddress = filing.changeOfAddress.offices
-            if (changeOfAddress.registeredOffice) {
-              this.addresses = {
-                registeredOffice: {
-                  deliveryAddress: changeOfAddress.registeredOffice.deliveryAddress,
-                  mailingAddress: changeOfAddress.registeredOffice.mailingAddress
+            if (filing.changeOfAddress) {
+              const offices = filing.changeOfAddress.offices
+              if (offices.registeredOffice) {
+                this.addresses = {
+                  registeredOffice: {
+                    deliveryAddress: offices.registeredOffice.deliveryAddress,
+                    mailingAddress: offices.registeredOffice.mailingAddress
+                  }
                 }
+                this.toggleFiling('add', 'OTADD')
+              } else {
+                throw new Error('invalid change of address')
               }
-              this.toggleFiling('add', 'OTADD')
-            } else {
-              throw new Error('invalid change of address')
             }
           } catch (err) {
             console.log(`fetchData() error - ${err.message}, filing =`, filing)

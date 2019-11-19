@@ -5,11 +5,11 @@
       <v-expansion-panel-header class="panel-header-btn">
         <div class="list-item__title">Registered Office</div>
       </v-expansion-panel-header>
-      <v-expansion-panel-content class="panel-wrapper">
+      <v-expansion-panel-content class="panel-wrapper pt-0 pb-0">
         <v-list class="pt-0 pb-0" v-if="registeredAddress">
 
           <v-list-item v-if="registeredAddress.deliveryAddress">
-            <v-list-item-icon class="address-icon mr-0">
+            <v-list-item-icon class="address-icon mr-0 mt-0">
               <v-icon color="primary">mdi-truck</v-icon>
             </v-list-item-icon>
             <v-list-item-content>
@@ -36,7 +36,7 @@
             <v-list-item-content>
               <v-list-item-title class="mb-2">Mailing Address</v-list-item-title>
               <v-list-item-subtitle>
-                <div v-if="isSameAddress(registeredAddress.deliveryAddress, registeredAddress.mailingAddress)">
+                <div v-if="isSame(registeredAddress.deliveryAddress, registeredAddress.mailingAddress)">
                   Same as above
                 </div>
                 <ul class="address-info" v-else>
@@ -95,7 +95,7 @@
             <v-list-item-content>
               <v-list-item-title class="mb-2">Mailing Address</v-list-item-title>
               <v-list-item-subtitle>
-                <div v-if="isSameAddress(recordsAddress.deliveryAddress, recordsAddress.mailingAddress)">
+                <div v-if="isSame(recordsAddress.deliveryAddress, recordsAddress.mailingAddress)">
                   Same as above
                 </div>
                 <ul class="address-info" v-else>
@@ -123,21 +123,20 @@ import { Component, Mixins } from 'vue-property-decorator'
 import { mapState } from 'vuex'
 
 // Mixins
-import { EntityFilterMixin, AddressMixin, CountriesProvincesMixin } from '@/mixins'
+import { EntityFilterMixin, CommonMixin, CountriesProvincesMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'
 
 // Interfaces
-import { BaseAddressObjIF } from '@/interfaces/address-interfaces'
+import { BaseAddressObjIF } from '@/interfaces'
 
 @Component({
-  mixins: [CountriesProvincesMixin],
   computed: {
     ...mapState(['registeredAddress', 'recordsAddress'])
   }
 })
-export default class AddressListSm extends Mixins(EntityFilterMixin, AddressMixin, CountriesProvincesMixin) {
+export default class AddressListSm extends Mixins(EntityFilterMixin, CommonMixin, CountriesProvincesMixin) {
   // Base Address properties
   private registeredAddress: BaseAddressObjIF
   private recordsAddress: BaseAddressObjIF
@@ -172,6 +171,14 @@ $icon-width: 2.75rem;
 .v-list-item__title {
   font-size: 0.875rem;
   font-weight: 400;
+}
+
+.v-list-item__subtitle {
+  line-height: 1.25rem;
+}
+
+.v-list-item__content {
+  padding: 0 0 1rem 0;
 }
 
 .address-icon {

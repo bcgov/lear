@@ -1034,6 +1034,11 @@ COPY public.addresses (id, address_type, street, street_additional, city, region
 1226	mailing	1391 COMMERCIAL DR.		VANCOUVER	BC	CA	V5L 3X5		146	24
 1255	mailing	32 - 12211 CAMBIE ROAD		RICHMOND	BC	CA	V6V 2H8		149	25
 1256	delivery	32 - 12211 CAMBIE ROAD		RICHMOND	BC	CA	V6V 2H8		149	25
+1265	mailing	549 11TH AVENUE	\N	VICTORIA	BC	CA	V1N 1J6	\N	150	27
+1266	delivery	549 3RD STREET	\N	CASTLEGAR	BC	CA	V1N 1J6	\N	150	27
+1267	mailing	549 11TH AVENUE	\N	VICTORIA	BC	CA	V1N 1J6	\N	150	28
+1268	delivery	549 3RD STREET	\N	CASTLEGAR	BC	CA	V1N 1J6	\N	150	28
+1269	delivery	549 3RD STREET	\N	CASTLEGAR	BC	CA	V1Z 1X6	\N	\N	\N
 \.
 
 
@@ -2408,6 +2413,7 @@ COPY public.businesses (id, last_modified, last_ledger_id, last_remote_ledger_id
 145	2019-08-21 03:16:49.980768+00	\N	0	2018-09-12 00:00:00+00	ALBERNI VALLEY SENIORS SERVICES SECTOR COOPERATIVE	2018-11-11 20:34:52.294847+00	\N	CP0002302	\N	2019-08-21 03:16:49.980768+00	\N	2018-09-12 00:00:00+00	2019-05-07 00:00:00+00	BC
 148	2019-08-21 16:16:16.048741+00	\N	0	2018-09-19 00:00:00+00	QUEENS PARK HOUSING CO-OPERATIVE	2018-11-11 20:34:52.294847+00	\N	CP0001479	\N	2019-08-21 16:16:16.049567+00	\N	2018-09-19 00:00:00+00	2018-11-08 00:00:00+00	BC
 147	2019-08-21 16:16:09.209741+00	\N	0	2018-09-30 00:00:00+00	CREEKVIEW HOUSING CO-OPERATIVE	2018-11-11 20:34:52.294847+00	\N	CP0001383	\N	2019-08-21 16:16:09.209741+00	\N	2018-09-30 00:00:00+00	2018-12-04 00:00:00+00	CP
+150	2019-08-21 03:13:12.761318+00	\N	0	2018-09-26 00:00:00+00	DUMMY BCORP1	2018-10-06 22:14:15.31476+00	\N	BC0007291	\N	2019-08-21 03:13:12.761318+00	\N	2018-09-26 00:00:00+00	2018-12-11 00:00:00+00	BC
 \.
 
 
@@ -2922,6 +2928,7 @@ COPY public.directors (id, first_name, middle_initial, last_name, title, appoint
 961	LIUBOV		ZAIKOVA		2019-04-04 00:00:00+00	\N	149	1262	\N
 962	GALYNA		MADORSKY		2019-04-04 00:00:00+00	\N	149	1263	\N
 963	ALISON		AZZANO		2019-04-04 00:00:00+00	\N	149	1264	\N
+964	DUMMY	\N	DIRECTOR	\N	2019-11-19 18:14:56.55386+00	\N	150	1269	1269
 \.
 
 
@@ -3986,6 +3993,8 @@ COPY public.offices (id, office_type, deactivated_date, business_id) FROM stdin;
 24	registeredOffice	\N	146
 25	registeredOffice	\N	149
 26	registeredOffice	\N	147
+27	registeredOffice	\N	150
+28	recordsOffice	\N	150
 \.
 
 
@@ -4280,14 +4289,14 @@ COPY public.users_version (id, username, firstname, lastname, email, sub, iss, c
 -- Name: addresses_id_seq; Type: SEQUENCE SET; Schema: public; Owner: userG5G
 --
 
-SELECT pg_catalog.setval('public.addresses_id_seq', 1264, true);
+SELECT pg_catalog.setval('public.addresses_id_seq', 1269, true);
 
 
 --
 -- Name: businesses_id_seq; Type: SEQUENCE SET; Schema: public; Owner: userG5G
 --
 
-SELECT pg_catalog.setval('public.businesses_id_seq', 149, true);
+SELECT pg_catalog.setval('public.businesses_id_seq', 150, true);
 
 
 --
@@ -4308,7 +4317,7 @@ SELECT pg_catalog.setval('public.comments_id_seq', 1, false);
 -- Name: directors_id_seq; Type: SEQUENCE SET; Schema: public; Owner: userG5G
 --
 
-SELECT pg_catalog.setval('public.directors_id_seq', 963, true);
+SELECT pg_catalog.setval('public.directors_id_seq', 964, true);
 
 
 --
@@ -4322,7 +4331,7 @@ SELECT pg_catalog.setval('public.filings_id_seq', 152, true);
 -- Name: offices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: userG5G
 --
 
-SELECT pg_catalog.setval('public.offices_id_seq', 26, true);
+SELECT pg_catalog.setval('public.offices_id_seq', 28, true);
 
 
 --

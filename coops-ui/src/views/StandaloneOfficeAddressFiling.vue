@@ -34,21 +34,21 @@
 
       <v-container id="standalone-office-address-container" class="view-container">
         <article id="standalone-office-address-article">
-          <header>
+          <section>
             <h1 id="filing-header">Change of Office Addresses</h1>
             <p>Please change your Registered Office Address
-              <span v-if="entityFilter(EntityTypes.BCorp)">and Record Address</span>
+              <span v-if="entityFilter(EntityTypes.BCorp)"> and Record Address.</span>
             </p>
             <v-alert
               v-if="entityFilter(EntityTypes.BCorp)"
               type="info"
-              :value="true"
               icon="mdi-information"
               outlined
-              class="white-background">
+              class="white-background"
+            >
               Any address update will be effective tomorrow.
             </v-alert>
-          </header>
+          </section>
 
           <!-- Office Addresses -->
           <section>
@@ -149,19 +149,30 @@
 </template>
 
 <script lang="ts">
+// Libraries
 import axios from '@/axios-auth'
 import { Affix } from 'vue-affix'
-import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapGetters } from 'vuex'
-import { PAYMENT_REQUIRED, BAD_REQUEST } from 'http-status-codes'
-import { EntityFilterMixin } from '@/mixins'
-import Certify from '@/components/AnnualReport/Certify.vue'
-import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
+
+// Dialogs
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
+
+// Components
 import { OfficeAddresses } from '@/components/Common'
+import Certify from '@/components/AnnualReport/Certify.vue'
+import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
+import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
+
+// Constants
+import { PAYMENT_REQUIRED, BAD_REQUEST } from 'http-status-codes'
+
+// Mixins
+import { EntityFilterMixin } from '@/mixins'
+
+// Enums
 import { EntityTypes } from '@/enums'
 
 export default {
@@ -204,7 +215,7 @@ export default {
       routingSlipNumber: null,
       staffPaymentFormValid: false,
       totalFee: 0,
-      EntityTypes: EntityTypes
+      EntityTypes
     }
   },
 
@@ -702,10 +713,7 @@ h2 {
 }
 
 // Bcorp Alert
-.v-application .info--text {
-  padding: 0.5rem!important;
-  color: #000014 !important;
-  border-color: #2196f3 !important;
-  caret-color: #2196f3 !important;
+.white-background {
+  background-color: white !important;
 }
 </style>

@@ -690,25 +690,13 @@ describe('AnnualReport - Part 3 - Submitting', () => {
 
     // stub address data
     vm.addresses = {
-      'registeredOffice': {
-        'deliveryAddress': {
-          'streetAddress': 'delivery street address',
-          'streetAddressAdditional': null,
-          'addressCity': 'deliv address city',
-          'addressCountry': 'deliv country',
-          'postalCode': 'H0H0H0',
-          'addressRegion': 'BC',
-          'deliveryInstructions': null
-        },
-        'mailingAddress': {
-          'streetAddress': 'mailing street address',
-          'streetAddressAdditional': 'Kirkintiloch',
-          'addressCity': 'Glasgow',
-          'addressCountry': 'UK',
-          'postalCode': 'H0H 0H0',
-          'addressRegion': 'Scotland',
-          'deliveryInstructions': 'go to the back'
-        }
+      registeredOffice: {
+        deliveryAddress: {},
+        mailingAddress: {}
+      },
+      recordsOffice: {
+        deliveryAddress: {},
+        mailingAddress: {}
       }
     }
 
@@ -775,25 +763,13 @@ describe('AnnualReport - Part 3 - Submitting', () => {
 
     // stub address data
     vm.addresses = {
-      'registeredOffice': {
-        'deliveryAddress': {
-          'streetAddress': 'delivery street address',
-          'streetAddressAdditional': null,
-          'addressCity': 'deliv address city',
-          'addressCountry': 'deliv country',
-          'postalCode': 'H0H0H0',
-          'addressRegion': 'BC',
-          'deliveryInstructions': null
-        },
-        'mailingAddress': {
-          'streetAddress': 'mailing street address',
-          'streetAddressAdditional': 'Kirkintiloch',
-          'addressCity': 'Glasgow',
-          'addressCountry': 'UK',
-          'postalCode': 'H0H 0H0',
-          'addressRegion': 'Scotland',
-          'deliveryInstructions': 'go to the back'
-        }
+      registeredOffice: {
+        deliveryAddress: {},
+        mailingAddress: {}
+      },
+      recordsOffice: {
+        deliveryAddress: {},
+        mailingAddress: {}
       }
     }
 
@@ -890,25 +866,13 @@ describe('AnnualReport - Part 4 - Saving', () => {
 
     // stub address data
     vm.addresses = {
-      'registeredOffice': {
-        'deliveryAddress': {
-          'streetAddress': 'delivery street address',
-          'streetAddressAdditional': null,
-          'addressCity': 'deliv address city',
-          'addressCountry': 'deliv country',
-          'postalCode': 'H0H0H0',
-          'addressRegion': 'BC',
-          'deliveryInstructions': null
-        },
-        'mailingAddress': {
-          'streetAddress': 'mailing street address',
-          'streetAddressAdditional': 'Kirkintiloch',
-          'addressCity': 'Glasgow',
-          'addressCountry': 'UK',
-          'postalCode': 'H0H 0H0',
-          'addressRegion': 'Scotland',
-          'deliveryInstructions': 'go to the back'
-        }
+      registeredOffice: {
+        deliveryAddress: {},
+        mailingAddress: {}
+      },
+      recordsOffice: {
+        deliveryAddress: {},
+        mailingAddress: {}
       }
     }
 
@@ -931,25 +895,13 @@ describe('AnnualReport - Part 4 - Saving', () => {
 
     // stub address data
     vm.addresses = {
-      'registeredOffice': {
-        'deliveryAddress': {
-          'streetAddress': 'delivery street address',
-          'streetAddressAdditional': null,
-          'addressCity': 'deliv address city',
-          'addressCountry': 'deliv country',
-          'postalCode': 'H0H0H0',
-          'addressRegion': 'BC',
-          'deliveryInstructions': null
-        },
-        'mailingAddress': {
-          'streetAddress': 'mailing street address',
-          'streetAddressAdditional': 'Kirkintiloch',
-          'addressCity': 'Glasgow',
-          'addressCountry': 'UK',
-          'postalCode': 'H0H 0H0',
-          'addressRegion': 'Scotland',
-          'deliveryInstructions': 'go to the back'
-        }
+      registeredOffice: {
+        deliveryAddress: {},
+        mailingAddress: {}
+      },
+      recordsOffice: {
+        deliveryAddress: {},
+        mailingAddress: {}
       }
     }
 
@@ -1080,25 +1032,13 @@ describe('AnnualReport - Part 5 - Data', () => {
 
     // stub address data
     vm.addresses = {
-      'registeredOffice': {
-        'deliveryAddress': {
-          'streetAddress': 'delivery street address',
-          'streetAddressAdditional': null,
-          'addressCity': 'deliv address city',
-          'addressCountry': 'deliv country',
-          'postalCode': 'H0H0H0',
-          'addressRegion': 'BC',
-          'deliveryInstructions': null
-        },
-        'mailingAddress': {
-          'streetAddress': 'mailing street address',
-          'streetAddressAdditional': 'Kirkintiloch',
-          'addressCity': 'Glasgow',
-          'addressCountry': 'UK',
-          'postalCode': 'H0H 0H0',
-          'addressRegion': 'Scotland',
-          'deliveryInstructions': 'go to the back'
-        }
+      registeredOffice: {
+        deliveryAddress: {},
+        mailingAddress: {}
+      },
+      recordsOffice: {
+        deliveryAddress: {},
+        mailingAddress: {}
       }
     }
 
