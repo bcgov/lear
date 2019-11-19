@@ -453,7 +453,7 @@ export default {
             }
 
             // load Change of Address fields
-            if (filing.changeOfAddress && filing.changeOfAddress.offices) {
+            if (filing.changeOfAddress) {
               const offices = filing.changeOfAddress.offices
               if (offices && offices.registeredOffice) {
                 this.addresses = {
