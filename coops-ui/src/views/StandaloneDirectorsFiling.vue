@@ -76,6 +76,9 @@
                   :isCertified.sync="isCertified"
                   :certifiedBy.sync="certifiedBy"
                   :currentDate="this.currentDate"
+                  :entityDisplayName="entityTypeToDisplay()"
+                  :sectionString="entityLegalSection()"
+                  :sectionCode="this.getSectionCode()"
                   @valid="certifyFormValid=$event"
                 />
               </section>
@@ -425,6 +428,16 @@ export default {
       this.haveChanges = true
       // when directors change (free filing), update filing data
       this.toggleFiling(modified ? 'add' : 'remove', 'OTFDR')
+    },
+
+    getSectionCode () :string {
+      switch (this.entityType) {
+        case EntityTypes.Coop:
+          return '78'
+        case EntityTypes.BCorp:
+          return '127'
+      }
+      return ''
     },
 
     async onClickSave () {

@@ -8,7 +8,7 @@
       <p class="certify-content">
         Note: It is an offence to make a false or misleading statement in
         respect of a material fact in a record submitted to the Corporate Registry for filing.
-        See section 200 of the Cooperatives Association Act.
+        See section {{sectionCode}} of the Cooperatives Association Act.
       </p>
     </div>
   </v-card>
@@ -16,7 +16,7 @@
 
 <script lang="ts">
 import { Component, Vue, Prop } from 'vue-property-decorator'
-
+import { EntityFilterMixin } from '@/mixins'
 @Component({})
 export default class SummaryCertify extends Vue {
   // Props passed into this component.
@@ -25,6 +25,12 @@ export default class SummaryCertify extends Vue {
 
   @Prop({ default: '' })
   private currentDate: string
+
+  @Prop({ default: '' })
+  private sectionCode: string
+
+  @Prop({ default: '' })
+  private sectionString: string
 
   /**
    * Computed value.

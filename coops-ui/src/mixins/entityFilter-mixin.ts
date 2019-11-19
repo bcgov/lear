@@ -21,4 +21,24 @@ export default class EntityFilterMixin extends Vue {
   entityFilter (entityType: string): boolean {
     return this.entityType === entityType
   }
+
+  entityTypeToDisplay (): string {
+    switch (this.entityType) {
+      case 'CP':
+        return 'Cooperative'
+      case 'BC':
+        return 'Benefits Company'
+    }
+    return ''
+  }
+
+  entityLegalSection (): string {
+    switch (this.entityType) {
+      case 'CP':
+        return 'Cooperative Association act'
+      case 'BC':
+        return 'Benefits Corporations act'
+    }
+    return ''
+  }
 }

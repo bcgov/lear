@@ -59,6 +59,9 @@
             <Certify
               :isCertified.sync="isCertified"
               :certifiedBy.sync="certifiedBy"
+              :entityDisplayName="entityTypeToDisplay()"
+              :sectionString="entityLegalSection()"
+              :sectionCode="this.getSectionCode()"
               @valid="certifyFormValid=$event"
             />
           </section>
@@ -149,10 +152,11 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
-
+import EntityFilterMixin from '@/mixins/entityFilter-mixin'
+import { EntityTypes } from '@/enums'
 export default {
   name: 'StandaloneOfficeAddressFiling',
-
+  mixins: [EntityFilterMixin],
   components: {
     RegisteredOfficeAddress,
     SbcFeeSummary,
@@ -568,7 +572,18 @@ export default {
           })
         return hasPendingItems
       }
+    },
+
+    getSectionCode () :string {
+      switch (this.entityType) {
+        case EntityTypes.Coop:
+          return '126'
+        case EntityTypes.BCorp:
+          return '51'
+      }
+      return ''
     }
+
   },
 
   watch: {

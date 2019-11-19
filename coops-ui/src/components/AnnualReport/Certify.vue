@@ -24,7 +24,7 @@
         <template slot="label">
           <div class="certify-stmt">
             I, <b>{{trimmedCertifiedBy || '[Legal Name]'}}</b>, certify that I have relevant knowledge of the
-            association and that I am authorized to make this filing.
+            {{entityDisplayName}} and that I am authorized to make this filing.
           </div>
         </template>
       </v-checkbox>
@@ -32,7 +32,7 @@
       <p class="certify-clause">
         Note: It is an offence to make a false or misleading statement in
         respect of a material fact in a record submitted to the Corporate Registry for filing.
-        See section 200 of the Cooperatives Association Act.
+        See section {{sectionCode}} of the {{sectionString}}.
       </p>
     </div>
   </v-card>
@@ -52,6 +52,15 @@ export default class Certify extends Vue {
 
   @Prop({ default: '' })
   private currentDate: string
+
+  @Prop({ default: '' })
+  private entityDisplayName: string
+
+  @Prop({ default: '' })
+  private sectionCode: string
+
+  @Prop({ default: '' })
+  private sectionString: string
 
   /**
    * Lifecycle callback to always give the parent a "valid" event for its property values.
