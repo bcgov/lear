@@ -37,7 +37,7 @@ def process(business: Business, filing: Dict):
                                        cessation_date=new_director.get('cessationDate'),
                                        delivery_address=address)
 
-            if 'mailingAddress' in new_director.keys():
+            if 'mailingAddress' in new_director and len(new_director['mailingAddress']):
                 mailing_address = create_address(new_director['mailingAddress'], Address.MAILING)
                 director_to_add.mailing_address = mailing_address
 
