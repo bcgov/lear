@@ -287,7 +287,7 @@ export default {
       saveWarnings: [],
 
       // EntityTypes Enum
-      EntityTypes: EntityTypes
+      EntityTypes
     }
   },
 
