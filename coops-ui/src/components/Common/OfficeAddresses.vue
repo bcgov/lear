@@ -204,7 +204,7 @@ import { Component, Emit, Prop, Watch, Mixins } from 'vue-property-decorator'
 import isEmpty from 'lodash.isempty'
 
 // Schemas
-import { addressSchema } from '@/schemas'
+import { officeAddressSchema } from '@/schemas'
 
 // Components
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
@@ -293,7 +293,7 @@ export default class OfficeAddresses extends Mixins(CommonMixin, EntityFilterMix
     private inheritRegisteredAddress: boolean = true
 
     // The Address schema containing Vuelidate rules.
-    private addressSchema: {} = addressSchema
+    private addressSchema: {} = officeAddressSchema
 
     // Entity Enum
     private EntityTypes: {} = EntityTypes
