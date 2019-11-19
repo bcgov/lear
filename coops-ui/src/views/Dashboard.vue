@@ -12,14 +12,17 @@
               <header>
                 <h2 class="mb-3">To Do <span class="text-muted">({{todoCount}})</span></h2>
               </header>
-              <todo-list @todo-count="todoCount = $event" @has-blocker-filing="hasBlockerFiling = $event"
-                         @todo-filings="todoListFilings = $event" :inProcessFiling="inProcessFiling" />
+              <todo-list @todo-count="todoCount = $event"
+                         @has-blocker-filing="hasBlockerFiling = $event"
+                         @todo-filings="todoListFilings = $event"
+                         :inProcessFiling="inProcessFiling" />
             </section>
             <section>
               <header>
                 <h2 class="mb-3">Recent Filing History <span class="text-muted">({{filedCount}})</span></h2>
               </header>
-              <filing-history-list @filed-count="filedCount = $event" @filings-list="historyFilings = $event" />
+              <filing-history-list @filed-count="filedCount = $event"
+                                   @filings-list="historyFilings = $event" />
             </section>
           </div>
 
@@ -169,19 +172,23 @@ export default {
       })
     }
   },
+
   mounted () {
     // Flag Usage Example.
     // console.log(this.flags.coopsVersion)
     this.checkToReloadDashboard()
   },
+
   watch: {
     historyFilings () {
       this.checkToReloadDashboard()
     },
+
     todoListFilings () {
       this.checkToReloadDashboard()
     }
   },
+
   destroyed () {
     // kill the refresh timer if it is running
     clearTimeout(this.refreshTimer)

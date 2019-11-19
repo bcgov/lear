@@ -2,23 +2,31 @@ import axios from '@/axios-auth'
 
 export default {
   /**
-   * fetch config from API
+   * fetch config from environment and API
    */
   fetchConfig () {
-    const url = `/${process.env.VUE_APP_PATH}/config/configuration.json`
+    const origin = window.location.origin
+    const vueAppPath = process.env.VUE_APP_PATH
+    const vueAppAuthPath = process.env.VUE_APP_AUTH_PATH
+
+    if (!vueAppPath || !vueAppAuthPath) {
+      throw new Error('failed to get env variables')
+    }
+
+    const baseUrl = `${origin}/${vueAppPath}/`
+    sessionStorage.setItem('BASE_URL', baseUrl)
+    console.log('Set Base URL to: ' + baseUrl)
+
+    const authUrl = `${origin}/${vueAppAuthPath}/`
+    sessionStorage.setItem('AUTH_URL', authUrl)
+    console.log('Set Auth URL to: ' + authUrl)
+
+    const url = `/${vueAppPath}/config/configuration.json`
     const headers = {
       'Accept': 'application/json',
       'ResponseType': 'application/json',
       'Cache-Control': 'no-cache'
     }
-
-    const baseUrl = `${window.location.origin}/${process.env.VUE_APP_PATH}/`
-    sessionStorage.setItem('BASE_URL', baseUrl)
-    console.log('Set Base URL to: ' + baseUrl)
-
-    const authUrl = `${window.location.origin}/${process.env.VUE_APP_AUTH_PATH}/`
-    sessionStorage.setItem('AUTH_URL', authUrl)
-    console.log('Set Auth URL to: ' + authUrl)
 
     return axios
       .get(url, { headers })
