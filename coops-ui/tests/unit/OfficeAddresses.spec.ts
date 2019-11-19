@@ -407,7 +407,6 @@ describe('OfficeAddresses as a BCORP', () => {
   })
 
   it('displays the `same as registered` text when records and registered addresses match', async () => {
-
     const recordsAddress = {
       deliveryAddress: {
         addressCity: 'delCity',
