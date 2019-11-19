@@ -63,7 +63,7 @@
       v-if="entityFilter(EntityTypes.BCorp)"
     >
       <v-expansion-panel-header class="panel-header-btn" id="record-office-panel">
-        <div class="list-item__title">Record Office</div>
+        <div class="list-item__title">Records Office</div>
       </v-expansion-panel-header>
       <v-expansion-panel-content class="panel-wrapper">
         <v-list class="pt-0 pb-0" v-if="recordsAddress">

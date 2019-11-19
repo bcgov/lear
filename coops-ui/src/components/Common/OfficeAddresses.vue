@@ -97,7 +97,7 @@
       <div v-if="entityFilter(EntityTypes.BCorp)">
         <div class="address-edit-header"
              v-if="showAddressForm">
-          <label class="address-edit-title">Record Office</label>
+          <label class="address-edit-title">Records Office</label>
             <v-checkbox
               class="records-inherit-checkbox"
               label="Same as Registered Office"
@@ -109,7 +109,7 @@
           <!-- Records Delivery Address -->
           <li class="container">
             <div class="meta-container">
-              <label v-if="!showAddressForm">Record Office</label>
+              <label v-if="!showAddressForm">Records Office</label>
               <label v-else>Delivery Address</label>
               <div class="meta-container__inner">
                 <label v-if="!showAddressForm"><strong>Delivery Address</strong></label>
@@ -166,7 +166,7 @@
         <div v-else>
           <li class="container" v-if="!showAddressForm">
             <div class="meta-container">
-              <label>Record Office</label>
+              <label>Records Office</label>
               <div class="meta-container__inner">
                 <span id="sameAsRegistered">
                   Same as Registered Office
