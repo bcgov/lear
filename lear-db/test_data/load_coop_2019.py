@@ -51,7 +51,8 @@ def create_business(db, business_json):
     business.last_ledger_timestamp = business_json['business']['lastLedgerTimestamp']
     business.legal_name = business_json['business']['legalName']
     business.founding_date = business_json['business']['foundingDate']
-    business.last_agm_date = datetime.date.fromisoformat(business_json['business']['lastAgmDate'])
+    business.last_agm_date = datetime.date.fromisoformat(business_json['business']['lastAgmDate']) \
+        if business_json['business']['lastAgmDate'] else None
     business.last_ar_date = datetime.date.fromisoformat(business_json['business']['lastArDate'])\
         if business_json['business']['lastArDate'] else business.last_agm_date
     business.legal_type = business_json['business']['legalType']
