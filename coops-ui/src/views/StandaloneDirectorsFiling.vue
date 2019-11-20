@@ -40,7 +40,9 @@
             <article id="standalone-directors-article">
               <header>
                 <h1 id="filing-header">Director Change</h1>
-                <p>Please verify or change the information of the directors.</p>
+                <p>Select the date of your director changes. If you have director changes that occured on
+                   different dates, you will need to perform multiple Director Change filings - one for each
+                   unique date.</p>
 
                 <v-alert
                   type="info"
@@ -52,6 +54,13 @@
                 </v-alert>
               </header>
 
+              <section>
+                <CODDate ref="codDate"
+                :initialCODDate="initialCODDate"
+                @codDate="codDate=$event"
+                @valid="codDateValid=$event" />
+              </section>
+
               <!-- Director Information -->
               <section>
                 <Directors ref="directorsList"
@@ -61,7 +70,7 @@
                   @directorFormValid="directorFormValid=$event"
                   @allDirectors="allDirectors=$event"
                   @directorEditAction="directorEditInProgress=$event"
-                  :asOfDate="currentDate"
+                  :asOfDate="codDate"
                 />
               </section>
 
@@ -259,6 +268,7 @@ import Certify from '@/components/AnnualReport/Certify.vue'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { SummaryDirectors, SummaryCertify, SummaryStaffPayment } from '@/components/Common'
+import CODDate from '@/components/StandaloneDirectorChange/CODDate.vue'
 
 // Dialog Components
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -290,7 +300,8 @@ export default {
     ConfirmDialog,
     PaymentErrorDialog,
     ResumeErrorDialog,
-    SaveErrorDialog
+    SaveErrorDialog,
+    CODDate
   },
 
   mixins: [EntityFilterMixin],
@@ -316,6 +327,9 @@ export default {
       haveChanges: false,
       saveErrors: [],
       saveWarnings: [],
+      initialCODDate: '',
+      codDate: null,
+      codDateValid: false,
 
       // properties for Staff Payment component
       routingSlipNumber: null,
@@ -337,7 +351,7 @@ export default {
       const filingDataValid = (this.filingData.length > 0)
 
       return (staffPaymentValid && this.certifyFormValid && this.directorFormValid && filingDataValid &&
-        !this.directorEditInProgress)
+        !this.directorEditInProgress && this.codDateValid)
     },
 
     busySaving () {
@@ -345,7 +359,7 @@ export default {
     },
 
     isSaveButtonEnabled () {
-      return (this.directorFormValid && this.filingData.length > 0 && !this.directorEditInProgress)
+      return (this.directorFormValid && this.filingData.length > 0 && !this.directorEditInProgress && this.codDateValid)
     },
 
     payAPIURL () {
@@ -379,6 +393,8 @@ export default {
     if (this.filingId > 0) {
       // resume draft filing
       this.fetchChangeOfDirectors()
+    } else {
+      this.initialCODDate = this.currentDate.split('/').join('-')
     }
   },
 
@@ -501,7 +517,8 @@ export default {
           name: 'changeOfDirectors',
           certifiedBy: this.certifiedBy || '',
           email: 'no_one@never.get',
-          date: this.currentDate
+          date: this.currentDate,
+          effectiveDate: this.codDate + 'T00:00:00+00:00'
         }
       }
       // only save this if it's not null
@@ -630,6 +647,8 @@ export default {
 
             this.certifiedBy = filing.header.certifiedBy
             this.routingSlipNumber = filing.header.routingSlipNumber
+            console.log(filing.header.effectiveDate.slice(0, 10))
+            this.initialCODDate = filing.header.effectiveDate.slice(0, 10)
 
             const changeOfDirectors = filing.changeOfDirectors
             if (changeOfDirectors) {

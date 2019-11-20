@@ -1,0 +1,241 @@
+<template>
+  <v-card flat class="container">
+    <div class="meta-container">
+      <label>
+        <span>Director Change Date</span>
+      </label>
+
+      <div class="value date">
+        <v-menu
+          ref="menu"
+          v-model="menu"
+          :nudge-right="40"
+          transition="scale-transition"
+          offset-y
+          min-width="18rem">
+          <template v-slot:activator="{ on }">
+            <v-text-field
+              id="cod-textfield"
+              v-model="dateFormatted"
+              :rules="codDateRules"
+              label="Date"
+              hint="YYYY/MM/DD"
+              append-icon="mdi-calendar"
+              v-on="on"
+              filled>
+            </v-text-field>
+          </template>
+          <v-date-picker
+            id="cod-datepicker"
+            v-model="date"
+            :min=minDate
+            :max=maxDate
+            no-title
+            @input="menu = true">
+          </v-date-picker>
+        </v-menu>
+
+        <div class="validationErrorInfo" v-if="$v.dateFormatted.isNotNull">
+          <span v-if="!$v.dateFormatted.isValidFormat">
+            Date must be in format YYYY/MM/DD.
+          </span>
+          <span v-else-if="!$v.dateFormatted.isValidCODDate">
+            Please enter a month between {{formatDate(minDate)}} and {{formatDate(maxDate)}}.
+          </span>
+        </div>
+      </div>
+    </div>
+  </v-card>
+</template>
+
+<script lang="ts">
+
+import { Component, Mixins, Vue, Prop, Watch, Emit } from 'vue-property-decorator'
+import { isNotNull, isValidFormat, isValidCODDate } from '@/validators'
+import { mapState, mapGetters } from 'vuex'
+import DateMixin from '@/mixins/date-mixin'
+
+@Component({
+  mixins: [DateMixin],
+  computed: {
+    // Property definitions for runtime environment.
+    ...mapState(['currentDate', 'lastPreLoadFilingDate']),
+    ...mapGetters(['lastFilingDate', 'lastCODFilingDate'])
+  },
+  validations: {
+    dateFormatted: { isNotNull, isValidFormat, isValidCODDate }
+  }
+})
+export default class CODDate extends Mixins(DateMixin) {
+  // Prop passed into this component.
+  @Prop({ default: '' })
+  private initialCODDate: string
+
+  // Local properties.
+  private date: string = '' // bound to date picker
+  private dateFormatted: string = '' // bound to text field
+  private menu: boolean = false // bound to calendar menu
+
+  // Local definitions of computed properties for static type checking.
+  // Use non-null assertion operator to allow use before assignment.
+  readonly currentDate!: string
+  readonly lastPreLoadFilingDate!: string
+  readonly lastFilingDate!: string
+  readonly lastCODFilingDate!: string
+
+  /**
+   * Computed value.
+   * @returns The array of validations rules for the COD Date text field.
+   */
+  private get codDateRules (): Array<Function> {
+    return [
+      v => isNotNull(v) || 'A Director change date is required.'
+    ]
+  }
+
+  /**
+   * Computed value.
+   * @returns The maximum date that can be entered.
+   */
+  private get maxDate (): string {
+    return this.currentDate.split('/').join('-')
+  }
+
+  /**
+   * Computed value.
+   * @returns The minimum date that can be entered.
+   */
+  private get minDate (): string {
+    /**
+     * Determine the latest of the following dates:
+     * - the last COD filing in filing history (from legal DB)
+     * - the last AR filing in filing history (from the Legal DB)
+     * - the last pre-load Cobrs filing
+     */
+    const lastFilingDate = this.lastFilingDate == null ? 0 : +this.lastFilingDate.split('-').join('')
+    const lastCODFilingDate = this.lastCODFilingDate == null ? 0 : +this.lastCODFilingDate.split('-').join('')
+    const lastPreLoadFilingDate = this.lastPreLoadFilingDate == null ? 0
+      : +this.lastPreLoadFilingDate.split('-').join('')
+    const minCODDate = Math.max(lastFilingDate, lastCODFilingDate, lastPreLoadFilingDate)
+    return this.numToUsableString(minCODDate)
+  }
+
+  /**
+   * Lifecycle hook to load initial data.
+   */
+  private mounted (): void {
+    this.dateFormatted = this.formatDate(this.initialCODDate)
+  }
+
+  /**
+   * Local helper to change date from YYYY-MM-DD to YYYY/MM/DD.
+   * @returns The formatted date.
+   */
+  private formatDate (date: string): string {
+    if (!this.isValidDate(date, '-')) return ''
+    const [year, month, day] = date.split('-')
+    return `${year}/${month}/${day}`
+  }
+
+  /**
+   * Local helper to change date from YYYY/MM/DD to YYYY-MM-DD.
+   * @returns The parsed date.
+   */
+  private parseDate (date: string): string {
+    // changes date from YYYY/MM/DD to YYYY-MM-DD
+    if (!this.isValidDate(date, '/')) return ''
+    const [year, month, day] = date.split('/')
+    return `${year}-${month}-${day}`
+  }
+
+  /**
+   * Local helper to determine if passed-in date is valid.
+   * @returns True if date is valid, otherwise false.
+   */
+  private isValidDate (date, separator): boolean {
+    return (isNotNull.call(this, date) &&
+      isValidFormat.call(this, date, separator) &&
+      isValidCODDate.call(this, date, separator))
+  }
+
+  /**
+   * When prop changes, load (initial) data.
+   */
+  @Watch('initialCODDate')
+  private onInitialCODChanged (val: string): void {
+    if (val) {
+      this.dateFormatted = this.formatDate(val)
+    }
+  }
+
+  /**
+   * When text field changes, update date picker.
+   */
+  @Watch('dateFormatted')
+  private onDateFormattedChanged (val: string): void {
+    this.date = this.parseDate(val)
+  }
+
+  /**
+   * When date picker changes, update text field etc.
+   */
+  @Watch('date')
+  private onDateChanged (val: string): void {
+    const codDate = this.isValidDate(val, '-') ? val : null
+    // only update text field if date is valid
+    // this is to retain previous invalid values
+    if (codDate) {
+      this.dateFormatted = this.formatDate(val)
+    }
+    this.emitCODDate(codDate)
+    this.emitValid(Boolean(codDate))
+  }
+
+  /**
+   * Emits an event with the new value of COD Date.
+   */
+  @Emit('codDate')
+  private emitCODDate (val: string): void { }
+
+  /**
+   * Emits an event indicating whether or not this component is valid.
+   */
+  @Emit('valid')
+  private emitValid (val: boolean): void { }
+}
+
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/styles/theme.scss";
+
+.validationErrorInfo{
+  color: red;
+}
+
+.value.date{
+  min-width: 24rem;
+}
+
+.meta-container{
+  display: flex;
+  flex-flow: column nowrap;
+  position: relative;
+
+  > label:first-child{
+    font-weight: 700;
+  }
+}
+
+@media (min-width: 768px){
+  .meta-container{
+    flex-flow: row nowrap;
+
+    > label:first-child{
+      flex: 0 0 auto;
+      padding-right: 2rem;
+      width: 12rem;
+    }
+  }
+}
+</style>
