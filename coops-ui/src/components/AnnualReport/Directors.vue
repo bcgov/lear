@@ -911,7 +911,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
         lastName: this.director.officer.lastName
       },
       deliveryAddress: { ...this.inProgressAddress },
-      ...(!this.entityFilter(EntityTypes.Coop) && { mailingAddress: { ...this.inProgressMailAddress } }),
+      ...(this.entityFilter(EntityTypes.BCorp) && { mailingAddress: { ...this.inProgressMailAddress } }),
       appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
       cessationDate: null // when implemented: this.director.cessationDate
     }
