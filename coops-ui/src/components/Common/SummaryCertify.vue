@@ -2,13 +2,13 @@
   <v-card flat id="certify-container">
     <div class="container">
       <p class="certify-content">I, <b>{{ trimmedCertifiedBy || '[Legal Name]'}}</b>,
-      certify that I have relevant knowledge of the association and that I am authorized to make this filing.
+      certify that I have relevant knowledge of the {{entityDisplayName}} and that I am authorized to make this filing.
       </p>
       <p class="certify-content">{{currentDate}}</p>
       <p class="certify-content">
         Note: It is an offence to make a false or misleading statement in
         respect of a material fact in a record submitted to the Corporate Registry for filing.
-        See section {{sectionCode}} of the Cooperatives Association Act.
+        See section {{sectionCode}} of the {{sectionString}}.
       </p>
     </div>
   </v-card>
@@ -25,6 +25,9 @@ export default class SummaryCertify extends Vue {
 
   @Prop({ default: '' })
   private currentDate: string
+
+  @Prop({ default: '' })
+  private entityDisplayName: string
 
   @Prop({ default: '' })
   private sectionCode: string
