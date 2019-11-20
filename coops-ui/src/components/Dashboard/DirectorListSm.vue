@@ -9,6 +9,7 @@
         </div>
         <div class="list-item__title">{{ director.officer.firstName }} {{ director.officer.lastName }}</div>
       </v-expansion-panel-header>
+
       <v-expansion-panel-content>
         <v-list class="pt-0 pb-0">
 

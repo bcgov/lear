@@ -897,41 +897,23 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * Local helper push the current director data into the list.
    */
   private pushNewDirectorData (): void {
-    let newDirector
     if (this.inheritDeliveryAddress) {
       this.inProgressMailAddress = { ...this.inProgressAddress }
     }
-    if (this.entityFilter(EntityTypes.Coop)) {
-      newDirector = {
-        actions: [DirectorConst.APPOINTED],
-        id: this.directors.length + 1,
-        isDirectorActionable: true,
-        isFeeApplied: true,
-        officer: {
-          firstName: this.director.officer.firstName,
-          middleInitial: this.director.officer.middleInitial,
-          lastName: this.director.officer.lastName
-        },
-        deliveryAddress: { ...this.inProgressAddress },
-        appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
-        cessationDate: null // when implemented: this.director.cessationDate
-      }
-    } else {
-      newDirector = {
-        actions: [DirectorConst.APPOINTED],
-        id: this.directors.length + 1,
-        isDirectorActionable: true,
-        isFeeApplied: true,
-        officer: {
-          firstName: this.director.officer.firstName,
-          middleInitial: this.director.officer.middleInitial,
-          lastName: this.director.officer.lastName
-        },
-        deliveryAddress: { ...this.inProgressAddress },
-        mailingAddress: { ...this.inProgressMailAddress },
-        appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
-        cessationDate: null // when implemented: this.director.cessationDate
-      }
+    let newDirector = {
+      actions: [DirectorConst.APPOINTED],
+      id: this.directors.length + 1,
+      isDirectorActionable: true,
+      isFeeApplied: true,
+      officer: {
+        firstName: this.director.officer.firstName,
+        middleInitial: this.director.officer.middleInitial,
+        lastName: this.director.officer.lastName
+      },
+      deliveryAddress: { ...this.inProgressAddress },
+      ...(!this.entityFilter(EntityTypes.Coop) && { mailingAddress: { ...this.inProgressMailAddress } }),
+      appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
+      cessationDate: null // when implemented: this.director.cessationDate
     }
 
     // if there is also a cease date on this new director, add the ceased action
