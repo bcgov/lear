@@ -73,7 +73,6 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
             return address_obj
 
         except Exception as err:
-            print(address_id)
             current_app.logger.error(err.with_traceback(None))
             raise AddressNotFoundException(address_id=address_id)
 
