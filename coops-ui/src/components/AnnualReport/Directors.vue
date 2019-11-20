@@ -897,10 +897,12 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * Local helper push the current director data into the list.
    */
   private pushNewDirectorData (): void {
+    let newDirector
     if (this.inheritDeliveryAddress) {
       this.inProgressMailAddress = { ...this.inProgressAddress }
     }
-    let newDirector = {
+
+    newDirector = {
       actions: [DirectorConst.APPOINTED],
       id: this.directors.length + 1,
       isDirectorActionable: true,
@@ -911,9 +913,13 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
         lastName: this.director.officer.lastName
       },
       deliveryAddress: { ...this.inProgressAddress },
-      ...(this.entityFilter(EntityTypes.BCorp) && { mailingAddress: { ...this.inProgressMailAddress } }),
       appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
       cessationDate: null // when implemented: this.director.cessationDate
+    }
+
+    // Add the mailing address property if the entity is a BCORP
+    if (this.entityFilter(EntityTypes.BCorp)) {
+      newDirector = { ...newDirector, mailingAddress: { ...this.inProgressMailAddress } }
     }
 
     // if there is also a cease date on this new director, add the ceased action
