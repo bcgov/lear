@@ -90,7 +90,7 @@ describe('Directors as a COOP', () => {
       }
     ]
     const Constructor = Vue.extend(SummaryDirectors)
-    const instance = new Constructor({ store: store, propsData: { directors }, vuetify })
+    const instance = new Constructor({ store, propsData: { directors }, vuetify })
     vm = instance.$mount()
 
     Vue.nextTick(() => {
@@ -254,7 +254,7 @@ describe('Directors as a BCORP', () => {
       }
     ]
     const Constructor = Vue.extend(SummaryDirectors)
-    const instance = new Constructor({ store: store, propsData: { directors }, vuetify })
+    const instance = new Constructor({ store, propsData: { directors }, vuetify })
     vm = instance.$mount()
 
     Vue.nextTick(() => {
