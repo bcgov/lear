@@ -132,6 +132,10 @@ describe('Directors as a COOP', () => {
     // spot-check second address
     expect(vm.directors[1].deliveryAddress.streetAddressAdditional).toEqual('Kirkintiloch')
     expect(vm.directors[1].deliveryAddress.deliveryInstructions).toEqual('go to the back')
+
+    // Verify no mailing address fo Coop directors
+    expect(vm.directors[0].mailingAddress).toBeUndefined()
+    expect(vm.directors[1].mailingAddress).toBeUndefined()
   })
 
   it('displays the list of directors', () => {
