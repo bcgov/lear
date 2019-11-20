@@ -60,7 +60,6 @@ def create_business(db, business_json):
 
 
 def create_delivery_address(delivery_json):
-
     delivery_address = Address()
     delivery_address.address_type = Address.DELIVERY
     delivery_address.city = delivery_json['addressCity']
@@ -76,7 +75,6 @@ def create_delivery_address(delivery_json):
 
 
 def add_business_addresses(business, offices_json):
-
     delivery_address = create_delivery_address(offices_json['deliveryAddress'])
     business.delivery_address.append(delivery_address)
 
@@ -126,6 +124,8 @@ def historic_filings_exist(business_id):
 rowcount = 0
 TIMEOUT = 15
 FAILED_COOPS = []
+NEW_COOPS = []
+LOADED_COOPS_HISTORY = []
 
 with open('coops.csv', 'r') as csvfile:
     reader = csv.DictReader(csvfile)
@@ -178,6 +178,7 @@ with open('coops.csv', 'r') as csvfile:
                             continue
                         directors_json = r.json()
                     except requests.exceptions.Timeout as timeout:
+                        FAILED_COOPS.append(row['CORP_NUM'])
                         print('colin_api request timed out getting corporation details.')
                         continue
 
@@ -203,7 +204,9 @@ with open('coops.csv', 'r') as csvfile:
                         db.session.add(filing)
                         db.session.commit()
                         added = True
-                    except:
+                        NEW_COOPS.append(row["CORP_NUM"])
+                    except Exception as err:
+                        print(err)
                         print(f'skipping {row["CORP_NUM"]} missing info')
                         FAILED_COOPS.append(row['CORP_NUM'])
                 else:
@@ -234,7 +237,10 @@ with open('coops.csv', 'r') as csvfile:
                                 db.session.add(filing)
                                 db.session.commit()
 
+                            LOADED_COOPS_HISTORY.append(row["CORP_NUM"])
+
                     except requests.exceptions.Timeout as timeout:
+                        LOADED_COOPS_HISTORY.append(row["CORP_NUM"])
                         print('colin_api request timed out getting historic filings.')
                 else:
                     print('->historic filings already exist - skipping history load')
@@ -245,4 +251,7 @@ with open('coops.csv', 'r') as csvfile:
 
 
 print(f'processed: {rowcount} rows')
-print(f'failed to load {len(FAILED_COOPS)} coops: {FAILED_COOPS}')
+print(f'Successfully loaded  {len(NEW_COOPS)}')
+print(f'Histories loaded for {len(LOADED_COOPS_HISTORY)}')
+print(f'Failed to load {len(FAILED_COOPS)}')
+print(f'Failed coops: {FAILED_COOPS}')

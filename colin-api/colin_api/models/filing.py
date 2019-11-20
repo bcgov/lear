@@ -52,6 +52,7 @@ class Filing:
     header = None
     body = None
     filing_type = None
+    paper_only = None
 
     def __init__(self):
         """Initialize with all values None."""
@@ -235,7 +236,7 @@ class Filing:
         # build base querystring
         querystring = ("""
             select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt,
-            agm_date, effective_dt, event.corp_num
+            agm_date, effective_dt, event.corp_num, user_id
             from event
             join filing on filing.event_id = event.event_id
             left join filing_user on event.event_id = filing_user.event_id
@@ -303,11 +304,8 @@ class Filing:
     def _get_ar(cls, identifier: str = None, filing_event_info: dict = None):
         """Return annual report filing."""
         # get directors and registered office as of this filing
-        print('type_code: ', filing_event_info['filing_type_code'])
         director_events = cls._get_events(identifier=identifier, filing_type_code='OTCDR')
-        print('director events: ', director_events)
         office_events = cls._get_events(identifier=identifier, filing_type_code='OTADD')
-        print('office events: ', office_events)
         director_event_id = None
         office_event_id = None
 
@@ -322,24 +320,23 @@ class Filing:
                 office_event_id = event['id']
                 tmp_timestamp = event['date']
 
+        recreated_dirs_and_office = True
         if director_event_id:
             try:
-                print('try directors')
                 directors = Director.get_by_event(identifier=identifier, event_id=director_event_id)
             except:  # noqa B901; pylint: disable=bare-except;
                 # should only get here if event was before the bob date
-                print('getting current directors')
+                recreated_dirs_and_office = False
                 directors = Director.get_current(identifier=identifier)
         else:
             directors = Director.get_current(identifier=identifier)
         directors = [x.as_dict() for x in directors]
         if office_event_id:
             try:
-                print('try office')
                 reg_office = Office.get_by_event(event_id=office_event_id)
             except:  # noqa B901; pylint: disable=bare-except;
                 # should only get here if event was before the bob date
-                print('getting current office')
+                recreated_dirs_and_office = False
                 reg_office = Office.get_current(identifier=identifier)
         else:
             reg_office = Office.get_current(identifier=identifier)
@@ -347,16 +344,19 @@ class Filing:
         # convert dates and date-times to correct json format
         agm_date = convert_to_json_date(filing_event_info.get('agm_date', None))
         ar_date = convert_to_json_date(filing_event_info['period_end_dt'])
-
+        # paper filings from colin don't enter in the agm_date and don't have no agm filings in the filings table
+        if filing_event_info['user_id'] != 'COOPER' and not agm_date:
+            agm_date = ar_date
         filing_obj = Filing()
         filing_obj.body = {
-            'annualGeneralMeetingDate': agm_date if agm_date else ar_date,
+            'annualGeneralMeetingDate': agm_date,
             'annualReportDate': ar_date,
             'directors': directors,
             'eventId': filing_event_info['event_id'],
             **reg_office
         }
         filing_obj.filing_type = 'annualReport'
+        filing_obj.paper_only = not recreated_dirs_and_office
 
         return filing_obj
 
@@ -375,6 +375,7 @@ class Filing:
             'eventId': filing_event_info['event_id']
         }
         filing_obj.filing_type = 'changeOfAddress'
+        filing_obj.paper_only = False
 
         return filing_obj
 
@@ -391,6 +392,7 @@ class Filing:
             'eventId': filing_event_info['event_id']
         }
         filing_obj.filing_type = 'changeOfDirectors'
+        filing_obj.paper_only = False
 
         return filing_obj
 
@@ -407,6 +409,7 @@ class Filing:
             **name_obj.as_dict()
         }
         filing_obj.filing_type = 'changeOfName'
+        filing_obj.paper_only = False
 
         return filing_obj
 
@@ -438,6 +441,7 @@ class Filing:
                 'resolution': sr_info['notation'],
             }
             filing_obj.filing_type = 'specialResolution'
+            filing_obj.paper_only = True
 
             return filing_obj
 
@@ -471,6 +475,7 @@ class Filing:
                 'dissolutionDate': convert_to_json_date(vd_info['effective_dt'])
             }
             filing_obj.filing_type = 'voluntaryDissolution'
+            filing_obj.paper_only = True
 
             return filing_obj
 
@@ -524,7 +529,7 @@ class Filing:
                 'name': filing_type,
                 'certifiedBy': filing_event_info['certifiedBy'],
                 'email': filing_event_info['email'],
-                'availableOnPaperOnly': filing_obj.filing_type in ['voluntaryDissolution', 'specialResolution'],
+                'availableOnPaperOnly': filing_obj.paper_only,
                 'colinId': filing_obj.body['eventId']
             }
             filing_obj.business = business
