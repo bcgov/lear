@@ -20,7 +20,7 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Business
 
-from ..utils import get_date, get_str
+from ..utils import get_str
 
 
 def validate(business: Business, con: Dict) -> Error:
@@ -35,11 +35,6 @@ def validate(business: Business, con: Dict) -> Error:
         msg.append({'error': _('Resolution must be provided.'),
                     'path': resolution_path})
 
-    resolution_date_path = '/filing/specialResolution/meetingDate'
-    resolution_date = get_date(con, resolution_date_path)
-    if not resolution_date:
-        msg.append({'error': _('Resolution date must be provided.'),
-                    'path': resolution_date_path})
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None

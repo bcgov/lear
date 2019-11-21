@@ -369,10 +369,10 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     elif filing.transaction_id:
         filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
 
-    elif filing.payment_completion_date:
+    elif filing.payment_completion_date or filing.colin_event_id:
         filing._status = Filing.Status.PAID.value  # pylint: disable=protected-access
 
-    elif filing.payment_token or filing.colin_event_id:
+    elif filing.payment_token:
         filing._status = Filing.Status.PENDING.value  # pylint: disable=protected-access
 
     else:

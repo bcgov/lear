@@ -21,6 +21,8 @@ def convert_to_json_date(thedate):
     :param thedate: datetime object
     :return: string
     """
+    if not thedate:
+        return None
     try:
         return thedate.strftime('%Y-%m-%d')
     except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
@@ -34,6 +36,8 @@ def convert_to_json_datetime(thedate):
     :param thedate: datetime object
     :return: string
     """
+    if not thedate:
+        return None
     try:
         return thedate.strftime('%Y-%m-%dT%H:%M:%S-00:00')
     except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
