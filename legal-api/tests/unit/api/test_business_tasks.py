@@ -68,13 +68,13 @@ AR_FILING_PREVIOUS_YEAR = {
 
 
 def test_get_tasks_no_filings(session, client):
-    """Assert that to-do for the current year is returned when there are no filings."""
+    """Assert that to-do for the year after incorporation is returned when there are no filings."""
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_business(identifier, founding_date='2017-02-01 00:00:00-00')  # incorporation in 2017
 
     rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
     assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json.get('tasks')) == 1  # To-do for the current year
+    assert 2 == len(rv.json.get('tasks'))  # To-do are 2018, 2019
 
 
 def test_bcorps_get_tasks_no_filings(session, client):
