@@ -34,7 +34,7 @@ def validate(business: Business, cod: Dict) -> Error:
 
     for idx, director in enumerate(directors):
         for address_type in Address.JSON_ADDRESS_TYPES:
-            if address_type in director: 
+            if address_type in director:
                 try:
                     pycountry.countries.search_fuzzy(
                         get_str(director, f'/{address_type}/addressCountry')
