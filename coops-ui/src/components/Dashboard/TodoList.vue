@@ -119,7 +119,7 @@
 
               <v-btn v-else-if="!isCompleted(item)"
                 color="primary"
-                :disabled="!item.enabled"
+                :disabled="!item.enabled || coaPending"
                 @click.native.stop="doFileNow(item)"
               >
                 File Now
@@ -193,7 +193,8 @@ export default {
   },
 
   props: {
-    inProcessFiling: null
+    inProcessFiling: null,
+    coaPending: null
   },
 
   computed: {

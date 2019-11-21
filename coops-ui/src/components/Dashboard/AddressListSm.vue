@@ -1,15 +1,17 @@
 <template>
   <v-expansion-panels accordion multiple :value=[0]>
     <!-- Registered Office -->
-    <v-expansion-panel class="align-items-top address-panel" id="registered-office-panel">
+    <v-expansion-panel
+      class="align-items-top address-panel"
+      :class="{ 'address-overlay': coaPending }"
+      id="registered-office-panel">
       <v-expansion-panel-header class="panel-header-btn">
         <div class="list-item__title">Registered Office</div>
       </v-expansion-panel-header>
       <v-expansion-panel-content class="panel-wrapper pt-0 pb-0">
         <v-list class="pt-0 pb-0" v-if="registeredAddress">
-
-          <v-list-item v-if="registeredAddress.deliveryAddress">
-            <v-list-item-icon class="address-icon mr-0 mt-0">
+          <v-list-item v-if="registeredAddress.deliveryAddress" :class="{ 'address-overlay': coaPending }">
+          <v-list-item-icon class="address-icon mr-0 mt-0">
               <v-icon color="primary">mdi-truck</v-icon>
             </v-list-item-icon>
             <v-list-item-content>
@@ -29,7 +31,7 @@
             </v-list-item-content>
           </v-list-item>
 
-          <v-list-item v-if="registeredAddress.mailingAddress">
+          <v-list-item v-if="registeredAddress.mailingAddress" :class="{ 'address-overlay': coaPending }">
             <v-list-item-icon class="address-icon mr-0">
               <v-icon color="primary">mdi-email-outline</v-icon>
             </v-list-item-icon>
@@ -60,6 +62,7 @@
     <!--Records Office-->
     <v-expansion-panel
       class="align-items-top address-panel"
+      :class="{ 'address-overlay': coaPending }"
       v-if="entityFilter(EntityTypes.BCorp)"
     >
       <v-expansion-panel-header class="panel-header-btn" id="record-office-panel">
@@ -68,7 +71,7 @@
       <v-expansion-panel-content class="panel-wrapper">
         <v-list class="pt-0 pb-0" v-if="recordsAddress">
 
-          <v-list-item v-if="recordsAddress.deliveryAddress">
+          <v-list-item v-if="recordsAddress.deliveryAddress" :class="{ 'address-overlay': coaPending }">
             <v-list-item-icon class="address-icon mr-0">
               <v-icon color="primary">mdi-truck</v-icon>
             </v-list-item-icon>
@@ -88,7 +91,7 @@
             </v-list-item-content>
           </v-list-item>
 
-          <v-list-item v-if="recordsAddress.mailingAddress">
+          <v-list-item v-if="recordsAddress.mailingAddress" :class="{ 'address-overlay': coaPending }">
             <v-list-item-icon class="address-icon mr-0">
               <v-icon color="primary">mdi-email-outline</v-icon>
             </v-list-item-icon>
@@ -119,7 +122,7 @@
 
 <script lang="ts">
 // Libraries
-import { Component, Mixins } from 'vue-property-decorator'
+import { Component, Mixins, Prop } from 'vue-property-decorator'
 import { mapState } from 'vuex'
 
 // Mixins
@@ -140,6 +143,10 @@ export default class AddressListSm extends Mixins(EntityFilterMixin, CommonMixin
   // Base Address properties
   private registeredAddress: BaseAddressObjIF
   private recordsAddress: BaseAddressObjIF
+
+  // Pending Prop
+  @Prop({ default: false })
+  private coaPending: boolean
 
   // EntityTypes Enum
   readonly EntityTypes: {} = EntityTypes
@@ -193,5 +200,9 @@ $icon-width: 2.75rem;
 
 .pre-wrap {
   white-space: pre-wrap;
+}
+
+.address-overlay {
+  background-color: rgba(255, 249, 196, .6)!important;
 }
 </style>
