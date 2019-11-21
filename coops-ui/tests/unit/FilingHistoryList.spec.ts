@@ -128,7 +128,106 @@ describe('FilingHistoryList', () => {
 
     // init store
     store.state.entityIncNo = 'CP0001191'
-    store.state.filings = sampleFilings
+    store.state.filings = [
+      {
+        'filing': {
+          'header': {
+            'name': 'annualReport',
+            'date': '2019-07-02',
+            'effectiveDate': 'Wed, 20 Nov 2019 22:17:54 GMT',
+            'paymentToken': 123,
+            'certifiedBy': 'Full Name 1',
+            'filingId': 321,
+            'status': 'COMPLETED',
+            'availableOnPaperOnly': false
+          },
+          'annualReport': {
+            'annualGeneralMeetingDate': '2019-12-31'
+          }
+        }
+      },
+      {
+        'filing': {
+          'header': {
+            'name': 'changeOfDirectors',
+            'date': '2019-04-04',
+            'effectiveDate': 'Wed, 20 Nov 2019 22:17:54 GMT',
+            'paymentToken': 456,
+            'certifiedBy': 'Full Name 2',
+            'filingId': 654,
+            'status': 'COMPLETED',
+            'availableOnPaperOnly': false
+          },
+          'changeOfDirectors': {
+          }
+        }
+      },
+      {
+        'filing': {
+          'header': {
+            'name': 'changeOfAddress',
+            'date': '2019-05-06',
+            'effectiveDate': 'Wed, 20 Nov 2019 22:17:54 GMT',
+            'paymentToken': 789,
+            'certifiedBy': 'Full Name 3',
+            'filingId': 987,
+            'status': 'COMPLETED',
+            'availableOnPaperOnly': false
+          },
+          'changeOfAddress': {
+          }
+        }
+      },
+      {
+        'filing': {
+          'header': {
+            'name': 'annualReport',
+            'date': '2019-03-02',
+            'effectiveDate': 'Wed, 20 Nov 2019 22:17:54 GMT',
+            'paymentToken': 100,
+            'certifiedBy': 'Full Name 1',
+            'filingId': 3212,
+            'status': 'COMPLETED',
+            'availableOnPaperOnly': true
+          },
+          'annualReport': {
+            'annualGeneralMeetingDate': '2019-01-01'
+          }
+        }
+      },
+      {
+        'filing': {
+          'header': {
+            'name': 'changeOfDirectors',
+            'date': '2019-02-04',
+            'effectiveDate': 'Wed, 20 Nov 2019 22:17:54 GMT',
+            'paymentToken': 4561,
+            'certifiedBy': 'Full Name 2',
+            'filingId': 6541,
+            'status': 'COMPLETED',
+            'availableOnPaperOnly': true
+          },
+          'changeOfDirectors': {
+          }
+        }
+      },
+      {
+        'filing': {
+          'header': {
+            'name': 'changeOfAddress',
+            'date': '2019-01-06',
+            'effectiveDate': 'Wed, 20 Nov 2019 22:17:54 GMT',
+            'paymentToken': 7891,
+            'certifiedBy': 'Full Name 3',
+            'filingId': 9871,
+            'status': 'COMPLETED',
+            'availableOnPaperOnly': true
+          },
+          'changeOfAddress': {
+          }
+        }
+      }
+    ]
 
     const wrapper = shallowMount(FilingHistoryList, { store, mocks: { $route }, vuetify })
     const vm = wrapper.vm as any
@@ -149,7 +248,106 @@ describe('FilingHistoryList', () => {
 
     // init store
     store.state.entityIncNo = 'CP0001191'
-    store.state.filings = sampleFilings
+    store.state.filings = [
+      {
+        'filing': {
+          'header': {
+            'name': 'annualReport',
+            'date': '2019-06-02',
+            'effectiveDate': 'Wed, 20 Nov 2019 22:17:54 GMT',
+            'paymentToken': 123,
+            'certifiedBy': 'Full Name 1',
+            'filingId': 321,
+            'status': 'COMPLETED',
+            'availableOnPaperOnly': false
+          },
+          'annualReport': {
+            'annualGeneralMeetingDate': '2019-12-31'
+          }
+        }
+      },
+      {
+        'filing': {
+          'header': {
+            'name': 'changeOfDirectors',
+            'date': '2019-03-09',
+            'effectiveDate': 'Wed, 20 Nov 2019 22:17:54 GMT',
+            'paymentToken': 456,
+            'certifiedBy': 'Full Name 2',
+            'filingId': 654,
+            'status': 'COMPLETED',
+            'availableOnPaperOnly': false
+          },
+          'changeOfDirectors': {
+          }
+        }
+      },
+      {
+        'filing': {
+          'header': {
+            'name': 'changeOfAddress',
+            'date': '2019-05-06',
+            'effectiveDate': 'Wed, 20 Nov 2019 22:17:54 GMT',
+            'paymentToken': 789,
+            'certifiedBy': 'Full Name 3',
+            'filingId': 987,
+            'status': 'COMPLETED',
+            'availableOnPaperOnly': false
+          },
+          'changeOfAddress': {
+          }
+        }
+      },
+      {
+        'filing': {
+          'header': {
+            'name': 'annualReport',
+            'date': '2019-03-02',
+            'effectiveDate': 'Wed, 20 Nov 2019 22:17:54 GMT',
+            'paymentToken': 100,
+            'certifiedBy': 'Full Name 1',
+            'filingId': 3212,
+            'status': 'COMPLETED',
+            'availableOnPaperOnly': true
+          },
+          'annualReport': {
+            'annualGeneralMeetingDate': '2019-01-01'
+          }
+        }
+      },
+      {
+        'filing': {
+          'header': {
+            'name': 'changeOfDirectors',
+            'date': '2019-02-04',
+            'effectiveDate': 'Wed, 20 Nov 2019 22:17:54 GMT',
+            'paymentToken': 4561,
+            'certifiedBy': 'Full Name 2',
+            'filingId': 6541,
+            'status': 'COMPLETED',
+            'availableOnPaperOnly': true
+          },
+          'changeOfDirectors': {
+          }
+        }
+      },
+      {
+        'filing': {
+          'header': {
+            'name': 'changeOfAddress',
+            'date': '2019-01-06',
+            'effectiveDate': 'Wed, 20 Nov 2019 22:17:54 GMT',
+            'paymentToken': 7891,
+            'certifiedBy': 'Full Name 3',
+            'filingId': 9871,
+            'status': 'COMPLETED',
+            'availableOnPaperOnly': true
+          },
+          'changeOfAddress': {
+          }
+        }
+      }
+    ]
 
     const wrapper = shallowMount(FilingHistoryList, { store, mocks: { $route }, vuetify })
     const vm = wrapper.vm as any
