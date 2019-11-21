@@ -358,7 +358,5 @@ export default {
 </script>
 
 <style lang="scss">
-@import "@/assets/styles/base.scss";
-@import "@/assets/styles/layout.scss";
-@import "@/assets/styles/overrides.scss";
+// @import '@/assets/styles/theme.scss';
 </style>

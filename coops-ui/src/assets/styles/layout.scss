@@ -1,6 +1,3 @@
-// Layout Variables
-$app-header-height: 70px;
-
 .app-container {
   display: flex;
   flex-flow: column nowrap;
@@ -35,7 +32,7 @@ $app-header-height: 70px;
 }
 
 .container {
-  max-width: 1200px; // Using PX dimensions here to jive with vuetify (RE: breakpoints)
+  max-width: 1224px; // should match sbc-common-components, auth-web, etc
 }
 
 // Page Layout

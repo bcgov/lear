@@ -269,7 +269,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
+// @import '@/assets/styles/theme.scss';
 
 section header {
   display: flex;
@@ -283,16 +283,16 @@ section header {
 }
 
 .dashboard-content {
-  display: flex
+  display: flex;
 }
 
 .dashboard-content__main {
   flex: 1 1 auto;
-  z-index: 1
+  z-index: 1;
 }
 
 .dashboard-content__aside {
-  margin-left: 2rem
+  margin-left: 2rem;
 }
 
 .pending-tooltip {

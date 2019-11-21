@@ -76,7 +76,7 @@ export default class StaffPayment extends Vue {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
+// @import '@/assets/styles/theme.scss';
 
 #AR-step-5-container {
   margin-top: 1rem;
@@ -109,6 +109,6 @@ export default class StaffPayment extends Vue {
 }
 
 .value.routingslipnumber {
-  min-width: 35rem
+  min-width: 35rem;
 }
 </style>

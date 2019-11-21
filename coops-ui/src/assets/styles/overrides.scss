@@ -1,4 +1,5 @@
 // Vuetify Overrides
+@import "theme.scss";
 
 // Buttons
 .v-btn {
@@ -53,16 +54,4 @@
   .v-expansion-panel-header__icon{
     display: none;
   }
-}
-
-// Hides an element to all devices except screen readers
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  border: 0;
 }

@@ -4,29 +4,29 @@
   font-family: 'BCSans';
   font-style: normal;
   font-weight: 400;
-  src: url('assets/fonts/BCSans/BCSans-Regular.woff2') format('woff2'), /* Optimized for very modern browsers */
-       url('assets/fonts/BCSans/BCSans-Regular.woff') format('woff'); /* Modern Browsers */
+  src: url('../fonts/BCSans/BCSans-Regular.woff2') format('woff2'), /* Optimized for very modern browsers */
+       url('../fonts/BCSans/BCSans-Regular.woff') format('woff'); /* Modern Browsers */
 }
 @font-face {
   font-family: 'BCSans';
   font-style: italic;
   font-weight: 400;
-  src: url('assets/fonts/BCSans/BCSans-Italic.woff2') format('woff2'), /* Optimized for very modern browsers */
-       url('assets/fonts/BCSans/BCSans-Italic.woff') format('woff'); /* Modern Browsers */
+  src: url('../fonts/BCSans/BCSans-Italic.woff2') format('woff2'), /* Optimized for very modern browsers */
+       url('../fonts/BCSans/BCSans-Italic.woff') format('woff'); /* Modern Browsers */
 }
 @font-face {
   font-family: 'BCSans';
   font-style: normal;
   font-weight: 700; 
-  src: url('assets/fonts/BCSans/BCSans-Bold.woff2') format('woff2'), /* Modern Browsers */
-       url('assets/fonts/BCSans/BCSans-Bold.woff') format('woff'); /* Optimized for very modern browsers */
+  src: url('../fonts/BCSans/BCSans-Bold.woff2') format('woff2'), /* Modern Browsers */
+       url('../fonts/BCSans/BCSans-Bold.woff') format('woff'); /* Optimized for very modern browsers */
 }
 @font-face {
   font-family: 'BCSans';
   font-style: italic;
   font-weight: 700; 
-  src: url('assets/fonts/BCSans/BCSans-BoldItalic.woff2') format('woff2'), /* Modern Browsers */
-       url('assets/fonts/BCSans/BCSans-BoldItalic.woff') format('woff'); /* Optimized for very modern browsers */
+  src: url('../fonts/BCSans/BCSans-BoldItalic.woff2') format('woff2'), /* Modern Browsers */
+       url('../fonts/BCSans/BCSans-BoldItalic.woff') format('woff'); /* Optimized for very modern browsers */
 }
 
 html,
@@ -288,6 +288,22 @@ ul.list {
   font-weight: 500;
 }
 
-.inline-div{
-  display: inline
+.inline-div {
+  display: inline;
+}
+
+.genErr {
+  font-size: 0.9rem;
+}
+
+// Hides an element to all devices except screen readers
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }

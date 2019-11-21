@@ -25,7 +25,7 @@ export default class SummaryStaffPayment extends Vue {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
+// @import '@/assets/styles/theme.scss';
 
 #staff-payment-container {
   margin-top: 1rem;
@@ -57,6 +57,6 @@ export default class SummaryStaffPayment extends Vue {
 }
 
 .value.routingslipnumber {
-  min-width: 35rem
+  min-width: 35rem;
 }
 </style>

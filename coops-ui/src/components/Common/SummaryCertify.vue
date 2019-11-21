@@ -37,7 +37,7 @@ export default class SummaryCertify extends Vue {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
+// @import '@/assets/styles/theme.scss';
 
 #certify-container {
   margin-top: 1rem;

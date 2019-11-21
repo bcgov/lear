@@ -4,23 +4,28 @@ import '@mdi/font/css/materialdesignicons.min.css' // ensure you are using css-l
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
-import App from '@/App.vue'
 import Vuelidate from 'vuelidate'
 import Vue2Filters from 'vue2-filters'
 import Affix from 'vue-affix'
+import configHelper from '@/utils/config-helper'
 import router from '@/router'
 import store from '@/store/store'
-import configHelper from '@/utils/config-helper'
-import '@/registerServiceWorker'
 import { withFlagProvider } from 'ld-vue'
+import '@/registerServiceWorker'
+import '@/assets/styles/base.scss'
+import '@/assets/styles/layout.scss'
+import '@/assets/styles/overrides.scss'
+import App from '@/App.vue'
 
-const opts = { iconfont: 'mdi' }
+// get rid of "You are running Vue in development mod" console message
+Vue.config.productionTip = false
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 Vue.use(Vue2Filters)
 Vue.use(Affix)
-Vue.config.productionTip = false
+
+const vuetify = new Vuetify({ iconfont: 'mdi' })
 
 /**
  * first fetch config from server, then load Vue
@@ -36,7 +41,7 @@ configHelper.fetchConfig()
       return // do not execute remaining code
     }
     new Vue({
-      vuetify: new Vuetify(opts),
+      vuetify,
       router,
       store,
       mixins: [withFlagProvider({ clientSideId: window['ldClientId'] })],

@@ -301,12 +301,12 @@ ul {
   list-style-type: none;
 }
 
-.meta-container{
+.meta-container {
   display: flex;
   flex-flow: column nowrap;
   position: relative;
 
-  > label:first-child{
+  > label:first-child {
     font-weight: 700;
   }
 
@@ -340,6 +340,7 @@ ul {
   align-items: stretch;
   margin-right: -0.5rem;
   margin-left: -0.5rem;
+
   .item {
     flex: 1 1 auto;
     flex-basis: 0;
@@ -387,7 +388,8 @@ ul {
 
 .new-director .meta-container,
 .meta-container.new-director {
-  flex-flow column nowrap
+  flex-flow: column nowrap;
+
   > label:first-child {
     margin-bottom: 1.5rem;
   }

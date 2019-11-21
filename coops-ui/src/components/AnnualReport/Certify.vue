@@ -94,7 +94,7 @@ export default class Certify extends Vue {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
+// @import '@/assets/styles/theme.scss';
 
 #AR-step-4-container {
   margin-top: 1rem;
@@ -128,7 +128,7 @@ export default class Certify extends Vue {
 }
 
 .value.certifiedby {
-  min-width: 35rem
+  min-width: 35rem;
 }
 
 .certify-clause {
@@ -140,6 +140,6 @@ export default class Certify extends Vue {
 .certify-stmt {
   display:inline;
   font-size: 0.875rem;
-  color: black
+  color: black;
 }
 </style>
