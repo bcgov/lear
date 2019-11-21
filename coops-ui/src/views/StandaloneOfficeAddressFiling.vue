@@ -61,7 +61,7 @@
               :certifiedBy.sync="certifiedBy"
               :entityDisplayName="entityTypeToDisplay()"
               :sectionString="entityLegalSection()"
-              :sectionCode="this.getSectionCode()"
+              :sectionCode="getCOASectionCode()"
               @valid="certifyFormValid=$event"
             />
           </section>
@@ -572,18 +572,7 @@ export default {
           })
         return hasPendingItems
       }
-    },
-
-    getSectionCode () :string {
-      switch (this.entityType) {
-        case EntityTypes.Coop:
-          return '126'
-        case EntityTypes.BCorp:
-          return '51'
-      }
-      return ''
     }
-
   },
 
   watch: {

@@ -35,9 +35,39 @@ export default class EntityFilterMixin extends Vue {
   entityLegalSection (): string {
     switch (this.entityType) {
       case 'CP':
-        return 'Cooperative Association act'
+        return 'Cooperative Association Act'
       case 'BC':
-        return 'Benefits Corporations act'
+        return 'Business Corporations Act'
+    }
+    return ''
+  }
+
+  getCODSectionCode () :string {
+    switch (this.entityType) {
+      case 'CP':
+        return '78'
+      case 'BC':
+        return '127'
+    }
+    return ''
+  }
+
+  getARSectionCode () :string {
+    switch (this.entityType) {
+      case 'CP':
+        return '126'
+      case 'BC':
+        return '51'
+    }
+    return ''
+  }
+
+  getCOASectionCode () :string {
+    switch (this.entityType) {
+      case 'CP':
+        return '126'
+      case 'BC':
+        return '51'
     }
     return ''
   }
