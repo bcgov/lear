@@ -1039,6 +1039,7 @@ COPY public.addresses (id, address_type, street, street_additional, city, region
 1267	mailing	549 11TH AVENUE	\N	VICTORIA	BC	CA	V1N 1J6	\N	150	28
 1268	delivery	549 3RD STREET	\N	CASTLEGAR	BC	CA	V1N 1J6	\N	150	28
 1269	delivery	549 3RD STREET	\N	CASTLEGAR	BC	CA	V1Z 1X6	\N	\N	\N
+1270	delivery	123132	DERBY RD	VICTORIA	BC	CN	V8P1S8		\N	\N
 \.
 
 
@@ -2345,6 +2346,7 @@ COPY public.addresses_version (id, address_type, street, street_additional, city
 1256	delivery	32 - 12211 CAMBIE ROAD		RICHMOND	BC	CA	V6V 2H8		149	225	\N	1	25
 1234	mailing	1483 LAMEY'S MILL ROAD		VANCOUVER	BC	CA	V6H 3Y7		147	227	\N	1	26
 1235	delivery	1483 LAMEY'S MILL ROAD		VANCOUVER	BC	CA	V6H 3Y7		147	228	\N	1	26
+1270	delivery	123132	DERBY RD	VICTORIA	BC	CN	V8P1S8		\N	230	\N	0	\N
 \.
 
 
@@ -2929,6 +2931,7 @@ COPY public.directors (id, first_name, middle_initial, last_name, title, appoint
 962	GALYNA		MADORSKY		2019-04-04 00:00:00+00	\N	149	1263	\N
 963	ALISON		AZZANO		2019-04-04 00:00:00+00	\N	149	1264	\N
 964	DUMMY	\N	DIRECTOR	\N	2019-11-19 18:14:56.55386+00	\N	150	1269	1269
+965	CAMERON		BOWLER		2019-11-19 00:00:00+00	\N	116	1270	\N
 \.
 
 
@@ -3890,6 +3893,7 @@ COPY public.directors_version (id, first_name, middle_initial, last_name, title,
 961	LIUBOV		ZAIKOVA		2019-04-04 00:00:00+00	\N	149	1262	153	\N	0	\N
 962	GALYNA		MADORSKY		2019-04-04 00:00:00+00	\N	149	1263	153	\N	0	\N
 963	ALISON		AZZANO		2019-04-04 00:00:00+00	\N	149	1264	153	\N	0	\N
+965	CAMERON		BOWLER		2019-11-19 00:00:00+00	\N	116	1270	230	\N	0	\N
 \.
 
 
@@ -3949,6 +3953,7 @@ COPY public.filings (id, filing_date, filing_type, filing_json, payment_id, tran
 150	2019-08-21 16:16:09.288756+00	lear_epoch	{"filing": {"header": {"name": "lear_epoch"}}}	\N	151	\N	\N	\N	DRAFT	\N	\N	\N	\N
 151	2019-08-21 16:16:16.538741+00	lear_epoch	{"filing": {"header": {"name": "lear_epoch"}}}	\N	152	\N	\N	\N	DRAFT	\N	\N	\N	\N
 152	2019-08-21 16:16:22.054738+00	lear_epoch	{"filing": {"header": {"name": "lear_epoch"}}}	\N	153	\N	\N	\N	DRAFT	\N	\N	\N	\N
+153	2019-11-20 22:17:54.867057+00	changeOfDirectors	{"filing": {"header": {"date": "2019-11-19", "name": "changeOfDirectors", "email": "no_one@never.get", "certifiedBy": "Cameron "}, "business": {"legalName": "MANANA PARK WATER CO-OPERATIVE", "identifier": "CP0001327", "foundingDate": "1985-01-22T00:00:00+00:00"}, "changeOfDirectors": {"directors": [{"id": 1, "actions": ["appointed"], "officer": {"lastName": "Bowler", "firstName": "Cameron", "middleInitial": ""}, "isFeeApplied": true, "cessationDate": null, "mailingAddress": {}, "appointmentDate": "2019-11-19", "deliveryAddress": {"postalCode": "V8P1S8", "addressCity": "VICTORIA", "addressRegion": "BC", "streetAddress": "123132", "addressCountry": "CN", "deliveryInstructions": "", "streetAddressAdditional": "DERBY RD"}, "isDirectorActionable": true}]}}}	938	230	116	3	\N	COMPLETED	\N	f	2019-11-20 22:50:14.371968+00	2019-11-20 22:17:54.909785+00
 \.
 
 
@@ -4262,6 +4267,8 @@ COPY public.transaction (issued_at, id, remote_addr) FROM stdin;
 2019-11-12 21:06:13.617135	226	\N
 2019-11-12 21:06:13.64501	227	\N
 2019-11-12 21:06:13.671918	228	\N
+2019-11-20 22:17:54.358867	229	\N
+2019-11-20 22:50:14.114944	230	\N
 \.
 
 
@@ -4272,6 +4279,7 @@ COPY public.transaction (issued_at, id, remote_addr) FROM stdin;
 COPY public.users (id, username, firstname, lastname, email, sub, iss, creation_date) FROM stdin;
 1	cp0000393	\N	\N	\N	4b23cde9-7904-490b-a931-19b0fd4503b8	https://sso.pathfinder.gov.bc.ca/auth/realms/fcf0kpqr	2019-08-20 22:09:33.364106+00
 2	cp0000976	\N	\N	\N	ec547860-06d5-4bea-819b-ec0e319f23de	https://sso.pathfinder.gov.bc.ca/auth/realms/fcf0kpqr	2019-08-20 22:30:06.624495+00
+3	cp0001327	\N	\N	\N	c3f4af11-a25e-46b1-8ba6-d8fd630ff475	https://sso-dev.pathfinder.gov.bc.ca/auth/realms/fcf0kpqr	2019-11-20 22:17:54.403372+00
 \.
 
 
@@ -4282,6 +4290,7 @@ COPY public.users (id, username, firstname, lastname, email, sub, iss, creation_
 COPY public.users_version (id, username, firstname, lastname, email, sub, iss, creation_date, transaction_id, end_transaction_id, operation_type) FROM stdin;
 1	cp0000393	\N	\N	\N	4b23cde9-7904-490b-a931-19b0fd4503b8	https://sso.pathfinder.gov.bc.ca/auth/realms/fcf0kpqr	2019-08-20 22:09:33.364106+00	98	\N	0
 2	cp0000976	\N	\N	\N	ec547860-06d5-4bea-819b-ec0e319f23de	https://sso.pathfinder.gov.bc.ca/auth/realms/fcf0kpqr	2019-08-20 22:30:06.624495+00	99	\N	0
+3	cp0001327	\N	\N	\N	c3f4af11-a25e-46b1-8ba6-d8fd630ff475	https://sso-dev.pathfinder.gov.bc.ca/auth/realms/fcf0kpqr	2019-11-20 22:17:54.403372+00	229	\N	0
 \.
 
 
@@ -4289,7 +4298,7 @@ COPY public.users_version (id, username, firstname, lastname, email, sub, iss, c
 -- Name: addresses_id_seq; Type: SEQUENCE SET; Schema: public; Owner: userG5G
 --
 
-SELECT pg_catalog.setval('public.addresses_id_seq', 1269, true);
+SELECT pg_catalog.setval('public.addresses_id_seq', 1270, true);
 
 
 --
@@ -4317,14 +4326,14 @@ SELECT pg_catalog.setval('public.comments_id_seq', 1, false);
 -- Name: directors_id_seq; Type: SEQUENCE SET; Schema: public; Owner: userG5G
 --
 
-SELECT pg_catalog.setval('public.directors_id_seq', 964, true);
+SELECT pg_catalog.setval('public.directors_id_seq', 965, true);
 
 
 --
 -- Name: filings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: userG5G
 --
 
-SELECT pg_catalog.setval('public.filings_id_seq', 152, true);
+SELECT pg_catalog.setval('public.filings_id_seq', 153, true);
 
 
 --
@@ -4338,14 +4347,14 @@ SELECT pg_catalog.setval('public.offices_id_seq', 28, true);
 -- Name: transaction_id_seq; Type: SEQUENCE SET; Schema: public; Owner: userG5G
 --
 
-SELECT pg_catalog.setval('public.transaction_id_seq', 228, true);
+SELECT pg_catalog.setval('public.transaction_id_seq', 230, true);
 
 
 --
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: userG5G
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 2, true);
+SELECT pg_catalog.setval('public.users_id_seq', 3, true);
 
 
 --
@@ -4864,3 +4873,4 @@ ALTER TABLE ONLY public.offices
 --
 -- PostgreSQL database dump complete
 --
+
