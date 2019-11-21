@@ -25,6 +25,21 @@ def process(business: Business, filing: Dict):
     new_directors = filing['changeOfDirectors'].get('directors')
 
     for new_director in new_directors:
+        if 'colinId' in filing['header']:
+            director_found = False
+            current_new_director_name = \
+                new_director['officer'].get('firstName') + new_director['officer'].get('middleInitial', '') + \
+                new_director['officer'].get('lastName')
+            for director in business.directors:
+                existing_director_name = director.first_name + director.middle_initial + director.last_name
+                if existing_director_name.upper() == current_new_director_name.upper():
+                    director_found = True
+                    if new_director.get('cessationDate'):
+                        new_director['actions'] = ['ceased']
+                    break
+            if not director_found:
+                new_director['actions'] = ['appointed']
+
         if 'appointed' in new_director['actions']:
             # create address
             address = create_address(new_director['deliveryAddress'], Address.DELIVERY)
