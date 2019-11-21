@@ -172,6 +172,9 @@ class Report:  # pylint: disable=too-few-public-methods
         # Get the effective date - TODO 'effective date' doesn't exist yet but will in future; for now use filing date
         effective_date = self._filing.filing_date.replace(tzinfo=timezone.utc).astimezone(tz=None)
 
+        # Get Colin Event Id
+        filing['colin_event_id'] = self._filing.colin_event_id
+
         # TODO: best: custom date/time filters in the report-api. Otherwise: a subclass for filing-specific data.
         if self._filing.filing_type == 'annualReport':
             agm_date = datetime.fromisoformat(filing['annualReport']['annualGeneralMeetingDate'])

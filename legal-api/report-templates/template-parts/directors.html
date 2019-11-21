@@ -1,5 +1,7 @@
+{# only show Appointed and Ceased directors if filing did not come from Colin #}
+{% if colin_event_id is None %}
 
-{% if listOfDirectors is defined %}
+  {% if listOfDirectors is defined %}
 
     {# APPOINTED #}
 
@@ -57,13 +59,15 @@
       None.
 {% endfor %}
 
+{% endif %}
+
     {# ALL CURRENT #}
 
         <div class="section-title">
           ALL DIRECTORS AS OF {{ effective_date.upper() }}
         </div>
 {% for director in listOfDirectors.directors %}
-{% if not director.cessationDate%}
+{% if not director.cessationDate %}
         <div class="section-data no-page-break">
           <div class="title">
             {{ director.officer.lastName }},
