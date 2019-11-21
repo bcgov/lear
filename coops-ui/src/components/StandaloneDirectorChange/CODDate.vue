@@ -22,7 +22,7 @@
               hint="YYYY/MM/DD"
               append-icon="mdi-calendar"
               v-on="on"
-              filled>
+              filled data-test-id="cod-date-text">
             </v-text-field>
           </template>
           <v-date-picker
@@ -31,11 +31,11 @@
             :min=minDate
             :max=maxDate
             no-title
-            @input="menu = true">
+            @input="menu = true" data-test-id="cod-date-picker">
           </v-date-picker>
         </v-menu>
 
-        <div class="validationErrorInfo" v-if="$v.dateFormatted.isNotNull">
+        <div class="validationErrorInfo" v-if="$v.dateFormatted.isNotNull" data-test-id="cod-validation-error">
           <span v-if="!$v.dateFormatted.isValidFormat">
             Date must be in format YYYY/MM/DD.
           </span>

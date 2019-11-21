@@ -647,7 +647,6 @@ export default {
 
             this.certifiedBy = filing.header.certifiedBy
             this.routingSlipNumber = filing.header.routingSlipNumber
-            console.log(filing.header.effectiveDate.slice(0, 10))
             this.initialCODDate = filing.header.effectiveDate.slice(0, 10)
 
             const changeOfDirectors = filing.changeOfDirectors

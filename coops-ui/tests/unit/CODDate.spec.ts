@@ -101,13 +101,13 @@ describe('CODDate', () => {
     // verify local variables
     expect(vm.$data.date).toBe('2019-05-11')
 
-    // verify emitted AGM Dates
+    // verify emitted COD Dates
     // first emit is from init
     // second emit is from text field update
-    const agmDates = wrapper.emitted('codDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-05-10'])
-    expect(agmDates[1]).toEqual(['2019-05-11'])
+    const codDates = wrapper.emitted('codDate')
+    expect(codDates.length).toBe(2)
+    expect(codDates[0]).toEqual(['2019-05-10'])
+    expect(codDates[1]).toEqual(['2019-05-11'])
 
     // verify emitted Valids
     // first emit is from init
