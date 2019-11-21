@@ -19,7 +19,7 @@ import pycountry
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import Business
+from legal_api.models import Business, Address
 
 from ..utils import get_str
 
@@ -33,13 +33,15 @@ def validate(business: Business, cod: Dict) -> Error:
     directors = cod['filing']['changeOfDirectors']['directors']
 
     for idx, director in enumerate(directors):
-        try:
-            pycountry.countries.search_fuzzy(
-                get_str(director, '/deliveryAddress/addressCountry')
-            )[0].alpha_2
-        except LookupError:
-            msg.append({'error': _('Address Country must resolve to a valid ISO-2 country.'),
-                        'path': f'/filing/changeOfDirectors/directors/{idx}/deliveryAddress/addressCountry'})
+        for address_type in Address.JSON_ADDRESS_TYPES:
+            if address_type in director: 
+                try:
+                    pycountry.countries.search_fuzzy(
+                        get_str(director, f'/{address_type}/addressCountry')
+                    )[0].alpha_2
+                except LookupError:
+                    msg.append({'error': _('Address Country must resolve to a valid ISO-2 country.'),
+                                'path': f'/filing/changeOfDirectors/directors/{idx}/{address_type}/addressCountry'})
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
