@@ -2,6 +2,11 @@
   <div id="dashboard">
     <v-container id="dashboardContainer" class="view-container">
       <article id="dashboardArticle">
+        <CoaWarningDialog
+          :dialog="coaWarning"
+          @toggle="toggleCoaWarning"
+          @proceed="goToStandaloneAddresses"
+        />
         <header>
           <h1>Dashboard</h1>
         </header>
@@ -63,7 +68,7 @@
                   color="primary"
                   id="btn-standalone-addresses"
                   :disabled="hasBlockerFiling"
-                  @click.native.stop="goToStandaloneAddresses()"
+                  @click.native.stop="proceedCoa()"
                 >
                   <v-icon small>mdi-pencil</v-icon>
                   <span>Change</span>
@@ -113,19 +118,26 @@ import FilingHistoryList from '@/components/Dashboard/FilingHistoryList.vue'
 import AddressListSm from '@/components/Dashboard/AddressListSm.vue'
 import DirectorListSm from '@/components/Dashboard/DirectorListSm.vue'
 
+// Mixins
+import { EntityFilterMixin } from '@/mixins'
+
+// Dialogs
+import CoaWarningDialog from '@/components/Dashboard/CoaWarningDialog'
+
 // Enums
-import { FilingStatus } from '@/enums'
+import { EntityTypes, FilingStatus } from '@/enums'
 
 export default {
   name: 'Dashboard',
 
-  mixins: [withFlags],
+  mixins: [withFlags, EntityFilterMixin],
 
   components: {
     TodoList,
     FilingHistoryList,
     AddressListSm,
-    DirectorListSm
+    DirectorListSm,
+    CoaWarningDialog
   },
 
   data () {
@@ -140,6 +152,8 @@ export default {
       inProcessFiling: null,
       coaPending: false,
       effectiveDate: null,
+      coaWarning: false,
+      coaProceed: false,
       FilingStatus
     }
   },
@@ -236,6 +250,20 @@ export default {
           this.hasBlockerFiling = true
         }
       })
+    },
+    /**
+     * Toggle the Change of address warning dialog.
+     */
+    toggleCoaWarning () {
+      this.coaWarning = !this.coaWarning
+    },
+    /**
+     * Display COA warning if BCORP else proceed to COA.
+     */
+    proceedCoa () {
+      this.entityFilter(EntityTypes.BCorp)
+        ? this.coaWarning = true
+        : this.goToStandaloneAddresses()
     }
   },
 

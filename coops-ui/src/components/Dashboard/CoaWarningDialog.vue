@@ -1,0 +1,42 @@
+<template>
+  <v-dialog v-model="dialog" width="45rem" persistent>
+    <v-card>
+      <v-card-title>Address Change Effective 12:01 AM</v-card-title>
+      <v-card-text>
+        <p class="genErr">Address changes take effect at 12:01 AM (PST). No other filings can be performed until an
+        Address Change has taken effect.</p>
+        <p class="genErr">If you need to perform other filings today, file them prior to your Address Change filing.</p>
+      </v-card-text>
+      <v-divider class="my-0"></v-divider>
+      <v-card-actions>
+        <v-btn color="primary" text @click="toggle()">Return to dashboard</v-btn>
+      <v-spacer></v-spacer>
+        <v-btn color="primary" text @click="proceed()">Continue to Change of Address</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+</template>
+
+<script lang="ts">
+import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
+
+@Component({})
+export default class CoaWarningDialog extends Vue {
+  // Prop to display the dialog.
+  @Prop() private dialog: boolean
+
+  // Pass click event to parent.
+  @Emit() private toggle () {}
+
+  // Pass click event to parent.
+  @Emit() private proceed () {}
+}
+</script>
+
+<style lang="scss" scoped>
+  @import '@/assets/styles/theme.scss';
+
+  .genErr{
+    font-size: 0.9rem;
+  }
+</style>
