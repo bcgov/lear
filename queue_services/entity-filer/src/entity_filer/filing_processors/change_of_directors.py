@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of directors."""
+from datetime import datetime
 from typing import Dict
 
 from entity_queue_common.service_utils import QueueException, logger
@@ -23,6 +24,7 @@ from entity_filer.filing_processors import create_address, update_director
 def process(business: Business, filing: Dict):
     """Render the change_of_directors onto the business model objects."""
     new_directors = filing['changeOfDirectors'].get('directors')
+    new_director_names = []
 
     for new_director in new_directors:
         if filing.get('colinId'):
@@ -30,6 +32,8 @@ def process(business: Business, filing: Dict):
             current_new_director_name = \
                 new_director['officer'].get('firstName') + new_director['officer'].get('middleInitial', '') + \
                 new_director['officer'].get('lastName')
+            new_director_names.append(current_new_director_name.upper())
+
             for director in business.directors:
                 existing_director_name = director.first_name + director.middle_initial + director.last_name
                 if existing_director_name.upper() == current_new_director_name.upper():
@@ -77,3 +81,10 @@ def process(business: Business, filing: Dict):
                 if director_name.upper() == new_director_name.upper():
                     update_director(director, new_director)
                     break
+
+    if filing.get('colinId'):
+        for director in business.directors:
+            # get name of director in database for comparison *
+            director_name = director.first_name + director.middle_initial + director.last_name
+            if director_name.upper() not in new_director_names:
+                director.cessation_date = datetime.now
