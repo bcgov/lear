@@ -11,7 +11,7 @@
       <v-card-actions>
         <v-btn color="primary" text @click="toggle()">Return to dashboard</v-btn>
       <v-spacer></v-spacer>
-        <v-btn color="primary" text @click="proceed()">Continue to Change of Address</v-btn>
+        <v-btn id="btn-proceed-coa" color="primary" text @click="proceed()">Continue to Change of Address</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

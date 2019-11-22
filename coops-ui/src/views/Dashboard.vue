@@ -153,7 +153,6 @@ export default {
       coaPending: false,
       effectiveDate: null,
       coaWarning: false,
-      coaProceed: false,
       FilingStatus
     }
   },
