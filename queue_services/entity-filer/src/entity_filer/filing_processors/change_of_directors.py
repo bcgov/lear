@@ -25,7 +25,7 @@ def process(business: Business, filing: Dict):
     new_directors = filing['changeOfDirectors'].get('directors')
 
     for new_director in new_directors:
-        if 'colinId' in filing['header']:
+        if filing.get('colinId'):
             director_found = False
             current_new_director_name = \
                 new_director['officer'].get('firstName') + new_director['officer'].get('middleInitial', '') + \
