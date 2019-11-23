@@ -87,4 +87,4 @@ def process(business: Business, filing: Dict):
             # get name of director in database for comparison *
             director_name = director.first_name + director.middle_initial + director.last_name
             if director_name.upper() not in new_director_names:
-                director.cessation_date = datetime.now
+                director.cessation_date = datetime.now()
