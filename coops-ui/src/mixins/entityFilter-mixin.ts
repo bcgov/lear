@@ -35,7 +35,7 @@ export default class EntityFilterMixin extends Vue {
   entityLegalSection (): string {
     switch (this.entityType) {
       case 'CP':
-        return 'Cooperative Association Act'
+        return 'Cooperatives Association Act'
       case 'BC':
         return 'Business Corporations Act'
     }
