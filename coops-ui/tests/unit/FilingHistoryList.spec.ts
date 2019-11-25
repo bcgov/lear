@@ -12,94 +12,93 @@ Vue.use(Vuelidate)
 let vuetify = new Vuetify({})
 
 const sampleFilings = [
-    {
-      'filing': {
-        'header': {
-          'name': 'annualReport',
-          'date': '2019-06-02T19:22:59.003777+00:00',
-          'paymentToken': 123,
-          'certifiedBy': 'Full Name 1',
-          'filingId': 321,
-          'availableOnPaperOnly': false
-        },
-        'annualReport': {
-          'annualGeneralMeetingDate': '2019-12-31'
-        }
-      }
-    },
-    {
-      'filing': {
-        'header': {
-          'name': 'changeOfDirectors',
-          'date': '2019-03-09T19:22:59.003777+00:00',
-          'paymentToken': 456,
-          'certifiedBy': 'Full Name 2',
-          'filingId': 654,
-          'availableOnPaperOnly': false
-        },
-        'changeOfDirectors': {
-        }
-      }
-    },
-    {
-      'filing': {
-        'header': {
-          'name': 'changeOfAddress',
-          'date': '2019-05-06T19:22:59.003777+00:00',
-          'paymentToken': 789,
-          'certifiedBy': 'Full Name 3',
-          'filingId': 987,
-          'availableOnPaperOnly': false
-        },
-        'changeOfAddress': {
-        }
-      }
-    },
-    {
-      'filing': {
-        'header': {
-          'name': 'annualReport',
-          'date': '2019-03-02T19:22:59.003777+00:00',
-          'paymentToken': 100,
-          'certifiedBy': 'Full Name 1',
-          'filingId': 3212,
-          'availableOnPaperOnly': true
-        },
-        'annualReport': {
-          'annualGeneralMeetingDate': '2019-01-01'
-        }
-      }
-    },
-    {
-      'filing': {
-        'header': {
-          'name': 'changeOfDirectors',
-          'date': '2019-02-04T19:22:59.003777+00:00',
-          'paymentToken': 4561,
-          'certifiedBy': 'Full Name 2',
-          'filingId': 6541,
-          'availableOnPaperOnly': true
-        },
-        'changeOfDirectors': {
-        }
-      }
-    },
-    {
-      'filing': {
-        'header': {
-          'name': 'changeOfAddress',
-          'date': '2019-01-06T19:22:59.003777+00:00',
-          'paymentToken': 7891,
-          'certifiedBy': 'Full Name 3',
-          'filingId': 9871,
-          'availableOnPaperOnly': true
-        },
-        'changeOfAddress': {
-        }
+  {
+    'filing': {
+      'header': {
+        'name': 'annualReport',
+        'date': '2019-06-02T19:22:59.003777+00:00',
+        'paymentToken': 123,
+        'certifiedBy': 'Full Name 1',
+        'filingId': 321,
+        'availableOnPaperOnly': false
+      },
+      'annualReport': {
+        'annualGeneralMeetingDate': '2019-12-31'
       }
     }
-  ]
-
+  },
+  {
+    'filing': {
+      'header': {
+        'name': 'changeOfDirectors',
+        'date': '2019-03-09T19:22:59.003777+00:00',
+        'paymentToken': 456,
+        'certifiedBy': 'Full Name 2',
+        'filingId': 654,
+        'availableOnPaperOnly': false
+      },
+      'changeOfDirectors': {
+      }
+    }
+  },
+  {
+    'filing': {
+      'header': {
+        'name': 'changeOfAddress',
+        'date': '2019-05-06T19:22:59.003777+00:00',
+        'paymentToken': 789,
+        'certifiedBy': 'Full Name 3',
+        'filingId': 987,
+        'availableOnPaperOnly': false
+      },
+      'changeOfAddress': {
+      }
+    }
+  },
+  {
+    'filing': {
+      'header': {
+        'name': 'annualReport',
+        'date': '2019-03-02T19:22:59.003777+00:00',
+        'paymentToken': 100,
+        'certifiedBy': 'Full Name 1',
+        'filingId': 3212,
+        'availableOnPaperOnly': true
+      },
+      'annualReport': {
+        'annualGeneralMeetingDate': '2019-01-01'
+      }
+    }
+  },
+  {
+    'filing': {
+      'header': {
+        'name': 'changeOfDirectors',
+        'date': '2019-02-04T19:22:59.003777+00:00',
+        'paymentToken': 4561,
+        'certifiedBy': 'Full Name 2',
+        'filingId': 6541,
+        'availableOnPaperOnly': true
+      },
+      'changeOfDirectors': {
+      }
+    }
+  },
+  {
+    'filing': {
+      'header': {
+        'name': 'changeOfAddress',
+        'date': '2019-01-06T19:22:59.003777+00:00',
+        'paymentToken': 7891,
+        'certifiedBy': 'Full Name 3',
+        'filingId': 9871,
+        'availableOnPaperOnly': true
+      },
+      'changeOfAddress': {
+      }
+    }
+  }
+]
 
 describe('FilingHistoryList', () => {
   it('handles empty data', done => {
