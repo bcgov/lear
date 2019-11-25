@@ -46,6 +46,9 @@ def process(business: Business, filing: Dict):  # pylint: disable=too-many-branc
                         director_found = True
                         if new_director.get('cessationDate'):
                             new_director['actions'] = ['ceased']
+                        else:
+                            # For force updating address always as of now.
+                            new_director['actions'] = ['modified']
                     break
             if not director_found:
                 new_director['actions'] = ['appointed']
@@ -84,7 +87,8 @@ def process(business: Business, filing: Dict):  # pylint: disable=too-many-branc
             for director in business.directors:
                 # get name of director in database for comparison *
                 director_name = director.first_name + director.middle_initial + director.last_name
-                if director_name.upper() == new_director_name.upper():
+                # Update only an active director
+                if director_name.upper() == new_director_name.upper() and director.cessation_date is None:
                     update_director(director, new_director)
                     break
 
