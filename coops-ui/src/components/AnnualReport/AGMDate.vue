@@ -1,5 +1,5 @@
 <template>
-  <v-card flat class="container">
+  <v-card flat class="agm-date-container">
     <div class="meta-container">
       <label>
         <span>Annual General<br>Meeting Date</span>
@@ -285,6 +285,10 @@ export default class AGMDate extends Mixins(DateMixin) {
 
 <style lang="scss" scoped>
 // @import "@/assets/styles/theme.scss";
+
+.agm-date-container {
+  padding: 1.25rem;
+}
 
 .validationErrorInfo {
   color: red;

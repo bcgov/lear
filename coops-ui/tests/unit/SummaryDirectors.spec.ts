@@ -147,7 +147,7 @@ describe('Directors as a COOP', () => {
   })
 
   it('displays the list of directors', () => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(3)
@@ -316,7 +316,7 @@ describe('Directors as a BCORP', () => {
   })
 
   it('displays the list of directors', () => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(3)

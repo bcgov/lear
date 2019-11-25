@@ -9,7 +9,7 @@
           <span v-if="entityFilter(EntityTypes.BCorp)">Mailing Address</span>
           <span>Appointed/Elected</span>
         </v-subheader>
-        <li class="container"
+        <li class="director-list-container"
           :id="'director-' + director.id"
           v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
           v-for="(director, index) in orderBy(directorSummary, 'id', -1)"
@@ -92,7 +92,7 @@
     <v-card flat>
       <v-expand-transition>
           <ul class="list director-list" v-show="expand">
-            <li class="container"
+            <li class="director-list-container"
               :id="'director-' + director.id"
               v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
               v-for="(director, index) in orderBy(directorsCeased, 'id', -1)"
@@ -413,6 +413,10 @@ ul {
     font-weight: 600;
     line-height: 1.1875rem;
   }
+}
+
+.director-list-container {
+  padding: 1.25rem;
 }
 
 .editFormStyle {

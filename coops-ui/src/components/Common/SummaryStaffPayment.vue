@@ -1,13 +1,11 @@
 <template>
   <v-card flat id="staff-payment-container">
-    <div class="container">
-      <div class="routingslipnumber-container">
-        <label>
-          <span>Routing Slip Number</span>
-        </label>
-        <div class="value routingslipnumber">
-          <p>{{ value }}</p>
-        </div>
+    <div class="routingslipnumber-container">
+      <label>
+        <span>Routing Slip Number</span>
+      </label>
+      <div class="value routingslipnumber">
+        <p>{{ value }}</p>
       </div>
     </div>
   </v-card>
@@ -29,8 +27,7 @@ export default class SummaryStaffPayment extends Vue {
 
 #staff-payment-container {
   margin-top: 1rem;
-  padding-bottom: 0.5rem;
-  padding-top: 1rem;
+  padding: 1.25rem 1.25rem 0.25rem 1.25rem;
   font-size: 0.875rem;
 }
 

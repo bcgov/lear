@@ -41,7 +41,7 @@
       <!-- New Director Form -->
       <v-expand-transition>
         <ul class="list new-director" v-show="showNewDirectorForm">
-          <li class="container">
+          <li class="new-director-container">
             <div class="meta-container">
               <label class="appoint-header">Appoint New Director</label>
               <div class="meta-container__inner">
@@ -176,7 +176,7 @@
           <span v-if="entityFilter(EntityTypes.BCorp)">Mailing Address</span>
           <span>Appointed/Elected</span>
         </v-subheader>
-        <li class="container"
+        <li class="director-list-container"
           :id="'director-' + director.id"
           v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
           v-for="(director, index) in orderBy(directors, 'id', -1)"
@@ -1488,9 +1488,15 @@ ul {
   color: $gray5 !important;
 }
 
-.new-director .meta-container {
-  > label:first-child {
-    margin-bottom: 1.5rem;
+.new-director {
+  .new-director-container {
+    padding: 1.25rem;
+
+    .meta-container {
+      > label:first-child {
+        margin-bottom: 1.5rem;
+      }
+    }
   }
 }
 
@@ -1528,6 +1534,12 @@ ul {
     font-size: 0.875rem;
     font-weight: 600;
     line-height: 1.1875rem;
+  }
+}
+
+.director-list {
+  .director-list-container {
+    padding: 1.25rem;
   }
 }
 

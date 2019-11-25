@@ -174,7 +174,8 @@ export default {
     },
 
     // Method to extract date from a local datetime string
-    formatDate (dateString) {
+    formatDate (dateString): string {
+      if (!dateString) return null // safety check
       var dateStrParts = dateString.split(',')
       var dateStr = dateStrParts[0]
       var dateParts = dateStr.split('/')
@@ -242,6 +243,7 @@ export default {
 
     loadPaperFiling (filing) {
       // split name on camelcase and capitalize first letters
+      if (!filing || !filing.header || !filing.header.name) return // safety check
       let name = filing.header.name.split(/(?=[A-Z])/).join(' ')
       const localDateTime = this.convertUTCTimeToLocalTime(filing.header.date)
       const filingDate = this.formatDate(localDateTime)

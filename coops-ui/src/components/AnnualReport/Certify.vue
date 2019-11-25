@@ -1,6 +1,6 @@
 <template>
   <v-card flat id="AR-step-4-container">
-    <div class="container">
+    <div class="certify-container">
       <div class="certifiedby-container">
         <label>
           <span>Legal Name</span>
@@ -102,6 +102,10 @@ export default class Certify extends Vue {
   padding-top: 1rem;
   line-height: 1.2rem;
   font-size: 0.875rem;
+}
+
+.certify-container {
+  padding: 1.25rem;
 }
 
 .certifiedby-container {

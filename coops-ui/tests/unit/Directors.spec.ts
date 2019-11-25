@@ -150,7 +150,7 @@ describe('Directors as a COOP', () => {
   })
 
   it('displays the list of directors', () => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(2)
@@ -172,7 +172,7 @@ describe('Directors as a COOP', () => {
       // confirm that flag is set correctly
       expect(vm.componentEnabled).toEqual(false)
 
-      const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+      const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
       // check that buttons are disabled (checks first button in first director, plus the Add New Director button)
       expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(true)
@@ -190,7 +190,7 @@ describe('Directors as a COOP', () => {
       // confirm that flag is set correctly
       expect(vm.componentEnabled).toEqual(true)
 
-      const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+      const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
       // check that buttons are enabled (checks first button in first director, plus the Add New Director button)
       expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(false)
@@ -234,7 +234,7 @@ describe('Directors as a COOP', () => {
   })
 
   it('handles "ceased" action', done => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // click first director's cease button
     click(vm, '#director-1-cease-btn')
@@ -254,7 +254,7 @@ describe('Directors as a COOP', () => {
   })
 
   it('handles "undo ceased" action', done => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // click first director's cease button
     click(vm, '#director-1-cease-btn')
@@ -432,7 +432,7 @@ describe('Directors as a BCorp', () => {
   })
 
   it('displays the list of directors', () => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(2)
@@ -457,7 +457,7 @@ describe('Directors as a BCorp', () => {
       // confirm that flag is set correctly
       expect(vm.componentEnabled).toEqual(false)
 
-      const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+      const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
       // check that buttons are disabled (checks first button in first director, plus the Add New Director button)
       expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(true)
@@ -475,7 +475,7 @@ describe('Directors as a BCorp', () => {
       // confirm that flag is set correctly
       expect(vm.componentEnabled).toEqual(true)
 
-      const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+      const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
       // check that buttons are enabled (checks first button in first director, plus the Add New Director button)
       expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(false)
@@ -514,7 +514,7 @@ describe('Directors as a BCorp', () => {
   })
 
   it('handles "ceased" action', done => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // click first director's cease button
     click(vm, '#director-1-cease-btn')
@@ -534,7 +534,7 @@ describe('Directors as a BCorp', () => {
   })
 
   it('handles "undo ceased" action', done => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // click first director's cease button
     click(vm, '#director-1-cease-btn')

@@ -1,6 +1,6 @@
 <template>
   <v-card flat id="AR-step-5-container">
-    <v-form class="container" v-model="formValid">
+    <v-form class="staff-payment-container" v-model="formValid">
       <div class="routingslipnumber-container">
         <label>
           <span>Routing Slip Number</span>
@@ -84,6 +84,10 @@ export default class StaffPayment extends Vue {
   padding-top: 1rem;
   line-height: 1.2rem;
   font-size: 0.875rem;
+}
+
+.staff-payment-container {
+  padding: 1.25rem;
 }
 
 .routingslipnumber-container {
