@@ -40,7 +40,7 @@ def process(business: Business, filing: Dict):  # pylint: disable=too-many-branc
                 if existing_director_name.upper() == current_new_director_name.upper():
                     # Creates a new director record in Lear if a matching ceased director exists in Lear
                     # and the colin json contains the same director record with cessation date null.
-                    if director.get('cessation_date') and new_director.get('cessationDate') is None:
+                    if director.cessation_date is not None and new_director.get('cessationDate') is None:
                         director_found = False
                     else:
                         director_found = True
