@@ -14,10 +14,16 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 
-import { mount, Wrapper } from '@vue/test-utils'
+import { shallowMount, createLocalVue, mount, Wrapper } from '@vue/test-utils'
 
 import Certify from '@/components/AnnualReport/Certify.vue'
 import store from '@/store/store'
+import { EntityTypes } from '@/enums'
+import AnnualReport from '@/views/AnnualReport.vue'
+import AGMDate from '@/components/AnnualReport/AGMDate.vue'
+import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
+import Directors from '@/components/AnnualReport/Directors.vue'
+import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
 
 Vue.use(Vuetify)
 
@@ -46,6 +52,41 @@ function getLastEvent (wrapper: Wrapper<Certify>, name: string): any {
   return events[0]
 }
 
+describe('Validate section codes in Certify.vue', () => {
+  let vm
+
+  beforeEach(() => {
+    // init store
+    store.state.entityIncNo = 'CP0001191'
+    store.state.ARFilingYear = 2017
+    store.state.currentFilingStatus = 'NEW'
+    store.state.entityType = 'mockType'
+  })
+
+  it('Check BCOMP dynamic field values for Certify.vue', () => {
+    store.state.entityType = EntityTypes.BCorp
+    const $route = { params: { id: '0' } } // new filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    const ARCertifyBcomp: any = wrapper.find(Certify)
+    expect(ARCertifyBcomp.vm.entityDisplayName).toEqual('Benefits Company')
+    expect(ARCertifyBcomp.vm.sectionCode).toEqual('51')
+    expect(ARCertifyBcomp.vm.sectionString).toEqual('Business Corporations Act')
+    wrapper.destroy()
+  })
+
+  it('Check COOP dynamic field values for Certify.vue', () => {
+    store.state.entityType = EntityTypes.Coop
+    const $route = { params: { id: '0' } } // new filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    expect(wrapper.find(Certify).exists()).toBe(true)
+    const ARCertifyCoop: any = wrapper.find(Certify)
+    expect(ARCertifyCoop.vm.entityDisplayName).toEqual('Cooperative')
+    expect(ARCertifyCoop.vm.sectionCode).toEqual('126')
+    expect(ARCertifyCoop.vm.sectionString).toEqual('Cooperative Association Act')
+    wrapper.destroy()
+  })
+})
+
 /**
  * Creates and mounts a component, so that it can be tested.
  *
@@ -56,12 +97,15 @@ function getLastEvent (wrapper: Wrapper<Certify>, name: string): any {
  * @returns a Wrapper<Certify> object with the given parameters.
  */
 function createComponent (certifiedBy: string = undefined, isCertified: boolean = undefined,
-  currentDate: string = defaultDate): Wrapper<Certify> {
+  currentDate: string = defaultDate, sectionCode: string = undefined, 
+  sectionString: string = undefined): Wrapper<Certify> {
   return mount(Certify, { sync: false,
     propsData: {
       'certifiedBy': certifiedBy,
       'currentDate': currentDate,
-      'isCertified': isCertified
+      'isCertified': isCertified,
+      'sectionCode': sectionCode,
+      'sectionString': sectionString
     } })
 }
 

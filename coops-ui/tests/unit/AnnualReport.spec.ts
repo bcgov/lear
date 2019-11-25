@@ -59,6 +59,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     expect(wrapper.find(RegisteredOfficeAddress).exists()).toBe(true)
     expect(wrapper.find(Directors).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)
+    debugger
     expect(wrapper.find(StaffPayment).exists()).toBe(false) // normally not rendered
 
     wrapper.destroy()
