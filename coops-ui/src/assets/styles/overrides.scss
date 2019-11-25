@@ -23,19 +23,26 @@
 // Dialogs
 .v-dialog {
   margin: 2rem;
-}
 
-.v-card__title {
-  padding: 1.25rem 1.5rem;
-  color: $BCgovFontColorInverted;
-  background: $BCgovBlue5;
-  font-size: 1.5em;
-  font-weight: 400;
-}
+  .v-card {
 
-.v-card__text {
-  padding: 1.5rem !important;
-  font-weight: 300;
+    .v-card__title {
+      padding: 1.25rem 1.5rem;
+      color: $BCgovFontColorInverted;
+      background: $BCgovBlue5;
+      font-size: 1.5em;
+      font-weight: 400;
+    }
+
+    .v-card__text {
+      padding: 1.5rem !important;
+      font-weight: 300;
+    }
+
+    .v-card__actions {
+      padding: 1rem;
+    }
+  }
 }
 
 // Expansion Panels
