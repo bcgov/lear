@@ -264,7 +264,7 @@
                             <v-icon>arrow_drop_down</v-icon>
                           </v-btn>
                         </template>
-                        <v-list class="actions__more_actions">
+                        <v-list class="actions__more-actions">
                           <v-list-tile @click="showDeleteDirectorConfirmation(director)">
                             <v-list-tile-title>Remove</v-list-tile-title>
                           </v-list-tile>
@@ -291,7 +291,7 @@
                               <v-icon>mdi-menu-down</v-icon>
                             </v-btn>
                           </template>
-                          <v-list class="actions__more_actions">
+                          <v-list class="actions__more-actions">
                             <!-- removed until release 2 -->
                             <!--
                             <v-list-tile @click="cessationDateTemp = asOfDate; activeIndexCustomCease = index;">
@@ -1512,6 +1512,14 @@ ul {
   margin-left: 1px !important;
   padding: 0 5px;
   color: $gray6;
+}
+
+.actions__more-actions {
+  padding: 0;
+
+  .v-list-item__title {
+    font-size: 0.875rem;
+  }
 }
 
 .standalone__cessation-date__datepicker {

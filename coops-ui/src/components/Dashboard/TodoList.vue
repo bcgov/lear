@@ -525,16 +525,22 @@ export default {
   }
 }
 
-.list-item__actions .v-btn.actions__more-actions__btn {
-  min-width: 38px !important;
-  width: 38px;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  margin-left: 1px;
+.list-item__actions {
+  .v-btn.actions__more-actions__btn {
+    min-width: 38px !important;
+    width: 38px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: 1px;
+  }
 }
 
 .actions__more-actions {
   padding: 0;
+
+  .v-list-item__title {
+    font-size: 0.875rem;
+  }
 }
 
 .filing-type {
