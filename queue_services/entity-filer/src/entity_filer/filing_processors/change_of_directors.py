@@ -21,12 +21,13 @@ from legal_api.models import Address, Business, Director
 from entity_filer.filing_processors import create_address, update_director
 
 
-def process(business: Business, filing: Dict):
+def process(business: Business, filing: Dict):  # pylint: disable=too-many-branches;
     """Render the change_of_directors onto the business model objects."""
     new_directors = filing['changeOfDirectors'].get('directors')
     new_director_names = []
 
-    for new_director in new_directors:
+    for new_director in new_directors:  # pylint: disable=too-many-nested-blocks;
+        # Applies only for filings coming from colin.
         if filing.get('colinId'):
             director_found = False
             current_new_director_name = \
@@ -37,9 +38,14 @@ def process(business: Business, filing: Dict):
             for director in business.directors:
                 existing_director_name = director.first_name + director.middle_initial + director.last_name
                 if existing_director_name.upper() == current_new_director_name.upper():
-                    director_found = True
-                    if new_director.get('cessationDate'):
-                        new_director['actions'] = ['ceased']
+                    # Creates a new director record in Lear if a matching ceased director exists in Lear
+                    # and the colin json contains the same director record with cessation date null.
+                    if director.get('cessation_date') and new_director.get('cessationDate') is None:
+                        director_found = False
+                    else:
+                        director_found = True
+                        if new_director.get('cessationDate'):
+                            new_director['actions'] = ['ceased']
                     break
             if not director_found:
                 new_director['actions'] = ['appointed']
@@ -87,4 +93,4 @@ def process(business: Business, filing: Dict):
             # get name of director in database for comparison *
             director_name = director.first_name + director.middle_initial + director.last_name
             if director_name.upper() not in new_director_names:
-                director.cessation_date = datetime.now()
+                director.cessation_date = datetime.utcnow()
