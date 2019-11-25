@@ -64,6 +64,7 @@ describe('Validate section codes in Certify.vue', () => {
   })
 
   it('Check BCOMP dynamic field values for Certify.vue', () => {
+    // Ensure correct section code and section string are populated
     store.state.entityType = EntityTypes.BCorp
     const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
@@ -75,11 +76,12 @@ describe('Validate section codes in Certify.vue', () => {
   })
 
   it('Check COOP dynamic field values for Certify.vue', () => {
+    // Ensure correct section code and section string are populated
     store.state.entityType = EntityTypes.Coop
     const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
-    expect(wrapper.find(Certify).exists()).toBe(true)
     const ARCertifyCoop: any = wrapper.find(Certify)
+    expect(wrapper.find(Certify).exists()).toBe(true)
     expect(ARCertifyCoop.vm.entityDisplayName).toEqual('Cooperative')
     expect(ARCertifyCoop.vm.sectionCode).toEqual('126')
     expect(ARCertifyCoop.vm.sectionString).toEqual('Cooperative Association Act')
