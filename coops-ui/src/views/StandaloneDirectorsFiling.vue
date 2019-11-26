@@ -43,14 +43,15 @@
                   <h1 id="filing-header">Director Change</h1>
 
                   <p>Select the date of your director changes. If you have director changes that occured on
-                      different dates, you will need to perform multiple Director Change filings - one for each
-                      unique date.</p>
+                      different dates, you will need to perform multiple Director Change filings &mdash;
+                      one for each unique date.</p>
 
                   <v-alert
+                    v-if="!entityFilter(EntityTypes.BCorp)"
                     type="info"
                     icon="mdi-information"
-                    outlined class="white-background"
-                    v-if="!entityFilter(EntityTypes.BCorp)"
+                    outlined
+                    class="white-background"
                   >
                     Director changes can be made as far back as {{ earliestDateToSet }}.
                   </v-alert>
@@ -105,7 +106,10 @@
 
             <v-col cols="12" lg="3" style="position: relative">
               <aside>
-                <affix relative-element-selector="#standalone-directors-article" :offset="{ top: 120, bottom: 40 }">
+                <affix
+                  relative-element-selector="#standalone-directors-article"
+                  :offset="{ top: 120, bottom: 40 }"
+                >
                   <sbc-fee-summary
                     v-bind:filingData="[...filingData]"
                     v-bind:payURL="payAPIURL"
@@ -176,7 +180,7 @@
           </div>
         </div>
 
-        <v-container id="standalone-directors-container" class="view-container">
+        <v-container id="standalone-directors-container-review" class="view-container">
           <v-row>
             <v-col cols="12" lg="9">
               <article id="standalone-directors-article-review">
@@ -218,7 +222,10 @@
 
             <v-col cols="12" lg="3" style="position: relative">
               <aside>
-                <affix relative-element-selector="#standalone-directors-article" :offset="{ top: 120, bottom: 40 }">
+                <affix
+                  relative-element-selector="#standalone-directors-article-review"
+                  :offset="{ top: 120, bottom: 40 }"
+                >
                   <sbc-fee-summary
                     v-bind:filingData="[...filingData]"
                     v-bind:payURL="payAPIURL"
@@ -229,7 +236,7 @@
           </v-row>
         </v-container>
 
-        <v-container id="buttons-container" class="list-item">
+        <v-container id="buttons-container-review" class="list-item">
           <div class="buttons-left">
             <v-btn
               id="cod-back-btn"
@@ -269,7 +276,6 @@
 <script lang="ts">
 // Libraries
 import axios from '@/axios-auth'
-import { Affix } from 'vue-affix'
 import { mapState, mapGetters } from 'vuex'
 import { BAD_REQUEST, PAYMENT_REQUIRED } from 'http-status-codes'
 
@@ -306,7 +312,6 @@ export default {
     SummaryCertify,
     SummaryStaffPayment,
     SbcFeeSummary,
-    Affix,
     Certify,
     StaffPayment,
     ConfirmDialog,
@@ -784,6 +789,7 @@ article {
   }
 }
 
+header p,
 section p {
   color: $gray6;
 }
@@ -810,7 +816,8 @@ h2 {
 }
 
 // Save & Filing Buttons
-#buttons-container {
+#buttons-container,
+#buttons-container-review {
   padding-top: 2rem;
   border-top: 1px solid $gray5;
 
@@ -829,10 +836,5 @@ h2 {
   #cod-cancel-btn {
     margin-left: 0.5rem;
   }
-}
-
-// Alert
-.white-background {
-  background-color: white !important;
 }
 </style>

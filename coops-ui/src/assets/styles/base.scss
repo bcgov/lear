@@ -297,6 +297,10 @@ ul.list {
   white-space: pre-wrap;
 }
 
+.white-background {
+  background-color: white !important;
+}
+
 // Hides an element to all devices except screen readers
 .sr-only {
   position: absolute;
@@ -307,4 +311,9 @@ ul.list {
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   border: 0;
+}
+
+// Vue Affix
+.vue-affix {
+  width: 282px;
 }

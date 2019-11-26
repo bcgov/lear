@@ -40,8 +40,10 @@
               <header>
                 <h1 id="filing-header">Address Change</h1>
 
-                <p>Please change your Registered Office Address
-                  <span v-if="entityFilter(EntityTypes.BCorp)"> and Records Address.</span>
+                <p>
+                  <span>Please change your Registered Office Address</span>
+                  <span v-if="entityFilter(EntityTypes.BCorp)"> and Records Address</span>
+                  <span>.</span>
                 </p>
 
                 <v-alert
@@ -95,7 +97,10 @@
 
           <v-col cols="12" lg="3" style="position: relative">
             <aside>
-              <affix relative-element-selector="#standalone-office-address-article" :offset="{ top: 120, bottom: 40 }">
+              <affix
+                relative-element-selector="#standalone-office-address-article"
+                :offset="{ top: 120, bottom: 40 }"
+              >
                 <sbc-fee-summary
                   v-bind:filingData="[...filingData]"
                   v-bind:payURL="payAPIURL"
@@ -160,7 +165,6 @@
 <script lang="ts">
 // Libraries
 import axios from '@/axios-auth'
-import { Affix } from 'vue-affix'
 import { mapState, mapGetters } from 'vuex'
 
 // Dialogs
@@ -190,7 +194,6 @@ export default {
   components: {
     OfficeAddresses,
     SbcFeeSummary,
-    Affix,
     Certify,
     StaffPayment,
     ConfirmDialog,
@@ -676,6 +679,7 @@ article {
   }
 }
 
+header p,
 section p {
   color: $gray6;
 }
@@ -716,10 +720,5 @@ h2 {
   #coa-cancel-btn {
     margin-left: 0.5rem;
   }
-}
-
-// Bcorp Alert
-.white-background {
-  background-color: white !important;
 }
 </style>

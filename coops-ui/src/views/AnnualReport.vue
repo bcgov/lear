@@ -139,7 +139,10 @@
 
           <v-col cols="12" lg="3" style="position: relative">
             <aside>
-              <affix relative-element-selector="#annual-report-article" :offset="{ top: 120, bottom: 40 }">
+              <affix
+                relative-element-selector="#annual-report-article"
+                :offset="{ top: 120, bottom: 40 }"
+              >
                 <sbc-fee-summary
                   v-bind:filingData="[...filingData]"
                   v-bind:payURL="payAPIURL"
@@ -210,7 +213,6 @@ import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
 import { OfficeAddresses } from '@/components/Common'
 import Directors from '@/components/AnnualReport/Directors.vue'
-import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapGetters } from 'vuex'
 import { BAD_REQUEST, PAYMENT_REQUIRED } from 'http-status-codes'
@@ -242,7 +244,6 @@ export default {
     Directors,
     Certify,
     StaffPayment,
-    Affix,
     SbcFeeSummary,
     ConfirmDialog,
     PaymentErrorDialog,
@@ -814,6 +815,7 @@ article {
   }
 }
 
+header p,
 section p {
   color: $gray6;
 }

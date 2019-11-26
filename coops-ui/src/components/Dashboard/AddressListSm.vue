@@ -202,10 +202,6 @@ $icon-width: 2.75rem;
   list-style-type: none;
 }
 
-.pre-wrap {
-  white-space: pre-wrap;
-}
-
 .address-overlay {
   background-color: rgba(255, 249, 196, .6)!important;
 }

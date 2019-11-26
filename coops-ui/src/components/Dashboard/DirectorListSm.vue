@@ -124,8 +124,4 @@ $avatar-width: 2.75rem;
   list-style-type: none;
   line-height: 1.25rem;
 }
-
-.pre-wrap {
-  white-space: pre-wrap;
-}
 </style>
