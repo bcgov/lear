@@ -26,143 +26,7 @@
 
     <!-- Change of Directors Filing -->
     <div v-show="!inFilingReview">
-      <div>
-        <div id="standalone-directors" ref="standaloneDirectors">
-          <!-- Initial Page Load Transition -->
-          <div class="loading-container fade-out">
-            <div class="loading__content">
-              <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-              <div class="loading-msg">Preparing Your Filing</div>
-            </div>
-          </div>
-
-          <v-container id="standalone-directors-container" class="view-container">
-            <article id="standalone-directors-article">
-              <header>
-                <h1 id="filing-header">Director Change</h1>
-                <p>Select the date of your director changes. If you have director changes that occured on
-                   different dates, you will need to perform multiple Director Change filings - one for each
-                   unique date.</p>
-
-                <v-alert
-                  type="info"
-                  icon="mdi-information"
-                  outlined class="white-background"
-                  v-if="!entityFilter(EntityTypes.BCorp)"
-                >
-                  Director changes can be made as far back as {{ earliestDateToSet }}.
-                </v-alert>
-              </header>
-
-              <section>
-                <CODDate ref="codDate"
-                :initialCODDate="initialCODDate"
-                @codDate="codDate=$event"
-                @valid="codDateValid=$event" />
-              </section>
-
-              <!-- Director Information -->
-              <section>
-                <Directors ref="directorsList"
-                  @directorsChange="directorsChange"
-                  @directorsFreeChange="directorsFreeChange"
-                  @earliestDateToSet="earliestDateToSet=$event"
-                  @directorFormValid="directorFormValid=$event"
-                  @allDirectors="allDirectors=$event"
-                  @directorEditAction="directorEditInProgress=$event"
-                  :asOfDate="codDate"
-                />
-              </section>
-
-              <!-- Certify -->
-              <section>
-                <header>
-                  <h2 id="AR-step-4-header">Certify Correct</h2>
-                  <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
-                </header>
-                <Certify
-                  :isCertified.sync="isCertified"
-                  :certifiedBy.sync="certifiedBy"
-                  :currentDate="this.currentDate"
-                  @valid="certifyFormValid=$event"
-                />
-              </section>
-
-              <!-- Staff Payment -->
-              <section v-if="isRoleStaff && isPayRequired">
-                <header>
-                  <h2 id="AR-step-5-header">Staff Payment</h2>
-                </header>
-                <StaffPayment
-                  :value.sync="routingSlipNumber"
-                  @valid="staffPaymentFormValid=$event"
-                />
-              </section>
-            </article>
-
-            <aside>
-              <affix relative-element-selector="#standalone-directors-article" :offset="{ top: 120, bottom: 40 }">
-                <sbc-fee-summary
-                  v-bind:filingData="[...filingData]"
-                  v-bind:payURL="payAPIURL"
-                  @total-fee="totalFee=$event"
-                />
-              </affix>
-            </aside>
-          </v-container>
-
-          <v-container id="buttons-container" class="list-item">
-            <div class="buttons-left">
-              <v-btn id="cod-save-btn" large
-                :disabled="!isSaveButtonEnabled || busySaving"
-                :loading="saving"
-                @click="onClickSave"
-              >
-                Save
-              </v-btn>
-              <v-btn id="cod-save-resume-btn" large
-                :disabled="!isSaveButtonEnabled || busySaving"
-                :loading="savingResuming"
-                @click="onClickSaveResume"
-              >
-                Save &amp; Resume Later
-              </v-btn>
-            </div>
-
-            <div class="buttons-right">
-              <v-tooltip top color="#3b6cff">
-                 <template v-slot:activator="{ on }">
-                  <div v-on="on" class="inline-div">
-                    <v-btn
-                      id="cod-next-btn"
-                      color="primary"
-                      large
-                      :disabled="!validated || busySaving"
-                      :loading="filingPaying"
-                      @click="showSummary()"
-                    >
-                      Next
-                    </v-btn>
-                  </div>
-                 </template>
-                <span>Proceed to Filing Summary</span>
-              </v-tooltip>
-              <v-btn
-                id="cod-cancel-btn"
-                large
-                to="/dashboard"
-              >
-                Cancel
-              </v-btn>
-            </div>
-          </v-container>
-        </div>
-      </div>
-    </div>
-
-    <!-- Directors Filing In Review -->
-    <div v-if="inFilingReview">
-      <div id="standalone-directors-review" ref="standaloneDirectors">
+      <div id="standalone-directors">
         <!-- Initial Page Load Transition -->
         <div class="loading-container fade-out">
           <div class="loading__content">
@@ -172,50 +36,197 @@
         </div>
 
         <v-container id="standalone-directors-container" class="view-container">
-          <article id="standalone-directors-article-review">
-            <header>
-              <h1 id="filing-header-review">Review: Director Change </h1>
-            </header>
+          <v-row>
+            <v-col cols="12" lg="9">
+              <article id="standalone-directors-article">
+                <header>
+                  <h1 id="filing-header">Director Change</h1>
 
-            <!-- Director Information -->
-            <section>
-              <SummaryDirectors ref="directorsList"
-                :directors="allDirectors"
-              />
-            </section>
+                  <p>Select the date of your director changes. If you have director changes that occured on
+                      different dates, you will need to perform multiple Director Change filings - one for each
+                      unique date.</p>
 
-            <!-- Certify -->
-            <section>
-              <header>
-                <h2>Certify Correct</h2>
-              </header>
-              <SummaryCertify
-                :isCertified.sync="isCertified"
-                :certifiedBy.sync="certifiedBy"
-                :currentDate="this.currentDate"
-                @valid="certifyFormValid=$event"
-              />
-            </section>
+                  <v-alert
+                    type="info"
+                    icon="mdi-information"
+                    outlined class="white-background"
+                    v-if="!entityFilter(EntityTypes.BCorp)"
+                  >
+                    Director changes can be made as far back as {{ earliestDateToSet }}.
+                  </v-alert>
+                </header>
 
-            <!-- Staff Payment -->
-            <section v-if="isRoleStaff && isPayRequired">
-              <header>
-                <h2>Staff Payment</h2>
-              </header>
-              <SummaryStaffPayment
-                :value="routingSlipNumber"
-              />
-            </section>
-          </article>
+                <section>
+                  <CODDate ref="codDate"
+                  :initialCODDate="initialCODDate"
+                  @codDate="codDate=$event"
+                  @valid="codDateValid=$event" />
+                </section>
 
-          <aside>
-            <affix relative-element-selector="#standalone-directors-article" :offset="{ top: 120, bottom: 40 }">
-              <sbc-fee-summary
-                v-bind:filingData="[...filingData]"
-                v-bind:payURL="payAPIURL"
-              />
-            </affix>
-          </aside>
+                <!-- Director Information -->
+                <section>
+                  <Directors ref="directorsList"
+                    @directorsChange="directorsChange"
+                    @directorsFreeChange="directorsFreeChange"
+                    @earliestDateToSet="earliestDateToSet=$event"
+                    @directorFormValid="directorFormValid=$event"
+                    @allDirectors="allDirectors=$event"
+                    @directorEditAction="directorEditInProgress=$event"
+                    :asOfDate="codDate"
+                  />
+                </section>
+
+                <!-- Certify -->
+                <section>
+                  <header>
+                    <h2 id="AR-step-4-header">Certify Correct</h2>
+                    <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+                  </header>
+                  <Certify
+                    :isCertified.sync="isCertified"
+                    :certifiedBy.sync="certifiedBy"
+                    :currentDate="this.currentDate"
+                    @valid="certifyFormValid=$event"
+                  />
+                </section>
+
+                <!-- Staff Payment -->
+                <section v-if="isRoleStaff && isPayRequired">
+                  <header>
+                    <h2 id="AR-step-5-header">Staff Payment</h2>
+                  </header>
+                  <StaffPayment
+                    :value.sync="routingSlipNumber"
+                    @valid="staffPaymentFormValid=$event"
+                  />
+                </section>
+              </article>
+            </v-col>
+
+            <v-col cols="12" lg="3" style="position: relative">
+              <aside>
+                <affix relative-element-selector="#standalone-directors-article" :offset="{ top: 120, bottom: 40 }">
+                  <sbc-fee-summary
+                    v-bind:filingData="[...filingData]"
+                    v-bind:payURL="payAPIURL"
+                    @total-fee="totalFee=$event"
+                  />
+                </affix>
+              </aside>
+            </v-col>
+          </v-row>
+        </v-container>
+
+        <v-container id="buttons-container" class="list-item">
+          <div class="buttons-left">
+            <v-btn id="cod-save-btn" large
+              :disabled="!isSaveButtonEnabled || busySaving"
+              :loading="saving"
+              @click="onClickSave"
+            >
+              Save
+            </v-btn>
+            <v-btn id="cod-save-resume-btn" large
+              :disabled="!isSaveButtonEnabled || busySaving"
+              :loading="savingResuming"
+              @click="onClickSaveResume"
+            >
+              Save &amp; Resume Later
+            </v-btn>
+          </div>
+
+          <div class="buttons-right">
+            <v-tooltip top color="#3b6cff">
+              <template v-slot:activator="{ on }">
+                <div v-on="on" class="inline-div">
+                  <v-btn
+                    id="cod-next-btn"
+                    color="primary"
+                    large
+                    :disabled="!validated || busySaving"
+                    :loading="filingPaying"
+                    @click="showSummary()"
+                  >
+                    Next
+                  </v-btn>
+                </div>
+              </template>
+              <span>Proceed to Filing Summary</span>
+            </v-tooltip>
+            <v-btn
+              id="cod-cancel-btn"
+              large
+              to="/dashboard"
+            >
+              Cancel
+            </v-btn>
+          </div>
+        </v-container>
+      </div>
+    </div>
+
+    <!-- Directors Filing In Review -->
+    <div v-if="inFilingReview">
+      <div id="standalone-directors-review">
+        <!-- Initial Page Load Transition -->
+        <div class="loading-container fade-out">
+          <div class="loading__content">
+            <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
+            <div class="loading-msg">Preparing Your Filing</div>
+          </div>
+        </div>
+
+        <v-container id="standalone-directors-container" class="view-container">
+          <v-row>
+            <v-col cols="12" lg="9">
+              <article id="standalone-directors-article-review">
+                <header>
+                  <h1 id="filing-header-review">Review: Director Change </h1>
+                </header>
+
+                <!-- Director Information -->
+                <section>
+                  <SummaryDirectors ref="directorsList"
+                    :directors="allDirectors"
+                  />
+                </section>
+
+                <!-- Certify -->
+                <section>
+                  <header>
+                    <h2>Certify Correct</h2>
+                  </header>
+                  <SummaryCertify
+                    :isCertified.sync="isCertified"
+                    :certifiedBy.sync="certifiedBy"
+                    :currentDate="this.currentDate"
+                    @valid="certifyFormValid=$event"
+                  />
+                </section>
+
+                <!-- Staff Payment -->
+                <section v-if="isRoleStaff && isPayRequired">
+                  <header>
+                    <h2>Staff Payment</h2>
+                  </header>
+                  <SummaryStaffPayment
+                    :value="routingSlipNumber"
+                  />
+                </section>
+              </article>
+            </v-col>
+
+            <v-col cols="12" lg="3" style="position: relative">
+              <aside>
+                <affix relative-element-selector="#standalone-directors-article" :offset="{ top: 120, bottom: 40 }">
+                  <sbc-fee-summary
+                    v-bind:filingData="[...filingData]"
+                    v-bind:payURL="payAPIURL"
+                  />
+                </affix>
+              </aside>
+            </v-col>
+          </v-row>
         </v-container>
 
         <v-container id="buttons-container" class="list-item">
@@ -773,10 +784,6 @@ article {
   }
 }
 
-.white-background {
-  background-color: white !important;
-}
-
 section p {
   color: $gray6;
 }
@@ -785,20 +792,16 @@ section + section {
   margin-top: 3rem;
 }
 
-h2 {
-  margin-bottom: 0.25rem;
-  margin-top: 3rem;
-  font-size: 1.125rem;
-}
-
-#filing-header {
+h1 {
   margin-bottom: 1.25rem;
   line-height: 2rem;
   letter-spacing: -0.01rem;
 }
 
-.title-container {
-  margin-bottom: 0.5rem;
+h2 {
+  margin-bottom: 0.25rem;
+  margin-top: 3rem;
+  font-size: 1.125rem;
 }
 
 .agm-date {
@@ -826,5 +829,10 @@ h2 {
   #cod-cancel-btn {
     margin-left: 0.5rem;
   }
+}
+
+// Alert
+.white-background {
+  background-color: white !important;
 }
 </style>

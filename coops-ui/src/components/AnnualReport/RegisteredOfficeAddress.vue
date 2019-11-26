@@ -1,7 +1,7 @@
 <template>
   <v-card flat>
     <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
-      <li class="address-container">
+      <li class="address-list-container">
         <div class="meta-container">
           <label>Delivery Address</label>
           <div class="meta-container__inner">
@@ -44,7 +44,7 @@
         </div>
       </li>
 
-      <li class="address-container">
+      <li class="address-list-container">
         <div class="meta-container">
           <label>Mailing Address</label>
           <div class="meta-container__inner">
@@ -437,7 +437,7 @@ export default class RegisteredOfficeAddress extends Mixins(AddressMixin, Common
 <style lang="scss" scoped>
 @import '@/assets/styles/theme.scss';
 
-.address-container {
+.address-list-container {
   padding: 1.25rem;
 }
 

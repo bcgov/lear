@@ -34,69 +34,77 @@
       </div>
 
       <v-container id="standalone-office-address-container" class="view-container">
-        <article id="standalone-office-address-article">
-          <section>
-            <h1 id="filing-header">Address Change</h1>
-            <p>Please change your Registered Office Address
-              <span v-if="entityFilter(EntityTypes.BCorp)"> and Records Address.</span>
-            </p>
-            <v-alert
-              v-if="entityFilter(EntityTypes.BCorp)"
-              type="info"
-              icon="mdi-information"
-              outlined
-              class="white-background"
-            >
-              Any address update will be effective tomorrow.
-            </v-alert>
-          </section>
+        <v-row>
+          <v-col cols="12" lg="9">
+            <article id="standalone-office-address-article">
+              <header>
+                <h1 id="filing-header">Address Change</h1>
 
-          <!-- Office Addresses -->
-          <section>
-            <OfficeAddresses
-              :changeButtonDisabled="false"
-              :addresses.sync="addresses"
-              :registeredAddress.sync="registeredAddress"
-              :recordsAddress.sync="recordsAddress"
-              @modified="officeModifiedEventHandler($event)"
-              @valid="officeAddressFormValid = $event"
-            />
-          </section>
+                <p>Please change your Registered Office Address
+                  <span v-if="entityFilter(EntityTypes.BCorp)"> and Records Address.</span>
+                </p>
 
-          <!-- Certify -->
-          <section>
-            <header>
-              <h2 id="AR-step-4-header">Certify Correct</h2>
-              <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
-            </header>
-            <Certify
-              :isCertified.sync="isCertified"
-              :certifiedBy.sync="certifiedBy"
-              @valid="certifyFormValid=$event"
-            />
-          </section>
+                <v-alert
+                  v-if="entityFilter(EntityTypes.BCorp)"
+                  type="info"
+                  icon="mdi-information"
+                  outlined
+                  class="white-background"
+                >
+                  Any address update will be effective tomorrow.
+                </v-alert>
+              </header>
 
-          <!-- Staff Payment -->
-          <section v-if="isRoleStaff && isPayRequired">
-            <header>
-              <h2 id="AR-step-5-header">Staff Payment</h2>
-            </header>
-            <StaffPayment
-              :value.sync="routingSlipNumber"
-              @valid="staffPaymentFormValid=$event"
-            />
-          </section>
-        </article>
+              <!-- Office Addresses -->
+              <section>
+                <OfficeAddresses
+                  :changeButtonDisabled="false"
+                  :addresses.sync="addresses"
+                  :registeredAddress.sync="registeredAddress"
+                  :recordsAddress.sync="recordsAddress"
+                  @modified="officeModifiedEventHandler($event)"
+                  @valid="officeAddressFormValid = $event"
+                />
+              </section>
 
-        <aside>
-          <affix relative-element-selector="#standalone-office-address-article" :offset="{ top: 120, bottom: 40 }">
-            <sbc-fee-summary
-              v-bind:filingData="[...filingData]"
-              v-bind:payURL="payAPIURL"
-              @total-fee="totalFee=$event"
-            />
-          </affix>
-        </aside>
+              <!-- Certify -->
+              <section>
+                <header>
+                  <h2 id="AR-step-4-header">Certify Correct</h2>
+                  <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+                </header>
+                <Certify
+                  :isCertified.sync="isCertified"
+                  :certifiedBy.sync="certifiedBy"
+                  @valid="certifyFormValid=$event"
+                />
+              </section>
+
+              <!-- Staff Payment -->
+              <section v-if="isRoleStaff && isPayRequired">
+                <header>
+                  <h2 id="AR-step-5-header">Staff Payment</h2>
+                </header>
+                <StaffPayment
+                  :value.sync="routingSlipNumber"
+                  @valid="staffPaymentFormValid=$event"
+                />
+              </section>
+            </article>
+          </v-col>
+
+          <v-col cols="12" lg="3" style="position: relative">
+            <aside>
+              <affix relative-element-selector="#standalone-office-address-article" :offset="{ top: 120, bottom: 40 }">
+                <sbc-fee-summary
+                  v-bind:filingData="[...filingData]"
+                  v-bind:payURL="payAPIURL"
+                  @total-fee="totalFee=$event"
+                />
+              </affix>
+            </aside>
+          </v-col>
+        </v-row>
       </v-container>
 
       <v-container id="buttons-container" class="list-item">
@@ -676,20 +684,16 @@ section + section {
   margin-top: 3rem;
 }
 
-h2 {
-  margin-bottom: 0.25rem;
-  margin-top: 3rem;
-  font-size: 1.125rem;
-}
-
-#filing-header {
+h1 {
   margin-bottom: 1.25rem;
   line-height: 2rem;
   letter-spacing: -0.01rem;
 }
 
-.title-container {
-  margin-bottom: 0.5rem;
+h2 {
+  margin-bottom: 0.25rem;
+  margin-top: 3rem;
+  font-size: 1.125rem;
 }
 
 // Save & Filing Buttons
