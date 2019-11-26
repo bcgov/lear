@@ -199,12 +199,13 @@ p {
   animation: fadeOut 2s forwards;
 }
 
-// styles for fade transitions
-.fade-enter-active,
+// styles for 'fade leave' transition
+// NB: 'fade enter' looks better without transition
+// .fade-enter-active,
 .fade-leave-active {
   transition: opacity .5s;
 }
-.fade-enter,
+// .fade-enter,
 .fade-leave-to {
   opacity: 0;
 }
