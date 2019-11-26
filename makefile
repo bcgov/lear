@@ -13,6 +13,9 @@ local-project: setup-local-env build-local-project run-local-project
 ## Sets the configuration to a local-build
 setup-local-env:
 	@cp ./coops-ui/public/config/local-configuration.json ./coops-ui/public/config/configuration.json
+	@cp -R ./legal-api/src/legal_api/models ./legal-test-fixture/legal_api
+	@cp -R ./legal-api/src/legal_api/exceptions ./legal-test-fixture/legal_api
+	@cp ./legal-api/src/legal_api/schemas.py ./legal-test-fixture/legal_api
 
 ## Builds the local project
 build-local-project:

@@ -118,3 +118,10 @@ venv.bak/
 # Misc backups
 *.bak
 
+# Excel lockfiles
+legal-test-fixture/test/spreadsheets/.~lock*
+
+# Copied files for test fixture
+legal-test-fixture/legal_api/exceptions/*
+legal-test-fixture/legal_api/models/*
+legal-test-fixture/legal_api/schemas.py
