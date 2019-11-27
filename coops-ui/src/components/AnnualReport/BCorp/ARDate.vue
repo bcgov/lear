@@ -10,8 +10,11 @@
 </template>
 
 <script lang="ts">
+// Libraries
 import { Component } from 'vue-property-decorator'
 import { mapState } from 'vuex'
+
+// Mixins
 import DateMixin from '@/mixins/date-mixin'
 
 @Component({
@@ -19,9 +22,7 @@ import DateMixin from '@/mixins/date-mixin'
     ...mapState(['nextARDate'])
   }
 })
-export default class ARDate extends DateMixin {
-  readonly nextARDate!: string
-}
+export default class ARDate extends DateMixin {}
 </script>
 
 <style lang="scss" scoped>

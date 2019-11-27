@@ -11,7 +11,7 @@
         </v-subheader>
         <li class="container"
           :id="'director-' + director.id"
-          v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
+          v-bind:class="{ 'remove' : !isActionable(director)}"
           v-for="(director, index) in orderBy(directorSummary, 'id', -1)"
           v-bind:key="index"
         >
@@ -30,7 +30,7 @@
                 </v-scale-transition>
                 <v-scale-transition>
                   <v-chip x-small label text-color="rgba(0,0,0,.38)"
-                    v-show="!isActive(director) || !isActionable(director)"
+                    v-show="!isActionable(director)"
                   >
                     Ceased
                   </v-chip>
@@ -218,7 +218,7 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
 
     // Push the ceased Directors to new array & remove them from summary array
     this.directorSummary.forEach((director: Director) => {
-      if (director.actions.includes(CEASED)) {
+      if (director.actions && director.actions.includes(CEASED)) {
         this.directorsCeased.push(director)
         this.directorSummary = this.directorSummary.filter(filterDir => filterDir !== director)
       }
@@ -240,7 +240,7 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
    */
   private isNew (director): boolean {
     // helper function - was the director added in this filing?
-    return (director.actions.indexOf(APPOINTED) >= 0)
+    return director.actions && (director.actions.indexOf(APPOINTED) >= 0)
   }
 
   /**
@@ -249,7 +249,7 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
    * @returns Whether the director has had the address changed.
    */
   private isAddressChanged (director): boolean {
-    return (director.actions.indexOf(ADDRESSCHANGED) >= 0)
+    return director.actions && (director.actions.indexOf(ADDRESSCHANGED) >= 0)
   }
 
   /**
@@ -258,7 +258,7 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
    * @returns Whether the director has had the name changed.
    */
   private isNameChanged (director): boolean {
-    return (director.actions.indexOf(NAMECHANGED) >= 0)
+    return director.actions && (director.actions.indexOf(NAMECHANGED) >= 0)
   }
 
   /**
@@ -268,7 +268,7 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
    */
   private isActive (director): boolean {
     // helper function - is the director active, ie: not ceased?
-    return (director.actions.indexOf(CEASED) < 0)
+    return director.actions && (director.actions.indexOf(CEASED) < 0)
   }
 
   /**

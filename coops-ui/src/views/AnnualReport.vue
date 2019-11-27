@@ -34,7 +34,10 @@
       </div>
 
       <v-container id="annual-report-container" class="view-container">
-        <article id="annual-report-article" :class="this.agmDate ? 'agm-date-selected' : 'no-agm-date-selected'">
+        <article id="annual-report-article"
+          :class="this.agmDate ? 'agm-date-selected' : 'no-agm-date-selected'"
+          v-if="entityFilter(EntityTypes.Coop)"
+        >
           <header>
             <h1 id="AR-header">File {{ ARFilingYear }} Annual Report
               <span style="font-style: italic" v-if="reportState">- {{ reportState }}</span>
@@ -44,96 +47,145 @@
 
           <div v-if="isAnnualReportEditable">
             <!-- Annual General Meeting Date ( COOP ) -->
-            <section v-if="entityFilter(EntityTypes.Coop)">
-              <header>
-                <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
-                <p>Select your Annual General Meeting (AGM) date</p>
-              </header>
-              <AGMDate
-                :initialAgmDate="initialAgmDate"
-                :allowCOA="allowChange('coa')"
-                :allowCOD="allowChange('cod')"
-                @agmDate="agmDate=$event"
-                @noAGM="noAGM=$event"
-                @valid="agmDateValid=$event"
-              />
-            </section>
+            <div>
+              <section>
+                <header>
+                  <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
+                  <p>Select your Annual General Meeting (AGM) date</p>
+                </header>
+                <AGMDate
+                  :initialAgmDate="initialAgmDate"
+                  :allowCOA="allowChange('coa')"
+                  :allowCOD="allowChange('cod')"
+                  @agmDate="agmDate=$event"
+                  @noAGM="noAGM=$event"
+                  @valid="agmDateValid=$event"
+                />
+              </section>
 
-            <!-- Annual Report Date ( BCORP ) -->
-            <section v-if="entityFilter(EntityTypes.BCorp)">
-              <header>
-                <h2 id="AR-step-1-header-BC">1. Dates</h2>
-                <p>Your Annual Report Date is the anniversary of the date your corporation was started.<br>
-                  The information displayed on this form reflects the state of your corporation on this date each year.
-                </p>
-              </header>
-              <ARDate />
-            </section>
+              <!-- Registered Office Addresses -->
+              <section>
+                <header>
+                  <h2 id="AR-step-2-header">2. Registered Office Addresses
+                    <span class="agm-date">(as of {{ ARFilingYear }} Annual General Meeting)</span>
+                  </h2>
+                  <p>Verify or change your Registered Office Addresses.</p>
+                </header>
+                <OfficeAddresses
+                  :changeButtonDisabled="!allowChange('coa')"
+                  :addresses.sync="addresses"
+                  :registeredAddress.sync="registeredAddress"
+                  :recordsAddress.sync="recordsAddress"
+                  @modified="officeModifiedEventHandler($event)"
+                  @valid="addressFormValid = $event"
+                />
+              </section>
 
-            <!-- Registered Office Addresses -->
-            <section>
-              <header>
-                <h2 id="AR-step-2-header">2. Registered Office Addresses
-                  <span class="agm-date">(as of {{ ARFilingYear }} Annual General Meeting)</span>
-                </h2>
-                <p>Verify or change your Registered Office Addresses.</p>
-              </header>
-              <OfficeAddresses
-                :changeButtonDisabled="!allowChange('coa')"
-                :addresses.sync="addresses"
-                :registeredAddress.sync="registeredAddress"
-                :recordsAddress.sync="recordsAddress"
-                @modified="officeModifiedEventHandler($event)"
-                @valid="addressFormValid = $event"
-              />
-            </section>
+              <!-- Directors -->
+              <section>
+                <header>
+                  <h2 id="AR-step-3-header">3. Directors</h2>
+                  <p>Tell us who was elected or appointed and who ceased to be a director at your
+                    {{ ARFilingYear }} AGM.</p>
+                </header>
+                <Directors ref="directorsList"
+                  @directorsChange="directorsChange"
+                  @directorsFreeChange="directorsFreeChange"
+                  @allDirectors="allDirectors=$event"
+                  @directorFormValid="directorFormValid=$event"
+                  @directorEditAction="directorEditInProgress=$event"
+                  :asOfDate="agmDate"
+                  :componentEnabled="allowChange('cod')"
+                />
+              </section>
 
-            <!-- Directors -->
-            <section>
-              <header>
-                <h2 id="AR-step-3-header">3. Directors</h2>
-                <p>Tell us who was elected or appointed and who ceased to be a director at your
-                  {{ ARFilingYear }} AGM.</p>
-              </header>
-              <Directors ref="directorsList"
-                @directorsChange="directorsChange"
-                @directorsFreeChange="directorsFreeChange"
-                @allDirectors="allDirectors=$event"
-                @directorFormValid="directorFormValid=$event"
-                @directorEditAction="directorEditInProgress=$event"
-                :asOfDate="agmDate"
-                :componentEnabled="allowChange('cod')"
-              />
-            </section>
+              <!-- Certify -->
+              <section>
+                <header>
+                  <h2 id="AR-step-4-header">Certify Correct</h2>
+                  <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+                </header>
+                <Certify
+                  :isCertified.sync="isCertified"
+                  :certifiedBy.sync="certifiedBy"
+                  :currentDate="currentDate"
+                  @valid="certifyFormValid=$event"
+                />
+              </section>
 
-            <!-- Certify -->
-            <section>
-              <header>
-                <h2 id="AR-step-4-header">4. Certify Correct</h2>
-                <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
-              </header>
-              <Certify
-                :isCertified.sync="isCertified"
-                :certifiedBy.sync="certifiedBy"
-                :currentDate="currentDate"
-                @valid="certifyFormValid=$event"
-              />
-            </section>
-
-            <!-- Staff Payment -->
-            <section v-if="isRoleStaff && isPayRequired">
-              <header>
-                <h2 id="AR-step-5-header">5. Staff Payment</h2>
-              </header>
-              <StaffPayment
-                :value.sync="routingSlipNumber"
-                @valid="staffPaymentFormValid=$event"
-              />
-            </section>
-
+              <!-- Staff Payment -->
+              <section v-if="isRoleStaff && isPayRequired">
+                <header>
+                  <h2>5. Staff Payment</h2>
+                </header>
+                <StaffPayment
+                  :value.sync="routingSlipNumber"
+                  @valid="staffPaymentFormValid=$event"
+                />
+              </section>
+            </div>
           </div>
         </article>
 
+       <!-- Annual Report Date ( BCORP ) -->
+        <article v-if="entityFilter(EntityTypes.BCorp)" id="annual-report-article">
+          <header>
+            <h1 id="AR-header-BC">File {{ ARFilingYear }} Annual Report
+              <span style="font-style: italic" v-if="reportState">- {{ reportState }}</span>
+            </h1>
+            <p>Please review all the information before you file and pay.</p>
+          </header>
+
+          <div>
+            <!-- Annual Report Date -->
+            <section>
+              <header>
+                <h2 id="AR-header-1-BC">Business Details</h2>
+              </header>
+              <ARDate />
+              <br>
+              <SummaryOfficeAddresses
+                :registeredAddress.sync="registeredAddress"
+                :recordsAddress.sync="recordsAddress"
+              />
+            </section>
+
+            <!-- Director Information -->
+            <section>
+              <header>
+                <h2 id="AR-header-2-BC">Directors</h2>
+              </header>
+              <SummaryDirectors
+                :directors="directors"
+              />
+            </section>
+          </div>
+
+          <!-- Certify -->
+          <section>
+            <header>
+              <h2 id="AR-step-4-header">Certify Correct</h2>
+              <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+            </header>
+            <Certify
+              :isCertified.sync="isCertified"
+              :certifiedBy.sync="certifiedBy"
+              :currentDate="currentDate"
+              @valid="certifyFormValid=$event"
+            />
+          </section>
+
+          <!-- Staff Payment -->
+          <section v-if="isRoleStaff && isPayRequired">
+            <header>
+              <h2 id="AR-step-5-header">5. Staff Payment</h2>
+            </header>
+            <StaffPayment
+              :value.sync="routingSlipNumber"
+              @valid="staffPaymentFormValid=$event"
+            />
+          </section>
+        </article>
         <aside>
           <affix relative-element-selector="#annual-report-article" :offset="{ top: 120, bottom: 40 }">
             <sbc-fee-summary
@@ -157,7 +209,7 @@
           </v-btn>
           <v-btn id="ar-save-resume-btn" large
             v-if="isAnnualReportEditable"
-            :disabled="!isSaveButtonEnabled || busySaving"
+            :disabled="isSaveButtonEnabled || busySaving"
             :loading="savingResuming"
             @click="onClickSaveResume"
           >
@@ -199,30 +251,35 @@
 </template>
 
 <script lang="ts">
+// Libraries
 import axios from '@/axios-auth'
-import AGMDate from '@/components/AnnualReport/AGMDate.vue'
-import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
-import { OfficeAddresses } from '@/components/Common'
-import Directors from '@/components/AnnualReport/Directors.vue'
 import { Affix } from 'vue-affix'
-import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapGetters } from 'vuex'
 import { BAD_REQUEST, PAYMENT_REQUIRED } from 'http-status-codes'
+
+// Components
+import AGMDate from '@/components/AnnualReport/AGMDate.vue'
+import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
+import Directors from '@/components/AnnualReport/Directors.vue'
+import { OfficeAddresses, SummaryDirectors, SummaryOfficeAddresses } from '@/components/Common'
+import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
+
+// Dialogs
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
 import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
-import DateMixin from '@/mixins/date-mixin'
-import EntityFilterMixin from '@/mixins/entityFilter-mixin'
-import { EntityTypes } from '@/enums'
 
-// action constants
-const APPOINTED = 'appointed'
-const CEASED = 'ceased'
-const NAMECHANGED = 'nameChanged'
-const ADDRESSCHANGED = 'addressChanged'
+// Mixins
+import { DateMixin, EntityFilterMixin } from '@/mixins'
+
+// Constants
+import { APPOINTED, CEASED, NAMECHANGED, ADDRESSCHANGED } from '@/constants'
+
+// Enums
+import { EntityTypes } from '@/enums'
 
 export default {
   name: 'AnnualReport',
@@ -237,6 +294,8 @@ export default {
     Certify,
     StaffPayment,
     Affix,
+    SummaryOfficeAddresses,
+    SummaryDirectors,
     SbcFeeSummary,
     ConfirmDialog,
     PaymentErrorDialog,
@@ -294,7 +353,8 @@ export default {
 
   computed: {
     ...mapState(['currentDate', 'ARFilingYear', 'lastAgmDate', 'entityType', 'entityName',
-      'entityIncNo', 'entityFoundingDate', 'registeredAddress', 'recordsAddress', 'lastPreLoadFilingDate']),
+      'entityIncNo', 'entityFoundingDate', 'registeredAddress', 'recordsAddress', 'lastPreLoadFilingDate',
+      'directors']),
 
     ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState', 'lastCOAFilingDate', 'lastCODFilingDate']),
 
