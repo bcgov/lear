@@ -280,7 +280,7 @@
                       </v-btn>
                       <!-- more actions menu -->
                       <span v-show="isActive(director)">
-                        <v-menu offset-y :disabled="!componentEnabled">
+                        <v-menu offset-y :disabled="!componentEnabled || directorEditInProgress">
                           <template v-slot:activator="{ on }">
                             <v-btn text small class="actions__more-actions__btn" v-on="on">
                               <v-icon>mdi-menu-down</v-icon>
