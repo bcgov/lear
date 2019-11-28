@@ -59,17 +59,17 @@ def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, fou
     business = Business(identifier=identifier, last_ledger_timestamp=previous_ar_date)
     business.founding_date = datetime.fromisoformat(founding_date)
 
+    if previous_ar_date:
+        business.last_ar_date = datetime.fromisoformat(previous_ar_date)
+
     previous_ar = copy.deepcopy(ANNUAL_REPORT)
-    previous_ar['filing']['business']['identifier'] = identifier
     current_ar = copy.deepcopy(previous_ar)
 
-    previous_ar['filing']['annualReport']['annualReportDate'] = previous_ar_date
     current_ar['filing']['annualReport']['annualReportDate'] = current_ar_date
 
     # Test it
     with app.app_context():
         err = validate_ar_year(business=business,
-                               previous_annual_report=previous_ar,
                                current_annual_report=current_ar)
     # Validate the outcome
     if not expected_code and not err:
