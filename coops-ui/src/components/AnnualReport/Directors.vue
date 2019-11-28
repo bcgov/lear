@@ -904,7 +904,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
       this.inProgressMailAddress = { ...this.inProgressAddress }
     }
 
-    let newDirector = {
+    newDirector = {
       actions: [APPOINTED],
       id: this.directors.length + 1,
       isDirectorActionable: true,
