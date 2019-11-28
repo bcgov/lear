@@ -15,6 +15,7 @@ export default {
   entityFoundingDate: null,
   businessEmail: null,
   businessPhone: null,
+  lastAnnualReportDate: null,
   businessPhoneExtension: null,
   lastAgmDate: null,
   nextARDate: null,

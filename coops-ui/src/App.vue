@@ -98,7 +98,7 @@ export default {
       'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityType', 'setEntityStatus',
       'setEntityBusinessNo', 'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate',
       'setNextARDate', 'setTasks', 'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors',
-      'setTriggerDashboardReload']),
+      'setTriggerDashboardReload', 'setLastAnnualReportDate']),
 
     fetchData () {
       this.dataLoaded = false
@@ -250,6 +250,7 @@ export default {
         this.setLastPreLoadFilingDate(response.data.business.lastLedgerTimestamp
           ? response.data.business.lastLedgerTimestamp.split('T')[0] : null)
         this.setEntityFoundingDate(response.data.business.foundingDate) // datetime
+        this.setLastAnnualReportDate(response.data.business.lastAnnualReport)
         const date = response.data.business.lastAnnualGeneralMeetingDate
         if (
           date &&

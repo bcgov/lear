@@ -85,7 +85,7 @@ import DateMixin from '@/mixins/date-mixin'
   mixins: [DateMixin],
   computed: {
     // Property definitions for runtime environment.
-    ...mapState(['ARFilingYear', 'currentDate', 'lastPreLoadFilingDate']),
+    ...mapState(['ARFilingYear', 'currentDate', 'lastPreLoadFilingDate', 'lastAnnualReportDate']),
     ...mapGetters(['lastFilingDate'])
   },
   validations: {
@@ -115,6 +115,7 @@ export default class AGMDate extends Mixins(DateMixin) {
   readonly currentDate!: string
   readonly lastPreLoadFilingDate!: string
   readonly lastFilingDate!: string
+  readonly lastAnnualReportDate!: string
 
   /**
    * Computed value.
@@ -156,9 +157,8 @@ export default class AGMDate extends Mixins(DateMixin) {
      * - the last pre-load Cobrs filing
      */
     const firstDayOfYear = +`${this.ARFilingYear}-01-01`.split('-').join('')
-    const lastFilingDate = this.lastFilingDate ? +this.lastFilingDate.split('-').join('') : 0
-    const lastPreLoadFilingDate = this.lastPreLoadFilingDate ? +this.lastPreLoadFilingDate.split('-').join('') : 0
-    const minAgmDate = Math.max(firstDayOfYear, lastFilingDate, lastPreLoadFilingDate)
+    const lastFilingDate = this.lastAnnualReportDate ? +this.lastAnnualReportDate.split('-').join('') : 0
+    const minAgmDate = Math.max(firstDayOfYear, lastFilingDate)
     return this.numToUsableString(minAgmDate)
   }
 
