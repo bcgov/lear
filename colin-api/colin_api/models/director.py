@@ -237,7 +237,8 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
                                 'middleInitial': row['middle_nme'] if row['middle_nme'] else ''}
 
             director.delivery_address = Address.get_by_address_id(row['delivery_addr_id']).as_dict()
-            director.mailing_address = Address.get_by_address_id(row['mailing_addr_id']).as_dict()
+            director.mailing_address = Address.get_by_address_id(row['mailing_addr_id']).as_dict() \
+                if row['mailing_addr_id'] else director.delivery_address
             director.appointment_date = convert_to_json_date(row['appointment_dt']) if row['appointment_dt'] else None
             director.cessation_date = convert_to_json_date(row['cessation_dt']) if row['cessation_dt'] else None
             director.start_event_id = row['start_event_id'] if row['start_event_id'] else ''

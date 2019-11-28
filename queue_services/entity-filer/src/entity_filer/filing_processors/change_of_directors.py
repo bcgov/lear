@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of directors."""
+from datetime import datetime
 from typing import Dict
 
 from entity_queue_common.service_utils import QueueException, logger
@@ -20,11 +21,38 @@ from legal_api.models import Address, Business, Director
 from entity_filer.filing_processors import create_address, update_director
 
 
-def process(business: Business, filing: Dict):
+def process(business: Business, filing: Dict):  # pylint: disable=too-many-branches;
     """Render the change_of_directors onto the business model objects."""
     new_directors = filing['changeOfDirectors'].get('directors')
+    new_director_names = []
 
-    for new_director in new_directors:
+    for new_director in new_directors:  # pylint: disable=too-many-nested-blocks;
+        # Applies only for filings coming from colin.
+        if filing.get('colinId'):
+            director_found = False
+            current_new_director_name = \
+                new_director['officer'].get('firstName') + new_director['officer'].get('middleInitial', '') + \
+                new_director['officer'].get('lastName')
+            new_director_names.append(current_new_director_name.upper())
+
+            for director in business.directors:
+                existing_director_name = director.first_name + director.middle_initial + director.last_name
+                if existing_director_name.upper() == current_new_director_name.upper():
+                    # Creates a new director record in Lear if a matching ceased director exists in Lear
+                    # and the colin json contains the same director record with cessation date null.
+                    if director.cessation_date is not None and new_director.get('cessationDate') is None:
+                        director_found = False
+                    else:
+                        director_found = True
+                        if new_director.get('cessationDate'):
+                            new_director['actions'] = ['ceased']
+                        else:
+                            # For force updating address always as of now.
+                            new_director['actions'] = ['modified']
+                    break
+            if not director_found:
+                new_director['actions'] = ['appointed']
+
         if 'appointed' in new_director['actions']:
             # create address
             address = create_address(new_director['deliveryAddress'], Address.DELIVERY)
@@ -59,6 +87,14 @@ def process(business: Business, filing: Dict):
             for director in business.directors:
                 # get name of director in database for comparison *
                 director_name = director.first_name + director.middle_initial + director.last_name
-                if director_name.upper() == new_director_name.upper():
+                # Update only an active director
+                if director_name.upper() == new_director_name.upper() and director.cessation_date is None:
                     update_director(director, new_director)
                     break
+
+    if filing.get('colinId'):
+        for director in business.directors:
+            # get name of director in database for comparison *
+            director_name = director.first_name + director.middle_initial + director.last_name
+            if director_name.upper() not in new_director_names:
+                director.cessation_date = datetime.utcnow()

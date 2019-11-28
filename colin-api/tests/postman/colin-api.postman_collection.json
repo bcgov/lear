@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "6c508540-1512-4ee3-807a-0dc803210c42",
 		"name": "colin-api",
-		"description": "version=0.105 - This is a Colin API description",
+		"description": "version=0.106 - This is a Colin API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -150,7 +150,7 @@
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    var jsonData = pm.response.json()",
 									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15')",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
 									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 									"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -239,7 +239,7 @@
 								},
 								{
 									"key": "Access-Control-Allow-Methods",
-									"value": "GET, OPTIONS, POST, HEAD"
+									"value": "OPTIONS, GET, POST, HEAD"
 								},
 								{
 									"key": "Access-Control-Max-Age",
@@ -247,19 +247,19 @@
 								},
 								{
 									"key": "API",
-									"value": "colin_api/0.1.0a0.dev"
+									"value": "colin_api/2.0.0"
 								},
 								{
 									"key": "Server",
-									"value": "Werkzeug/0.15.4 Python/3.6.5"
+									"value": "Werkzeug/0.16.0 Python/3.7.4"
 								},
 								{
 									"key": "Date",
-									"value": "Mon, 15 Jul 2019 20:29:42 GMT"
+									"value": "Wed, 06 Nov 2019 00:28:33 GMT"
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2017-12-21\",\n            \"certifiedBy\": \"N/A\",\n            \"email\": \"xxxx@xxxx.xxx\",\n            \"eventId\": 103248132\n        },\n        \"business\": {\n            \"businessNumber\": null,\n            \"cacheId\": 0,\n            \"corpState\": \"ACT\",\n            \"foundingDate\": \"2010-10-15\",\n            \"identifier\": \"CP0002098\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2017-09-11\",\n            \"lastArFiledDate\": \"2017-09-11\",\n            \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n            \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n            \"status\": \"Active\",\n            \"type\": \"CP\"\n        },\n        \"header\": {\n            \"date\": \"2017-12-21\",\n            \"name\": \"annualReport\"\n        }\n    }\n}"
+							"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": null,\n            \"annualReportDate\": null,\n            \"deliveryAddress\": {\n                \"actions\": [],\n                \"addressCity\": \"BURNS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 102604291,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"\",\n                \"streetAddress\": \"586 HWY 16\",\n                \"streetAddressAdditional\": \"\"\n            },\n            \"directors\": [\n                {\n                    \"actions\": [],\n                    \"appointmentDate\": \"2010-10-15\",\n                    \"cessationDate\": null,\n                    \"deliveryAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555536,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"3705 EAST-TCHESINKUT RD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"endEventId\": \"\",\n                    \"mailingAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555536,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"3705 EAST-TCHESINKUT RD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"officer\": {\n                        \"firstName\": \"CANDICE M\",\n                        \"lastName\": \"LITTLE\",\n                        \"middleInitial\": \"\"\n                    },\n                    \"startEventId\": 103219412,\n                    \"title\": \"\"\n                },\n                {\n                    \"actions\": [],\n                    \"appointmentDate\": \"2010-10-15\",\n                    \"cessationDate\": null,\n                    \"deliveryAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555537,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"115 SCHRITT CRES\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"endEventId\": \"\",\n                    \"mailingAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555537,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"115 SCHRITT CRES\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"officer\": {\n                        \"firstName\": \"BEATE\",\n                        \"lastName\": \"MARQUARDT\",\n                        \"middleInitial\": \"\"\n                    },\n                    \"startEventId\": 103219412,\n                    \"title\": \"\"\n                },\n                {\n                    \"actions\": [],\n                    \"appointmentDate\": \"2012-05-08\",\n                    \"cessationDate\": null,\n                    \"deliveryAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555538,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"1723 SIDAR ROAD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"endEventId\": \"\",\n                    \"mailingAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555538,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"1723 SIDAR ROAD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"officer\": {\n                        \"firstName\": \"LORNA\",\n                        \"lastName\": \"HANNETT\",\n                        \"middleInitial\": \"\"\n                    },\n                    \"startEventId\": 103219412,\n                    \"title\": \"\"\n                },\n                {\n                    \"actions\": [],\n                    \"appointmentDate\": \"2015-10-14\",\n                    \"cessationDate\": null,\n                    \"deliveryAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555539,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"173 8TH AVE\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"endEventId\": \"\",\n                    \"mailingAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555539,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"173 8TH AVE\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"officer\": {\n                        \"firstName\": \"PAULA\",\n                        \"lastName\": \"LAURIE\",\n                        \"middleInitial\": \"\"\n                    },\n                    \"startEventId\": 103219412,\n                    \"title\": \"\"\n                },\n                {\n                    \"actions\": [],\n                    \"appointmentDate\": \"2017-12-21\",\n                    \"cessationDate\": null,\n                    \"deliveryAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555540,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"10816 TINTAGEL ROAD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"endEventId\": \"\",\n                    \"mailingAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555540,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"10816 TINTAGEL ROAD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"officer\": {\n                        \"firstName\": \"KELLY\",\n                        \"lastName\": \"TURFORD\",\n                        \"middleInitial\": \"\"\n                    },\n                    \"startEventId\": 103219412,\n                    \"title\": \"\"\n                }\n            ],\n            \"eventId\": 103248132,\n            \"mailingAddress\": {\n                \"actions\": [],\n                \"addressCity\": \"BURNS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 102604757,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"\",\n                \"streetAddress\": \"PO BOX 559\",\n                \"streetAddressAdditional\": \"\"\n            }\n        },\n        \"business\": {\n            \"businessNumber\": null,\n            \"cacheId\": 0,\n            \"corpState\": \"ACT\",\n            \"foundingDate\": \"2010-10-15T00:00:00-00:00\",\n            \"identifier\": \"CP0002098\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2017-09-11\",\n            \"lastArDate\": \"2017-09-11\",\n            \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n            \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n            \"legalType\": \"CP\",\n            \"status\": \"Active\"\n        },\n        \"header\": {\n            \"availableOnPaperOnly\": false,\n            \"certifiedBy\": \"N/A\",\n            \"colinId\": 103248132,\n            \"date\": \"2017-12-21\",\n            \"email\": \"xxxx@xxxx.xxx\",\n            \"name\": \"annualReport\"\n        }\n    }\n}"
 						}
 					]
 				},
@@ -302,7 +302,7 @@
 									"",
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15')",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
 									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 									"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -383,7 +383,12 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"filing\": {\n    \"annualReport\": {\n      \"annualGeneralMeetingDate\": \"2018-12-21\",\n      \"certifiedBy\": \"Tester testing\",\n      \"email\": \"tester@test.com\"\n    },\n    \"business\": {\n      \"businessNumber\": null,\n      \"cacheId\": 0,\n      \"corpState\": \"ACT\",\n      \"foundingDate\": \"2010-10-15\",\n      \"identifier\": \"CP0002098\",\n      \"jurisdiction\": \"BC\",\n      \"lastAgmDate\": \"2017-09-11\",\n      \"lastArFiledDate\": \"2017-09-11\",\n      \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n      \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n      \"status\": \"Active\",\n      \"type\": \"CP\"\n    },\n    \"header\": {\n      \"date\": \"{{today}}\",\n      \"name\": \"annualReport\"\n    }\n  }\n}"
+									"raw": "{\n  \"filing\": {\n    \"annualReport\": {\n      \"annualGeneralMeetingDate\": \"2018-12-21\",\n      \"annualReportDate\": \"2018-12-21\",\n      \"deliveryAddress\": {\n\t    \"actions\": [],\n\t    \"addressCity\": \"BURNS LAKE\",\n\t    \"addressCountry\": \"CANADA\",\n\t    \"addressId\": 102604291,\n\t    \"addressRegion\": \"BC\",\n\t    \"deliveryInstructions\": \"\",\n\t    \"postalCode\": \"\",\n\t    \"streetAddress\": \"586 HWY 16\",\n\t    \"streetAddressAdditional\": \"\"\n\t  },\n\t  \"mailingAddress\": {\n\t    \"actions\": [],\n\t    \"addressCity\": \"BURNS LAKE\",\n\t    \"addressCountry\": \"CANADA\",\n\t    \"addressId\": 102604757,\n\t    \"addressRegion\": \"BC\",\n\t    \"deliveryInstructions\": \"\",\n\t    \"postalCode\": \"\",\n\t    \"streetAddress\": \"PO BOX 559\",\n\t    \"streetAddressAdditional\": \"\"\n\t  },\n      \"directors\": [\n        {\n\t      \"actions\": [],\n\t      \"appointmentDate\": \"2010-10-15\",\n\t      \"cessationDate\": null,\n\t      \"deliveryAddress\": {\n\t        \"actions\": [],\n\t        \"addressCity\": \"BURNS LAKE\",\n\t        \"addressCountry\": \"CANADA\",\n\t        \"addressId\": 102555536,\n\t        \"addressRegion\": \"BC\",\n\t        \"deliveryInstructions\": \"\",\n\t        \"postalCode\": \"\",\n\t        \"streetAddress\": \"3705 EAST-TCHESINKUT RD\",\n\t        \"streetAddressAdditional\": \"\"\n\t      },\n\t      \"endEventId\": \"\",\n\t      \"officer\": {\n\t        \"firstName\": \"CANDICE M\",\n\t        \"lastName\": \"LITTLE\",\n\t        \"middleInitial\": \"\"\n\t      },\n\t      \"startEventId\": 103219412,\n\t      \"title\": \"\"\n\t    },\n\t    {\n\t      \"actions\": [],\n\t      \"appointmentDate\": \"2010-10-15\",\n\t      \"cessationDate\": null,\n\t      \"deliveryAddress\": {\n\t        \"actions\": [],\n\t        \"addressCity\": \"BURNS LAKE\",\n\t        \"addressCountry\": \"CANADA\",\n\t        \"addressId\": 102555537,\n\t        \"addressRegion\": \"BC\",\n\t        \"deliveryInstructions\": \"\",\n\t        \"postalCode\": \"\",\n\t        \"streetAddress\": \"115 SCHRITT CRES\",\n\t        \"streetAddressAdditional\": \"\"\n\t      },\n\t      \"endEventId\": \"\",\n\t      \"officer\": {\n\t        \"firstName\": \"BEATE\",\n\t        \"lastName\": \"MARQUARDT\",\n\t        \"middleInitial\": \"\"\n\t      },\n\t      \"startEventId\": 103219412,\n\t      \"title\": \"\"\n\t    },\n\t    {\n\t      \"actions\": [],\n\t      \"appointmentDate\": \"2012-05-08\",\n\t      \"cessationDate\": null,\n\t      \"deliveryAddress\": {\n\t        \"actions\": [],\n\t        \"addressCity\": \"BURNS LAKE\",\n\t        \"addressCountry\": \"CANADA\",\n\t        \"addressId\": 102555538,\n\t        \"addressRegion\": \"BC\",\n\t        \"deliveryInstructions\": \"\",\n\t        \"postalCode\": \"\",\n\t        \"streetAddress\": \"1723 SIDAR ROAD\",\n\t        \"streetAddressAdditional\": \"\"\n\t      },\n\t      \"endEventId\": \"\",\n\t      \"officer\": {\n\t        \"firstName\": \"LORNA\",\n\t        \"lastName\": \"HANNETT\",\n\t        \"middleInitial\": \"\"\n\t      },\n\t      \"startEventId\": 103219412,\n\t      \"title\": \"\"\n\t    },\n\t    {\n\t      \"actions\": [],\n\t      \"appointmentDate\": \"2015-10-14\",\n\t      \"cessationDate\": null,\n\t      \"deliveryAddress\": {\n\t        \"actions\": [],\n\t        \"addressCity\": \"BURNS LAKE\",\n\t        \"addressCountry\": \"CANADA\",\n\t        \"addressId\": 102555539,\n\t        \"addressRegion\": \"BC\",\n\t        \"deliveryInstructions\": \"\",\n\t        \"postalCode\": \"\",\n\t        \"streetAddress\": \"173 8TH AVE\",\n\t        \"streetAddressAdditional\": \"\"\n\t      },\n\t      \"endEventId\": \"\",\n\t      \"officer\": {\n\t        \"firstName\": \"PAULA\",\n\t        \"lastName\": \"LAURIE\",\n\t        \"middleInitial\": \"\"\n\t      },\n\t      \"startEventId\": 103219412,\n\t      \"title\": \"\"\n\t    },\n\t    {\n\t      \"actions\": [],\n\t      \"appointmentDate\": \"2017-12-21\",\n\t      \"cessationDate\": null,\n\t      \"deliveryAddress\": {\n\t        \"actions\": [],\n\t        \"addressCity\": \"BURNS LAKE\",\n\t        \"addressCountry\": \"CANADA\",\n\t        \"addressId\": 102555540,\n\t        \"addressRegion\": \"BC\",\n\t        \"deliveryInstructions\": \"\",\n\t        \"postalCode\": \"\",\n\t        \"streetAddress\": \"10816 TINTAGEL ROAD\",\n\t        \"streetAddressAdditional\": \"\"\n\t      },\n\t      \"endEventId\": \"\",\n\t      \"officer\": {\n\t        \"firstName\": \"KELLY\",\n\t        \"lastName\": \"TURFORD\",\n\t        \"middleInitial\": \"\"\n\t      },\n\t      \"startEventId\": 103219412,\n\t      \"title\": \"\"\n\t    }\n      ]\n    },\n    \"business\": {\n      \"businessNumber\": null,\n      \"cacheId\": 0,\n      \"corpState\": \"ACT\",\n      \"foundingDate\": \"2010-10-15\",\n      \"identifier\": \"CP0002098\",\n      \"jurisdiction\": \"BC\",\n      \"lastAgmDate\": \"2017-09-11\",\n      \"lastArDate\": \"2017-09-11\",\n      \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n      \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n      \"status\": \"Active\",\n      \"legalType\": \"CP\"\n    },\n    \"header\": {\n\t  \"certifiedBy\": \"Tester testing\",\n      \"email\": \"tester@test.com\",\n      \"date\": \"{{today}}\",\n      \"name\": \"annualReport\"\n    }\n  }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
 								},
 								"url": {
 									"raw": "{{url}}/api/v1/businesses/CP0002098/filings/annualReport",
@@ -414,7 +419,7 @@
 								},
 								{
 									"key": "Access-Control-Allow-Methods",
-									"value": "GET, OPTIONS, POST, HEAD"
+									"value": "OPTIONS, GET, POST, HEAD"
 								},
 								{
 									"key": "Access-Control-Max-Age",
@@ -422,19 +427,19 @@
 								},
 								{
 									"key": "API",
-									"value": "colin_api/0.1.0a0.dev"
+									"value": "colin_api/2.0.0"
 								},
 								{
 									"key": "Server",
-									"value": "Werkzeug/0.15.4 Python/3.6.5"
+									"value": "Werkzeug/0.16.0 Python/3.7.4"
 								},
 								{
 									"key": "Date",
-									"value": "Mon, 15 Jul 2019 20:32:49 GMT"
+									"value": "Wed, 06 Nov 2019 00:29:33 GMT"
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2018-12-21\",\n            \"certifiedBy\": \"Tester testing\",\n            \"email\": \"tester@test.com\",\n            \"eventId\": 103251077\n        },\n        \"business\": {\n            \"businessNumber\": null,\n            \"cacheId\": 0,\n            \"corpState\": \"ACT\",\n            \"foundingDate\": \"2010-10-15\",\n            \"identifier\": \"CP0002098\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2018-12-21\",\n            \"lastArFiledDate\": \"2019-07-15\",\n            \"lastLedgerTimestamp\": \"2019-07-15T20:32:47-00:00\",\n            \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n            \"status\": \"In Good Standing\",\n            \"type\": \"CP\"\n        },\n        \"header\": {\n            \"date\": \"2019-07-15\",\n            \"name\": \"annualReport\"\n        }\n    }\n}"
+							"body": "{\n    \"filing\": {\n        \"annualReport\": {\n            \"annualGeneralMeetingDate\": \"2018-12-21\",\n            \"annualReportDate\": \"2018-12-21\",\n            \"deliveryAddress\": {\n                \"actions\": [],\n                \"addressCity\": \"BURNS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 102604291,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"\",\n                \"streetAddress\": \"586 HWY 16\",\n                \"streetAddressAdditional\": \"\"\n            },\n            \"directors\": [\n                {\n                    \"actions\": [],\n                    \"appointmentDate\": \"2010-10-15\",\n                    \"cessationDate\": null,\n                    \"deliveryAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555536,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"3705 EAST-TCHESINKUT RD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"endEventId\": \"\",\n                    \"mailingAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555536,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"3705 EAST-TCHESINKUT RD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"officer\": {\n                        \"firstName\": \"CANDICE M\",\n                        \"lastName\": \"LITTLE\",\n                        \"middleInitial\": \"\"\n                    },\n                    \"startEventId\": 103219412,\n                    \"title\": \"\"\n                },\n                {\n                    \"actions\": [],\n                    \"appointmentDate\": \"2010-10-15\",\n                    \"cessationDate\": null,\n                    \"deliveryAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555537,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"115 SCHRITT CRES\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"endEventId\": \"\",\n                    \"mailingAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555537,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"115 SCHRITT CRES\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"officer\": {\n                        \"firstName\": \"BEATE\",\n                        \"lastName\": \"MARQUARDT\",\n                        \"middleInitial\": \"\"\n                    },\n                    \"startEventId\": 103219412,\n                    \"title\": \"\"\n                },\n                {\n                    \"actions\": [],\n                    \"appointmentDate\": \"2012-05-08\",\n                    \"cessationDate\": null,\n                    \"deliveryAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555538,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"1723 SIDAR ROAD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"endEventId\": \"\",\n                    \"mailingAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555538,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"1723 SIDAR ROAD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"officer\": {\n                        \"firstName\": \"LORNA\",\n                        \"lastName\": \"HANNETT\",\n                        \"middleInitial\": \"\"\n                    },\n                    \"startEventId\": 103219412,\n                    \"title\": \"\"\n                },\n                {\n                    \"actions\": [],\n                    \"appointmentDate\": \"2015-10-14\",\n                    \"cessationDate\": null,\n                    \"deliveryAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555539,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"173 8TH AVE\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"endEventId\": \"\",\n                    \"mailingAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555539,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"173 8TH AVE\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"officer\": {\n                        \"firstName\": \"PAULA\",\n                        \"lastName\": \"LAURIE\",\n                        \"middleInitial\": \"\"\n                    },\n                    \"startEventId\": 103219412,\n                    \"title\": \"\"\n                },\n                {\n                    \"actions\": [],\n                    \"appointmentDate\": \"2017-12-21\",\n                    \"cessationDate\": null,\n                    \"deliveryAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555540,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"10816 TINTAGEL ROAD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"endEventId\": \"\",\n                    \"mailingAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"BURNS LAKE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102555540,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"\",\n                        \"streetAddress\": \"10816 TINTAGEL ROAD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"officer\": {\n                        \"firstName\": \"KELLY\",\n                        \"lastName\": \"TURFORD\",\n                        \"middleInitial\": \"\"\n                    },\n                    \"startEventId\": 103219412,\n                    \"title\": \"\"\n                }\n            ],\n            \"eventId\": 103251127,\n            \"mailingAddress\": {\n                \"actions\": [],\n                \"addressCity\": \"BURNS LAKE\",\n                \"addressCountry\": \"CANADA\",\n                \"addressId\": 102604757,\n                \"addressRegion\": \"BC\",\n                \"deliveryInstructions\": \"\",\n                \"postalCode\": \"\",\n                \"streetAddress\": \"PO BOX 559\",\n                \"streetAddressAdditional\": \"\"\n            }\n        },\n        \"business\": {\n            \"businessNumber\": null,\n            \"cacheId\": 0,\n            \"corpState\": \"ACT\",\n            \"foundingDate\": \"2010-10-15T00:00:00-00:00\",\n            \"identifier\": \"CP0002098\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2018-12-21\",\n            \"lastArDate\": \"2018-12-21\",\n            \"lastLedgerTimestamp\": \"2019-11-06T00:29:11-00:00\",\n            \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n            \"legalType\": \"CP\",\n            \"status\": \"In Good Standing\"\n        },\n        \"header\": {\n            \"certifiedBy\": \"Tester testing\",\n            \"date\": \"2019-11-05\",\n            \"email\": \"tester@test.com\",\n            \"name\": \"annualReport\"\n        }\n    }\n}"
 						}
 					]
 				},
@@ -475,7 +480,7 @@
 									"",
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15')",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
 									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 									"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -635,7 +640,7 @@
 									"",
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15')",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
 									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 									"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -797,7 +802,7 @@
 									"",
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15')",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
 									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 									"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -961,7 +966,7 @@
 									"",
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2004-04-28')",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2004-04-28T00:00:00-00:00')",
 									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0001965')",
 									"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -1031,7 +1036,7 @@
 					"response": []
 				},
 				{
-					"name": "GET no agme AR CP0001965",
+					"name": "GET no agm AR CP0001965",
 					"event": [
 						{
 							"listen": "test",
@@ -1068,7 +1073,7 @@
 									"",
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2004-04-28')",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2004-04-28T00:00:00-00:00')",
 									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0001965')",
 									"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -1157,7 +1162,7 @@
 									"    var jsonData = pm.response.json()",
 									"    pm.expect(jsonData.business).to.exist",
 									"    pm.expect(jsonData.business.cacheId).to.exist",
-									"    pm.expect(jsonData.business.foundingDate).to.eql('2010-10-15')",
+									"    pm.expect(jsonData.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
 									"    pm.expect(jsonData.business.identifier).to.eql('CP0002098')",
 									"    pm.expect(jsonData.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.business.corpState).to.eql('ACT')",
@@ -1720,7 +1725,7 @@
 									"",
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15')",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
 									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 									"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -2061,7 +2066,7 @@
 									"",
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15')",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
 									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 									"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -2254,7 +2259,7 @@
 									"",
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15')",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
 									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 									"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -2422,7 +2427,7 @@
 									"",
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15')",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
 									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 									"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -2604,7 +2609,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{url}}/api/v1/businesses/CP0002098/directors",
+							"raw": "{{url}}/api/v1/businesses/CP0002206/directors",
 							"host": [
 								"{{url}}"
 							],
@@ -2612,7 +2617,7 @@
 								"api",
 								"v1",
 								"businesses",
-								"CP0002098",
+								"CP0002206",
 								"directors"
 							]
 						}
@@ -2752,7 +2757,7 @@
 									"",
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15')",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
 									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 									"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -2959,7 +2964,7 @@
 									"",
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15')",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
 									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 									"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -3137,7 +3142,7 @@
 									"",
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    pm.expect(jsonData.filing.business.cacheId).to.exist",
-									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15')",
+									"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
 									"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 									"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 									"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",

@@ -166,6 +166,7 @@ def run():
                                           json=filing, headers={'Content-Type': 'application/json',
                                                                 'Authorization': f'Bearer {token}'})
                         if r.status_code != 201:
+                            application.logger.error(f'{r.json()} {r.status_code}')
                             application.logger.error(f'Legal failed to create filing with event_id '
                                                      f'{event_info["event_id"]} for {event_info["corp_num"]}')
                         else:

@@ -223,6 +223,7 @@ class ListFilingResource(Resource):
             else:
                 epoch_filing = Filing.get_filings_by_status(business_id=business.id, status=[Filing.Status.EPOCH.value])
                 filing.transaction_id = epoch_filing[0].transaction_id
+                filing.set_processed()
                 filing.save()
             return {'filing': {'id': filing.id}}, HTTPStatus.CREATED
         except KeyError:
