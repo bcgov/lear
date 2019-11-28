@@ -86,6 +86,7 @@ class Director(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the active directors as of given date."""
         directors = db.session.query(Director). \
             filter(Director.business_id == business_id). \
+            filter(cast(Director.appointment_date, Date) <= end_date). \
             filter(or_(Director.cessation_date.is_(None), cast(Director.cessation_date, Date) > end_date)). \
             all()
         return directors
