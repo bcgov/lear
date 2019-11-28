@@ -598,7 +598,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private get directorFirstNameRules (): Array<Function> {
     return [
       v => !!v || 'A first name is required',
-      v => !/\s/g.test(v) || 'Invalid spaces'
+      v => (v !== undefined && v.trim() !== '') || 'Invalid spaces'
     ]
   }
 
@@ -609,7 +609,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private get directorLastNameRules (): Array<Function> {
     return [
       v => !!v || 'A last name is required',
-      v => !/\s/g.test(v) || 'Invalid spaces'
+      v => (v !== undefined && v.trim() !== '') || 'Invalid spaces'
     ]
   }
 
