@@ -52,8 +52,8 @@
                       </v-chip>
                     </template>
                     <span>
-                      The updated office addresses will be legally effective on {{ effectiveDate }}, 12:01 AM(PST).
-                      No other filings are allowed until then.
+                      The updated office addresses will be legally effective on {{ effectiveDate }},
+                      12:01 AM(Pacific Time). No other filings are allowed until then.
                     </span>
                   </v-tooltip>
                 </v-scale-transition>
@@ -140,6 +140,8 @@ export default {
       inProcessFiling: null,
       coaPending: false,
       effectiveDate: null,
+
+      // Filing Status Enum
       FilingStatus
     }
   },
