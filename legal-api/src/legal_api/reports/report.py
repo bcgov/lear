@@ -181,11 +181,10 @@ class Report:  # pylint: disable=too-few-public-methods
             if agm_date_str:
                 agm_date = datetime.fromisoformat(agm_date_str)
                 filing['agm_date'] = agm_date.strftime('%B %d, %Y')
+                # for AR, the effective date is the AGM date
+                filing['effective_date'] = agm_date.strftime('%B %d, %Y')
             else:
                 filing['agm_date'] = 'No AGM'
-
-            # for AR, the effective date is the AGM date
-            filing['effective_date'] = filing_datetime.strftime('%B %d, %Y')
 
         elif self._filing.filing_type in ('changeOfAddress', 'changeOfDirectors'):
             # for standalone filings, the effective date comes from the filing data
