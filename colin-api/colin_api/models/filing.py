@@ -141,7 +141,7 @@ class Filing:
                 item = {'id': row['event_id'], 'date': row['event_timestmp']}
 
                 # if filing type is an AR include the period_end_dt info
-                if Filing[filing_type_code] == 'annualReport':
+                if Filing.FILING_TYPES[filing_type_code] == 'annualReport':
                     item['annualReportDate'] = row['period_end_dt']
 
                 event_list.append(item)
