@@ -29,9 +29,7 @@ def test_get_business_addresses(session, client, jwt):
     identifier = 'CP7654321'
     business = factory_business(identifier)
     mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
-    #business.mailing_address.append(mailing_address)
     delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
-    #business.delivery_address.append(delivery_address)
     office = Office(office_type='registeredOffice')
     office.addresses.append(mailing_address)
     office.addresses.append(delivery_address)
