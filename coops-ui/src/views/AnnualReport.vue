@@ -728,9 +728,6 @@ export default {
       } else if (type === 'cod') {
         earliestAllowedDate = this.lastCODFilingDate
       }
-      if (!earliestAllowedDate) {
-        earliestAllowedDate = this.lastPreLoadFilingDate
-      }
       return this.agmDateValid && this.agmDate && this.compareDates(this.agmDate, earliestAllowedDate, '>=')
     },
 
