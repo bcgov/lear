@@ -42,7 +42,7 @@ class EventInfo(Resource):
                 querystring += 'and event.event_id > :max_event_id'
                 cursor.execute(querystring, max_event_id=event_id, corp_type=corp_type + '%')
             else:
-                querystring += f"and event_timestmp > TO_DATE('2019-03-08', 'yyyy-mm-dd')"
+                querystring += f"and event_timestmp > TO_DATE('2019-03-08', 'yyyy-mm-dd') order by event.event_id desc"
                 cursor.execute(querystring, corp_type=corp_type + '%')
 
             event_info = cursor.fetchall()
