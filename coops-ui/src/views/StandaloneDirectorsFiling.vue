@@ -263,12 +263,12 @@ import { mapState, mapGetters } from 'vuex'
 import { BAD_REQUEST, PAYMENT_REQUIRED } from 'http-status-codes'
 
 // Components
+import CODDate from '@/components/StandaloneDirectorChange/CODDate.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { SummaryDirectors, SummaryCertify, SummaryStaffPayment } from '@/components/Common'
-import CODDate from '@/components/StandaloneDirectorChange/CODDate.vue'
 
 // Dialog Components
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -289,6 +289,7 @@ export default {
   name: 'StandaloneDirectorsFiling',
 
   components: {
+    CODDate,
     Directors,
     SummaryDirectors,
     SummaryCertify,
@@ -300,8 +301,7 @@ export default {
     ConfirmDialog,
     PaymentErrorDialog,
     ResumeErrorDialog,
-    SaveErrorDialog,
-    CODDate
+    SaveErrorDialog
   },
 
   mixins: [EntityFilterMixin],
@@ -647,7 +647,12 @@ export default {
 
             this.certifiedBy = filing.header.certifiedBy
             this.routingSlipNumber = filing.header.routingSlipNumber
-            this.initialCODDate = filing.header.effectiveDate.slice(0, 10)
+
+            if (filing.header.effectiveDate) {
+              this.initialCODDate = filing.header.effectiveDate.slice(0, 10)
+            } else {
+              console.error('fetchChangeOfDirectors() error = missing Effective Date')
+            }
 
             const changeOfDirectors = filing.changeOfDirectors
             if (changeOfDirectors) {

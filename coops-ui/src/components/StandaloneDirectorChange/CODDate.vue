@@ -1,5 +1,5 @@
 <template>
-  <v-card flat class="container">
+  <v-card flat class="cod-date-container">
     <div class="meta-container">
       <label>
         <span>Director Change Date</span>
@@ -16,23 +16,25 @@
           <template v-slot:activator="{ on }">
             <v-text-field
               id="cod-textfield"
+              data-test-id="cod-date-text"
               v-model="dateFormatted"
               :rules="codDateRules"
-              label="Date"
+              label="Enter your Director Change Date"
               hint="YYYY/MM/DD"
               append-icon="mdi-calendar"
               v-on="on"
-              filled data-test-id="cod-date-text">
-            </v-text-field>
+              filled
+            />
           </template>
           <v-date-picker
             id="cod-datepicker"
+            data-test-id="cod-date-picker"
             v-model="date"
             :min=minDate
             :max=maxDate
             no-title
-            @input="menu = true" data-test-id="cod-date-picker">
-          </v-date-picker>
+            @input="menu = true"
+          />
         </v-menu>
 
         <div class="validationErrorInfo" v-if="$v.dateFormatted.isNotNull" data-test-id="cod-validation-error">
@@ -49,7 +51,6 @@
 </template>
 
 <script lang="ts">
-
 import { Component, Mixins, Vue, Prop, Watch, Emit } from 'vue-property-decorator'
 import { isNotNull, isValidFormat, isValidCODDate } from '@/validators'
 import { mapState, mapGetters } from 'vuex'
@@ -98,7 +99,7 @@ export default class CODDate extends Mixins(DateMixin) {
    * @returns The maximum date that can be entered.
    */
   private get maxDate (): string {
-    return this.currentDate.split('/').join('-')
+    return this.currentDate ? this.currentDate.split('/').join('-') : null
   }
 
   /**
@@ -203,35 +204,38 @@ export default class CODDate extends Mixins(DateMixin) {
   @Emit('valid')
   private emitValid (val: boolean): void { }
 }
-
 </script>
 
 <style lang="scss" scoped>
-@import "@/assets/styles/theme.scss";
+// @import "@/assets/styles/theme.scss";
 
-.validationErrorInfo{
+.cod-date-container {
+  padding: 1.25rem;
+}
+
+.validationErrorInfo {
   color: red;
 }
 
-.value.date{
+.value.date {
   min-width: 24rem;
 }
 
-.meta-container{
+.meta-container {
   display: flex;
   flex-flow: column nowrap;
   position: relative;
 
-  > label:first-child{
+  > label:first-child {
     font-weight: 700;
   }
 }
 
-@media (min-width: 768px){
-  .meta-container{
+@media (min-width: 768px) {
+  .meta-container {
     flex-flow: row nowrap;
 
-    > label:first-child{
+    > label:first-child {
       flex: 0 0 auto;
       padding-right: 2rem;
       width: 12rem;
