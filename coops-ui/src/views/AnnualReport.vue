@@ -34,109 +34,85 @@
       </div>
 
       <v-container id="annual-report-container" class="view-container">
-        <article id="annual-report-article"
-          :class="this.agmDate ? 'agm-date-selected' : 'no-agm-date-selected'"
-          v-if="entityFilter(EntityTypes.Coop)"
-        >
-          <header>
-            <h1 id="AR-header">File {{ ARFilingYear }} Annual Report
-              <span style="font-style: italic" v-if="reportState">- {{ reportState }}</span>
-            </h1>
-            <p>Please verify or change your Office Addresses and Directors.</p>
-          </header>
+        <article>
+          <!-- Annual Report Date ( COOP ) -->
+          <article class="annual-report-article"
+            :class="this.agmDate ? 'agm-date-selected' : 'no-agm-date-selected'"
+            v-if="entityFilter(EntityTypes.Coop)"
+          >
+            <header>
+              <h1 id="AR-header">File {{ ARFilingYear }} Annual Report
+                <span style="font-style: italic" v-if="reportState">- {{ reportState }}</span>
+              </h1>
+              <p>Please verify or change your Office Addresses and Directors.</p>
+            </header>
 
-          <div v-if="isAnnualReportEditable">
-            <!-- Annual General Meeting Date ( COOP ) -->
-            <div>
-              <section>
-                <header>
-                  <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
-                  <p>Select your Annual General Meeting (AGM) date</p>
-                </header>
-                <AGMDate
-                  :initialAgmDate="initialAgmDate"
-                  :allowCOA="allowChange('coa')"
-                  :allowCOD="allowChange('cod')"
-                  @agmDate="agmDate=$event"
-                  @noAGM="noAGM=$event"
-                  @valid="agmDateValid=$event"
-                />
-              </section>
+            <div v-if="isAnnualReportEditable">
+              <!-- Annual General Meeting Date ( COOP ) -->
+              <div>
+                <section>
+                  <header>
+                    <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
+                    <p>Select your Annual General Meeting (AGM) date</p>
+                  </header>
+                  <AGMDate
+                    :initialAgmDate="initialAgmDate"
+                    :allowCOA="allowChange('coa')"
+                    :allowCOD="allowChange('cod')"
+                    @agmDate="agmDate=$event"
+                    @noAGM="noAGM=$event"
+                    @valid="agmDateValid=$event"
+                  />
+                </section>
 
-              <!-- Registered Office Addresses -->
-              <section>
-                <header>
-                  <h2 id="AR-step-2-header">2. Registered Office Addresses
-                    <span class="agm-date">(as of {{ ARFilingYear }} Annual General Meeting)</span>
-                  </h2>
-                  <p>Verify or change your Registered Office Addresses.</p>
-                </header>
-                <OfficeAddresses
-                  :changeButtonDisabled="!allowChange('coa')"
-                  :addresses.sync="addresses"
-                  :registeredAddress.sync="registeredAddress"
-                  :recordsAddress.sync="recordsAddress"
-                  @modified="officeModifiedEventHandler($event)"
-                  @valid="addressFormValid = $event"
-                />
-              </section>
+                <!-- Registered Office Addresses -->
+                <section>
+                  <header>
+                    <h2 id="AR-step-2-header">2. Registered Office Addresses
+                      <span class="agm-date">(as of {{ ARFilingYear }} Annual General Meeting)</span>
+                    </h2>
+                    <p>Verify or change your Registered Office Addresses.</p>
+                  </header>
+                  <OfficeAddresses
+                    :changeButtonDisabled="!allowChange('coa')"
+                    :addresses.sync="addresses"
+                    :registeredAddress.sync="registeredAddress"
+                    :recordsAddress.sync="recordsAddress"
+                    @modified="officeModifiedEventHandler($event)"
+                    @valid="addressFormValid = $event"
+                  />
+                </section>
 
-              <!-- Directors -->
-              <section>
-                <header>
-                  <h2 id="AR-step-3-header">3. Directors</h2>
-                  <p>Tell us who was elected or appointed and who ceased to be a director at your
-                    {{ ARFilingYear }} AGM.</p>
-                </header>
-                <Directors ref="directorsList"
-                  @directorsChange="directorsChange"
-                  @directorsFreeChange="directorsFreeChange"
-                  @allDirectors="allDirectors=$event"
-                  @directorFormValid="directorFormValid=$event"
-                  @directorEditAction="directorEditInProgress=$event"
-                  :asOfDate="agmDate"
-                  :componentEnabled="allowChange('cod')"
-                />
-              </section>
-
-              <!-- Certify -->
-              <section>
-                <header>
-                  <h2 id="AR-step-4-header">Certify Correct</h2>
-                  <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
-                </header>
-                <Certify
-                  :isCertified.sync="isCertified"
-                  :certifiedBy.sync="certifiedBy"
-                  :currentDate="currentDate"
-                  @valid="certifyFormValid=$event"
-                />
-              </section>
-
-              <!-- Staff Payment -->
-              <section v-if="isRoleStaff && isPayRequired">
-                <header>
-                  <h2>5. Staff Payment</h2>
-                </header>
-                <StaffPayment
-                  :value.sync="routingSlipNumber"
-                  @valid="staffPaymentFormValid=$event"
-                />
-              </section>
+                <!-- Directors -->
+                <section>
+                  <header>
+                    <h2 id="AR-step-3-header">3. Directors</h2>
+                    <p>Tell us who was elected or appointed and who ceased to be a director at your
+                      {{ ARFilingYear }} AGM.</p>
+                  </header>
+                  <Directors ref="directorsList"
+                    @directorsChange="directorsChange"
+                    @directorsFreeChange="directorsFreeChange"
+                    @allDirectors="allDirectors=$event"
+                    @directorFormValid="directorFormValid=$event"
+                    @directorEditAction="directorEditInProgress=$event"
+                    :asOfDate="agmDate"
+                    :componentEnabled="allowChange('cod')"
+                  />
+                </section>
+              </div>
             </div>
-          </div>
-        </article>
+          </article>
 
-       <!-- Annual Report Date ( BCORP ) -->
-        <article v-if="entityFilter(EntityTypes.BCorp)" id="annual-report-article">
-          <header>
-            <h1 id="AR-header-BC">File {{ ARFilingYear }} Annual Report
-              <span style="font-style: italic" v-if="reportState">- {{ reportState }}</span>
-            </h1>
-            <p>Please review all the information before you file and pay.</p>
-          </header>
+          <!-- Annual Report Date ( BCORP ) -->
+          <article v-if="entityFilter(EntityTypes.BCorp)" class="annual-report-article">
+            <header>
+              <h1 id="AR-header-BC">File {{ ARFilingYear }} Annual Report
+                <span style="font-style: italic" v-if="reportState">- {{ reportState }}</span>
+              </h1>
+              <p>Please review all the information before you file and pay.</p>
+            </header>
 
-          <div>
             <!-- Annual Report Date -->
             <section>
               <header>
@@ -145,8 +121,8 @@
               <ARDate />
               <br>
               <SummaryOfficeAddresses
-                :registeredAddress.sync="registeredAddress"
-                :recordsAddress.sync="recordsAddress"
+                :registeredAddress="registeredAddress"
+                :recordsAddress="recordsAddress"
               />
             </section>
 
@@ -159,7 +135,7 @@
                 :directors="directors"
               />
             </section>
-          </div>
+          </article>
 
           <!-- Certify -->
           <section>
@@ -178,7 +154,7 @@
           <!-- Staff Payment -->
           <section v-if="isRoleStaff && isPayRequired">
             <header>
-              <h2 id="AR-step-5-header">5. Staff Payment</h2>
+              <h2>5. Staff Payment</h2>
             </header>
             <StaffPayment
               :value.sync="routingSlipNumber"
@@ -187,7 +163,7 @@
           </section>
         </article>
         <aside>
-          <affix relative-element-selector="#annual-report-article" :offset="{ top: 120, bottom: 40 }">
+          <affix relative-element-selector=".annual-report-article" :offset="{ top: 120, bottom: 40 }">
             <sbc-fee-summary
               v-bind:filingData="[...filingData]"
               v-bind:payURL="payAPIURL"
@@ -197,7 +173,12 @@
         </aside>
       </v-container>
 
-      <v-container id="buttons-container" class="list-item">
+      <!-- Buttons Container ( Coops ) -->
+      <v-container
+        id="buttons-container"
+        class="list-item"
+        v-if="entityFilter(EntityTypes.Coop)"
+      >
         <div class="buttons-left">
           <v-btn id="ar-save-btn" large
             v-if="isAnnualReportEditable"
@@ -209,7 +190,7 @@
           </v-btn>
           <v-btn id="ar-save-resume-btn" large
             v-if="isAnnualReportEditable"
-            :disabled="isSaveButtonEnabled || busySaving"
+            :disabled="!isSaveButtonEnabled || busySaving"
             :loading="savingResuming"
             @click="onClickSaveResume"
           >
@@ -246,6 +227,44 @@
           </v-btn>
         </div>
       </v-container>
+
+      <!-- Buttons Container ( Bcorps ) -->
+      <v-container
+        id="buttons-container"
+        class="list-item"
+        v-if="entityFilter(EntityTypes.BCorp)"
+      >
+        <div class="buttons-left">
+          <v-btn
+            id="ar-back-btn"
+            large
+            to="/dashboard"
+          >
+            Back
+          </v-btn>
+        </div>
+
+        <div class="buttons-right">
+          <v-tooltip top color="#3b6cff">
+            <template v-slot:activator="{ on }">
+              <div v-on="on" class="inline-div">
+                <v-btn
+                  id="ar-file-pay-bc-btn"
+                  color="primary"
+                  large
+                  :disabled="!validated"
+                  :loading="filingPaying"
+                  @click="onClickFilePay"
+                >
+                 File & Pay
+                </v-btn>
+              </div>
+            </template>
+            <span>Ensure all of your information is entered correctly before you File.<br>
+              There is no opportunity to change information beyond this point.</span>
+          </v-tooltip>
+        </div>
+      </v-container>
     </div>
   </div>
 </template>
@@ -278,8 +297,11 @@ import { DateMixin, EntityFilterMixin } from '@/mixins'
 // Constants
 import { APPOINTED, CEASED, NAMECHANGED, ADDRESSCHANGED } from '@/constants'
 
+// Interfaces
+import { FilingData } from '@/interfaces'
+
 // Enums
-import { EntityTypes } from '@/enums'
+import { EntityTypes, FilingCodes } from '@/enums'
 
 export default {
   name: 'AnnualReport',
@@ -338,7 +360,7 @@ export default {
       // other local properties
       filingId: null,
       loadingMessage: 'Loading...', // initial generic message
-      filingData: [],
+      filingData: [] as Array<FilingData>,
       saving: false,
       savingResuming: false,
       filingPaying: false,
@@ -352,7 +374,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['currentDate', 'ARFilingYear', 'lastAgmDate', 'entityType', 'entityName',
+    ...mapState(['currentDate', 'ARFilingYear', 'nextARDate', 'lastAgmDate', 'entityType', 'entityName',
       'entityIncNo', 'entityFoundingDate', 'registeredAddress', 'recordsAddress', 'lastPreLoadFilingDate',
       'directors']),
 
@@ -372,8 +394,11 @@ export default {
     validated () {
       const staffPaymentValid = (!this.isRoleStaff || !this.isPayRequired || this.staffPaymentFormValid)
 
-      return (staffPaymentValid && this.agmDateValid && this.addressesFormValid && this.directorFormValid &&
-        this.certifyFormValid && !this.directorEditInProgress)
+      if (this.entityFilter(EntityTypes.Coop)) {
+        return (staffPaymentValid && this.agmDateValid && this.addressesFormValid && this.directorFormValid &&
+          this.certifyFormValid && !this.directorEditInProgress)
+      }
+      return this.certifyFormValid
     },
 
     busySaving () {
@@ -414,6 +439,8 @@ export default {
     } else {
       // else just load new page
       this.loadingMessage = `Preparing Your ${this.ARFilingYear} Annual Report`
+      // TODO: This filing code needs to be updated to AnnualReportBC when Payments codes have been updated.
+      this.entityFilter(EntityTypes.BCorp) && this.toggleFiling('add', FilingCodes.AnnualReportOT)
     }
   },
 
@@ -449,6 +476,7 @@ export default {
 
   methods: {
     fetchData () {
+      console.log('Fetch Data')
       const url = this.entityIncNo + '/filings/' + this.filingId
       axios.get(url).then(response => {
         if (response && response.data) {
@@ -477,7 +505,7 @@ export default {
               // set the Initial AGM Date in the AGM Date component
               // NOTE: AR Filing Year (which is needed by agmDate component) was already set by Todo List
               this.initialAgmDate = annualReport.annualGeneralMeetingDate
-              this.toggleFiling('add', 'OTANN')
+              this.toggleFiling('add', FilingCodes.AnnualReportOT)
             } else {
               throw new Error('missing annual report')
             }
@@ -494,14 +522,14 @@ export default {
                 if (changeOfDirectors.directors.filter(
                   director => this.hasAction(director, CEASED) || this.hasAction(director, APPOINTED)
                 ).length > 0) {
-                  this.toggleFiling('add', 'OTCDR')
+                  this.toggleFiling('add', FilingCodes.DirectorChangeOT)
                 }
 
                 // add filing code for free changes
                 if (changeOfDirectors.directors.filter(
                   director => this.hasAction(director, NAMECHANGED) || this.hasAction(director, ADDRESSCHANGED)
                 ).length > 0) {
-                  this.toggleFiling('add', 'OTFDR')
+                  this.toggleFiling(1, FilingCodes.FreeDirectorChangeOT)
                 }
               } else {
                 throw new Error('invalid change of directors')
@@ -523,7 +551,7 @@ export default {
                     mailingAddress: offices.registeredOffice.mailingAddress
                   }
                 }
-                this.toggleFiling('add', 'OTADD')
+                this.toggleFiling('add', FilingCodes.AddressChangeOT)
               } else {
                 throw new Error('invalid change of address')
               }
@@ -551,19 +579,19 @@ export default {
     officeModifiedEventHandler (modified: boolean): void {
       this.haveChanges = true
       // when addresses change, update filing data
-      this.toggleFiling(modified ? 'add' : 'remove', 'OTADD')
+      this.toggleFiling(modified ? 'add' : 'remove', FilingCodes.AddressChangeOT)
     },
 
     directorsChange (modified: boolean) {
       this.haveChanges = true
       // when directors change, update filing data
-      this.toggleFiling(modified ? 'add' : 'remove', 'OTCDR')
+      this.toggleFiling(modified ? 'add' : 'remove', FilingCodes.DirectorChangeOT)
     },
 
     directorsFreeChange (modified: boolean) {
       this.haveChanges = true
       // when directors change (free filing), update filing data
-      this.toggleFiling(modified ? 'add' : 'remove', 'OTFDR')
+      this.toggleFiling(modified ? 'add' : 'remove', FilingCodes.FreeDirectorChangeOT)
     },
 
     async onClickSave () {
@@ -596,31 +624,34 @@ export default {
       if (this.busySaving) return
 
       this.filingPaying = true
-      const filing = await this.saveFiling(false) // not a draft
+      const filing = this.entityFilter(EntityTypes.Coop)
+        ? await this.saveFiling(false) // not a draft
+        : await this.saveArFiling()
 
-      // on success, redirect to Pay URL
-      if (filing && filing.header) {
-        const filingId = +filing.header.filingId
-
-        // whether this is a staff or no-fee filing
-        const prePaidFiling = (this.isRoleStaff || !this.isPayRequired)
-
-        // if filing needs to be paid, redirect to Pay URL
-        if (!prePaidFiling) {
-          const paymentToken = filing.header.paymentToken
-          const baseUrl = sessionStorage.getItem('BASE_URL')
-          const returnURL = encodeURIComponent(baseUrl + 'dashboard?filing_id=' + filingId)
-          const authUrl = sessionStorage.getItem('AUTH_URL')
-          const payURL = authUrl + 'makepayment/' + paymentToken + '/' + returnURL
-
-          // assume Pay URL is always reachable
-          // otherwise, user will have to retry payment later
-          window.location.assign(payURL)
-        } else {
-          // route directly to dashboard
-          this.$router.push('/dashboard?filing_id=' + filingId)
-        }
-      }
+      console.log(filing)
+      // // on success, redirect to Pay URL
+      // if (filing && filing.header) {
+      //   const filingId = +filing.header.filingId
+      //
+      //   // whether this is a staff or no-fee filing
+      //   const prePaidFiling = (this.isRoleStaff || !this.isPayRequired)
+      //
+      //   // if filing needs to be paid, redirect to Pay URL
+      //   if (!prePaidFiling) {
+      //     const paymentToken = filing.header.paymentToken
+      //     const baseUrl = sessionStorage.getItem('BASE_URL')
+      //     const returnURL = encodeURIComponent(baseUrl + 'dashboard?filing_id=' + filingId)
+      //     const authUrl = sessionStorage.getItem('AUTH_URL')
+      //     const payURL = authUrl + 'makepayment/' + paymentToken + '/' + returnURL
+      //
+      //     // assume Pay URL is always reachable
+      //     // otherwise, user will have to retry payment later
+      //     window.location.assign(payURL)
+      //   } else {
+      //     // route directly to dashboard
+      //     this.$router.push('/dashboard?filing_id=' + filingId)
+      //   }
+      // }
       this.filingPaying = false
     },
 
@@ -670,7 +701,7 @@ export default {
         }
       }
 
-      if (this.isDataChanged('OTCDR') || this.isDataChanged('OTFDR')) {
+      if (this.isDataChanged(FilingCodes.DirectorChangeOT) || this.isDataChanged(FilingCodes.FreeDirectorChangeOT)) {
         changeOfDirectors = {
           changeOfDirectors: {
             directors: this.allDirectors
@@ -678,7 +709,7 @@ export default {
         }
       }
 
-      if (this.isDataChanged('OTADD') && this.addresses) {
+      if (this.isDataChanged(FilingCodes.AddressChangeOT) && this.addresses) {
         changeOfAddress = {
           changeOfAddress: {
             legalType: this.entityType,
@@ -752,11 +783,88 @@ export default {
             this.saveErrorDialog = true
           }
         })
+        console.log(filing)
         return filing
       }
     },
 
-    toggleFiling (setting, filing) {
+    async saveArFiling () {
+      this.resetErrors()
+
+      const header = {
+        header: {
+          name: 'annualReport',
+          certifiedBy: this.certifiedBy || '',
+          email: 'no_one@never.get',
+          date: this.currentDate
+        }
+      }
+      // only save this if it's not null
+      if (this.routingSlipNumber) {
+        header.header['routingSlipNumber'] = this.routingSlipNumber
+      }
+
+      const business = {
+        business: {
+          foundingDate: this.entityFoundingDate,
+          identifier: this.entityIncNo,
+          legalName: this.entityName
+        }
+      }
+
+      const annualReport = {
+        annualReport: {
+          annualReportDate: this.annualReportDate,
+          nextArDate: 'nextARDAte',
+          offices: {
+            registeredOffice: {
+              deliveryAddress: this.registeredAddress['deliveryAddress'],
+              mailingAddress: this.registeredAddress['mailingAddress']
+            },
+            recordsOffice: {
+              deliveryAddress: this.recordsAddress['deliveryAddress'],
+              mailingAddress: this.recordsAddress['mailingAddress']
+            }
+          },
+          directors: this.directors
+        }
+      }
+
+      const data = {
+        filing: Object.assign(
+          {},
+          header,
+          business,
+          annualReport
+        )
+      }
+      console.log(this.nextArDate)
+      console.log(data)
+      // let url = this.entityIncNo + '/filings'
+      // let filing = null
+      // await axios.post(url, data).then(res => {
+      //   if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
+      //   filing = res.data.filing
+      //   this.haveChanges = false
+      // }).catch(error => {
+      //   if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
+      //     this.paymentErrorDialog = true
+      //   } else if (error && error.response && error.response.status === BAD_REQUEST) {
+      //     if (error.response.data.errors) {
+      //       this.saveErrors = error.response.data.errors
+      //     }
+      //     if (error.response.data.warnings) {
+      //       this.saveWarnings = error.response.data.warnings
+      //     }
+      //     this.saveErrorDialog = true
+      //   } else {
+      //     this.saveErrorDialog = true
+      //   }
+      // })
+      // return filing
+    },
+
+    toggleFiling (setting: string, filing: string) {
       let added = false
       for (let i = 0; i < this.filingData.length; i++) {
         if (this.filingData[i].filingTypeCode === filing) {
@@ -834,13 +942,13 @@ export default {
     agmDate (val: string) {
       this.haveChanges = true
       // when AGM Date changes, update filing data
-      this.toggleFiling(val ? 'add' : 'remove', 'OTANN')
+      this.toggleFiling(val ? 'add' : 'remove', FilingCodes.AnnualReportOT)
     },
 
     noAGM (val: boolean) {
       this.haveChanges = true
       // when No AGM changes, update filing data
-      this.toggleFiling(val ? 'add' : 'remove', 'OTANN')
+      this.toggleFiling(val ? 'add' : 'remove', FilingCodes.AnnualReportOT)
     },
 
     isCertified (val: boolean) {

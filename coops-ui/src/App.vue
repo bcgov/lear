@@ -290,7 +290,6 @@ export default {
         const filings = response.data.filings.sort(
           (a, b) => (b.filing.header.date - a.filing.header.date)
         )
-        // response.data.filings[0].filing.header.status = 'PAID'
         this.setFilings(filings)
       } else {
         throw new Error('Invalid filings')
