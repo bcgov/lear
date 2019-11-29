@@ -67,7 +67,7 @@
           {% if effective_date is defined %}
           ALL DIRECTORS AS OF {{ effective_date.upper() }}
           {% else %}
-          ALL DIRECTORS AS PER FILING
+          ALL DIRECTORS AS PER SUBMITTED FILING
           {% endif %}
         </div>
 {% for director in listOfDirectors.directors %}
