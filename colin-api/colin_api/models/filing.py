@@ -141,7 +141,7 @@ class Filing:
                 item = {'id': row['event_id'], 'date': row['event_timestmp']}
 
                 # if filing type is an AR include the period_end_dt info
-                if Filing[filing_type_code] == 'annualReport':
+                if Filing.FILING_TYPES[filing_type_code] == 'annualReport':
                     item['annualReportDate'] = row['period_end_dt']
 
                 event_list.append(item)
@@ -364,7 +364,7 @@ class Filing:
         }
         filing_obj.filing_type = 'annualReport'
         filing_obj.paper_only = not recreated_dirs_and_office
-        filing_obj.effective_date = ar_date
+        filing_obj.effective_date = filing_event_info['period_end_dt']
 
         return filing_obj
 
@@ -378,11 +378,11 @@ class Filing:
                                           event_id=filing_event_info['event_id'])
 
         # check to see if this filing was made with an AR -> if it was then set the AR date as the effective date
-        effective_date = convert_to_json_datetime(filing_event_info['event_timestmp'])
+        effective_date = filing_event_info['event_timestmp']
         annual_reports = cls._get_events(identifier=identifier, filing_type_code='OTANN')
         for filing in annual_reports:
-            if convert_to_json_datetime(filing['annualReportDate']) == effective_date:
-                effective_date = convert_to_json_datetime(filing['annualReportDate'])
+            if convert_to_json_date(filing['annualReportDate']) == convert_to_json_date(effective_date):
+                effective_date = filing['annualReportDate']
                 break
 
         filing_obj = Filing()
@@ -404,11 +404,11 @@ class Filing:
             current_app.logger.error('Less than 3 directors for {}'.format(identifier))
 
         # check to see if this filing was made with an AR -> if it was then set the AR date as the effective date
-        effective_date = convert_to_json_datetime(filing_event_info['event_timestmp'])
+        effective_date = filing_event_info['event_timestmp']
         annual_reports = cls._get_events(identifier=identifier, filing_type_code='OTANN')
         for filing in annual_reports:
-            if convert_to_json_datetime(filing['annualReportDate']) == effective_date:
-                effective_date = convert_to_json_datetime(filing['annualReportDate'])
+            if convert_to_json_date(filing['annualReportDate']) == convert_to_json_date(effective_date):
+                effective_date = filing['annualReportDate']
                 break
 
         filing_obj = Filing()
