@@ -56,11 +56,11 @@ export default {
   filings (state, filings) {
     state.filings = filings
   },
-  mailingAddress (state, mailingAddress) {
-    state.mailingAddress = mailingAddress
+  registeredAddress (state, registeredAddress) {
+    state.registeredAddress = registeredAddress
   },
-  deliveryAddress (state, deliveryAddress) {
-    state.deliveryAddress = deliveryAddress
+  recordsAddress (state, recordsAddress) {
+    state.recordsAddress = recordsAddress
   },
   directors (state, directors) {
     state.directors = directors

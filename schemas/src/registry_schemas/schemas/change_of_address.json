@@ -1,61 +1,76 @@
 {
-    "definitions": {},
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "https://bcrs.gov.bc.ca/.well_known/schemas/change_of_address",
     "required": [
         "changeOfAddress"
     ],
-    "type": "object",
-    "title": "Change of Address Filing",
     "definitions": {
-        "actions": {
+        "changeOfAddress": {
             "type": "object",
             "properties": {
-                "actions": {
-                    "type": "array",
-                    "title": "List of actions taken on an address",
-                    "items": {
-                        "type": "string",
-                        "enum": [
-                            "addressChanged"
-                        ]
+                "legalType": {
+                    "enum": ["CP", "BC"]
+                }
+            },
+            "allOf": [
+                {
+            "if": {
+                "properties": {
+                    "legalType": {
+                        "const": "CP"
                     }
                 }
             },
+            "then": {
+                "properties": {
+                    "offices": {
+                        "registeredOffice": {
+                            "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/office"
+                        },
+                        "required": [
+                            "registeredOffice"
+                        ]
+                    }
+                },
+                "required": [
+                    "offices"
+                ]
+            }},
+            {
+            "if": {
+                "properties": {
+                    "legalType": {
+                        "enum": ["BC"]
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "offices": {
+                        "registeredOffice": {
+                            "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/office"
+                        },
+                        "recordsOffice": {
+                            "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/office"
+                        },
+                        "required": [
+                            "registeredOffice", "recordsOffice"
+                        ]
+                    }
+                },
+                "required": [
+                    "offices"
+                ]
+            }}
+        ],
             "required": [
-                "actions"
+                "legalType"
             ]
         }
     },
     "properties": {
         "changeOfAddress": {
-            "type": "object",
-            "required": [
-                "deliveryAddress",
-                "mailingAddress"
-            ],
-            "properties": {
-                "deliveryAddress": {
-                    "allOf": [
-                        {
-                            "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
-                        },
-                        {
-                            "$ref": "#/definitions/actions"
-                        }
-                    ]
-                },
-                "mailingAddress": {
-                    "allOf": [
-                        {
-                            "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
-                        },
-                        {
-                            "$ref": "#/definitions/actions"
-                        }
-                    ]
-                }
-            }
+            "$ref": "#/definitions/changeOfAddress"
         }
     }
 }

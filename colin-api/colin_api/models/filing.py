@@ -668,14 +668,18 @@ class Filing:
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
 
                 # create new addresses for delivery + mailing, return address ids
-                delivery_addr_id = Address.create_new_address(cursor, filing.body['deliveryAddress'])
-                mailing_addr_id = Address.create_new_address(cursor, filing.body['mailingAddress'])
+                for office in filing.body['offices']:
+                    office_arr = filing.body['offices'][office]
+                    delivery_addr_id = Address.create_new_address(cursor, office_arr['deliveryAddress'])
+                    mailing_addr_id = Address.create_new_address(cursor, office_arr['mailingAddress'])
+                    office_desc = Office.office_codes[office]['description']
 
-                # update office table to include new addresses
-                Office.update_office(cursor, event_id, corp_num, delivery_addr_id, mailing_addr_id, 'RG')
+                    # update office table to include new addresses
+                    Office.update_office(cursor, event_id, corp_num, delivery_addr_id,
+                                         mailing_addr_id, Office.office_codes[office]['code'])
 
-                # create new ledger text for address change
-                cls._add_ledger_text(cursor, event_id, f'Change to the Registered Office, effective on {date}')
+                    # create new ledger text for address change
+                    cls._add_ledger_text(cursor, event_id, f'Change to the {office_desc}, effective on {date}')
                 # update corporation record
                 Business.update_corporation(cursor, corp_num)
 

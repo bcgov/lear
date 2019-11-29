@@ -13,6 +13,7 @@
 # limitations under the License.
 """Validation for the Change of Address filing."""
 from http import HTTPStatus
+import json
 from typing import Dict
 
 import pycountry
@@ -21,7 +22,6 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Business
 
-from ..utils import get_str
 
 
 def validate(business: Business, cod: Dict) -> Error:
@@ -30,36 +30,32 @@ def validate(business: Business, cod: Dict) -> Error:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
     msg = []
 
-    # Check Delivery Address
-    da_region_path = '/filing/changeOfAddress/deliveryAddress/addressRegion'
-    if get_str(cod, da_region_path) != 'BC':
-        msg.append({'error': _("Address Region must be 'BC'."),
-                    'path': da_region_path})
+    offices_array = json.dumps(cod['filing']['changeOfAddress']['offices'])
+    addresses = json.loads(offices_array)
 
-    da_country_path = '/filing/changeOfAddress/deliveryAddress/addressCountry'
-    raw_da_country = get_str(cod, da_country_path)
-    try:
-        da_country = pycountry.countries.search_fuzzy(raw_da_country)[0].alpha_2
-        if da_country != 'CA':
-            raise LookupError
-    except LookupError:
-        msg.append({'error': _("Address Country must be 'CA'."),
-                    'path': da_country_path})
+    for item in addresses.keys():
+        for k, v in addresses[item].items():
+            region = v['addressRegion']
+            country = v['addressCountry']
 
-    ma_region_path = '/filing/changeOfAddress/mailingAddress/addressRegion'
-    if get_str(cod, ma_region_path) != 'BC':
-        msg.append({'error': _("Address Region must be 'BC'."),
-                    'path': ma_region_path})
+            if region != 'BC':
+                path = '/filing/changeOfAddress/offices/%s/%s/addressRegion' % (
+                    item, k
+                )
+                msg.append({'error': _("Address Region must be 'BC'."),
+                            'path': path})
 
-    ma_country_path = '/filing/changeOfAddress/mailingAddress/addressCountry'
-    raw_ma_country = get_str(cod, ma_country_path)
-    try:
-        ma_country = pycountry.countries.search_fuzzy(raw_ma_country)[0].alpha_2
-        if ma_country != 'CA':
-            raise LookupError
-    except LookupError:
-        msg.append({'error': _("Address Country must be 'CA'."),
-                    'path': ma_country_path})
+            try:
+                country = pycountry.countries.search_fuzzy(country)[0].alpha_2
+                if country != 'CA':
+                    raise LookupError
+            except LookupError:
+                err_path = '/filing/changeOfAddress/offices/%s/%s/addressCountry' % (
+                    item, k
+                )
+                msg.append({'error': _("Address Country must be 'CA'."),
+                            'path': err_path})
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
+
     return None

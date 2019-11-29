@@ -39,12 +39,11 @@
           <v-container id="standalone-directors-container" class="view-container">
             <article id="standalone-directors-article">
               <header>
-                <h1 id="filing-header">Change of Directors</h1>
+                <h1 id="filing-header">Director Change</h1>
                 <p>Please verify or change the information of the directors.</p>
 
                 <v-alert
                   type="info"
-                  :value="true"
                   icon="mdi-information"
                   outlined class="white-background"
                   v-if="!entityFilter(EntityTypes.BCorp)"
@@ -166,7 +165,7 @@
         <v-container id="standalone-directors-container" class="view-container">
           <article id="standalone-directors-article-review">
             <header>
-              <h1 id="filing-header-review">Review: Change of Directors </h1>
+              <h1 id="filing-header-review">Review: Director Change </h1>
             </header>
 
             <!-- Director Information -->
@@ -274,7 +273,7 @@ import { EntityFilterMixin } from '@/mixins'
 import { EntityTypes } from '@/enums'
 
 // Constants
-import { DirectorConst } from '@/constants'
+import { CEASED, APPOINTED, ADDRESSCHANGED, NAMECHANGED } from '@/constants'
 
 export default {
   name: 'StandaloneDirectorsFiling',
@@ -324,8 +323,7 @@ export default {
       totalFee: 0,
 
       // Enums and Constants
-      EntityTypes,
-      DirectorConst
+      EntityTypes
     }
   },
 
@@ -642,16 +640,16 @@ export default {
 
                 // add filing code for paid changes
                 if (changeOfDirectors.directors.filter(
-                  director => this.hasAction(director, DirectorConst.CEASED) ||
-                    this.hasAction(director, DirectorConst.APPOINTED)
+                  director => this.hasAction(director, CEASED) ||
+                    this.hasAction(director, APPOINTED)
                 ).length > 0) {
                   this.toggleFiling('add', 'OTCDR')
                 }
 
                 // add filing code for free changes
                 if (changeOfDirectors.directors.filter(
-                  director => this.hasAction(director, DirectorConst.NAMECHANGED) ||
-                    this.hasAction(director, DirectorConst.ADDRESSCHANGED)
+                  director => this.hasAction(director, NAMECHANGED) ||
+                    this.hasAction(director, ADDRESSCHANGED)
                 ).length > 0) {
                   this.toggleFiling('add', 'OTFDR')
                 }

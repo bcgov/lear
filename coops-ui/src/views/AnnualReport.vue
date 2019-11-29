@@ -78,12 +78,13 @@
                 </h2>
                 <p>Verify or change your Registered Office Addresses.</p>
               </header>
-              <RegisteredOfficeAddress
+              <OfficeAddresses
                 :changeButtonDisabled="!allowChange('coa')"
-                :legalEntityNumber="entityIncNo"
                 :addresses.sync="addresses"
+                :registeredAddress.sync="registeredAddress"
+                :recordsAddress.sync="recordsAddress"
                 @modified="officeModifiedEventHandler($event)"
-                @valid="addressesFormValid=$event"
+                @valid="addressFormValid = $event"
               />
             </section>
 
@@ -201,7 +202,7 @@
 import axios from '@/axios-auth'
 import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
-import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
+import { OfficeAddresses } from '@/components/Common'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
@@ -231,7 +232,7 @@ export default {
   components: {
     ARDate,
     AGMDate,
-    RegisteredOfficeAddress,
+    OfficeAddresses,
     Directors,
     Certify,
     StaffPayment,
@@ -251,7 +252,7 @@ export default {
       noAGM: false,
       agmDateValid: false,
 
-      // properties for RegisteredOfficeAddress component
+      // properties for OfficeAddresses component
       addresses: null,
       addressesFormValid: true,
 
@@ -293,7 +294,7 @@ export default {
 
   computed: {
     ...mapState(['currentDate', 'ARFilingYear', 'lastAgmDate', 'entityType', 'entityName',
-      'entityIncNo', 'entityFoundingDate', 'lastPreLoadFilingDate']),
+      'entityIncNo', 'entityFoundingDate', 'registeredAddress', 'recordsAddress', 'lastPreLoadFilingDate']),
 
     ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState', 'lastCOAFilingDate', 'lastCODFilingDate']),
 
@@ -453,12 +454,14 @@ export default {
             }
 
             // load Change of Address fields
-            const changeOfAddress = filing.changeOfAddress
-            if (changeOfAddress) {
-              if (changeOfAddress.deliveryAddress && changeOfAddress.mailingAddress) {
+            if (filing.changeOfAddress) {
+              const offices = filing.changeOfAddress.offices
+              if (offices && offices.registeredOffice) {
                 this.addresses = {
-                  deliveryAddress: changeOfAddress.deliveryAddress,
-                  mailingAddress: changeOfAddress.mailingAddress
+                  registeredOffice: {
+                    deliveryAddress: offices.registeredOffice.deliveryAddress,
+                    mailingAddress: offices.registeredOffice.mailingAddress
+                  }
                 }
                 this.toggleFiling('add', 'OTADD')
               } else {
@@ -480,7 +483,7 @@ export default {
     },
 
     /**
-     * Callback method for the "modified" event from RegisteredOfficeAddress.
+     * Callback method for the "modified" event from OfficeAddress.
      *
      * @param modified a boolean indicating whether or not the office address(es) have been modified from their
      * original values.
@@ -601,8 +604,8 @@ export default {
         annualReport: {
           annualGeneralMeetingDate: this.noAGM ? null : this.agmDate,
           annualReportDate: this.annualReportDate,
-          deliveryAddress: this.addresses['deliveryAddress'],
-          mailingAddress: this.addresses['mailingAddress'],
+          deliveryAddress: this.addresses.registeredOffice['deliveryAddress'],
+          mailingAddress: this.addresses.registeredOffice['mailingAddress'],
           directors: this.allDirectors.filter(el => el.cessationDate === null)
         }
       }
@@ -618,8 +621,13 @@ export default {
       if (this.isDataChanged('OTADD') && this.addresses) {
         changeOfAddress = {
           changeOfAddress: {
-            deliveryAddress: this.addresses['deliveryAddress'],
-            mailingAddress: this.addresses['mailingAddress']
+            legalType: this.entityType,
+            offices: {
+              registeredOffice: {
+                deliveryAddress: this.addresses.registeredOffice['deliveryAddress'],
+                mailingAddress: this.addresses.registeredOffice['mailingAddress']
+              }
+            }
           }
         }
       }

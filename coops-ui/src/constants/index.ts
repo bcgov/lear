@@ -1,5 +1,1 @@
-import * as DirectorConst from './director-constants'
-
-export {
-  DirectorConst
-}
+export * from './constants'

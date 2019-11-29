@@ -13,7 +13,7 @@
       <v-expansion-panel-content>
         <v-list class="pt-0 pb-0">
 
-          <v-list-item>
+          <v-list-item v-if="director.deliveryAddress">
             <v-list-item-content>
               <v-list-item-title class="mb-2">Delivery Address</v-list-item-title>
               <v-list-item-subtitle>
@@ -28,11 +28,11 @@
             </v-list-item-content>
           </v-list-item>
 
-          <v-list-item v-if="entityFilter(EntityTypes.BCorp)">
+          <v-list-item v-if="entityFilter(EntityTypes.BCorp) && director.mailingAddress">
             <v-list-item-content>
               <v-list-item-title class="mb-2">Mailing Address</v-list-item-title>
               <v-list-item-subtitle>
-                <div v-if="isSameAddress(director.deliveryAddress, director.mailingAddress)">
+                <div v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                   Same as above
                 </div>
                 <ul v-else class="address-info">
@@ -58,7 +58,7 @@ import { Component, Mixins } from 'vue-property-decorator'
 import { mapState } from 'vuex'
 
 // Mixins
-import { CountriesProvincesMixin, EntityFilterMixin, AddressMixin } from '@/mixins'
+import { CountriesProvincesMixin, EntityFilterMixin, CommonMixin } from '@/mixins'
 
 // Constants
 import { EntityTypes } from '@/enums'
@@ -66,10 +66,9 @@ import { EntityTypes } from '@/enums'
 @Component({
   computed: {
     ...mapState(['directors'])
-  },
-  mixins: [CountriesProvincesMixin, EntityFilterMixin, AddressMixin]
+  }
 })
-export default class DirectorListSm extends Mixins(CountriesProvincesMixin, EntityFilterMixin, AddressMixin) {
+export default class DirectorListSm extends Mixins(CountriesProvincesMixin, EntityFilterMixin, CommonMixin) {
   readonly directors: Array<object>
 
   // EntityTypes Enum

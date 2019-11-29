@@ -131,8 +131,8 @@ def test_process_coa_filing(app, session):
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
-    new_delivery_address = COA_FILING['filing']['changeOfAddress']['deliveryAddress']
-    new_mailing_address = COA_FILING['filing']['changeOfAddress']['mailingAddress']
+    new_delivery_address = COA_FILING['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']
+    new_mailing_address = COA_FILING['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']
 
     # setup
     business = create_business(identifier)
@@ -307,8 +307,8 @@ def test_process_combined_filing(app, session):
     identifier = 'CP1234567'
     agm_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualGeneralMeetingDate'))
     ar_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualReportDate'))
-    new_delivery_address = COMBINED_FILING['filing']['changeOfAddress']['deliveryAddress']
-    new_mailing_address = COMBINED_FILING['filing']['changeOfAddress']['mailingAddress']
+    new_delivery_address = COMBINED_FILING['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']
+    new_mailing_address = COMBINED_FILING['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']
     end_date = datetime.datetime.utcnow().date()
     # prep director for no change
     filing_data = copy.deepcopy(COMBINED_FILING)
