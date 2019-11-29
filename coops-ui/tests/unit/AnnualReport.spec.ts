@@ -1199,6 +1199,10 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
     window.location = { assign: jest.fn() } as any
   })
 
+  afterAll(() => {
+    window.location.assign = assign
+  })
+
   beforeEach(async () => {
     // init store
     store.state.entityIncNo = 'CP0001191'
