@@ -278,11 +278,7 @@ export default {
 
     storeFilings (response) {
       if (response && response.data && response.data.filings) {
-        // sort by date descending (ie, latest to earliest)
-        const filings = response.data.filings.sort(
-          (a, b) => (b.filing.header.date - a.filing.header.date)
-        )
-        this.setFilings(filings)
+        this.setFilings(response.data.filings)
       } else {
         throw new Error('Invalid filings')
       }
