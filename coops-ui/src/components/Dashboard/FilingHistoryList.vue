@@ -217,18 +217,21 @@ export default {
       if (section) {
         const localDateTime = this.convertUTCTimeToLocalTime(filing.header.date)
         const filingDate = this.formatDate(localDateTime)
+        const effectiveDate = this.formatDate(this.convertUTCTimeToLocalTime(filing.header.effectiveDate))
         const item = {
           name: title,
           filingId: filing.header.filingId,
           filingAuthor: filing.header.certifiedBy,
           filingDateTime: localDateTime,
           filingDate: filingDate,
+          filingEffectiveDate: effectiveDate,
           paymentToken: filing.header.paymentToken,
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: title,
             documentName: `${this.entityIncNo} - ${title} - ${filingDate}.pdf`
           }],
+          status: filing.header.status,
           paperOnly: false
         }
         this.filedItems.push(item)
