@@ -105,6 +105,8 @@
 // Libraries
 import axios from '@/axios-auth'
 import { mapState, mapActions } from 'vuex'
+
+// Mixins
 import { withFlags } from 'ld-vue'
 
 // Components
@@ -225,8 +227,9 @@ export default {
 
     /**
      * Searches the filings history for a 'paid' status.
-     * Paid status indicates a filing that is future effective.
+     * Paid status indicates a filing that is paid but future effective.
      * Change the state of the UI when a filing is future effective.
+     * Currently only BCOMPS have future effective filings.
      *
      * @param filings The array of filings in history
      */
@@ -249,7 +252,7 @@ export default {
 
   watch: {
     historyFilings () {
-      this.checkPendingFilings(this.historyFilings)
+      this.checkPendingFilings(this.historyFilings) // If a filing has a paid but pending state ( Currently BCOMPS )
       this.checkToReloadDashboard()
     },
 

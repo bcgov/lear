@@ -55,9 +55,9 @@ describe('Dashboard - UI', () => {
 
     expect(wrapper.vm.hasBlockerFiling).toEqual(false)
     expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
-      .getAttribute('disabled')).not.toBe('true')
+      .getAttribute('disabled')).toBeNull()
     expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
-      .getAttribute('disabled')).not.toBe('true')
+      .getAttribute('disabled')).toBeNull()
   })
 
   it('disables standalone filing buttons when there is a blocker filing in the to-do list', () => {
@@ -65,9 +65,9 @@ describe('Dashboard - UI', () => {
 
     expect(wrapper.vm.hasBlockerFiling).toEqual(true)
     expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
-      .getAttribute('disabled')).toEqual('true')
+      .getAttribute('disabled')).toBe('true')
     expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
-      .getAttribute('disabled')).toEqual('true')
+      .getAttribute('disabled')).toBe('true')
   })
 
   it('disables standalone filing buttons & toDo filings when there is a future effective filing pending', () => {
@@ -77,9 +77,9 @@ describe('Dashboard - UI', () => {
     expect(wrapper.vm.hasBlockerFiling).toEqual(true)
     expect(wrapper.vm.coaPending).toEqual(true)
     expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
-      .getAttribute('disabled')).toEqual('true')
+      .getAttribute('disabled')).toBe('true')
     expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
-      .getAttribute('disabled')).toEqual('true')
+      .getAttribute('disabled')).toBe('true')
   })
 
   it('marks filing as PROCESSING when expecting completed filing and dashboard does not reflect this', () => {
