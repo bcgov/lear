@@ -33,7 +33,6 @@ from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed b
 from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 
-
 class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages all of the base data about a business.
 

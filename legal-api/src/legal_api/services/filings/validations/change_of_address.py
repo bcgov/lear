@@ -14,6 +14,7 @@
 """Validation for the Change of Address filing."""
 import json
 from http import HTTPStatus
+import json
 from typing import Dict
 
 import pycountry

@@ -125,7 +125,6 @@ def factory_business_mailing_address(business):
     office = Office(
         office_type='registeredOffice'
     )
-
     office.addresses.append(address)
     business.offices.append(office)
     business.save()
