@@ -364,7 +364,7 @@ class Filing:
         }
         filing_obj.filing_type = 'annualReport'
         filing_obj.paper_only = not recreated_dirs_and_office
-        filing_obj.effective_date = ar_date
+        filing_obj.effective_date = filing_event_info['period_end_dt']
 
         return filing_obj
 
