@@ -13,7 +13,7 @@
       <v-expansion-panel-content>
         <v-list class="pt-0 pb-0">
 
-          <v-list-item>
+          <v-list-item v-if="director.deliveryAddress">
             <v-list-item-content>
               <v-list-item-title class="mb-2">Delivery Address</v-list-item-title>
               <v-list-item-subtitle>
@@ -28,7 +28,7 @@
             </v-list-item-content>
           </v-list-item>
 
-          <v-list-item v-if="entityFilter(EntityTypes.BCorp)">
+          <v-list-item v-if="entityFilter(EntityTypes.BCorp) && director.mailingAddress">
             <v-list-item-content>
               <v-list-item-title class="mb-2">Mailing Address</v-list-item-title>
               <v-list-item-subtitle>

@@ -693,10 +693,6 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       registeredOffice: {
         deliveryAddress: {},
         mailingAddress: {}
-      },
-      recordsOffice: {
-        deliveryAddress: {},
-        mailingAddress: {}
       }
     }
 

@@ -36,7 +36,9 @@
             <v-list-item-content>
               <v-list-item-title class="mb-2">Mailing Address</v-list-item-title>
               <v-list-item-subtitle>
-                <div v-if="isSame(registeredAddress.deliveryAddress, registeredAddress.mailingAddress)">
+                <div
+                  class="same-as-above"
+                  v-if="isSame(registeredAddress.deliveryAddress, registeredAddress.mailingAddress)">
                   Same as above
                 </div>
                 <ul class="address-info" v-else>
@@ -95,7 +97,9 @@
             <v-list-item-content>
               <v-list-item-title class="mb-2">Mailing Address</v-list-item-title>
               <v-list-item-subtitle>
-                <div v-if="isSame(recordsAddress.deliveryAddress, recordsAddress.mailingAddress)">
+                <div
+                  class="same-as-above"
+                  v-if="isSame(recordsAddress.deliveryAddress, recordsAddress.mailingAddress)">
                   Same as above
                 </div>
                 <ul class="address-info" v-else>

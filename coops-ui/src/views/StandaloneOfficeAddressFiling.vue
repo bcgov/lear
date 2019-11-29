@@ -36,7 +36,7 @@
       <v-container id="standalone-office-address-container" class="view-container">
         <article id="standalone-office-address-article">
           <section>
-            <h1 id="filing-header">Change of Office Addresses</h1>
+            <h1 id="filing-header">Address Change</h1>
             <p>Please change your Registered Office Address
               <span v-if="entityFilter(EntityTypes.BCorp)"> and Records Address.</span>
             </p>
