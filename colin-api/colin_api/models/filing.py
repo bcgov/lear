@@ -436,7 +436,7 @@ class Filing:
         }
         filing_obj.filing_type = 'changeOfName'
         filing_obj.paper_only = False
-        filing_obj.effective_date = convert_to_json_datetime(filing_event_info['event_timestmp'])
+        filing_obj.effective_date = filing_event_info['event_timestmp']
 
         return filing_obj
 
@@ -469,7 +469,7 @@ class Filing:
             }
             filing_obj.filing_type = 'specialResolution'
             filing_obj.paper_only = True
-            filing_obj.effective_date = convert_to_json_datetime(filing_event_info['event_timestmp'])
+            filing_obj.effective_date = filing_event_info['event_timestmp']
 
             return filing_obj
 
@@ -504,7 +504,7 @@ class Filing:
             }
             filing_obj.filing_type = 'voluntaryDissolution'
             filing_obj.paper_only = True
-            filing_obj.effective_date = convert_to_json_datetime(filing_event_info['event_timestmp'])
+            filing_obj.effective_date = filing_event_info['event_timestmp']
 
             return filing_obj
 
