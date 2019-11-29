@@ -608,15 +608,15 @@ class Filing:
                     filing.header = {
                         'date': date,
                         'name': filing_info['filing_type'],
+                        'effectiveDate': convert_to_json_date(filing_info['effective_dt']),
+                        'historic': True,
                         'availableOnPaperOnly': True
                     }
                     filing.body = {
                         filing_info['filing_type']: {
                             'eventId': filing_info['event_id'],
-                            'eventDate': date,
-                            'effectiveDate': convert_to_json_date(filing_info['effective_dt']),
-                            'periodEndDate': convert_to_json_date(filing_info['period_end_dt']),
-                            'agmDate': convert_to_json_date(filing_info['agm_date'])
+                            'annualReportDate': convert_to_json_date(filing_info['period_end_dt']),
+                            'annualGeneralMeetingDate': convert_to_json_date(filing_info['agm_date'])
                         }
                     }
                     historic_filings.append(filing.as_dict())
