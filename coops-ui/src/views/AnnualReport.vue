@@ -731,7 +731,7 @@ export default {
       if (!earliestAllowedDate) {
         earliestAllowedDate = this.lastPreLoadFilingDate
       }
-      return this.agmDateValid && this.compareDates(this.agmDate, earliestAllowedDate, '>=') && this.agmDate
+      return this.agmDateValid && this.agmDate && this.compareDates(this.agmDate, earliestAllowedDate, '>=')
     },
 
     hasAction (director, action) {
