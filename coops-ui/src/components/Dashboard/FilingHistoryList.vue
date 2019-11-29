@@ -178,7 +178,9 @@ export default {
       var dateStrParts = dateString.split(',')
       var dateStr = dateStrParts[0]
       var dateParts = dateStr.split('/')
-      return dateParts[2] + '-' + dateParts[0] + '-' + dateParts[1]
+      return dateParts[2] + '-' +
+        dateParts[0].toString().padStart(2, '0') + '-' +
+        dateParts[1].toString().padStart(2, '0')
     },
 
     loadAnnualReport (filing) {

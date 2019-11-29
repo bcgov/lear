@@ -39,7 +39,7 @@
           <v-container id="standalone-directors-container" class="view-container">
             <article id="standalone-directors-article">
               <header>
-                <h1 id="filing-header">Change of Directors</h1>
+                <h1 id="filing-header">Director Change</h1>
                 <p>Please verify or change the information of the directors.</p>
 
                 <v-alert
@@ -165,7 +165,7 @@
         <v-container id="standalone-directors-container" class="view-container">
           <article id="standalone-directors-article-review">
             <header>
-              <h1 id="filing-header-review">Review: Change of Directors </h1>
+              <h1 id="filing-header-review">Review: Director Change </h1>
             </header>
 
             <!-- Director Information -->

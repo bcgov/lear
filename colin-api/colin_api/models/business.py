@@ -70,7 +70,7 @@ class Business:
                 join event on corp.corp_num = event.corp_num
                 left join filing on event.event_id = filing.event_id and filing.filing_typ_cd = 'OTANN'
                 where corp_typ_cd = 'CP'
-                and corp.CORP_NUM=:corp_num                
+                and corp.CORP_NUM=:corp_num
                 order by last_ar_date desc nulls last""", corp_num=identifier)
             business = cursor.fetchone()
 

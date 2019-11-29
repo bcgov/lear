@@ -65,8 +65,9 @@ class TaskListResource(Resource):
         tasks = []
         order = 1
         check_agm = validations.annual_report.requires_agm(business)
-        # If no filings exist in legal API db this year will be used as the start year.
-        todo_start_date = (datetime(2019, 1, 1)).date() if check_agm else business.next_anniversary.date()
+
+        # If no filings exist in legal API db (set after this line), use the business' next anniversary date
+        todo_start_date = business.next_anniversary.date()
 
         # Retrieve filings that are either incomplete, or drafts
         pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,

@@ -1,1 +1,1 @@
-export * from './address-schema'
+export * from './office-address-schema'

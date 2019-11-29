@@ -693,10 +693,6 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       registeredOffice: {
         deliveryAddress: {},
         mailingAddress: {}
-      },
-      recordsOffice: {
-        deliveryAddress: {},
-        mailingAddress: {}
       }
     }
 
@@ -1201,6 +1197,10 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
     // mock the window.location.assign function
     delete window.location
     window.location = { assign: jest.fn() } as any
+  })
+
+  afterAll(() => {
+    window.location.assign = assign
   })
 
   beforeEach(async () => {

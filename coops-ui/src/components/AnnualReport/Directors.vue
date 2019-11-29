@@ -598,7 +598,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private get directorFirstNameRules (): Array<Function> {
     return [
       v => !!v || 'A first name is required',
-      v => !/\s/g.test(v) || 'Invalid spaces'
+      v => (v !== undefined && v.trim() !== '') || 'Invalid spaces'
     ]
   }
 
@@ -609,7 +609,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private get directorLastNameRules (): Array<Function> {
     return [
       v => !!v || 'A last name is required',
-      v => !/\s/g.test(v) || 'Invalid spaces'
+      v => (v !== undefined && v.trim() !== '') || 'Invalid spaces'
     ]
   }
 
@@ -775,7 +775,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   }
 
   /**
-   * Function called internall and externally to fetch the list of directors.
+   * Function called internally and externally to fetch the list of directors.
    * TODO: change this to a prop?
    */
   public getDirectors (getOrigOnly: Boolean = false): void {
@@ -803,11 +803,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
               directors[i].officer.prevFirstName = directors[i].officer.firstName
               directors[i].officer.prevLastName = directors[i].officer.lastName
               directors[i].officer.prevMiddleInitial = directors[i].officer.middleInitial
-
-              // if this is a Coop, copy delivery address to mailing address - directors only have delivery addresses
-              if (this.entityFilter(EntityTypes.Coop)) {
-                directors[i].mailingAddress = directors[i].deliveryAddress
-              }
 
               // ensure there is complete address data including missing/blank fields
               directors[i].deliveryAddress = this.formatAddress(directors[i].deliveryAddress)
@@ -904,11 +899,12 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * Local helper push the current director data into the list.
    */
   private pushNewDirectorData (): void {
+    let newDirector
     if (this.inheritDeliveryAddress) {
       this.inProgressMailAddress = { ...this.inProgressAddress }
     }
 
-    let newDirector = {
+    newDirector = {
       actions: [APPOINTED],
       id: this.directors.length + 1,
       isDirectorActionable: true,
@@ -919,9 +915,13 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
         lastName: this.director.officer.lastName
       },
       deliveryAddress: { ...this.inProgressAddress },
-      mailingAddress: { ...this.inProgressMailAddress },
       appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
       cessationDate: null // when implemented: this.director.cessationDate
+    }
+
+    // Add the mailing address property if the entity is a BCORP
+    if (this.entityFilter(EntityTypes.BCorp)) {
+      newDirector = { ...newDirector, mailingAddress: { ...this.inProgressMailAddress } }
     }
 
     // if there is also a cease date on this new director, add the ceased action
