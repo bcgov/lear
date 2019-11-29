@@ -185,7 +185,7 @@ export default {
 
     loadAnnualReport (filing) {
       if (filing.annualReport) {
-        const date = filing.annualReport.annualGeneralMeetingDate
+        const date = filing.annualReport.annualReportDate
         const localDateTime = this.convertUTCTimeToLocalTime(filing.header.date)
         const filingDate = this.formatDate(localDateTime)
         if (date) {

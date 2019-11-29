@@ -731,7 +731,7 @@ export default {
       if (!earliestAllowedDate) {
         earliestAllowedDate = this.lastPreLoadFilingDate
       }
-      return this.agmDateValid && this.compareDates(this.agmDate, earliestAllowedDate, '>=')
+      return this.agmDateValid && this.compareDates(this.agmDate, earliestAllowedDate, '>=') && this.agmDate
     },
 
     hasAction (director, action) {
@@ -762,17 +762,23 @@ export default {
     }
   },
 
+  mounted () {
+    // Flag Usage Example.
+    // console.log(this.flags.coopsVersion)
+    this.toggleFiling('add', 'OTANN')
+  },
+
   watch: {
     agmDate (val: string) {
       this.haveChanges = true
       // when AGM Date changes, update filing data
-      this.toggleFiling(val ? 'add' : 'remove', 'OTANN')
+      // this.toggleFiling(val ? 'add' : 'remove', 'OTANN')
     },
 
     noAGM (val: boolean) {
       this.haveChanges = true
       // when No AGM changes, update filing data
-      this.toggleFiling(val ? 'add' : 'remove', 'OTANN')
+      // this.toggleFiling(val ? 'add' : 'remove', 'OTANN')
     },
 
     isCertified (val: boolean) {
