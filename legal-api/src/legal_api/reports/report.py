@@ -177,8 +177,12 @@ class Report:  # pylint: disable=too-few-public-methods
 
         # TODO: best: custom date/time filters in the report-api. Otherwise: a subclass for filing-specific data.
         if self._filing.filing_type == 'annualReport':
-            agm_date = datetime.fromisoformat(filing['annualReport']['annualGeneralMeetingDate'])
-            filing['agm_date'] = agm_date.strftime('%B %d, %Y')
+            agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
+            if agm_date_str:
+                agm_date = datetime.fromisoformat(agm_date_str)
+                filing['agm_date'] = agm_date.strftime('%B %d, %Y')
+            else:
+                filing['agm_date'] = 'No AGM'
 
             # for AR, the effective date is the AGM date
             filing['effective_date'] = filing_datetime.strftime('%B %d, %Y')
