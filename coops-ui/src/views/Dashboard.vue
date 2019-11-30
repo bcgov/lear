@@ -57,8 +57,8 @@
                       </v-chip>
                     </template>
                     <span>
-                      The updated office addresses will be legally effective on {{ effectiveDate }}, 12:01 AM(PST).
-                      No other filings are allowed until then.
+                      The updated office addresses will be legally effective on {{ effectiveDate }},
+                      12:01 AM(Pacific Time). No other filings are allowed until then.
                     </span>
                   </v-tooltip>
                 </v-scale-transition>
@@ -110,6 +110,8 @@
 // Libraries
 import axios from '@/axios-auth'
 import { mapState, mapActions } from 'vuex'
+
+// Mixins
 import { withFlags } from 'ld-vue'
 
 // Components
@@ -126,6 +128,7 @@ import CoaWarningDialog from '@/components/Dashboard/CoaWarningDialog'
 
 // Enums
 import { EntityTypes, FilingStatus } from '@/enums'
+
 
 export default {
   name: 'Dashboard',
@@ -153,6 +156,8 @@ export default {
       coaPending: false,
       effectiveDate: null,
       coaWarning: false,
+
+      // Filing Status Enum
       FilingStatus
     }
   },
@@ -236,8 +241,9 @@ export default {
 
     /**
      * Searches the filings history for a 'paid' status.
-     * Paid status indicates a filing that is future effective.
+     * Paid status indicates a filing that is paid but future effective.
      * Change the state of the UI when a filing is future effective.
+     * Currently only BCOMPS have future effective filings.
      *
      * @param filings The array of filings in history
      */
@@ -274,7 +280,7 @@ export default {
 
   watch: {
     historyFilings () {
-      this.checkPendingFilings(this.historyFilings)
+      this.checkPendingFilings(this.historyFilings) // If a filing has a paid but pending state ( Currently BCOMPS )
       this.checkToReloadDashboard()
     },
 
