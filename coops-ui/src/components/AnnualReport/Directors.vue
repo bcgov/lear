@@ -49,18 +49,23 @@
                   v-model="directorFormValid" lazy-validation
                 >
                   <div class="form__row three-column">
-                    <v-text-field filled class="item" label="First Name" id="new-director__first-name"
+                    <v-text-field filled class="item"
+                      label="First Name"
+                      id="new-director__first-name"
                       v-model="director.officer.firstName"
                       :rules="directorFirstNameRules"
-                      required
                     />
-                    <v-text-field filled label="Initial" class="item director-initial"
+                    <v-text-field filled class="item director-initial"
+                      label="Initial"
+                      id="new-director__middle-initial"
                       v-model="director.officer.middleInitial"
+                      :rules="directorMiddleInitialRules"
                     />
-                    <v-text-field filled class="item" label="Last Name"
+                    <v-text-field filled class="item"
+                      label="Last Name"
+                      id="new-director__last-name"
                       v-model="director.officer.lastName"
                       :rules="directorLastNameRules"
-                      required
                     />
                   </div>
 
@@ -103,7 +108,7 @@
                       <template v-slot:activator="{ on }">
                         <v-text-field box class="item" label="Appointment / Election Date"
                           id="new-director__appointment-date"
-                          v-model="director.appointmentDate"
+                          v-model.trim="director.appointmentDate"
                           hint="YYYY/MM/DD"
                           append-icon="event"
                           v-on="on"
@@ -129,7 +134,7 @@
                       <template v-slot:activator="{ on }">
                         <v-text-field class="item" ref="newDirectorCessationDate"
                           id="new-director__cessation-date"
-                          v-model="director.cessationDate"
+                          v-model.trim="director.cessationDate"
                           label="Cessation Date"
                           hint="YYYY/MM/DD"
                           append-icon="event"
@@ -327,15 +332,21 @@
                   v-show="activeIndex === index"
                   v-model="directorFormValid" lazy-validation>
                   <div class="form__row three-column" v-show="editFormShowHide.showName">
-                    <v-text-field filled label="First Name" class="item"
+                    <v-text-field filled class="item"
+                      label="First Name"
+                      id="edit-director__first-name"
                       v-model="director.officer.firstName"
                       :rules="directorFirstNameRules"
-                      required
                     />
-                    <v-text-field filled label="Initial" class="item director-initial"
+                    <v-text-field filled class="item director-initial"
+                      label="Initial"
+                      id="edit-director__middle-initial"
                       v-model="director.officer.middleInitial"
+                      :rules="directorMiddleInitialRules"
                     />
-                    <v-text-field filled label="Last Name" class="item"
+                    <v-text-field filled class="item"
+                      label="Last Name"
+                      id="edit-director__last-name"
                       v-model="director.officer.lastName"
                       :rules="directorLastNameRules"
                     />
@@ -385,7 +396,7 @@
                       <template v-slot:activator="{ on }">
                         <v-text-field
                           class="item edit-director__appointment-date"
-                          v-model="director.appointmentDate"
+                          v-model.trim="director.appointmentDate"
                           label="Apointment / Election Date"
                           hint="YYYY/MM/DD"
                           append-icon="event"
@@ -412,7 +423,7 @@
                       min-width="18rem">
                       <template v-slot:activator="{ on }">
                         <v-text-field class="item edit-director__cessation-date"
-                          v-model="director.cessationDate"
+                          v-model.trim="director.cessationDate"
                           label="Cessation Date"
                           hint="YYYY/MM/DD"
                           append-icon="event"
@@ -598,7 +609,21 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private get directorFirstNameRules (): Array<Function> {
     return [
       v => !!v || 'A first name is required',
-      v => (v !== undefined && v.trim() !== '') || 'Invalid spaces'
+      v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
+      v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
+      v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
+    ]
+  }
+
+  /**
+   * Computed value.
+   * @returns The array of validations rules for a director's middle initial.
+   */
+  private get directorMiddleInitialRules (): Array<Function> {
+    return [
+      v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
+      v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
+      v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
     ]
   }
 
@@ -609,7 +634,9 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private get directorLastNameRules (): Array<Function> {
     return [
       v => !!v || 'A last name is required',
-      v => (v !== undefined && v.trim() !== '') || 'Invalid spaces'
+      v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
+      v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
+      v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
     ]
   }
 
@@ -669,16 +696,10 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     }
 
     // appointment date must be before cessation date
-    const rule1 =
-      v => this.compareDates(v, cessationDate, '<') || 'Appointment Date must be before Cessation Date'
-
-    rules.push(rule1)
+    rules.push(v => this.compareDates(v, cessationDate, '<') || 'Appointment Date must be before Cessation Date')
 
     // appointment date must be in the past (or today)
-    const rule2 =
-      v => this.dateIsNotFuture(v) || 'Appointment Date cannot be in the future'
-
-    rules.push(rule2)
+    rules.push(v => this.dateIsNotFuture(v) || 'Appointment Date cannot be in the future')
 
     return rules
   }

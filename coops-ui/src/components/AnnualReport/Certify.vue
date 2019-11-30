@@ -57,7 +57,7 @@ export default class Certify extends Vue {
    * Lifecycle callback to always give the parent a "valid" event for its property values.
    */
   private created (): void {
-    this.emitValid(this.trimmedCertifiedBy && this.isCertified)
+    this.emitValid(Boolean(this.trimmedCertifiedBy && this.isCertified))
   }
 
   /**
@@ -65,30 +65,31 @@ export default class Certify extends Vue {
    * @returns The trimmed "Certified By" string (may be '').
    */
   private get trimmedCertifiedBy (): string {
-    return this.certifiedBy && this.certifiedBy.trim()
+    // remove repeated inline whitespace, and leading/trailing whitespace
+    return this.certifiedBy && this.certifiedBy.replace(/\s+/g, ' ').trim()
   }
 
-  // Emit an update event.
+  // Emit an update event when input changes.
   @Emit('update:certifiedBy')
-  private emitCertifiedBy (val: string): string {
-    this.emitValid(val && val.trim() && this.isCertified)
+  private emitCertifiedBy (certifiedBy: string): string {
+    // remove repeated inline whitespace, and leading/trailing whitespace
+    certifiedBy = certifiedBy && certifiedBy.replace(/\s+/g, ' ').trim()
+    this.emitValid(Boolean(certifiedBy && this.isCertified))
 
-    return val
+    return certifiedBy
   }
 
-  // Emit an update event.
+  // Emit an update event when checkbox changes.
   @Emit('update:isCertified')
-  private emitIsCertified (val: boolean): boolean {
-    this.emitValid(this.trimmedCertifiedBy && !!val)
+  private emitIsCertified (isCertified: boolean): boolean {
+    this.emitValid(Boolean(this.trimmedCertifiedBy && isCertified))
 
-    return val
+    return isCertified
   }
 
   // Emit an event indicating whether or not the form is valid.
   @Emit('valid')
-  private emitValid (val: boolean): boolean {
-    return val
-  }
+  private emitValid (valid: boolean): void { }
 }
 </script>
 

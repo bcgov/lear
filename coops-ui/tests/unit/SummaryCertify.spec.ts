@@ -40,7 +40,7 @@ describe('SummaryCertified', () => {
 
   beforeEach(done => {
     const Constructor = Vue.extend(SummaryCertify)
-    const instance = new Constructor({ store: store, vuetify })
+    const instance = new Constructor({ store, vuetify })
     vm = instance.$mount()
 
     Vue.nextTick(() => {
