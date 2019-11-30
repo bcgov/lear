@@ -31,5 +31,7 @@ def process(business: Business, filing: Dict):
     else:
         # should never get here (schema validation should prevent this from making it to the filer)
         logger.error('No annualReportDate given for in annual report. Filing id: %s', filing.id)
-    business.last_agm_date = agm_date
+
+    if agm_date is not None:
+        business.last_agm_date = agm_date
     business.last_ar_date = ar_date
