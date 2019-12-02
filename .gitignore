@@ -119,7 +119,7 @@ venv.bak/
 *.bak
 
 # Excel lockfiles
-legal-test-fixture/test/spreadsheets/.~lock*
+/**/.~lock*
 
 # Copied files for test fixture
 legal-test-fixture/legal_api/exceptions/*
