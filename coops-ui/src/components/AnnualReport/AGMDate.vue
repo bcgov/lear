@@ -321,7 +321,7 @@ export default class AGMDate extends Mixins(DateMixin) {
 }
 
 #agm-checkbox {
-  font-size: 14px;
+  font-size: 0.875rem;
   margin-top: 0;
   margin-left: -3px;
   padding: 0;

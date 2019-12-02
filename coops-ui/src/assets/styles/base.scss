@@ -35,12 +35,14 @@ body {
 }
 
 html {
-  font-size: 14px;
+  // default font size (14px)
+  font-size: 0.875rem;
 }
 
 @media (min-width: 960px) {
   html {
-    font-size: 16px;
+    // default font size (16px)
+    font-size: 1rem;
   }
 }
 

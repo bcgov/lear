@@ -59,7 +59,7 @@
       <!-- Registered Mailing Address -->
       <li class="address-list-container">
         <div class="meta-container">
-          <label v-if="showAddressForm">Mailing Address</label>
+          <label>{{ showAddressForm ? "Mailing Address" : "" }}</label>
           <div class="meta-container__inner">
             <label v-if="!showAddressForm && !isSame(deliveryAddress, mailingAddress, 'actions')">
               <strong>Mailing Address</strong>
@@ -84,7 +84,7 @@
                 @valid="isBaseAddressValid('mailingAddress', $event)"
               />
             </div>
-            <span id="sameAsAbove" v-else>
+            <span v-else id="sameAsAbove">
               Mailing Address same as above
             </span>
           </div>
@@ -127,7 +127,7 @@
           <!-- Records Mailing Address -->
           <li class="address-list-container">
             <div class="meta-container">
-              <label v-if="showAddressForm">Mailing Address</label>
+              <label>{{ showAddressForm ? "Mailing Address" : "" }}</label>
               <div class="meta-container__inner">
                 <label v-if="!isSame(recDeliveryAddress, recMailingAddress, 'actions') && !showAddressForm">
                   <strong>Mailing Address</strong>
@@ -772,9 +772,9 @@ ul {
   padding: 1.25rem;
 
   address-edit-title {
-    font-size: 16px;
+    font-size: 1rem;
     font-weight: bold;
-    line-height: 22px;
+    line-height: 1.375rem;
   }
 }
 </style>

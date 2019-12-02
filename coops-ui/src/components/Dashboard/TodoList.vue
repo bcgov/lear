@@ -527,8 +527,9 @@ export default {
 
 .list-item__actions {
   .v-btn.actions__more-actions__btn {
-    min-width: 38px !important;
-    width: 38px;
+    // make action button width same as its height (per Vuetify)
+    min-width: 36px !important;
+    width: 36px;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     margin-left: 1px;

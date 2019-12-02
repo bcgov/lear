@@ -17,11 +17,12 @@
             <v-list-item-content>
               <v-list-item-title class="mb-2">Delivery Address</v-list-item-title>
               <v-list-item-subtitle>
-                <ul class="address-info">
+                <ul class="address-info pre-wrap">
                   <li>{{ director.deliveryAddress.streetAddress }}</li>
-                  <li class="pre-wrap" v-html="director.deliveryAddress.streetAddressAdditional"></li>
-                  <li>{{ director.deliveryAddress.addressCity }} {{ director.deliveryAddress.addressRegion }}
-                    {{ director.deliveryAddress.postalCode }}</li>
+                  <li>{{ director.deliveryAddress.streetAddressAdditional }}</li>
+                  <li>{{ director.deliveryAddress.addressCity }}
+                      {{ director.deliveryAddress.addressRegion }}
+                      {{ director.deliveryAddress.postalCode }}</li>
                   <li>{{ getCountryName(director.deliveryAddress.addressCountry) }}</li>
                 </ul>
               </v-list-item-subtitle>
@@ -35,11 +36,12 @@
                 <div v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                   Same as above
                 </div>
-                <ul v-else class="address-info">
+                <ul v-else class="address-info pre-wrap">
                   <li>{{ director.mailingAddress.streetAddress }}</li>
-                  <li class="pre-wrap" v-html="director.mailingAddress.streetAddressAdditional"></li>
-                  <li>{{ director.mailingAddress.addressCity }} {{ director.mailingAddress.addressRegion }}
-                    {{ director.mailingAddress.postalCode }}</li>
+                  <li>{{ director.mailingAddress.streetAddressAdditional }}</li>
+                  <li>{{ director.mailingAddress.addressCity }}
+                      {{ director.mailingAddress.addressRegion }}
+                      {{ director.mailingAddress.postalCode }}</li>
                   <li>{{ getCountryName(director.mailingAddress.addressCountry) }}</li>
                 </ul>
               </v-list-item-subtitle>
