@@ -261,16 +261,17 @@ def test_business_relationships_json(session):
                         last_modified=EPOCH_DATETIME)
 
     office = Office(office_type='registeredOffice')
-    mailing_address = Address(city='Test City', address_type=Address.MAILING, \
-    business_id=business.id)
+    mailing_address = Address(city='Test City', address_type=Address.MAILING,
+                              business_id=business.id)
     office.addresses.append(mailing_address)
     business.offices.append(office)
     business.save()
 
     assert business.mailing_address.one_or_none()
 
-    delivery_address = Address(city='Test City', address_type=Address.DELIVERY, \
-    business_id=business.id)
+    delivery_address = Address(city='Test City',
+                               address_type=Address.DELIVERY,
+                               business_id=business.id)
     office.addresses.append(delivery_address)
     business.save()
 

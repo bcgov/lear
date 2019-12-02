@@ -694,8 +694,8 @@ def test_coa_future_effective(session, client, jwt):
     coa = copy.deepcopy(FILING_HEADER)
     coa['filing']['header']['name'] = 'changeOfAddress'
     coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
-    coa['filing']['changeOfAddress']['deliveryAddress']['addressCountry'] = 'CA'
-    coa['filing']['changeOfAddress']['mailingAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
     identifier = 'CP1234567'
     b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None)
     factory_business_mailing_address(b)
