@@ -56,6 +56,24 @@ services:
     networks:
       - bcros
 
+####################### Lear DB Test Fixture Service Definition #######################
+  legal_test_fixture:
+    container_name: legal_test_fixture
+    build:
+      context: legal-test-fixture
+    volumes:
+      - "./legal-test-fixture:/opt/server/"
+    ports:
+      - "5005:5000"
+    environment:
+      # Use this version when running the DB local as part of your Docker network
+      - DATABASE_URL=postgres://userG5G:password@legal_db:5432/legal_test
+      # Use this version when port forwarding to openshift (provide password)
+      # - DATABASE_URL=postgres://user5SJ:password@host.docker.internal:65432/lear
+
+    networks:
+      - bcros
+
 ####################### Networks Definition #######################
 networks:
   bcros:
