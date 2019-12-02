@@ -398,7 +398,7 @@ export default {
         return (staffPaymentValid && this.agmDateValid && this.addressesFormValid && this.directorFormValid &&
           this.certifyFormValid && !this.directorEditInProgress)
       }
-      return this.certifyFormValid
+      return (staffPaymentValid && this.certifyFormValid)
     },
 
     busySaving () {
@@ -804,81 +804,6 @@ export default {
         return filing
       }
     },
-
-    // async saveBCFiling () {
-    //   this.resetErrors()
-    //
-    //   const header = {
-    //     header: {
-    //       name: 'annualReport',
-    //       certifiedBy: this.certifiedBy || '',
-    //       email: 'no_one@never.get',
-    //       date: this.currentDate
-    //     }
-    //   }
-    //   // only save this if it's not null
-    //   if (this.routingSlipNumber) {
-    //     header.header['routingSlipNumber'] = this.routingSlipNumber
-    //   }
-    //
-    //   const business = {
-    //     business: {
-    //       foundingDate: this.entityFoundingDate,
-    //       identifier: this.entityIncNo,
-    //       legalName: this.entityName
-    //     }
-    //   }
-    //
-    //   const annualReport = {
-    //     annualReport: {
-    //       annualReportDate: this.annualReportDate,
-    //       nextARDate: this.dateToUsableString(new Date(this.nextARDate)),
-    //       offices: {
-    //         registeredOffice: {
-    //           deliveryAddress: this.registeredAddress['deliveryAddress'],
-    //           mailingAddress: this.registeredAddress['mailingAddress']
-    //         },
-    //         recordsOffice: {
-    //           deliveryAddress: this.recordsAddress['deliveryAddress'],
-    //           mailingAddress: this.recordsAddress['mailingAddress']
-    //         }
-    //       },
-    //       directors: this.directors
-    //     }
-    //   }
-    //
-    //   const data = {
-    //     filing: Object.assign(
-    //       {},
-    //       header,
-    //       business,
-    //       annualReport
-    //     )
-    //   }
-    //
-    //   let url = this.entityIncNo + '/filings'
-    //   let filing = null
-    //   await axios.post(url, data).then(res => {
-    //     if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
-    //     filing = res.data.filing
-    //     this.haveChanges = false
-    //   }).catch(error => {
-    //     if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
-    //       this.paymentErrorDialog = true
-    //     } else if (error && error.response && error.response.status === BAD_REQUEST) {
-    //       if (error.response.data.errors) {
-    //         this.saveErrors = error.response.data.errors
-    //       }
-    //       if (error.response.data.warnings) {
-    //         this.saveWarnings = error.response.data.warnings
-    //       }
-    //       this.saveErrorDialog = true
-    //     } else {
-    //       this.saveErrorDialog = true
-    //     }
-    //   })
-    //   return filing
-    // },
 
     toggleFiling (setting: string, filing: string) {
       let added = false

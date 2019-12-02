@@ -140,7 +140,6 @@ export default {
           axios.get(businessId + '/directors')
         ]).then(data => {
           if (!data || data.length !== 6) throw new Error('Incomplete data')
-          console.log(data)
           this.storeBusinessInfo(data[0])
           this.storeEntityInfo(data[1])
           this.storeTasks(data[2])
