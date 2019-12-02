@@ -97,6 +97,9 @@ export default class AGMDate extends Mixins(DateMixin) {
   @Prop({ default: '' })
   private initialAgmDate: string
 
+  @Prop({ default: false })
+  private noAGM: boolean
+
   @Prop({ default: true })
   private allowCOA: boolean
 
@@ -220,6 +223,11 @@ export default class AGMDate extends Mixins(DateMixin) {
     } else {
       this.didNotHoldAgm = true
     }
+  }
+
+  @Watch('noAGM')
+  private onNoAGMChanged (val: boolean): void {
+    this.didNotHoldAgm = this.noAGM
   }
 
   /**
