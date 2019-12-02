@@ -476,7 +476,6 @@ export default {
 
   methods: {
     fetchData () {
-      console.log('Fetch Data')
       const url = this.entityIncNo + '/filings/' + this.filingId
       axios.get(url).then(response => {
         if (response && response.data) {
@@ -624,34 +623,31 @@ export default {
       if (this.busySaving) return
 
       this.filingPaying = true
-      const filing = this.entityFilter(EntityTypes.Coop)
-        ? await this.saveFiling(false) // not a draft
-        : await this.saveArFiling()
+      const filing = await this.saveFiling(false) // not a draft
 
-      console.log(filing)
-      // // on success, redirect to Pay URL
-      // if (filing && filing.header) {
-      //   const filingId = +filing.header.filingId
-      //
-      //   // whether this is a staff or no-fee filing
-      //   const prePaidFiling = (this.isRoleStaff || !this.isPayRequired)
-      //
-      //   // if filing needs to be paid, redirect to Pay URL
-      //   if (!prePaidFiling) {
-      //     const paymentToken = filing.header.paymentToken
-      //     const baseUrl = sessionStorage.getItem('BASE_URL')
-      //     const returnURL = encodeURIComponent(baseUrl + 'dashboard?filing_id=' + filingId)
-      //     const authUrl = sessionStorage.getItem('AUTH_URL')
-      //     const payURL = authUrl + 'makepayment/' + paymentToken + '/' + returnURL
-      //
-      //     // assume Pay URL is always reachable
-      //     // otherwise, user will have to retry payment later
-      //     window.location.assign(payURL)
-      //   } else {
-      //     // route directly to dashboard
-      //     this.$router.push('/dashboard?filing_id=' + filingId)
-      //   }
-      // }
+      // on success, redirect to Pay URL
+      if (filing && filing.header) {
+        const filingId = +filing.header.filingId
+
+        // whether this is a staff or no-fee filing
+        const prePaidFiling = (this.isRoleStaff || !this.isPayRequired)
+
+        // if filing needs to be paid, redirect to Pay URL
+        if (!prePaidFiling) {
+          const paymentToken = filing.header.paymentToken
+          const baseUrl = sessionStorage.getItem('BASE_URL')
+          const returnURL = encodeURIComponent(baseUrl + 'dashboard?filing_id=' + filingId)
+          const authUrl = sessionStorage.getItem('AUTH_URL')
+          const payURL = authUrl + 'makepayment/' + paymentToken + '/' + returnURL
+
+          // assume Pay URL is always reachable
+          // otherwise, user will have to retry payment later
+          window.location.assign(payURL)
+        } else {
+          // route directly to dashboard
+          this.$router.push('/dashboard?filing_id=' + filingId)
+        }
+      }
       this.filingPaying = false
     },
 
@@ -667,6 +663,7 @@ export default {
         return null
       }
 
+      let annualReport = null
       let changeOfDirectors = null
       let changeOfAddress = null
 
@@ -691,13 +688,33 @@ export default {
         }
       }
 
-      const annualReport = {
-        annualReport: {
-          annualGeneralMeetingDate: this.noAGM ? null : this.agmDate,
-          annualReportDate: this.annualReportDate,
-          deliveryAddress: this.addresses.registeredOffice['deliveryAddress'],
-          mailingAddress: this.addresses.registeredOffice['mailingAddress'],
-          directors: this.allDirectors.filter(el => el.cessationDate === null)
+      if (this.entityFilter(EntityTypes.Coop)) {
+        annualReport = {
+          annualReport: {
+            annualGeneralMeetingDate: this.noAGM ? null : this.agmDate,
+            annualReportDate: this.annualReportDate,
+            deliveryAddress: this.addresses.registeredOffice['deliveryAddress'],
+            mailingAddress: this.addresses.registeredOffice['mailingAddress'],
+            directors: this.allDirectors.filter(el => el.cessationDate === null)
+          }
+        }
+      } else {
+        annualReport = {
+          annualReport: {
+            annualReportDate: this.annualReportDate,
+            nextARDate: this.dateToUsableString(new Date(this.nextARDate)),
+            offices: {
+              registeredOffice: {
+                deliveryAddress: this.registeredAddress['deliveryAddress'],
+                mailingAddress: this.registeredAddress['mailingAddress']
+              },
+              recordsOffice: {
+                deliveryAddress: this.recordsAddress['deliveryAddress'],
+                mailingAddress: this.recordsAddress['mailingAddress']
+              }
+            },
+            directors: this.directors
+          }
         }
       }
 
@@ -783,86 +800,85 @@ export default {
             this.saveErrorDialog = true
           }
         })
-        console.log(filing)
+
         return filing
       }
     },
 
-    async saveArFiling () {
-      this.resetErrors()
-
-      const header = {
-        header: {
-          name: 'annualReport',
-          certifiedBy: this.certifiedBy || '',
-          email: 'no_one@never.get',
-          date: this.currentDate
-        }
-      }
-      // only save this if it's not null
-      if (this.routingSlipNumber) {
-        header.header['routingSlipNumber'] = this.routingSlipNumber
-      }
-
-      const business = {
-        business: {
-          foundingDate: this.entityFoundingDate,
-          identifier: this.entityIncNo,
-          legalName: this.entityName
-        }
-      }
-
-      const annualReport = {
-        annualReport: {
-          annualReportDate: this.annualReportDate,
-          nextArDate: 'nextARDAte',
-          offices: {
-            registeredOffice: {
-              deliveryAddress: this.registeredAddress['deliveryAddress'],
-              mailingAddress: this.registeredAddress['mailingAddress']
-            },
-            recordsOffice: {
-              deliveryAddress: this.recordsAddress['deliveryAddress'],
-              mailingAddress: this.recordsAddress['mailingAddress']
-            }
-          },
-          directors: this.directors
-        }
-      }
-
-      const data = {
-        filing: Object.assign(
-          {},
-          header,
-          business,
-          annualReport
-        )
-      }
-      console.log(this.nextArDate)
-      console.log(data)
-      // let url = this.entityIncNo + '/filings'
-      // let filing = null
-      // await axios.post(url, data).then(res => {
-      //   if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
-      //   filing = res.data.filing
-      //   this.haveChanges = false
-      // }).catch(error => {
-      //   if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
-      //     this.paymentErrorDialog = true
-      //   } else if (error && error.response && error.response.status === BAD_REQUEST) {
-      //     if (error.response.data.errors) {
-      //       this.saveErrors = error.response.data.errors
-      //     }
-      //     if (error.response.data.warnings) {
-      //       this.saveWarnings = error.response.data.warnings
-      //     }
-      //     this.saveErrorDialog = true
-      //   } else {
-      //     this.saveErrorDialog = true
-      //   }
-      // })
-      // return filing
-    },
+    // async saveBCFiling () {
+    //   this.resetErrors()
+    //
+    //   const header = {
+    //     header: {
+    //       name: 'annualReport',
+    //       certifiedBy: this.certifiedBy || '',
+    //       email: 'no_one@never.get',
+    //       date: this.currentDate
+    //     }
+    //   }
+    //   // only save this if it's not null
+    //   if (this.routingSlipNumber) {
+    //     header.header['routingSlipNumber'] = this.routingSlipNumber
+    //   }
+    //
+    //   const business = {
+    //     business: {
+    //       foundingDate: this.entityFoundingDate,
+    //       identifier: this.entityIncNo,
+    //       legalName: this.entityName
+    //     }
+    //   }
+    //
+    //   const annualReport = {
+    //     annualReport: {
+    //       annualReportDate: this.annualReportDate,
+    //       nextARDate: this.dateToUsableString(new Date(this.nextARDate)),
+    //       offices: {
+    //         registeredOffice: {
+    //           deliveryAddress: this.registeredAddress['deliveryAddress'],
+    //           mailingAddress: this.registeredAddress['mailingAddress']
+    //         },
+    //         recordsOffice: {
+    //           deliveryAddress: this.recordsAddress['deliveryAddress'],
+    //           mailingAddress: this.recordsAddress['mailingAddress']
+    //         }
+    //       },
+    //       directors: this.directors
+    //     }
+    //   }
+    //
+    //   const data = {
+    //     filing: Object.assign(
+    //       {},
+    //       header,
+    //       business,
+    //       annualReport
+    //     )
+    //   }
+    //
+    //   let url = this.entityIncNo + '/filings'
+    //   let filing = null
+    //   await axios.post(url, data).then(res => {
+    //     if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
+    //     filing = res.data.filing
+    //     this.haveChanges = false
+    //   }).catch(error => {
+    //     if (error && error.response && error.response.status === PAYMENT_REQUIRED) {
+    //       this.paymentErrorDialog = true
+    //     } else if (error && error.response && error.response.status === BAD_REQUEST) {
+    //       if (error.response.data.errors) {
+    //         this.saveErrors = error.response.data.errors
+    //       }
+    //       if (error.response.data.warnings) {
+    //         this.saveWarnings = error.response.data.warnings
+    //       }
+    //       this.saveErrorDialog = true
+    //     } else {
+    //       this.saveErrorDialog = true
+    //     }
+    //   })
+    //   return filing
+    // },
 
     toggleFiling (setting: string, filing: string) {
       let added = false

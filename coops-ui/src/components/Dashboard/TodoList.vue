@@ -233,9 +233,13 @@ export default {
           return this.isDraft(elem) || this.isPending(elem) || this.isError(elem) || this.isPaid(elem)
         }).length > 0
       )
+      console.log('Loading all TaskItems')
+      console.log(this.taskItems)
     },
 
     loadTodoItem (task) {
+      console.log('Loading ToDo Item')
+      console.log(task)
       const todo = task.task.todo
       if (todo && todo.header) {
         switch (todo.header.name) {
@@ -262,6 +266,8 @@ export default {
     },
 
     loadFilingItem (task) {
+      console.log('Loading Filing Item')
+      console.log(task)
       const filing = task.task.filing
       if (filing && filing.header) {
         switch (filing.header.name) {
@@ -284,9 +290,10 @@ export default {
     },
 
     loadAnnualReport (task) {
+      console.log('Loading Annual Report')
+      console.log(task)
       let date
       const filing = task.task.filing
-      console.log(filing)
       if (filing && filing.header && filing.annualReport) {
         filing.annualReport.annualGeneralMeetingDate
           ? date = filing.annualReport.annualGeneralMeetingDate

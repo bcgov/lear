@@ -165,7 +165,7 @@ export default class SummaryOfficeAddresses extends Mixins(CommonMixin, EntityFi
       label:first-child {
         flex: 0 0 auto;
         padding-right: 4rem;
-        width: 12rem;
+        width: 15.25rem;
       }
     }
 
