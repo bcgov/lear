@@ -30,7 +30,7 @@
       <div v-show="!showNewDirectorForm">
         <v-btn class="new-director-btn" outlined color="primary" :disabled="!componentEnabled || directorEditInProgress"
           @click="addNewDirector"
-        >
+          v-if="componentEnabled">
           <v-icon>mdi-plus</v-icon>
           <span>Appoint New Director</span>
         </v-btn>
@@ -269,7 +269,7 @@
                     </span>
 
                     <!-- Cease menu -->
-                    <span v-show="!isNew(director)">
+                    <span v-show="!isNew(director) && componentEnabled">
                       <v-btn small text color="primary" :disabled="!componentEnabled || directorEditInProgress"
                         class="cease-btn"
                         :id="'director-' + director.id + '-cease-btn'"

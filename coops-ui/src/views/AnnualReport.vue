@@ -53,8 +53,8 @@
                 :initialAgmDate="initialAgmDate"
                 :allowCOA="allowChange('coa')"
                 :allowCOD="allowChange('cod')"
+                :noAGM="noAGM"
                 @agmDate="agmDate=$event"
-                @noAGM="noAGM=$event"
                 @valid="agmDateValid=$event"
               />
             </section>
@@ -91,8 +91,11 @@
             <section>
               <header>
                 <h2 id="AR-step-3-header">3. Directors</h2>
-                <p>Tell us who was elected or appointed and who ceased to be a director at your
-                  {{ ARFilingYear }} AGM.</p>
+                <p v-if="allowChange('cod')">Tell us who was elected or appointed and who ceased to be
+                   a director at your {{ ARFilingYear }} AGM.</p>
+                <p v-else-if="!allowChange('cod')">This is your list of directors active on
+                   {{agmDate ? agmDate : `${this.ARFilingYear}-01-01`}}, including
+                   directors that were ceased at a later date.</p>
               </header>
               <Directors ref="directorsList"
                 @directorsChange="directorsChange"
@@ -416,6 +419,9 @@ export default {
               // set the Initial AGM Date in the AGM Date component
               // NOTE: AR Filing Year (which is needed by agmDate component) was already set by Todo List
               this.initialAgmDate = annualReport.annualGeneralMeetingDate
+              if (annualReport.annualGeneralMeetingDate == null) {
+                this.noAGM = true
+              }
               this.toggleFiling('add', 'OTANN')
             } else {
               throw new Error('missing annual report')
@@ -599,7 +605,7 @@ export default {
 
       const annualReport = {
         annualReport: {
-          annualGeneralMeetingDate: this.noAGM ? null : this.agmDate,
+          annualGeneralMeetingDate: this.agmDate,
           annualReportDate: this.annualReportDate,
           deliveryAddress: this.addresses['deliveryAddress'],
           mailingAddress: this.addresses['mailingAddress'],
@@ -775,8 +781,6 @@ export default {
 
     noAGM (val: boolean) {
       this.haveChanges = true
-      // when No AGM changes, update filing data
-      // this.toggleFiling(val ? 'add' : 'remove', 'OTANN')
     },
 
     isCertified (val: boolean) {
