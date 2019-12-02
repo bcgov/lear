@@ -200,9 +200,11 @@ describe('Dashboard - Click Tests', () => {
       await button.click()
 
       expect(vm.coaWarning).toBe(true)
-      vm.goToStandaloneAddresses()
+      expect(wrapper.find(CoaWarningDialog).vm.$el.querySelector('#btn-close-coa')).toBeDefined()
+      expect(wrapper.find(CoaWarningDialog).vm.$el.querySelector('#btn-proceed-coa')).toBeDefined()
 
-      // verify routing to Standalone Office Address Filing page with id=0
+      wrapper.find(CoaWarningDialog).vm.$emit('proceed', true)
+
       expect(vm.$route.name).toBe('standalone-addresses')
       expect(vm.$route.params.id).toBe(0)
 

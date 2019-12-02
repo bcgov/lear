@@ -129,7 +129,6 @@ import CoaWarningDialog from '@/components/Dashboard/CoaWarningDialog'
 // Enums
 import { EntityTypes, FilingStatus } from '@/enums'
 
-
 export default {
   name: 'Dashboard',
 
@@ -267,7 +266,7 @@ export default {
      */
     proceedCoa () {
       this.entityFilter(EntityTypes.BCorp)
-        ? this.coaWarning = true
+        ? this.toggleCoaWarning()
         : this.goToStandaloneAddresses()
     }
   },
