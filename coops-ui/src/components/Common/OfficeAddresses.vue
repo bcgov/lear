@@ -8,7 +8,7 @@
         <label class="address-edit-title">Registered Office</label>
       </div>
       <!-- Registered Delivery Address -->
-      <li class="container">
+      <li class="address-list-container">
         <div class="meta-container">
           <label v-if="!showAddressForm">Registered Office</label>
           <label v-else>Delivery Address</label>
@@ -57,13 +57,11 @@
       </li>
 
       <!-- Registered Mailing Address -->
-      <li class="container">
+      <li class="address-list-container">
         <div class="meta-container">
-          <label v-if="showAddressForm">Mailing Address</label>
-          <label v-else></label>
+          <label>{{ showAddressForm ? "Mailing Address" : "" }}</label>
           <div class="meta-container__inner">
-            <label
-              v-if="!showAddressForm && !isSame(deliveryAddress, mailingAddress, 'actions')">
+            <label v-if="!showAddressForm && !isSame(deliveryAddress, mailingAddress, 'actions')">
               <strong>Mailing Address</strong>
             </label>
             <div class="form__row">
@@ -86,7 +84,7 @@
                 @valid="isBaseAddressValid('mailingAddress', $event)"
               />
             </div>
-            <span id="sameAsAbove" v-else>
+            <span v-else id="sameAsAbove">
               Mailing Address same as above
             </span>
           </div>
@@ -94,7 +92,7 @@
       </li>
 
       <!-- Records Office Section -->
-      <div v-if="entityFilter(EntityTypes.BCorp)">
+      <div v-if="entityFilter(EntityTypes.BCORP)">
         <div class="address-edit-header"
              v-if="showAddressForm">
           <label class="address-edit-title">Records Office</label>
@@ -107,7 +105,7 @@
         </div>
         <div v-if="!isSame(registeredAddress, recordsAddress) || !inheritRegisteredAddress">
           <!-- Records Delivery Address -->
-          <li class="container">
+          <li class="address-list-container">
             <div class="meta-container">
               <label v-if="!showAddressForm">Records Office</label>
               <label v-else>Delivery Address</label>
@@ -127,13 +125,11 @@
           </li>
 
           <!-- Records Mailing Address -->
-          <li class="container">
+          <li class="address-list-container">
             <div class="meta-container">
-              <label v-if="showAddressForm">Mailing Address</label>
-              <label v-else></label>
+              <label>{{ showAddressForm ? "Mailing Address" : "" }}</label>
               <div class="meta-container__inner">
-                <label
-                  v-if="!isSame(recDeliveryAddress, recMailingAddress, 'actions') && !showAddressForm">
+                <label v-if="!isSame(recDeliveryAddress, recMailingAddress, 'actions') && !showAddressForm">
                   <strong>Mailing Address</strong>
                 </label>
                 <div class="form__row">
@@ -164,7 +160,7 @@
           </li>
         </div>
         <div v-else>
-          <li class="container" v-if="!showAddressForm">
+          <li class="address-list-container" v-if="!showAddressForm">
             <div class="meta-container">
               <label>Records Office</label>
               <div class="meta-container__inner">
@@ -201,7 +197,7 @@
 <script lang="ts">
 // Libraries
 import { Component, Emit, Prop, Watch, Mixins } from 'vue-property-decorator'
-import isEmpty from 'lodash.isempty'
+import { isEmpty } from 'lodash'
 
 // Schemas
 import { officeAddressSchema } from '@/schemas'
@@ -296,7 +292,7 @@ export default class OfficeAddresses extends Mixins(CommonMixin, EntityFilterMix
     private addressSchema: {} = officeAddressSchema
 
     // Entity Enum
-    private EntityTypes: {} = EntityTypes
+    readonly EntityTypes: {} = EntityTypes
 
     /**
      * Lifecycle callback to initialize the data when the component when it is created.
@@ -634,149 +630,151 @@ export default class OfficeAddresses extends Mixins(CommonMixin, EntityFilterMix
 </script>
 
 <style lang="scss" scoped>
-  @import '../../assets/styles/theme.scss';
-  .v-btn {
-    margin: 0;
-    min-width: 6rem;
-    text-transform: none;
-  }
+// @import '../../assets/styles/theme.scss';
 
-  .reset-btn {
-    margin-top: 0.5rem;
-  }
+.address-list-container {
+  padding: 1.25rem;
+}
 
+.v-btn {
+  margin: 0;
+  min-width: 6rem;
+  text-transform: none;
+}
+
+.reset-btn {
+  margin-top: 0.5rem;
+}
+
+.meta-container {
+  display: flex;
+  flex-flow: column nowrap;
+  position: relative;
+}
+
+.meta-container__inner {
+  margin-top: 1rem;
+}
+
+label:first-child {
+  font-weight: 700;
+  &__inner {
+    flex: 1 1 auto;
+  }
+}
+
+@media (min-width: 768px) {
   .meta-container {
-    display: flex;
-    flex-flow: column nowrap;
-    position: relative;
+    flex-flow: row nowrap;
+
+    label:first-child {
+      flex: 0 0 auto;
+      padding-right: 4rem;
+      width: 12rem;
+    }
   }
 
   .meta-container__inner {
-    margin-top: 1rem;
+    margin-top: 0;
   }
+}
 
-  label:first-child {
-    font-weight: 700;
-    &__inner {
-      flex: 1 1 auto;
-    }
-  }
+.address-list .form {
+  margin-top: 1rem;
+}
 
-  @media (min-width: 768px) {
-    .meta-container {
-      flex-flow: row nowrap;
-
-      label:first-child {
-        flex: 0 0 auto;
-        padding-right: 4rem;
-        width: 12rem;
-      }
-    }
-
-    .meta-container__inner {
-      margin-top: 0;
-    }
-  }
-
+@media (min-width: 768px) {
   .address-list .form {
-    margin-top: 1rem;
+    margin-top: 0rem
+  }
+}
+
+// Address Block Layout
+.address-wrapper {
+  margin-top: .5rem;
+}
+
+.address-block__actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+
+  .v-btn {
+    min-width: 4rem;
   }
 
-  @media (min-width: 768px) {
-    .address-list .form {
-      margin-top: 0rem
-    }
+  .v-btn + .v-btn {
+    margin-left: 0.5rem;
   }
+}
 
-  // Address Block Layout
-  .address-wrapper{
-    margin-top: .5rem;
-  }
+// Form Row Elements
+.form__row + .form__row {
+  margin-top: 0.25rem;
+}
 
-  .address-block__actions {
-    position: absolute;
-    top: 0;
-    right: 0;
+.form__btns {
+  text-align: right;
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem;
 
-    .v-btn {
-      min-width: 4rem;
-    }
+  .v-btn {
+    margin: 0;
 
-    .v-btn + .v-btn {
+    + .v-btn {
       margin-left: 0.5rem;
     }
   }
+}
 
-  // Form Row Elements
-  .form__row + .form__row {
-    margin-top: 0.25rem;
+.form__row.three-column {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: stretch;
+  margin-right: -0.5rem;
+  margin-left: -0.5rem;
+}
+
+.inherit-checkbox {
+  margin-top: -3px;
+  margin-left: -3px;
+  padding: 0;
+}
+.records-inherit-checkbox {
+  margin-top: 0rem;
+  margin-left: 6rem;
+  margin-bottom: -1.5rem;
+  padding: 0;
+
+  .v-messages {
+    display: none!important;
   }
+}
 
-  .form__btns {
-    text-align: right;
-    display: flex;
-    justify-content: flex-end;
-    padding: 1rem;
-
-    .v-btn {
-      margin: 0;
-
-      + .v-btn {
-        margin-left: 0.5rem;
-      }
-    }
+// Registered Office Address Form Behavior
+.show-address-form {
+  li:first-child {
+    padding-bottom: 0;
   }
+}
 
-  .form__row.three-column {
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: stretch;
-    margin-right: -0.5rem;
-    margin-left: -0.5rem;
+ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+// Editing Address Form
+.address-edit-header {
+  display: flex;
+  background-color: rgba(1,51,102,0.15);
+  padding: 1.25rem;
+
+  address-edit-title {
+    font-size: 1rem;
+    font-weight: bold;
+    line-height: 1.375rem;
   }
-
-  .inherit-checkbox {
-    margin-top: -3px;
-    margin-left: -3px;
-    padding: 0;
-  }
-  .records-inherit-checkbox {
-    margin-top: 0rem;
-    margin-left: 6rem;
-    margin-bottom: -1.5rem;
-    padding: 0;
-
-    .v-messages {
-      display: none!important;
-    }
-  }
-
-  // Registered Office Address Form Behavior
-  .show-address-form {
-
-    li:first-child {
-      padding-bottom: 0;
-    }
-  }
-
-  ul {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-  }
-
-  // Editing Address Form
-
-  .address-edit-header {
-    display: flex;
-    background-color: rgba(1,51,102,0.15);
-    padding: 1.25rem;
-
-    address-edit-title {
-      font-size: 16px;
-      font-weight: bold;
-      line-height: 22px;
-    }
-  }
-
+}
 </style>

@@ -26,7 +26,7 @@ export default class ErrorContact extends Vue { }
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
+// @import '@/assets/styles/theme.scss';
 
 li {
   font-size: 0.9rem;

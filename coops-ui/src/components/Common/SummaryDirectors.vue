@@ -6,10 +6,10 @@
         <v-subheader class="director-header">
           <span>Names</span>
           <span>Delivery Address</span>
-          <span v-if="entityFilter(EntityTypes.BCorp)">Mailing Address</span>
+          <span v-if="entityFilter(EntityTypes.BCORP)">Mailing Address</span>
           <span>Appointed/Elected</span>
         </v-subheader>
-        <li class="container"
+        <li class="director-list-container"
           :id="'director-' + director.id"
           v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
           v-for="(director, index) in orderBy(directorSummary, 'id', -1)"
@@ -64,7 +64,7 @@
                   <div class="address">
                     <BaseAddress :address="director.deliveryAddress" />
                   </div>
-                  <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
+                  <div class="address same-address" v-if="entityFilter(EntityTypes.BCORP)">
                     <span v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                       Same as Delivery Address
                     </span>
@@ -92,7 +92,7 @@
     <v-card flat>
       <v-expand-transition>
           <ul class="list director-list" v-show="expand">
-            <li class="container"
+            <li class="director-list-container"
               :id="'director-' + director.id"
               v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
               v-for="(director, index) in orderBy(directorsCeased, 'id', -1)"
@@ -147,7 +147,7 @@
                       <div class="address">
                         <BaseAddress :address="director.deliveryAddress" />
                       </div>
-                      <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
+                      <div class="address same-address" v-if="entityFilter(EntityTypes.BCORP)">
                         <span v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                           Same as Delivery Address
                         </span>
@@ -301,12 +301,12 @@ ul {
   list-style-type: none;
 }
 
-.meta-container{
+.meta-container {
   display: flex;
   flex-flow: column nowrap;
   position: relative;
 
-  > label:first-child{
+  > label:first-child {
     font-weight: 700;
   }
 
@@ -340,6 +340,7 @@ ul {
   align-items: stretch;
   margin-right: -0.5rem;
   margin-left: -0.5rem;
+
   .item {
     flex: 1 1 auto;
     flex-basis: 0;
@@ -387,7 +388,8 @@ ul {
 
 .new-director .meta-container,
 .meta-container.new-director {
-  flex-flow column nowrap
+  flex-flow: column nowrap;
+
   > label:first-child {
     margin-bottom: 1.5rem;
   }
@@ -411,6 +413,10 @@ ul {
     font-weight: 600;
     line-height: 1.1875rem;
   }
+}
+
+.director-list-container {
+  padding: 1.25rem;
 }
 
 .editFormStyle {

@@ -42,9 +42,5 @@ export default class PaymentErrorDialog extends Vue {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
-
-.genErr{
-  font-size: 0.9rem;
-}
+// @import '@/assets/styles/theme.scss';
 </style>

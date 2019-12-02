@@ -41,7 +41,7 @@
       <!-- New Director Form -->
       <v-expand-transition>
         <ul class="list new-director" v-show="showNewDirectorForm">
-          <li class="container">
+          <li class="new-director-container">
             <div class="meta-container">
               <label class="appoint-header">Appoint New Director</label>
               <div class="meta-container__inner">
@@ -77,7 +77,7 @@
                       @update:address="updateBaseAddress"
                     />
                   </div>
-                  <div class="form__row" v-if="entityFilter(EntityTypes.BCorp)">
+                  <div class="form__row" v-if="entityFilter(EntityTypes.BCORP)">
                     <v-checkbox
                       class="inherit-checkbox"
                       label="Mailing Address same as Delivery Address"
@@ -132,7 +132,7 @@
                       full-width
                       min-width="18rem">
                       <template v-slot:activator="{ on }">
-                        <v-text-field class="item" ref="newDirectorCessationDate"
+                        <v-text-field class="item"
                           id="new-director__cessation-date"
                           v-model.trim="director.cessationDate"
                           label="Cessation Date"
@@ -173,10 +173,10 @@
         <v-subheader v-if="this.directors.length && !directorEditInProgress" class="director-header">
           <span>Names</span>
           <span>Delivery Address</span>
-          <span v-if="entityFilter(EntityTypes.BCorp)">Mailing Address</span>
+          <span v-if="entityFilter(EntityTypes.BCORP)">Mailing Address</span>
           <span>Appointed/Elected</span>
         </v-subheader>
-        <li class="container"
+        <li class="director-list-container"
           :id="'director-' + director.id"
           v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
           v-for="(director, index) in orderBy(directors, 'id', -1)"
@@ -232,7 +232,7 @@
                   <div class="address">
                     <BaseAddress :address="director.deliveryAddress" />
                   </div>
-                  <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
+                  <div class="address same-address" v-if="entityFilter(EntityTypes.BCORP)">
                     <span v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                       Same as Delivery Address
                     </span>
@@ -264,7 +264,7 @@
                             <v-icon>arrow_drop_down</v-icon>
                           </v-btn>
                         </template>
-                        <v-list class="actions__more_actions">
+                        <v-list class="actions__more-actions">
                           <v-list-tile @click="showDeleteDirectorConfirmation(director)">
                             <v-list-tile-title>Remove</v-list-tile-title>
                           </v-list-tile>
@@ -291,7 +291,7 @@
                               <v-icon>mdi-menu-down</v-icon>
                             </v-btn>
                           </template>
-                          <v-list class="actions__more_actions">
+                          <v-list class="actions__more-actions">
                             <!-- removed until release 2 -->
                             <!--
                             <v-list-tile @click="cessationDateTemp = asOfDate; activeIndexCustomCease = index;">
@@ -361,7 +361,7 @@
                     :key="activeIndex"
                   />
 
-                  <div class="form__row" v-if="entityFilter(EntityTypes.BCorp)"
+                  <div class="form__row" v-if="entityFilter(EntityTypes.BCORP)"
                    v-show="editFormShowHide.showAddress"
                   >
                     <v-checkbox
@@ -571,7 +571,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private inheritDeliveryAddress: boolean = false
 
   // EntityTypes Enum
-  private EntityTypes: {} = EntityTypes
+  readonly EntityTypes: {} = EntityTypes
 
   // The Address schema containing Vuelidate rules.
   // NB: This should match the subject JSON schema.
@@ -941,7 +941,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     }
 
     // Add the mailing address property if the entity is a BCORP
-    if (this.entityFilter(EntityTypes.BCorp)) {
+    if (this.entityFilter(EntityTypes.BCORP)) {
       newDirector = { ...newDirector, mailingAddress: { ...this.inProgressMailAddress } }
     }
 
@@ -1358,12 +1358,12 @@ ul {
   min-width: 56rem;
 }
 
-.meta-container{
+.meta-container {
   display: flex;
   flex-flow: column nowrap;
   position: relative;
 
-  > label:first-child{
+  > label:first-child {
     font-weight: 700;
   }
 
@@ -1428,6 +1428,7 @@ ul {
   align-items: stretch;
   margin-right: -0.5rem;
   margin-left: -0.5rem;
+
   .item {
     flex: 1 1 auto;
     flex-basis: 0;
@@ -1488,9 +1489,15 @@ ul {
   color: $gray5 !important;
 }
 
-.new-director .meta-container {
-  > label:first-child {
-    margin-bottom: 1.5rem;
+.new-director {
+  .new-director-container {
+    padding: 1.25rem;
+
+    .meta-container {
+      > label:first-child {
+        margin-bottom: 1.5rem;
+      }
+    }
   }
 }
 
@@ -1506,6 +1513,14 @@ ul {
   margin-left: 1px !important;
   padding: 0 5px;
   color: $gray6;
+}
+
+.actions__more-actions {
+  padding: 0;
+
+  .v-list-item__title {
+    font-size: 0.875rem;
+  }
 }
 
 .standalone__cessation-date__datepicker {
@@ -1528,6 +1543,12 @@ ul {
     font-size: 0.875rem;
     font-weight: 600;
     line-height: 1.1875rem;
+  }
+}
+
+.director-list {
+  .director-list-container {
+    padding: 1.25rem;
   }
 }
 

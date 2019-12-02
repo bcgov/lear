@@ -6,8 +6,8 @@
           <h1>Dashboard</h1>
         </header>
 
-        <div class="dashboard-content">
-          <div class="dashboard-content__main">
+        <v-row>
+          <v-col cols="12" lg="9">
             <section>
               <header>
                 <h2 class="mb-3">To Do <span class="text-muted">({{todoCount}})</span></h2>
@@ -29,9 +29,9 @@
                 @filings-list="historyFilings = $event"
               />
             </section>
-          </div>
+          </v-col>
 
-          <aside class="dashboard-content__aside">
+          <v-col cols="12" lg="3" style="position: relative">
             <section>
               <header class="aside-header mb-3">
                 <h2>Office Addresses</h2>
@@ -48,7 +48,8 @@
                         text-color="black"
                         v-show="coaPending"
                         v-on="on"
-                      >Pending
+                      >
+                        Pending
                       </v-chip>
                     </template>
                     <span>
@@ -85,7 +86,8 @@
                   color="primary"
                   id="btn-standalone-directors"
                   :disabled="hasBlockerFiling"
-                  @click.native.stop="goToStandaloneDirectors()">
+                  @click.native.stop="goToStandaloneDirectors()"
+                >
                   <v-icon small>mdi-pencil</v-icon>
                   <span>Change</span>
                 </v-btn>
@@ -94,8 +96,8 @@
                 <director-list-sm></director-list-sm>
               </v-card>
             </section>
-          </aside>
-        </div>
+          </v-col>
+        </v-row>
       </article>
     </v-container>
   </div>
@@ -269,7 +271,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
+// @import '@/assets/styles/theme.scss';
 
 section header {
   display: flex;
@@ -282,20 +284,7 @@ section header {
   }
 }
 
-.dashboard-content {
-  display: flex
-}
-
-.dashboard-content__main {
-  flex: 1 1 auto;
-  z-index: 1
-}
-
-.dashboard-content__aside {
-  margin-left: 2rem
-}
-
 .pending-tooltip {
-  max-width: 16rem
+  max-width: 16rem;
 }
 </style>

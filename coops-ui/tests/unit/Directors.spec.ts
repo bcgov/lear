@@ -14,7 +14,7 @@ Vue.use(Vuelidate)
 // get rid of "Download the Vue Devtools extension for a better development experience" console message
 Vue.config.devtools = false
 
-// get rid of "You are running Vue in development mod" console message
+// get rid of "You are running Vue in development mode" console message
 Vue.config.productionTip = false
 
 let vuetify = new Vuetify({})
@@ -46,7 +46,7 @@ describe('Directors as a COOP', () => {
   beforeEach(() => {
     // init store
     store.state.entityIncNo = 'CP0001191'
-    store.state.entityType = EntityTypes.Coop
+    store.state.entityType = EntityTypes.COOP
 
     // GET directors
     sinon.stub(axios, 'get').withArgs('CP0001191/directors?date=2019-04-01')
@@ -144,13 +144,13 @@ describe('Directors as a COOP', () => {
     expect(vm.directors[1].deliveryAddress.streetAddressAdditional).toEqual('Kirkintiloch')
     expect(vm.directors[1].deliveryAddress.deliveryInstructions).toEqual('go to the back')
 
-    // Verify no mailing address fo Coop directors
+    // Verify no mailing address for COOP directors
     expect(vm.directors[0].mailingAddress).toBeUndefined()
     expect(vm.directors[1].mailingAddress).toBeUndefined()
   })
 
   it('displays the list of directors', () => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(2)
@@ -172,7 +172,7 @@ describe('Directors as a COOP', () => {
       // confirm that flag is set correctly
       expect(vm.componentEnabled).toEqual(false)
 
-      const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+      const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
       // check that buttons are disabled (checks first button in first director, plus the Add New Director button)
       expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(true)
@@ -190,7 +190,7 @@ describe('Directors as a COOP', () => {
       // confirm that flag is set correctly
       expect(vm.componentEnabled).toEqual(true)
 
-      const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+      const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
       // check that buttons are enabled (checks first button in first director, plus the Add New Director button)
       expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(false)
@@ -234,7 +234,7 @@ describe('Directors as a COOP', () => {
   })
 
   it('handles "ceased" action', done => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // click first director's cease button
     click(vm, '#director-1-cease-btn')
@@ -254,7 +254,7 @@ describe('Directors as a COOP', () => {
   })
 
   it('handles "undo ceased" action', done => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // click first director's cease button
     click(vm, '#director-1-cease-btn')
@@ -306,13 +306,13 @@ describe('Directors as a COOP', () => {
   // })
 })
 
-describe('Directors as a BCorp', () => {
+describe('Directors as a BCORP', () => {
   let vm: any
 
   beforeEach(() => {
     // init store
     store.state.entityIncNo = 'CP0002291'
-    store.state.entityType = EntityTypes.BCorp
+    store.state.entityType = EntityTypes.BCORP
 
     // GET directors
     sinon.stub(axios, 'get').withArgs('CP0002291/directors?date=2019-04-01')
@@ -432,7 +432,7 @@ describe('Directors as a BCorp', () => {
   })
 
   it('displays the list of directors', () => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(2)
@@ -457,7 +457,7 @@ describe('Directors as a BCorp', () => {
       // confirm that flag is set correctly
       expect(vm.componentEnabled).toEqual(false)
 
-      const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+      const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
       // check that buttons are disabled (checks first button in first director, plus the Add New Director button)
       expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(true)
@@ -475,7 +475,7 @@ describe('Directors as a BCorp', () => {
       // confirm that flag is set correctly
       expect(vm.componentEnabled).toEqual(true)
 
-      const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+      const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
       // check that buttons are enabled (checks first button in first director, plus the Add New Director button)
       expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(false)
@@ -514,7 +514,7 @@ describe('Directors as a BCorp', () => {
   })
 
   it('handles "ceased" action', done => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // click first director's cease button
     click(vm, '#director-1-cease-btn')
@@ -534,7 +534,7 @@ describe('Directors as a BCorp', () => {
   })
 
   it('handles "undo ceased" action', done => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // click first director's cease button
     click(vm, '#director-1-cease-btn')
@@ -566,7 +566,7 @@ describe('Appoint New Director tests', () => {
   beforeEach(() => {
     // init store
     store.state.entityIncNo = 'CP0001191'
-    store.state.entityType = EntityTypes.Coop
+    store.state.entityType = EntityTypes.COOP
 
     // GET directors
     sinon.stub(axios, 'get').withArgs('CP0001191/directors?date=2019-04-01')

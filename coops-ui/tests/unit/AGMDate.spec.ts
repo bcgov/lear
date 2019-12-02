@@ -15,16 +15,16 @@ import { EntityTypes } from '@/enums'
 // ref: https://github.com/vuejs/vue-test-utils/issues/532
 Vue.config.silent = true
 
-Vue.use(Vuetify)
-Vue.use(Vuelidate)
-
-let vuetify = new Vuetify({})
-
 // get rid of "Download the Vue Devtools extension for a better development experience" console message
 Vue.config.devtools = false
 
-// get rid of "You are running Vue in development mod" console message
+// get rid of "You are running Vue in development mode" console message
 Vue.config.productionTip = false
+
+Vue.use(Vuetify)
+Vue.use(Vuelidate)
+
+const vuetify = new Vuetify({})
 
 describe('AGMDate', () => {
   let wrapper
@@ -35,7 +35,7 @@ describe('AGMDate', () => {
     store.state.entityIncNo = 'CP0001191'
     store.state.currentDate = '2019/07/15'
     store.state.ARFilingYear = 2019
-    store.state.entityType = EntityTypes.Coop
+    store.state.entityType = EntityTypes.COOP
 
     wrapper = mount(AGMDate, { store, vuetify })
     vm = wrapper.vm as any

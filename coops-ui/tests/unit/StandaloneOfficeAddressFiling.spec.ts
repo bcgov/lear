@@ -344,7 +344,7 @@ describe('Standalone Office Address Filing - Part 2B (BCORPS) - Resuming', () =>
     // init store
     store.state.entityIncNo = 'BC0001191'
     store.state.entityName = 'Legal Name - BC0001191'
-    store.state.entityType = EntityTypes.BCorp
+    store.state.entityType = EntityTypes.BCORP
 
     // mock "fetch a draft filing" endpoint
     sinon.stub(axios, 'get').withArgs('BC0001191/filings/123')
@@ -433,7 +433,7 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
     // init store
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
-    store.state.entityType = EntityTypes.Coop
+    store.state.entityType = EntityTypes.COOP
 
     let s = sinon.stub(axios, 'get')
 
@@ -711,7 +711,7 @@ describe('Standalone Office Address Filing - Part 3B (BCORP) - Submitting', () =
     // init store
     store.state.entityIncNo = 'BC0001191'
     store.state.entityName = 'Legal Name - BC0001191'
-    store.state.entityType = EntityTypes.BCorp
+    store.state.entityType = EntityTypes.BCORP
 
     let s = sinon.stub(axios, 'get')
 
@@ -1129,7 +1129,7 @@ describe('Standalone Office Address Filing - Part 4B (BCORPS) - Saving', () => {
     // init store
     store.state.entityIncNo = 'BC0001191'
     store.state.entityName = 'Legal Name - BC0001191'
-    store.state.entityType = EntityTypes.BCorp
+    store.state.entityType = EntityTypes.BCORP
 
     // mock "save draft" endpoint
     sinon.stub(axios, 'post').withArgs('BC0001191/filings?draft=true')

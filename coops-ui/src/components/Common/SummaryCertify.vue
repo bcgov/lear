@@ -1,16 +1,14 @@
 <template>
   <v-card flat id="certify-container">
-    <div class="container">
-      <p class="certify-content">I, <b>{{ trimmedCertifiedBy || '[Legal Name]'}}</b>,
-      certify that I have relevant knowledge of the association and that I am authorized to make this filing.
-      </p>
-      <p class="certify-content">{{currentDate}}</p>
-      <p class="certify-content">
-        Note: It is an offence to make a false or misleading statement in
-        respect of a material fact in a record submitted to the Corporate Registry for filing.
-        See section 200 of the Cooperatives Association Act.
-      </p>
-    </div>
+    <p class="certify-content">I, <b>{{ trimmedCertifiedBy || '[Legal Name]'}}</b>,
+    certify that I have relevant knowledge of the association and that I am authorized to make this filing.
+    </p>
+    <p class="certify-content">{{currentDate}}</p>
+    <p class="certify-content">
+      Note: It is an offence to make a false or misleading statement in
+      respect of a material fact in a record submitted to the Corporate Registry for filing.
+      See section 200 of the Cooperatives Association Act.
+    </p>
   </v-card>
 </template>
 
@@ -37,11 +35,11 @@ export default class SummaryCertify extends Vue {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
+// @import '@/assets/styles/theme.scss';
 
 #certify-container {
   margin-top: 1rem;
-  padding-top: 1rem;
+  padding: 1.25rem 1.25rem 0.25rem 1.25rem;
   font-size: 0.875rem;
 
   .certify-content {

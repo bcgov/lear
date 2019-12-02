@@ -109,7 +109,7 @@ export default class EntityInfo extends Vue {
 @import '@/assets/styles/theme.scss';
 
 .entity-info {
-  background: #ffffff;
+  background: $BCgovInputBG;
 }
 
 // .entity-info.staff {

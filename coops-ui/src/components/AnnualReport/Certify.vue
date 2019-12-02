@@ -1,10 +1,8 @@
 <template>
   <v-card flat id="AR-step-4-container">
-    <div class="container">
+    <div class="certify-container">
       <div class="certifiedby-container">
-        <label>
-          <span>Legal Name</span>
-        </label>
+        <label>Legal Name</label>
         <div class="value certifiedby">
           <v-text-field
             filled
@@ -94,7 +92,7 @@ export default class Certify extends Vue {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
+// @import '@/assets/styles/theme.scss';
 
 #AR-step-4-container {
   margin-top: 1rem;
@@ -102,6 +100,10 @@ export default class Certify extends Vue {
   padding-top: 1rem;
   line-height: 1.2rem;
   font-size: 0.875rem;
+}
+
+.certify-container {
+  padding: 1.25rem;
 }
 
 .certifiedby-container {
@@ -128,7 +130,7 @@ export default class Certify extends Vue {
 }
 
 .value.certifiedby {
-  min-width: 35rem
+  min-width: 35rem;
 }
 
 .certify-clause {
@@ -140,6 +142,6 @@ export default class Certify extends Vue {
 .certify-stmt {
   display:inline;
   font-size: 0.875rem;
-  color: black
+  color: black;
 }
 </style>

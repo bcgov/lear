@@ -508,9 +508,9 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
   })
 
   it('saves a new filing and redirects to Pay URL when this is a new filing and the File & Pay button ' +
-    'is clicked - as a Coop', async () => {
+    'is clicked - as a COOP', async () => {
     // init store
-    store.state.entityType = EntityTypes.Coop
+    store.state.entityType = EntityTypes.COOP
 
     // set necessary session variables
     sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
@@ -580,9 +580,9 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
   })
 
   it('saves a new filing and redirects to Pay URL when this is a new filing and the File & Pay button ' +
-    'is clicked - as a Bcorp', async () => {
+    'is clicked - as a BCORP', async () => {
     // init store
-    store.state.entityType = EntityTypes.BCorp
+    store.state.entityType = EntityTypes.BCORP
 
     // set necessary session variables
     sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
