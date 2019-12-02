@@ -227,7 +227,7 @@ describe('Directors as a COOP', () => {
         expect(vm.$el.querySelector('#new-director__first-name')).toBeDefined()
         expect(vm.$el.querySelector('#new-director__middle-initial')).toBeDefined()
         expect(vm.$el.querySelector('#new-director__last-name')).toBeDefined()
-  
+
         done()
       })
     })
