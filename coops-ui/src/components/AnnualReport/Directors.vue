@@ -77,7 +77,7 @@
                       @update:address="updateBaseAddress"
                     />
                   </div>
-                  <div class="form__row" v-if="entityFilter(EntityTypes.BCorp)">
+                  <div class="form__row" v-if="entityFilter(EntityTypes.BCORP)">
                     <v-checkbox
                       class="inherit-checkbox"
                       label="Mailing Address same as Delivery Address"
@@ -173,7 +173,7 @@
         <v-subheader v-if="this.directors.length && !directorEditInProgress" class="director-header">
           <span>Names</span>
           <span>Delivery Address</span>
-          <span v-if="entityFilter(EntityTypes.BCorp)">Mailing Address</span>
+          <span v-if="entityFilter(EntityTypes.BCORP)">Mailing Address</span>
           <span>Appointed/Elected</span>
         </v-subheader>
         <li class="director-list-container"
@@ -232,7 +232,7 @@
                   <div class="address">
                     <BaseAddress :address="director.deliveryAddress" />
                   </div>
-                  <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
+                  <div class="address same-address" v-if="entityFilter(EntityTypes.BCORP)">
                     <span v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                       Same as Delivery Address
                     </span>
@@ -361,7 +361,7 @@
                     :key="activeIndex"
                   />
 
-                  <div class="form__row" v-if="entityFilter(EntityTypes.BCorp)"
+                  <div class="form__row" v-if="entityFilter(EntityTypes.BCORP)"
                    v-show="editFormShowHide.showAddress"
                   >
                     <v-checkbox
@@ -941,7 +941,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     }
 
     // Add the mailing address property if the entity is a BCORP
-    if (this.entityFilter(EntityTypes.BCorp)) {
+    if (this.entityFilter(EntityTypes.BCORP)) {
       newDirector = { ...newDirector, mailingAddress: { ...this.inProgressMailAddress } }
     }
 

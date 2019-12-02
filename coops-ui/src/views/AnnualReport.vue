@@ -46,7 +46,7 @@
 
               <div v-if="isAnnualReportEditable">
                 <!-- Annual General Meeting Date ( COOP ) -->
-                <section v-if="entityFilter(EntityTypes.Coop)">
+                <section v-if="entityFilter(EntityTypes.COOP)">
                   <header>
                     <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
                     <p>Select your Annual General Meeting (AGM) date</p>
@@ -62,7 +62,7 @@
                 </section>
 
                 <!-- Annual Report Date ( BCORP ) -->
-                <section v-if="entityFilter(EntityTypes.BCorp)">
+                <section v-if="entityFilter(EntityTypes.BCORP)">
                   <header>
                     <h2 id="AR-step-1-header-BC">1. Dates</h2>
                     <p>Your Annual Report Date is the anniversary of the date your corporation was started.<br>

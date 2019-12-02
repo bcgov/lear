@@ -6,7 +6,7 @@
         <v-subheader class="director-header">
           <span>Names</span>
           <span>Delivery Address</span>
-          <span v-if="entityFilter(EntityTypes.BCorp)">Mailing Address</span>
+          <span v-if="entityFilter(EntityTypes.BCORP)">Mailing Address</span>
           <span>Appointed/Elected</span>
         </v-subheader>
         <li class="director-list-container"
@@ -64,7 +64,7 @@
                   <div class="address">
                     <BaseAddress :address="director.deliveryAddress" />
                   </div>
-                  <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
+                  <div class="address same-address" v-if="entityFilter(EntityTypes.BCORP)">
                     <span v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                       Same as Delivery Address
                     </span>
@@ -147,7 +147,7 @@
                       <div class="address">
                         <BaseAddress :address="director.deliveryAddress" />
                       </div>
-                      <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
+                      <div class="address same-address" v-if="entityFilter(EntityTypes.BCORP)">
                         <span v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                           Same as Delivery Address
                         </span>

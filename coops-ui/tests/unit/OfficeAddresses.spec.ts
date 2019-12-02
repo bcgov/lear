@@ -22,7 +22,7 @@ describe('OfficeAddresses as a COOP', () => {
 
   beforeAll(() => {
     // init store
-    store.state.entityType = EntityTypes.Coop
+    store.state.entityType = EntityTypes.COOP
     store.state.registeredAddress = {
       deliveryAddress: {
         addressCity: 'delCity',
@@ -264,7 +264,7 @@ describe('OfficeAddresses as a BCORP', () => {
 
   beforeAll(() => {
     // init store
-    store.state.entityType = EntityTypes.BCorp
+    store.state.entityType = EntityTypes.BCORP
     store.state.registeredAddress = {
       deliveryAddress: {
         addressCity: 'delCity',

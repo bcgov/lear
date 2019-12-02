@@ -48,7 +48,8 @@
                         text-color="black"
                         v-show="coaPending"
                         v-on="on"
-                      >Pending
+                      >
+                        Pending
                       </v-chip>
                     </template>
                     <span>
@@ -85,7 +86,8 @@
                   color="primary"
                   id="btn-standalone-directors"
                   :disabled="hasBlockerFiling"
-                  @click.native.stop="goToStandaloneDirectors()">
+                  @click.native.stop="goToStandaloneDirectors()"
+                >
                   <v-icon small>mdi-pencil</v-icon>
                   <span>Change</span>
                 </v-btn>

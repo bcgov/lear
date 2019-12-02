@@ -47,7 +47,7 @@
                       one for each unique date.</p>
 
                   <v-alert
-                    v-if="!entityFilter(EntityTypes.BCorp)"
+                    v-if="!entityFilter(EntityTypes.BCORP)"
                     type="info"
                     icon="mdi-information"
                     outlined

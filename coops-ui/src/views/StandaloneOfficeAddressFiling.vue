@@ -42,12 +42,12 @@
 
                 <p>
                   <span>Please change your Registered Office Address</span>
-                  <span v-if="entityFilter(EntityTypes.BCorp)"> and Records Address</span>
+                  <span v-if="entityFilter(EntityTypes.BCORP)"> and Records Address</span>
                   <span>.</span>
                 </p>
 
                 <v-alert
-                  v-if="entityFilter(EntityTypes.BCorp)"
+                  v-if="entityFilter(EntityTypes.BCORP)"
                   type="info"
                   icon="mdi-information"
                   outlined

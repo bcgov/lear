@@ -29,7 +29,7 @@ describe('Directors as a COOP', () => {
   beforeEach(done => {
     // init store
     store.state.entityIncNo = 'CP0001191'
-    store.state.entityType = EntityTypes.Coop
+    store.state.entityType = EntityTypes.COOP
     const directors = [
       {
         'id': 1,
@@ -166,7 +166,7 @@ describe('Directors as a BCORP', () => {
   beforeEach(done => {
     // init store
     store.state.entityIncNo = 'BC0001191'
-    store.state.entityType = EntityTypes.BCorp
+    store.state.entityType = EntityTypes.BCORP
     const directors = [
       {
         'id': 1,

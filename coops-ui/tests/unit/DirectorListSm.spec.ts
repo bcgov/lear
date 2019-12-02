@@ -16,7 +16,7 @@ describe('DirectorListSm', () => {
   it('handles empty data as a coop', done => {
     // init store
     store.state.directors = []
-    store.state.entityType = EntityTypes.Coop
+    store.state.entityType = EntityTypes.COOP
 
     const wrapper = mount(DirectorListSm, { store, vuetify })
     const vm = wrapper.vm as any
@@ -32,7 +32,7 @@ describe('DirectorListSm', () => {
 
   it('displays multiple directors as a coop', done => {
     // init store
-    store.state.entityType = EntityTypes.Coop
+    store.state.entityType = EntityTypes.COOP
     store.state.directors = [
       {
         'officer': {
@@ -78,7 +78,7 @@ describe('DirectorListSm', () => {
   it('handles empty data as a coop', done => {
     // init store
     store.state.directors = []
-    store.state.entityType = EntityTypes.Coop
+    store.state.entityType = EntityTypes.COOP
 
     const wrapper = mount(DirectorListSm, { store, vuetify })
     const vm = wrapper.vm as any
@@ -102,7 +102,7 @@ describe('DirectorListSm', () => {
     }
 
     // init store
-    store.state.entityType = EntityTypes.BCorp
+    store.state.entityType = EntityTypes.BCORP
     store.state.directors = [
       {
         'officer': {

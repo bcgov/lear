@@ -35,7 +35,7 @@ describe('AGMDate', () => {
     store.state.entityIncNo = 'CP0001191'
     store.state.currentDate = '2019/07/15'
     store.state.ARFilingYear = 2019
-    store.state.entityType = EntityTypes.Coop
+    store.state.entityType = EntityTypes.COOP
 
     wrapper = mount(AGMDate, { store, vuetify })
     vm = wrapper.vm as any

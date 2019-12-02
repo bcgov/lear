@@ -46,7 +46,7 @@ describe('Directors as a COOP', () => {
   beforeEach(() => {
     // init store
     store.state.entityIncNo = 'CP0001191'
-    store.state.entityType = EntityTypes.Coop
+    store.state.entityType = EntityTypes.COOP
 
     // GET directors
     sinon.stub(axios, 'get').withArgs('CP0001191/directors?date=2019-04-01')
@@ -144,7 +144,7 @@ describe('Directors as a COOP', () => {
     expect(vm.directors[1].deliveryAddress.streetAddressAdditional).toEqual('Kirkintiloch')
     expect(vm.directors[1].deliveryAddress.deliveryInstructions).toEqual('go to the back')
 
-    // Verify no mailing address fo Coop directors
+    // Verify no mailing address for COOP directors
     expect(vm.directors[0].mailingAddress).toBeUndefined()
     expect(vm.directors[1].mailingAddress).toBeUndefined()
   })
@@ -306,13 +306,13 @@ describe('Directors as a COOP', () => {
   // })
 })
 
-describe('Directors as a BCorp', () => {
+describe('Directors as a BCORP', () => {
   let vm: any
 
   beforeEach(() => {
     // init store
     store.state.entityIncNo = 'CP0002291'
-    store.state.entityType = EntityTypes.BCorp
+    store.state.entityType = EntityTypes.BCORP
 
     // GET directors
     sinon.stub(axios, 'get').withArgs('CP0002291/directors?date=2019-04-01')
@@ -566,7 +566,7 @@ describe('Appoint New Director tests', () => {
   beforeEach(() => {
     // init store
     store.state.entityIncNo = 'CP0001191'
-    store.state.entityType = EntityTypes.Coop
+    store.state.entityType = EntityTypes.COOP
 
     // GET directors
     sinon.stub(axios, 'get').withArgs('CP0001191/directors?date=2019-04-01')

@@ -36,8 +36,8 @@ describe('AnnualReport - Part 1 - UI', () => {
     store.state.entityType = 'mockType'
   })
 
-  it('renders the Annual Report sub-components properly when entity is a Coop', () => {
-    store.state.entityType = EntityTypes.Coop
+  it('renders the Annual Report sub-components properly when entity is a COOP', () => {
+    store.state.entityType = EntityTypes.COOP
     const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
 
@@ -50,8 +50,8 @@ describe('AnnualReport - Part 1 - UI', () => {
     wrapper.destroy()
   })
 
-  it('renders the Annual Report sub-components properly when entity is a BCorp', () => {
-    store.state.entityType = EntityTypes.BCorp
+  it('renders the Annual Report sub-components properly when entity is a BCORP', () => {
+    store.state.entityType = EntityTypes.BCORP
     const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
 

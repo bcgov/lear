@@ -30,7 +30,7 @@ describe('AddressListSm', () => {
     })
   })
 
-  it('displays registered office data when a Coop', done => {
+  it('displays registered office data when a COOP', done => {
     // Init Store
     store.state.registeredAddress = {
       'deliveryAddress':
@@ -69,7 +69,7 @@ describe('AddressListSm', () => {
     })
   })
 
-  it('displays registered office and same as above text data when a Coop', done => {
+  it('displays registered office and same as above text data when a COOP', done => {
     // Init Store
     store.state.registeredAddress = {
       'deliveryAddress':
@@ -108,9 +108,9 @@ describe('AddressListSm', () => {
     })
   })
 
-  it('displays registered address and records address data when a Bcorp', async done => {
+  it('displays registered address and records address data when a BCORP', async done => {
     // Init Store
-    store.state.entityType = EntityTypes.BCorp
+    store.state.entityType = EntityTypes.BCORP
     store.state.registeredAddress = {
       'deliveryAddress':
         {
@@ -177,9 +177,9 @@ describe('AddressListSm', () => {
     })
   })
 
-  it('displays records address and same as above text  data when a Bcorp', async done => {
+  it('displays records address and same as above text  data when a BCORP', async done => {
     // Init Store
-    store.state.entityType = EntityTypes.BCorp
+    store.state.entityType = EntityTypes.BCORP
     store.state.registeredAddress = {
       'deliveryAddress':
         {

@@ -92,7 +92,7 @@
       </li>
 
       <!-- Records Office Section -->
-      <div v-if="entityFilter(EntityTypes.BCorp)">
+      <div v-if="entityFilter(EntityTypes.BCORP)">
         <div class="address-edit-header"
              v-if="showAddressForm">
           <label class="address-edit-title">Records Office</label>

@@ -28,7 +28,7 @@
             </v-list-item-content>
           </v-list-item>
 
-          <v-list-item v-if="entityFilter(EntityTypes.BCorp) && director.mailingAddress">
+          <v-list-item v-if="entityFilter(EntityTypes.BCORP) && director.mailingAddress">
             <v-list-item-content>
               <v-list-item-title class="mb-2">Mailing Address</v-list-item-title>
               <v-list-item-subtitle>
