@@ -20,7 +20,7 @@ Currently this only provides API versioning information
 from .db import db
 
 
-class Office(db.Model): # pylint: disable=too-few-public-methods
+class Office(db.Model):  # pylint: disable=too-few-public-methods
     """This is the object mapping for the Office entity.
 
     An office is associated with one business, and 0...n addresses
@@ -38,7 +38,10 @@ class Office(db.Model): # pylint: disable=too-few-public-methods
     # relationships
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
 
-class OfficeType(db.Model): # pylint: disable=too-few-public-methods
+
+class OfficeType(db.Model):  # pylint: disable=too-few-public-methods
+    """Define the Office Types available for Legal Entities."""
+
     __tablename__ = 'office_types'
 
     identifier = db.Column(db.String(50), primary_key=True)

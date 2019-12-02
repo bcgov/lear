@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Change of Address filing."""
-from http import HTTPStatus
 import json
+from http import HTTPStatus
 from typing import Dict
 
 import pycountry
@@ -21,7 +21,6 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Business
-
 
 
 def validate(business: Business, cod: Dict) -> Error:

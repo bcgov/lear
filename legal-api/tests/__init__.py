@@ -19,6 +19,7 @@ from .pytest_marks import (
     integration_colin,
     integration_nats,
     integration_payment,
+    integration_reports,
     integration_sentry,
     not_github_ci
 )
