@@ -2,14 +2,20 @@ import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
 import sinon from 'sinon'
-
 import axios from '@/axios-auth'
 import store from '@/store/store'
+
 import Directors from '@/components/AnnualReport/Directors.vue'
 import { EntityTypes } from '@/enums'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
+
+// get rid of "Download the Vue Devtools extension for a better development experience" console message
+Vue.config.devtools = false
+
+// get rid of "You are running Vue in development mod" console message
+Vue.config.productionTip = false
 
 let vuetify = new Vuetify({})
 
@@ -18,18 +24,26 @@ const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
 document.body.append(app)
 
+function click (vm: any, id: string) {
+  const button = vm.$el.querySelector(id)
+  const window = button.ownerDocument.defaultView
+  const event = new window.Event('click')
+  button.dispatchEvent(event)
+}
+
+function setValue (vm: any, id: string, value: string) {
+  const input = vm.$el.querySelector(id)
+  input.value = value
+  const window = input.ownerDocument.defaultView
+  const event = new window.Event('input')
+  input.dispatchEvent(event)
+}
+
 describe('Directors as a COOP', () => {
-  let vm
-  let vm2
+  let vm: any
+  let vm2: any
 
-  function click (id) {
-    const button = vm.$el.querySelector(id)
-    const window = button.ownerDocument.defaultView
-    const click = new window.Event('click')
-    button.dispatchEvent(click)
-  }
-
-  beforeEach(done => {
+  beforeEach(() => {
     // init store
     store.state.entityIncNo = 'CP0001191'
     store.state.entityType = EntityTypes.Coop
@@ -81,19 +95,16 @@ describe('Directors as a COOP', () => {
       })))
 
     const Constructor = Vue.extend(Directors)
-    const instance = new Constructor({ store: store, vuetify })
+    const instance = new Constructor({ store, vuetify })
     vm = instance.$mount()
-
-    // set vm2 for draft test (setup is different and does not fire the 'asOfDate' watcher)
-    store.state.currentFilingStatus = 'DRAFT'
-    const instance2 = new Constructor({ store: store, vuetify, propsData: { asOfDate: '2019-04-01' } })
-    vm2 = instance2.$mount()
 
     // set as-of date
     vm.asOfDate = '2019-04-01'
-    Vue.nextTick(() => {
-      done()
-    })
+
+    // set vm2 for draft test (setup is different and does not fire the 'asOfDate' watcher)
+    store.state.currentFilingStatus = 'DRAFT'
+    const instance2 = new Constructor({ store, vuetify, propsData: { asOfDate: '2019-04-01' } })
+    vm2 = instance2.$mount()
   })
 
   afterEach(() => {
@@ -154,7 +165,7 @@ describe('Directors as a COOP', () => {
   })
 
   it('disables buttons/actions when instructed by parent component', done => {
-    // invalidate AGM Date
+    // set enabled prop
     vm.componentEnabled = false
 
     Vue.nextTick(() => {
@@ -172,7 +183,7 @@ describe('Directors as a COOP', () => {
   })
 
   it('enables buttons/actions when instructed by parent component', done => {
-    // validate AGM Date
+    // set enabled prop
     vm.componentEnabled = true
 
     Vue.nextTick(() => {
@@ -189,8 +200,8 @@ describe('Directors as a COOP', () => {
     })
   })
 
-  it('displays Add New Director form when button clicked', done => {
-    // validate AGM Date
+  it('displays Appoint New Director form when button clicked', done => {
+    // set enabled prop
     vm.componentEnabled = true
 
     Vue.nextTick(() => {
@@ -200,8 +211,8 @@ describe('Directors as a COOP', () => {
       // check that Add New Director button is enabled
       expect(vm.$el.querySelector('.new-director-btn').disabled).toBe(false)
 
-      // click Add New Director button
-      click('.new-director-btn')
+      // click Appoint New Director button
+      click(vm, '.new-director-btn')
 
       Vue.nextTick(() => {
         // check that button is hidden
@@ -212,6 +223,11 @@ describe('Directors as a COOP', () => {
         expect(vm.$el.querySelector('.new-director')
           .getAttribute('style')).not.toContain('display: none;')
 
+        // check that inputs are showing
+        expect(vm.$el.querySelector('#new-director__first-name')).toBeDefined()
+        expect(vm.$el.querySelector('#new-director__middle-initial')).toBeDefined()
+        expect(vm.$el.querySelector('#new-director__last-name')).toBeDefined()
+
         done()
       })
     })
@@ -221,7 +237,7 @@ describe('Directors as a COOP', () => {
     const directorListUI = vm.$el.querySelectorAll('.director-list .container')
 
     // click first director's cease button
-    click('#director-1-cease-btn')
+    click(vm, '#director-1-cease-btn')
 
     Vue.nextTick(() => {
       // check that button has changed to "undo"
@@ -237,15 +253,15 @@ describe('Directors as a COOP', () => {
     })
   })
 
-  it('handles un-"ceased" action', done => {
+  it('handles "undo ceased" action', done => {
     const directorListUI = vm.$el.querySelectorAll('.director-list .container')
 
     // click first director's cease button
-    click('#director-1-cease-btn')
+    click(vm, '#director-1-cease-btn')
 
     Vue.nextTick(() => {
       // click first director's undo cease button
-      click('#director-1-cease-btn')
+      click(vm, '#director-1-cease-btn')
 
       Vue.nextTick(() => {
         // check that button has changed back to "cease"
@@ -274,25 +290,26 @@ describe('Directors as a COOP', () => {
   })
 
   // todo
-  // it('adds a new director to list', () => {
+  // it('can change a director\'s address', () => {
   // })
 
   // todo
-  // it('can undo adding new director', () => {
+  // it('can remove a director\'s address change', () => {
+  // })
+
+  // todo
+  // it('can change a director\'s name', () => {
+  // })
+
+  // todo
+  // it('can remove a director\'s name change', () => {
   // })
 })
 
 describe('Directors as a BCorp', () => {
-  let vm
+  let vm: any
 
-  function click (id) {
-    const button = vm.$el.querySelector(id)
-    const window = button.ownerDocument.defaultView
-    const click = new window.Event('click')
-    button.dispatchEvent(click)
-  }
-
-  beforeEach(done => {
+  beforeEach(() => {
     // init store
     store.state.entityIncNo = 'CP0002291'
     store.state.entityType = EntityTypes.BCorp
@@ -362,7 +379,7 @@ describe('Directors as a BCorp', () => {
       })))
 
     const Constructor = Vue.extend(Directors)
-    const instance = new Constructor({ store: store, vuetify })
+    const instance = new Constructor({ store, vuetify })
     vm = instance.$mount()
 
     // set as-of date
@@ -370,10 +387,6 @@ describe('Directors as a BCorp', () => {
 
     // call getDirectors() since it won't be triggered from parent component
     vm.getDirectors()
-
-    Vue.nextTick(() => {
-      done()
-    })
   })
 
   afterEach(() => {
@@ -437,7 +450,7 @@ describe('Directors as a BCorp', () => {
   })
 
   it('disables buttons/actions when instructed by parent component', done => {
-    // invalidate AGM Date
+    // set enabled prop
     vm.componentEnabled = false
 
     Vue.nextTick(() => {
@@ -455,7 +468,7 @@ describe('Directors as a BCorp', () => {
   })
 
   it('enables buttons/actions when instructed by parent component', done => {
-    // validate AGM Date
+    // set enabled prop
     vm.componentEnabled = true
 
     Vue.nextTick(() => {
@@ -472,8 +485,8 @@ describe('Directors as a BCorp', () => {
     })
   })
 
-  it('displays Add New Director form when button clicked', done => {
-    // validate AGM Date
+  it('displays Appoint New Director form when button clicked', done => {
+    // set enabled prop
     vm.componentEnabled = true
 
     Vue.nextTick(() => {
@@ -483,8 +496,8 @@ describe('Directors as a BCorp', () => {
       // check that Add New Director button is enabled
       expect(vm.$el.querySelector('.new-director-btn').disabled).toBe(false)
 
-      // click Add New Director button
-      click('.new-director-btn')
+      // click Appoint New Director button
+      click(vm, '.new-director-btn')
 
       Vue.nextTick(() => {
         // check that button is hidden
@@ -504,7 +517,7 @@ describe('Directors as a BCorp', () => {
     const directorListUI = vm.$el.querySelectorAll('.director-list .container')
 
     // click first director's cease button
-    click('#director-1-cease-btn')
+    click(vm, '#director-1-cease-btn')
 
     Vue.nextTick(() => {
       // check that button has changed to "undo"
@@ -520,15 +533,15 @@ describe('Directors as a BCorp', () => {
     })
   })
 
-  it('handles un-"ceased" action', done => {
+  it('handles "undo ceased" action', done => {
     const directorListUI = vm.$el.querySelectorAll('.director-list .container')
 
     // click first director's cease button
-    click('#director-1-cease-btn')
+    click(vm, '#director-1-cease-btn')
 
     Vue.nextTick(() => {
       // click first director's undo cease button
-      click('#director-1-cease-btn')
+      click(vm, '#director-1-cease-btn')
 
       Vue.nextTick(() => {
         // check that button has changed back to "cease"
@@ -545,4 +558,182 @@ describe('Directors as a BCorp', () => {
       })
     })
   })
+})
+
+describe('Appoint New Director tests', () => {
+  let vm: any
+
+  beforeEach(() => {
+    // init store
+    store.state.entityIncNo = 'CP0001191'
+    store.state.entityType = EntityTypes.Coop
+
+    // GET directors
+    sinon.stub(axios, 'get').withArgs('CP0001191/directors?date=2019-04-01')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            directors: []
+          }
+      })))
+
+    const Constructor = Vue.extend(Directors)
+    const instance = new Constructor({ store, vuetify })
+    vm = instance.$mount()
+
+    // set props
+    vm.asOfDate = '2019-04-01'
+    vm.componentEnabled = true
+
+    // click Appoint New Director button
+    click(vm, '.new-director-btn')
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  it('accepts valid First Name', done => {
+    setValue(vm, '#new-director__first-name', 'First First')
+    expect(vm.director.officer.firstName).toBe('First First')
+
+    // verify that there are no validation errors
+    setTimeout(() => {
+      expect(vm.$el.querySelectorAll('.v-messages')[0].textContent).toBe('')
+      done()
+    }, 100)
+  })
+
+  it('displays error for invalid First Name - leading spaces', done => {
+    setValue(vm, '#new-director__first-name', '  First')
+    expect(vm.director.officer.firstName).toBe('  First')
+
+    // verify that validation error is displayed
+    setTimeout(() => {
+      expect(vm.$el.querySelectorAll('.v-messages')[0].textContent).toContain('Invalid spaces')
+      done()
+    }, 100)
+  })
+
+  it('displays error for invalid First Name - trailing spaces', done => {
+    setValue(vm, '#new-director__first-name', 'First  ')
+    expect(vm.director.officer.firstName).toBe('First  ')
+
+    // verify that validation error is displayed
+    setTimeout(() => {
+      expect(vm.$el.querySelectorAll('.v-messages')[0].textContent).toContain('Invalid spaces')
+      done()
+    }, 100)
+  })
+
+  it('displays error for invalid First Name - multiple inline spaces', done => {
+    setValue(vm, '#new-director__first-name', 'First  First')
+    expect(vm.director.officer.firstName).toBe('First  First')
+
+    // verify that validation error is displayed
+    setTimeout(() => {
+      expect(vm.$el.querySelectorAll('.v-messages')[0].textContent).toContain('Invalid word spacing')
+      done()
+    }, 100)
+  })
+
+  it('accepts valid Middle Initial', done => {
+    setValue(vm, '#new-director__middle-initial', 'M M')
+    expect(vm.director.officer.middleInitial).toBe('M M')
+
+    // verify that there are no validation errors
+    setTimeout(() => {
+      expect(vm.$el.querySelectorAll('.v-messages')[1].textContent).toBe('')
+      done()
+    }, 100)
+  })
+
+  it('displays error for invalid Middle Initial - leading spaces', done => {
+    setValue(vm, '#new-director__middle-initial', '  M')
+    expect(vm.director.officer.middleInitial).toBe('  M')
+
+    // verify that validation error is displayed
+    setTimeout(() => {
+      expect(vm.$el.querySelectorAll('.v-messages')[1].textContent).toContain('Invalid spaces')
+      done()
+    }, 100)
+  })
+
+  it('displays error for invalid Middle Initial - trailing spaces', done => {
+    setValue(vm, '#new-director__middle-initial', 'M  ')
+    expect(vm.director.officer.middleInitial).toBe('M  ')
+
+    // verify that validation error is displayed
+    setTimeout(() => {
+      expect(vm.$el.querySelectorAll('.v-messages')[1].textContent).toContain('Invalid spaces')
+      done()
+    }, 100)
+  })
+
+  it('displays error for invalid Middle Initial - multiple inline spaces', done => {
+    setValue(vm, '#new-director__middle-initial', 'M  M')
+    expect(vm.director.officer.middleInitial).toBe('M  M')
+
+    // verify that validation error is displayed
+    setTimeout(() => {
+      expect(vm.$el.querySelectorAll('.v-messages')[1].textContent).toContain('Invalid word spacing')
+      done()
+    }, 100)
+  })
+
+  it('accepts valid Last Name', done => {
+    setValue(vm, '#new-director__last-name', 'Last')
+    expect(vm.director.officer.lastName).toBe('Last')
+
+    // verify that there are no validation errors
+    setTimeout(() => {
+      expect(vm.$el.querySelectorAll('.v-messages')[2].textContent).toBe('')
+      done()
+    }, 100)
+  })
+
+  it('displays error for invalid Last Name - leading spaces', done => {
+    setValue(vm, '#new-director__last-name', '  Last')
+    expect(vm.director.officer.lastName).toBe('  Last')
+
+    // verify that validation error is displayed
+    setTimeout(() => {
+      expect(vm.$el.querySelectorAll('.v-messages')[2].textContent).toContain('Invalid spaces')
+      done()
+    }, 100)
+  })
+
+  it('displays error for invalid Last Name - trailing spaces', done => {
+    setValue(vm, '#new-director__last-name', 'Last  ')
+    expect(vm.director.officer.lastName).toBe('Last  ')
+
+    // verify that validation error is displayed
+    setTimeout(() => {
+      expect(vm.$el.querySelectorAll('.v-messages')[2].textContent).toContain('Invalid spaces')
+      done()
+    }, 100)
+  })
+
+  it('displays error for invalid Last Name - multiple inline spaces', done => {
+    setValue(vm, '#new-director__last-name', 'Last  Last')
+    expect(vm.director.officer.lastName).toBe('Last  Last')
+
+    // verify that validation error is displayed
+    setTimeout(() => {
+      expect(vm.$el.querySelectorAll('.v-messages')[2].textContent).toContain('Invalid word spacing')
+      done()
+    }, 100)
+  })
+
+  // todo
+  // it('can appoint a new director', () => {
+  // })
+
+  // todo
+  // it('can edit a new director', () => {
+  // })
+
+  // todo
+  // it('can remove a new director', () => {
+  // })
 })

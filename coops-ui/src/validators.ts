@@ -43,3 +43,14 @@ export function isValidDay (date: string): boolean {
   const max = new Date(this.maxDate).getTime()
   return (time >= min && time <= max)
 }
+
+export function isValidCODDate (dateInput: string, separator: string): boolean {
+  separator = (typeof separator === 'string') ? separator : '/'
+
+  if (!dateInput) return false
+
+  var d1 = this.minDate == null ? 0 : this.minDate.split('-').join('')
+  var d2 = this.maxDate.split('-').join('')
+  var c = dateInput.split(separator).join('')
+  return c >= d1 && c <= d2
+}

@@ -13,22 +13,19 @@
 
 import Vue from 'vue'
 import Vuetify from 'vuetify'
-
 import { mount, Wrapper } from '@vue/test-utils'
 
 import Certify from '@/components/AnnualReport/Certify.vue'
-import store from '@/store/store'
 
 Vue.use(Vuetify)
-
-let vuetify = new Vuetify({})
 
 // Input field selectors to test changes to the DOM elements.
 const certifiedBySelector: string = 'input[type=text]'
 const isCertifiedSelector: string = 'input[type=checkbox]'
 const statementSelector: string = '.certify-stmt'
 
-const someCertifier = 'Some Certifier'
+const trimmedCertifier = 'Some Certifier'
+const whitespaceCertifier = '  Some  Certifier  '
 const defaultDate = '2019-01-01'
 
 /**
@@ -55,136 +52,119 @@ function getLastEvent (wrapper: Wrapper<Certify>, name: string): any {
  *
  * @returns a Wrapper<Certify> object with the given parameters.
  */
-function createComponent (certifiedBy: string = undefined, isCertified: boolean = undefined,
-  currentDate: string = defaultDate): Wrapper<Certify> {
+function createComponent (
+  certifiedBy: string = undefined,
+  isCertified: boolean = undefined,
+  currentDate: string = defaultDate
+): Wrapper<Certify> {
   return mount(Certify, { sync: false,
     propsData: {
-      'certifiedBy': certifiedBy,
-      'currentDate': currentDate,
-      'isCertified': isCertified
-    } })
+      certifiedBy,
+      currentDate,
+      isCertified
+    }
+  })
 }
 
-describe('Certified.vue', () => {
-  let vm
-
-  beforeEach(done => {
-    const Constructor = Vue.extend(Certify)
-    const instance = new Constructor({ store: store, vuetify })
-    vm = instance.$mount()
-
-    Vue.nextTick(() => {
-      done()
-    })
-  })
-
+describe('Certify', () => {
   it('has date displayed', () => {
     const wrapper: Wrapper<Certify> = createComponent()
 
     // The text should contain the date.
-    expect(wrapper.text()).toEqual(expect.stringMatching(new RegExp(defaultDate)))
+    expect(wrapper.text()).toContain(defaultDate)
   })
 
   it('has statement with certifier', () => {
-    const wrapper: Wrapper<Certify> = createComponent(someCertifier)
+    const wrapper: Wrapper<Certify> = createComponent(trimmedCertifier)
     const statement: Wrapper<Vue> = wrapper.find(statementSelector)
 
     // The text should contain the certifier name.
-    expect(statement.text()).toEqual(expect.stringMatching(new RegExp(someCertifier)))
+    expect(statement.text()).toContain(trimmedCertifier)
   })
 
   it('has statement with trimmed certifier', () => {
-    const untrimmedCertifier = '   ' + someCertifier + ' '
-    const wrapper: Wrapper<Certify> = createComponent(untrimmedCertifier)
+    const wrapper: Wrapper<Certify> = createComponent(whitespaceCertifier)
     const statement: Wrapper<Vue> = wrapper.find(statementSelector)
 
-    // The text should contain the certifier name.
-    expect(statement.text()).toEqual(expect.not.stringMatching(new RegExp(untrimmedCertifier)))
+    // The text should contain the trimmed certifier name.
+    expect(statement.text()).toContain(trimmedCertifier)
   })
 
-  it('is invalid when no value', () => {
+  it('is invalid when no props are defined', () => {
     const wrapper: Wrapper<Certify> = createComponent()
 
-    // The last "valid" event should indicate that the form is not valid.
-    expect(getLastEvent(wrapper, 'valid')).not.toBeTruthy()
+    // The last "valid" event should indicate that the form is invalid.
+    expect(getLastEvent(wrapper, 'valid')).toBe(false)
   })
 
-  it('is invalid when just certifiedBy', () => {
-    const wrapper: Wrapper<Certify> = createComponent(someCertifier)
+  it('is invalid when just certifiedBy is defined', () => {
+    const wrapper: Wrapper<Certify> = createComponent(trimmedCertifier, undefined)
 
-    // The last "valid" event should indicate that the form is not valid.
-    expect(getLastEvent(wrapper, 'valid')).not.toBeTruthy()
+    // The last "valid" event should indicate that the form is invalid.
+    expect(getLastEvent(wrapper, 'valid')).toBe(false)
   })
 
-  it('is invalid when just isCertified', () => {
-    const wrapper: Wrapper<Certify> = createComponent(null, true)
+  it('is invalid when just isCertified is defined', () => {
+    const wrapper: Wrapper<Certify> = createComponent(undefined, true)
 
-    // The last "valid" event should indicate that the form is not valid.
-    expect(getLastEvent(wrapper, 'valid')).not.toBeTruthy()
+    // The last "valid" event should indicate that the form is invalid.
+    expect(getLastEvent(wrapper, 'valid')).toBe(false)
   })
 
-  it('is invalid when name is space', () => {
-    const wrapper: Wrapper<Certify> = createComponent(' ', true)
-
-    // The last "valid" event should indicate that the form is not valid.
-    expect(getLastEvent(wrapper, 'valid')).not.toBeTruthy()
-  })
-
-  it('is valid when props defined', () => {
-    const wrapper: Wrapper<Certify> = createComponent(someCertifier, true)
+  it('is valid when both certifiedBy and isCertified are defined', () => {
+    const wrapper: Wrapper<Certify> = createComponent(trimmedCertifier, true)
 
     // The last "valid" event should indicate that the form is valid.
-    expect(getLastEvent(wrapper, 'valid')).toBeTruthy()
+    expect(getLastEvent(wrapper, 'valid')).toBe(true)
   })
 
-  it('is valid when certifier untrimmed', () => {
-    const wrapper: Wrapper<Certify> = createComponent('  ' + someCertifier + ' ', true)
+  it('is valid when certifier is defined and contains whitespace', () => {
+    const wrapper: Wrapper<Certify> = createComponent(whitespaceCertifier, true)
 
     // The last "valid" event should indicate that the form is valid.
-    expect(getLastEvent(wrapper, 'valid')).toBeTruthy()
+    expect(getLastEvent(wrapper, 'valid')).toBe(true)
   })
 
-  it('is invalid when certifier is whitespace', () => {
+  it('is invalid when certifier is just whitespace', () => {
     const wrapper: Wrapper<Certify> = createComponent('  ', true)
 
     // The last "valid" event should indicate that the form is invalid.
-    expect(getLastEvent(wrapper, 'valid')).not.toBeTruthy()
+    expect(getLastEvent(wrapper, 'valid')).toBe(false)
   })
 
-  it('is still invalid when certifier is whitespace', () => {
+  it('is still invalid when certifier is just whitespace and form is certified', () => {
     const wrapper: Wrapper<Certify> = createComponent('  ', false)
     const checkboxElement: Wrapper<Vue> = wrapper.find(isCertifiedSelector)
     checkboxElement.setChecked()
 
     // The last "valid" event should indicate that the form is invalid.
-    expect(getLastEvent(wrapper, 'valid')).not.toBeTruthy()
+    expect(getLastEvent(wrapper, 'valid')).toBe(false)
   })
 
-  it('has input event for certifiedBy', () => {
+  it('has update event for certifiedBy', () => {
     const wrapper: Wrapper<Certify> = createComponent()
     const inputElement: Wrapper<Vue> = wrapper.find(certifiedBySelector)
-    inputElement.setValue(someCertifier)
+    inputElement.setValue(trimmedCertifier)
 
     // The last "update:certifiedBy" event should match the input.
-    expect(getLastEvent(wrapper, 'update:certifiedBy')).toMatch(someCertifier)
+    expect(getLastEvent(wrapper, 'update:certifiedBy')).toMatch(trimmedCertifier)
   })
 
-  it('has untrimmed input event for certifiedBy', () => {
-    const untrimmedCertifier = '   ' + someCertifier + ' '
+  it('has update event for trimmed certifiedBy', () => {
     const wrapper: Wrapper<Certify> = createComponent()
     const inputElement: Wrapper<Vue> = wrapper.find(certifiedBySelector)
-    inputElement.setValue(untrimmedCertifier)
+    inputElement.setValue(whitespaceCertifier)
 
     // The last "update:certifiedBy" event should be a trimmed version of the input.
-    expect(getLastEvent(wrapper, 'update:certifiedBy')).toMatch(untrimmedCertifier)
+    expect(getLastEvent(wrapper, 'update:certifiedBy')).toMatch(trimmedCertifier)
   })
 
-  it('has input event for isCertified', () => {
+  it('has update event for isCertified', () => {
     const wrapper: Wrapper<Certify> = createComponent()
     const checkboxElement: Wrapper<Vue> = wrapper.find(isCertifiedSelector)
     checkboxElement.setChecked()
 
     // The last "update:isCertified" event should indicate that the checkbox is checked.
-    expect(getLastEvent(wrapper, 'update:isCertified')).toBeTruthy()
+    expect(getLastEvent(wrapper, 'update:isCertified')).toBe(true)
   })
 })

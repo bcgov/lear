@@ -98,7 +98,19 @@ describe('Dashboard - UI', () => {
     expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
       .getAttribute('disabled')).toBeTruthy()
     expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
-      .getAttribute('disabled')).toBeTruthy()
+      .getAttribute('disabled')).toBe('true')
+  })
+
+  it('disables standalone filing buttons & toDo filings when there is a future effective filing pending', () => {
+    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [{ 'status': 'PAID' }])
+    wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
+
+    expect(wrapper.vm.hasBlockerFiling).toEqual(true)
+    expect(wrapper.vm.coaPending).toEqual(true)
+    expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
+      .getAttribute('disabled')).toBe('true')
+    expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
+      .getAttribute('disabled')).toBe('true')
   })
 
   it('marks filing as PROCESSING when expecting completed filing and dashboard does not reflect this', () => {

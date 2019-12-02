@@ -33,6 +33,7 @@ from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed b
 from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 
+
 class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages all of the base data about a business.
 
@@ -91,16 +92,18 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
     @property
     def mailing_address(self):
+        """Return the mailing address."""
         registered_office = db.session.query(Office).filter(Office.business_id == self.id).\
             filter(Office.office_type == 'registeredOffice').one_or_none()
         if registered_office:
             return registered_office.addresses.filter(Address.address_type == 'mailing')
 
-        return db.session.query(Address).filter(Address.business_id == self.id).\
+        return db.session.query(Address).filter(Address.business_id == self.id). \
             filter(Address.address_type == Address.MAILING)
 
     @property
     def delivery_address(self):
+        """Return the delivery address."""
         registered_office = db.session.query(Office).filter(Office.business_id == self.id).\
             filter(Office.office_type == 'registeredOffice').one_or_none()
         if registered_office:

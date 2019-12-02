@@ -4,12 +4,13 @@ import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
 import sinon from 'sinon'
 import { createLocalVue, shallowMount, mount } from '@vue/test-utils'
+import CODDate from '@/components/StandaloneDirectorChange/CODDate.vue'
+import Directors from '@/components/AnnualReport/Directors.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
 import axios from '@/axios-auth'
 import store from '@/store/store'
 import StandaloneDirectorsFiling from '@/views/StandaloneDirectorsFiling.vue'
-import Directors from '@/components/AnnualReport/Directors.vue'
 import VueRouter from 'vue-router'
 import mockRouter from './mockRouter'
 import { BAD_REQUEST } from 'http-status-codes'
@@ -70,12 +71,14 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
   beforeEach(() => {
     // init store
     store.state.entityIncNo = 'CP0001191'
+    store.state.currentDate = '2019/07/15'
   })
 
   it('renders the filing sub-components properly', () => {
     const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
 
+    expect(wrapper.find(CODDate).exists()).toBe(true)
     expect(wrapper.find(Directors).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)
     expect(wrapper.find(StaffPayment).exists()).toBe(false) // normally not rendered
@@ -111,6 +114,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set properties
+    vm.codDateValid = true
     vm.directorFormValid = true
     vm.staffPaymentFormValid = true
     vm.certifyFormValid = true
@@ -122,12 +126,31 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     wrapper.destroy()
   })
 
-  it('disables Validated flag when Directors form is invalid', () => {
+  it('disables Validated flag when COD Date component is invalid', () => {
     const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route }, vuetify })
     const vm: any = wrapper.vm
 
     // set properties
+    vm.codDateValid = false
+    vm.directorFormValid = true
+    vm.staffPaymentFormValid = true
+    vm.certifyFormValid = true
+    vm.filingData = [{}] // dummy data
+
+    // confirm that flag is set correctly
+    expect(vm.validated).toEqual(false)
+
+    wrapper.destroy()
+  })
+
+  it('disables Validated flag when Directors component is invalid', () => {
+    const $route = { params: { id: 0 } } // new filing id
+    const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route }, vuetify })
+    const vm: any = wrapper.vm
+
+    // set properties
+    vm.codDateValid = true
     vm.directorFormValid = false
     vm.staffPaymentFormValid = true
     vm.certifyFormValid = true
@@ -139,12 +162,13 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     wrapper.destroy()
   })
 
-  it('disables Validated flag when Certify form is invalid', () => {
+  it('disables Validated flag when Certify component is invalid', () => {
     const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route }, vuetify })
     const vm: any = wrapper.vm
 
     // set properties
+    vm.codDateValid = true
     vm.directorFormValid = true
     vm.staffPaymentFormValid = true
     vm.certifyFormValid = false
@@ -162,9 +186,11 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set properties
+    vm.codDateValid = true
     vm.directorFormValid = true
     vm.certifyFormValid = true
     vm.filingData = [{}] // dummydata
+
     // set properties to make only staff payment invalid
     store.state.keycloakRoles = ['staff']
     vm.totalFee = 1
@@ -204,6 +230,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     // set properties
+    vm.codDateValid = true
     vm.directorFormValid = true
     vm.staffPaymentFormValid = true
     vm.certifyFormValid = true
@@ -226,6 +253,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
       localVue,
       router,
       stubs: {
+        CODDate: true,
         Directors: true,
         Certify: true,
         StaffPayment: true,
@@ -242,6 +270,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
 
     // set properties
     vm.inFilingReview = true
+    vm.codDateValid = true
     vm.directorFormValid = true
     vm.staffPaymentFormValid = true
     vm.certifyFormValid = true
@@ -264,6 +293,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
       localVue,
       router,
       stubs: {
+        CODDate: true,
         Directors: true,
         Certify: true,
         StaffPayment: true,
@@ -280,6 +310,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
 
     // set properties
     vm.inFilingReview = true
+    vm.codDateValid = false
     vm.directorFormValid = false
     vm.staffPaymentFormValid = false
     vm.certifyFormValid = false
@@ -297,6 +328,7 @@ describe('Standalone Directors Filing - Part 2 - Resuming', () => {
     // init store
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
+    store.state.currentDate = '2019/07/15'
 
     // mock "fetch a draft filing" endpoint
     sinon.stub(axios, 'get').withArgs('CP0001191/filings/123')
@@ -309,14 +341,15 @@ describe('Standalone Directors Filing - Part 2 - Resuming', () => {
               },
               'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP0001191',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'Legal Name - CP0001191'
               },
               'header': {
                 'name': 'changeOfDirectors',
-                'date': '2017-06-06',
+                'date': '2017-06-06T00:00:00+00:00',
+                'effectiveDate': 'Tue, 06 Jun 2017 18:49:44 GMT',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
                 'certifiedBy': 'Full Name',
@@ -388,14 +421,15 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
               },
               'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP0001191',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'Legal Name - CP0001191'
               },
               'header': {
                 'name': 'changeOfDirectors',
-                'date': '2017-06-06',
+                'date': '2017-06-06T00:00:00+00:00',
+                'effectiveDate': 'Tue, 06 Jun 2017 18:49:44 GMT',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
                 'certifiedBy': 'Full Name',
@@ -417,14 +451,15 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
               },
               'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP0001191',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'Legal Name - CP0001191'
               },
               'header': {
                 'name': 'changeOfDirectors',
-                'date': '2017-06-06',
+                'date': '2017-06-06T00:00:00+00:00',
+                'effectiveDate': 'Tue, 06 Jun 2017 18:49:44 GMT',
                 'submitter': 'cp0001191',
                 'status': 'PENDING',
                 'filingId': 123,
@@ -447,14 +482,15 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
               },
               'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP0001191',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'Legal Name - CP0001191'
               },
               'header': {
                 'name': 'changeOfDirectors',
-                'date': '2017-06-06',
+                'date': '2017-06-06T00:00:00+00:00',
+                'effectiveDate': 'Tue, 06 Jun 2017 18:49:44 GMT',
                 'submitter': 'cp0001191',
                 'status': 'PENDING',
                 'filingId': 123,
@@ -489,6 +525,7 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
       localVue,
       router,
       stubs: {
+        CODDate: true,
         Directors: true,
         Certify: true,
         StaffPayment: true,
@@ -505,10 +542,12 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
 
     // make sure form is validated
     vm.inFilingReview = true
+    vm.codDateValid = true
     vm.directorFormValid = true
     vm.staffPaymentFormValid = true
     vm.certifyFormValid = true
     vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'CP' }] // dummy data
+
     expect(vm.validated).toEqual(true)
 
     // make sure a fee is required
@@ -573,9 +612,11 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
 
     // make sure form is validated
     vm.inFilingReview = true
+    vm.codDateValid = true
     vm.directorFormValid = true
     vm.certifyFormValid = true
     vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'BC' }] // dummy data
+
     expect(vm.validated).toEqual(true)
 
     // make sure a fee is required
@@ -622,6 +663,7 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
       localVue,
       router,
       stubs: {
+        CODDate: true,
         Directors: true,
         Certify: true,
         StaffPayment: true,
@@ -638,10 +680,12 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
 
     // make sure form is validated
     vm.inFilingReview = true
+    vm.codDateValid = true
     vm.directorFormValid = true
     vm.staffPaymentFormValid = true
     vm.certifyFormValid = true
     vm.filingData = [{}] // dummy data
+
     expect(vm.validated).toEqual(true)
 
     // make sure a fee is required
@@ -691,14 +735,15 @@ describe('Standalone Directors Filing - Part 3B - Submitting filing that doesn\'
               },
               'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP0001191',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'Legal Name - CP0001191'
               },
               'header': {
                 'name': 'changeOfDirectors',
-                'date': '2017-06-06',
+                'date': '2017-06-06T00:00:00+00:00',
+                'effectiveDate': 'Tue, 06 Jun 2017 18:49:44 GMT',
                 'submitter': 'cp0001191',
                 'status': 'PAID', // API may return this or PENDING but we don't care
                 'filingId': 123,
@@ -748,6 +793,7 @@ describe('Standalone Directors Filing - Part 3B - Submitting filing that doesn\'
 
     // make sure form is validated
     vm.inFilingReview = true
+    vm.codDateValid = true
     vm.directorFormValid = true
     vm.staffPaymentFormValid = true
     vm.certifyFormValid = true
@@ -799,14 +845,15 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
               },
               'business': {
                 'cacheId': 1,
-                'foundingDate': '2007-04-08',
+                'foundingDate': '2007-04-08T00:00:00+00:00',
                 'identifier': 'CP0001191',
                 'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
                 'legalName': 'Legal Name - CP0001191'
               },
               'header': {
                 'name': 'changeOfDirectors',
-                'date': '2017-06-06',
+                'date': '2017-06-06T00:00:00+00:00',
+                'effectiveDate': 'Tue, 06 Jun 2017 18:49:44 GMT',
                 'submitter': 'cp0001191',
                 'status': 'DRAFT',
                 'certifiedBy': 'Full Name',
@@ -850,6 +897,7 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
       const vm = wrapper.vm as any
 
       // make sure form is validated
+      vm.codDateValid = true
       vm.directorFormValid = true
       vm.staffPaymentFormValid = true
       vm.certifyFormValid = true
@@ -883,6 +931,7 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
 
     // make sure form is validated
     vm.inFilingReview = true
+    vm.codDateValid = true
     vm.directorFormValid = true
     vm.staffPaymentFormValid = true
     vm.certifyFormValid = true
@@ -992,6 +1041,7 @@ describe('Standalone Directors Filing - Part 5 - Data', () => {
     ]
 
     // make sure form is validated
+    vm.codDateValid = true
     vm.directorFormValid = true
     vm.staffPaymentFormValid = true
     vm.certifyFormValid = true
@@ -1081,14 +1131,15 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
             },
             'business': {
               'cacheId': 1,
-              'foundingDate': '2007-04-08',
+              'foundingDate': '2007-04-08T00:00:00+00:00',
               'identifier': 'CP0001191',
               'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
               'legalName': 'Legal Name - CP0001191'
             },
             'header': {
               'name': 'changeOfDirectors',
-              'date': '2017-06-06',
+              'date': '2017-06-06T00:00:00+00:00',
+              'effectiveDate': 'Tue, 06 Jun 2017 18:49:44 GMT',
               'submitter': 'cp0001191',
               'status': 'PENDING',
               'filingId': 123,
@@ -1126,14 +1177,15 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
             },
             'business': {
               'cacheId': 1,
-              'foundingDate': '2007-04-08',
+              'foundingDate': '2007-04-08T00:00:00+00:00',
               'identifier': 'CP0001191',
               'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
               'legalName': 'Legal Name - CP0001191'
             },
             'header': {
               'name': 'changeOfDirectors',
-              'date': '2017-06-06',
+              'date': '2017-06-06T00:00:00+00:00',
+              'effectiveDate': 'Tue, 06 Jun 2017 18:49:44 GMT',
               'submitter': 'cp0001191',
               'status': 'PENDING',
               'filingId': 123,
@@ -1164,6 +1216,7 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
         localVue,
         router,
         stubs: {
+          CODDate: true,
           Directors: true,
           Certify: true,
           StaffPayment: true,
@@ -1180,6 +1233,7 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
 
       // make sure form is validated
       vm.inFilingReview = true
+      vm.codDateValid = true
       vm.directorFormValid = true
       vm.staffPaymentFormValid = true
       vm.certifyFormValid = true
@@ -1216,6 +1270,7 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
         localVue,
         router,
         stubs: {
+          CODDate: true,
           Directors: true,
           Certify: true,
           StaffPayment: true,
@@ -1232,6 +1287,7 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
 
       // make sure form is validated
       vm.inFilingReview = true
+      vm.codDateValid = true
       vm.directorFormValid = true
       vm.staffPaymentFormValid = true
       vm.certifyFormValid = true
