@@ -137,6 +137,7 @@ def run():
     failed_filing_events = []
     corps_with_failed_filing = []
     skipped_filings = []
+    first_failed_id = None
     application = create_app()
     with application.app_context():
         try:
@@ -164,6 +165,8 @@ def run():
                         is_valid, errors = validate(filing, 'filing', validate_schema=True)
                         if errors:
                             for err in errors:
+                                if not first_failed_id:
+                                    first_failed_id = event_info['event_id']
                                 failed_filing_events.append(event_info)
                                 corps_with_failed_filing.append(event_info['corp_num'])
                                 application.logger.error(err.message)
@@ -175,6 +178,8 @@ def run():
                                               json=filing, headers={'Content-Type': 'application/json',
                                                                     'Authorization': f'Bearer {token}'})
                             if r.status_code != 201:
+                                if not first_failed_id:
+                                    first_failed_id = event_info['event_id']
                                 failed_filing_events.append(event_info)
                                 corps_with_failed_filing.append(event_info['corp_num'])
                                 application.logger.error(f'{r.json()} {r.status_code}')
@@ -194,6 +199,11 @@ def run():
             application.logger.debug(f'skipped filings due to related erred filings: {len(skipped_filings)}')
             application.logger.debug(f'failed filings: {len(failed_filing_events)}')
             application.logger.debug(f'failed filings event info: {failed_filing_events}')
+
+            # if one of the events failed then save that id minus one so that the next run will try it again
+            # this way failed filings wont get buried/forgotten after multiple runs
+            if first_failed_id:
+                max_event_id = first_failed_id - 1
             if max_event_id > 0:
                 # update max_event_id in legal_db
                 application.logger.debug('setting last_event_id in legal_db to {}'.format(max_event_id))
