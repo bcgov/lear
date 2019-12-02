@@ -2,9 +2,7 @@
   <v-card flat id="AR-step-5-container">
     <v-form class="staff-payment-container" v-model="formValid">
       <div class="routingslipnumber-container">
-        <label>
-          <span>Routing Slip Number</span>
-        </label>
+        <label>Routing Slip Number</label>
         <div class="value routingslipnumber">
           <v-text-field
             filled

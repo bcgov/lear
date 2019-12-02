@@ -1,9 +1,7 @@
 <template>
   <v-card flat id="staff-payment-container">
     <div class="routingslipnumber-container">
-      <label>
-        <span>Routing Slip Number</span>
-      </label>
+      <label>Routing Slip Number</label>
       <div class="value routingslipnumber">
         <p>{{ value }}</p>
       </div>

@@ -1,9 +1,7 @@
 <template>
   <v-card flat class="cod-date-container">
     <div class="meta-container">
-      <label>
-        <span>Director Change Date</span>
-      </label>
+      <label>Director Change Date</label>
 
       <div class="value date">
         <v-menu

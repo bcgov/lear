@@ -2,9 +2,7 @@
   <v-card flat id="AR-step-4-container">
     <div class="certify-container">
       <div class="certifiedby-container">
-        <label>
-          <span>Legal Name</span>
-        </label>
+        <label>Legal Name</label>
         <div class="value certifiedby">
           <v-text-field
             filled

@@ -60,10 +60,8 @@
       <li class="address-list-container">
         <div class="meta-container">
           <label v-if="showAddressForm">Mailing Address</label>
-          <label v-else></label>
           <div class="meta-container__inner">
-            <label
-              v-if="!showAddressForm && !isSame(deliveryAddress, mailingAddress, 'actions')">
+            <label v-if="!showAddressForm && !isSame(deliveryAddress, mailingAddress, 'actions')">
               <strong>Mailing Address</strong>
             </label>
             <div class="form__row">
@@ -130,10 +128,8 @@
           <li class="address-list-container">
             <div class="meta-container">
               <label v-if="showAddressForm">Mailing Address</label>
-              <label v-else></label>
               <div class="meta-container__inner">
-                <label
-                  v-if="!isSame(recDeliveryAddress, recMailingAddress, 'actions') && !showAddressForm">
+                <label v-if="!isSame(recDeliveryAddress, recMailingAddress, 'actions') && !showAddressForm">
                   <strong>Mailing Address</strong>
                 </label>
                 <div class="form__row">
