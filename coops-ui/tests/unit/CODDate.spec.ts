@@ -1,12 +1,10 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
-import { mount, shallowMount } from '@vue/test-utils'
-import flushPromises from 'flush-promises'
+import { mount } from '@vue/test-utils'
 
 import store from '@/store/store'
 import CODDate from '@/components/StandaloneDirectorChange/CODDate.vue'
-import { EntityTypes } from '@/enums'
 
 Vue.config.silent = true
 
@@ -18,7 +16,7 @@ let vuetify = new Vuetify({})
 // get rid of "Download the Vue Devtools extension for a better development experience" console message
 Vue.config.devtools = false
 
-// get rid of "You are running Vue in development mod" console message
+// get rid of "You are running Vue in development mode" console message
 Vue.config.productionTip = false
 
 describe('CODDate', () => {

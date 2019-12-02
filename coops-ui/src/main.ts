@@ -17,7 +17,7 @@ import '@/assets/styles/layout.scss'
 import '@/assets/styles/overrides.scss'
 import App from '@/App.vue'
 
-// get rid of "You are running Vue in development mod" console message
+// get rid of "You are running Vue in development mode" console message
 Vue.config.productionTip = false
 
 Vue.use(Vuetify)

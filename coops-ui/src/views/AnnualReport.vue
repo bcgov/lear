@@ -177,7 +177,7 @@
         <div class="buttons-right">
           <v-tooltip top color="#3b6cff">
             <template v-slot:activator="{ on }">
-              <div v-on="on" class="inline-div">
+              <div v-on="on" class="d-inline">
                 <v-btn
                   v-if="isAnnualReportEditable"
                   id="ar-file-pay-btn"

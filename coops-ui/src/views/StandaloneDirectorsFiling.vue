@@ -58,10 +58,11 @@
                 </header>
 
                 <section>
-                  <CODDate ref="codDate"
-                  :initialCODDate="initialCODDate"
-                  @codDate="codDate=$event"
-                  @valid="codDateValid=$event" />
+                  <CODDate
+                    :initialCODDate="initialCODDate"
+                    @codDate="codDate=$event"
+                    @valid="codDateValid=$event"
+                  />
                 </section>
 
                 <!-- Director Information -->
@@ -142,7 +143,7 @@
           <div class="buttons-right">
             <v-tooltip top color="#3b6cff">
               <template v-slot:activator="{ on }">
-                <div v-on="on" class="inline-div">
+                <div v-on="on" class="d-inline">
                   <v-btn
                     id="cod-next-btn"
                     color="primary"
@@ -190,7 +191,7 @@
 
                 <!-- Director Information -->
                 <section>
-                  <SummaryDirectors ref="directorsList"
+                  <SummaryDirectors
                     :directors="allDirectors"
                   />
                 </section>
@@ -250,7 +251,7 @@
           <div class="buttons-right">
             <v-tooltip top color="#3b6cff">
               <template v-slot:activator="{ on }">
-                <div v-on="on" class="inline-div">
+                <div v-on="on" class="d-inline">
                   <v-btn
                     id="cod-file-pay-btn"
                     color="primary"
@@ -352,7 +353,7 @@ export default {
       staffPaymentFormValid: false,
       totalFee: 0,
 
-      // Enums and Constants
+      // EntityTypes Enum
       EntityTypes
     }
   },

@@ -18,7 +18,7 @@ Vue.config.silent = true
 // get rid of "Download the Vue Devtools extension for a better development experience" console message
 Vue.config.devtools = false
 
-// get rid of "You are running Vue in development mod" console message
+// get rid of "You are running Vue in development mode" console message
 Vue.config.productionTip = false
 
 Vue.use(Vuetify)

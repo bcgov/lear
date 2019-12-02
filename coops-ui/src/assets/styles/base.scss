@@ -167,6 +167,10 @@ p {
   white-space: nowrap;
 }
 
+.pre-wrap {
+  white-space: pre-wrap;
+}
+
 .align-right {
   text-align: right !important;
 }
@@ -285,16 +289,8 @@ ul.list {
   font-weight: 500;
 }
 
-.inline-div {
-  display: inline;
-}
-
 .genErr {
   font-size: 0.9rem;
-}
-
-.pre-wrap {
-  white-space: pre-wrap;
 }
 
 .white-background {

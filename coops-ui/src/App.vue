@@ -54,9 +54,6 @@ import AccountAuthorizationDialog from '@/components/Dashboard/AccountAuthorizat
 // Mixins
 import { DateMixin, CommonMixin } from '@/mixins'
 
-// Enums
-import { EntityTypes } from '@/enums'
-
 export default {
   name: 'App',
 
@@ -66,8 +63,7 @@ export default {
     return {
       dataLoaded: false,
       dashboardUnavailableDialog: false,
-      accountAuthorizationDialog: false,
-      EntityTypes
+      accountAuthorizationDialog: false
     }
   },
 

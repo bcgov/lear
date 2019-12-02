@@ -132,7 +132,7 @@
                       full-width
                       min-width="18rem">
                       <template v-slot:activator="{ on }">
-                        <v-text-field class="item" ref="newDirectorCessationDate"
+                        <v-text-field class="item"
                           id="new-director__cessation-date"
                           v-model.trim="director.cessationDate"
                           label="Cessation Date"
@@ -571,7 +571,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private inheritDeliveryAddress: boolean = false
 
   // EntityTypes Enum
-  private EntityTypes: {} = EntityTypes
+  readonly EntityTypes: {} = EntityTypes
 
   // The Address schema containing Vuelidate rules.
   // NB: This should match the subject JSON schema.
@@ -1358,12 +1358,12 @@ ul {
   min-width: 56rem;
 }
 
-.meta-container{
+.meta-container {
   display: flex;
   flex-flow: column nowrap;
   position: relative;
 
-  > label:first-child{
+  > label:first-child {
     font-weight: 700;
   }
 
@@ -1428,6 +1428,7 @@ ul {
   align-items: stretch;
   margin-right: -0.5rem;
   margin-left: -0.5rem;
+
   .item {
     flex: 1 1 auto;
     flex-basis: 0;

@@ -24,7 +24,7 @@
       @exit="navigateToDashboard"
     />
 
-    <div id="standalone-office-address" ref="standaloneOfficeAddress">
+    <div id="standalone-office-address">
       <!-- Initial Page Load Transition -->
       <div class="loading-container fade-out">
         <div class="loading__content">
@@ -133,7 +133,7 @@
         <div class="buttons-right">
           <v-tooltip top color="#3b6cff">
             <template v-slot:activator="{ on }">
-              <div v-on="on" class="inline-div">
+              <div v-on="on" class="d-inline">
               <v-btn
                 id="coa-file-pay-btn"
                 color="primary"
@@ -227,6 +227,8 @@ export default {
       routingSlipNumber: null,
       staffPaymentFormValid: false,
       totalFee: 0,
+
+      // EntityTypes Enum
       EntityTypes
     }
   },

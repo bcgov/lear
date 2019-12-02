@@ -8,7 +8,7 @@
         <label class="address-edit-title">Registered Office</label>
       </div>
       <!-- Registered Delivery Address -->
-      <li class="address-container">
+      <li class="address-list-container">
         <div class="meta-container">
           <label v-if="!showAddressForm">Registered Office</label>
           <label v-else>Delivery Address</label>
@@ -57,7 +57,7 @@
       </li>
 
       <!-- Registered Mailing Address -->
-      <li class="address-container">
+      <li class="address-list-container">
         <div class="meta-container">
           <label v-if="showAddressForm">Mailing Address</label>
           <label v-else></label>
@@ -107,7 +107,7 @@
         </div>
         <div v-if="!isSame(registeredAddress, recordsAddress) || !inheritRegisteredAddress">
           <!-- Records Delivery Address -->
-          <li class="address-container">
+          <li class="address-list-container">
             <div class="meta-container">
               <label v-if="!showAddressForm">Records Office</label>
               <label v-else>Delivery Address</label>
@@ -127,7 +127,7 @@
           </li>
 
           <!-- Records Mailing Address -->
-          <li class="address-container">
+          <li class="address-list-container">
             <div class="meta-container">
               <label v-if="showAddressForm">Mailing Address</label>
               <label v-else></label>
@@ -164,7 +164,7 @@
           </li>
         </div>
         <div v-else>
-          <li class="address-container" v-if="!showAddressForm">
+          <li class="address-list-container" v-if="!showAddressForm">
             <div class="meta-container">
               <label>Records Office</label>
               <div class="meta-container__inner">
@@ -201,7 +201,7 @@
 <script lang="ts">
 // Libraries
 import { Component, Emit, Prop, Watch, Mixins } from 'vue-property-decorator'
-import isEmpty from 'lodash.isempty'
+import { isEmpty } from 'lodash'
 
 // Schemas
 import { officeAddressSchema } from '@/schemas'
@@ -296,7 +296,7 @@ export default class OfficeAddresses extends Mixins(CommonMixin, EntityFilterMix
     private addressSchema: {} = officeAddressSchema
 
     // Entity Enum
-    private EntityTypes: {} = EntityTypes
+    readonly EntityTypes: {} = EntityTypes
 
     /**
      * Lifecycle callback to initialize the data when the component when it is created.
@@ -636,7 +636,7 @@ export default class OfficeAddresses extends Mixins(CommonMixin, EntityFilterMix
 <style lang="scss" scoped>
 // @import '../../assets/styles/theme.scss';
 
-.address-container {
+.address-list-container {
   padding: 1.25rem;
 }
 
@@ -694,7 +694,7 @@ label:first-child {
 }
 
 // Address Block Layout
-.address-wrapper{
+.address-wrapper {
   margin-top: .5rem;
 }
 
