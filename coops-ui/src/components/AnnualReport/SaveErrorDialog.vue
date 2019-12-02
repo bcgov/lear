@@ -29,10 +29,10 @@
             </ul>
           </div>
 
-          <p class="genErr">If you need help, please contact us.</p>
-
-          <ErrorContact class="mt-5" />
-
+          <template v-if="!isRoleStaff">
+            <p class="genErr">If you need help, please contact us.</p>
+            <ErrorContact class="mt-5" />
+          </template>
         </v-card-text>
 
         <v-divider class="my-0"></v-divider>
@@ -52,12 +52,20 @@
 
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
+import { mapGetters } from 'vuex'
 import ErrorContact from '@/components/ErrorContact.vue'
 
 @Component({
+  computed: {
+    // Property definition for runtime environment.
+    ...mapGetters(['isRoleStaff'])
+  },
   components: { ErrorContact }
 })
 export default class SaveErrorDialog extends Vue {
+  // Getter definition for static type checking.
+  readonly isRoleStaff!: boolean
+
   // Prop containing filing name.
   @Prop({ default: 'Filing' }) private filing: string
 

@@ -571,10 +571,14 @@ export default {
       if (this.filingId > 0) {
         // we have a filing id, so we are updating an existing filing
         let url = this.entityIncNo + '/filings/' + this.filingId
-        if (isDraft) { url += '?draft=true' }
+        if (isDraft) {
+          url += '?draft=true'
+        }
         let filing = null
         await axios.put(url, filingData).then(res => {
-          if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
+          if (!res || !res.data || !res.data.filing) {
+            throw new Error('invalid API response')
+          }
           filing = res.data.filing
           this.haveChanges = false
         }).catch(error => {
@@ -596,10 +600,14 @@ export default {
       } else {
         // filing id is 0, so we are saving a new filing
         let url = this.entityIncNo + '/filings'
-        if (isDraft) { url += '?draft=true' }
+        if (isDraft) {
+          url += '?draft=true'
+        }
         let filing = null
         await axios.post(url, filingData).then(res => {
-          if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
+          if (!res || !res.data || !res.data.filing) {
+            throw new Error('invalid API response')
+          }
           filing = res.data.filing
           this.haveChanges = false
         }).catch(error => {

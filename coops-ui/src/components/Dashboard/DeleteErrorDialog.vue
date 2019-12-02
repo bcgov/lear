@@ -7,6 +7,7 @@
         <v-card-title id="warning-dialogue-title" v-else>
           Filing Deleted with Warnings
         </v-card-title>
+
         <v-card-text id="dialogue-text">
           <p class="genErr" v-if="errors.length + warnings.length < 1">
             We were unable to delete your filing.
@@ -24,10 +25,14 @@
             {{warning.warning}}
           </p>
 
-          <ErrorContact />
-
+          <template v-if="!isRoleStaff">
+            <p class="genErr">If you need help, please contact us.</p>
+            <ErrorContact class="mt-5" />
+          </template>
         </v-card-text>
+
         <v-divider class="my-0"></v-divider>
+
         <v-card-actions>
           <v-btn id="okay-btn" color="primary" text @click="okay()">Okay</v-btn>
         </v-card-actions>
@@ -37,12 +42,20 @@
 
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
+import { mapGetters } from 'vuex'
 import ErrorContact from '@/components/ErrorContact.vue'
 
 @Component({
+  computed: {
+    // Property definition for runtime environment.
+    ...mapGetters(['isRoleStaff'])
+  },
   components: { ErrorContact }
 })
 export default class DeleteErrorDialog extends Vue {
+  // Getter definition for static type checking.
+  readonly isRoleStaff!: boolean
+
   // Prop to display the dialog.
   @Prop() private dialog: boolean
 
