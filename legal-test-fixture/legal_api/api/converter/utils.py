@@ -42,8 +42,8 @@ def format_json(value):
 class SheetName(Enum):
     """Render an Enum of the names of the sheets."""
 
-    BUSINESS = 'Business'
-    BUSINESS_ADDRESS = 'Business_Address'
-    DIRECTOR = 'Director'
-    DIRECTOR_ADDRESS = 'Director_Address'
-    FILING = 'Filing'
+    BUSINESS = 'Businesses'
+    BUSINESS_ADDRESS = 'Business_Addresses'
+    DIRECTOR = 'Directors'
+    DIRECTOR_ADDRESS = 'Director_Addresses'
+    FILING = 'Filings'
