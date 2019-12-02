@@ -19,6 +19,7 @@ from http import HTTPStatus
 from typing import List
 
 from sqlalchemy import desc, event, inspect
+# from sqlalchemy.dialects import postgresql  # pylint: disable=unused-import; used when debugging
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -258,10 +259,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         query = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
             filter(Filing._status.in_(status)). \
-            order_by(desc(Filing.filing_date))
+            order_by(Filing.filing_date.desc(), Filing.effective_date.desc())  # pylint: disable=no-member;
+        # member provided via SQLAlchemy
 
         if after_date:
             query = query.filter(Filing._filing_date >= after_date)
+
+        # un-comment if you need to see the SQL sent to postgres in debug-mode
+        # query_str = str(query.statement.compile(dialect=postgresql.dialect()))
 
         return query.all()
 
