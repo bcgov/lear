@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="dialog" width="45rem" persistent>
+  <v-dialog id="dashboard-unavailable-dialog" v-model="dialog" width="45rem" persistent>
     <v-card>
       <v-card-title>Dashboard Unavailable</v-card-title>
 

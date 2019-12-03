@@ -1,11 +1,11 @@
 <template>
-  <v-dialog v-model="dialog" width="45rem" persistent>
+  <v-dialog id="resume-error-dialog" v-model="dialog" width="45rem" persistent>
     <v-card>
       <v-card-title>Unable to Resume Filing</v-card-title>
 
       <v-card-text>
-        <p class="genErr">We were unable to resume your filing. You can return to the Business
-          Dashboard and try again.</p>
+        <p class="genErr">We were unable to resume your filing. You can return to
+          the Business Dashboard and try again.</p>
 
         <template v-if="!isRoleStaff">
           <p class="genErr">If this error persists, please contact us.</p>
@@ -17,7 +17,9 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" text @click="exit()">Return to Business Dashboard</v-btn>
+        <v-btn id="btn-return-dashboard" color="primary" text @click="exit()">
+          Return to Business Dashboard
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

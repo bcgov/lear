@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="dialog" width="60rem" id="delete-error-dialog">
+  <v-dialog id="delete-error-dialog" v-model="dialog" width="45rem" persistent="">
       <v-card>
         <v-card-title id="error-dialogue-title" v-if="errors.length > 0 || warnings.length < 1">
           Unable to Delete Filing
@@ -35,7 +35,7 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn id="okay-btn" color="primary" text @click="okay()">Okay</v-btn>
+          <v-btn id="okay-btn" color="primary" text @click="okay()">OK</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

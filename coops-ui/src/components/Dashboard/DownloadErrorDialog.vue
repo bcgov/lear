@@ -1,10 +1,10 @@
 <template>
-  <v-dialog v-model="dialog" width="45rem">
+  <v-dialog id="download-error-dialog" v-model="dialog" width="45rem">
     <v-card>
       <v-card-title>Unable to Download Document</v-card-title>
 
       <v-card-text>
-        <p class="genErr">We were unable to download your filing history document(s).</p>
+        <p class="genErr">We were unable to download your document(s).</p>
 
         <template v-if="!isRoleStaff">
           <p class="genErr">If this error persists, please contact us.</p>
@@ -16,7 +16,7 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" text @click="close()">Close</v-btn>
+        <v-btn color="primary" text @click="close()">OK</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

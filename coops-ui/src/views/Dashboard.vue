@@ -3,7 +3,7 @@
     <v-container id="dashboardContainer" class="view-container">
       <article id="dashboardArticle">
         <CoaWarningDialog
-          :dialog="coaWarning"
+          :dialog="coaWarningDialog"
           @toggle="toggleCoaWarning"
           @proceed="goToStandaloneAddresses"
         />
@@ -12,7 +12,7 @@
         </header>
 
         <v-row>
-          <v-col cols="12" lg="9">
+          <v-col cols="12" md="9">
             <section>
               <header>
                 <h2 class="mb-3">To Do <span class="text-muted">({{todoCount}})</span></h2>
@@ -36,7 +36,7 @@
             </section>
           </v-col>
 
-          <v-col cols="12" lg="3" style="position: relative">
+          <v-col cols="12" md="3" style="position: relative">
             <section>
               <header class="aside-header mb-3">
                 <h2>Office Addresses</h2>
@@ -156,7 +156,7 @@ export default {
       inProcessFiling: null,
       coaPending: false,
       effectiveDate: null,
-      coaWarning: false,
+      coaWarningDialog: false,
 
       // Filing Status Enum
       FilingStatus
@@ -261,7 +261,7 @@ export default {
      * Toggle the Change of address warning dialog.
      */
     toggleCoaWarning () {
-      this.coaWarning = !this.coaWarning
+      this.coaWarningDialog = !this.coaWarningDialog
     },
     /**
      * Display COA warning if BCORP else proceed to COA.

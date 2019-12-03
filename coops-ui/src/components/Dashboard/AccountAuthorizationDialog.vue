@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="dialog" width="45rem" persistent>
+  <v-dialog id="account-authorization-dialog" v-model="dialog" width="45rem" persistent>
     <v-card>
       <v-card-title>Account Authorization</v-card-title>
 
