@@ -4,9 +4,9 @@
       <v-card-title>Unable to Process Payment</v-card-title>
 
       <v-card-text>
-        <p class="genErr">PayBC is unable to process payments at this time.</p>
-        <p class="genErr">Your filing has been saved as a DRAFT and you can resume your filing from your Dashboard
-          at a later time.</p>
+        <p class="genErr">We are unable to process payments at this time.</p>
+        <p class="genErr">Your filing has been saved as a DRAFT and you can resume your filing from
+          the Business Dashboard at a later time.</p>
         <p class="genErr">PayBC is normally available:</p>
         <p class="genErr">
           Monday to Friday: 6:00am to 9:00pm
@@ -24,7 +24,7 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" text @click="exit()">Back to My Dashboard</v-btn>
+        <v-btn color="primary" text @click="exit()">Return to Business Dashboard</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

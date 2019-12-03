@@ -15,6 +15,7 @@
       <v-divider class="my-0"></v-divider>
 
       <v-card-actions>
+        <v-spacer></v-spacer>
         <v-btn color="primary" text @click="close()">Close</v-btn>
       </v-card-actions>
     </v-card>
