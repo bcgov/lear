@@ -267,7 +267,7 @@ export default {
      * Display COA warning if BCORP else proceed to COA.
      */
     proceedCoa () {
-      this.entityFilter(EntityTypes.BCorp)
+      this.entityFilter(EntityTypes.BCORP)
         ? this.toggleCoaWarning()
         : this.goToStandaloneAddresses()
     }
