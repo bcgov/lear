@@ -197,7 +197,7 @@ describe('Dashboard - Click Tests', () => {
   it('displays the change of address warning dialog as a bcorp', done => {
     // init store
     store.state.entityIncNo = 'BC0007291'
-    store.state.entityType = EntityTypes.BCorp
+    store.state.entityType = EntityTypes.BCORP
     // create a Local Vue and install router on it
     const localVue = createLocalVue()
     localVue.use(VueRouter)
