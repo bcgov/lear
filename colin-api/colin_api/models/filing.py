@@ -381,7 +381,7 @@ class Filing:
         effective_date = filing_event_info['event_timestmp']
         annual_reports = cls._get_events(identifier=identifier, filing_type_code='OTANN')
         for filing in annual_reports:
-            if convert_to_json_date(filing['annualReportDate']) == convert_to_json_date(effective_date):
+            if convert_to_json_date(filing['date']) == convert_to_json_date(effective_date):
                 effective_date = filing['annualReportDate']
                 break
 
@@ -407,7 +407,7 @@ class Filing:
         effective_date = filing_event_info['event_timestmp']
         annual_reports = cls._get_events(identifier=identifier, filing_type_code='OTANN')
         for filing in annual_reports:
-            if convert_to_json_date(filing['annualReportDate']) == convert_to_json_date(effective_date):
+            if convert_to_json_date(filing['date']) == convert_to_json_date(effective_date):
                 effective_date = filing['annualReportDate']
                 break
 
