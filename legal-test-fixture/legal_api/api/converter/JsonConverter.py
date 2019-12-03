@@ -1,5 +1,6 @@
 from flask import json, jsonify
-from legal_api.models.business import Business, Director
+from legal_api.models.business import Business, Director, Address
+from legal_api.models.office import Office, OfficeType
 import logging
 from legal_api.api.converter.utils import format_date, format_non_date, format_boolean, format_json
 
@@ -17,8 +18,11 @@ class JsonConverter():
         return jsonify({'businesses': json_list})
 
     def __json_business(self, business):
-        mailing_address = business.mailing_address.one_or_none()
-        delivery_address = business.delivery_address.one_or_none()
+
+        offices = business.offices.all()
+        registeredOffice = self.__create_office_addresses(offices, OfficeType.REGISTERED)
+        recordsOffice = self.__create_office_addresses(offices, OfficeType.RECORDS)
+
         d = {
             'identifier': format_non_date(business.identifier),
             'legalName': format_non_date(business.legal_name),
@@ -35,8 +39,9 @@ class JsonConverter():
             'submitterUserId': format_non_date(business.submitter_userid),
             'lastModified': format_date(business.last_modified),
             'directors': self.__json_directors(business.directors),
-            'mailingAddress': self.__format_address(mailing_address),
-            'deliveryAddress': self.__format_address(delivery_address),
+            'registeredOffice': registeredOffice,
+            OfficeType.REGISTERED: format_non_date(registeredOffice),
+            OfficeType.RECORDS: format_non_date(recordsOffice),
             'filings': self.__json_filings(business.filings)
         }
 
@@ -95,3 +100,23 @@ class JsonConverter():
             filings_json_list.append(d)
 
         return filings_json_list
+
+    def __create_office_addresses(self, offices, office_type):
+        office_addresses = None
+        for office in offices:
+            if office_type == office.office_type:
+                mailing_address = None
+                delivery_address = None
+
+                office_addresses = office.addresses.all()
+                for office_address in office_addresses:
+                    if office_address.address_type == Address.MAILING:
+                        mailing_address = office_address
+                    elif office_address.address_type == Address.DELIVERY:
+                        delivery_address = office_address
+                office_addresses = {
+                    'mailingAddress': self.__format_address(mailing_address),
+                    'deliveryAddress': self.__format_address(delivery_address)
+                }
+        return office_addresses
+

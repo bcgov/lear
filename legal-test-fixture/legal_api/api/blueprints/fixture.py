@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request, send_file
 from sqlalchemy import exc
 from legal_api import db
 from legal_api.models.business import Business, Director, Address
+from legal_api.models.office import OfficeType
 from legal_api.api.converter.ExcelConverter import ExcelConverter
 from legal_api.api.converter.ExcelWriter import ExcelWriter
 from legal_api.api.converter.JsonConverter import JsonConverter
@@ -31,6 +32,17 @@ def post(business_identifier):
             logging.warning('Rebuilding database')
             db.drop_all()
             db.create_all()
+            # Create lookup values
+            registered_office_type = OfficeType(
+                identifier=OfficeType.REGISTERED,
+                description=OfficeType.REGISTERED
+            )
+            db.session.add(registered_office_type)
+            records_office_type = OfficeType(
+                identifier=OfficeType.RECORDS,
+                description=OfficeType.RECORDS
+            )
+            db.session.add(records_office_type)
             db.session.commit()
 
     # return "{businesses:[]}"

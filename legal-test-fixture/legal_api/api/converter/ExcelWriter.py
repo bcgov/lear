@@ -158,15 +158,11 @@ class ExcelWriter():
         for director in directors:
             self.__write_director_to_excel(business.identifier, director)
 
-        delivery_address = business.delivery_address.one_or_none()
-        if (delivery_address):
-            self.__write_business_address_to_excel(
-                business.identifier, delivery_address)
-
-        mailing_address = business.mailing_address.one_or_none()
-        if (mailing_address):
-            self.__write_business_address_to_excel(
-                business.identifier, mailing_address)
+        offices = business.offices.all()
+        for office in offices:
+            office_addresses = office.addresses.all()
+            for office_address in office_addresses:
+                self.__write_business_address_to_excel(business.identifier, office.office_type, office_address)
 
         filings = business.filings.all()
         for filing in filings:
@@ -229,24 +225,26 @@ class ExcelWriter():
 
         self.__director_address_sheet_row_index += 1
 
-    def __write_business_address_to_excel(self, business_identifier, business_address):
+    def __write_business_address_to_excel(self, business_identifier, office_type, business_address):
         self.__business_address_sheet.write(
             self.__business_address_sheet_row_index, 0, format_non_date(business_identifier))
         self.__business_address_sheet.write(
-            self.__business_address_sheet_row_index, 1, format_non_date(business_address.address_type))
+            self.__business_address_sheet_row_index, 1, format_non_date(office_type))
         self.__business_address_sheet.write(
-            self.__business_address_sheet_row_index, 2, format_non_date(business_address.street))
+            self.__business_address_sheet_row_index, 2, format_non_date(business_address.address_type))
         self.__business_address_sheet.write(
-            self.__business_address_sheet_row_index, 3, format_non_date(business_address.street_additional))
+            self.__business_address_sheet_row_index, 3, format_non_date(business_address.street))
         self.__business_address_sheet.write(
-            self.__business_address_sheet_row_index, 4, format_non_date(business_address.city))
+            self.__business_address_sheet_row_index, 4, format_non_date(business_address.street_additional))
         self.__business_address_sheet.write(
-            self.__business_address_sheet_row_index, 5, format_non_date(business_address.region))
+            self.__business_address_sheet_row_index, 5, format_non_date(business_address.city))
         self.__business_address_sheet.write(
-            self.__business_address_sheet_row_index, 6, format_non_date(business_address.country))
+            self.__business_address_sheet_row_index, 6, format_non_date(business_address.region))
         self.__business_address_sheet.write(
-            self.__business_address_sheet_row_index, 7, format_non_date(business_address.postal_code))
-        self.__business_address_sheet.write(self.__business_address_sheet_row_index, 8, format_non_date(
+            self.__business_address_sheet_row_index, 7, format_non_date(business_address.country))
+        self.__business_address_sheet.write(
+            self.__business_address_sheet_row_index, 8, format_non_date(business_address.postal_code))
+        self.__business_address_sheet.write(self.__business_address_sheet_row_index, 9, format_non_date(
             business_address.delivery_instructions))
 
         self.__business_address_sheet_row_index += 1

@@ -3,6 +3,7 @@ from sqlalchemy import exc
 from sqlalchemy_continuum import versioning_manager
 from legal_api import db
 from legal_api.models.business import Business, Director, Address, Filing
+from legal_api.models.office import Office, OfficeType
 from legal_api.api.converter.utils import format_date, format_non_date, format_boolean, SheetName
 from datetime import datetime
 from enum import Enum
@@ -13,8 +14,6 @@ import xlrd
 class ExcelConverter():
 
     def create_businesses_from_file(self, a_file, input_business_identifier, rebuild):
-        logging.warning(
-            "creating businesses from input_business_identifier [%s]" % input_business_identifier)
         book = xlrd.open_workbook(file_contents=a_file.stream.read())
 
         # Start to process the sheet with the businesses
@@ -69,10 +68,10 @@ class ExcelConverter():
                             last_modified=self.__get_value_from_row(row, 12)
                             )
         business.save()
-        # logging.warning("created business: %s" % business.identifier)
         self.__add_directors(business, book)
         self.__add_business_addresses(business, book)
         self.__add_filings(business, book)
+        db.session.commit()
         return business
 
     def __add_directors(self, business, book):
@@ -98,7 +97,7 @@ class ExcelConverter():
 
                 business.directors.append(director)
                 db.session.add(director)
-                db.session.commit()
+                director.save()
 
     def __add_director_addresses(self, business_identifier, director, book):
         # Find Mailing and Delivery Addresses
@@ -127,8 +126,7 @@ class ExcelConverter():
                     delivery_instructions=self.__get_value_from_row(
                         director_address_row, 10)
                 )
-                db.session.add(address)
-                db.session.commit()
+                address.save()
                 if (address.address_type == Address.MAILING):
                     director.mailing_address = address
                     director.mailing_address_id = address.id
@@ -141,38 +139,63 @@ class ExcelConverter():
                 break
 
     def __add_business_addresses(self, business, book):
+        registered_office_type_id = OfficeType.REGISTERED
+        records_office_type_id = OfficeType.RECORDS
+
         # Get the business address properties and create the business addresses
         business_address_sheet = book.sheet_by_name(
             SheetName.BUSINESS_ADDRESS.value)
         iter_business_address_rows = iter(business_address_sheet.get_rows())
         # (skipping the header line)
         next(iter_business_address_rows)
+        registered_office = None
+        records_office = None
         for business_address_row in iter_business_address_rows:
+            business_offices = business.offices.all()
+
             if business_address_row[0].value == business.identifier:
+                office_type=self.__get_value_from_row(business_address_row, 1)
+                office = None
+
+                # Create the appropriate office if it does not exist
+                if (office_type == OfficeType.REGISTERED) and not registered_office:
+                    # Create registered office
+                    registered_office = Office(
+                        business_id=business.id,
+                        office_type=registered_office_type_id
+                    )
+                    db.session.add(registered_office)
+                    business_offices.append(registered_office)
+                elif (office_type == OfficeType.RECORDS) and not records_office:
+                    # Create records office
+                    records_office = Office(
+                        business_id=business.id,
+                        office_type=records_office_type_id
+                    )
+                    db.session.add(records_office)
+                    business_offices.append(records_office)
+
+                # Set the office to use to save the address
+                if office_type == OfficeType.REGISTERED:
+                    office = registered_office
+                elif office_type == OfficeType.RECORDS:
+                    office = records_office
+                
                 address = Address(
-                    address_type=self.__get_value_from_row(
-                        business_address_row, 1),
-                    street=self.__get_value_from_row(business_address_row, 2),
-                    street_additional=self.__get_value_from_row(
-                        business_address_row, 3),
-                    city=self.__get_value_from_row(business_address_row, 4),
-                    region=self.__get_value_from_row(business_address_row, 5),
-                    country=self.__get_value_from_row(business_address_row, 6),
-                    postal_code=self.__get_value_from_row(
-                        business_address_row, 7),
-                    delivery_instructions=self.__get_value_from_row(
-                        business_address_row, 8),
+                    address_type=self.__get_value_from_row(business_address_row, 2),
+                    street=self.__get_value_from_row(business_address_row, 3),
+                    street_additional=self.__get_value_from_row(business_address_row, 4),
+                    city=self.__get_value_from_row(business_address_row, 5),
+                    region=self.__get_value_from_row(business_address_row, 6),
+                    country=self.__get_value_from_row(business_address_row, 7),
+                    postal_code=self.__get_value_from_row(business_address_row, 8),
+                    delivery_instructions=self.__get_value_from_row(business_address_row, 9),
+                    office_id=office.id,
                     business_id=business.id
                 )
                 db.session.add(address)
-                db.session.commit()
-                if (address.address_type == Address.MAILING):
-                    business.mailing_address.append(address)
-                elif (address.address_type == Address.DELIVERY):
-                    business.delivery_address.append(address)
-            # If the mailing anddress and the delivery address are both found, no need to continue
-            if business.mailing_address.one_or_none() and business.delivery_address.one_or_none():
-                break
+                office.addresses.append(address)
+            db.session.commit()
 
     def __add_filings(self, business, book):
         # Get the filings properties and create the filings
