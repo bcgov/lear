@@ -122,7 +122,7 @@
 
                 <section>
                   <header>
-                    <h2 id="AR-header-1-BC">Business Details</h2>
+                    <h2 id="AR-header-1-BC">1. Business Details</h2>
                   </header>
                   <ARDate />
                   <br>
@@ -135,7 +135,7 @@
                 <!-- Director Information -->
                 <section>
                   <header>
-                    <h2 id="AR-header-2-BC">Directors</h2>
+                    <h2 id="AR-header-2-BC">2. Directors</h2>
                   </header>
                   <SummaryDirectors
                     :directors="directors"
@@ -146,7 +146,7 @@
               <!-- Certify -->
               <section>
                 <header>
-                  <h2 id="AR-step-4-header">4. Certify Correct</h2>
+                  <h2 id="AR-step-4-header">{{this.entityFilter(EntityTypes.BCORP) ? '3.' : '4.' }} Certify Correct</h2>
                   <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
                 </header>
                 <Certify
