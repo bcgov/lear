@@ -38,6 +38,9 @@
                         "registeredOffice": {
                             "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/office"
                         },
+                        "recordsOffice": {
+                            "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/office"
+                        },
                         "required": [
                             "registeredOffice"
                         ]
