@@ -39,7 +39,7 @@ describe('TodoList - UI', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(0)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(0)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(0)
     expect(wrapper.emitted('todo-count')).toEqual([[0]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
     expect(vm.$el.querySelector('.no-results')).not.toBeNull()
@@ -107,15 +107,15 @@ describe('TodoList - UI', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(3)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(3)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(3)
     expect(wrapper.emitted('todo-count')).toEqual([[3]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
 
     // verify that first task is enabled and other 2 are disabled
-    const item1 = vm.$el.querySelectorAll('.todo-list')[0]
-    const item2 = vm.$el.querySelectorAll('.todo-list')[1]
-    const item3 = vm.$el.querySelectorAll('.todo-list')[2]
+    const item1 = vm.$el.querySelectorAll('.todo-item')[0]
+    const item2 = vm.$el.querySelectorAll('.todo-item')[1]
+    const item3 = vm.$el.querySelectorAll('.todo-item')[2]
 
     // check list items
     expect(item1.classList.contains('disabled')).toBe(false)
@@ -157,7 +157,7 @@ describe('TodoList - UI', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -204,7 +204,7 @@ describe('TodoList - UI', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -245,7 +245,7 @@ describe('TodoList - UI', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -286,7 +286,7 @@ describe('TodoList - UI', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -333,7 +333,7 @@ describe('TodoList - UI', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -381,7 +381,7 @@ describe('TodoList - UI', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -423,7 +423,7 @@ describe('TodoList - UI', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -466,7 +466,7 @@ describe('TodoList - UI', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -511,7 +511,7 @@ describe('TodoList - UI', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -545,7 +545,7 @@ describe('TodoList - UI - BCOMP', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(0)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(0)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(0)
     expect(wrapper.emitted('todo-count')).toEqual([[0]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
     expect(vm.$el.querySelector('.no-results')).not.toBeNull()
@@ -613,15 +613,15 @@ describe('TodoList - UI - BCOMP', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(3)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(3)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(3)
     expect(wrapper.emitted('todo-count')).toEqual([[3]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
 
     // verify that first task is enabled and other 2 are disabled
-    const item1 = vm.$el.querySelectorAll('.todo-list')[0]
-    const item2 = vm.$el.querySelectorAll('.todo-list')[1]
-    const item3 = vm.$el.querySelectorAll('.todo-list')[2]
+    const item1 = vm.$el.querySelectorAll('.todo-item')[0]
+    const item2 = vm.$el.querySelectorAll('.todo-item')[1]
+    const item3 = vm.$el.querySelectorAll('.todo-item')[2]
 
     // check list items
     expect(item1.classList.contains('disabled')).toBe(false)
@@ -633,7 +633,7 @@ describe('TodoList - UI - BCOMP', () => {
     expect(item2.querySelector('.todo-list-checkbox')).toBeDefined()
     expect(item3.querySelector('.todo-list-checkbox')).toBeDefined()
 
-    // Simulate Checkbox being selected to enable File Now Button
+    // Simulate Checkbox being selected to enable first File Now button
     vm.confirmCheckbox = true
 
     // check action buttons
@@ -671,7 +671,7 @@ describe('TodoList - UI - BCOMP', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -718,7 +718,7 @@ describe('TodoList - UI - BCOMP', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[false]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -766,7 +766,7 @@ describe('TodoList - UI - BCOMP', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -813,7 +813,7 @@ describe('TodoList - UI - BCOMP', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -855,7 +855,7 @@ describe('TodoList - UI - BCOMP', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -898,7 +898,7 @@ describe('TodoList - UI - BCOMP', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -943,7 +943,7 @@ describe('TodoList - UI - BCOMP', () => {
     await flushPromises()
 
     expect(vm.taskItems.length).toEqual(1)
-    expect(vm.$el.querySelectorAll('.todo-list').length).toEqual(1)
+    expect(vm.$el.querySelectorAll('.todo-item').length).toEqual(1)
     expect(wrapper.emitted('todo-count')).toEqual([[1]])
     expect(wrapper.emitted('has-blocker-filing')).toEqual([[true]])
     expect(vm.$el.querySelector('.no-results')).toBeNull()
@@ -1225,29 +1225,32 @@ describe('TodoList - Click Tests - BCOMPs', () => {
     Vue.nextTick(async () => {
       expect(vm.taskItems.length).toEqual(1)
 
-      // Check Checkbox Content and Model State
-      const item = vm.$el.querySelectorAll('.todo-list')[0]
-      expect(item.querySelector('.list-item .filing-type .todo-list-checkbox').textContent)
-        .toContain('All information about the Office Addresses and Current Directors is correct.')
+      // verify model state
       expect(vm.confirmCheckbox).toBe(false)
 
-      // Verify Checkbox is enabled
-      const checkbox = vm.$el.querySelector('#confirm-checkbox')
-      expect(checkbox.disabled).toBe(false)
+      // verify checkbox content
+      const firstTodoItem = vm.$el.querySelectorAll('.todo-item')[0]
+      const htmlDivElement = firstTodoItem.querySelector('.bcorps-ar-subtitle .todo-list-checkbox')
+      expect(htmlDivElement.textContent)
+        .toContain('All information about the Office Addresses and Current Directors is correct.')
 
-      // Check FileNow Button
+      // verify that checkbox is enabled
+      const htmlInputElement = htmlDivElement.querySelector('[type="checkbox"]')
+      expect(htmlInputElement.disabled).toBe(false)
+
+      // verify File Now button
       const listItem = vm.$el.querySelector('.list-item')
-      const button = listItem.querySelector('.list-item__actions .v-btn')
-      expect(button.querySelector('.v-btn__content').textContent).toContain('File Now')
-      expect(button.disabled).toBe(true)
+      const fileNowButton = listItem.querySelector('.list-item__actions .v-btn')
+      expect(fileNowButton.querySelector('.v-btn__content').textContent).toContain('File Now')
+      expect(fileNowButton.disabled).toBe(true)
 
-      // Select Checkbox and enable FileNow Btn
-      await checkbox.click()
+      // click checkbox to enable File Now button
+      await htmlInputElement.click()
       expect(vm.confirmCheckbox).toBe(true)
-      expect(button.disabled).toBe(false)
+      expect(fileNowButton.disabled).toBe(false)
 
-      // Click FileNow Btn
-      await button.click()
+      // click File Now button
+      await fileNowButton.click()
 
       // verify that filing status was set
       expect(vm.$store.state.currentFilingStatus).toBe('NEW')

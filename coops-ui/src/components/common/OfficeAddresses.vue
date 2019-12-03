@@ -1,197 +1,197 @@
 <template>
-  <v-card flat>
-    <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
+  <div id="office-addresses">
+    <v-card flat>
+      <ul class="list address-list" v-bind:class="{ 'show-address-form' : showAddressForm }">
+        <!-- Registered Office Section -->
+        <div class="address-edit-header" v-if="showAddressForm">
+          <label class="address-edit-title">Registered Office</label>
+        </div>
 
-      <!-- Registered Office Section -->
-      <div class="address-edit-header"
-        v-if="showAddressForm">
-        <label class="address-edit-title">Registered Office</label>
-      </div>
-      <!-- Registered Delivery Address -->
-      <li class="address-list-container">
-        <div class="meta-container">
-          <label v-if="!showAddressForm">Registered Office</label>
-          <label v-else>Delivery Address</label>
-          <div class="meta-container__inner">
-            <label v-if="!showAddressForm"><strong>Delivery Address</strong></label>
-            <div class="address-wrapper">
-              <delivery-address
-              :address="deliveryAddress"
-              :editing="showAddressForm"
-              :schema="addressSchema"
-              @update:address="updateBaseAddress(deliveryAddress, $event)"
-              @valid="isBaseAddressValid('deliveryAddress', $event)"
-              />
-            </div>
-            <!-- Change and Reset btns -->
-            <v-expand-transition>
-              <div class="address-block__actions">
-                <v-btn
-                  color="primary"
-                  text
-                  id="reg-off-addr-change-btn"
-                  small
-                  v-if="!showAddressForm"
-                  :disabled="changeButtonDisabled"
-                  @click="editAddress"
-                >
-                  <v-icon small>mdi-pencil</v-icon>
-                  <span>Change</span>
-                </v-btn>
-                <br />
-                <v-btn
-                  class="reset-btn"
-                  color="red"
-                  id="reg-off-addr-reset-btn"
-                  outlined
-                  small
-                  v-if="!showAddressForm && modified"
-                  @click="resetAddress"
-                >
-                  Reset
-                </v-btn>
+        <!-- Registered Delivery Address -->
+        <li class="address-list-container">
+          <div class="meta-container">
+            <label v-if="!showAddressForm">Registered Office</label>
+            <label v-else>Delivery Address</label>
+
+            <div class="meta-container__inner">
+              <label v-if="!showAddressForm"><strong>Delivery Address</strong></label>
+
+              <div class="address-wrapper">
+                <delivery-address
+                  :address="deliveryAddress"
+                  :editing="showAddressForm"
+                  :schema="addressSchema"
+                  @update:address="updateBaseAddress(deliveryAddress, $event)"
+                  @valid="isBaseAddressValid('deliveryAddress', $event)"
+                />
               </div>
-            </v-expand-transition>
-          </div>
-        </div>
-      </li>
 
-      <!-- Registered Mailing Address -->
-      <li class="address-list-container">
-        <div class="meta-container">
-          <label>{{ showAddressForm ? "Mailing Address" : "" }}</label>
-          <div class="meta-container__inner">
-            <label v-if="!showAddressForm && !isSame(deliveryAddress, mailingAddress, 'actions')">
-              <strong>Mailing Address</strong>
-            </label>
-            <div class="form__row">
-              <v-checkbox
-                class="inherit-checkbox"
-                label="Same as Delivery Address"
-                v-if="showAddressForm"
-                v-model="inheritDeliveryAddress"
-              />
+              <!-- Change and Reset Buttons -->
+              <v-expand-transition>
+                <div class="address-block__actions">
+                  <v-btn
+                    color="primary"
+                    text
+                    id="reg-off-addr-change-btn"
+                    small
+                    v-if="!showAddressForm"
+                    :disabled="changeButtonDisabled"
+                    @click="editAddress"
+                  >
+                    <v-icon small>mdi-pencil</v-icon>
+                    <span>Change</span>
+                  </v-btn>
+                  <br />
+                  <v-btn
+                    class="reset-btn"
+                    color="red"
+                    id="reg-off-addr-reset-btn"
+                    outlined
+                    small
+                    v-if="!showAddressForm && modified"
+                    @click="resetAddress"
+                  >
+                    <span>Reset</span>
+                  </v-btn>
+                </div>
+                </v-expand-transition>
             </div>
-            <div class="address-wrapper"
-             v-if="!isSame(deliveryAddress, mailingAddress, 'actions') || showAddressForm"
-            >
-              <mailing-address
-                v-if="!showAddressForm || !inheritDeliveryAddress"
-                :address="mailingAddress"
-                :editing="showAddressForm"
-                :schema="addressSchema"
-                @update:address="updateBaseAddress(mailingAddress, $event)"
-                @valid="isBaseAddressValid('mailingAddress', $event)"
-              />
-            </div>
-            <span v-else id="sameAsAbove">
-              Mailing Address same as above
-            </span>
           </div>
-        </div>
-      </li>
+        </li>
 
-      <!-- Records Office Section -->
-      <div v-if="entityFilter(EntityTypes.BCORP)">
-        <div class="address-edit-header"
-             v-if="showAddressForm">
-          <label class="address-edit-title">Records Office</label>
+        <!-- Registered Mailing Address -->
+        <li class="address-list-container">
+          <div class="meta-container">
+            <label>{{ showAddressForm ? "Mailing Address" : "" }}</label>
+            <div class="meta-container__inner">
+              <label v-if="!showAddressForm && !isSame(deliveryAddress, mailingAddress, 'actions')">
+                <strong>Mailing Address</strong>
+              </label>
+              <div class="form__row">
+                <v-checkbox
+                  class="inherit-checkbox"
+                  label="Same as Delivery Address"
+                  v-if="showAddressForm"
+                  v-model="inheritDeliveryAddress"
+                />
+              </div>
+              <div class="address-wrapper"
+                v-if="!isSame(deliveryAddress, mailingAddress, 'actions') || showAddressForm"
+              >
+                <mailing-address
+                  v-if="!showAddressForm || !inheritDeliveryAddress"
+                  :address="mailingAddress"
+                  :editing="showAddressForm"
+                  :schema="addressSchema"
+                  @update:address="updateBaseAddress(mailingAddress, $event)"
+                  @valid="isBaseAddressValid('mailingAddress', $event)"
+                />
+              </div>
+              <span v-else id="sameAsAbove">Mailing Address same as above</span>
+            </div>
+          </div>
+        </li>
+
+        <div v-if="entityFilter(EntityTypes.BCORP)">
+          <div class="address-edit-header" v-if="showAddressForm">
+            <label class="address-edit-title">Records Office</label>
             <v-checkbox
               class="records-inherit-checkbox"
               label="Same as Registered Office"
               v-if="showAddressForm"
               v-model="inheritRegisteredAddress"
             />
-        </div>
-        <div v-if="!isSame(registeredAddress, recordsAddress) || !inheritRegisteredAddress">
-          <!-- Records Delivery Address -->
-          <li class="address-list-container">
-            <div class="meta-container">
-              <label v-if="!showAddressForm">Records Office</label>
-              <label v-else>Delivery Address</label>
-              <div class="meta-container__inner">
-                <label v-if="!showAddressForm"><strong>Delivery Address</strong></label>
-                <div class="address-wrapper">
-                  <delivery-address
-                    :address="recDeliveryAddress"
-                    :editing="showAddressForm"
-                    :schema="addressSchema"
-                    @update:address="updateBaseAddress(recDeliveryAddress, $event)"
-                    @valid="isBaseAddressValid('recDeliveryAddress', $event)"
-                  />
-                </div>
-              </div>
-            </div>
-          </li>
+          </div>
 
-          <!-- Records Mailing Address -->
-          <li class="address-list-container">
-            <div class="meta-container">
-              <label>{{ showAddressForm ? "Mailing Address" : "" }}</label>
-              <div class="meta-container__inner">
-                <label v-if="!isSame(recDeliveryAddress, recMailingAddress, 'actions') && !showAddressForm">
-                  <strong>Mailing Address</strong>
-                </label>
-                <div class="form__row">
-                  <v-checkbox
-                    class="inherit-checkbox"
-                    label="Same as Delivery Address"
-                    v-if="showAddressForm"
-                    v-model="inheritRecDeliveryAddress"
-                  />
+          <div v-if="!isSame(registeredAddress, recordsAddress) || !inheritRegisteredAddress">
+            <!-- Records Delivery Address -->
+            <li class="address-list-container">
+              <div class="meta-container">
+                <label v-if="!showAddressForm">Records Office</label>
+                <label v-else>Delivery Address</label>
+
+                <div class="meta-container__inner">
+                  <label v-if="!showAddressForm"><strong>Delivery Address</strong></label>
+                  <div class="address-wrapper">
+                    <delivery-address
+                      :address="recDeliveryAddress"
+                      :editing="showAddressForm"
+                      :schema="addressSchema"
+                      @update:address="updateBaseAddress(recDeliveryAddress, $event)"
+                      @valid="isBaseAddressValid('recDeliveryAddress', $event)"
+                    />
+                  </div>
                 </div>
-                <div class="address-wrapper"
-                     v-if="!isSame(recDeliveryAddress, recMailingAddress, 'actions') || showAddressForm"
-                >
-                  <mailing-address
-                    v-if="!showAddressForm || !inheritRecDeliveryAddress"
-                    :address="recMailingAddress"
-                    :editing="showAddressForm"
-                    :schema="addressSchema"
-                    @update:address="updateBaseAddress(recMailingAddress, $event)"
-                    @valid="isBaseAddressValid('recMailingAddress', $event)"
-                  />
+              </div>
+            </li>
+
+            <!-- Records Mailing Address -->
+            <li class="address-list-container">
+              <div class="meta-container">
+                <label>{{ showAddressForm ? "Mailing Address" : "" }}</label>
+                <div class="meta-container__inner">
+                  <label v-if="!isSame(recDeliveryAddress, recMailingAddress, 'actions') && !showAddressForm">
+                    <strong>Mailing Address</strong>
+                  </label>
+                  <div class="form__row">
+                    <v-checkbox
+                      class="inherit-checkbox"
+                      label="Same as Delivery Address"
+                      v-if="showAddressForm"
+                      v-model="inheritRecDeliveryAddress"
+                    />
+                  </div>
+                  <div class="address-wrapper"
+                      v-if="!isSame(recDeliveryAddress, recMailingAddress, 'actions') || showAddressForm"
+                  >
+                    <mailing-address
+                      v-if="!showAddressForm || !inheritRecDeliveryAddress"
+                      :address="recMailingAddress"
+                      :editing="showAddressForm"
+                      :schema="addressSchema"
+                      @update:address="updateBaseAddress(recMailingAddress, $event)"
+                      @valid="isBaseAddressValid('recMailingAddress', $event)"
+                    />
+                  </div>
+                  <span v-else>Mailing Address same as above</span>
                 </div>
-                <span v-else>
-                  Mailing Address same as above
-                </span>
               </div>
-            </div>
-          </li>
-        </div>
-        <div v-else>
-          <li class="address-list-container" v-if="!showAddressForm">
-            <div class="meta-container">
-              <label>Records Office</label>
-              <div class="meta-container__inner">
-                <span id="sameAsRegistered">
-                  Same as Registered Office
-                </span>
+            </li>
+          </div>
+
+          <div v-else>
+            <li class="address-list-container" v-if="!showAddressForm">
+              <div class="meta-container">
+                <label>Records Office</label>
+                <div class="meta-container__inner">
+                  <span id="sameAsRegistered">Same as Registered Office</span>
+                </div>
               </div>
-            </div>
-          </li>
+            </li>
+          </div>
         </div>
-      </div>
-      <!-- Form Btn Section -->
-      <li>
-        <div
-          class="form__row form__btns"
-          v-show="showAddressForm"
-        >
-          <v-btn
-            class="update-btn"
-            color="primary"
-            id="reg-off-update-addr-btn"
-            :disabled="!formValid"
-            @click="updateAddress"
+
+        <!-- Form Button Section -->
+        <li>
+          <div
+            class="form__row form__btns"
+            v-show="showAddressForm"
           >
-            Update Addresses
-          </v-btn>
-          <v-btn id="reg-off-cancel-addr-btn" @click="cancelEditAddress">Cancel</v-btn>
-        </div>
-      </li>
-    </ul>
-  </v-card>
+            <v-btn
+              class="update-btn"
+              color="primary"
+              id="reg-off-update-addr-btn"
+              :disabled="!formValid"
+              @click="updateAddress"
+            >
+              <span>Update Addresses</span>
+            </v-btn>
+            <v-btn id="reg-off-cancel-addr-btn" @click="cancelEditAddress">Cancel</v-btn>
+          </div>
+        </li>
+      </ul>
+    </v-card>
+  </div>
 </template>
 
 <script lang="ts">

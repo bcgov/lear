@@ -1,21 +1,25 @@
 <template>
   <div id="dashboard">
-    <v-container id="dashboardContainer" class="view-container">
-      <article id="dashboardArticle">
-        <CoaWarningDialog
-          :dialog="coaWarningDialog"
-          @toggle="toggleCoaWarning"
-          @proceed="goToStandaloneAddresses"
-        />
+    <CoaWarningDialog
+      :dialog="coaWarningDialog"
+      @toggle="toggleCoaWarning"
+      @proceed="goToStandaloneAddresses"
+      attach="#dashboard"
+    />
+
+    <v-container id="dashboard-container" class="view-container">
+      <article id="dashboard-article">
         <header>
-          <h1>Dashboard</h1>
+          <h1 data-test-id="dashboard-title">Dashboard</h1>
         </header>
 
         <v-row>
           <v-col cols="12" md="9">
             <section>
               <header>
-                <h2 class="mb-3">To Do <span class="text-muted">({{todoCount}})</span></h2>
+                <h2 class="mb-3" data-test-id="dashboard-todo-subtitle">
+                  <span>To Do</span>&nbsp;<span class="gray6">({{todoCount}})</span>
+                </h2>
               </header>
               <todo-list
                 @todo-count="todoCount = $event"
@@ -25,9 +29,12 @@
                 :coaPending="coaPending"
               />
             </section>
+
             <section>
               <header>
-                <h2 class="mb-3">Recent Filing History <span class="text-muted">({{filedCount}})</span></h2>
+                <h2 class="mb-3" data-test-id="dashboard-filing-history-subtitle">
+                  <span>Recent Filing History</span>&nbsp;<span class="gray6">({{filedCount}})</span>
+                </h2>
               </header>
               <filing-history-list
                 @filed-count="filedCount = $event"
@@ -39,35 +46,23 @@
           <v-col cols="12" md="3" style="position: relative">
             <section>
               <header class="aside-header mb-3">
-                <h2>Office Addresses</h2>
+                <h2 data-test-id="dashboard-addresses-subtitle">Office Addresses</h2>
                 <v-scale-transition>
-                  <v-tooltip
-                    top
-                    content-class="pending-tooltip"
-                  >
+                  <v-tooltip top content-class="pending-tooltip">
                     <template v-slot:activator="{ on }">
-                      <v-chip
-                        small
-                        label
-                        color="yellow"
-                        text-color="black"
+                      <v-chip small label color="yellow" text-color="black"
                         v-show="coaPending"
                         v-on="on"
                       >
-                        Pending
+                        <span>Pending</span>
                       </v-chip>
                     </template>
-                    <span>
-                      The updated office addresses will be legally effective on {{ effectiveDate }},
-                      12:01 AM(Pacific Time). No other filings are allowed until then.
-                    </span>
+                    <span>The updated office addresses will be legally effective on {{ effectiveDate }},
+                      12:01 AM(Pacific Time). No other filings are allowed until then.</span>
                   </v-tooltip>
                 </v-scale-transition>
-                <v-btn
-                  text
-                  small
-                  color="primary"
-                  id="btn-standalone-addresses"
+                <v-btn text small color="primary"
+                  id="standalone-addresses-button"
                   :disabled="hasBlockerFiling"
                   @click.native.stop="proceedCoa()"
                 >
@@ -84,12 +79,9 @@
 
             <section>
               <header class="aside-header mb-3">
-                <h2>Current Directors</h2>
-                <v-btn
-                  text
-                  small
-                  color="primary"
-                  id="btn-standalone-directors"
+                <h2 data-test-id="dashboard-directors-subtitle">Current Directors</h2>
+                <v-btn text small color="primary"
+                  id="standalone-directors-button"
                   :disabled="hasBlockerFiling"
                   @click.native.stop="goToStandaloneDirectors()"
                 >
@@ -98,7 +90,7 @@
                 </v-btn>
               </header>
               <v-card flat>
-                <director-list-sm></director-list-sm>
+                <director-list-sm />
               </v-card>
             </section>
           </v-col>

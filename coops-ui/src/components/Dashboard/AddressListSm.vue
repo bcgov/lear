@@ -1,125 +1,142 @@
 <template>
-  <v-expansion-panels accordion multiple :value=[0]>
+  <div id="address-list-sm">
+    <v-expansion-panels accordion multiple :value=[0]>
+      <!-- Registered Office -->
+      <v-expansion-panel id="registered-office-panel"
+        class="align-items-top"
+        :class="{ 'address-overlay': coaPending }"
+      >
+        <v-expansion-panel-header id="registered-office-panel-toggle">
+          <div class="list-item__title">Registered Office</div>
+        </v-expansion-panel-header>
 
-    <!-- Registered Office -->
-    <v-expansion-panel
-      class="align-items-top address-panel"
-      :class="{ 'address-overlay': coaPending }"
-      id="registered-office-panel"
-    >
-      <v-expansion-panel-header class="panel-header-btn">
-        <div class="list-item__title">Registered Office</div>
-      </v-expansion-panel-header>
+        <v-expansion-panel-content class="panel-wrapper pt-0 pb-0">
+          <v-list class="pt-0 pb-0" v-if="registeredAddress">
+            <v-list-item class="delivery-address-list-item"
+              v-if="registeredAddress.deliveryAddress"
+              :class="{ 'address-overlay': coaPending }"
+            >
+              <v-list-item-icon class="address-icon mr-0">
+                <v-icon color="primary">mdi-truck</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title class="mb-2 address-title">Delivery Address</v-list-item-title>
+                <v-list-item-subtitle>
+                  <ul class="address-subtitle pre-wrap">
+                    <li class="address-line1">{{ registeredAddress.deliveryAddress.streetAddress }}</li>
+                    <li class="address-line2">{{ registeredAddress.deliveryAddress.streetAddressAdditional }}</li>
+                    <li class="address-line3">{{ registeredAddress.deliveryAddress.addressCity }}
+                                              {{ registeredAddress.deliveryAddress.addressRegion }}
+                                              {{ registeredAddress.deliveryAddress.postalCode }}</li>
+                    <li class="address-line4">
+                      <span>{{ getCountryName(registeredAddress.deliveryAddress.addressCountry) }}</span>
+                    </li>
+                  </ul>
+                </v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
 
-      <v-expansion-panel-content class="panel-wrapper pt-0 pb-0">
-        <v-list class="pt-0 pb-0" v-if="registeredAddress">
-          <v-list-item v-if="registeredAddress.deliveryAddress" :class="{ 'address-overlay': coaPending }">
-            <v-list-item-icon class="address-icon mr-0">
-              <v-icon color="primary">mdi-truck</v-icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-list-item-title class="mb-2">Delivery Address</v-list-item-title>
-              <v-list-item-subtitle>
-                <ul class="address-info pre-wrap">
-                  <li>{{ registeredAddress.deliveryAddress.streetAddress }}</li>
-                  <li>{{ registeredAddress.deliveryAddress.streetAddressAdditional }}</li>
-                  <li>{{ registeredAddress.deliveryAddress.addressCity }}
-                      {{ registeredAddress.deliveryAddress.addressRegion }}
-                      {{ registeredAddress.deliveryAddress.postalCode }}</li>
-                  <li>{{ getCountryName(registeredAddress.deliveryAddress.addressCountry) }}</li>
-                </ul>
-              </v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
+            <v-list-item class="mailing-address-list-item"
+              v-if="registeredAddress.mailingAddress"
+              :class="{ 'address-overlay': coaPending }"
+            >
+              <v-list-item-icon class="address-icon mr-0">
+                <v-icon color="primary">mdi-email-outline</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title class="mb-2 address-title">Mailing Address</v-list-item-title>
+                <v-list-item-subtitle>
+                  <div class="same-as-above"
+                    v-if="isSame(registeredAddress.deliveryAddress, registeredAddress.mailingAddress)"
+                  >
+                    <span>Same as above</span>
+                  </div>
+                  <ul v-else class="address-subtitle pre-wrap">
+                    <li class="address-line1">{{ registeredAddress.mailingAddress.streetAddress }}</li>
+                    <li class="address-line2">{{ registeredAddress.mailingAddress.streetAddressAdditional }}</li>
+                    <li class="address-line3">{{ registeredAddress.mailingAddress.addressCity }}
+                                              {{ registeredAddress.mailingAddress.addressRegion }}
+                                              {{ registeredAddress.mailingAddress.postalCode }}</li>
+                    <li class="address-line4">
+                      <span>{{ getCountryName(registeredAddress.mailingAddress.addressCountry) }}</span>
+                    </li>
+                  </ul>
+                </v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-expansion-panel-content>
+      </v-expansion-panel>
 
-          <v-list-item v-if="registeredAddress.mailingAddress" :class="{ 'address-overlay': coaPending }">
-            <v-list-item-icon class="address-icon mr-0">
-              <v-icon color="primary">mdi-email-outline</v-icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-list-item-title class="mb-2">Mailing Address</v-list-item-title>
-              <v-list-item-subtitle>
-                <div
-                  v-if="isSame(registeredAddress.deliveryAddress, registeredAddress.mailingAddress)"
-                  class="same-as-above"
-                >
-                  Same as above
-                </div>
-                <ul v-else class="address-info pre-wrap">
-                  <li>{{ registeredAddress.mailingAddress.streetAddress }}</li>
-                  <li>{{ registeredAddress.mailingAddress.streetAddressAdditional }}</li>
-                  <li>{{ registeredAddress.mailingAddress.addressCity }}
-                      {{ registeredAddress.mailingAddress.addressRegion }}
-                      {{ registeredAddress.mailingAddress.postalCode }}</li>
-                  <li>{{ getCountryName(registeredAddress.mailingAddress.addressCountry) }}</li>
-                </ul>
-              </v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
-      </v-expansion-panel-content>
-    </v-expansion-panel>
+      <!--Records Office-->
+      <v-expansion-panel id="records-office-panel"
+        v-if="entityFilter(EntityTypes.BCORP)"
+        class="align-items-top"
+        :class="{ 'address-overlay': coaPending }"
+      >
+        <v-expansion-panel-header id="records-office-panel-toggle">
+          <div class="list-item__title">Records Office</div>
+        </v-expansion-panel-header>
 
-    <!--Records Office-->
-    <v-expansion-panel
-      class="align-items-top address-panel"
-      :class="{ 'address-overlay': coaPending }"
-      v-if="entityFilter(EntityTypes.BCORP)"
-    >
-      <v-expansion-panel-header class="panel-header-btn" id="record-office-panel">
-        <div class="list-item__title">Records Office</div>
-      </v-expansion-panel-header>
+        <v-expansion-panel-content class="panel-wrapper">
+          <v-list class="pt-0 pb-0" v-if="recordsAddress">
+            <v-list-item class="delivery-address-list-item"
+              v-if="recordsAddress.deliveryAddress"
+              :class="{ 'address-overlay': coaPending }"
+            >
+              <v-list-item-icon class="address-icon mr-0">
+                <v-icon color="primary">mdi-truck</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title class="mb-2 address-title">Delivery Address</v-list-item-title>
+                <v-list-item-subtitle>
+                  <ul class="address-subtitle pre-wrap">
+                    <li class="address-line1">{{ recordsAddress.deliveryAddress.streetAddress }}</li>
+                    <li class="address-line2">{{ recordsAddress.deliveryAddress.streetAddressAdditional }}</li>
+                    <li class="address-line3">{{ recordsAddress.deliveryAddress.addressCity }}
+                                              {{ recordsAddress.deliveryAddress.addressRegion }}
+                                              {{ recordsAddress.deliveryAddress.postalCode }}</li>
+                    <li class="address-line4">
+                      <span>{{ getCountryName(recordsAddress.deliveryAddress.addressCountry) }}</span>
+                    </li>
+                  </ul>
+                </v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
 
-      <v-expansion-panel-content class="panel-wrapper">
-        <v-list class="pt-0 pb-0" v-if="recordsAddress">
-          <v-list-item v-if="recordsAddress.deliveryAddress" :class="{ 'address-overlay': coaPending }">
-            <v-list-item-icon class="address-icon mr-0">
-              <v-icon color="primary">mdi-truck</v-icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-list-item-title class="mb-2">Delivery Address</v-list-item-title>
-              <v-list-item-subtitle>
-                <ul class="address-info pre-wrap">
-                  <li>{{ recordsAddress.deliveryAddress.streetAddress }}</li>
-                  <li>{{ recordsAddress.deliveryAddress.streetAddressAdditional }}</li>
-                  <li>{{ recordsAddress.deliveryAddress.addressCity }}
-                      {{ recordsAddress.deliveryAddress.addressRegion }}
-                      {{ recordsAddress.deliveryAddress.postalCode }}</li>
-                  <li>{{ getCountryName(recordsAddress.deliveryAddress.addressCountry) }}</li>
-                </ul>
-              </v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
-
-          <v-list-item v-if="recordsAddress.mailingAddress" :class="{ 'address-overlay': coaPending }">
-            <v-list-item-icon class="address-icon mr-0">
-              <v-icon color="primary">mdi-email-outline</v-icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-list-item-title class="mb-2">Mailing Address</v-list-item-title>
-              <v-list-item-subtitle>
-                <div
-                  v-if="isSame(recordsAddress.deliveryAddress, recordsAddress.mailingAddress)"
-                  class="same-as-above"
-                >
-                  Same as above
-                </div>
-                <ul v-else class="address-info pre-wrap">
-                  <li>{{ recordsAddress.mailingAddress.streetAddress }}</li>
-                  <li>{{ recordsAddress.mailingAddress.streetAddressAdditional }}</li>
-                  <li>{{ recordsAddress.mailingAddress.addressCity }}
-                      {{ recordsAddress.mailingAddress.addressRegion }}
-                      {{ recordsAddress.mailingAddress.postalCode }}</li>
-                  <li>{{ getCountryName(recordsAddress.mailingAddress.addressCountry) }}</li>
-                </ul>
-              </v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
-      </v-expansion-panel-content>
-    </v-expansion-panel>
-
-  </v-expansion-panels>
+            <v-list-item class="mailing-address-list-item"
+              v-if="recordsAddress.mailingAddress"
+              :class="{ 'address-overlay': coaPending }"
+            >
+              <v-list-item-icon class="address-icon mr-0">
+                <v-icon color="primary">mdi-email-outline</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title class="mb-2 address-title">Mailing Address</v-list-item-title>
+                <v-list-item-subtitle>
+                  <div class="same-as-above"
+                    v-if="isSame(recordsAddress.deliveryAddress, recordsAddress.mailingAddress)"
+                  >
+                    <span>Same as above</span>
+                  </div>
+                  <ul v-else class="address-subtitle pre-wrap">
+                    <li class="address-line1">{{ recordsAddress.mailingAddress.streetAddress }}</li>
+                    <li class="address-line2">{{ recordsAddress.mailingAddress.streetAddressAdditional }}</li>
+                    <li class="address-line3">{{ recordsAddress.mailingAddress.addressCity }}
+                                              {{ recordsAddress.mailingAddress.addressRegion }}
+                                              {{ recordsAddress.mailingAddress.postalCode }}</li>
+                    <li class="address-line4">
+                      <span>{{ getCountryName(recordsAddress.mailingAddress.addressCountry) }}</span>
+                    </li>
+                  </ul>
+                </v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+    </v-expansion-panels>
+  </div>
 </template>
 
 <script lang="ts">
@@ -164,7 +181,9 @@ $icon-width: 2.75rem;
 .panel-wrapper {
   margin-left: -1.5rem;
 }
-.panel-header-btn {
+
+#registered-office-panel-toggle,
+#records-office-panel-toggle {
   padding-left: .85rem;
 }
 
@@ -195,7 +214,7 @@ $icon-width: 2.75rem;
   margin-top: 0;
 }
 
-.address-info {
+.address-subtitle {
   margin: 0;
   padding: 0;
   list-style-type: none;

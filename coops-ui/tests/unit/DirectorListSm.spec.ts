@@ -150,7 +150,7 @@ describe('DirectorListSm', () => {
     const vm = wrapper.vm as any
 
     Vue.nextTick(() => {
-      click('.panel-header-btn')
+      click('.address-panel-toggle')
       expect(vm.directors.length).toEqual(2)
       expect(vm.directors[0].mailingAddress).toBeDefined()
       expect(vm.$el.querySelectorAll('.address-panel').length).toEqual(2)

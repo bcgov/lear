@@ -2,7 +2,7 @@
   <div id="directors">
 
     <!-- delete new director - confirmation popup -->
-    <v-dialog id="delete-director-dialog" v-model="showPopup" width="30rem">
+    <v-dialog content-class="delete-confirm-dialog" v-model="showPopup" width="30rem" attach="#directors">
       <v-card>
         <v-card-text>
           Are you sure you want to remove
@@ -16,12 +16,8 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" @click="deleteDirector(activeDirectorToDelete.id)">
-            Remove
-          </v-btn>
-          <v-btn color="default" @click="showPopup = false; activeDirectorToDelete = null">
-            Cancel
-          </v-btn>
+          <v-btn color="primary" @click="deleteDirector(activeDirectorToDelete.id)">Remove</v-btn>
+          <v-btn color="default" @click="showPopup = false; activeDirectorToDelete = null">Cancel</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -29,7 +25,7 @@
     <v-expand-transition>
       <div v-if="componentEnabled" v-show="!showNewDirectorForm">
         <v-btn class="new-director-btn" outlined color="primary"
-          :disabled="!componentEnabled || directorEditInProgress"
+          :disabled="directorEditInProgress"
           @click="addNewDirector"
         >
           <v-icon>mdi-plus</v-icon>
@@ -46,8 +42,11 @@
             <div class="meta-container">
               <label class="appoint-header">Appoint New Director</label>
               <div class="meta-container__inner">
-                <v-form class="appoint-form" ref="newDirectorForm" v-on:submit.prevent="addNewDirector"
-                  v-model="directorFormValid" lazy-validation
+                <v-form ref="newDirectorForm"
+                  class="appoint-form"
+                  v-model="directorFormValid"
+                  v-on:submit.prevent="addNewDirector"
+                  lazy-validation
                 >
                   <div class="form__row three-column">
                     <v-text-field filled class="item"
@@ -78,6 +77,7 @@
                       @update:address="updateBaseAddress"
                     />
                   </div>
+
                   <div class="form__row" v-if="entityFilter(EntityTypes.BCORP)">
                     <v-checkbox
                       class="inherit-checkbox"
@@ -107,9 +107,10 @@
                       full-width
                       min-width="18rem">
                       <template v-slot:activator="{ on }">
-                        <v-text-field box class="item" label="Appointment / Election Date"
+                        <v-text-field box class="item"
                           id="new-director__appointment-date"
                           v-model.trim="director.appointmentDate"
+                          label="Appointment / Election Date"
                           hint="YYYY/MM/DD"
                           append-icon="event"
                           v-on="on"
@@ -133,7 +134,7 @@
                       full-width
                       min-width="18rem">
                       <template v-slot:activator="{ on }">
-                        <v-text-field class="item"
+                        <v-text-field box class="item"
                           id="new-director__cessation-date"
                           v-model.trim="director.cessationDate"
                           label="Cessation Date"
@@ -141,7 +142,6 @@
                           append-icon="event"
                           v-on="on"
                           :rules="directorCessationDateRules"
-                          box
                         />
                       </template>
                       <v-date-picker
@@ -156,9 +156,7 @@
                   -->
 
                   <div class="form__row form__btns">
-                    <v-btn color="error" disabled>
-                      <span>Remove</span>
-                    </v-btn>
+                    <v-btn color="error" disabled>Remove</v-btn>
                     <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
                     <v-btn class="form-cancel-btn" @click="cancelNewDirector()">Cancel</v-btn>
                   </div>
@@ -178,10 +176,10 @@
           <span>Appointed/Elected</span>
         </v-subheader>
         <li class="director-list-item"
-          :id="'director-' + director.id"
-          v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
           v-for="(director, index) in orderBy(directors, 'id', -1)"
-          v-bind:key="index"
+          :id="'director-' + director.id"
+          :class="{ 'remove' : !isActive(director) || !isActionable(director)}"
+          :key="index"
         >
           <div class="meta-container">
             <label>
@@ -245,7 +243,6 @@
                     <div class="director_dates__date">{{ director.cessationDate }}</div>
                   </div>
                   <div class="actions" v-show="isActionable(director)">
-
                     <!-- Edit menu -->
                     <span v-show="isNew(director)">
                       <v-btn small text color="primary" :disabled="!componentEnabled || directorEditInProgress"
@@ -276,14 +273,15 @@
 
                     <!-- Cease menu -->
                     <span v-show="!isNew(director) && componentEnabled">
-                      <v-btn small text color="primary" :disabled="!componentEnabled || directorEditInProgress"
-                        class="cease-btn"
+                      <v-btn small text color="primary" class="cease-btn"
+                        :disabled="!componentEnabled || directorEditInProgress"
                         :id="'director-' + director.id + '-cease-btn'"
                         @click="ceaseDirector(director)"
                       >
                         <v-icon small>{{isActive(director) ? 'mdi-close':'mdi-undo'}}</v-icon>
                         <span>{{isActive(director) ? 'Cease':'Undo'}}</span>
                       </v-btn>
+
                       <!-- more actions menu -->
                       <span v-show="isActive(director)">
                         <v-menu offset-y :disabled="!componentEnabled || directorEditInProgress">
@@ -323,12 +321,11 @@
                     <v-btn text color="primary" @click="activeIndexCustomCease = null">Cancel</v-btn>
                     <v-btn text color="primary" @click="ceaseDirector(director)">OK</v-btn>
                   </v-date-picker>
-
                 </div>
               </v-expand-transition>
 
-              <!-- EDIT director form -->
-              <v-expand-transition class="edit-form">
+              <!-- Edit director form -->
+              <v-expand-transition>
                 <v-form ref="editDirectorForm"
                   v-show="activeIndex === index"
                   v-model="directorFormValid" lazy-validation>
@@ -446,22 +443,30 @@
 
                   <div class="form__row form__btns">
                     <v-btn color="error"
+                      id="remove-edit-btn"
                       v-show="isNew(director)"
                       @click="deleteDirector(director.id)"
                     >
                       <span>Remove</span>
                     </v-btn>
-                    <v-btn class="form-primary-btn" color="primary"
+                    <v-btn color="primary"
+                      class="form-primary-btn"
                       id="done-edit-btn"
                       @click="saveEditDirector(index, director.id)"
                     >
-                      Done</v-btn>
-                    <v-btn id="cancel-edit-btn" class="form-cancel-btn"
-                      @click="cancelEditDirector(director.id)">Cancel</v-btn>
+                      <span>Done</span>
+                    </v-btn>
+                    <v-btn class="form-cancel-btn"
+                      id="cancel-edit-btn"
+                      @click="cancelEditDirector(director.id)"
+                    >
+                      <span>Cancel</span>
+                    </v-btn>
                   </div>
                 </v-form>
               </v-expand-transition>
               <!-- END edit director form -->
+
             </div>
           </div>
         </li>
@@ -876,10 +881,11 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * Local helper to show the Delete Director confirmation popup.
    * @param director The director object to delete.
    */
-  private showDeleteDirectorConfirmation (director): void {
-    this.showPopup = true
-    this.activeDirectorToDelete = director
-  }
+  // removed until release 2
+  // private showDeleteDirectorConfirmation (director): void {
+  //   this.showPopup = true
+  //   this.activeDirectorToDelete = director
+  // }
 
   /**
    * Local helper to delete a director.
@@ -1572,9 +1578,7 @@ ul {
   }
 }
 
-.director-list {
-  .director-list-item {
-    padding: 1.25rem;
-  }
+.director-list-item {
+  padding: 1.25rem;
 }
 </style>

@@ -1723,7 +1723,7 @@ describe('AnnualReport - Part 5B - Data - BCOMP', () => {
   })
 })
 
-describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
+describe('AnnualReport - Part 6 - Error/Warning dialogs', () => {
   let wrapper
   let vm
   const request = require('request')

@@ -4,6 +4,7 @@ import Vuetify from 'vuetify'
 import Vuelidate from 'vuelidate'
 import sinon from 'sinon'
 import { createLocalVue, shallowMount, mount } from '@vue/test-utils'
+import flushPromises from 'flush-promises'
 import CODDate from '@/components/StandaloneDirectorChange/CODDate.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
@@ -243,15 +244,10 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
   })
 
   it('enables File & Pay button when Validated is true', () => {
-    const localVue = createLocalVue()
-    localVue.use(VueRouter)
-    const router = mockRouter.mock()
-    router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
-
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = mount(StandaloneDirectorsFiling, {
       store,
-      localVue,
-      router,
+      mocks: { $route },
       stubs: {
         CODDate: true,
         Directors: true,
@@ -277,21 +273,16 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     vm.filingData = [{}] // dummy data
 
     // confirm that button is enabled
-    expect(wrapper.find('#cod-file-pay-btn').attributes('disabled')).not.toBe('true')
+    expect(wrapper.find('#cod-file-pay-btn').attributes('disabled')).toBeUndefined()
 
     wrapper.destroy()
   })
 
   it('disables File & Pay button when Validated is false', () => {
-    const localVue = createLocalVue()
-    localVue.use(VueRouter)
-    const router = mockRouter.mock()
-    router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
-
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = mount(StandaloneDirectorsFiling, {
       store,
-      localVue,
-      router,
+      mocks: { $route },
       stubs: {
         CODDate: true,
         Directors: true,
@@ -409,9 +400,12 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
     // init store
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
+    store.state.currentDate = '2019/07/15'
+
+    const get = sinon.stub(axios, 'get')
 
     // mock "fetch a draft filing" endpoint
-    sinon.stub(axios, 'get').withArgs('CP0001191/filings/123')
+    get.withArgs('CP0001191/filings/123')
       .returns(new Promise((resolve) => resolve({
         data:
           {
@@ -437,6 +431,29 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
                 'filingId': 123
               }
             }
+          }
+      })))
+
+    // mock "fetch tasks" endpoint
+    get.withArgs('CP0001191/tasks')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'tasks': [
+              {
+                'task': {
+                  'filing': {
+                    'header': {
+                      'name': 'annualReport',
+                      'ARFilingYear': 2017,
+                      'status': 'NEW'
+                    }
+                  }
+                },
+                'enabled': true,
+                'order': 1
+              }
+            ]
           }
       })))
 
@@ -516,14 +533,10 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
     sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
     sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
 
-    const localVue = createLocalVue()
-    localVue.use(VueRouter)
-    const router = mockRouter.mock()
-    router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = mount(StandaloneDirectorsFiling, {
       store,
-      localVue,
-      router,
+      mocks: { $route },
       stubs: {
         CODDate: true,
         Directors: true,
@@ -558,13 +571,13 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
 
     // TODO: verify that new filing was created
 
+    // verify that button is enabled
     const button = wrapper.find('#cod-file-pay-btn')
-    expect(button.attributes('disabled')).not.toBe('true')
+    expect(button.attributes('disabled')).toBeUndefined()
 
-    // click the File & Pay button
+    // click the File & Pay button and wait for async methods to finish
     button.trigger('click')
-    // work-around because click trigger isn't working
-    await vm.onClickFilePay()
+    await flushPromises()
 
     // verify v-tooltip text - Todo - Tool tip is outside the wrapper. Yet to find out how to get hold of that.
     // const tooltipText = wrapper.find('#cod-file-pay-btn + span').text()
@@ -588,14 +601,10 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
     sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
     sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
 
-    const localVue = createLocalVue()
-    localVue.use(VueRouter)
-    const router = mockRouter.mock()
-    router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
+    const $route = { params: { id: 0 } } // new filing id
     const wrapper = mount(StandaloneDirectorsFiling, {
       store,
-      localVue,
-      router,
+      mocks: { $route },
       stubs: {
         Directors: true,
         Certify: true,
@@ -627,13 +636,13 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
 
     // TODO: verify that new filing was created
 
+    // verify that button is enabled
     const button = wrapper.find('#cod-file-pay-btn')
-    expect(button.attributes('disabled')).not.toBe('true')
+    expect(button.attributes('disabled')).toBeUndefined()
 
-    // click the File & Pay button
+    // click the File & Pay button and wait for async methods to finish
     button.trigger('click')
-    // work-around because click trigger isn't working
-    await vm.onClickFilePay()
+    await flushPromises()
 
     // verify v-tooltip text - Todo - Tool tip is outside the wrapper. Yet to find out how to get hold of that.
     // const tooltipText = wrapper.find('#cod-file-pay-btn + span').text()
@@ -654,14 +663,10 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
     sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
     sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
 
-    const localVue = createLocalVue()
-    localVue.use(VueRouter)
-    const router = mockRouter.mock()
-    router.push({ name: 'standalone-directors', params: { id: '123' } }) // existing filing id
+    const $route = { params: { id: 123 } } // existing filing id
     const wrapper = mount(StandaloneDirectorsFiling, {
       store,
-      localVue,
-      router,
+      mocks: { $route },
       stubs: {
         CODDate: true,
         Directors: true,
@@ -696,13 +701,13 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
 
     // TODO: verify that draft filing was fetched
 
+    // verify that button is enabled
     const button = wrapper.find('#cod-file-pay-btn')
-    expect(button.attributes('disabled')).not.toBe('true')
+    expect(button.attributes('disabled')).toBeUndefined()
 
-    // click the File & Pay button
+    // click the File & Pay button and wait for async methods to finish
     button.trigger('click')
-    // work-around because click trigger isn't working
-    await vm.onClickFilePay()
+    await flushPromises()
 
     // verify v-tooltip text - To find out how to get the tool tip text outside the wrapper
     // const tooltipText = wrapper.find('#cod-file-pay-btn + span').text()
@@ -723,6 +728,7 @@ describe('Standalone Directors Filing - Part 3B - Submitting filing that doesn\'
     // init store
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
+    store.state.currentDate = '2019/07/15'
 
     // mock "save and file" endpoint
     sinon.stub(axios, 'post').withArgs('CP0001191/filings')
@@ -746,15 +752,16 @@ describe('Standalone Directors Filing - Part 3B - Submitting filing that doesn\'
                 'effectiveDate': 'Tue, 06 Jun 2017 18:49:44 GMT',
                 'submitter': 'cp0001191',
                 'status': 'PAID', // API may return this or PENDING but we don't care
-                'filingId': 123,
                 'certifiedBy': 'Full Name',
                 'email': 'no_one@never.get',
+                'filingId': 123,
                 'paymentToken': '321'
               }
             }
           }
       })))
 
+    // mock "fetch tasks" endpoint
     sinon.stub(axios, 'get').withArgs('CP0001191/tasks')
       .returns(new Promise((resolve) => resolve({
         data: {
@@ -797,13 +804,12 @@ describe('Standalone Directors Filing - Part 3B - Submitting filing that doesn\'
     vm.directorFormValid = true
     vm.staffPaymentFormValid = true
     vm.certifyFormValid = true
-    vm.filingData = [{ filingTypeCode: 'OTFDR', entityType: 'CP' }] // dummy data
+    vm.filingData = [{}] // dummy data
 
-    // go to summary page
-    vm.showSummary()
+    // NB: can't find button because Vuetify hasn't rendered it
+    // const button = wrapper.find('#cod-file-pay-btn')
 
-    wrapper.find('#cod-file-pay-btn')
-    // work-around because click trigger isn't working
+    // work-around in lieu of clicking Pay & File button
     await vm.onClickFilePay()
 
     // verify routing back to Dashboard URL
@@ -833,6 +839,7 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
     // init store
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
+    store.state.currentDate = '2019/07/15'
 
     // mock "save draft" endpoint
     sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')
@@ -864,6 +871,7 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
           }
       })))
 
+    // mock "fetch tasks" endpoint
     sinon.stub(axios, 'get').withArgs('CP0001191/tasks')
       .returns(new Promise((resolve) => resolve({
         data: {
@@ -890,7 +898,7 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
     sinon.restore()
   })
 
-  it('saves a new filing when this is a new filing and the Save button is clicked',
+  it('saves a new filing and stays on current page when the Save button is clicked',
     async () => {
       const $route = { params: { id: 0 } } // new filing id
       const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
@@ -901,19 +909,28 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
       vm.directorFormValid = true
       vm.staffPaymentFormValid = true
       vm.certifyFormValid = true
+      vm.filingData = [{}] // dummy data
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
       // TODO: verify that new filing was created
 
-      // click the Save button
-      wrapper.find('#cod-save-btn').trigger('click')
+      // verify that button is enabled
+      const button = wrapper.find('#cod-save-btn')
+      expect(button.attributes('disabled')).toBeUndefined()
+
+      // click the Save button and wait for async methods to finish
+      // button.trigger('click')
+      // await flushPromises()
       // work-around because click trigger isn't working
       await vm.onClickSave()
 
       // verify no redirection
       expect(window.location.assign).not.toHaveBeenCalled()
+
+      // verify no routing
+      expect(vm.$route.name).toBeUndefined()
 
       wrapper.destroy()
     }
@@ -935,11 +952,25 @@ describe('Standalone Directors Filing - Part 4 - Saving', () => {
     vm.directorFormValid = true
     vm.staffPaymentFormValid = true
     vm.certifyFormValid = true
+    vm.filingData = [{}] // dummy data
 
-    // click the Save & Resume Later button
-    wrapper.find('#cod-save-resume-btn').trigger('click')
+    // sanity check
+    expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+    // TODO: verify that new filing was created
+
+    // verify that button is enabled
+    const button = wrapper.find('#cod-save-resume-btn')
+    expect(button.attributes('disabled')).toBeUndefined()
+
+    // click the Save & Resume Later button and wait for async methods to finish
+    // button.trigger('click')
+    // await flushPromises()
     // work-around because click trigger isn't working
     await vm.onClickSaveResume()
+
+    // verify no redirection
+    expect(window.location.assign).not.toHaveBeenCalled()
 
     // verify routing back to Dashboard URL
     expect(vm.$route.name).toBe('dashboard')
@@ -957,6 +988,7 @@ describe('Standalone Directors Filing - Part 5 - Data', () => {
     // init store
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
+    store.state.currentDate = '2019/07/15'
 
     // mock "save draft" endpoint - garbage response data, we aren't testing that
     spy = sinon.stub(axios, 'post').withArgs('CP0001191/filings?draft=true')
@@ -1056,7 +1088,8 @@ describe('Standalone Directors Filing - Part 5 - Data', () => {
 
   it('Includes complete list of directors in the filing data', async () => {
     // click the Save button
-    wrapper.find('#cod-save-btn').trigger('click')
+    // wrapper.find('#cod-save-btn').trigger('click')
+    // await flushPromises()
     // work-around because click trigger isn't working
     await vm.onClickSave()
 
@@ -1074,7 +1107,8 @@ describe('Standalone Directors Filing - Part 5 - Data', () => {
 
   it('Includes certification data in the header', async () => {
     // click the Save button
-    wrapper.find('#cod-save-btn').trigger('click')
+    // wrapper.find('#cod-save-btn').trigger('click')
+    // await flushPromises()
     // work-around because click trigger isn't working
     await vm.onClickSave()
 
@@ -1090,7 +1124,7 @@ describe('Standalone Directors Filing - Part 5 - Data', () => {
   })
 })
 
-describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () => {
+describe('Standalone Directors Filing - Part 6 - Error/Warning dialogs', () => {
   const { assign } = window.location
 
   beforeAll(() => {
@@ -1107,6 +1141,61 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
     // init store
     store.state.entityIncNo = 'CP0001191'
     store.state.entityName = 'Legal Name - CP0001191'
+    store.state.currentDate = '2019/07/15'
+
+    const get = sinon.stub(axios, 'get')
+
+    // mock "fetch a draft filing" endpoint
+    get.withArgs('CP0001191/filings/123')
+      .returns(new Promise((resolve) => resolve({
+        data:
+          {
+            'filing': {
+              'changeOfDirectors': {
+                'directors': sampleDirectors
+              },
+              'business': {
+                'cacheId': 1,
+                'foundingDate': '2007-04-08T00:00:00+00:00',
+                'identifier': 'CP0001191',
+                'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+                'legalName': 'Legal Name - CP0001191'
+              },
+              'header': {
+                'name': 'changeOfDirectors',
+                'date': '2017-06-06T00:00:00+00:00',
+                'effectiveDate': 'Tue, 06 Jun 2017 18:49:44 GMT',
+                'submitter': 'cp0001191',
+                'status': 'DRAFT',
+                'certifiedBy': 'Full Name',
+                'email': 'no_one@never.get',
+                'filingId': 123
+              }
+            }
+          }
+      })))
+
+    // mock "fetch tasks" endpoint
+    get.withArgs('CP0001191/tasks')
+      .returns(new Promise((resolve) => resolve({
+        data: {
+          'tasks': [
+            {
+              'task': {
+                'filing': {
+                  'header': {
+                    'name': 'annualReport',
+                    'ARFilingYear': 2017,
+                    'status': 'NEW'
+                  }
+                }
+              },
+              'enabled': true,
+              'order': 1
+            }
+          ]
+        }
+      })))
 
     // mock "file post" endpoint
     const p1 = Promise.reject({
@@ -1207,29 +1296,9 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
 
   it('sets the required fields to display errors from the api after a POST call',
     async () => {
-      const localVue = createLocalVue()
-      localVue.use(VueRouter)
-      const router = mockRouter.mock()
-      router.push({ name: 'standalone-directors', params: { id: '0' } }) // new filing id
-      const wrapper = mount(StandaloneDirectorsFiling, {
-        store,
-        localVue,
-        router,
-        stubs: {
-          CODDate: true,
-          Directors: true,
-          Certify: true,
-          StaffPayment: true,
-          Affix: true,
-          SbcFeeSummary: true,
-          ConfirmDialog: true,
-          PaymentErrorDialog: true,
-          ResumeErrorDialog: true,
-          SaveErrorDialog: true
-        },
-        vuetify
-      })
-      const vm: any = wrapper.vm as any
+      const $route = { params: { id: 0 } } // new filing id
+      const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
+      const vm = wrapper.vm as any
 
       // make sure form is validated
       vm.inFilingReview = true
@@ -1237,18 +1306,20 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
       vm.directorFormValid = true
       vm.staffPaymentFormValid = true
       vm.certifyFormValid = true
+      vm.filingData = [{}] // dummy data
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
       // TODO: verify that draft filing was fetched
 
-      // click the File & Pay button
-      wrapper.find('#cod-file-pay-btn').trigger('click')
-      // work-around because click trigger isn't working
+      // NB: can't find button because Vuetify hasn't rendered it
+      // const button = wrapper.find('#cod-file-pay-btn')
+
+      // work-around in lieu of clicking Pay & File button
       await vm.onClickFilePay()
 
-      // verify error dialogue values set to what was returned
+      // verify error dialog values set to what was returned
       expect(vm.saveErrorDialog).toBe(true)
       expect(vm.saveErrors.length).toBe(1)
       expect(vm.saveErrors[0].error).toBe('err msg post')
@@ -1261,29 +1332,9 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
 
   it('sets the required fields to display errors from the api after a PUT call',
     async () => {
-      const localVue = createLocalVue()
-      localVue.use(VueRouter)
-      const router = mockRouter.mock()
-      router.push({ name: 'standalone-directors', params: { id: '123' } }) // existing filing id
-      const wrapper = mount(StandaloneDirectorsFiling, {
-        store,
-        localVue,
-        router,
-        stubs: {
-          CODDate: true,
-          Directors: true,
-          Certify: true,
-          StaffPayment: true,
-          Affix: true,
-          SbcFeeSummary: true,
-          ConfirmDialog: true,
-          PaymentErrorDialog: true,
-          ResumeErrorDialog: true,
-          SaveErrorDialog: true
-        },
-        vuetify
-      })
-      const vm: any = wrapper.vm as any
+      const $route = { params: { id: 123 } } // existing filing id
+      const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
+      const vm = wrapper.vm as any
 
       // make sure form is validated
       vm.inFilingReview = true
@@ -1291,18 +1342,20 @@ describe('Standalone Directors Filing - Part 6 - Error/Warning dialogues', () =>
       vm.directorFormValid = true
       vm.staffPaymentFormValid = true
       vm.certifyFormValid = true
+      vm.filingData = [{}] // dummy data
 
       // sanity check
       expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
       // TODO: verify that draft filing was fetched
 
-      // click the File & Pay button
-      wrapper.find('#cod-file-pay-btn').trigger('click')
-      // work-around because click trigger isn't working
+      // NB: can't find button because Vuetify hasn't rendered it
+      // const button = wrapper.find('#cod-file-pay-btn')
+
+      // work-around in lieu of clicking Pay & File button
       await vm.onClickFilePay()
 
-      // verify error dialogue values set to what was returned
+      // verify error dialog values set to what was returned
       expect(vm.saveErrorDialog).toBe(true)
       expect(vm.saveErrors.length).toBe(1)
       expect(vm.saveErrors[0].error).toBe('err msg put')

@@ -1,5 +1,5 @@
 <template>
-  <v-dialog id="payment-error-dialog" v-model="dialog" width="45rem" persistent>
+  <v-dialog v-model="dialog" width="45rem" persistent :attach="attach" content-class="payment-error-dialog">
     <v-card>
       <v-card-title>Unable to Process Payment</v-card-title>
 
@@ -25,9 +25,7 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn id="btn-return-dashboard" color="primary" text @click="exit()">
-          Return to Business Dashboard
-        </v-btn>
+        <v-btn id="dialog-exit-button" color="primary" text @click="exit()">Back to My Dashboard</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -51,6 +49,9 @@ export default class PaymentErrorDialog extends Vue {
 
   // Prop to display the dialog.
   @Prop() private dialog: boolean
+
+  // Prop to provide attachment selector.
+  @Prop() private attach: string
 
   // Pass click event to parent.
   @Emit() private exit () { }

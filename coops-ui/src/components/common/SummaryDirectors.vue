@@ -59,18 +59,21 @@
                 </v-scale-transition>
               </div>
             </label>
+
             <div class="meta-container__inner">
               <v-expand-transition>
-                <div class="director-info" >
+                <div class="director-info">
                   <div class="address">
                     <BaseAddress :address="director.deliveryAddress" />
                   </div>
+
                   <div class="address same-address" v-if="entityFilter(EntityTypes.BCORP)">
                     <span v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                       Same as Delivery Address
                     </span>
                     <BaseAddress v-else :address="director.mailingAddress" />
                   </div>
+
                   <div class="director_dates">
                     <div class="director_dates__date">{{ director.appointmentDate }}</div>
                     <div v-if="director.cessationDate">Ceased</div>
@@ -88,7 +91,8 @@
 
     <!-- Ceased Directors List -->
     <v-btn text small v-if="directorsCeased.length > 0" @click="expand = !expand" class="cease-btn">
-      <v-icon>{{ dropdownIcon }}</v-icon>Hide Ceased Directors
+      <v-icon>{{ dropdownIcon }}</v-icon>
+      <span>Hide Ceased Directors</span>
     </v-btn>
     <v-card flat>
       <v-expand-transition>
@@ -142,9 +146,10 @@
                   </v-scale-transition>
                 </div>
               </label>
+
               <div class="meta-container__inner">
                 <v-expand-transition>
-                  <div class="director-info" >
+                  <div class="director-info">
                     <div class="address">
                       <BaseAddress :address="director.deliveryAddress" />
                     </div>

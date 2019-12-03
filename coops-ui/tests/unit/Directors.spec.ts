@@ -7,7 +7,6 @@ import store from '@/store/store'
 
 import Directors from '@/components/AnnualReport/Directors.vue'
 import { EntityTypes } from '@/enums'
-import { createWrapper } from '@vue/test-utils'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -673,7 +672,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[0].textContent).toBe('')
       done()
-    }, 200)
+    }, 250)
   })
 
   it('displays error for invalid First Name - leading spaces', done => {
@@ -684,7 +683,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[0].textContent).toContain('Invalid spaces')
       done()
-    }, 200)
+    }, 250)
   })
 
   it('displays error for invalid First Name - trailing spaces', done => {
@@ -695,7 +694,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[0].textContent).toContain('Invalid spaces')
       done()
-    }, 200)
+    }, 250)
   })
 
   it('displays error for invalid First Name - multiple inline spaces', done => {
@@ -706,7 +705,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[0].textContent).toContain('Invalid word spacing')
       done()
-    }, 200)
+    }, 250)
   })
 
   it('accepts valid Middle Initial', done => {
@@ -717,7 +716,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[1].textContent).toBe('')
       done()
-    }, 200)
+    }, 250)
   })
 
   it('displays error for invalid Middle Initial - leading spaces', done => {
@@ -728,7 +727,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[1].textContent).toContain('Invalid spaces')
       done()
-    }, 200)
+    }, 250)
   })
 
   it('displays error for invalid Middle Initial - trailing spaces', done => {
@@ -739,7 +738,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[1].textContent).toContain('Invalid spaces')
       done()
-    }, 200)
+    }, 250)
   })
 
   it('displays error for invalid Middle Initial - multiple inline spaces', done => {
@@ -750,7 +749,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[1].textContent).toContain('Invalid word spacing')
       done()
-    }, 100)
+    }, 250)
   })
 
   it('accepts valid Last Name', done => {
@@ -761,7 +760,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[2].textContent).toBe('')
       done()
-    }, 100)
+    }, 250)
   })
 
   it('displays error for invalid Last Name - leading spaces', done => {
@@ -772,7 +771,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[2].textContent).toContain('Invalid spaces')
       done()
-    }, 100)
+    }, 250)
   })
 
   it('displays error for invalid Last Name - trailing spaces', done => {
@@ -783,7 +782,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[2].textContent).toContain('Invalid spaces')
       done()
-    }, 100)
+    }, 250)
   })
 
   it('displays error for invalid Last Name - multiple inline spaces', done => {
@@ -794,7 +793,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[2].textContent).toContain('Invalid word spacing')
       done()
-    }, 100)
+    }, 250)
   })
 
   // todo

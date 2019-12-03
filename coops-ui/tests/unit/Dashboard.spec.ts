@@ -61,9 +61,9 @@ describe('Dashboard - UI', () => {
     wrapper.find(TodoList).vm.$emit('has-blocker-filing', false)
 
     expect(wrapper.vm.hasBlockerFiling).toEqual(false)
-    expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
+    expect(wrapper.vm.$el.querySelector('#standalone-addresses-button')
       .getAttribute('disabled')).toBeNull()
-    expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
+    expect(wrapper.vm.$el.querySelector('#standalone-directors-button')
       .getAttribute('disabled')).toBeNull()
   })
 
@@ -71,21 +71,9 @@ describe('Dashboard - UI', () => {
     wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
 
     expect(wrapper.vm.hasBlockerFiling).toEqual(true)
-    expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
+    expect(wrapper.vm.$el.querySelector('#standalone-addresses-button')
       .getAttribute('disabled')).toBe('true')
-    expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
-      .getAttribute('disabled')).toBe('true')
-  })
-
-  it('disables standalone filing buttons & toDo filings when there is a future effective filing pending', () => {
-    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [{ 'status': 'PAID' }])
-    wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
-
-    expect(wrapper.vm.hasBlockerFiling).toEqual(true)
-    expect(wrapper.vm.coaPending).toEqual(true)
-    expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
-      .getAttribute('disabled')).toBe('true')
-    expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
+    expect(wrapper.vm.$el.querySelector('#standalone-directors-button')
       .getAttribute('disabled')).toBe('true')
   })
 
@@ -95,9 +83,21 @@ describe('Dashboard - UI', () => {
 
     expect(wrapper.vm.hasBlockerFiling).toEqual(true)
     expect(wrapper.vm.coaPending).toEqual(true)
-    expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
+    expect(wrapper.vm.$el.querySelector('#standalone-addresses-button')
+      .getAttribute('disabled')).toBe('true')
+    expect(wrapper.vm.$el.querySelector('#standalone-directors-button')
+      .getAttribute('disabled')).toBe('true')
+  })
+
+  it('disables standalone filing buttons & toDo filings when there is a future effective filing pending', () => {
+    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [{ 'status': 'PAID' }])
+    wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
+
+    expect(wrapper.vm.hasBlockerFiling).toEqual(true)
+    expect(wrapper.vm.coaPending).toEqual(true)
+    expect(wrapper.vm.$el.querySelector('#standalone-addresses-button')
       .getAttribute('disabled')).toBeTruthy()
-    expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
+    expect(wrapper.vm.$el.querySelector('#standalone-directors-button')
       .getAttribute('disabled')).toBe('true')
   })
 
@@ -107,9 +107,9 @@ describe('Dashboard - UI', () => {
 
     expect(wrapper.vm.hasBlockerFiling).toEqual(true)
     expect(wrapper.vm.coaPending).toEqual(true)
-    expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
+    expect(wrapper.vm.$el.querySelector('#standalone-addresses-button')
       .getAttribute('disabled')).toBe('true')
-    expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
+    expect(wrapper.vm.$el.querySelector('#standalone-directors-button')
       .getAttribute('disabled')).toBe('true')
   })
 
@@ -181,7 +181,7 @@ describe('Dashboard - Click Tests', () => {
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
-      const button = vm.$el.querySelector('#btn-standalone-addresses')
+      const button = vm.$el.querySelector('#standalone-addresses-button')
       expect(button.textContent).toContain('Change')
       await button.click()
 
@@ -204,16 +204,16 @@ describe('Dashboard - Click Tests', () => {
     const router = mockRouter.mock()
     const wrapper = shallowMount(Dashboard, { localVue, store, router, vuetify })
     const vm = wrapper.vm as any
-    vm.coaWarningDialog = false
+    vm.coaWarningDialog = false // initially hidden
 
     Vue.nextTick(async () => {
-      const button = vm.$el.querySelector('#btn-standalone-addresses')
+      const button = vm.$el.querySelector('#standalone-addresses-button')
       expect(button.textContent).toContain('Change')
       await button.click()
 
       expect(vm.coaWarningDialog).toBe(true)
-      expect(wrapper.find(CoaWarningDialog).vm.$el.querySelector('#btn-close-coa')).toBeDefined()
-      expect(wrapper.find(CoaWarningDialog).vm.$el.querySelector('#btn-proceed-coa')).toBeDefined()
+      expect(wrapper.find('#dialog-toggle-button')).toBeDefined()
+      expect(wrapper.find('#dialog-proceed-button')).toBeDefined()
 
       wrapper.find(CoaWarningDialog).vm.$emit('proceed', true)
 
@@ -237,7 +237,7 @@ describe('Dashboard - Click Tests', () => {
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
-      const button = vm.$el.querySelector('#btn-standalone-directors')
+      const button = vm.$el.querySelector('#standalone-directors-button')
       expect(button.textContent).toContain('Change')
       await button.click()
 

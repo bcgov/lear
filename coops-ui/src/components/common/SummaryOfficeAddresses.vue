@@ -30,9 +30,7 @@
               />
             </div>
           </div>
-          <span id="sameAsAbove" v-else>
-            Mailing Address same as above
-          </span>
+          <span id="sameAsAbove" v-else>Mailing Address same as above</span>
         </div>
       </li>
 
@@ -67,9 +65,7 @@
                 />
               </div>
             </div>
-            <span v-else>
-              Mailing Address same as above
-            </span>
+            <span v-else>Mailing Address same as above</span>
           </div>
         </li>
       </template>

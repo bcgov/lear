@@ -1,11 +1,10 @@
 <template>
-  <v-dialog id="download-error-dialog" v-model="dialog" width="45rem">
+  <v-dialog v-model="dialog" width="45rem" persistent :attach="attach" content-class="download-error-dialog">
     <v-card>
       <v-card-title>Unable to Download Document</v-card-title>
 
       <v-card-text>
         <p class="genErr">We were unable to download your document(s).</p>
-
         <template v-if="!isRoleStaff">
           <p class="genErr">If this error persists, please contact us.</p>
           <ErrorContact />
@@ -16,7 +15,7 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" text @click="close()">OK</v-btn>
+        <v-btn id="dialog-close-button" color="primary" text @click="close()">Close</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -40,6 +39,9 @@ export default class DownloadErrorDialog extends Vue {
 
   // Prop to display the dialog.
   @Prop() private dialog: boolean
+
+  // Prop to provide attachment selector.
+  @Prop() private attach: string
 
   // Pass click event to parent.
   @Emit() private close () { }

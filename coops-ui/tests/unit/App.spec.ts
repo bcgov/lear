@@ -15,12 +15,12 @@ Vue.use(Vuelidate)
 let vuetify = new Vuetify({})
 
 describe('App as a COOP', () => {
-  // just need a token that can get parsed properly (will be expired but doesn't matter for tests)
-  // must not include keycloakRoles=["staff"]
   let wrapper
   let vm
 
   beforeEach(done => {
+    // we need a token that can get parsed properly (will be expired but doesn't matter for tests)
+    // must not include keycloakRoles=["staff"]
     sessionStorage.setItem('KEYCLOAK_TOKEN', 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUbWdtZUk0MnVsdUZ0N3' +
         'FQbmUtcTEzdDUwa0JDbjF3bHF6dHN0UGdUM1dFIn0.eyJqdGkiOiIzZDQ3YjgwYy01MTAzLTRjMTYtOGNhZC0yMjU4NDMwZGYwZTciLCJle' +
       'HAiOjE1Njg0ODk1NTksIm5iZiI6MCwiaWF0IjoxNTY4NDAzMTYwLCJpc3MiOiJodHRwczovL3Nzby1kZXYucGF0aGZpbmRlci5nb3YuYmMuY2' +
@@ -43,7 +43,10 @@ describe('App as a COOP', () => {
       'JiIUlDmKZ2ow7GmmDabic8igHnEDYD6sI7OFYnCJhRdgVEHN-_4KUk2YsAVl5XUr6blJKMuYDPeMyNreGTXU7foE4AT-93FwlyTyFzQGddrDv' +
       'c6kkQr7mgJNTtgg87DdYbVGbEtIetyVfvwEF0rU8JH2N-j36XIebo33FU3-gJ5Y5S69EHPqQ37R9H4d8WUrHO-4QzJQih3Yaea820XBplJeo0' +
       'DO3hQoVtPD42j0p3aIy10cnW2g')
+    // set business identified and user full name
     sessionStorage.setItem('BUSINESS_IDENTIFIER', 'CP0001867')
+    sessionStorage.setItem('USER_FULL_NAME', 'First Last')
+
     const get = sinon.stub(axios, 'get')
     // GET authorizations (role)
     get.withArgs('CP0001867/authorizations')
