@@ -167,7 +167,8 @@ describe('TodoList - UI', () => {
               'status': 'DRAFT'
             },
             'annualReport': {
-              'annualGeneralMeetingDate': '2019-07-15'
+              'annualGeneralMeetingDate': '2019-07-15',
+              'annualReportDate': '2019-07-15'
             },
             'changeOfAddress': { },
             'changeOfDirectors': { }
@@ -295,7 +296,8 @@ describe('TodoList - UI', () => {
               'paymentToken': 12345678
             },
             'annualReport': {
-              'annualGeneralMeetingDate': '2019-07-15'
+              'annualGeneralMeetingDate': '2019-07-15',
+              'annualReportDate': '2019-07-15'
             },
             'changeOfAddress': { },
             'changeOfDirectors': { }
@@ -342,7 +344,8 @@ describe('TodoList - UI', () => {
               'paymentToken': 12345678
             },
             'annualReport': {
-              'annualGeneralMeetingDate': '2019-07-15'
+              'annualGeneralMeetingDate': '2019-07-15',
+              'annualReportDate': '2019-07-15'
             },
             'changeOfAddress': { },
             'changeOfDirectors': { }
@@ -580,7 +583,8 @@ describe('TodoList - Click Tests', () => {
               'filingId': 123
             },
             'annualReport': {
-              'annualGeneralMeetingDate': '2019-07-15'
+              'annualGeneralMeetingDate': '2019-07-15',
+              'annualReportDate': '2019-07-15'
             },
             'changeOfAddress': { },
             'changeOfDirectors': { }
@@ -637,7 +641,8 @@ describe('TodoList - Click Tests', () => {
               'paymentToken': 654
             },
             'annualReport': {
-              'annualGeneralMeetingDate': '2019-07-15'
+              'annualGeneralMeetingDate': '2019-07-15',
+              'annualReportDate': '2019-07-15'
             },
             'changeOfAddress': { },
             'changeOfDirectors': { }
@@ -689,7 +694,8 @@ describe('TodoList - Click Tests', () => {
               'paymentToken': 987
             },
             'annualReport': {
-              'annualGeneralMeetingDate': '2019-07-15'
+              'annualGeneralMeetingDate': '2019-07-15',
+              'annualReportDate': '2019-07-15'
             },
             'changeOfAddress': { },
             'changeOfDirectors': { }
@@ -757,7 +763,8 @@ describe('TodoList - Delete Draft', () => {
               'filingId': 789
             },
             'annualReport': {
-              'annualGeneralMeetingDate': '2019-07-15'
+              'annualGeneralMeetingDate': '2019-07-15',
+              'annualReportDate': '2019-07-15'
             },
             'changeOfAddress': { },
             'changeOfDirectors': { }
@@ -798,7 +805,8 @@ describe('TodoList - Delete Draft', () => {
               'filingId': 789
             },
             'annualReport': {
-              'annualGeneralMeetingDate': '2019-07-15'
+              'annualGeneralMeetingDate': '2019-07-15',
+              'annualReportDate': '2019-07-15'
             },
             'changeOfAddress': { },
             'changeOfDirectors': { }
@@ -844,7 +852,8 @@ describe('TodoList - Delete Draft', () => {
               'filingId': 789
             },
             'annualReport': {
-              'annualGeneralMeetingDate': '2019-07-15'
+              'annualGeneralMeetingDate': '2019-07-15',
+              'annualReportDate': '2019-07-15'
             },
             'changeOfAddress': { },
             'changeOfDirectors': { }
