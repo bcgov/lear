@@ -10,8 +10,11 @@
 </template>
 
 <script lang="ts">
+// Libraries
 import { Component } from 'vue-property-decorator'
 import { mapState } from 'vuex'
+
+// Mixins
 import DateMixin from '@/mixins/date-mixin'
 
 @Component({
