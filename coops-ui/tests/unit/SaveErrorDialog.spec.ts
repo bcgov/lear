@@ -2,6 +2,7 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import { shallowMount } from '@vue/test-utils'
+import store from '@/store/store'
 import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
 
 Vue.use(Vuetify)
@@ -9,13 +10,14 @@ Vue.use(Vuetify)
 let vuetify = new Vuetify({})
 
 describe('SaveErrorDialogue - Part 1 - Displays Error/Warning messages', () => {
-  it('displays generic message', () => {
+  it('displays generic message for normal users', () => {
     const wrapper = shallowMount(SaveErrorDialog,
       {
         propsData: {
           filing: 'FILING',
           dialog: true
         },
+        store,
         vuetify
       })
     const vm: any = wrapper.vm
@@ -23,6 +25,31 @@ describe('SaveErrorDialogue - Part 1 - Displays Error/Warning messages', () => {
     expect(wrapper.find('#error-dialogue-title').text()).toBe('Unable to save FILING')
     expect(wrapper.find('#dialogue-text').text())
       .toContain('We were unable to save your FILING. You can continue to try to save this')
+    expect(wrapper.find('#dialogue-text').text()).toContain('If you need help, please contact us')
+    expect(wrapper.find('#exit-btn')).toBeDefined()
+    expect(wrapper.find('#retry-btn')).toBeDefined()
+
+    wrapper.destroy()
+  })
+
+  it('displays generic message for staff', () => {
+    // init store
+    store.state.keycloakRoles.push('staff')
+    const wrapper = shallowMount(SaveErrorDialog,
+      {
+        propsData: {
+          filing: 'FILING',
+          dialog: true
+        },
+        store,
+        vuetify
+      })
+    const vm: any = wrapper.vm
+
+    expect(wrapper.find('#error-dialogue-title').text()).toBe('Unable to save FILING')
+    expect(wrapper.find('#dialogue-text').text())
+      .toContain('We were unable to save your FILING. You can continue to try to save this')
+    expect(wrapper.find('#dialogue-text').text()).not.toContain('If you need help, please contact us')
     expect(wrapper.find('#exit-btn')).toBeDefined()
     expect(wrapper.find('#retry-btn')).toBeDefined()
 
@@ -41,6 +68,7 @@ describe('SaveErrorDialogue - Part 1 - Displays Error/Warning messages', () => {
             }
           ]
         },
+        store,
         vuetify
       })
     const vm: any = wrapper.vm
@@ -67,6 +95,7 @@ describe('SaveErrorDialogue - Part 1 - Displays Error/Warning messages', () => {
             }
           ]
         },
+        store,
         vuetify
       })
     const vm: any = wrapper.vm

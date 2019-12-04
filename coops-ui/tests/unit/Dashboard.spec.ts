@@ -204,14 +204,14 @@ describe('Dashboard - Click Tests', () => {
     const router = mockRouter.mock()
     const wrapper = shallowMount(Dashboard, { localVue, store, router, vuetify })
     const vm = wrapper.vm as any
-    vm.coaWarning = false
+    vm.coaWarningDialog = false
 
     Vue.nextTick(async () => {
       const button = vm.$el.querySelector('#btn-standalone-addresses')
       expect(button.textContent).toContain('Change')
       await button.click()
 
-      expect(vm.coaWarning).toBe(true)
+      expect(vm.coaWarningDialog).toBe(true)
       expect(wrapper.find(CoaWarningDialog).vm.$el.querySelector('#btn-close-coa')).toBeDefined()
       expect(wrapper.find(CoaWarningDialog).vm.$el.querySelector('#btn-proceed-coa')).toBeDefined()
 

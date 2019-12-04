@@ -2,7 +2,7 @@
   <div id="directors">
 
     <!-- delete new director - confirmation popup -->
-    <v-dialog v-model="showPopup" width="30rem">
+    <v-dialog id="delete-director-dialog" v-model="showPopup" width="30rem">
       <v-card>
         <v-card-text>
           Are you sure you want to remove
