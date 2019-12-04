@@ -21,9 +21,20 @@
           <div class="list-item">
             <div class="filing-type">
               <div class="list-item__title">{{item.title}}</div>
+              <div class="bcorps-ar" v-if="entityFilter(EntityTypes.BCORP)">
+                <p>Verify your Office Address and Current Directors before filing your Annual Report.</p>
+                <v-checkbox
+                  class="todo-list-checkbox"
+                  label="All information about the Office Addresses and Current Directors is correct."
+                  v-model="confirmInfo"
+                  light
+                  @click.native.stop
+                />
+              </div>
               <div class="list-item__subtitle">
-                <div v-if="item.subtitle" class="todo-status">{{item.subtitle}}</div>
-
+                <div v-if="item.subtitle && !entityFilter(EntityTypes.BCORP)" class="todo-status">
+                  {{item.subtitle}}
+                </div>
                 <div v-if="isDraft(item)" class="todo-status">
                   DRAFT
                 </div>
@@ -119,7 +130,7 @@
 
               <v-btn v-else-if="!isCompleted(item)"
                 color="primary"
-                :disabled="!item.enabled || coaPending"
+                :disabled="((!item.enabled || coaPending) && (confirmInfo && !confirmInfo))"
                 @click.native.stop="doFileNow(item)"
               >
                 File Now
@@ -172,6 +183,12 @@ import ExternalMixin from '@/mixins/external-mixin'
 import { mapState, mapActions } from 'vuex'
 import { ConfirmDialog, DeleteErrorDialog } from '@/components/dialogs'
 
+// Mixins
+import { EntityFilterMixin } from '@/mixins'
+
+// Enums
+import { EntityTypes } from '@/enums'
+
 export default {
   name: 'TodoList',
 
@@ -180,14 +197,18 @@ export default {
     ConfirmDialog
   },
 
-  mixins: [ExternalMixin],
+  mixins: [ExternalMixin, EntityFilterMixin],
 
   data () {
     return {
       taskItems: null,
       deleteErrors: [],
       deleteWarnings: [],
-      deleteErrorDialog: false
+      deleteErrorDialog: false,
+      confirmInfo: false,
+
+      // Entity Types Enum
+      EntityTypes
     }
   },
 
@@ -232,6 +253,9 @@ export default {
           return this.isDraft(elem) || this.isPending(elem) || this.isError(elem) || this.isPaid(elem)
         }).length > 0
       )
+    },
+    check () {
+      console.log('checkbox checked')
     },
 
     loadTodoItem (task) {
@@ -492,6 +516,10 @@ export default {
 .todo-list {
   // disable expansion
   pointer-events: none;
+
+  .todo-list-checkbox {
+    pointer-events: visible;
+  }
 }
 
 .todo-list.disabled {
@@ -517,6 +545,10 @@ export default {
 .todo-list .list-item {
   padding: 0;
   justify-content: space-evenly;
+
+  .bcorps-ar {
+    padding: .5rem 0 .5rem 0;
+  }
 }
 
 .todo-list .list-item .list-item__actions {

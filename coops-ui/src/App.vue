@@ -273,6 +273,7 @@ export default {
     },
 
     storeTasks (response) {
+      console.log(response)
       if (response && response.data && response.data.tasks) {
         this.setTasks(response.data.tasks)
       } else {

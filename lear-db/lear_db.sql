@@ -4869,6 +4869,7 @@ ALTER TABLE ONLY public.offices
 ALTER TABLE ONLY public.offices
     ADD CONSTRAINT offices_office_type_fkey FOREIGN KEY (office_type) REFERENCES public.office_types(identifier);
 
+update public.businesses set founding_date = '01-01-2017';
 
 --
 -- PostgreSQL database dump complete
