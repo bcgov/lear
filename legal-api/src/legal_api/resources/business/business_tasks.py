@@ -82,7 +82,9 @@ class TaskListResource(Resource):
 
         last_ar_date = business.last_ar_date
         if last_ar_date and check_agm:
-                todo_start_date = (datetime(last_ar_date.year + 1, 1, 1)).date()
+            # If this is a CO-OP, set the start date to the first day of the year, since an AR filing
+            # is available as of Jan/01
+            todo_start_date = (datetime(last_ar_date.year + 1, 1, 1)).date()
 
         # Retrieve all previous annual report filings. If there are existing AR filings, determine
         # the latest date of filing
