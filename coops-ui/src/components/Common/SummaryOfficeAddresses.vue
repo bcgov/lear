@@ -130,7 +130,7 @@ export default class SummaryOfficeAddresses extends Mixins(CommonMixin, EntityFi
 </script>
 
 <style lang="scss" scoped>
-  @import '../../assets/styles/theme.scss';
+  @import '@/assets/styles/theme.scss';
 
   ul {
     margin: 0;
