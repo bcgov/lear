@@ -286,7 +286,7 @@ import Directors from '@/components/AnnualReport/Directors.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
-import { SummaryDirectors, SummaryCertify, SummaryStaffPayment } from '@/components/Common'
+import { SummaryDirectors, SummaryCertify, SummaryStaffPayment } from '@/components/common'
 
 // Dialog Components
 import ConfirmDialog from '@/components/ConfirmDialog.vue'

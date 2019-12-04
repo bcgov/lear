@@ -4,7 +4,7 @@ import Vuetify from 'vuetify'
 import { mount, Wrapper } from '@vue/test-utils'
 
 // Components
-import { SummaryCertify } from '@/components/Common'
+import { SummaryCertify } from '@/components/common'
 
 // Store
 import store from '@/store/store'

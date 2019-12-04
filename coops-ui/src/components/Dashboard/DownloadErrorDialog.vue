@@ -25,7 +25,7 @@
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import { mapGetters } from 'vuex'
-import ErrorContact from '@/components/ErrorContact.vue'
+import { ErrorContact } from '@/components/common'
 
 @Component({
   computed: {

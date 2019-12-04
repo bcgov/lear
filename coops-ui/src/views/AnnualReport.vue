@@ -211,7 +211,7 @@
 import axios from '@/axios-auth'
 import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
-import { OfficeAddresses } from '@/components/Common'
+import { OfficeAddresses } from '@/components/common'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapGetters } from 'vuex'
