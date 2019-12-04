@@ -5,7 +5,7 @@ import Vuelidate from 'vuelidate'
 import sinon from 'sinon'
 
 // Components
-import { SummaryDirectors } from '@/components/Common'
+import { SummaryDirectors } from '@/components/common'
 
 // Store
 import store from '@/store/store'

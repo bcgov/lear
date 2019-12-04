@@ -1,11 +1,11 @@
 <template>
-  <v-dialog id="account-authorization-dialog" v-model="dialog" width="45rem" persistent>
+  <v-dialog id="dashboard-unavailable-dialog" v-model="dialog" width="45rem" persistent>
     <v-card>
-      <v-card-title>Account Authorization</v-card-title>
+      <v-card-title>Dashboard Unavailable</v-card-title>
 
       <v-card-text>
-        <p class="genErr">This account appears to be unable to access this business. You can
-          retry to access this business now, or you can exit and return to the login page.</p>
+        <p class="genErr">We are currently unable to access your dashboard. You can retry to access
+          your dashboard now, or you can exit and try to access your dashboard at another time.</p>
 
         <template v-if="!isRoleStaff">
           <p class="genErr">If this error persists, please contact us.</p>
@@ -27,7 +27,7 @@
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import { mapGetters } from 'vuex'
-import ErrorContact from '@/components/ErrorContact.vue'
+import { ErrorContact } from '@/components/common'
 
 @Component({
   computed: {
@@ -36,7 +36,7 @@ import ErrorContact from '@/components/ErrorContact.vue'
   },
   components: { ErrorContact }
 })
-export default class AccountAuthorizationDialog extends Vue {
+export default class DashboardUnavailableDialog extends Vue {
   // Getter definition for static type checking.
   readonly isRoleStaff!: boolean
 

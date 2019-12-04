@@ -48,8 +48,7 @@ import SbcFooter from 'sbc-common-components/src/components/SbcFooter.vue'
 import EntityInfo from '@/components/EntityInfo.vue'
 
 // Dialogs
-import DashboardUnavailableDialog from '@/components/Dashboard/DashboardUnavailableDialog.vue'
-import AccountAuthorizationDialog from '@/components/Dashboard/AccountAuthorizationDialog.vue'
+import { DashboardUnavailableDialog, AccountAuthorizationDialog } from '@/components/dialogs'
 
 // Mixins
 import { DateMixin, CommonMixin } from '@/mixins'

@@ -9,7 +9,7 @@ import store from '@/store/store'
 
 // Components
 import Dashboard from '@/views/Dashboard.vue'
-import CoaWarningDialog from '@/components/Dashboard/CoaWarningDialog.vue'
+import { CoaWarningDialog } from '@/components/dialogs'
 import TodoList from '@/components/Dashboard/TodoList.vue'
 import FilingHistoryList from '@/components/Dashboard/FilingHistoryList.vue'
 import AddressListSm from '@/components/Dashboard/AddressListSm.vue'

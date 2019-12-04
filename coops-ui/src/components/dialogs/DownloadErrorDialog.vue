@@ -1,21 +1,12 @@
 <template>
-  <v-dialog id="payment-error-dialog" v-model="dialog" width="45rem" persistent>
+  <v-dialog id="download-error-dialog" v-model="dialog" width="45rem">
     <v-card>
-      <v-card-title>Unable to Process Payment</v-card-title>
+      <v-card-title>Unable to Download Document</v-card-title>
 
       <v-card-text>
-        <p class="genErr">We are unable to process payments at this time.</p>
-        <p class="genErr">Your filing has been saved as a DRAFT and you can resume
-          your filing from the Business Dashboard at a later time.</p>
+        <p class="genErr">We were unable to download your document(s).</p>
 
         <template v-if="!isRoleStaff">
-          <p class="genErr">PayBC is normally available:</p>
-          <p class="genErr">
-            Monday to Friday: 6:00am to 9:00pm
-            <br>Saturday: 12:00am to 7:00pm
-            <br>Sunday: 12:00pm to 12:00am
-          </p>
-
           <p class="genErr">If this error persists, please contact us.</p>
           <ErrorContact />
         </template>
@@ -25,9 +16,7 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn id="btn-return-dashboard" color="primary" text @click="exit()">
-          Return to Business Dashboard
-        </v-btn>
+        <v-btn color="primary" text @click="close()">OK</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -36,7 +25,7 @@
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import { mapGetters } from 'vuex'
-import ErrorContact from '@/components/ErrorContact.vue'
+import { ErrorContact } from '@/components/common'
 
 @Component({
   computed: {
@@ -45,7 +34,7 @@ import ErrorContact from '@/components/ErrorContact.vue'
   },
   components: { ErrorContact }
 })
-export default class PaymentErrorDialog extends Vue {
+export default class DownloadErrorDialog extends Vue {
   // Getter definition for static type checking.
   readonly isRoleStaff!: boolean
 
@@ -53,7 +42,7 @@ export default class PaymentErrorDialog extends Vue {
   @Prop() private dialog: boolean
 
   // Pass click event to parent.
-  @Emit() private exit () { }
+  @Emit() private close () { }
 }
 </script>
 
