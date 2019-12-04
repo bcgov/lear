@@ -126,7 +126,7 @@ import DirectorListSm from '@/components/Dashboard/DirectorListSm.vue'
 import { EntityFilterMixin } from '@/mixins'
 
 // Dialogs
-import CoaWarningDialog from '@/components/Dashboard/CoaWarningDialog'
+import { CoaWarningDialog } from '@/components/dialogs'
 
 // Enums
 import { EntityTypes, FilingStatus } from '@/enums'

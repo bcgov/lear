@@ -168,10 +168,9 @@
 
 <script>
 import axios from '@/axios-auth'
-import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import ExternalMixin from '@/mixins/external-mixin'
 import { mapState, mapActions } from 'vuex'
-import DeleteErrorDialog from '@/components/Dashboard/DeleteErrorDialog'
+import { ConfirmDialog, DeleteErrorDialog } from '@/components/dialogs'
 
 export default {
   name: 'TodoList',

@@ -3,7 +3,7 @@ import Vue from 'vue'
 import Vuetify from 'vuetify'
 import { shallowMount } from '@vue/test-utils'
 import store from '@/store/store'
-import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
+import { SaveErrorDialog } from '@/components/dialogs'
 
 Vue.use(Vuetify)
 

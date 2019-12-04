@@ -92,7 +92,7 @@ import ExternalMixin from '@/mixins/external-mixin'
 import DateMixin from '@/mixins/date-mixin'
 import axios from '@/axios-auth'
 import { mapState } from 'vuex'
-import DownloadErrorDialog from '@/components/Dashboard/DownloadErrorDialog.vue'
+import { DownloadErrorDialog } from '@/components/dialogs'
 
 export default {
   name: 'FilingHistoryList',
