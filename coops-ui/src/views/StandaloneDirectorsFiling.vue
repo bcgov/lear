@@ -162,6 +162,7 @@
               id="cod-cancel-btn"
               large
               to="/dashboard"
+              :loading="filingPaying"
             >
               Cancel
             </v-btn>

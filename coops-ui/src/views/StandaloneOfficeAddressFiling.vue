@@ -153,6 +153,7 @@
             id="coa-cancel-btn"
             large
             to="/dashboard"
+            :loading="filingPaying"
           >
             Cancel
           </v-btn>
