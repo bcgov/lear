@@ -94,7 +94,7 @@ def test_bcorps_get_tasks_no_filings(session, client):
 
 
 def test_bcorps_get_tasks_pending_filings(session, client, jwt):
-    """Assert that to-do for the current year is returned when there are no filings."""
+    """Assert the correct number of todo items are returned when there is an AR filing pending."""
     identifier = 'CP7654321'
     business = factory_business(identifier, datetime.today() - datedelta.datedelta(years=3), None, 'BC')
     factory_business_mailing_address(business)
