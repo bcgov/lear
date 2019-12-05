@@ -13,7 +13,8 @@
             "required": [
                 "annualGeneralMeetingDate",
                 "annualReportDate",
-                "directors"
+                "directors",
+                "offices"
             ],
             "properties": {
                 "annualGeneralMeetingDate": {
@@ -33,11 +34,16 @@
                         "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/directors#/definitions/director"
                     }
                 },
-                "deliveryAddress": {
-                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
-                },
-                "mailingAddress": {
-                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
+                "offices": {
+                        "registeredOffice": {
+                            "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/office"
+                        },
+                        "recordsOffice": {
+                            "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/office"
+                        },
+                        "required": [
+                            "registeredOffice"
+                        ]
                 }
             }
         }
