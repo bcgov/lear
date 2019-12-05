@@ -151,7 +151,7 @@ describe('Directors as a COOP', () => {
   })
 
   it('displays the list of directors', () => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-item')
 
     // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(2)
@@ -165,20 +165,23 @@ describe('Directors as a COOP', () => {
     expect(directorListUI[1].innerHTML).toContain('<span>Cease</span>')
   })
 
-  it('disables buttons/actions when instructed by parent component', () => {
-    // invalidate AGM Date
-    const wrapper = createWrapper(vm)
-    wrapper.setProps({ componentEnabled: false })
-    // confirm that flag is set correctly
-    expect(vm.componentEnabled).toEqual(false)
+  it('disables buttons/actions when instructed by parent component', done => {
+    // clear enabled prop
+    vm.componentEnabled = false
 
-    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
+    Vue.nextTick(() => {
+      // confirm that flag is set correctly
+      expect(vm.componentEnabled).toEqual(false)
 
-    // check that buttons are disabled (checks first button in first director, plus the Add New Director button)
-    setTimeout(() => {
+      // check that first button in first director is disabled
+      const directorListUI = vm.$el.querySelectorAll('.director-list-item')
       expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(true)
-      expect(vm.$el.querySelector('.new-director-btn').disabled).toBe(true)
-    }, 2000)
+
+      // check that Appoint New Director button is not rendered
+      expect(vm.$el.querySelector('.new-director-btn')).toBeNull()
+
+      done()
+    })
   })
 
   it('enables buttons/actions when instructed by parent component', done => {
@@ -189,10 +192,11 @@ describe('Directors as a COOP', () => {
       // confirm that flag is set correctly
       expect(vm.componentEnabled).toEqual(true)
 
-      const directorListUI = vm.$el.querySelectorAll('.director-list-container')
-
-      // check that buttons are enabled (checks first button in first director, plus the Add New Director button)
+      // check that first button in first director is enabled
+      const directorListUI = vm.$el.querySelectorAll('.director-list-item')
       expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(false)
+
+      // check that Appoint New Director button is enabled
       expect(vm.$el.querySelector('.new-director-btn').disabled).toBe(false)
 
       done()
@@ -207,7 +211,7 @@ describe('Directors as a COOP', () => {
       // confirm that flag is set correctly
       expect(vm.componentEnabled).toEqual(true)
 
-      // check that Add New Director button is enabled
+      // check that Appoint New Director button is enabled
       expect(vm.$el.querySelector('.new-director-btn').disabled).toBe(false)
 
       // click Appoint New Director button
@@ -233,7 +237,7 @@ describe('Directors as a COOP', () => {
   })
 
   it('handles "ceased" action', done => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-item')
 
     // click first director's cease button
     click(vm, '#director-1-cease-btn')
@@ -253,7 +257,7 @@ describe('Directors as a COOP', () => {
   })
 
   it('handles "undo ceased" action', done => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-item')
 
     // click first director's cease button
     click(vm, '#director-1-cease-btn')
@@ -431,7 +435,7 @@ describe('Directors as a BCORP', () => {
   })
 
   it('displays the list of directors', () => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-item')
 
     // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(2)
@@ -449,19 +453,22 @@ describe('Directors as a BCORP', () => {
   })
 
   it('disables buttons/actions when instructed by parent component', done => {
-    // invalidate AGM Date
+    // clear enabled prop
     vm.componentEnabled = false
 
-    setTimeout(() => {
+    Vue.nextTick(() => {
       // confirm that flag is set correctly
       expect(vm.componentEnabled).toEqual(false)
 
-      const directorListUI = vm.$el.querySelectorAll('.director-list-container')
-
-      // check that buttons are disabled (checks first button in first director, plus the Add New Director button)
+      // check that first button in first director is disabled
+      const directorListUI = vm.$el.querySelectorAll('.director-list-item')
       expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(true)
-      expect(vm.$el.querySelector('.new-director-btn').disabled).toBe(true)
-    }, 2000)
+
+      // check that Appoint New Director button is not rendered
+      expect(vm.$el.querySelector('.new-director-btn')).toBeNull()
+
+      done()
+    })
   })
 
   it('enables buttons/actions when instructed by parent component', done => {
@@ -472,10 +479,11 @@ describe('Directors as a BCORP', () => {
       // confirm that flag is set correctly
       expect(vm.componentEnabled).toEqual(true)
 
-      const directorListUI = vm.$el.querySelectorAll('.director-list-container')
-
-      // check that buttons are enabled (checks first button in first director, plus the Add New Director button)
+      // check that first button in first director is enabled
+      const directorListUI = vm.$el.querySelectorAll('.director-list-item')
       expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(false)
+
+      // check that Appoint New Director button is enabled
       expect(vm.$el.querySelector('.new-director-btn').disabled).toBe(false)
 
       done()
@@ -490,7 +498,7 @@ describe('Directors as a BCORP', () => {
       // confirm that flag is set correctly
       expect(vm.componentEnabled).toEqual(true)
 
-      // check that Add New Director button is enabled
+      // check that Appoint New Director button is enabled
       expect(vm.$el.querySelector('.new-director-btn').disabled).toBe(false)
 
       // click Appoint New Director button
@@ -511,7 +519,7 @@ describe('Directors as a BCORP', () => {
   })
 
   it('handles "ceased" action', done => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-item')
 
     // click first director's cease button
     click(vm, '#director-1-cease-btn')
@@ -531,7 +539,7 @@ describe('Directors as a BCORP', () => {
   })
 
   it('handles "undo ceased" action', done => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-item')
 
     // click first director's cease button
     click(vm, '#director-1-cease-btn')
@@ -598,7 +606,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[0].textContent).toBe('')
       done()
-    }, 100)
+    }, 200)
   })
 
   it('displays error for invalid First Name - leading spaces', done => {
@@ -609,7 +617,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[0].textContent).toContain('Invalid spaces')
       done()
-    }, 100)
+    }, 200)
   })
 
   it('displays error for invalid First Name - trailing spaces', done => {
@@ -620,7 +628,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[0].textContent).toContain('Invalid spaces')
       done()
-    }, 100)
+    }, 200)
   })
 
   it('displays error for invalid First Name - multiple inline spaces', done => {
@@ -631,7 +639,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[0].textContent).toContain('Invalid word spacing')
       done()
-    }, 100)
+    }, 200)
   })
 
   it('accepts valid Middle Initial', done => {
@@ -642,7 +650,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[1].textContent).toBe('')
       done()
-    }, 100)
+    }, 200)
   })
 
   it('displays error for invalid Middle Initial - leading spaces', done => {
@@ -653,7 +661,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[1].textContent).toContain('Invalid spaces')
       done()
-    }, 100)
+    }, 200)
   })
 
   it('displays error for invalid Middle Initial - trailing spaces', done => {
@@ -664,7 +672,7 @@ describe('Appoint New Director tests', () => {
     setTimeout(() => {
       expect(vm.$el.querySelectorAll('.v-messages')[1].textContent).toContain('Invalid spaces')
       done()
-    }, 100)
+    }, 200)
   })
 
   it('displays error for invalid Middle Initial - multiple inline spaces', done => {

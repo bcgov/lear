@@ -21,7 +21,7 @@
         <div class="meta-container">
           <label></label>
           <div class="meta-container__inner"
-               v-if="!isSame(registeredAddress.deliveryAddress, registeredAddress.mailingAddress)"
+            v-if="!isSame(registeredAddress.deliveryAddress, registeredAddress.mailingAddress)"
           >
             <label><strong>Mailing Address</strong></label>
             <div class="address-wrapper">
@@ -37,7 +37,7 @@
       </li>
 
       <!-- Records Office Section -->
-      <div v-if="!isSame(registeredAddress, recordsAddress)">
+      <template v-if="!isSame(registeredAddress, recordsAddress)">
         <!-- Records Delivery Address -->
         <li class="address-list-container">
           <div class="meta-container">
@@ -58,7 +58,7 @@
           <div class="meta-container">
             <label></label>
             <div class="meta-container__inner"
-                 v-if="!isSame(recordsAddress.deliveryAddress, recordsAddress.mailingAddress)"
+              v-if="!isSame(recordsAddress.deliveryAddress, recordsAddress.mailingAddress)"
             >
               <label>Mailing Address</label>
               <div class="address-wrapper">
@@ -72,8 +72,8 @@
             </span>
           </div>
         </li>
-      </div>
-      <div v-else>
+      </template>
+      <template v-else>
         <li class="address-list-container">
           <div class="meta-container">
             <label>Records Office</label>
@@ -84,7 +84,7 @@
             </div>
           </div>
         </li>
-      </div>
+      </template>
     </ul>
   </v-card>
 </template>
@@ -130,63 +130,64 @@ export default class SummaryOfficeAddresses extends Mixins(CommonMixin, EntityFi
 </script>
 
 <style lang="scss" scoped>
-  @import '@/assets/styles/theme.scss';
+// @import '@/assets/styles/theme.scss';
 
-  ul {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
+ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+.address-list-container {
+  padding: 1.25rem;
+}
+
+.meta-container {
+  display: flex;
+  flex-flow: column nowrap;
+  position: relative;
+}
+
+.meta-container__inner {
+  margin-top: 1rem;
+}
+
+label:first-child {
+  font-weight: 700;
+
+  &__inner {
+    flex: 1 1 auto;
   }
+}
 
-  .address-list-container {
-    padding: 1.25rem
-  }
-
+@media (min-width: 768px) {
   .meta-container {
-    display: flex;
-    flex-flow: column nowrap;
-    position: relative;
+    flex-flow: row nowrap;
+
+    label:first-child {
+      flex: 0 0 auto;
+      padding-right: 4rem;
+      width: 14.5rem;
+    }
   }
 
   .meta-container__inner {
-    margin-top: 1rem;
+    margin-top: 0;
   }
+}
 
-  label:first-child {
-    font-weight: 700;
-    &__inner {
-      flex: 1 1 auto;
-    }
-  }
+.address-list .form {
+  margin-top: 1rem;
+}
 
-  @media (min-width: 768px) {
-    .meta-container {
-      flex-flow: row nowrap;
-      label:first-child {
-        flex: 0 0 auto;
-        padding-right: 4rem;
-        width: 14.5rem;
-      }
-    }
-
-    .meta-container__inner {
-      margin-top: 0;
-    }
-  }
-
+@media (min-width: 768px) {
   .address-list .form {
-    margin-top: 1rem;
+    margin-top: 0rem;
   }
+}
 
-  @media (min-width: 768px) {
-    .address-list .form {
-      margin-top: 0rem
-    }
-  }
-
-  // Address Block Layout
-  .address-wrapper {
-    margin-top: .5rem;
-  }
-
+// Address Block Layout
+.address-wrapper {
+  margin-top: .5rem;
+}
 </style>

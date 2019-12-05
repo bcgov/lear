@@ -27,10 +27,11 @@
     </v-dialog>
 
     <v-expand-transition>
-      <div v-show="!showNewDirectorForm">
-        <v-btn class="new-director-btn" outlined color="primary" :disabled="!componentEnabled || directorEditInProgress"
+      <div v-if="componentEnabled" v-show="!showNewDirectorForm">
+        <v-btn class="new-director-btn" outlined color="primary"
+          :disabled="!componentEnabled || directorEditInProgress"
           @click="addNewDirector"
-          v-if="componentEnabled">
+        >
           <v-icon>mdi-plus</v-icon>
           <span>Appoint New Director</span>
         </v-btn>
@@ -176,7 +177,7 @@
           <span v-if="entityFilter(EntityTypes.BCORP)">Mailing Address</span>
           <span>Appointed/Elected</span>
         </v-subheader>
-        <li class="director-list-container"
+        <li class="director-list-item"
           :id="'director-' + director.id"
           v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
           v-for="(director, index) in orderBy(directors, 'id', -1)"
@@ -1547,13 +1548,8 @@ ul {
 }
 
 .director-list {
-  .director-list-container {
+  .director-list-item {
     padding: 1.25rem;
   }
-}
-
-.editFormStyle {
-  border: 1px solid red;
-  padding: 1rem;
 }
 </style>

@@ -1,33 +1,33 @@
 export default {
   // tombstone data
-  keycloakRoles: [],
-  authRoles: [],
-  username: null,
-  currentDate: null,
+  keycloakRoles: [] as Array<string>,
+  authRoles: [] as Array<string>,
+  username: null as string,
+  currentDate: null as string,
 
   // entity info
-  entityName: null,
-  entityType: null,
-  entityStatus: null,
-  entityBusinessNo: null,
-  entityIncNo: null,
-  lastPreLoadFilingDate: null,
-  entityFoundingDate: null,
-  businessEmail: null,
-  businessPhone: null,
-  lastAnnualReportDate: null,
-  businessPhoneExtension: null,
-  lastAgmDate: null,
-  nextARDate: null,
+  entityName: null as string,
+  entityType: null as string,
+  entityStatus: null as string,
+  entityBusinessNo: null as string,
+  entityIncNo: null as string,
+  lastPreLoadFilingDate: null as string,
+  entityFoundingDate: null as string,
+  businessEmail: null as string,
+  businessPhone: null as string,
+  lastAnnualReportDate: null as string,
+  businessPhoneExtension: null as string,
+  lastAgmDate: null as string,
+  nextARDate: null as string,
 
-  ARFilingYear: null, /* Number */
-  tasks: [],
-  filings: [],
-  registeredAddress: null,
-  recordsAddress: null,
-  directors: [],
+  ARFilingYear: null as number,
+  tasks: [] as Array<object>,
+  filings: [] as Array<object>,
+  registeredAddress: null as object,
+  recordsAddress: null as object,
+  directors: [] as Array<object>,
 
-  triggerDashboardReload: false,
+  triggerDashboardReload: false as boolean,
 
-  currentFilingStatus: null
+  currentFilingStatus: null as string
 }

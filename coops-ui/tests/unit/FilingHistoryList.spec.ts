@@ -144,7 +144,8 @@ describe('FilingHistoryList', () => {
             'availableOnPaperOnly': false
           },
           'annualReport': {
-            'annualGeneralMeetingDate': '2019-12-31'
+            'annualGeneralMeetingDate': '2019-12-31',
+            'annualReportDate': '2019-12-31'
           }
         }
       },
@@ -193,7 +194,8 @@ describe('FilingHistoryList', () => {
             'availableOnPaperOnly': true
           },
           'annualReport': {
-            'annualGeneralMeetingDate': '2019-01-01'
+            'annualGeneralMeetingDate': '2019-01-01',
+            'annualReportDate': '2019-01-01'
           }
         }
       },
@@ -264,7 +266,8 @@ describe('FilingHistoryList', () => {
             'availableOnPaperOnly': false
           },
           'annualReport': {
-            'annualGeneralMeetingDate': '2019-12-31'
+            'annualGeneralMeetingDate': '2019-12-31',
+            'annualReportDate': '2019-12-31'
           }
         }
       },
@@ -313,7 +316,8 @@ describe('FilingHistoryList', () => {
             'availableOnPaperOnly': true
           },
           'annualReport': {
-            'annualGeneralMeetingDate': '2019-01-01'
+            'annualGeneralMeetingDate': '2019-01-01',
+            'annualReportDate': '2019-01-01'
           }
         }
       },

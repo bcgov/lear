@@ -1,5 +1,5 @@
 <template>
-  <div id="directors">
+  <div id="summary-directors">
     <v-card flat>
       <!-- Current Director List -->
       <ul class="list director-list">
@@ -9,7 +9,7 @@
           <span v-if="entityFilter(EntityTypes.BCORP)">Mailing Address</span>
           <span>Appointed/Elected</span>
         </v-subheader>
-        <li class="director-list-container"
+        <li class="director-list-item"
           :id="'director-' + director.id"
           v-bind:class="{ 'remove' : !isActionable(director)}"
           v-for="(director, index) in orderBy(directorSummary, 'id', -1)"
@@ -86,13 +86,13 @@
     <br>
 
     <!-- Ceased Directors List -->
-    <v-btn text small v-if="directorsCeased.length > 0" @click="expand = !expand" class="cease-Btn">
+    <v-btn text small v-if="directorsCeased.length > 0" @click="expand = !expand" class="cease-btn">
       <v-icon>{{ dropdownIcon() }}</v-icon>Hide Ceased Directors
     </v-btn>
     <v-card flat>
       <v-expand-transition>
           <ul class="list director-list" v-show="expand">
-            <li class="director-list-container"
+            <li class="director-list-item"
               :id="'director-' + director.id"
               v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
               v-for="(director, index) in orderBy(directorsCeased, 'id', -1)"
@@ -239,8 +239,7 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
    * @returns Whether the director was appointed.
    */
   private isNew (director): boolean {
-    // helper function - was the director added in this filing?
-    return director.actions && (director.actions.indexOf(APPOINTED) >= 0)
+    return director.actions && director.actions.includes(APPOINTED)
   }
 
   /**
@@ -249,7 +248,7 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
    * @returns Whether the director has had the address changed.
    */
   private isAddressChanged (director): boolean {
-    return director.actions && (director.actions.indexOf(ADDRESSCHANGED) >= 0)
+    return director.actions && director.actions.includes(ADDRESSCHANGED)
   }
 
   /**
@@ -258,7 +257,7 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
    * @returns Whether the director has had the name changed.
    */
   private isNameChanged (director): boolean {
-    return director.actions && (director.actions.indexOf(NAMECHANGED) >= 0)
+    return director.actions && director.actions.includes(NAMECHANGED)
   }
 
   /**
@@ -268,7 +267,7 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
    */
   private isActive (director): boolean {
     // helper function - is the director active, ie: not ceased?
-    return director.actions && (director.actions.indexOf(CEASED) < 0)
+    return director.actions && director.actions.includes(CEASED)
   }
 
   /**
@@ -369,30 +368,9 @@ ul {
   }
 }
 
-.director-initial {
-  max-width: 6rem;
-}
-
-.new-director-btn {
-  margin-bottom: 1.5rem !important;
-
-  .v-icon {
-    margin-left: -0.5rem;
-  }
-}
-
 // V-chip customization
 .remove, .remove .director-info {
   color: $gray5 !important;
-}
-
-.new-director .meta-container,
-.meta-container.new-director {
-  flex-flow: column nowrap;
-
-  > label:first-child {
-    margin-bottom: 1.5rem;
-  }
 }
 
 .director_dates {
@@ -415,16 +393,11 @@ ul {
   }
 }
 
-.director-list-container {
+.director-list-item {
   padding: 1.25rem;
 }
 
-.editFormStyle {
-  border: 1px solid red;
-  padding: 1rem;
-}
-
-.cease-Btn {
+.cease-btn {
   color: #1876D2;
 }
 </style>

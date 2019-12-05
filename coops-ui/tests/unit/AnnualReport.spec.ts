@@ -180,13 +180,13 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.directorFormValid = true
     vm.certifyFormValid = true
 
-    // confirm that address component disabled
+    // confirm that change state is disabled
     expect(vm.allowChange('coa')).toBe(false)
 
     wrapper.destroy()
   })
 
-  it('no effect on address component when last COA is null and agm date < lastPreLoadFilingDate', () => {
+  it('has no effect on address component when last COA is null and agm date < lastPreLoadFilingDate', () => {
     store.state.lastPreLoadFilingDate = '2019-02-10'
     store.state.filings = []
     const $route = { params: { id: '0' } } // new filing id
@@ -202,7 +202,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.directorFormValid = true
     vm.certifyFormValid = true
 
-    // confirm that change address button is disabled
+    // confirm that change state is enabled
     expect(vm.allowChange('coa')).toBe(true)
 
     wrapper.destroy()
@@ -237,7 +237,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.directorFormValid = true
     vm.certifyFormValid = true
 
-    // confirm that director component disabled
+    // confirm that change state is disabled
     expect(vm.allowChange('cod')).toBe(false)
 
     wrapper.destroy()
@@ -259,7 +259,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.directorFormValid = true
     vm.certifyFormValid = true
 
-    // confirm that director component disabled
+    // confirm that change state is enabled
     expect(vm.allowChange('cod')).toBe(true)
 
     wrapper.destroy()
@@ -1388,8 +1388,8 @@ describe('AnnualReport - Part 5 - Data', () => {
     expect(payload.filing.annualReport).toBeDefined()
 
     expect(payload.filing.annualReport.directors).toBeDefined()
-    expect(payload.filing.annualReport.mailingAddress).toBeDefined()
-    expect(payload.filing.annualReport.deliveryAddress).toBeDefined()
+    expect(payload.filing.annualReport.offices.registeredOffice.mailingAddress).toBeDefined()
+    expect(payload.filing.annualReport.offices.registeredOffice.deliveryAddress).toBeDefined()
   })
 
   it('includes unchanged directors in AR filing data', async () => {

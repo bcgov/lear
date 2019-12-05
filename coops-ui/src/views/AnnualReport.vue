@@ -37,12 +37,13 @@
         <v-row>
           <v-col cols="12" lg="9">
             <section>
-            <!-- Annual Report Date ( COOP ) -->
+              <!-- COOP only: -->
               <article
                 class="annual-report-article"
                 :class="this.agmDate ? 'agm-date-selected' : 'no-agm-date-selected'"
                 v-if="entityFilter(EntityTypes.COOP)"
               >
+                <!-- Page Title -->
                 <header>
                   <h1 id="AR-header">File {{ ARFilingYear }} Annual Report
                     <span class="font-italic" v-if="reportState">- {{ reportState }}</span>
@@ -108,11 +109,12 @@
                 </template>
               </article>
 
-              <!-- Annual Report Date -->
+              <!-- BCORP only: -->
               <article
                 class="annual-report-article"
                 v-if="entityFilter(EntityTypes.BCORP)"
               >
+                <!-- Page Title -->
                 <header>
                   <h1 id="AR-header-BC">File {{ ARFilingYear }} Annual Report
                     <span style="font-style: italic" v-if="reportState">- {{ reportState }}</span>
@@ -120,6 +122,7 @@
                   <p>Please review all the information before you file and pay.</p>
                 </header>
 
+                <!-- Business Details -->
                 <section>
                   <header>
                     <h2 id="AR-header-1-BC">1. Business Details</h2>
@@ -132,7 +135,7 @@
                   />
                 </section>
 
-                <!-- Director Information -->
+                <!-- Directors -->
                 <section>
                   <header>
                     <h2 id="AR-header-2-BC">2. Directors</h2>
@@ -142,6 +145,8 @@
                   />
                 </section>
               </article>
+
+              <!-- Both COOP and BCOMP: -->
 
               <!-- Certify -->
               <section>
@@ -184,7 +189,7 @@
         </v-row>
       </v-container>
 
-      <!-- Buttons Container ( COOP ) -->
+      <!-- Buttons ( COOP only ) -->
       <v-container
         id="buttons-container"
         class="list-item"
@@ -239,6 +244,7 @@
         </div>
       </v-container>
 
+      <!-- Buttons ( BCORP only ) -->
       <v-container
         id="buttons-container"
         class="list-item"
@@ -266,7 +272,7 @@
                   :loading="filingPaying"
                   @click="onClickFilePay"
                 >
-                  File & Pay
+                  File &amp; Pay
                 </v-btn>
               </div>
             </template>
@@ -509,7 +515,7 @@ export default {
               // set the Initial AGM Date in the AGM Date component
               // NOTE: AR Filing Year (which is needed by agmDate component) was already set by Todo List
               this.initialAgmDate = annualReport.annualGeneralMeetingDate
-              if (annualReport.annualGeneralMeetingDate == null) {
+              if (!annualReport.annualGeneralMeetingDate) {
                 this.noAGM = true
               }
               this.toggleFiling('add', FilingCodes.ANNUAL_REPORT_OT)
@@ -865,7 +871,7 @@ export default {
       } else if (type === 'cod') {
         earliestAllowedDate = this.lastCODFilingDate
       }
-      return this.agmDateValid && this.agmDate && this.compareDates(this.agmDate, earliestAllowedDate, '>=')
+      return (this.agmDateValid && this.agmDate && this.compareDates(this.agmDate, earliestAllowedDate, '>='))
     },
 
     hasAction (director, action) {
@@ -899,15 +905,14 @@ export default {
   mounted () {
     // Flag Usage Example.
     // console.log(this.flags.coopsVersion)
-    // Annual report will always have the 30$ fee.
+
+    // Annual report will always have the $30 fee.
     this.toggleFiling('add', 'OTANN')
   },
 
   watch: {
     agmDate (val: string) {
       this.haveChanges = true
-      // when AGM Date changes, update filing data
-      this.toggleFiling(val ? 'add' : 'remove', FilingCodes.ANNUAL_REPORT_OT)
     },
 
     noAGM (val: boolean) {

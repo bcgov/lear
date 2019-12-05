@@ -1,21 +1,21 @@
 export default {
-  isRoleStaff: state => {
+  isRoleStaff (state): boolean {
     return state.keycloakRoles.includes('staff')
   },
 
-  isRoleEdit: state => {
+  isRoleEdit (state): boolean {
     return state.authRoles.includes('edit')
   },
 
-  isRoleView: state => {
+  isRoleView (state): boolean {
     return state.authRoles.includes('view')
   },
 
-  isAnnualReportEditable: state => {
+  isAnnualReportEditable (state): boolean {
     return (state.currentFilingStatus === 'NEW' || state.currentFilingStatus === 'DRAFT')
   },
 
-  reportState: state => {
+  reportState (state): string {
     switch (state.currentFilingStatus) {
       case 'NEW': return ''
       case 'DRAFT': return 'Draft'
@@ -24,8 +24,8 @@ export default {
   },
 
   // get last Change of Directors filing from list of past filings
-  lastCODFilingDate: state => {
-    let lastCOD = null
+  lastCODFilingDate (state): string {
+    let lastCOD: string = null
 
     for (let i = 0; i < state.filings.length; i++) {
       let filing = state.filings[i].filing
@@ -40,8 +40,8 @@ export default {
   },
 
   // get last Change of Address filing from list of past filings
-  lastCOAFilingDate: state => {
-    let lastCOA = null
+  lastCOAFilingDate (state): string {
+    let lastCOA: string = null
 
     for (let i = 0; i < state.filings.length; i++) {
       let filing = state.filings[i].filing
@@ -56,8 +56,8 @@ export default {
   },
 
   // get last filing (of any type) from list of past filings
-  lastFilingDate: state => {
-    let lastFilingDate = null
+  lastFilingDate (state): string {
+    let lastFilingDate: string = null
 
     for (let i = 0; i < state.filings.length; i++) {
       let filing = state.filings[i].filing
