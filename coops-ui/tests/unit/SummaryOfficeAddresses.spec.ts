@@ -3,7 +3,7 @@ import Vuelidate from 'vuelidate'
 import Vuetify from 'vuetify'
 import store from '@/store/store'
 
-import { SummaryOfficeAddresses } from '@/components/Common'
+import { SummaryOfficeAddresses } from '@/components/common'
 
 import { EntityTypes } from '@/enums'
 
