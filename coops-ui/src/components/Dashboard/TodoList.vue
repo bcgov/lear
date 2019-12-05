@@ -15,19 +15,24 @@
         v-for="(item, index) in orderBy(taskItems, 'order')"
         v-bind:key="index"
         expand-icon=""
-        :class="{ 'disabled': !item.enabled, 'draft': isDraft(item) }">
+        :class="{ 'disabled': !item.enabled, 'draft': isDraft(item),
+        'awaitConfirm': !confirmCheckbox && isConfirmEnabled(item.type, item.status)}">
 
         <v-expansion-panel-header class="no-dropdown">
           <div class="list-item">
             <div class="filing-type">
               <div class="list-item__title">{{item.title}}</div>
-              <div class="bcorps-ar" v-if="entityFilter(EntityTypes.BCORP)">
+              <div class="bcorps-ar-subtitle"
+                 v-if="entityFilter(EntityTypes.BCORP) &&
+                 isConfirmEnabled(item.type, item.status)"
+              >
                 <p>Verify your Office Address and Current Directors before filing your Annual Report.</p>
                 <v-checkbox
+                  id="confirm-checkbox"
                   class="todo-list-checkbox"
                   label="All information about the Office Addresses and Current Directors is correct."
-                  v-model="confirmInfo"
-                  light
+                  :disabled=!item.enabled
+                  v-model=confirmCheckbox
                   @click.native.stop
                 />
               </div>
@@ -78,6 +83,12 @@
             </div>
 
             <div class="list-item__actions">
+              <v-col>
+                <p class="date-subtitle"
+                  v-if="entityFilter(EntityTypes.BCORP) && isConfirmEnabled(item.type, item.status)"
+                >
+                  due {{ item.nextArDate }}
+                </p>
               <!-- pre-empt any buttons below -->
               <template v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
                 <v-btn text loading disabled />
@@ -129,12 +140,14 @@
               </template>
 
               <v-btn v-else-if="!isCompleted(item)"
+                class="btn-file"
                 color="primary"
-                :disabled="((!item.enabled || coaPending) && (confirmInfo && !confirmInfo))"
+                :disabled="(!item.enabled || coaPending) || !confirmCheckbox"
                 @click.native.stop="doFileNow(item)"
               >
                 File Now
               </v-btn>
+              </v-col>
             </div>
           </div>
         </v-expansion-panel-header>
@@ -179,12 +192,13 @@
 
 <script>
 import axios from '@/axios-auth'
-import ExternalMixin from '@/mixins/external-mixin'
 import { mapState, mapActions } from 'vuex'
+
+// Dialogs
 import { ConfirmDialog, DeleteErrorDialog } from '@/components/dialogs'
 
 // Mixins
-import { EntityFilterMixin } from '@/mixins'
+import { ExternalMixin, EntityFilterMixin, DateMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'
@@ -197,7 +211,7 @@ export default {
     ConfirmDialog
   },
 
-  mixins: [ExternalMixin, EntityFilterMixin],
+  mixins: [ExternalMixin, EntityFilterMixin, DateMixin],
 
   data () {
     return {
@@ -205,7 +219,8 @@ export default {
       deleteErrors: [],
       deleteWarnings: [],
       deleteErrorDialog: false,
-      confirmInfo: false,
+      confirmCheckbox: false,
+      confirmEnabled: false,
 
       // Entity Types Enum
       EntityTypes
@@ -231,6 +246,7 @@ export default {
 
     loadData () {
       this.taskItems = []
+      this.confirmCheckbox = this.entityFilter(EntityTypes.COOP)
 
       // create task items
       this.tasks.forEach(task => {
@@ -254,9 +270,6 @@ export default {
         }).length > 0
       )
     },
-    check () {
-      console.log('checkbox checked')
-    },
 
     loadTodoItem (task) {
       const todo = task.task.todo
@@ -271,7 +284,8 @@ export default {
               ARFilingYear,
               status: todo.header.status || 'NEW',
               enabled: Boolean(task.enabled),
-              order: task.order
+              order: task.order,
+              nextArDate: this.toReadableDate(todo.business.nextAnnualReport)
             })
             break
           }
@@ -494,6 +508,10 @@ export default {
       this.deleteErrorDialog = false
       this.deleteErrors = []
       this.deleteWarnings = []
+    },
+
+    isConfirmEnabled (type, status) {
+      return ((type === 'annualReport') && (status === 'NEW'))
     }
   },
 
@@ -515,8 +533,12 @@ export default {
   pointer-events: none;
 
   .todo-list-checkbox {
-    pointer-events: visible;
+    pointer-events: auto;
   }
+}
+
+.awaitConfirm {
+  background-color: rgba(216,216,216,0.75)!important;
 }
 
 .todo-list.disabled {
@@ -543,12 +565,16 @@ export default {
   padding: 0;
   justify-content: space-evenly;
 
-  .bcorps-ar {
-    padding: .5rem 0 .5rem 0;
+  .bcorps-ar-subtitle {
+    padding: 1rem 0 .5rem 0;
   }
 }
 
 .todo-list .list-item .list-item__actions {
+  .date-subtitle {
+    margin-bottom: 4.5rem;
+  }
+
   #btn-draft-resume {
     min-width: 103px;
     border-top-right-radius: 0;
@@ -557,6 +583,10 @@ export default {
 }
 
 .list-item__actions {
+  .btn-file{
+    width: inherit;
+  }
+
   .v-btn.actions__more-actions__btn {
     // make action button width same as its height (per Vuetify)
     min-width: 36px !important;
