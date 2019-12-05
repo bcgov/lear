@@ -21,14 +21,16 @@ from http import HTTPStatus
 
 import datedelta
 
-from tests.unit.models import factory_business, factory_filing
-
+from legal_api.services.authz import STAFF_ROLE
+from tests.unit.models import factory_business, factory_filing, factory_pending_filing, factory_business_mailing_address
+from tests.unit.services.utils import create_header
 
 AR_FILING_CURRENT_YEAR = {
     'filing': {
         'header': {
             'name': 'annualReport',
-            'date': '2019-08-13'
+            'date': '2019-08-13',
+            'certifiedBy': 'full name'
         },
         'business': {
             'cacheId': 1,
@@ -49,13 +51,16 @@ AR_FILING_PREVIOUS_YEAR = {
     'filing': {
         'header': {
             'name': 'annualReport',
-            'date': '2001-08-05'
+            'date': '2001-08-05',
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get'
         },
         'business': {
             'cacheId': 1,
-            'foundingDate': '2007-04-08',
+            'foundingDate': '2007-04-08T00:00:00+00:00',
             'identifier': 'CP1234567',
-            'legalName': 'legal name - CP1234567'
+            'legalName': 'legal name - CP1234567',
+            'lastPreBobFilingTimestamp': '2019-01-01T20:05:49.068272+00:00'
         },
         'annualReport': {
             'annualGeneralMeetingDate': str(datetime.today() - datedelta.datedelta(years=1)).split()[0],
@@ -86,6 +91,38 @@ def test_bcorps_get_tasks_no_filings(session, client):
 
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('tasks')) == 0  # To-do for the current year
+
+
+def test_bcorps_get_tasks_pending_filings(session, client, jwt):
+    """Assert that to-do for the current year is returned when there are no filings."""
+    identifier = 'CP7654321'
+    business = factory_business(identifier, datetime.today() - datedelta.datedelta(years=3), None, 'BC')
+    factory_business_mailing_address(business)
+    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+
+    assert rv.status_code == HTTPStatus.OK
+    assert len(rv.json.get('tasks')) == 3  # To-do for the current year
+    assert rv.json['tasks'][0]['task']['todo']['header']['status'] == 'NEW'
+
+    filing = AR_FILING_PREVIOUS_YEAR
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                    json=filing,
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+
+    filing['filing']['annualReport']['annualReportDate'] = str((datetime.today() - datedelta.datedelta(years=2)).date())
+    filing['filing']['business']['legalType'] = 'BC'
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                    json=filing,
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+
+    assert rv.status_code == HTTPStatus.CREATED
+
+    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+    assert len(rv.json.get('tasks')) == 3
+    assert rv.json['tasks'][0]['task']['filing']['header']['status'] == 'PENDING'
 
 
 def test_get_tasks_current_year_filing_exists(session, client):
