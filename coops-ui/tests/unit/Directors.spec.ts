@@ -172,7 +172,7 @@ describe('Directors as a COOP', () => {
     // confirm that flag is set correctly
     expect(vm.componentEnabled).toEqual(false)
 
-      const directorListUI = vm.$el.querySelectorAll('.director-list-container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // check that buttons are disabled (checks first button in first director, plus the Add New Director button)
     setTimeout(() => {
