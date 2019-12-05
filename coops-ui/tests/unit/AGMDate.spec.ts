@@ -149,21 +149,6 @@ describe('AGMDate', () => {
 
     // verify default Min Date
     expect(vm.minDate).toBe('2019-01-01')
-
-    // set Last Filing Date and verify new Min Date
-    store.state.filings = [
-      { filing: { header: { date: '2019-02-01' } } },
-      { filing: { header: { date: '2019-03-01' } } }
-    ]
-    expect(vm.minDate).toBe('2019-03-01')
-
-    // set Last Pre-Load Filing Date and verify new date
-    store.state.lastPreLoadFilingDate = '2019-04-01'
-    expect(vm.minDate).toBe('2019-04-01')
-
-    // cleanup
-    store.state.filings = []
-    store.state.lastPreLoadFilingDate = null
   })
 
   it('sets date picker when text field is set', () => {
@@ -387,7 +372,7 @@ describe('AGMDate', () => {
   })
 
   it('invalidates the component when entered month is before Min Date', () => {
-    store.state.lastPreLoadFilingDate = '2019-03-01' // to set new Min Date
+    store.state.lastAnnualReportDate = '2019-03-01' // to set new Min Date
 
     wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
     wrapper.setData({ dateFormatted: '2019/02/01' })
@@ -425,7 +410,7 @@ describe('AGMDate', () => {
     // second emit is from text field update
     const agmDates = wrapper.emitted('agmDate')
     expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
+    expect(agmDates[0]).toEqual(['2019-03-01'])
     expect(agmDates[1]).toEqual([null])
 
     // verify emitted Valids
@@ -438,7 +423,7 @@ describe('AGMDate', () => {
 
     // verify validation error
     expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Please enter a month between 2019/01/01 and 2019/07/15.')
+      .toContain('Please enter a month between 2019/03/01 and 2019/07/15.')
   })
 
   it('invalidates the component when entered day is an invalid number', () => {
@@ -450,7 +435,7 @@ describe('AGMDate', () => {
     // second emit is from text field update
     const agmDates = wrapper.emitted('agmDate')
     expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
+    expect(agmDates[0]).toEqual(['2019-03-01'])
     expect(agmDates[1]).toEqual([null])
 
     // verify emitted Valids
@@ -463,7 +448,7 @@ describe('AGMDate', () => {
 
     // verify validation error
     expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Please enter a day between 2019/01/01 and 2019/07/15.')
+      .toContain('Please enter a month between 2019/03/01 and 2019/07/15.')
   })
 
   it('invalidates the component when entered day is invalid in non leap year', () => {
@@ -475,7 +460,7 @@ describe('AGMDate', () => {
     // second emit is from text field update
     const agmDates = wrapper.emitted('agmDate')
     expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
+    expect(agmDates[0]).toEqual(['2019-03-01'])
     expect(agmDates[1]).toEqual([null])
 
     // verify emitted Valids
@@ -488,7 +473,7 @@ describe('AGMDate', () => {
 
     // verify validation error
     expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Please enter a day between 2019/01/01 and 2019/07/15.')
+      .toContain('Please enter a month between 2019/03/01 and 2019/07/15.')
   })
 
   it('validates the component when entered day is valid in leap year', () => {
@@ -502,7 +487,7 @@ describe('AGMDate', () => {
     // second emit is from first text field update
     const agmDates = wrapper.emitted('agmDate')
     expect(agmDates.length).toBe(3)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
+    expect(agmDates[0]).toEqual(['2019-03-01'])
     expect(agmDates[1]).toEqual([null])
     expect(agmDates[2]).toEqual(['2020-02-29'])
 
@@ -524,7 +509,7 @@ describe('AGMDate', () => {
   })
 
   it('invalidates the component when entered day is before Min Date', () => {
-    store.state.lastPreLoadFilingDate = '2019-04-15' // to set new Min Date
+    store.state.lastAnnualReportDate = '2019-04-15' // to set new Min Date
 
     wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
     wrapper.setData({ dateFormatted: '2019/04/01' })
@@ -534,7 +519,7 @@ describe('AGMDate', () => {
     // second emit is from text field update
     const agmDates = wrapper.emitted('agmDate')
     expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
+    expect(agmDates[0]).toEqual(['2019-03-01'])
     expect(agmDates[1]).toEqual([null])
 
     // verify emitted Valids
@@ -550,10 +535,11 @@ describe('AGMDate', () => {
       .toContain('Please enter a day between 2019/04/15 and 2019/07/15.')
 
     // cleanup
-    store.state.lastPreLoadFilingDate = null
+    store.state.lastAnnualReportDate = null
   })
 
   it('invalidates the component when entered day is after Max Date', () => {
+    store.state.lastAnnualReportDate = '2019-04-15'
     wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
     wrapper.setData({ dateFormatted: '2019/07/20' })
 
@@ -575,7 +561,7 @@ describe('AGMDate', () => {
 
     // verify validation error
     expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Please enter a day between 2019/01/01 and 2019/07/15.')
+      .toContain('Please enter a day between 2019/04/15 and 2019/07/15.')
   })
 
   it('validates the component when Did Not Hold AGM is checked', () => {
@@ -586,7 +572,7 @@ describe('AGMDate', () => {
     // second emit is from checkbox update
     const agmDates = wrapper.emitted('agmDate')
     expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
+    expect(agmDates[0]).toEqual(['2019-04-15'])
     expect(agmDates[1]).toEqual([null])
 
     // verify emitted Valids

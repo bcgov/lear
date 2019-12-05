@@ -258,7 +258,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         query = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
             filter(Filing._status.in_(status)). \
-            order_by(desc(Filing.filing_date))
+            order_by(Filing.filing_date.desc(), Filing.effective_date.desc())  # pylint: disable=no-member;
+        # member provided via SQLAlchemy
 
         if after_date:
             query = query.filter(Filing._filing_date >= after_date)

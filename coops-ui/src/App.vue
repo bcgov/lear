@@ -102,7 +102,7 @@ export default {
       'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityType', 'setEntityStatus',
       'setEntityBusinessNo', 'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate',
       'setNextARDate', 'setTasks', 'setFilings', 'setRegisteredAddress', 'setRecordsAddress', 'setDirectors',
-      'setTriggerDashboardReload']),
+      'setTriggerDashboardReload', 'setLastAnnualReportDate']),
 
     fetchData () {
       this.dataLoaded = false
@@ -254,6 +254,7 @@ export default {
         this.setLastPreLoadFilingDate(response.data.business.lastLedgerTimestamp
           ? response.data.business.lastLedgerTimestamp.split('T')[0] : null)
         this.setEntityFoundingDate(response.data.business.foundingDate) // datetime
+        this.setLastAnnualReportDate(response.data.business.lastAnnualReport)
         const date = response.data.business.lastAnnualGeneralMeetingDate
         if (
           date &&
@@ -281,11 +282,7 @@ export default {
 
     storeFilings (response) {
       if (response && response.data && response.data.filings) {
-        // sort by date descending (ie, latest to earliest)
-        const filings = response.data.filings.sort(
-          (a, b) => (b.filing.header.date - a.filing.header.date)
-        )
-        this.setFilings(filings)
+        this.setFilings(response.data.filings)
       } else {
         throw new Error('Invalid filings')
       }

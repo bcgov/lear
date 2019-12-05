@@ -19,7 +19,7 @@
     <div class="column-report">
       <div class="column-report-headspace"></div>
       <div class="header-blue">
-        {{ annualReport.annualGeneralMeetingDate[:4] }} BC COOPERATIVE ANNUAL REPORT
+        {{ annualReport.annualReportDate[:4] }} BC COOPERATIVE ANNUAL REPORT
       </div>
       <div class="header-gold">
         BC Cooperative &bull; Cooperative Association Act
@@ -51,11 +51,11 @@
             </tr>
           </table>
         </div>
-
+ {% if effective_date is defined %}
 [[addresses.html]]
 
 [[directors.html]]
-
+{% endif %}
 [[certification.html]]
 
       </div>

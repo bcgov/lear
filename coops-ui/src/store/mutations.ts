@@ -67,5 +67,8 @@ export default {
   },
   triggerDashboardReload (state, value) {
     state.triggerDashboardReload = value
+  },
+  lastAnnualReportDate (state, value) {
+    state.lastAnnualReportDate = value
   }
 }

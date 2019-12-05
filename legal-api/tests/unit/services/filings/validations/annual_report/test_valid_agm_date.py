@@ -34,24 +34,6 @@ from legal_api.services.filings.validations.annual_report import validate_agm_ye
          [{'error': 'Annual General Meeting Date must be a valid date when submitting '
            'an Annual Report in the current year.',
            'path': 'filing/annualReport/annualGeneralMeetingDate'}]),
-        ('AGM_DATE_MISSING_FIRST_YEAR_WARNING',
-         date(2019, 9, 17), date(2018, 8, 5), None, date(2017, 7, 1), date(2019, 9, 17),
-         HTTPStatus.OK,
-         [{'warning': 'Annual General Meeting Date (AGM) is being skipped. '
-           'If another AGM is skipped, the business will be dissolved.',
-           'path': 'filing/annualReport/annualGeneralMeetingDate'}]),
-        ('AGM_DATE_MISSING_SECOND_YEAR_WARNING',
-         date(2019, 9, 17), date(2018, 8, 5), None, date(2016, 7, 1), date(2019, 9, 17),
-         HTTPStatus.OK,
-         [{'warning': 'Annual General Meeting Date (AGM) is being skipped. '
-           'The business will be dissolved, unless an extension and an AGM are held.',
-           'path': 'filing/annualReport/annualGeneralMeetingDate'}]),
-        ('AGM_DATE_NOT BEFORE_LAST_FILING',
-         date(2019, 9, 17), date(2019, 8, 5), date(2019, 8, 5), date(2019, 9, 1), date(2019, 9, 17),
-         HTTPStatus.BAD_REQUEST,
-         [{'error': 'Annual General Meeting Date is before a previous filing filed on 2019-09-01, so it must be '
-                    'submitted as a paper-filing.',
-           'path': 'filing/annualReport/annualGeneralMeetingDate'}]),
     ])
 def test_valid_agm_date(app, test_name, now, ar_date, agm_date, last_agm_date, submission_date,
                         expected_code, expected_msg):

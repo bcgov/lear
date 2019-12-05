@@ -67,5 +67,8 @@ export default {
   },
   setTriggerDashboardReload ({ commit }, value) {
     commit('triggerDashboardReload', value)
+  },
+  setLastAnnualReportDate ({ commit }, value) {
+    commit('lastAnnualReportDate', value)
   }
 }

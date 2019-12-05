@@ -196,7 +196,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     wrapper.destroy()
   })
 
-  it('disables address component when last COA is null and agm date < lastPreLoadFilingDate', () => {
+  it('no effect on address component when last COA is null and agm date < lastPreLoadFilingDate', () => {
     store.state.lastPreLoadFilingDate = '2019-02-10'
     store.state.filings = []
     const $route = { params: { id: '0' } } // new filing id
@@ -213,7 +213,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.certifyFormValid = true
 
     // confirm that change address button is disabled
-    expect(vm.allowChange('coa')).toBe(false)
+    expect(vm.allowChange('coa')).toBe(true)
 
     wrapper.destroy()
   })
@@ -270,7 +270,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     vm.certifyFormValid = true
 
     // confirm that director component disabled
-    expect(vm.allowChange('cod')).toBe(false)
+    expect(vm.allowChange('cod')).toBe(true)
 
     wrapper.destroy()
   })

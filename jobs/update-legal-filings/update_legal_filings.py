@@ -133,6 +133,11 @@ def get_filing(event_info: dict = None, application: Flask = None):
 
 
 def run():
+    successful_filings = 0
+    failed_filing_events = []
+    corps_with_failed_filing = []
+    skipped_filings = []
+    first_failed_id = None
     application = create_app()
     with application.app_context():
         try:
@@ -151,31 +156,54 @@ def run():
 
             if len(manual_filings_info) > 0:
                 for event_info in manual_filings_info:
-                    filing = get_filing(event_info, application)
+                    # Make sure this coop has no outstanding filings that failed to be applied.
+                    # This ensures we don't apply filings out of order when one fails.
+                    if event_info['corp_num'] not in corps_with_failed_filing:
+                        filing = get_filing(event_info, application)
 
-                    # validate schema
-                    is_valid, errors = validate(filing, 'filing', validate_schema=True)
-                    if errors:
-                        for err in errors:
-                            application.logger.error(err.message)
+                        # validate schema
+                        is_valid, errors = validate(filing, 'filing', validate_schema=True)
+                        if errors:
+                            for err in errors:
+                                if not first_failed_id:
+                                    first_failed_id = event_info['event_id']
+                                failed_filing_events.append(event_info)
+                                corps_with_failed_filing.append(event_info['corp_num'])
+                                application.logger.error(err.message)
 
-                    else:
-                        # call legal api with filing
-                        application.logger.debug('sending filing with event info: {} to legal api.'.format(event_info))
-                        r = requests.post(application.config['LEGAL_URL'] + '/' + event_info['corp_num'] + '/filings',
-                                          json=filing, headers={'Content-Type': 'application/json',
-                                                                'Authorization': f'Bearer {token}'})
-                        if r.status_code != 201:
-                            application.logger.error(f'{r.json()} {r.status_code}')
-                            application.logger.error(f'Legal failed to create filing with event_id '
-                                                     f'{event_info["event_id"]} for {event_info["corp_num"]}')
                         else:
-                            # update max_event_id entered
-                            if int(event_info['event_id']) > max_event_id:
-                                max_event_id = int(event_info['event_id'])
+                            # call legal api with filing
+                            application.logger.debug('sending filing with event info: {} to legal api.'.format(event_info))
+                            r = requests.post(application.config['LEGAL_URL'] + '/' + event_info['corp_num'] + '/filings',
+                                              json=filing, headers={'Content-Type': 'application/json',
+                                                                    'Authorization': f'Bearer {token}'})
+                            if r.status_code != 201:
+                                if not first_failed_id:
+                                    first_failed_id = event_info['event_id']
+                                failed_filing_events.append(event_info)
+                                corps_with_failed_filing.append(event_info['corp_num'])
+                                application.logger.error(f'{r.json()} {r.status_code}')
+                                application.logger.error(f'Legal failed to create filing with event_id '
+                                                         f'{event_info["event_id"]} for {event_info["corp_num"]}')
+                            else:
+                                # update max_event_id entered
+                                successful_filings += 1
+                                if int(event_info['event_id']) > max_event_id:
+                                    max_event_id = int(event_info['event_id'])
+                    else:
+                        skipped_filings.append(event_info)
             else:
                 application.logger.debug('0 filings updated in legal db.')
 
+            application.logger.debug(f'successful filings: {successful_filings}')
+            application.logger.debug(f'skipped filings due to related erred filings: {len(skipped_filings)}')
+            application.logger.debug(f'failed filings: {len(failed_filing_events)}')
+            application.logger.debug(f'failed filings event info: {failed_filing_events}')
+
+            # if one of the events failed then save that id minus one so that the next run will try it again
+            # this way failed filings wont get buried/forgotten after multiple runs
+            if first_failed_id:
+                max_event_id = first_failed_id - 1
             if max_event_id > 0:
                 # update max_event_id in legal_db
                 application.logger.debug('setting last_event_id in legal_db to {}'.format(max_event_id))

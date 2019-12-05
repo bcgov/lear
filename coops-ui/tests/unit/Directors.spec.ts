@@ -7,6 +7,7 @@ import store from '@/store/store'
 
 import Directors from '@/components/AnnualReport/Directors.vue'
 import { EntityTypes } from '@/enums'
+import { createWrapper } from '@vue/test-utils'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -164,22 +165,20 @@ describe('Directors as a COOP', () => {
     expect(directorListUI[1].innerHTML).toContain('<span>Cease</span>')
   })
 
-  it('disables buttons/actions when instructed by parent component', done => {
-    // set enabled prop
-    vm.componentEnabled = false
-
-    Vue.nextTick(() => {
-      // confirm that flag is set correctly
-      expect(vm.componentEnabled).toEqual(false)
+  it('disables buttons/actions when instructed by parent component', () => {
+    // invalidate AGM Date
+    const wrapper = createWrapper(vm)
+    wrapper.setProps({ componentEnabled: false })
+    // confirm that flag is set correctly
+    expect(vm.componentEnabled).toEqual(false)
 
       const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
-      // check that buttons are disabled (checks first button in first director, plus the Add New Director button)
+    // check that buttons are disabled (checks first button in first director, plus the Add New Director button)
+    setTimeout(() => {
       expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(true)
       expect(vm.$el.querySelector('.new-director-btn').disabled).toBe(true)
-
-      done()
-    })
+    }, 2000)
   })
 
   it('enables buttons/actions when instructed by parent component', done => {
@@ -450,10 +449,10 @@ describe('Directors as a BCORP', () => {
   })
 
   it('disables buttons/actions when instructed by parent component', done => {
-    // set enabled prop
+    // invalidate AGM Date
     vm.componentEnabled = false
 
-    Vue.nextTick(() => {
+    setTimeout(() => {
       // confirm that flag is set correctly
       expect(vm.componentEnabled).toEqual(false)
 
@@ -462,9 +461,7 @@ describe('Directors as a BCORP', () => {
       // check that buttons are disabled (checks first button in first director, plus the Add New Director button)
       expect(directorListUI[0].querySelector('.cease-btn').disabled).toBe(true)
       expect(vm.$el.querySelector('.new-director-btn').disabled).toBe(true)
-
-      done()
-    })
+    }, 2000)
   })
 
   it('enables buttons/actions when instructed by parent component', done => {

@@ -246,6 +246,8 @@ with open('coops.csv', 'r') as csvfile:
                                 filing_type = historic_filing['filing']['header']['name']
                                 filing.colin_event_id = historic_filing['filing'][filing_type]['eventId']
                                 filing.paper_only = True
+                                filing.effective_date = datetime.datetime.strptime(
+                                    historic_filing['filing']['header']['effectiveDate'], '%Y-%m-%d')
                                 db.session.add(filing)
                                 db.session.commit()
 

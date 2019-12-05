@@ -23,7 +23,8 @@ const sampleFilings = [
         'availableOnPaperOnly': false
       },
       'annualReport': {
-        'annualGeneralMeetingDate': '2019-12-31'
+        'annualGeneralMeetingDate': '2019-12-31',
+        'annualReportDate': '2019-12-31'
       }
     }
   },
@@ -66,7 +67,8 @@ const sampleFilings = [
         'availableOnPaperOnly': true
       },
       'annualReport': {
-        'annualGeneralMeetingDate': '2019-01-01'
+        'annualGeneralMeetingDate': '2019-01-01',
+        'annualReportDate': '2019-01-01'
       }
     }
   },

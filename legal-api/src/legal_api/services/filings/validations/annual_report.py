@@ -20,7 +20,7 @@ import datedelta
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import Business, Filing
+from legal_api.models import Business
 
 from ..utils import get_date
 
@@ -37,10 +37,7 @@ def validate(business: Business, annual_report: Dict) -> Error:
     if not business or not annual_report:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
 
-    last_filing = Filing.get_a_businesses_most_recent_filing_of_a_type(
-        business.id, Filing.FILINGS['annualReport']['name'])
     err = validate_ar_year(business=business,
-                           previous_annual_report=last_filing,
                            current_annual_report=annual_report)
     if err:
         return err
@@ -55,7 +52,7 @@ def validate(business: Business, annual_report: Dict) -> Error:
     return None
 
 
-def validate_ar_year(*, business: Business, previous_annual_report: Dict, current_annual_report: Dict) -> Error:
+def validate_ar_year(*, business: Business, current_annual_report: Dict) -> Error:
     """Validate that the annual report year is valid."""
     ar_date = get_date(current_annual_report,
                        'filing/annualReport/annualReportDate')
@@ -72,14 +69,10 @@ def validate_ar_year(*, business: Business, previous_annual_report: Dict, curren
 
     # The AR Date cannot be before the last AR Filed
     # or in or before the foundingDate
-    expected_date = get_date(previous_annual_report,
-                             'filing/annualReport/annualReportDate')
-    if expected_date:
-        expected_date += datedelta.YEAR
-    elif business.last_ar_date:
+    expected_date = business.founding_date + datedelta.YEAR
+
+    if business.last_ar_date:
         expected_date = business.last_ar_date + datedelta.YEAR
-    else:
-        expected_date = business.founding_date + datedelta.YEAR
 
     if ar_date.year < expected_date.year:
         return Error(HTTPStatus.BAD_REQUEST,
@@ -122,25 +115,18 @@ def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, 
                                   'submitting an Annual Report in the current year.'),
                        'path': 'filing/annualReport/annualGeneralMeetingDate'}])
 
-    # ar filed for previous year, agm skipped, warn of pending dissolution
-    if agm_date is None and business.last_agm_date.year == (ar_date - datedelta.datedelta(years=1)).year:
-        return Error(HTTPStatus.OK,
-                     [{'warning': _('Annual General Meeting Date (AGM) is being skipped. '
-                                    'If another AGM is skipped, the business will be dissolved.'),
-                       'path': 'filing/annualReport/annualGeneralMeetingDate'}])
-
-    # ar filed for previous year, agm skipped, warn of pending dissolution
-    if agm_date is None and business.last_agm_date.year <= (ar_date - datedelta.datedelta(years=2)).year:
-        return Error(HTTPStatus.OK,
-                     [{'warning': _('Annual General Meeting Date (AGM) is being skipped. '
-                                    'The business will be dissolved, unless an extension and an AGM are held.'),
-                       'path': 'filing/annualReport/annualGeneralMeetingDate'}])
-
-    last_filing_date = datetime.date(business.last_ledger_timestamp)
-    if agm_date and agm_date < last_filing_date:
-        return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': 'Annual General Meeting Date is before a previous filing filed on '
-                                f'{last_filing_date}, so it must be submitted as a paper-filing.',
-                       'path': 'filing/annualReport/annualGeneralMeetingDate'}])
-
+    # # ar filed for previous year, agm skipped, warn of pending dissolution
+    # if agm_date is None and business.last_agm_date.year == (ar_date - datedelta.datedelta(years=1)).year:
+    #     return Error(HTTPStatus.OK,
+    #                  [{'warning': _('Annual General Meeting Date (AGM) is being skipped. '
+    #                                 'If another AGM is skipped, the business will be dissolved.'),
+    #                    'path': 'filing/annualReport/annualGeneralMeetingDate'}])
+    #
+    # # ar filed for previous year, agm skipped, warn of pending dissolution
+    # if agm_date is None and business.last_agm_date.year <= (ar_date - datedelta.datedelta(years=2)).year:
+    #     return Error(HTTPStatus.OK,
+    #                  [{'warning': _('Annual General Meeting Date (AGM) is being skipped. '
+    #                                 'The business will be dissolved, unless an extension and an AGM are held.'),
+    #                    'path': 'filing/annualReport/annualGeneralMeetingDate'}])
+    #
     return None

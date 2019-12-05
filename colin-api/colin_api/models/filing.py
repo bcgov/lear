@@ -22,7 +22,7 @@ from flask import current_app
 from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
 from colin_api.models import Address, Business, Director, EntityName, Office
 from colin_api.resources.db import DB
-from colin_api.utils import convert_to_json_date
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
 
 class Filing:
@@ -53,6 +53,7 @@ class Filing:
     body = None
     filing_type = None
     paper_only = None
+    effective_date = None
 
     def __init__(self):
         """Initialize with all values None."""
@@ -124,7 +125,7 @@ class Filing:
             cursor = DB.connection.cursor()
             cursor.execute(
                 """
-                select event.event_id, event_timestmp
+                select event.event_id, event.event_timestmp, filing.period_end_dt
                 from event
                 join filing on event.event_id = filing.event_id
                 where corp_num=:identifier and filing_typ_cd=:filing_type
@@ -137,7 +138,13 @@ class Filing:
             event_list = []
             for row in events:
                 row = dict(zip([x[0].lower() for x in cursor.description], row))
-                event_list.append({'id': row['event_id'], 'date': row['event_timestmp']})
+                item = {'id': row['event_id'], 'date': row['event_timestmp']}
+
+                # if filing type is an AR include the period_end_dt info
+                if Filing.FILING_TYPES[filing_type_code] == 'annualReport':
+                    item['annualReportDate'] = row['period_end_dt']
+
+                event_list.append(item)
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error('error getting events for {}'.format(identifier))
@@ -325,7 +332,7 @@ class Filing:
             try:
                 directors = Director.get_by_event(identifier=identifier, event_id=director_event_id)
             except:  # noqa B901; pylint: disable=bare-except;
-                # should only get here if event was before the bob date
+                # should only get here if agm was before the bob date
                 recreated_dirs_and_office = False
                 directors = Director.get_current(identifier=identifier)
         else:
@@ -335,7 +342,7 @@ class Filing:
             try:
                 reg_office = Office.get_by_event(event_id=office_event_id)
             except:  # noqa B901; pylint: disable=bare-except;
-                # should only get here if event was before the bob date
+                # should only get here if agm was before the bob date
                 recreated_dirs_and_office = False
                 reg_office = Office.get_current(identifier=identifier)
         else:
@@ -357,6 +364,7 @@ class Filing:
         }
         filing_obj.filing_type = 'annualReport'
         filing_obj.paper_only = not recreated_dirs_and_office
+        filing_obj.effective_date = filing_event_info['period_end_dt']
 
         return filing_obj
 
@@ -369,6 +377,14 @@ class Filing:
             raise FilingNotFoundException(identifier=identifier, filing_type='change_of_address',
                                           event_id=filing_event_info['event_id'])
 
+        # check to see if this filing was made with an AR -> if it was then set the AR date as the effective date
+        effective_date = filing_event_info['event_timestmp']
+        annual_reports = cls._get_events(identifier=identifier, filing_type_code='OTANN')
+        for filing in annual_reports:
+            if convert_to_json_date(filing['date']) == convert_to_json_date(effective_date):
+                effective_date = filing['annualReportDate']
+                break
+
         filing_obj = Filing()
         filing_obj.body = {
             **registered_office_obj.as_dict(),
@@ -376,6 +392,7 @@ class Filing:
         }
         filing_obj.filing_type = 'changeOfAddress'
         filing_obj.paper_only = False
+        filing_obj.effective_date = effective_date
 
         return filing_obj
 
@@ -386,6 +403,14 @@ class Filing:
         if len(director_objs) < 3:
             current_app.logger.error('Less than 3 directors for {}'.format(identifier))
 
+        # check to see if this filing was made with an AR -> if it was then set the AR date as the effective date
+        effective_date = filing_event_info['event_timestmp']
+        annual_reports = cls._get_events(identifier=identifier, filing_type_code='OTANN')
+        for filing in annual_reports:
+            if convert_to_json_date(filing['date']) == convert_to_json_date(effective_date):
+                effective_date = filing['annualReportDate']
+                break
+
         filing_obj = Filing()
         filing_obj.body = {
             'directors': [x.as_dict() for x in director_objs],
@@ -393,6 +418,7 @@ class Filing:
         }
         filing_obj.filing_type = 'changeOfDirectors'
         filing_obj.paper_only = False
+        filing_obj.effective_date = effective_date
 
         return filing_obj
 
@@ -410,6 +436,7 @@ class Filing:
         }
         filing_obj.filing_type = 'changeOfName'
         filing_obj.paper_only = False
+        filing_obj.effective_date = filing_event_info['event_timestmp']
 
         return filing_obj
 
@@ -442,6 +469,7 @@ class Filing:
             }
             filing_obj.filing_type = 'specialResolution'
             filing_obj.paper_only = True
+            filing_obj.effective_date = filing_event_info['event_timestmp']
 
             return filing_obj
 
@@ -476,6 +504,7 @@ class Filing:
             }
             filing_obj.filing_type = 'voluntaryDissolution'
             filing_obj.paper_only = True
+            filing_obj.effective_date = filing_event_info['event_timestmp']
 
             return filing_obj
 
@@ -525,12 +554,13 @@ class Filing:
                 raise InvalidFilingTypeException(filing_type=filing_type)
 
             filing_obj.header = {
-                'date': convert_to_json_date(filing_event_info['event_timestmp']),
-                'name': filing_type,
-                'certifiedBy': filing_event_info['certifiedBy'],
-                'email': filing_event_info['email'],
                 'availableOnPaperOnly': filing_obj.paper_only,
-                'colinId': filing_obj.body['eventId']
+                'certifiedBy': filing_event_info['certifiedBy'],
+                'colinId': filing_obj.body['eventId'],
+                'date': convert_to_json_date(filing_event_info['event_timestmp']),
+                'effectiveDate': convert_to_json_datetime(filing_obj.effective_date),
+                'email': filing_event_info['email'],
+                'name': filing_type
             }
             filing_obj.business = business
 
@@ -578,15 +608,15 @@ class Filing:
                     filing.header = {
                         'date': date,
                         'name': filing_info['filing_type'],
+                        'effectiveDate': convert_to_json_date(filing_info['effective_dt']),
+                        'historic': True,
                         'availableOnPaperOnly': True
                     }
                     filing.body = {
                         filing_info['filing_type']: {
                             'eventId': filing_info['event_id'],
-                            'eventDate': date,
-                            'effectiveDate': convert_to_json_date(filing_info['effective_dt']),
-                            'periodEndDate': convert_to_json_date(filing_info['period_end_dt']),
-                            'agmDate': convert_to_json_date(filing_info['agm_date'])
+                            'annualReportDate': convert_to_json_date(filing_info['period_end_dt']),
+                            'annualGeneralMeetingDate': convert_to_json_date(filing_info['agm_date'])
                         }
                     }
                     historic_filings.append(filing.as_dict())

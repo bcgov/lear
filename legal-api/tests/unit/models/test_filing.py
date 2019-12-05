@@ -24,7 +24,8 @@ from http import HTTPStatus
 import datedelta
 import pytest
 from flask import current_app
-from registry_schemas.example_data import ANNUAL_REPORT
+from freezegun import freeze_time
+from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, SPECIAL_RESOLUTION
 from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions import BusinessException
@@ -331,6 +332,52 @@ def test_get_filings_by_status(session):
 
     assert rv
     assert rv[0].status == Filing.Status.COMPLETED.value
+
+
+def test_get_filings_by_status__default_order(session):
+    """Assert that a filing can be retrieved by status and is returned in the default order.
+    default order is submission_date, and then effective_date.
+    """
+    # setup
+    base_filing = copy.deepcopy(FILING_HEADER)
+    base_filing['specialResolution'] = SPECIAL_RESOLUTION
+    uow = versioning_manager.unit_of_work(session)
+    business = factory_business('CP1234567')
+
+    completion_date = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+
+    # setup - create multiple filings on the same day & time
+    filing_ids = []
+    file_counter = -1
+    with freeze_time(completion_date):
+        for i in range(0, 5):
+            transaction = uow.create_transaction(session)
+            payment_token = str(i)
+            effective_date = f'200{i}-04-15T00:00:00+00:00'
+
+            base_filing['filing']['header']['effectiveDate'] = effective_date
+            filing = Filing()
+            filing._filing_date = completion_date
+            filing.business_id = business.id
+            filing.filing_json = base_filing
+            filing.effective_date = datetime.datetime.fromisoformat(effective_date)
+            filing.payment_token = payment_token
+            filing.transaction_id = transaction.id
+            filing.payment_completion_date = completion_date
+            filing.save()
+
+            filing_ids.append(filing.id)
+            file_counter += 1
+
+    # test
+    rv = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
+
+    # check
+    assert rv
+    # filings should be in newest to oldest effective date order
+    for filing in rv:
+        assert filing.id == filing_ids[file_counter]
+        file_counter -= 1
 
 
 # testdata pattern is ({str: environment}, {expected return value})
