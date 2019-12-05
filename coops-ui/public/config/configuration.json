@@ -3,5 +3,5 @@
   "AUTH_API_URL": "https://auth-api-dev.pathfinder.gov.bc.ca/api/v1/",
   "PAY_API_URL": "https://pay-api-dev.pathfinder.gov.bc.ca/api/v1/",
   "ADDRESS_COMPLETE_KEY": "RH99-RN99-GB72-FW86",
-  "LD_CLIENT_ID": "5dc1c5fd1d213d087f9e1025"
+  "LD_CLIENT_ID": "5dc1c5fd1d213d087f9e1024"
 }
