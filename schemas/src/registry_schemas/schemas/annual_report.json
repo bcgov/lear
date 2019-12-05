@@ -11,6 +11,7 @@
         "annualReport": {
             "type": "object",
             "required": [
+                "annualGeneralMeetingDate",
                 "annualReportDate",
                 "directors",
                 "offices"

@@ -36,7 +36,7 @@
       <v-container id="annual-report-container" class="view-container">
         <v-row>
           <v-col cols="12" lg="9">
-            <article>
+            <section>
             <!-- Annual Report Date ( COOP ) -->
               <article
                 class="annual-report-article"
@@ -50,7 +50,7 @@
                   <p>Please verify or change your Office Addresses and Directors.</p>
                 </header>
 
-                <div v-if="isAnnualReportEditable">
+                <template v-if="isAnnualReportEditable">
                   <!-- Annual General Meeting Date -->
                   <section>
                     <header>
@@ -105,7 +105,7 @@
                       :componentEnabled="allowChange('cod')"
                     />
                   </section>
-                </div>
+                </template>
               </article>
 
               <!-- Annual Report Date -->
@@ -167,7 +167,7 @@
                   @valid="staffPaymentFormValid=$event"
                 />
               </section>
-            </article>
+            </section>
           </v-col>
 
           <v-col cols="12" lg="3" style="position: relative">
@@ -701,8 +701,12 @@ export default {
           annualReport: {
             annualGeneralMeetingDate: this.agmDate,
             annualReportDate: this.annualReportDate,
-            deliveryAddress: this.addresses.registeredOffice['deliveryAddress'],
-            mailingAddress: this.addresses.registeredOffice['mailingAddress'],
+            offices: {
+              registeredOffice: {
+                deliveryAddress: this.addresses.registeredOffice['deliveryAddress'],
+                mailingAddress: this.addresses.registeredOffice['mailingAddress']
+              }
+            },
             directors: this.allDirectors.filter(el => el.cessationDate === null)
           }
         }
