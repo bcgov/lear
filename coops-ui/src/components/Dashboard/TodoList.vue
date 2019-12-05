@@ -283,9 +283,12 @@ export default {
     },
 
     loadAnnualReport (task) {
+      let date
       const filing = task.task.filing
       if (filing && filing.header && filing.annualReport) {
-        const date = filing.annualReport.annualReportDate
+        filing.annualReport.annualGeneralMeetingDate
+          ? date = filing.annualReport.annualGeneralMeetingDate
+          : date = filing.annualReport.nextARDate
         if (date) {
           const ARFilingYear = +date.substring(0, 4)
           this.taskItems.push({

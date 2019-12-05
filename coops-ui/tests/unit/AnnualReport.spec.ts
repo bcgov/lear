@@ -1,23 +1,28 @@
 /* eslint promise/param-names: 0, prefer-promise-reject-errors: 0 */
+// Libraries
 import Vue from 'vue'
+import sinon from 'sinon'
 import Vuetify from 'vuetify'
 import VueRouter from 'vue-router'
 import Vuelidate from 'vuelidate'
-import sinon from 'sinon'
-import { shallowMount, createLocalVue, mount } from '@vue/test-utils'
-import flushPromises from 'flush-promises'
-import mockRouter from './mockRouter'
 import axios from '@/axios-auth'
 import store from '@/store/store'
+import mockRouter from './mockRouter'
+import flushPromises from 'flush-promises'
+import { BAD_REQUEST } from 'http-status-codes'
+import { shallowMount, createLocalVue, mount } from '@vue/test-utils'
+
+// Components
 import AnnualReport from '@/views/AnnualReport.vue'
 import AGMDate from '@/components/AnnualReport/AGMDate.vue'
-import { OfficeAddresses } from '@/components/common'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
-import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
-import { BAD_REQUEST } from 'http-status-codes'
-import { EntityTypes } from '@/enums'
 import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
+import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
+import { OfficeAddresses, SummaryDirectors, SummaryOfficeAddresses } from '@/components/common'
+
+// Enums
+import { EntityTypes } from '@/enums'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -33,29 +38,14 @@ describe('AnnualReport - Part 1 - UI', () => {
     store.state.entityIncNo = 'CP0001191'
     store.state.ARFilingYear = 2017
     store.state.currentFilingStatus = 'NEW'
-    store.state.entityType = 'mockType'
+    store.state.entityType = EntityTypes.COOP
   })
 
-  it('renders the Annual Report sub-components properly when entity is a COOP', () => {
-    store.state.entityType = EntityTypes.COOP
+  it('renders the Annual Report sub-components properly when entity is a Coop', () => {
     const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
 
     expect(wrapper.find(AGMDate).exists()).toBe(true)
-    expect(wrapper.find(OfficeAddresses).exists()).toBe(true)
-    expect(wrapper.find(Directors).exists()).toBe(true)
-    expect(wrapper.find(Certify).exists()).toBe(true)
-    expect(wrapper.find(StaffPayment).exists()).toBe(false) // normally not rendered
-
-    wrapper.destroy()
-  })
-
-  it('renders the Annual Report sub-components properly when entity is a BCORP', () => {
-    store.state.entityType = EntityTypes.BCORP
-    const $route = { params: { id: '0' } } // new filing id
-    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
-
-    expect(wrapper.find(ARDate).exists()).toBe(true)
     expect(wrapper.find(OfficeAddresses).exists()).toBe(true)
     expect(wrapper.find(Directors).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)
@@ -92,7 +82,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     const vm: any = wrapper.vm
 
     expect(vm.$store.state.entityIncNo).toEqual('CP0001191')
-    expect(vm.$store.state.entityType).toEqual('mockType')
+    expect(vm.$store.state.entityType).toEqual('CP')
     expect(vm.$store.state.ARFilingYear).toEqual(2017)
     expect(vm.$store.state.currentFilingStatus).toEqual('NEW')
 
@@ -439,6 +429,213 @@ describe('AnnualReport - Part 1 - UI', () => {
   })
 })
 
+describe('AnnualReport - Part 1B - UI - BCOMP', () => {
+  beforeEach(() => {
+    // init store
+    store.state.entityIncNo = 'BC0007291'
+    store.state.ARFilingYear = 2018
+    store.state.nextARDate = '2019-09-26T00:00:00+00:00'
+    store.state.currentFilingStatus = 'NEW'
+    store.state.entityType = EntityTypes.BCORP
+  })
+
+  it('renders the Annual Report sub-components properly when entity is a BCorp', () => {
+    const $route = { params: { id: '0' } } // new filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+
+    expect(wrapper.find(ARDate).exists()).toBe(true)
+    expect(wrapper.find(SummaryOfficeAddresses).exists()).toBe(true)
+    expect(wrapper.find(SummaryDirectors).exists()).toBe(true)
+    expect(wrapper.find(Certify).exists()).toBe(true)
+    expect(wrapper.find(StaffPayment).exists()).toBe(false) // normally not rendered
+
+    wrapper.destroy()
+  })
+
+  it('renders the Staff Payment sub-component properly', () => {
+    // init store
+    store.state.keycloakRoles = ['staff']
+
+    const $route = { params: { id: 0 } } // new filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+
+    // component should be displayed when totalFee > 0
+    wrapper.setData({ totalFee: 1 })
+    expect(wrapper.find(StaffPayment).exists()).toBe(true)
+
+    // component should not be displayed when totalFee <= 0
+    wrapper.setData({ totalFee: 0 })
+    expect(wrapper.find(StaffPayment).exists()).toBe(false)
+
+    // reset store
+    // NB: this is important for subsequent tests
+    store.state.keycloakRoles = []
+
+    wrapper.destroy()
+  })
+
+  it('initializes the store variables properly', () => {
+    const $route = { params: { id: '0' } } // new filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route }, vuetify })
+    const vm: any = wrapper.vm
+
+    expect(vm.$store.state.entityIncNo).toEqual('BC0007291')
+    expect(vm.$store.state.entityType).toEqual('BC')
+    expect(vm.$store.state.ARFilingYear).toEqual(2018)
+    expect(vm.$store.state.nextARDate).toEqual('2019-09-26T00:00:00+00:00')
+    expect(vm.$store.state.currentFilingStatus).toEqual('NEW')
+
+    // check titles and sub-titles
+    expect(vm.$el.querySelector('#AR-header-BC').textContent).toContain('2018')
+
+    wrapper.destroy()
+  })
+
+  it('enables Validated flag when sub-component flags are valid', () => {
+    const $route = { params: { id: '0' } } // new filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route }, vuetify })
+    const vm: any = wrapper.vm
+
+    // set properties
+    vm.staffPaymentFormValid = true
+    vm.certifyFormValid = true
+
+    // confirm that flags are set correctly
+    expect(vm.validated).toEqual(true)
+
+    wrapper.destroy()
+  })
+
+  it('disables Validated flag when Certify form is invalid', () => {
+    const $route = { params: { id: '0' } } // new filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route }, vuetify })
+    const vm: any = wrapper.vm
+
+    // set properties
+    vm.staffPaymentFormValid = true
+    vm.certifyFormValid = false
+
+    // confirm that flags are set correctly
+    expect(vm.validated).toEqual(false)
+
+    wrapper.destroy()
+  })
+
+  it('disables Validated flag when Staff Payment data is required but not provided', () => {
+    const $route = { params: { id: '0' } } // new filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route }, vuetify })
+    const vm: any = wrapper.vm
+
+    // set properties
+    vm.certifyFormValid = true
+    // set properties to make only staff payment invalid
+    store.state.keycloakRoles = ['staff']
+    vm.totalFee = 1
+    vm.staffPaymentFormValid = false
+
+    // confirm that form is invalid
+    expect(vm.validated).toEqual(false)
+
+    // toggle keycloak role to make payment valid
+    store.state.keycloakRoles = []
+    expect(vm.validated).toEqual(true)
+    store.state.keycloakRoles = ['staff']
+
+    // toggle total fee to make payment valid
+    vm.totalFee = 0
+    expect(vm.validated).toEqual(true)
+    vm.totalFee = 1
+
+    // toggle staff payment form valid to make payment valid
+    vm.staffPaymentFormValid = true
+    expect(vm.validated).toEqual(true)
+    vm.staffPaymentFormValid = false
+
+    // we should be back where we started
+    expect(vm.validated).toEqual(false)
+
+    // reset store
+    // NB: this is important for subsequent tests
+    store.state.keycloakRoles = []
+
+    wrapper.destroy()
+  })
+
+  it('enables File & Pay button when form is validated', () => {
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'annual-report', params: { id: '0' } }) // new filing id
+    const wrapper = mount(AnnualReport, {
+      store,
+      localVue,
+      router,
+      stubs: {
+        ARDate: true,
+        SummaryDirectors: true,
+        SummaryOfficeAddresses: true,
+        Certify: true,
+        StaffPayment: true,
+        Affix: true,
+        SbcFeeSummary: true,
+        ConfirmDialog: true,
+        PaymentErrorDialog: true,
+        ResumeErrorDialog: true,
+        SaveErrorDialog: true
+      },
+      vuetify
+    })
+
+    const vm: any = wrapper.vm
+
+    // make sure form is validated
+    vm.staffPaymentFormValid = true
+    vm.certifyFormValid = true
+    vm.directorEditInProgress = false
+
+    // confirm that button is enabled
+    expect(wrapper.find('#ar-file-pay-bc-btn').attributes('disabled')).toBeUndefined()
+
+    wrapper.destroy()
+  })
+
+  it('disables File & Pay button when form is not validated', () => {
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'annual-report', params: { id: '0' } }) // new filing id
+    const wrapper = mount(AnnualReport, {
+      store,
+      localVue,
+      router,
+      stubs: {
+        ARDate: true,
+        SummaryDirectors: true,
+        SummaryOfficeAddresses: true,
+        Certify: true,
+        StaffPayment: true,
+        Affix: true,
+        SbcFeeSummary: true,
+        ConfirmDialog: true,
+        PaymentErrorDialog: true,
+        ResumeErrorDialog: true,
+        SaveErrorDialog: true
+      },
+      vuetify
+    })
+    const vm: any = wrapper.vm
+
+    // set properties
+    vm.staffPaymentFormValid = false
+    vm.certifyFormValid = false
+
+    // confirm that button is disabled
+    expect(wrapper.find('#ar-file-pay-bc-btn').attributes('disabled')).toBe('disabled')
+
+    wrapper.destroy()
+  })
+})
+
 describe('AnnualReport - Part 2 - Resuming', () => {
   beforeEach(async () => {
     // init store
@@ -534,6 +731,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
   beforeEach(async () => {
     // init store
     store.state.entityIncNo = 'CP0001191'
+    store.state.entityType = EntityTypes.COOP
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
     store.state.currentFilingStatus = 'NEW'
@@ -792,6 +990,128 @@ describe('AnnualReport - Part 3 - Submitting', () => {
   })
 })
 
+describe('AnnualReport - Part 3B - Submitting - BCOMP', () => {
+  const { assign } = window.location
+
+  beforeAll(() => {
+    // mock the window.location.assign function
+    delete window.location
+    window.location = { assign: jest.fn() } as any
+  })
+
+  afterAll(() => {
+    window.location.assign = assign
+  })
+
+  beforeEach(async () => {
+    // init store
+    store.state.entityIncNo = 'BC0007291'
+    store.state.entityName = 'Legal Name - BC0007291'
+    store.state.entityType = EntityTypes.BCORP
+    store.state.ARFilingYear = 2018
+    store.state.nextARDate = '2019-09-26T00:00:00+00:00'
+    store.state.currentFilingStatus = 'NEW'
+    store.state.registeredAddress = {}
+    store.state.recordsAddress = {}
+
+    // mock "save and file" endpoint
+    sinon
+      .stub(axios, 'post')
+      .withArgs('BC0007291/filings')
+      .returns(
+        new Promise(resolve =>
+          resolve({
+            data: {
+              filing: {
+                annualReport: {
+                  annualReportDate: '2019-09-21',
+                  nextARDate: '2019-09-20'
+                },
+                business: {
+                  cacheId: 1,
+                  foundingDate: '2007-04-08',
+                  identifier: 'BC0007291',
+                  lastLedgerTimestamp: '2019-04-15T20:05:49.068272+00:00',
+                  legalName: 'Legal Name - BC0007291'
+                },
+                header: {
+                  name: 'annualReport',
+                  date: '2017-06-06',
+                  submitter: 'bc0007291',
+                  status: 'PENDING',
+                  filingId: 123,
+                  certifiedBy: 'Full Name',
+                  email: 'no_one@never.get',
+                  paymentToken: '321'
+                }
+              }
+            }
+          })
+        )
+      )
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  it('saves a new filing and redirects to Pay URL when this is a new AR and the File & Pay button ' +
+    'is clicked', async () => {
+    // set necessary session variables
+    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'annual-report', params: { id: '0' } }) // new filing id
+    const wrapper = mount(AnnualReport, {
+      store,
+      localVue,
+      router,
+      stubs: {
+        ARDate: true,
+        SummaryDirectors: true,
+        SummaryOfficeAddresses: true,
+        Certify: true,
+        StaffPayment: true,
+        Affix: true,
+        SbcFeeSummary: true,
+        ConfirmDialog: true,
+        PaymentErrorDialog: true,
+        ResumeErrorDialog: true,
+        SaveErrorDialog: true
+      },
+      vuetify
+    })
+    const vm = wrapper.vm as any
+
+    // make sure form is validated
+    vm.staffPaymentFormValid = true
+    vm.certifyFormValid = true
+    vm.filingData = [{ filingTypeCode: 'ANNBC', entityType: 'BC' }] // dummy data
+
+    // make sure a fee is required
+    vm.totalFee = 100
+
+    expect(jest.isMockFunction(window.location.assign)).toBe(true)
+
+    const button = wrapper.find('#ar-file-pay-bc-btn')
+    expect(button.attributes('disabled')).toBeUndefined()
+
+    // click the File & Pay button
+    button.trigger('click')
+    await flushPromises()
+
+    // verify redirection
+    const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
+      encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
+    expect(window.location.assign).toHaveBeenCalledWith(payURL)
+
+    wrapper.destroy()
+  })
+})
+
 describe('AnnualReport - Part 4 - Saving', () => {
   let wrapper
   let vm
@@ -799,6 +1119,7 @@ describe('AnnualReport - Part 4 - Saving', () => {
   beforeEach(async () => {
     // init store
     store.state.entityIncNo = 'CP0001191'
+    store.state.entityType = EntityTypes.COOP
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
     store.state.currentFilingStatus = 'NEW'
@@ -938,6 +1259,7 @@ describe('AnnualReport - Part 5 - Data', () => {
   beforeEach(async () => {
     // init store
     store.state.entityIncNo = 'CP0001191'
+    store.state.entityType = EntityTypes.COOP
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = currentFilingYear
     store.state.currentFilingStatus = 'NEW'
@@ -1187,6 +1509,220 @@ describe('AnnualReport - Part 5 - Data', () => {
   })
 })
 
+describe('AnnualReport - Part 5B - Data - BCOMP', () => {
+  let wrapper
+  let vm
+  let spy
+
+  const currentFilingYear = 2018
+
+  beforeEach(async () => {
+    // init store
+    store.state.entityIncNo = 'BC0007291'
+    store.state.entityName = 'Legal Name - BC0007291'
+    store.state.entityType = EntityTypes.BCORP
+    store.state.ARFilingYear = 2018
+    store.state.nextARDate = '2019-09-26T00:00:00+00:00'
+    store.state.currentFilingStatus = 'NEW'
+    store.state.registeredAddress = {}
+    store.state.recordsAddress = {}
+
+    // mock "save" endpoint - garbage response data, we aren't testing that
+    spy = sinon
+      .stub(axios, 'post')
+      .withArgs('BC0007291/filings')
+      .returns(
+        new Promise(resolve =>
+          resolve({
+            data: {
+              filing: {
+                annualReport: {},
+                business: {},
+                header: {
+                  filingId: 0
+                }
+              }
+            }
+          })
+        )
+      )
+
+    // create local Vue and mock router
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'annual-report', params: { id: '0' } }) // new filing id
+    wrapper = mount(AnnualReport, {
+      store,
+      localVue,
+      router,
+      stubs: {
+        ARDate: true,
+        SummaryDirectors: true,
+        SummaryOfficeAddresses: true,
+        Certify: true,
+        StaffPayment: true,
+        Affix: true,
+        SbcFeeSummary: true,
+        ConfirmDialog: true,
+        PaymentErrorDialog: true,
+        ResumeErrorDialog: true,
+        SaveErrorDialog: true
+      },
+      vuetify
+    })
+    vm = wrapper.vm as any
+
+    // set up director data
+    vm.allDirectors = [
+      // unchanged director
+      {
+        officer: {
+          firstName: 'Unchanged',
+          lastName: 'lastname'
+        },
+        deliveryAddress: {
+          streetAddress: 'a1',
+          addressCity: 'city',
+          addressCountry: 'country',
+          postalCode: 'H0H0H0',
+          addressRegion: 'BC'
+        },
+        mailingAddress: {
+          streetAddress: 'a2',
+          addressCity: 'cit2',
+          addressCountry: 'country2',
+          postalCode: 'H0H0H02',
+          addressRegion: 'BC'
+        },
+        appointmentDate: '2019-01-01',
+        cessationDate: null,
+        actions: []
+      },
+      // appointed director
+      {
+        officer: {
+          firstName: 'Appointed',
+          lastName: 'lastname'
+        },
+        deliveryAddress: {
+          streetAddress: 'a1',
+          addressCity: 'city',
+          addressCountry: 'country',
+          postalCode: 'H0H0H0',
+          addressRegion: 'BC'
+        },
+        mailingAddress: {
+          streetAddress: 'a2',
+          addressCity: 'cit2',
+          addressCountry: 'country2',
+          postalCode: 'H0H0H02',
+          addressRegion: 'BC'
+        },
+        appointmentDate: '2019-01-01',
+        cessationDate: null,
+        actions: ['appointed']
+      },
+      // ceased director
+      {
+        officer: {
+          firstName: 'Ceased',
+          lastName: 'lastname'
+        },
+        deliveryAddress: {
+          streetAddress: 'a1',
+          addressCity: 'city',
+          addressCountry: 'country',
+          postalCode: 'H0H0H0',
+          addressRegion: 'BC'
+        },
+        mailingAddress: {
+          streetAddress: 'a2',
+          addressCity: 'cit2',
+          addressCountry: 'country2',
+          postalCode: 'H0H0H02',
+          addressRegion: 'BC'
+        },
+        appointmentDate: '2019-01-01',
+        cessationDate: '2019-03-25',
+        actions: ['ceased']
+      }
+    ]
+
+    // make sure form is validated
+    vm.staffPaymentFormValid = true
+    vm.agmDateValid = true
+    vm.addressesFormValid = true
+    vm.directorFormValid = true
+    vm.certifyFormValid = true
+  })
+
+  afterEach(() => {
+    sinon.restore()
+    wrapper.destroy()
+  })
+
+  it('includes Directors, Registered Address, and Records Address in AR filing data', async () => {
+    const button = wrapper.find('#ar-file-pay-bc-btn')
+    expect(button.attributes('disabled')).toBeUndefined()
+
+    // click the File & Pay button
+    button.trigger('click')
+    await flushPromises()
+
+    // get the payload of the ajax call
+    // - the first index (0) is to get the first call, where there could be many calls to the stubbed function
+    // - the second index (1) is to get the second param - data - where the call is axios.post(url, data)
+    const payload = spy.args[0][1]
+    // basic tests to pass ensuring structure of payload is as expected
+    expect(payload.filing).toBeDefined()
+    expect(payload.filing.annualReport).toBeDefined()
+
+    expect(payload.filing.annualReport.directors).toBeDefined()
+    expect(payload.filing.annualReport.offices.registeredOffice).toBeDefined()
+    expect(payload.filing.annualReport.offices.recordsOffice).toBeDefined()
+  })
+
+  it('includes certification data in the header', async () => {
+    const button = wrapper.find('#ar-file-pay-bc-btn')
+    expect(button.attributes('disabled')).toBeUndefined()
+
+    // click the File & Pay button
+    button.trigger('click')
+    await flushPromises()
+
+    const payload = spy.args[0][1]
+
+    // basic tests to pass ensuring structure of payload is as expected
+    expect(payload.filing).toBeDefined()
+    expect(payload.filing.annualReport).toBeDefined()
+    expect(payload.filing.header).toBeDefined()
+
+    expect(payload.filing.header.certifiedBy).toBeDefined()
+    expect(payload.filing.header.email).toBeDefined()
+
+    expect(payload.filing.header.routingSlipNumber).toBeUndefined() // normally not saved
+  })
+
+  it('includes the AR Date for the current filing year', async () => {
+    const button = wrapper.find('#ar-file-pay-bc-btn')
+    expect(button.attributes('disabled')).toBeUndefined()
+
+    // click the File & Pay button
+    button.trigger('click')
+    await flushPromises()
+
+    const payload = spy.args[0][1]
+
+    // basic tests to pass ensuring structure of payload is as expected
+    expect(payload.filing).toBeDefined()
+    expect(payload.filing.annualReport).toBeDefined()
+    expect(payload.filing.annualReport.annualReportDate).toBeDefined()
+
+    expect(payload.filing.annualReport.annualReportDate.substr(0, 4)).toBe(currentFilingYear.toString())
+  })
+})
+
 describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
   let wrapper
   let vm
@@ -1206,6 +1742,7 @@ describe('AnnualReport - Part 6 - Error/Warning dialogues', () => {
   beforeEach(async () => {
     // init store
     store.state.entityIncNo = 'CP0001191'
+    store.state.entityType = EntityTypes.COOP
     store.state.entityName = 'Legal Name - CP0001191'
     store.state.ARFilingYear = 2017
     store.state.currentFilingStatus = 'NEW'
@@ -1414,6 +1951,7 @@ describe('AnnualReport - Part 7 - Save through multiple tabs', () => {
   let vm
 
   store.state.entityName = 'Legal Name - CP0001191'
+  store.state.entityType = EntityTypes.COOP
   store.state.ARFilingYear = 2017
   store.state.currentFilingStatus = 'NEW'
   store.state.entityIncNo = 'CP0001191'
