@@ -5,7 +5,7 @@ import Vuelidate from 'vuelidate'
 import sinon from 'sinon'
 
 // Components
-import { SummaryDirectors } from '@/components/Common'
+import { SummaryDirectors } from '@/components/common'
 
 // Store
 import store from '@/store/store'
@@ -29,7 +29,7 @@ describe('Directors as a COOP', () => {
   beforeEach(done => {
     // init store
     store.state.entityIncNo = 'CP0001191'
-    store.state.entityType = EntityTypes.Coop
+    store.state.entityType = EntityTypes.COOP
     const directors = [
       {
         'id': 1,
@@ -90,7 +90,7 @@ describe('Directors as a COOP', () => {
       }
     ]
     const Constructor = Vue.extend(SummaryDirectors)
-    const instance = new Constructor({ store: store, propsData: { directors }, vuetify })
+    const instance = new Constructor({ store, propsData: { directors }, vuetify })
     vm = instance.$mount()
 
     Vue.nextTick(() => {
@@ -147,7 +147,7 @@ describe('Directors as a COOP', () => {
   })
 
   it('displays the list of directors', () => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(3)
@@ -166,7 +166,7 @@ describe('Directors as a BCORP', () => {
   beforeEach(done => {
     // init store
     store.state.entityIncNo = 'BC0001191'
-    store.state.entityType = EntityTypes.BCorp
+    store.state.entityType = EntityTypes.BCORP
     const directors = [
       {
         'id': 1,
@@ -254,7 +254,7 @@ describe('Directors as a BCORP', () => {
       }
     ]
     const Constructor = Vue.extend(SummaryDirectors)
-    const instance = new Constructor({ store: store, propsData: { directors }, vuetify })
+    const instance = new Constructor({ store, propsData: { directors }, vuetify })
     vm = instance.$mount()
 
     Vue.nextTick(() => {
@@ -316,7 +316,7 @@ describe('Directors as a BCORP', () => {
   })
 
   it('displays the list of directors', () => {
-    const directorListUI = vm.$el.querySelectorAll('.director-list .container')
+    const directorListUI = vm.$el.querySelectorAll('.director-list-container')
 
     // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(3)

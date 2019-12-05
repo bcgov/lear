@@ -2,7 +2,7 @@
   <div id="directors">
 
     <!-- delete new director - confirmation popup -->
-    <v-dialog v-model="showPopup" width="30rem">
+    <v-dialog id="delete-director-dialog" v-model="showPopup" width="30rem">
       <v-card>
         <v-card-text>
           Are you sure you want to remove
@@ -41,7 +41,7 @@
       <!-- New Director Form -->
       <v-expand-transition>
         <ul class="list new-director" v-show="showNewDirectorForm">
-          <li class="container">
+          <li class="new-director-container">
             <div class="meta-container">
               <label class="appoint-header">Appoint New Director</label>
               <div class="meta-container__inner">
@@ -49,18 +49,23 @@
                   v-model="directorFormValid" lazy-validation
                 >
                   <div class="form__row three-column">
-                    <v-text-field filled class="item" label="First Name" id="new-director__first-name"
+                    <v-text-field filled class="item"
+                      label="First Name"
+                      id="new-director__first-name"
                       v-model="director.officer.firstName"
                       :rules="directorFirstNameRules"
-                      required
                     />
-                    <v-text-field filled label="Initial" class="item director-initial"
+                    <v-text-field filled class="item director-initial"
+                      label="Initial"
+                      id="new-director__middle-initial"
                       v-model="director.officer.middleInitial"
+                      :rules="directorMiddleInitialRules"
                     />
-                    <v-text-field filled class="item" label="Last Name"
+                    <v-text-field filled class="item"
+                      label="Last Name"
+                      id="new-director__last-name"
                       v-model="director.officer.lastName"
                       :rules="directorLastNameRules"
-                      required
                     />
                   </div>
 
@@ -72,7 +77,7 @@
                       @update:address="updateBaseAddress"
                     />
                   </div>
-                  <div class="form__row" v-if="entityFilter(EntityTypes.BCorp)">
+                  <div class="form__row" v-if="entityFilter(EntityTypes.BCORP)">
                     <v-checkbox
                       class="inherit-checkbox"
                       label="Mailing Address same as Delivery Address"
@@ -103,7 +108,7 @@
                       <template v-slot:activator="{ on }">
                         <v-text-field box class="item" label="Appointment / Election Date"
                           id="new-director__appointment-date"
-                          v-model="director.appointmentDate"
+                          v-model.trim="director.appointmentDate"
                           hint="YYYY/MM/DD"
                           append-icon="event"
                           v-on="on"
@@ -127,9 +132,9 @@
                       full-width
                       min-width="18rem">
                       <template v-slot:activator="{ on }">
-                        <v-text-field class="item" ref="newDirectorCessationDate"
+                        <v-text-field class="item"
                           id="new-director__cessation-date"
-                          v-model="director.cessationDate"
+                          v-model.trim="director.cessationDate"
                           label="Cessation Date"
                           hint="YYYY/MM/DD"
                           append-icon="event"
@@ -168,10 +173,10 @@
         <v-subheader v-if="this.directors.length && !directorEditInProgress" class="director-header">
           <span>Names</span>
           <span>Delivery Address</span>
-          <span v-if="entityFilter(EntityTypes.BCorp)">Mailing Address</span>
+          <span v-if="entityFilter(EntityTypes.BCORP)">Mailing Address</span>
           <span>Appointed/Elected</span>
         </v-subheader>
-        <li class="container"
+        <li class="director-list-container"
           :id="'director-' + director.id"
           v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
           v-for="(director, index) in orderBy(directors, 'id', -1)"
@@ -227,8 +232,8 @@
                   <div class="address">
                     <BaseAddress :address="director.deliveryAddress" />
                   </div>
-                  <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
-                    <span v-if="isSameAddress(director.deliveryAddress, director.mailingAddress)">
+                  <div class="address same-address" v-if="entityFilter(EntityTypes.BCORP)">
+                    <span v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                       Same as Delivery Address
                     </span>
                     <BaseAddress v-else :address="director.mailingAddress" />
@@ -259,7 +264,7 @@
                             <v-icon>arrow_drop_down</v-icon>
                           </v-btn>
                         </template>
-                        <v-list class="actions__more_actions">
+                        <v-list class="actions__more-actions">
                           <v-list-tile @click="showDeleteDirectorConfirmation(director)">
                             <v-list-tile-title>Remove</v-list-tile-title>
                           </v-list-tile>
@@ -286,7 +291,7 @@
                               <v-icon>mdi-menu-down</v-icon>
                             </v-btn>
                           </template>
-                          <v-list class="actions__more_actions">
+                          <v-list class="actions__more-actions">
                             <!-- removed until release 2 -->
                             <!--
                             <v-list-tile @click="cessationDateTemp = asOfDate; activeIndexCustomCease = index;">
@@ -327,15 +332,21 @@
                   v-show="activeIndex === index"
                   v-model="directorFormValid" lazy-validation>
                   <div class="form__row three-column" v-show="editFormShowHide.showName">
-                    <v-text-field filled label="First Name" class="item"
+                    <v-text-field filled class="item"
+                      label="First Name"
+                      id="edit-director__first-name"
                       v-model="director.officer.firstName"
                       :rules="directorFirstNameRules"
-                      required
                     />
-                    <v-text-field filled label="Initial" class="item director-initial"
+                    <v-text-field filled class="item director-initial"
+                      label="Initial"
+                      id="edit-director__middle-initial"
                       v-model="director.officer.middleInitial"
+                      :rules="directorMiddleInitialRules"
                     />
-                    <v-text-field filled label="Last Name" class="item"
+                    <v-text-field filled class="item"
+                      label="Last Name"
+                      id="edit-director__last-name"
                       v-model="director.officer.lastName"
                       :rules="directorLastNameRules"
                     />
@@ -350,7 +361,7 @@
                     :key="activeIndex"
                   />
 
-                  <div class="form__row" v-if="entityFilter(EntityTypes.BCorp)"
+                  <div class="form__row" v-if="entityFilter(EntityTypes.BCORP)"
                    v-show="editFormShowHide.showAddress"
                   >
                     <v-checkbox
@@ -385,7 +396,7 @@
                       <template v-slot:activator="{ on }">
                         <v-text-field
                           class="item edit-director__appointment-date"
-                          v-model="director.appointmentDate"
+                          v-model.trim="director.appointmentDate"
                           label="Apointment / Election Date"
                           hint="YYYY/MM/DD"
                           append-icon="event"
@@ -412,7 +423,7 @@
                       min-width="18rem">
                       <template v-slot:activator="{ on }">
                         <v-text-field class="item edit-director__cessation-date"
-                          v-model="director.cessationDate"
+                          v-model.trim="director.cessationDate"
                           label="Cessation Date"
                           hint="YYYY/MM/DD"
                           append-icon="event"
@@ -468,16 +479,16 @@ import { required, maxLength } from 'vuelidate/lib/validators'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
 // Mixins
-import { DateMixin, ExternalMixin, EntityFilterMixin, AddressMixin } from '@/mixins'
+import { DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'
 
 // Constants
-import { DirectorConst } from '@/constants'
+import { CEASED, NAMECHANGED, ADDRESSCHANGED, APPOINTED } from '@/constants'
 
 // Interfaces
-import { FormsIF, AddressesIF } from '@/interfaces'
+import { FormType, BaseAddressType } from '@/interfaces'
 
 @Component({
   components: {
@@ -489,16 +500,16 @@ import { FormsIF, AddressesIF } from '@/interfaces'
     ...mapGetters(['lastCODFilingDate'])
   }
 })
-export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFilterMixin, AddressMixin) {
+export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin) {
   // To fix "property X does not exist on type Y" errors, annotate types for referenced components.
   // ref: https://github.com/vuejs/vetur/issues/1414
   $refs!: {
-    newDirectorForm: FormsIF.FormType,
-    baseAddressNew: AddressesIF.BaseAddressType,
-    mailAddressNew: AddressesIF.BaseAddressType,
-    editDirectorForm: Array<FormsIF.FormType>,
-    baseAddressEdit: Array<AddressesIF.BaseAddressType>
-    mailAddressEdit: Array<AddressesIF.BaseAddressType>
+    newDirectorForm: FormType,
+    baseAddressNew: BaseAddressType,
+    mailAddressNew: BaseAddressType,
+    editDirectorForm: Array<FormType>,
+    baseAddressEdit: Array<BaseAddressType>
+    mailAddressEdit: Array<BaseAddressType>
   }
 
   // Props passed into this component.
@@ -560,7 +571,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private inheritDeliveryAddress: boolean = false
 
   // EntityTypes Enum
-  private EntityTypes: {} = EntityTypes
+  readonly EntityTypes: {} = EntityTypes
 
   // The Address schema containing Vuelidate rules.
   // NB: This should match the subject JSON schema.
@@ -598,7 +609,21 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private get directorFirstNameRules (): Array<Function> {
     return [
       v => !!v || 'A first name is required',
-      v => (v !== undefined && v.trim() !== '') || 'Invalid spaces'
+      v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
+      v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
+      v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
+    ]
+  }
+
+  /**
+   * Computed value.
+   * @returns The array of validations rules for a director's middle initial.
+   */
+  private get directorMiddleInitialRules (): Array<Function> {
+    return [
+      v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
+      v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
+      v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
     ]
   }
 
@@ -609,7 +634,9 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private get directorLastNameRules (): Array<Function> {
     return [
       v => !!v || 'A last name is required',
-      v => (v !== undefined && v.trim() !== '') || 'Invalid spaces'
+      v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
+      v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
+      v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
     ]
   }
 
@@ -669,16 +696,10 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     }
 
     // appointment date must be before cessation date
-    const rule1 =
-      v => this.compareDates(v, cessationDate, '<') || 'Appointment Date must be before Cessation Date'
-
-    rules.push(rule1)
+    rules.push(v => this.compareDates(v, cessationDate, '<') || 'Appointment Date must be before Cessation Date')
 
     // appointment date must be in the past (or today)
-    const rule2 =
-      v => this.dateIsNotFuture(v) || 'Appointment Date cannot be in the future'
-
-    rules.push(rule2)
+    rules.push(v => this.dateIsNotFuture(v) || 'Appointment Date cannot be in the future')
 
     return rules
   }
@@ -905,7 +926,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     }
 
     newDirector = {
-      actions: [DirectorConst.APPOINTED],
+      actions: [APPOINTED],
       id: this.directors.length + 1,
       isDirectorActionable: true,
       isFeeApplied: true,
@@ -920,13 +941,13 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     }
 
     // Add the mailing address property if the entity is a BCORP
-    if (this.entityFilter(EntityTypes.BCorp)) {
+    if (this.entityFilter(EntityTypes.BCORP)) {
       newDirector = { ...newDirector, mailingAddress: { ...this.inProgressMailAddress } }
     }
 
     // if there is also a cease date on this new director, add the ceased action
     if (this.director.cessationDate !== null && this.director.cessationDate !== undefined) {
-      this.addAction(newDirector, DirectorConst.CEASED)
+      this.addAction(newDirector, CEASED)
     }
     this.directors.push(newDirector)
   }
@@ -942,7 +963,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     else director.isFeeApplied = false
 
     // reverse "ceased" action
-    this.toggleAction(director, DirectorConst.CEASED)
+    this.toggleAction(director, CEASED)
 
     // either set or undo cessation date
     if (director.cessationDate === null) {
@@ -1044,22 +1065,22 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
       }
 
       /* COMPARE changes to original director data, for existing directors */
-      if (director.actions.indexOf(DirectorConst.APPOINTED) < 0) {
+      if (director.actions.indexOf(APPOINTED) < 0) {
         const origDirector = this.directorsOriginal.filter(el => el.id === id)[0]
 
         // check whether address has changed
         if ((JSON.stringify(origDirector.deliveryAddress) !== JSON.stringify(director.deliveryAddress)) ||
           (JSON.stringify(origDirector.mailingAddress) !== JSON.stringify(director.mailingAddress))) {
-          this.addAction(director, DirectorConst.ADDRESSCHANGED)
+          this.addAction(director, ADDRESSCHANGED)
         } else {
-          this.removeAction(director, DirectorConst.ADDRESSCHANGED)
+          this.removeAction(director, ADDRESSCHANGED)
         }
 
         // check whether name has changed
         if (JSON.stringify(origDirector.officer) !== JSON.stringify(director.officer)) {
-          this.addAction(director, DirectorConst.NAMECHANGED)
+          this.addAction(director, NAMECHANGED)
         } else {
-          this.removeAction(director, DirectorConst.NAMECHANGED)
+          this.removeAction(director, NAMECHANGED)
         }
       }
 
@@ -1173,7 +1194,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    */
   private isNew (director): boolean {
     // helper function - was the director added in this filing?
-    return (director.actions.indexOf(DirectorConst.APPOINTED) >= 0)
+    return (director.actions.indexOf(APPOINTED) >= 0)
   }
 
   /**
@@ -1182,7 +1203,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * @returns Whether the director has had the name changed.
    */
   private isNameChanged (director): boolean {
-    return (director.actions.indexOf(DirectorConst.NAMECHANGED) >= 0)
+    return (director.actions.indexOf(NAMECHANGED) >= 0)
   }
 
   /**
@@ -1191,7 +1212,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * @returns Whether the director has had the address changed.
    */
   private isAddressChanged (director): boolean {
-    return (director.actions.indexOf(DirectorConst.ADDRESSCHANGED) >= 0)
+    return (director.actions.indexOf(ADDRESSCHANGED) >= 0)
   }
 
   /**
@@ -1201,7 +1222,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    */
   private isActive (director): boolean {
     // helper function - is the director active, ie: not ceased?
-    return (director.actions.indexOf(DirectorConst.CEASED) < 0)
+    return (director.actions.indexOf(CEASED) < 0)
   }
 
   /**
@@ -1337,12 +1358,12 @@ ul {
   min-width: 56rem;
 }
 
-.meta-container{
+.meta-container {
   display: flex;
   flex-flow: column nowrap;
   position: relative;
 
-  > label:first-child{
+  > label:first-child {
     font-weight: 700;
   }
 
@@ -1407,6 +1428,7 @@ ul {
   align-items: stretch;
   margin-right: -0.5rem;
   margin-left: -0.5rem;
+
   .item {
     flex: 1 1 auto;
     flex-basis: 0;
@@ -1467,9 +1489,15 @@ ul {
   color: $gray5 !important;
 }
 
-.new-director .meta-container {
-  > label:first-child {
-    margin-bottom: 1.5rem;
+.new-director {
+  .new-director-container {
+    padding: 1.25rem;
+
+    .meta-container {
+      > label:first-child {
+        margin-bottom: 1.5rem;
+      }
+    }
   }
 }
 
@@ -1485,6 +1513,14 @@ ul {
   margin-left: 1px !important;
   padding: 0 5px;
   color: $gray6;
+}
+
+.actions__more-actions {
+  padding: 0;
+
+  .v-list-item__title {
+    font-size: 0.875rem;
+  }
 }
 
 .standalone__cessation-date__datepicker {
@@ -1507,6 +1543,12 @@ ul {
     font-size: 0.875rem;
     font-weight: 600;
     line-height: 1.1875rem;
+  }
+}
+
+.director-list {
+  .director-list-container {
+    padding: 1.25rem;
   }
 }
 

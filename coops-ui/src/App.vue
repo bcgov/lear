@@ -38,27 +38,31 @@
 </template>
 
 <script>
+// Libraries
 import { mapActions, mapState } from 'vuex'
-import { DateMixin, AddressMixin, CommonMixin } from '@/mixins'
 import axios from '@/axios-auth'
-import DashboardUnavailableDialog from '@/components/Dashboard/DashboardUnavailableDialog.vue'
-import AccountAuthorizationDialog from '@/components/Dashboard/AccountAuthorizationDialog.vue'
+
+// Components
 import SbcHeader from 'sbc-common-components/src/components/SbcHeader.vue'
 import SbcFooter from 'sbc-common-components/src/components/SbcFooter.vue'
 import EntityInfo from '@/components/EntityInfo.vue'
-import { EntityTypes } from '@/enums'
+
+// Dialogs
+import { DashboardUnavailableDialog, AccountAuthorizationDialog } from '@/components/dialogs'
+
+// Mixins
+import { DateMixin, CommonMixin } from '@/mixins'
 
 export default {
   name: 'App',
 
-  mixins: [DateMixin, AddressMixin, CommonMixin],
+  mixins: [DateMixin, CommonMixin],
 
   data () {
     return {
       dataLoaded: false,
       dashboardUnavailableDialog: false,
-      accountAuthorizationDialog: false,
-      EntityTypes
+      accountAuthorizationDialog: false
     }
   },
 
@@ -97,7 +101,7 @@ export default {
     ...mapActions(['setKeycloakRoles', 'setAuthRoles', 'setBusinessEmail', 'setBusinessPhone',
       'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityType', 'setEntityStatus',
       'setEntityBusinessNo', 'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate',
-      'setNextARDate', 'setTasks', 'setFilings', 'setMailingAddress', 'setDeliveryAddress', 'setDirectors',
+      'setNextARDate', 'setTasks', 'setFilings', 'setRegisteredAddress', 'setRecordsAddress', 'setDirectors',
       'setTriggerDashboardReload', 'setLastAnnualReportDate']),
 
     fetchData () {
@@ -285,15 +289,19 @@ export default {
     },
 
     storeAddresses (response) {
-      if (response && response.data && response.data.mailingAddress) {
-        this.setMailingAddress(this.omitProp(response.data.mailingAddress, ['addressType']))
+      if (response && response.data) {
+        if (response.data.registeredOffice) {
+          this.setRegisteredAddress(this.omitProps(response.data.registeredOffice,
+            ['deliveryAddress', 'mailingAddress'],
+            ['addressType']))
+        }
+        if (response.data.recordsOffice) {
+          this.setRecordsAddress(this.omitProps(response.data.recordsOffice,
+            ['deliveryAddress', 'mailingAddress'],
+            ['addressType']))
+        }
       } else {
-        throw new Error('Invalid mailing address')
-      }
-      if (response && response.data && response.data.deliveryAddress) {
-        this.setDeliveryAddress(this.omitProp(response.data.deliveryAddress, ['addressType']))
-      } else {
-        throw new Error('Invalid delivery address')
+        throw new Error('invalid office addresses')
       }
     },
 
@@ -342,7 +350,5 @@ export default {
 </script>
 
 <style lang="scss">
-@import "@/assets/styles/base.scss";
-@import "@/assets/styles/layout.scss";
-@import "@/assets/styles/overrides.scss";
+// @import '@/assets/styles/theme.scss';
 </style>

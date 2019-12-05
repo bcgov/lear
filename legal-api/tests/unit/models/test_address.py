@@ -16,7 +16,7 @@
 
 Test-Suite to ensure that the Address Model is working as expected.
 """
-from legal_api.models import Address
+from legal_api.models import Address, Office
 from tests.unit.models import factory_business
 
 
@@ -75,8 +75,9 @@ def test_mailing_address_save_to_business(session):
         region='BC',
         address_type=Address.MAILING
     )
-
-    business.mailing_address.append(address)
+    office = Office(office_type='registeredOffice')
+    office.addresses.append(address)
+    business.offices.append(office)
     business.save()
 
     mailing = business.mailing_address.one_or_none()

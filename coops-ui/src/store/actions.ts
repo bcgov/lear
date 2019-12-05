@@ -56,11 +56,11 @@ export default {
   setFilings ({ commit }, filings) {
     commit('filings', filings)
   },
-  setMailingAddress ({ commit }, mailingAddress) {
-    commit('mailingAddress', mailingAddress)
+  setRegisteredAddress ({ commit }, registeredAddress) {
+    commit('registeredAddress', registeredAddress)
   },
-  setDeliveryAddress ({ commit }, deliveryAddress) {
-    commit('deliveryAddress', deliveryAddress)
+  setRecordsAddress ({ commit }, recordsAddress) {
+    commit('recordsAddress', recordsAddress)
   },
   setDirectors ({ commit }, directors) {
     commit('directors', directors)

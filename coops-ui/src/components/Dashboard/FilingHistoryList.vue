@@ -92,7 +92,7 @@ import ExternalMixin from '@/mixins/external-mixin'
 import DateMixin from '@/mixins/date-mixin'
 import axios from '@/axios-auth'
 import { mapState } from 'vuex'
-import DownloadErrorDialog from '@/components/Dashboard/DownloadErrorDialog.vue'
+import { DownloadErrorDialog } from '@/components/dialogs'
 
 export default {
   name: 'FilingHistoryList',
@@ -174,7 +174,8 @@ export default {
     },
 
     // Method to extract date from a local datetime string
-    formatDate (dateString) {
+    formatDate (dateString): string {
+      if (!dateString) return null // safety check
       var dateStrParts = dateString.split(',')
       var dateStr = dateStrParts[0]
       var dateParts = dateStr.split('/')
@@ -217,18 +218,21 @@ export default {
       if (section) {
         const localDateTime = this.convertUTCTimeToLocalTime(filing.header.date)
         const filingDate = this.formatDate(localDateTime)
+        const effectiveDate = this.formatDate(this.convertUTCTimeToLocalTime(filing.header.effectiveDate))
         const item = {
           name: title,
           filingId: filing.header.filingId,
           filingAuthor: filing.header.certifiedBy,
           filingDateTime: localDateTime,
           filingDate: filingDate,
+          filingEffectiveDate: effectiveDate,
           paymentToken: filing.header.paymentToken,
           filingDocuments: [{
             filingId: filing.header.filingId,
             name: title,
             documentName: `${this.entityIncNo} - ${title} - ${filingDate}.pdf`
           }],
+          status: filing.header.status,
           paperOnly: false
         }
         this.filedItems.push(item)
@@ -239,6 +243,7 @@ export default {
 
     loadPaperFiling (filing) {
       // split name on camelcase and capitalize first letters
+      if (!filing || !filing.header || !filing.header.name) return // safety check
       let name = filing.header.name.split(/(?=[A-Z])/).join(' ')
       const localDateTime = this.convertUTCTimeToLocalTime(filing.header.date)
       const filingDate = this.formatDate(localDateTime)

@@ -1,10 +1,8 @@
 <template>
   <v-card flat id="AR-step-4-container">
-    <div class="container">
+    <div class="certify-container">
       <div class="certifiedby-container">
-        <label>
-          <span>Legal Name</span>
-        </label>
+        <label>Legal Name</label>
         <div class="value certifiedby">
           <v-text-field
             filled
@@ -57,7 +55,7 @@ export default class Certify extends Vue {
    * Lifecycle callback to always give the parent a "valid" event for its property values.
    */
   private created (): void {
-    this.emitValid(this.trimmedCertifiedBy && this.isCertified)
+    this.emitValid(Boolean(this.trimmedCertifiedBy && this.isCertified))
   }
 
   /**
@@ -65,35 +63,36 @@ export default class Certify extends Vue {
    * @returns The trimmed "Certified By" string (may be '').
    */
   private get trimmedCertifiedBy (): string {
-    return this.certifiedBy && this.certifiedBy.trim()
+    // remove repeated inline whitespace, and leading/trailing whitespace
+    return this.certifiedBy && this.certifiedBy.replace(/\s+/g, ' ').trim()
   }
 
-  // Emit an update event.
+  // Emit an update event when input changes.
   @Emit('update:certifiedBy')
-  private emitCertifiedBy (val: string): string {
-    this.emitValid(val && val.trim() && this.isCertified)
+  private emitCertifiedBy (certifiedBy: string): string {
+    // remove repeated inline whitespace, and leading/trailing whitespace
+    certifiedBy = certifiedBy && certifiedBy.replace(/\s+/g, ' ').trim()
+    this.emitValid(Boolean(certifiedBy && this.isCertified))
 
-    return val
+    return certifiedBy
   }
 
-  // Emit an update event.
+  // Emit an update event when checkbox changes.
   @Emit('update:isCertified')
-  private emitIsCertified (val: boolean): boolean {
-    this.emitValid(this.trimmedCertifiedBy && !!val)
+  private emitIsCertified (isCertified: boolean): boolean {
+    this.emitValid(Boolean(this.trimmedCertifiedBy && isCertified))
 
-    return val
+    return isCertified
   }
 
   // Emit an event indicating whether or not the form is valid.
   @Emit('valid')
-  private emitValid (val: boolean): boolean {
-    return val
-  }
+  private emitValid (valid: boolean): void { }
 }
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
+// @import '@/assets/styles/theme.scss';
 
 #AR-step-4-container {
   margin-top: 1rem;
@@ -101,6 +100,10 @@ export default class Certify extends Vue {
   padding-top: 1rem;
   line-height: 1.2rem;
   font-size: 0.875rem;
+}
+
+.certify-container {
+  padding: 1.25rem;
 }
 
 .certifiedby-container {
@@ -127,7 +130,7 @@ export default class Certify extends Vue {
 }
 
 .value.certifiedby {
-  min-width: 35rem
+  min-width: 35rem;
 }
 
 .certify-clause {
@@ -139,6 +142,6 @@ export default class Certify extends Vue {
 .certify-stmt {
   display:inline;
   font-size: 0.875rem;
-  color: black
+  color: black;
 }
 </style>

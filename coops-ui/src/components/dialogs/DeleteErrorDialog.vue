@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="dialog" width="60rem" id="delete-error-dialog">
+  <v-dialog id="delete-error-dialog" v-model="dialog" width="45rem" persistent="">
       <v-card>
         <v-card-title id="error-dialogue-title" v-if="errors.length > 0 || warnings.length < 1">
           Unable to Delete Filing
@@ -7,6 +7,7 @@
         <v-card-title id="warning-dialogue-title" v-else>
           Filing Deleted with Warnings
         </v-card-title>
+
         <v-card-text id="dialogue-text">
           <p class="genErr" v-if="errors.length + warnings.length < 1">
             We were unable to delete your filing.
@@ -24,12 +25,17 @@
             {{warning.warning}}
           </p>
 
-          <ErrorContact />
-
+          <template v-if="!isRoleStaff">
+            <p class="genErr">If you need help, please contact us.</p>
+            <ErrorContact class="mt-5" />
+          </template>
         </v-card-text>
+
         <v-divider class="my-0"></v-divider>
+
         <v-card-actions>
-          <v-btn id="okay-btn" color="primary" text @click="okay()">Okay</v-btn>
+          <v-spacer></v-spacer>
+          <v-btn id="okay-btn" color="primary" text @click="okay()">OK</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -37,12 +43,20 @@
 
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
-import ErrorContact from '@/components/ErrorContact.vue'
+import { mapGetters } from 'vuex'
+import { ErrorContact } from '@/components/common'
 
 @Component({
+  computed: {
+    // Property definition for runtime environment.
+    ...mapGetters(['isRoleStaff'])
+  },
   components: { ErrorContact }
 })
 export default class DeleteErrorDialog extends Vue {
+  // Getter definition for static type checking.
+  readonly isRoleStaff!: boolean
+
   // Prop to display the dialog.
   @Prop() private dialog: boolean
 
@@ -58,9 +72,5 @@ export default class DeleteErrorDialog extends Vue {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
-
-.genErr {
-  font-size: 0.9rem;
-}
+// @import '@/assets/styles/theme.scss';
 </style>

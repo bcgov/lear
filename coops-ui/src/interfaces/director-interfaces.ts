@@ -1,3 +1,5 @@
-export interface Director {
+import Vue from 'vue'
+
+export interface Director extends Vue{
   actions?: string[]
 }

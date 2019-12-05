@@ -23,8 +23,8 @@ export default {
   ARFilingYear: null, /* Number */
   tasks: [],
   filings: [],
-  mailingAddress: null,
-  deliveryAddress: null,
+  registeredAddress: null,
+  recordsAddress: null,
   directors: [],
 
   triggerDashboardReload: false,

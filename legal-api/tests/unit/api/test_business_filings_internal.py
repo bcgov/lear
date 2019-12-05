@@ -281,8 +281,8 @@ def test_future_filing_coa(session, client, jwt):
     coa = copy.deepcopy(FILING_HEADER)
     coa['filing']['header']['name'] = 'changeOfAddress'
     coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
-    coa['filing']['changeOfAddress']['deliveryAddress']['addressCountry'] = 'CA'
-    coa['filing']['changeOfAddress']['mailingAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
     coa['filing']['business']['identifier'] = identifier
 
     filing = factory_pending_filing(b, coa)

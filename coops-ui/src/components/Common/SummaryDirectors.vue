@@ -6,10 +6,10 @@
         <v-subheader class="director-header">
           <span>Names</span>
           <span>Delivery Address</span>
-          <span v-if="entityFilter(EntityTypes.BCorp)">Mailing Address</span>
+          <span v-if="entityFilter(EntityTypes.BCORP)">Mailing Address</span>
           <span>Appointed/Elected</span>
         </v-subheader>
-        <li class="container"
+        <li class="director-list-container"
           :id="'director-' + director.id"
           v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
           v-for="(director, index) in orderBy(directorSummary, 'id', -1)"
@@ -64,8 +64,8 @@
                   <div class="address">
                     <BaseAddress :address="director.deliveryAddress" />
                   </div>
-                  <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
-                    <span v-if="isSameAddress(director.deliveryAddress, director.mailingAddress)">
+                  <div class="address same-address" v-if="entityFilter(EntityTypes.BCORP)">
+                    <span v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                       Same as Delivery Address
                     </span>
                     <BaseAddress v-else :address="director.mailingAddress" />
@@ -92,7 +92,7 @@
     <v-card flat>
       <v-expand-transition>
           <ul class="list director-list" v-show="expand">
-            <li class="container"
+            <li class="director-list-container"
               :id="'director-' + director.id"
               v-bind:class="{ 'remove' : !isActive(director) || !isActionable(director)}"
               v-for="(director, index) in orderBy(directorsCeased, 'id', -1)"
@@ -147,8 +147,8 @@
                       <div class="address">
                         <BaseAddress :address="director.deliveryAddress" />
                       </div>
-                      <div class="address same-address" v-if="entityFilter(EntityTypes.BCorp)">
-                        <span v-if="isSameAddress(director.deliveryAddress, director.mailingAddress)">
+                      <div class="address same-address" v-if="entityFilter(EntityTypes.BCORP)">
+                        <span v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                           Same as Delivery Address
                         </span>
                         <BaseAddress v-else :address="director.mailingAddress" />
@@ -177,23 +177,23 @@ import { Component, Mixins, Prop } from 'vue-property-decorator'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
 // Mixins
-import { DateMixin, EntityFilterMixin, ExternalMixin, AddressMixin } from '@/mixins'
+import { DateMixin, EntityFilterMixin, ExternalMixin, CommonMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'
 
 // Constants
-import { DirectorConst } from '@/constants'
+import { CEASED, APPOINTED, NAMECHANGED, ADDRESSCHANGED } from '@/constants'
 
 // Interfaces
-import { DirectorIF } from '@/interfaces'
+import { Director } from '@/interfaces'
 
 @Component({
   components: {
     BaseAddress
   }
 })
-export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixin, ExternalMixin, AddressMixin) {
+export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixin, ExternalMixin, CommonMixin) {
   @Prop({ default: '' })
   private directors: Array<object>
 
@@ -217,8 +217,8 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
     this.directorSummary = this.directors.slice()
 
     // Push the ceased Directors to new array & remove them from summary array
-    this.directorSummary.forEach((director: DirectorIF.Director) => {
-      if (director.actions.includes(DirectorConst.CEASED)) {
+    this.directorSummary.forEach((director: Director) => {
+      if (director.actions.includes(CEASED)) {
         this.directorsCeased.push(director)
         this.directorSummary = this.directorSummary.filter(filterDir => filterDir !== director)
       }
@@ -240,7 +240,7 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
    */
   private isNew (director): boolean {
     // helper function - was the director added in this filing?
-    return (director.actions.indexOf(DirectorConst.APPOINTED) >= 0)
+    return (director.actions.indexOf(APPOINTED) >= 0)
   }
 
   /**
@@ -249,7 +249,7 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
    * @returns Whether the director has had the address changed.
    */
   private isAddressChanged (director): boolean {
-    return (director.actions.indexOf(DirectorConst.ADDRESSCHANGED) >= 0)
+    return (director.actions.indexOf(ADDRESSCHANGED) >= 0)
   }
 
   /**
@@ -258,7 +258,7 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
    * @returns Whether the director has had the name changed.
    */
   private isNameChanged (director): boolean {
-    return (director.actions.indexOf(DirectorConst.NAMECHANGED) >= 0)
+    return (director.actions.indexOf(NAMECHANGED) >= 0)
   }
 
   /**
@@ -268,7 +268,7 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
    */
   private isActive (director): boolean {
     // helper function - is the director active, ie: not ceased?
-    return (director.actions.indexOf(DirectorConst.CEASED) < 0)
+    return (director.actions.indexOf(CEASED) < 0)
   }
 
   /**
@@ -301,12 +301,12 @@ ul {
   list-style-type: none;
 }
 
-.meta-container{
+.meta-container {
   display: flex;
   flex-flow: column nowrap;
   position: relative;
 
-  > label:first-child{
+  > label:first-child {
     font-weight: 700;
   }
 
@@ -340,6 +340,7 @@ ul {
   align-items: stretch;
   margin-right: -0.5rem;
   margin-left: -0.5rem;
+
   .item {
     flex: 1 1 auto;
     flex-basis: 0;
@@ -387,7 +388,8 @@ ul {
 
 .new-director .meta-container,
 .meta-container.new-director {
-  flex-flow column nowrap
+  flex-flow: column nowrap;
+
   > label:first-child {
     margin-bottom: 1.5rem;
   }
@@ -411,6 +413,10 @@ ul {
     font-weight: 600;
     line-height: 1.1875rem;
   }
+}
+
+.director-list-container {
+  padding: 1.25rem;
 }
 
 .editFormStyle {

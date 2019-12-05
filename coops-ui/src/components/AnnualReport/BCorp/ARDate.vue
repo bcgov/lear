@@ -1,5 +1,5 @@
 <template>
-  <v-card flat class="container">
+  <v-card flat class="ar-date-container">
     <div class="timeline">
       <label>Annual Report Date</label>
       <span class="date ar-date">{{this.toReadableDate(this.nextARDate)}}</span>
@@ -27,8 +27,9 @@ export default class ARDate extends DateMixin {
 <style lang="scss" scoped>
 @import '@/assets/styles/theme.scss';
 
-.container {
-  background: #ffffff;
+.ar-date-container {
+  background: $BCgovInputBG;
+  padding: 1.25rem;
 
   .timeline {
     display: flex;

@@ -24,7 +24,7 @@
       @exit="navigateToDashboard"
     />
 
-    <div id="standalone-office-address" ref="standaloneOfficeAddress">
+    <div id="standalone-office-address">
       <!-- Initial Page Load Transition -->
       <div class="loading-container fade-out">
         <div class="loading__content">
@@ -34,56 +34,82 @@
       </div>
 
       <v-container id="standalone-office-address-container" class="view-container">
-        <article id="standalone-office-address-article">
-          <header>
-            <h1 id="filing-header">Address Change</h1>
-          </header>
+        <v-row>
+          <v-col cols="12" lg="9">
+            <article id="standalone-office-address-article">
+              <header>
+                <h1 id="filing-header">Address Change</h1>
 
-          <!-- Registered Office Addresses -->
-          <section>
-            <RegisteredOfficeAddress
-              :changeButtonDisabled="false"
-              :legalEntityNumber="entityIncNo"
-              :addresses.sync="addresses"
-              @modified="officeModifiedEventHandler($event)"
-              @valid="officeAddressFormValid = $event"
-            />
-          </section>
+                <p>
+                  <span>Please change your Registered Office Address</span>
+                  <span v-if="entityFilter(EntityTypes.BCORP)"> and Records Address</span>
+                  <span>.</span>
+                </p>
 
-          <!-- Certify -->
-          <section>
-            <header>
-              <h2 id="AR-step-4-header">Certify Correct</h2>
-              <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
-            </header>
-            <Certify
-              :isCertified.sync="isCertified"
-              :certifiedBy.sync="certifiedBy"
-              @valid="certifyFormValid=$event"
-            />
-          </section>
+                <v-alert
+                  v-if="entityFilter(EntityTypes.BCORP)"
+                  type="info"
+                  icon="mdi-information"
+                  outlined
+                  class="white-background"
+                >
+                  Any address update will be effective tomorrow.
+                </v-alert>
+              </header>
 
-          <!-- Staff Payment -->
-          <section v-if="isRoleStaff && isPayRequired">
-            <header>
-              <h2 id="AR-step-5-header">Staff Payment</h2>
-            </header>
-            <StaffPayment
-              :value.sync="routingSlipNumber"
-              @valid="staffPaymentFormValid=$event"
-            />
-          </section>
-        </article>
+              <!-- Office Addresses -->
+              <section>
+                <OfficeAddresses
+                  :changeButtonDisabled="false"
+                  :addresses.sync="addresses"
+                  :registeredAddress.sync="registeredAddress"
+                  :recordsAddress.sync="recordsAddress"
+                  @modified="officeModifiedEventHandler($event)"
+                  @valid="officeAddressFormValid = $event"
+                />
+              </section>
 
-        <aside>
-          <affix relative-element-selector="#standalone-office-address-article" :offset="{ top: 120, bottom: 40 }">
-            <sbc-fee-summary
-              v-bind:filingData="[...filingData]"
-              v-bind:payURL="payAPIURL"
-              @total-fee="totalFee=$event"
-            />
-          </affix>
-        </aside>
+              <!-- Certify -->
+              <section>
+                <header>
+                  <h2 id="AR-step-4-header">Certify Correct</h2>
+                  <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+                </header>
+                <Certify
+                  :isCertified.sync="isCertified"
+                  :certifiedBy.sync="certifiedBy"
+                  @valid="certifyFormValid=$event"
+                />
+              </section>
+
+              <!-- Staff Payment -->
+              <section v-if="isRoleStaff && isPayRequired">
+                <header>
+                  <h2 id="AR-step-5-header">Staff Payment</h2>
+                </header>
+                <StaffPayment
+                  :value.sync="routingSlipNumber"
+                  @valid="staffPaymentFormValid=$event"
+                />
+              </section>
+            </article>
+          </v-col>
+
+          <v-col cols="12" lg="3" style="position: relative">
+            <aside>
+              <affix
+                relative-element-selector="#standalone-office-address-article"
+                :offset="{ top: 120, bottom: 40 }"
+              >
+                <sbc-fee-summary
+                  v-bind:filingData="[...filingData]"
+                  v-bind:payURL="payAPIURL"
+                  @total-fee="totalFee=$event"
+                />
+              </affix>
+            </aside>
+          </v-col>
+        </v-row>
       </v-container>
 
       <v-container id="buttons-container" class="list-item">
@@ -107,7 +133,7 @@
         <div class="buttons-right">
           <v-tooltip top color="#3b6cff">
             <template v-slot:activator="{ on }">
-              <div v-on="on" class="inline-div">
+              <div v-on="on" class="d-inline">
               <v-btn
                 id="coa-file-pay-btn"
                 color="primary"
@@ -137,26 +163,34 @@
 </template>
 
 <script lang="ts">
+// Libraries
 import axios from '@/axios-auth'
-import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
-import { Affix } from 'vue-affix'
-import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapGetters } from 'vuex'
-import { PAYMENT_REQUIRED, BAD_REQUEST } from 'http-status-codes'
+
+// Dialogs
+import { ConfirmDialog, PaymentErrorDialog, ResumeErrorDialog, SaveErrorDialog } from '@/components/dialogs'
+
+// Components
+import { OfficeAddresses } from '@/components/common'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
-import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
-import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
-import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
+import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
+
+// Constants
+import { PAYMENT_REQUIRED, BAD_REQUEST } from 'http-status-codes'
+
+// Mixins
+import { EntityFilterMixin } from '@/mixins'
+
+// Enums
+import { EntityTypes } from '@/enums'
 
 export default {
   name: 'StandaloneOfficeAddressFiling',
 
   components: {
-    RegisteredOfficeAddress,
+    OfficeAddresses,
     SbcFeeSummary,
-    Affix,
     Certify,
     StaffPayment,
     ConfirmDialog,
@@ -164,6 +198,7 @@ export default {
     ResumeErrorDialog,
     SaveErrorDialog
   },
+  mixins: [EntityFilterMixin],
 
   data () {
     return {
@@ -188,13 +223,16 @@ export default {
       // properties for Staff Payment component
       routingSlipNumber: null,
       staffPaymentFormValid: false,
-      totalFee: 0
+      totalFee: 0,
+
+      // EntityTypes Enum
+      EntityTypes
     }
   },
 
   computed: {
-    ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo', 'entityFoundingDate']),
-
+    ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo',
+      'entityFoundingDate', 'registeredAddress', 'recordsAddress']),
     ...mapGetters(['isRoleStaff']),
 
     validated () {
@@ -313,21 +351,34 @@ export default {
             // load Annual Report fields
             if (!filing.changeOfAddress) throw new Error('Missing change of address')
 
-            const changeOfAddress = filing.changeOfAddress
+            const changeOfAddress = filing.changeOfAddress.offices
             if (changeOfAddress) {
-              if (changeOfAddress.deliveryAddress && changeOfAddress.mailingAddress) {
+              if (changeOfAddress.recordsOffice) {
                 this.addresses = {
-                  deliveryAddress: changeOfAddress.deliveryAddress,
-                  mailingAddress: changeOfAddress.mailingAddress
+                  registeredOffice: {
+                    deliveryAddress: changeOfAddress.registeredOffice.deliveryAddress,
+                    mailingAddress: changeOfAddress.registeredOffice.mailingAddress
+                  },
+                  recordsOffice: {
+                    deliveryAddress: changeOfAddress.recordsOffice.deliveryAddress,
+                    mailingAddress: changeOfAddress.recordsOffice.mailingAddress
+                  }
                 }
                 this.toggleFiling('add', 'OTADD')
               } else {
-                throw new Error('invalid change of address')
+                this.addresses = {
+                  registeredOffice: {
+                    deliveryAddress: changeOfAddress.registeredOffice.deliveryAddress,
+                    mailingAddress: changeOfAddress.registeredOffice.mailingAddress
+                  }
+                }
+                this.toggleFiling('add', 'OTADD')
               }
             }
           } catch (err) {
             console.log(`fetchData() error - ${err.message}, filing =`, filing)
             this.resumeErrorDialog = true
+            throw new Error('invalid change of address')
           }
         } else {
           console.log('fetchData() error - invalid response =', response)
@@ -340,7 +391,7 @@ export default {
     },
 
     /**
-     * Callback method for the "modified" event from RegisteredOfficeAddress.
+     * Callback method for the "modified" event from OfficeAddresses component.
      *
      * @param modified a boolean indicating whether or not the office address(es) have been modified from their
      * original values.
@@ -354,9 +405,9 @@ export default {
     async onClickSave () {
       // prevent double saving
       if (this.busySaving) return
-
       this.saving = true
       const filing = await this.saveFiling(true)
+
       if (filing) {
         this.filingId = +filing.header.filingId
       }
@@ -445,10 +496,33 @@ export default {
       }
 
       if (this.isDataChanged('OTADD') && this.addresses) {
-        changeOfAddress = {
-          changeOfAddress: {
-            deliveryAddress: this.formatAddress(this.addresses['deliveryAddress']),
-            mailingAddress: this.formatAddress(this.addresses['mailingAddress'])
+        if (this.addresses.recordsOffice) {
+          changeOfAddress = {
+            changeOfAddress: {
+              legalType: this.entityType,
+              offices: {
+                registeredOffice: {
+                  deliveryAddress: this.formatAddress(this.addresses.registeredOffice['deliveryAddress']),
+                  mailingAddress: this.formatAddress(this.addresses.registeredOffice['mailingAddress'])
+                },
+                recordsOffice: {
+                  deliveryAddress: this.formatAddress(this.addresses.recordsOffice['deliveryAddress']),
+                  mailingAddress: this.formatAddress(this.addresses.recordsOffice['mailingAddress'])
+                }
+              }
+            }
+          }
+        } else {
+          changeOfAddress = {
+            changeOfAddress: {
+              legalType: this.entityType,
+              offices: {
+                registeredOffice: {
+                  deliveryAddress: this.formatAddress(this.addresses.registeredOffice['deliveryAddress']),
+                  mailingAddress: this.formatAddress(this.addresses.registeredOffice['mailingAddress'])
+                }
+              }
+            }
           }
         }
       }
@@ -465,10 +539,14 @@ export default {
       if (this.filingId > 0) {
         // we have a filing id, so we are updating an existing filing
         let url = this.entityIncNo + '/filings/' + this.filingId
-        if (isDraft) { url += '?draft=true' }
+        if (isDraft) {
+          url += '?draft=true'
+        }
         let filing = null
         await axios.put(url, filingData).then(res => {
-          if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
+          if (!res || !res.data || !res.data.filing) {
+            throw new Error('invalid API response')
+          }
           filing = res.data.filing
           this.haveChanges = false
         }).catch(error => {
@@ -490,10 +568,14 @@ export default {
       } else {
         // filing id is 0, so we are saving a new filing
         let url = this.entityIncNo + '/filings'
-        if (isDraft) { url += '?draft=true' }
+        if (isDraft) {
+          url += '?draft=true'
+        }
         let filing = null
         await axios.post(url, filingData).then(res => {
-          if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
+          if (!res || !res.data || !res.data.filing) {
+            throw new Error('invalid API response')
+          }
           filing = res.data.filing
           this.haveChanges = false
         }).catch(error => {
@@ -579,7 +661,6 @@ export default {
     certifiedBy (val) {
       this.haveChanges = true
     },
-
     routingSlipNumber (val) {
       this.haveChanges = true
     }
@@ -597,6 +678,7 @@ article {
   }
 }
 
+header p,
 section p {
   color: $gray6;
 }
@@ -605,20 +687,16 @@ section + section {
   margin-top: 3rem;
 }
 
-h2 {
-  margin-bottom: 0.25rem;
-  margin-top: 3rem;
-  font-size: 1.125rem;
-}
-
-#filing-header {
+h1 {
   margin-bottom: 1.25rem;
   line-height: 2rem;
   letter-spacing: -0.01rem;
 }
 
-.title-container {
-  margin-bottom: 0.5rem;
+h2 {
+  margin-bottom: 0.25rem;
+  margin-top: 3rem;
+  font-size: 1.125rem;
 }
 
 // Save & Filing Buttons

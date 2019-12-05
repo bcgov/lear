@@ -119,7 +119,7 @@
 
               <v-btn v-else-if="!isCompleted(item)"
                 color="primary"
-                :disabled="!item.enabled"
+                :disabled="!item.enabled || coaPending"
                 @click.native.stop="doFileNow(item)"
               >
                 File Now
@@ -168,10 +168,9 @@
 
 <script>
 import axios from '@/axios-auth'
-import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import ExternalMixin from '@/mixins/external-mixin'
 import { mapState, mapActions } from 'vuex'
-import DeleteErrorDialog from '@/components/Dashboard/DeleteErrorDialog'
+import { ConfirmDialog, DeleteErrorDialog } from '@/components/dialogs'
 
 export default {
   name: 'TodoList',
@@ -193,7 +192,8 @@ export default {
   },
 
   props: {
-    inProcessFiling: null
+    inProcessFiling: null,
+    coaPending: null
   },
 
   computed: {
@@ -524,16 +524,23 @@ export default {
   }
 }
 
-.list-item__actions .v-btn.actions__more-actions__btn {
-  min-width: 38px !important;
-  width: 38px;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  margin-left: 1px;
+.list-item__actions {
+  .v-btn.actions__more-actions__btn {
+    // make action button width same as its height (per Vuetify)
+    min-width: 36px !important;
+    width: 36px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: 1px;
+  }
 }
 
 .actions__more-actions {
   padding: 0;
+
+  .v-list-item__title {
+    font-size: 0.875rem;
+  }
 }
 
 .filing-type {

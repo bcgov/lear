@@ -1,5 +1,5 @@
 <template>
-  <v-card flat class="container">
+  <v-card flat class="agm-date-container">
     <div class="meta-container">
       <label>
         <span>Annual General<br>Meeting Date</span>
@@ -16,6 +16,7 @@
           <template v-slot:activator="{ on }">
             <v-text-field
               id="agm-textfield"
+              data-test-id="agm-date-text"
               v-model="dateFormatted"
               :disabled="didNotHoldAgm"
               :rules="agmDateRules"
@@ -23,17 +24,18 @@
               hint="YYYY/MM/DD"
               append-icon="mdi-calendar"
               v-on="on"
-              filled>
-            </v-text-field>
+              filled
+            />
           </template>
           <v-date-picker
             id="agm-datepicker"
+            data-test-id="agm-date-picker"
             v-model="date"
             :min=minDate
             :max=maxDate
             no-title
-            @input="menu = true">
-          </v-date-picker>
+            @input="menu = true"
+          />
         </v-menu>
 
         <div class="validationErrorInfo" v-if="$v.dateFormatted.isNotNull">
@@ -75,7 +77,6 @@
 </template>
 
 <script lang="ts">
-
 import { Component, Mixins, Vue, Prop, Watch, Emit } from 'vue-property-decorator'
 import { isNotNull, isValidFormat, isValidYear, isValidMonth, isValidDay } from '@/validators'
 import { mapState, mapGetters } from 'vuex'
@@ -288,11 +289,14 @@ export default class AGMDate extends Mixins(DateMixin) {
   @Emit('valid')
   private emitValid (val: boolean): void { }
 }
-
 </script>
 
 <style lang="scss" scoped>
-@import "@/assets/styles/theme.scss";
+// @import "@/assets/styles/theme.scss";
+
+.agm-date-container {
+  padding: 1.25rem;
+}
 
 .validationErrorInfo {
   color: red;
@@ -325,7 +329,7 @@ export default class AGMDate extends Mixins(DateMixin) {
 }
 
 #agm-checkbox {
-  font-size: 14px;
+  font-size: 0.875rem;
   margin-top: 0;
   margin-left: -3px;
   padding: 0;

@@ -1,8 +1,12 @@
-import SummaryDirectors from '@/components/Common/SummaryDirectors.vue'
-import SummaryCertify from '@/components/Common/SummaryCertify.vue'
-import SummaryStaffPayment from '@/components/Common/SummaryStaffPayment.vue'
+import ErrorContact from './ErrorContact.vue'
+import OfficeAddresses from './OfficeAddresses.vue'
+import SummaryCertify from './SummaryCertify.vue'
+import SummaryDirectors from './SummaryDirectors.vue'
+import SummaryStaffPayment from './SummaryStaffPayment.vue'
 
 export {
+  ErrorContact,
+  OfficeAddresses,
   SummaryCertify,
   SummaryDirectors,
   SummaryStaffPayment

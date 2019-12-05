@@ -1,5 +1,7 @@
 <template>
-  <v-dialog v-model="dialog"
+  <v-dialog
+    id="confirm-dialog"
+    v-model="dialog"
     :max-width="options.width"
     :style="{ zIndex: options.zIndex }"
     :persistent="options.persistent"

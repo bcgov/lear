@@ -13,7 +13,7 @@ import base64
 import copy
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 
@@ -169,8 +169,9 @@ class Report:  # pylint: disable=too-few-public-methods
         hour = filing_datetime.strftime('%I').lstrip('0')
         filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {hour}:%M %p Pacific Time')
 
-        # Get the effective date - TODO 'effective date' doesn't exist yet but will in future; for now use filing date
-        effective_date = self._filing.filing_date.replace(tzinfo=timezone.utc).astimezone(tz=None)
+        # Get the effective date
+        effective_date = self._filing.filing_date.astimezone(local_timezone) if self._filing.effective_date is None\
+            else self._filing.effective_date
 
         # Get Colin Event Id
         filing['colin_event_id'] = self._filing.colin_event_id

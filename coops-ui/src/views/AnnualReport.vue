@@ -34,17 +34,19 @@
       </div>
 
       <v-container id="annual-report-container" class="view-container">
-        <article id="annual-report-article" :class="this.agmDate ? 'agm-date-selected' : 'no-agm-date-selected'">
-          <header>
-            <h1 id="AR-header">File {{ ARFilingYear }} Annual Report
-              <span style="font-style: italic" v-if="reportState">- {{ reportState }}</span>
-            </h1>
-            <p>Please verify or change your Office Addresses and Directors.</p>
-          </header>
+        <v-row>
+          <v-col cols="12" lg="9">
+            <article id="annual-report-article" :class="this.agmDate ? 'agm-date-selected' : 'no-agm-date-selected'">
+              <header>
+                <h1 id="AR-header">File {{ ARFilingYear }} Annual Report
+                  <span class="font-italic" v-if="reportState">- {{ reportState }}</span>
+                </h1>
+                <p>Please verify or change your Office Addresses and Directors.</p>
+              </header>
 
           <div v-if="isAnnualReportEditable">
             <!-- Annual General Meeting Date ( COOP ) -->
-            <section v-if="entityFilter(EntityTypes.Coop)">
+            <section v-if="entityFilter(EntityTypes.COOP)">
               <header>
                 <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
                 <p>Select your Annual General Meeting (AGM) date</p>
@@ -59,33 +61,34 @@
               />
             </section>
 
-            <!-- Annual Report Date ( BCORP ) -->
-            <section v-if="entityFilter(EntityTypes.BCorp)">
-              <header>
-                <h2 id="AR-step-1-header-BC">1. Dates</h2>
-                <p>Your Annual Report Date is the anniversary of the date your corporation was started.<br>
-                  The information displayed on this form reflects the state of your corporation on this date each year.
-                </p>
-              </header>
-              <ARDate />
-            </section>
+                <!-- Annual Report Date ( BCORP ) -->
+                <section v-if="entityFilter(EntityTypes.BCORP)">
+                  <header>
+                    <h2 id="AR-step-1-header-BC">1. Dates</h2>
+                    <p>Your Annual Report Date is the anniversary of the date your corporation was started.<br>
+                      The information displayed on this form reflects the state of your corporation on this
+                      date each year.</p>
+                  </header>
+                  <ARDate />
+                </section>
 
-            <!-- Registered Office Addresses -->
-            <section>
-              <header>
-                <h2 id="AR-step-2-header">2. Registered Office Addresses
-                  <span class="agm-date">(as of {{ ARFilingYear }} Annual General Meeting)</span>
-                </h2>
-                <p>Verify or change your Registered Office Addresses.</p>
-              </header>
-              <RegisteredOfficeAddress
-                :changeButtonDisabled="!allowChange('coa')"
-                :legalEntityNumber="entityIncNo"
-                :addresses.sync="addresses"
-                @modified="officeModifiedEventHandler($event)"
-                @valid="addressesFormValid=$event"
-              />
-            </section>
+                <!-- Registered Office Addresses -->
+                <section>
+                  <header>
+                    <h2 id="AR-step-2-header">2. Registered Office Addresses
+                      <span class="agm-date">(as of {{ ARFilingYear }} Annual General Meeting)</span>
+                    </h2>
+                    <p>Verify or change your Registered Office Addresses.</p>
+                  </header>
+                  <OfficeAddresses
+                    :changeButtonDisabled="!allowChange('coa')"
+                    :addresses.sync="addresses"
+                    :registeredAddress.sync="registeredAddress"
+                    :recordsAddress.sync="recordsAddress"
+                    @modified="officeModifiedEventHandler($event)"
+                    @valid="addressFormValid = $event"
+                  />
+                </section>
 
             <!-- Directors -->
             <section>
@@ -108,43 +111,50 @@
               />
             </section>
 
-            <!-- Certify -->
-            <section>
-              <header>
-                <h2 id="AR-step-4-header">4. Certify Correct</h2>
-                <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
-              </header>
-              <Certify
-                :isCertified.sync="isCertified"
-                :certifiedBy.sync="certifiedBy"
-                :currentDate="currentDate"
-                @valid="certifyFormValid=$event"
-              />
-            </section>
+                <!-- Certify -->
+                <section>
+                  <header>
+                    <h2 id="AR-step-4-header">4. Certify Correct</h2>
+                    <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+                  </header>
+                  <Certify
+                    :isCertified.sync="isCertified"
+                    :certifiedBy.sync="certifiedBy"
+                    :currentDate="currentDate"
+                    @valid="certifyFormValid=$event"
+                  />
+                </section>
 
-            <!-- Staff Payment -->
-            <section v-if="isRoleStaff && isPayRequired">
-              <header>
-                <h2 id="AR-step-5-header">5. Staff Payment</h2>
-              </header>
-              <StaffPayment
-                :value.sync="routingSlipNumber"
-                @valid="staffPaymentFormValid=$event"
-              />
-            </section>
+                <!-- Staff Payment -->
+                <section v-if="isRoleStaff && isPayRequired">
+                  <header>
+                    <h2 id="AR-step-5-header">5. Staff Payment</h2>
+                  </header>
+                  <StaffPayment
+                    :value.sync="routingSlipNumber"
+                    @valid="staffPaymentFormValid=$event"
+                  />
+                </section>
 
-          </div>
-        </article>
+              </div>
+            </article>
+          </v-col>
 
-        <aside>
-          <affix relative-element-selector="#annual-report-article" :offset="{ top: 120, bottom: 40 }">
-            <sbc-fee-summary
-              v-bind:filingData="[...filingData]"
-              v-bind:payURL="payAPIURL"
-              @total-fee="totalFee=$event"
-            />
-          </affix>
-        </aside>
+          <v-col cols="12" lg="3" style="position: relative">
+            <aside>
+              <affix
+                relative-element-selector="#annual-report-article"
+                :offset="{ top: 120, bottom: 40 }"
+              >
+                <sbc-fee-summary
+                  v-bind:filingData="[...filingData]"
+                  v-bind:payURL="payAPIURL"
+                  @total-fee="totalFee=$event"
+                />
+              </affix>
+            </aside>
+          </v-col>
+        </v-row>
       </v-container>
 
       <v-container id="buttons-container" class="list-item">
@@ -170,7 +180,7 @@
         <div class="buttons-right">
           <v-tooltip top color="#3b6cff">
             <template v-slot:activator="{ on }">
-              <div v-on="on" class="inline-div">
+              <div v-on="on" class="d-inline">
                 <v-btn
                   v-if="isAnnualReportEditable"
                   id="ar-file-pay-btn"
@@ -204,18 +214,14 @@
 import axios from '@/axios-auth'
 import AGMDate from '@/components/AnnualReport/AGMDate.vue'
 import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
-import RegisteredOfficeAddress from '@/components/AnnualReport/RegisteredOfficeAddress.vue'
+import { OfficeAddresses } from '@/components/common'
 import Directors from '@/components/AnnualReport/Directors.vue'
-import { Affix } from 'vue-affix'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import { mapState, mapGetters } from 'vuex'
 import { BAD_REQUEST, PAYMENT_REQUIRED } from 'http-status-codes'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
-import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import PaymentErrorDialog from '@/components/AnnualReport/PaymentErrorDialog.vue'
-import ResumeErrorDialog from '@/components/AnnualReport/ResumeErrorDialog.vue'
-import SaveErrorDialog from '@/components/AnnualReport/SaveErrorDialog.vue'
+import { ConfirmDialog, PaymentErrorDialog, ResumeErrorDialog, SaveErrorDialog } from '@/components/dialogs'
 import DateMixin from '@/mixins/date-mixin'
 import EntityFilterMixin from '@/mixins/entityFilter-mixin'
 import { EntityTypes } from '@/enums'
@@ -234,11 +240,10 @@ export default {
   components: {
     ARDate,
     AGMDate,
-    RegisteredOfficeAddress,
+    OfficeAddresses,
     Directors,
     Certify,
     StaffPayment,
-    Affix,
     SbcFeeSummary,
     ConfirmDialog,
     PaymentErrorDialog,
@@ -254,7 +259,7 @@ export default {
       noAGM: false,
       agmDateValid: false,
 
-      // properties for RegisteredOfficeAddress component
+      // properties for OfficeAddresses component
       addresses: null,
       addressesFormValid: true,
 
@@ -296,7 +301,7 @@ export default {
 
   computed: {
     ...mapState(['currentDate', 'ARFilingYear', 'lastAgmDate', 'entityType', 'entityName',
-      'entityIncNo', 'entityFoundingDate', 'lastPreLoadFilingDate']),
+      'entityIncNo', 'entityFoundingDate', 'registeredAddress', 'recordsAddress', 'lastPreLoadFilingDate']),
 
     ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState', 'lastCOAFilingDate', 'lastCODFilingDate']),
 
@@ -459,12 +464,14 @@ export default {
             }
 
             // load Change of Address fields
-            const changeOfAddress = filing.changeOfAddress
-            if (changeOfAddress) {
-              if (changeOfAddress.deliveryAddress && changeOfAddress.mailingAddress) {
+            if (filing.changeOfAddress) {
+              const offices = filing.changeOfAddress.offices
+              if (offices && offices.registeredOffice) {
                 this.addresses = {
-                  deliveryAddress: changeOfAddress.deliveryAddress,
-                  mailingAddress: changeOfAddress.mailingAddress
+                  registeredOffice: {
+                    deliveryAddress: offices.registeredOffice.deliveryAddress,
+                    mailingAddress: offices.registeredOffice.mailingAddress
+                  }
                 }
                 this.toggleFiling('add', 'OTADD')
               } else {
@@ -486,7 +493,7 @@ export default {
     },
 
     /**
-     * Callback method for the "modified" event from RegisteredOfficeAddress.
+     * Callback method for the "modified" event from OfficeAddress.
      *
      * @param modified a boolean indicating whether or not the office address(es) have been modified from their
      * original values.
@@ -607,8 +614,8 @@ export default {
         annualReport: {
           annualGeneralMeetingDate: this.agmDate,
           annualReportDate: this.annualReportDate,
-          deliveryAddress: this.addresses['deliveryAddress'],
-          mailingAddress: this.addresses['mailingAddress'],
+          deliveryAddress: this.addresses.registeredOffice['deliveryAddress'],
+          mailingAddress: this.addresses.registeredOffice['mailingAddress'],
           directors: this.allDirectors.filter(el => el.cessationDate === null)
         }
       }
@@ -624,8 +631,13 @@ export default {
       if (this.isDataChanged('OTADD') && this.addresses) {
         changeOfAddress = {
           changeOfAddress: {
-            deliveryAddress: this.addresses['deliveryAddress'],
-            mailingAddress: this.addresses['mailingAddress']
+            legalType: this.entityType,
+            offices: {
+              registeredOffice: {
+                deliveryAddress: this.addresses.registeredOffice['deliveryAddress'],
+                mailingAddress: this.addresses.registeredOffice['mailingAddress']
+              }
+            }
           }
         }
       }
@@ -644,10 +656,14 @@ export default {
       if (this.filingId > 0) {
         // we have a filing id, so we are updating an existing filing
         let url = this.entityIncNo + '/filings/' + this.filingId
-        if (isDraft) { url += '?draft=true' }
+        if (isDraft) {
+          url += '?draft=true'
+        }
         let filing = null
         await axios.put(url, data).then(res => {
-          if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
+          if (!res || !res.data || !res.data.filing) {
+            throw new Error('invalid API response')
+          }
           filing = res.data.filing
           this.haveChanges = false
         }).catch(error => {
@@ -669,10 +685,14 @@ export default {
       } else {
         // filing id is 0, so we are saving a new filing
         let url = this.entityIncNo + '/filings'
-        if (isDraft) { url += '?draft=true' }
+        if (isDraft) {
+          url += '?draft=true'
+        }
         let filing = null
         await axios.post(url, data).then(res => {
-          if (!res || !res.data || !res.data.filing) { throw new Error('invalid API response') }
+          if (!res || !res.data || !res.data.filing) {
+            throw new Error('invalid API response')
+          }
           filing = res.data.filing
           this.haveChanges = false
         }).catch(error => {
@@ -808,6 +828,7 @@ article {
   }
 }
 
+header p,
 section p {
   color: $gray6;
 }
@@ -816,20 +837,16 @@ section + section {
   margin-top: 3rem;
 }
 
-h2 {
-  margin-bottom: 0.25rem;
-  margin-top: 3rem;
-  font-size: 1.125rem;
-}
-
-#AR-header {
+h1 {
   margin-bottom: 1.25rem;
   line-height: 2rem;
   letter-spacing: -0.01rem;
 }
 
-.title-container {
-  margin-bottom: 0.5rem;
+h2 {
+  margin-bottom: 0.25rem;
+  margin-top: 3rem;
+  font-size: 1.125rem;
 }
 
 .agm-date {

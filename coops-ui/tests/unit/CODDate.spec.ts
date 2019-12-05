@@ -1,0 +1,152 @@
+import Vue from 'vue'
+import Vuetify from 'vuetify'
+import Vuelidate from 'vuelidate'
+import { mount } from '@vue/test-utils'
+
+import store from '@/store/store'
+import CODDate from '@/components/StandaloneDirectorChange/CODDate.vue'
+
+Vue.config.silent = true
+
+Vue.use(Vuetify)
+Vue.use(Vuelidate)
+
+let vuetify = new Vuetify({})
+
+// get rid of "Download the Vue Devtools extension for a better development experience" console message
+Vue.config.devtools = false
+
+// get rid of "You are running Vue in development mode" console message
+Vue.config.productionTip = false
+
+describe('CODDate', () => {
+  let wrapper
+  let vm
+
+  beforeEach(() => {
+    // init store
+    store.state.currentDate = '2019/07/15'
+
+    wrapper = mount(CODDate, { store, vuetify })
+    vm = wrapper.vm as any
+  })
+
+  afterEach(() => {
+    wrapper.destroy()
+    wrapper = null
+  })
+
+  it('loads variables properly when initial COD Date is set', () => {
+    wrapper.setProps({ initialCODDate: '2019-05-10' })
+
+    // verify local variables
+    expect(vm.$data.date).toBe('2019-05-10')
+    expect(vm.$data.dateFormatted).toBe('2019/05/10')
+
+    // verify emitted COD Date
+    const codDates = wrapper.emitted('codDate')
+    expect(codDates.length).toBe(1)
+    expect(codDates[0]).toEqual(['2019-05-10'])
+
+    // verify emitted Valid
+    const valids = wrapper.emitted('valid')
+    expect(valids.length).toBe(1)
+    expect(valids[0]).toEqual([true])
+  })
+
+  it('sets Min Date properly based on global properties', () => {
+    // verify initial state
+    expect(vm.$store.state.filings).toEqual([])
+    expect(vm.$store.state.lastPreLoadFilingDate).toBeNull()
+
+    // verify default Min Date
+    expect(vm.minDate).toBe(null)
+
+    // set Last Filing Date and verify new Min Date
+    store.state.filings = [
+      { filing: { header: { date: '2019-02-01' } } },
+      { filing: { header: { date: '2019-03-01' } } }
+    ]
+    expect(vm.minDate).toBe('2019-03-01')
+
+    // set Last Pre-Load Filing Date and verify new date
+    store.state.lastPreLoadFilingDate = '2019-04-01'
+    expect(vm.minDate).toBe('2019-04-01')
+
+    // cleanup
+    store.state.filings = []
+    store.state.lastPreLoadFilingDate = null
+  })
+
+  it('sets Max Date to current date in store', () => {
+    expect(vm.maxDate).toBe(vm.$store.state.currentDate.split('/').join('-'))
+  })
+
+  it('Shows error message when date has invalid length', () => {
+    wrapper.setData({ dateFormatted: '2019/11/6' })
+    expect(vm.$data.date).toBe('')
+    expect(vm.$el.querySelector('.v-messages').textContent).toContain('A Director change date is required.')
+  })
+
+  it('sets date picker and emits date changed and valid events when date is changed', () => {
+    wrapper.setData({ dateFormatted: '2019/05/10' })
+
+    // verify local variables
+    expect(vm.$data.date).toBe('2019-05-10')
+
+    wrapper.setData({ dateFormatted: '2019/05/11' })
+
+    // verify local variables
+    expect(vm.$data.date).toBe('2019-05-11')
+
+    // verify emitted COD Dates
+    // first emit is from init
+    // second emit is from text field update
+    const codDates = wrapper.emitted('codDate')
+    expect(codDates.length).toBe(2)
+    expect(codDates[0]).toEqual(['2019-05-10'])
+    expect(codDates[1]).toEqual(['2019-05-11'])
+
+    // verify emitted Valids
+    // first emit is from init
+    // second emit is from text field update
+    const valids = wrapper.emitted('valid')
+    expect(valids.length).toBe(2)
+    expect(valids[0]).toEqual([true])
+    expect(valids[1]).toEqual([true])
+  })
+
+  it('invalidates the component when entered month is after Max Date', () => {
+    wrapper = mount(CODDate, { store,
+      vuetify,
+      computed: {
+        minDate () {
+          return '2019-01-01'
+        },
+        maxDate () {
+          return '2019-05-05'
+        }
+      } })
+
+    wrapper.setData({ dateFormatted: '2019/11/11' })
+    wrapper.vm.$v.$touch()
+    expect(wrapper.vm.$v.dateFormatted.isValidCODDate).toBe(false)
+  })
+
+  it('invalidates the component when entered month is before Min Date', () => {
+    wrapper = mount(CODDate, { store,
+      vuetify,
+      computed: {
+        minDate () {
+          return '2019-01-01'
+        },
+        maxDate () {
+          return '2019-05-05'
+        }
+      } })
+
+    wrapper.setData({ dateFormatted: '2018/11/11' })
+    wrapper.vm.$v.$touch()
+    expect(wrapper.vm.$v.dateFormatted.isValidCODDate).toBe(false)
+  })
+})

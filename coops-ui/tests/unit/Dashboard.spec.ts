@@ -6,11 +6,17 @@ import { mount, shallowMount, createLocalVue } from '@vue/test-utils'
 
 import mockRouter from './mockRouter'
 import store from '@/store/store'
+
+// Components
 import Dashboard from '@/views/Dashboard.vue'
+import { CoaWarningDialog } from '@/components/dialogs'
 import TodoList from '@/components/Dashboard/TodoList.vue'
 import FilingHistoryList from '@/components/Dashboard/FilingHistoryList.vue'
 import AddressListSm from '@/components/Dashboard/AddressListSm.vue'
 import DirectorListSm from '@/components/Dashboard/DirectorListSm.vue'
+
+// Enums
+import { EntityTypes } from '@/enums'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -27,7 +33,7 @@ describe('Dashboard - UI', () => {
 
   beforeEach(() => {
     // create wrapper for Dashboard
-    // this stubs out the 4 sub-components
+    // this stubs out the 5 sub-components
     wrapper = shallowMount(Dashboard, { vuetify })
   })
 
@@ -36,6 +42,7 @@ describe('Dashboard - UI', () => {
   })
 
   it('renders the dashboard sub-components properly', () => {
+    expect(wrapper.find(CoaWarningDialog).exists()).toBe(true)
     expect(wrapper.find(TodoList).exists()).toBe(true)
     expect(wrapper.find(FilingHistoryList).exists()).toBe(true)
     expect(wrapper.find(AddressListSm).exists()).toBe(true)
@@ -55,9 +62,9 @@ describe('Dashboard - UI', () => {
 
     expect(wrapper.vm.hasBlockerFiling).toEqual(false)
     expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
-      .getAttribute('disabled')).toBeFalsy()
+      .getAttribute('disabled')).toBeNull()
     expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
-      .getAttribute('disabled')).toBeFalsy()
+      .getAttribute('disabled')).toBeNull()
   })
 
   it('disables standalone filing buttons when there is a blocker filing in the to-do list', () => {
@@ -65,9 +72,45 @@ describe('Dashboard - UI', () => {
 
     expect(wrapper.vm.hasBlockerFiling).toEqual(true)
     expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
+      .getAttribute('disabled')).toBe('true')
+    expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
+      .getAttribute('disabled')).toBe('true')
+  })
+
+  it('disables standalone filing buttons & toDo filings when there is a future effective filing pending', () => {
+    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [{ 'status': 'PAID' }])
+    wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
+
+    expect(wrapper.vm.hasBlockerFiling).toEqual(true)
+    expect(wrapper.vm.coaPending).toEqual(true)
+    expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
+      .getAttribute('disabled')).toBe('true')
+    expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
+      .getAttribute('disabled')).toBe('true')
+  })
+
+  it('disables standalone filing buttons & toDo filings when there is a future effective filing pending', () => {
+    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [{ 'status': 'PAID' }])
+    wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
+
+    expect(wrapper.vm.hasBlockerFiling).toEqual(true)
+    expect(wrapper.vm.coaPending).toEqual(true)
+    expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
       .getAttribute('disabled')).toBeTruthy()
     expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
-      .getAttribute('disabled')).toBeTruthy()
+      .getAttribute('disabled')).toBe('true')
+  })
+
+  it('disables standalone filing buttons & toDo filings when there is a future effective filing pending', () => {
+    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [{ 'status': 'PAID' }])
+    wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
+
+    expect(wrapper.vm.hasBlockerFiling).toEqual(true)
+    expect(wrapper.vm.coaPending).toEqual(true)
+    expect(wrapper.vm.$el.querySelector('#btn-standalone-addresses')
+      .getAttribute('disabled')).toBe('true')
+    expect(wrapper.vm.$el.querySelector('#btn-standalone-directors')
+      .getAttribute('disabled')).toBe('true')
   })
 
   it('marks filing as PROCESSING when expecting completed filing and dashboard does not reflect this', () => {
@@ -75,7 +118,7 @@ describe('Dashboard - UI', () => {
     localVue.use(VueRouter)
     const router = mockRouter.mock()
     router.push({ name: 'dashboard', query: { filing_id: '123' } })
-    const wrapper = mount(Dashboard, { localVue, store, router, vuetify })
+    const wrapper = shallowMount(Dashboard, { localVue, store, router, vuetify })
     const vm = wrapper.vm as any
 
     // push filing ID in URL to indicate that we've returned from the dashboard from a filing (file pay, not save draft)
@@ -102,7 +145,7 @@ describe('Dashboard - UI', () => {
     localVue.use(VueRouter)
     const router = mockRouter.mock()
     router.push({ name: 'dashboard', query: { filing_id: '123' } })
-    const wrapper = mount(Dashboard, { localVue, store, router, vuetify })
+    const wrapper = shallowMount(Dashboard, { localVue, store, router, vuetify })
     const vm = wrapper.vm as any
 
     // push filing ID in URL to indicate that we've returned from the dashboard from a filing (file pay, not save draft)
@@ -130,20 +173,50 @@ describe('Dashboard - Click Tests', () => {
   it('routes to Standalone Office Address Filing page when EDIT is clicked', done => {
     // init store
     store.state.entityIncNo = 'CP0001191'
-
     // create a Local Vue and install router on it
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
-    const wrapper = mount(Dashboard, { localVue, store, router, vuetify })
+    const wrapper = shallowMount(Dashboard, { localVue, store, router, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
       const button = vm.$el.querySelector('#btn-standalone-addresses')
-      expect(button.querySelector('.v-btn__content').textContent).toContain('Change')
+      expect(button.textContent).toContain('Change')
       await button.click()
 
       // verify routing to Standalone Office Address Filing page with id=0
+      expect(vm.$route.name).toBe('standalone-addresses')
+      expect(vm.$route.params.id).toBe(0)
+
+      wrapper.destroy()
+      done()
+    })
+  })
+
+  it('displays the change of address warning dialog as a bcorp', done => {
+    // init store
+    store.state.entityIncNo = 'BC0007291'
+    store.state.entityType = EntityTypes.BCORP
+    // create a Local Vue and install router on it
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    const wrapper = shallowMount(Dashboard, { localVue, store, router, vuetify })
+    const vm = wrapper.vm as any
+    vm.coaWarningDialog = false
+
+    Vue.nextTick(async () => {
+      const button = vm.$el.querySelector('#btn-standalone-addresses')
+      expect(button.textContent).toContain('Change')
+      await button.click()
+
+      expect(vm.coaWarningDialog).toBe(true)
+      expect(wrapper.find(CoaWarningDialog).vm.$el.querySelector('#btn-close-coa')).toBeDefined()
+      expect(wrapper.find(CoaWarningDialog).vm.$el.querySelector('#btn-proceed-coa')).toBeDefined()
+
+      wrapper.find(CoaWarningDialog).vm.$emit('proceed', true)
+
       expect(vm.$route.name).toBe('standalone-addresses')
       expect(vm.$route.params.id).toBe(0)
 
@@ -160,12 +233,12 @@ describe('Dashboard - Click Tests', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
-    const wrapper = mount(Dashboard, { localVue, store, router, vuetify })
+    const wrapper = shallowMount(Dashboard, { localVue, store, router, vuetify })
     const vm = wrapper.vm as any
 
     Vue.nextTick(async () => {
       const button = vm.$el.querySelector('#btn-standalone-directors')
-      expect(button.querySelector('.v-btn__content').textContent).toContain('Change')
+      expect(button.textContent).toContain('Change')
       await button.click()
 
       // verify routing to Standalone Directors Filing page with id=0

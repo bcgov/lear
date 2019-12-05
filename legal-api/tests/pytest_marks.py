@@ -33,6 +33,9 @@ load_dotenv(find_dotenv())
 integration_colin = pytest.mark.skipif((os.getenv('RUN_COLIN_TESTS', False) is False),
                                        reason='COLIN tests are only run when requested.')
 
+integration_reports = pytest.mark.skipif((os.getenv('RUN_REPORT_TESTS', False) is False),
+                                         reason='Report tests are only run when requested.')
+
 integration_nats = pytest.mark.skipif((os.getenv('RUN_NATS_TESTS', False) is False),
                                       reason='NATS tests are only run when requested.')
 

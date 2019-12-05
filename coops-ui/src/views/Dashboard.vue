@@ -2,50 +2,97 @@
   <div id="dashboard">
     <v-container id="dashboardContainer" class="view-container">
       <article id="dashboardArticle">
+        <CoaWarningDialog
+          :dialog="coaWarningDialog"
+          @toggle="toggleCoaWarning"
+          @proceed="goToStandaloneAddresses"
+        />
         <header>
           <h1>Dashboard</h1>
         </header>
 
-        <div class="dashboard-content">
-          <div class="dashboard-content__main">
+        <v-row>
+          <v-col cols="12" md="9">
             <section>
               <header>
                 <h2 class="mb-3">To Do <span class="text-muted">({{todoCount}})</span></h2>
               </header>
-              <todo-list @todo-count="todoCount = $event"
-                         @has-blocker-filing="hasBlockerFiling = $event"
-                         @todo-filings="todoListFilings = $event"
-                         :inProcessFiling="inProcessFiling" />
+              <todo-list
+                @todo-count="todoCount = $event"
+                @has-blocker-filing="hasBlockerFiling = $event"
+                @todo-filings="todoListFilings = $event"
+                :inProcessFiling="inProcessFiling"
+                :coaPending="coaPending"
+              />
             </section>
             <section>
               <header>
                 <h2 class="mb-3">Recent Filing History <span class="text-muted">({{filedCount}})</span></h2>
               </header>
-              <filing-history-list @filed-count="filedCount = $event"
-                                   @filings-list="historyFilings = $event" />
+              <filing-history-list
+                @filed-count="filedCount = $event"
+                @filings-list="historyFilings = $event"
+              />
             </section>
-          </div>
+          </v-col>
 
-          <aside class="dashboard-content__aside">
+          <v-col cols="12" md="3" style="position: relative">
             <section>
               <header class="aside-header mb-3">
                 <h2>Office Addresses</h2>
-                <v-btn text small color="primary" id="btn-standalone-addresses" :disabled="hasBlockerFiling"
-                      @click.native.stop="goToStandaloneAddresses()">
+                <v-scale-transition>
+                  <v-tooltip
+                    top
+                    content-class="pending-tooltip"
+                  >
+                    <template v-slot:activator="{ on }">
+                      <v-chip
+                        small
+                        label
+                        color="yellow"
+                        text-color="black"
+                        v-show="coaPending"
+                        v-on="on"
+                      >
+                        Pending
+                      </v-chip>
+                    </template>
+                    <span>
+                      The updated office addresses will be legally effective on {{ effectiveDate }},
+                      12:01 AM(Pacific Time). No other filings are allowed until then.
+                    </span>
+                  </v-tooltip>
+                </v-scale-transition>
+                <v-btn
+                  text
+                  small
+                  color="primary"
+                  id="btn-standalone-addresses"
+                  :disabled="hasBlockerFiling"
+                  @click.native.stop="proceedCoa()"
+                >
                   <v-icon small>mdi-pencil</v-icon>
                   <span>Change</span>
                 </v-btn>
               </header>
               <v-card flat>
-                <address-list-sm></address-list-sm>
+                <address-list-sm
+                  :coaPending="coaPending"
+                />
               </v-card>
             </section>
 
             <section>
               <header class="aside-header mb-3">
                 <h2>Current Directors</h2>
-                <v-btn text small color="primary" id="btn-standalone-directors" :disabled="hasBlockerFiling"
-                      @click.native.stop="goToStandaloneDirectors()">
+                <v-btn
+                  text
+                  small
+                  color="primary"
+                  id="btn-standalone-directors"
+                  :disabled="hasBlockerFiling"
+                  @click.native.stop="goToStandaloneDirectors()"
+                >
                   <v-icon small>mdi-pencil</v-icon>
                   <span>Change</span>
                 </v-btn>
@@ -54,32 +101,47 @@
                 <director-list-sm></director-list-sm>
               </v-card>
             </section>
-          </aside>
-        </div>
+          </v-col>
+        </v-row>
       </article>
     </v-container>
   </div>
 </template>
 
 <script>
+// Libraries
 import axios from '@/axios-auth'
+import { mapState, mapActions } from 'vuex'
+
+// Mixins
+import { withFlags } from 'ld-vue'
+
+// Components
 import TodoList from '@/components/Dashboard/TodoList.vue'
 import FilingHistoryList from '@/components/Dashboard/FilingHistoryList.vue'
 import AddressListSm from '@/components/Dashboard/AddressListSm.vue'
 import DirectorListSm from '@/components/Dashboard/DirectorListSm.vue'
-import { mapState, mapActions } from 'vuex'
-import { withFlags } from 'ld-vue'
+
+// Mixins
+import { EntityFilterMixin } from '@/mixins'
+
+// Dialogs
+import { CoaWarningDialog } from '@/components/dialogs'
+
+// Enums
+import { EntityTypes, FilingStatus } from '@/enums'
 
 export default {
   name: 'Dashboard',
 
-  mixins: [withFlags],
+  mixins: [withFlags, EntityFilterMixin],
 
   components: {
     TodoList,
     FilingHistoryList,
     AddressListSm,
-    DirectorListSm
+    DirectorListSm,
+    CoaWarningDialog
   },
 
   data () {
@@ -91,7 +153,13 @@ export default {
       todoListFilings: [],
       refreshTimer: null,
       checkFilingStatusCount: 0,
-      inProcessFiling: null
+      inProcessFiling: null,
+      coaPending: false,
+      effectiveDate: null,
+      coaWarningDialog: false,
+
+      // Filing Status Enum
+      FilingStatus
     }
   },
 
@@ -103,12 +171,12 @@ export default {
     ...mapActions(['setCurrentFilingStatus', 'setTriggerDashboardReload']),
 
     goToStandaloneDirectors () {
-      this.setCurrentFilingStatus('NEW')
+      this.setCurrentFilingStatus(FilingStatus.NEW)
       this.$router.push({ name: 'standalone-directors', params: { id: 0 } }) // 0 means "new COD filing"
     },
 
     goToStandaloneAddresses () {
-      this.setCurrentFilingStatus('NEW')
+      this.setCurrentFilingStatus(FilingStatus.NEW)
       this.$router.push({ name: 'standalone-addresses', params: { id: 0 } }) // 0 means "new COA filing"
     },
 
@@ -154,7 +222,7 @@ export default {
       axios.get(url).then(res => {
         // if the filing status is now COMPLETE, reload the dashboard
         if (res && res.data && res.data.filing && res.data.filing.header &&
-          res.data.filing.header.status === 'COMPLETED') {
+          res.data.filing.header.status === FilingStatus.COMPLETED) {
           this.setTriggerDashboardReload(true)
         } else {
           // call this function again in 1 second
@@ -170,6 +238,38 @@ export default {
           vue.checkFilingStatus(filingId)
         }, 1000)
       })
+    },
+
+    /**
+     * Searches the filings history for a 'paid' status.
+     * Paid status indicates a filing that is paid but future effective.
+     * Change the state of the UI when a filing is future effective.
+     * Currently only BCOMPS have future effective filings.
+     *
+     * @param filings The array of filings in history
+     */
+    checkPendingFilings (filings) {
+      filings.forEach(filing => {
+        if (filing.status === FilingStatus.PAID) {
+          this.effectiveDate = filing.filingEffectiveDate
+          this.coaPending = true
+          this.hasBlockerFiling = true
+        }
+      })
+    },
+    /**
+     * Toggle the Change of address warning dialog.
+     */
+    toggleCoaWarning () {
+      this.coaWarningDialog = !this.coaWarningDialog
+    },
+    /**
+     * Display COA warning if BCORP else proceed to COA.
+     */
+    proceedCoa () {
+      this.entityFilter(EntityTypes.BCORP)
+        ? this.toggleCoaWarning()
+        : this.goToStandaloneAddresses()
     }
   },
 
@@ -181,6 +281,7 @@ export default {
 
   watch: {
     historyFilings () {
+      this.checkPendingFilings(this.historyFilings) // If a filing has a paid but pending state ( Currently BCOMPS )
       this.checkToReloadDashboard()
     },
 
@@ -197,7 +298,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
+// @import '@/assets/styles/theme.scss';
 
 section header {
   display: flex;
@@ -210,16 +311,7 @@ section header {
   }
 }
 
-.dashboard-content {
-  display: flex
-}
-
-.dashboard-content__main {
-  flex: 1 1 auto;
-  z-index: 1
-}
-
-.dashboard-content__aside {
-  margin-left: 2rem
+.pending-tooltip {
+  max-width: 16rem;
 }
 </style>
