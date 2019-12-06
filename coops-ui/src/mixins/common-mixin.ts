@@ -12,7 +12,7 @@ export default class CommonMixin extends Vue {
    * @param baseObj The base object.
    * @param prop The property to be removed.
    */
-  omitProp (baseObj: object, prop: Array<string>): Object {
+  omitProp (baseObj: object, prop: Array<string>): object {
     return omit(baseObj, prop)
   }
 
