@@ -16,7 +16,6 @@ import asyncio
 import random
 
 import pytest
-
 from entity_queue_common.messages import get_filing_id_from_msg
 
 from .utils import helper_add_payment_to_queue, subscribe_to_queue
