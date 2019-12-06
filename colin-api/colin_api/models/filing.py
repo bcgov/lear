@@ -467,7 +467,7 @@ class Filing:
                 'filedDate': convert_to_json_date(sr_info['effective_dt']),
                 'resolution': sr_info['notation'],
             }
-            filing_obj.filing_type = 'specialResolution'
+            filing_obj.filing_type = cls.FILING_TYPES[filing_event_info['filing_type_code']]
             filing_obj.paper_only = True
             filing_obj.effective_date = filing_event_info['event_timestmp']
 
@@ -502,7 +502,7 @@ class Filing:
                 'eventId': vd_info['event_id'],
                 'dissolutionDate': convert_to_json_date(vd_info['effective_dt'])
             }
-            filing_obj.filing_type = 'voluntaryDissolution'
+            filing_obj.filing_type = cls.FILING_TYPES[filing_event_info['filing_type_code']]
             filing_obj.paper_only = True
             filing_obj.effective_date = filing_event_info['event_timestmp']
 
@@ -510,6 +510,44 @@ class Filing:
 
         except Exception as err:
             current_app.logger.error('error voluntary dissolution filing for corp: {}'.format(identifier))
+            raise err
+
+    @classmethod
+    def _get_other(cls, identifier: str = None, filing_event_info: dict = None):
+        """Get basic info for a filing we aren't handling yet."""
+        querystring = ("""
+            select filing.event_id, filing.effective_dt, ledger_text.notation
+            from filing
+            left join ledger_text on ledger_text.event_id = filing.event_id
+            where filing.event_id=:event_id
+            """)
+
+        try:
+            cursor = DB.connection.cursor()
+            cursor.execute(querystring, event_id=filing_event_info['event_id'])
+            filing_info = cursor.fetchone()
+            if not filing_info:
+                raise FilingNotFoundException(identifier=identifier,
+                                              filing_type=cls.FILING_TYPES[filing_event_info['filing_type_code']],
+                                              event_id=filing_event_info['event_id']
+                                              )
+
+            filing_info = dict(zip([x[0].lower() for x in cursor.description], filing_info))
+            filing_obj = Filing()
+            filing_obj.body = {
+                'eventId': filing_info['event_id'],
+                'filedDate': convert_to_json_date(filing_event_info['event_timestmp']),
+                'ledgerText': filing_info['notation'],
+            }
+            filing_obj.filing_type = cls.FILING_TYPES[filing_event_info['filing_type_code']]
+            filing_obj.paper_only = True
+            filing_obj.effective_date = filing_info['effective_dt']
+
+            return filing_obj
+
+        except Exception as err:
+            current_app.logger.error('error getting {} filing for corp: {}'.format(
+                cls.FILING_TYPES[filing_event_info['filing_type_code']], identifier))
             raise err
 
     @classmethod
@@ -551,6 +589,8 @@ class Filing:
                 filing_obj = cls._get_vd(identifier=identifier, filing_event_info=filing_event_info)
 
             else:
+                # uncomment to bring in other filings as available on paper only
+                # filing_obj = cls._get_other(identifier=identifier, filing_event_info=filing_event_info)
                 raise InvalidFilingTypeException(filing_type=filing_type)
 
             filing_obj.header = {
