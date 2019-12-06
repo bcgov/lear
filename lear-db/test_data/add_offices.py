@@ -38,6 +38,7 @@ def add_business_office_records():
             office.office_type = 'registeredOffice'
             office.addresses = [business.mailing_address.one_or_none(),
                                 business.delivery_address.one_or_none()]
+            office.business_id = business.id
             db.session.add(office) #pylint: disable=no-member; needed by SQLAlchemy
             db.session.add(business) #pylint: disable=no-member; needed by SQLAlchemy
             db.session.commit() #pylint: disable=no-member; needed by SQLAlchemy
