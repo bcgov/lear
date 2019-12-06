@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of directors."""
+from contextlib import suppress
 from datetime import datetime
 from typing import Dict
 
@@ -65,7 +66,9 @@ def process(business: Business, filing: Dict):  # pylint: disable=too-many-branc
                                        cessation_date=new_director.get('cessationDate'),
                                        delivery_address=address)
 
-            if 'mailingAddress' in new_director and len(new_director['mailingAddress']):
+            # if 'mailingAddress' in new_director and len(new_director['mailingAddress']): <- fails lint
+            # if new_director.get('mailingAddress', None): <- slightly more pythonic
+            with suppress(KeyError):  # <- since we're only going to do this if the key exists, it's easier to read
                 mailing_address = create_address(new_director['mailingAddress'], Address.MAILING)
                 director_to_add.mailing_address = mailing_address
 
