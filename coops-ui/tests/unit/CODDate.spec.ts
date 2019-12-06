@@ -65,7 +65,7 @@ describe('CODDate', () => {
     // set Last Filing Date and verify new Min Date
     store.state.filings = [
       { filing: { header: { date: '2019-02-01' } } },
-      { filing: { header: { date: '2019-03-01' } } }
+      { filing: { header: { effectiveDate: '2019-03-01' } } }
     ]
     expect(vm.minDate).toBe('2019-03-01')
 
