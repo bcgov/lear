@@ -152,9 +152,11 @@ def test_process_coa_filing(app, session):
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
 
-    delivery_address = business.delivery_address.one_or_none().json
+    register_office = business.offices.filter_by(office_type='registeredOffice').one_or_none()
+
+    delivery_address = register_office.addresses.filter_by(address_type='delivery').one_or_none().json
     compare_addresses(delivery_address, new_delivery_address)
-    mailing_address = business.mailing_address.one_or_none().json
+    mailing_address = register_office.addresses.filter_by(address_type='mailing').one_or_none().json
     compare_addresses(mailing_address, new_mailing_address)
 
 
@@ -307,7 +309,7 @@ def test_process_combined_filing(app, session):
     identifier = 'CP1234567'
     agm_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualGeneralMeetingDate'))
     ar_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualReportDate'))
-    new_delivery_address = COMBINED_FILING['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']
+    new_delivery_address = COMBINED_FILING['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']  # noqa: E501; line too long by 1 char
     new_mailing_address = COMBINED_FILING['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']
     end_date = datetime.datetime.utcnow().date()
     # prep director for no change
