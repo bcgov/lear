@@ -12,23 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of address."""
-import json
 from typing import Dict
 
-from legal_api.models import Business, Filing
+from legal_api.models import Business
 
-from entity_filer.filing_processors import update_address
+from entity_filer.filing_processors import create_address, update_address
 
 
 def process(business: Business, filing: Dict):
     """Render the change_of_address onto the business model objects."""
-    offices_array = json.dumps(filing['changeOfAddress']['offices'])
+    # offices_array = json.dumps(filing['changeOfAddress']['offices'])
     # Only retrieve the offices component from the filing json
-    offices = json.loads(offices_array)
+    # offices = json.loads(offices_array)
+    offices = filing['changeOfAddress']['offices']
 
     for item in offices.keys():
         office = business.offices.filter_by(office_type=item).one_or_none()
         for k, new_address in offices[item].items():
             k = k.replace('Address', '')
             address = office.addresses.filter_by(address_type=k).one_or_none()
-            update_address(address, new_address)
+            if address:
+                update_address(address, new_address)
+            else:
+                address = create_address(new_address, k)
+                office.addresses.append(address)

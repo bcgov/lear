@@ -15,11 +15,13 @@
 
 Processors hold the business logic for how a filing is interpreted and saved to the legal database.
 """
+from typing import Dict
+
 import pycountry
 from legal_api.models import Address, Director
 
 
-def create_address(address_info, address_type):
+def create_address(address_info: Dict, address_type: str):
     """Create an address."""
     address = Address(street=address_info.get('streetAddress'),
                       street_additional=address_info.get('streetAddressAdditional'),
