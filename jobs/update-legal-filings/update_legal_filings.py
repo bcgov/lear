@@ -98,6 +98,11 @@ def check_for_manual_filings(application: Flask = None):
                 r = requests.get(f'{application.config["COLIN_URL"]}/event/CP/{last_event_id}')
                 colin_events = dict(r.json())
 
+                # for bringing in a specific filing
+                # colin_events = {
+                #     'events': [{'corp_num': 'CP0001483', 'event_id': 102110149, 'filing_typ_cd': 'OTCGM'}]
+                # }
+
             except Exception as err:
                 application.logger.error('Error getting event_ids from colin')
                 raise err
