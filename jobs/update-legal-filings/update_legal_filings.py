@@ -157,7 +157,6 @@ def run():
 
             # check if there are filings to send to legal
             manual_filings_info = check_for_manual_filings(application)
-            print(manual_filings_info)
             max_event_id = 0
 
             if len(manual_filings_info) > 0:
