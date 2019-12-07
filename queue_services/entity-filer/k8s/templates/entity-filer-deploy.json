@@ -239,6 +239,15 @@
                                         }
                                     },
                                     {
+                                        "name": "NATS_ENTITY_EVENT_SUBJECT",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NATS_ENTITY_EVENT_SUBJECT"
+                                            }
+                                        }
+                                    },
+                                    {
                                         "name": "NATS_QUEUE",
                                         "valueFrom": {
                                             "configMapKeyRef": {
@@ -282,6 +291,7 @@
                 "NATS_CLIENT_NAME": "${NATS_CLIENT_NAME}",
                 "NATS_SUBJECT": "${NATS_SUBJECT}",
                 "NATS_FILER_SUBJECT": "${NATS_FILER_SUBJECT}",
+                "NATS_ENTITY_EVENT_SUBJECT": "${NATS_ENTITY_EVENT_SUBJECT}",
                 "NATS_QUEUE": "${NATS_QUEUE}"
             }
         }
@@ -363,6 +373,13 @@
             "description": "A unique NATS subject name that is set to manage filing processing.",
             "required": true,
             "value": "entity.filing.filer"
+        },
+        {
+            "name": "NATS_ENTITY_EVENT_SUBJECT",
+            "displayName": "NATS Entity Event Stream",
+            "description": "A unique NATS subject name that is set to manage entity event processing.",
+            "required": true,
+            "value": "entity.events"
         },
         {
             "name": "NATS_QUEUE",

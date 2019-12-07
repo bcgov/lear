@@ -18,6 +18,7 @@ NATS_CLUSTER_ID="test-cluster"
 NATS_CLIENT_NAME="entity.filing.filer.worker"
 NATS_SUBJECT="entity.filing.filer"
 NATS_FILER_SUBJECT=entity.filing.filer
+NATS_ENTITY_EVENT_SUBJECT="entity.events"
 NATS_QUEUE="filing-worker"
 IMAGE_NAMESPACE="<namespace>"
 TAG_NAME="dev"
