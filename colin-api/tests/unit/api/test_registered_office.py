@@ -46,8 +46,8 @@ def test_post_coa(client):
     fake_filing['filing']['header']['name'] = 'changeOfAddress'
     fake_filing['filing']['business']['identifier'] = 'CP0001965'
     fake_filing['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
-    fake_filing['filing']['changeOfAddress']['deliveryAddress']['addressCountry'] = 'Canada'
-    fake_filing['filing']['changeOfAddress']['mailingAddress']['addressCountry'] = 'Canada'
+    fake_filing['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'Canada'
+    fake_filing['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'Canada'
     rv = client.post('/api/v1/businesses/CP0001965/filings/changeOfAddress',
                      data=json.dumps(fake_filing), headers=headers)
 

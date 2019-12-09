@@ -92,7 +92,7 @@ class Office:
                     k = office_obj.office_codes[item]['code']
                     if k == office_obj.office_type:
                         if item not in office_arr.keys():
-                            office_arr[item] = office_obj.as_dict()
+                            office_arr[item] = office_obj
                         else:
                             current_app.logger.error('got more than 1 current registered office address for {}'
                                                      .format(identifier))
