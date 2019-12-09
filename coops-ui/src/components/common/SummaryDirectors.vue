@@ -7,7 +7,7 @@
           <span>Names</span>
           <span>Delivery Address</span>
           <span v-if="entityFilter(EntityTypes.BCORP)">Mailing Address</span>
-          <span>Appointed/Elected</span>
+          <span class="header-appointed">Appointed/Elected</span>
         </v-subheader>
 
         <li class="director-list-item"
@@ -316,7 +316,6 @@ ul {
 
     > label:first-child {
       flex: 0 0 auto;
-      padding-right: 2rem;
       width: 14rem;
     }
   }
@@ -350,6 +349,9 @@ ul {
   width: 14rem;
 }
 
+.same-address {
+}
+
 .address__row {
   flex: 1 1 auto;
 }
@@ -374,9 +376,9 @@ ul {
 }
 
 .director-header {
+  width: 100%;
   padding: 1.25rem;
-  display: flex;
-  justify-content: flex-start;
+  display: inline-flex;
   height: 3rem;
   background-color: rgba(77, 112, 147, 0.15);
 
@@ -386,6 +388,10 @@ ul {
     font-size: 0.875rem;
     font-weight: 600;
     line-height: 1.1875rem;
+  }
+
+  .header-appointed {
+    width: 11.4rem;
   }
 }
 

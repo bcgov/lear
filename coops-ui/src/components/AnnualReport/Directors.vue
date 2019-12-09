@@ -1356,7 +1356,6 @@ ul {
   margin: 0;
   padding: 0;
   list-style-type: none;
-  min-width: 56rem;
 }
 
 .meta-container {
@@ -1446,6 +1445,10 @@ ul {
   margin-right: 1.35rem;
 }
 
+.same-address {
+  width: 11.65rem;
+}
+
 .address__row {
   flex: 1 1 auto;
 }
@@ -1531,7 +1534,7 @@ ul {
 }
 
 .director-header {
-  width: 99.8%;
+  width: 100%;
   padding: 1.25rem;
   display: inline-flex;
   height: 3rem;
