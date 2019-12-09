@@ -1442,9 +1442,8 @@ ul {
 .address {
   display: flex;
   width: 12rem;
-  padding-right: 1rem;
-  padding-left: 1rem;
-  margin-right: 2rem;
+  padding-left: .5rem;
+  margin-right: 1.35rem;
 }
 
 .address__row {
