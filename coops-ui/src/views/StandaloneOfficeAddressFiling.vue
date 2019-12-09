@@ -182,6 +182,8 @@ import { EntityFilterMixin } from '@/mixins'
 // Enums
 import { EntityTypes } from '@/enums'
 
+import { configJson } from '@/resources'
+
 export default {
   name: 'StandaloneOfficeAddressFiling',
 
@@ -222,7 +224,7 @@ export default {
       routingSlipNumber: null,
       staffPaymentFormValid: false,
       totalFee: 0,
-
+      configObject: {},
       // EntityTypes Enum
       EntityTypes
     }
@@ -269,6 +271,7 @@ export default {
       }
     }
 
+    this.configObject = configJson.find(x => x.typeEnum === this.entityType)
     // NB: filing id of 0 means "new"
     // otherwise it's a draft filing id
     this.filingId = this.$route.params.id

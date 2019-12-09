@@ -22,15 +22,13 @@
         <template slot="label">
           <div class="certify-stmt">
             I, <b>{{trimmedCertifiedBy || '[Legal Name]'}}</b>, certify that I have relevant knowledge of the
-            association and that I am authorized to make this filing.
+            {{ entityDisplay || 'association' }} and that I am authorized to make this filing.
           </div>
         </template>
       </v-checkbox>
       <p class="certify-clause">{{currentDate}}</p>
       <p class="certify-clause">
-        Note: It is an offence to make a false or misleading statement in
-        respect of a material fact in a record submitted to the Corporate Registry for filing.
-        See section 200 of the Cooperatives Association Act.
+        {{message}}
       </p>
     </div>
   </v-card>
@@ -38,7 +36,7 @@
 
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
-
+import { configJson } from '@/resources'
 @Component({})
 export default class Certify extends Vue {
   // Props passed into this component.
@@ -51,6 +49,11 @@ export default class Certify extends Vue {
   @Prop({ default: '' })
   private currentDate: string
 
+  @Prop({ default: '' })
+  private message: string
+
+  @Prop({ default: '' })
+  private entityDisplay: string
   /**
    * Lifecycle callback to always give the parent a "valid" event for its property values.
    */

@@ -92,6 +92,8 @@
                     :certifiedBy.sync="certifiedBy"
                     :currentDate="currentDate"
                     @valid="certifyFormValid=$event"
+                    :entityDisplay="this.configObject.displayName"
+                    :message="this.configObject.flows.find(x => x.feeCode === 'OTCDR').certifyText"
                   />
                 </section>
 
@@ -292,6 +294,8 @@ import { EntityTypes } from '@/enums'
 // Constants
 import { CEASED, APPOINTED, ADDRESSCHANGED, NAMECHANGED } from '@/constants'
 
+import { configJson } from '@/resources'
+
 export default {
   name: 'StandaloneDirectorsFiling',
 
@@ -342,7 +346,7 @@ export default {
       routingSlipNumber: null,
       staffPaymentFormValid: false,
       totalFee: 0,
-
+      configObject: {},
       // EntityTypes Enum
       EntityTypes
     }
@@ -388,6 +392,9 @@ export default {
         event.returnValue = 'You have unsaved changes. Are you sure you want to leave?'
       }
     }
+
+    this.configObject = configJson.find(x => x.typeEnum === this.entityType)
+
     // NB: filing id of 0 means "new"
     // otherwise it's a draft filing id
     this.filingId = this.$route.params.id
