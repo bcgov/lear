@@ -328,7 +328,7 @@
               </v-expand-transition>
 
               <!-- EDIT director form -->
-              <v-expand-transition>
+              <v-expand-transition class="edit-form">
                 <v-form ref="editDirectorForm"
                   v-show="activeIndex === index"
                   v-model="directorFormValid" lazy-validation>
@@ -452,10 +452,12 @@
                       <span>Remove</span>
                     </v-btn>
                     <v-btn class="form-primary-btn" color="primary"
+                      id="done-edit-btn"
                       @click="saveEditDirector(index, director.id)"
                     >
                       Done</v-btn>
-                    <v-btn class="form-cancel-btn" @click="cancelEditDirector(director.id)">Cancel</v-btn>
+                    <v-btn id="cancel-edit-btn" class="form-cancel-btn"
+                      @click="cancelEditDirector(director.id)">Cancel</v-btn>
                   </div>
                 </v-form>
               </v-expand-transition>
