@@ -160,7 +160,7 @@
                       <span>Remove</span>
                     </v-btn>
                     <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
-                    <v-btn class="form-cancel-btn" @click="cancelNewDirector">Cancel</v-btn>
+                    <v-btn class="form-cancel-btn" @click="cancelNewDirector()">Cancel</v-btn>
                   </div>
                 </v-form>
               </div>
@@ -935,7 +935,10 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
       officer: {
         firstName: this.director.officer.firstName,
         middleInitial: this.director.officer.middleInitial,
-        lastName: this.director.officer.lastName
+        lastName: this.director.officer.lastName,
+        prevFirstName: this.director.officer.firstName,
+        prevMiddleInitial: this.director.officer.middleInitial,
+        prevLastName: this.director.officer.lastName
       },
       deliveryAddress: { ...this.inProgressAddress },
       appointmentDate: this.asOfDate, // when implemented: this.director.appointmentDate,
@@ -1097,7 +1100,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * @param id Id of the director being edited.
    */
   private cancelEditDirector (id = null): void {
-    if (id) this.restoreDirName(id - 1)
+    this.restoreDirName(id - 1)
 
     this.activeIndex = -1
     this.directorEditInProgress = false
@@ -1115,14 +1118,16 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * @param index Index value of the director currently being edited
    */
   private restoreDirName (index: number): void {
-    const director = this.directors[index]
-    this.removeAction(director, NAMECHANGED)
+    if (index >= 0) {
+      const director = this.directors[index]
+      this.removeAction(director, NAMECHANGED)
 
-    if (director.officer.prevFirstName && director.officer.prevLastName) {
-      director.officer.firstName = director.officer.prevFirstName
-      director.officer.middleInitial = director.officer.prevMiddleInitial
-      director.officer.lastName = director.officer.prevLastName
-    } else this.directors[index] = { ...this.directors[index] }
+      if (director.officer.prevFirstName && director.officer.prevLastName) {
+        director.officer.firstName = director.officer.prevFirstName
+        director.officer.middleInitial = director.officer.prevMiddleInitial
+        director.officer.lastName = director.officer.prevLastName
+      }
+    }
   }
   /**
    * Local helper to watch changes to the address data in BaseAddress component, and to update
