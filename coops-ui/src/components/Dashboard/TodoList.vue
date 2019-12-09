@@ -201,7 +201,10 @@ import { ConfirmDialog, DeleteErrorDialog } from '@/components/dialogs'
 import { ExternalMixin, EntityFilterMixin, DateMixin } from '@/mixins'
 
 // Enums
-import { EntityTypes } from '@/enums'
+import { EntityTypes, FilingStatus } from '@/enums'
+
+// Constants
+import { ANNUALREPORT, CHANGEOFADDRESS, CHANGEOFDIRECTORS } from '@/constants'
 
 export default {
   name: 'TodoList',
@@ -223,7 +226,8 @@ export default {
       confirmEnabled: false,
 
       // Entity Types Enum
-      EntityTypes
+      EntityTypes,
+      FilingStatus
     }
   },
 
@@ -275,14 +279,14 @@ export default {
       const todo = task.task.todo
       if (todo && todo.header) {
         switch (todo.header.name) {
-          case 'annualReport': {
+          case ANNUALREPORT: {
             const ARFilingYear = todo.header.ARFilingYear
             this.taskItems.push({
               type: todo.header.name,
               title: `File ${ARFilingYear} Annual Report`,
               subtitle: task.enabled ? '(including Address and/or Director Change)' : null,
               ARFilingYear,
-              status: todo.header.status || 'NEW',
+              status: todo.header.status || FilingStatus.NEW,
               enabled: Boolean(task.enabled),
               order: task.order,
               nextArDate: this.toReadableDate(todo.business.nextAnnualReport)
@@ -302,13 +306,13 @@ export default {
       const filing = task.task.filing
       if (filing && filing.header) {
         switch (filing.header.name) {
-          case 'annualReport':
+          case ANNUALREPORT:
             this.loadAnnualReport(task)
             break
-          case 'changeOfDirectors':
+          case CHANGEOFDIRECTORS:
             this.loadChangeOfDirectors(task)
             break
-          case 'changeOfAddress':
+          case CHANGEOFADDRESS:
             this.loadChangeOfAddress(task)
             break
           default:
@@ -335,7 +339,7 @@ export default {
             title: `File ${ARFilingYear} Annual Report`,
             draftTitle: `${ARFilingYear} Annual Report`,
             ARFilingYear,
-            status: filing.header.status || 'NEW',
+            status: filing.header.status || FilingStatus.NEW,
             enabled: Boolean(task.enabled),
             order: task.order,
             paymentToken: filing.header.paymentToken || null
@@ -356,7 +360,7 @@ export default {
           id: filing.header.filingId,
           title: `File Director Change`,
           draftTitle: `Director Change`,
-          status: filing.header.status || 'NEW',
+          status: filing.header.status || FilingStatus.NEW,
           enabled: Boolean(task.enabled),
           order: task.order,
           paymentToken: filing.header.paymentToken || null
@@ -374,7 +378,7 @@ export default {
           id: filing.header.filingId,
           title: `File Address Change`,
           draftTitle: `Address Change`,
-          status: filing.header.status || 'NEW',
+          status: filing.header.status || FilingStatus.NEW,
           enabled: Boolean(task.enabled),
           order: task.order,
           paymentToken: filing.header.paymentToken || null
@@ -386,10 +390,10 @@ export default {
 
     doFileNow (item) {
       switch (item.type) {
-        case 'annualReport':
+        case ANNUALREPORT:
           // file the subject Annual Report
           this.setARFilingYear(item.ARFilingYear)
-          this.setCurrentFilingStatus('NEW')
+          this.setCurrentFilingStatus(FilingStatus.NEW)
           this.$router.push({ name: 'annual-report', params: { id: 0 } }) // 0 means "new AR"
           break
         default:
@@ -399,22 +403,22 @@ export default {
 
     doResumeFiling (item) {
       switch (item.type) {
-        case 'annualReport':
+        case ANNUALREPORT:
           // resume the subject Annual Report
           this.setARFilingYear(item.ARFilingYear)
-          this.setCurrentFilingStatus('DRAFT')
+          this.setCurrentFilingStatus(FilingStatus.DRAFT)
           this.$router.push({ name: 'annual-report', params: { id: item.id } })
           break
-        case 'changeOfDirectors':
+        case CHANGEOFDIRECTORS:
           // resume the subject Change Of Directors
           this.setARFilingYear(item.ARFilingYear)
-          this.setCurrentFilingStatus('DRAFT')
+          this.setCurrentFilingStatus(FilingStatus.DRAFT)
           this.$router.push({ name: 'standalone-directors', params: { id: item.id } })
           break
-        case 'changeOfAddress':
+        case CHANGEOFADDRESS:
           // resume the subject Change Of Address
           this.setARFilingYear(item.ARFilingYear)
-          this.setCurrentFilingStatus('DRAFT')
+          this.setCurrentFilingStatus(FilingStatus.DRAFT)
           this.$router.push({ name: 'standalone-addresses', params: { id: item.id } })
           break
         default:
@@ -438,27 +442,27 @@ export default {
     },
 
     isNew (item) {
-      return item.status === 'NEW'
+      return item.status === FilingStatus.NEW
     },
 
     isDraft (item) {
-      return item.status === 'DRAFT'
+      return item.status === FilingStatus.DRAFT
     },
 
     isPending (item) {
-      return item.status === 'PENDING'
+      return item.status === FilingStatus.PENDING
     },
 
     isError (item) {
-      return item.status === 'ERROR'
+      return item.status === FilingStatus.ERROR
     },
 
     isPaid (item) {
-      return item.status === 'PAID'
+      return item.status === FilingStatus.PAID
     },
 
     isCompleted (item) {
-      return item.status === 'COMPLETED'
+      return item.status === FilingStatus.COMPLETED
     },
 
     confirmDeleteDraft (item) {
@@ -514,7 +518,7 @@ export default {
     },
 
     isConfirmEnabled (type, status) {
-      return ((type === 'annualReport') && (status === 'NEW'))
+      return ((type === ANNUALREPORT) && (status === FilingStatus.NEW))
     }
   },
 
@@ -575,6 +579,7 @@ export default {
 
 .todo-list .list-item .list-item__actions {
   .date-subtitle {
+    font-size: 0.875rem;
     margin-bottom: 4.5rem;
   }
 
