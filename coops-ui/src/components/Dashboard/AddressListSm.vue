@@ -47,7 +47,7 @@
                 </div>
                 <ul v-else class="address-info pre-wrap">
                   <li>{{ registeredAddress.mailingAddress.streetAddress }}</li>
-                  <li>{{ registeredAddress.mailingAddress.streetAddressAdditional }}></li>
+                  <li>{{ registeredAddress.mailingAddress.streetAddressAdditional }}</li>
                   <li>{{ registeredAddress.mailingAddress.addressCity }}
                       {{ registeredAddress.mailingAddress.addressRegion }}
                       {{ registeredAddress.mailingAddress.postalCode }}</li>
