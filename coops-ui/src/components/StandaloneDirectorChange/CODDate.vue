@@ -58,8 +58,8 @@ import DateMixin from '@/mixins/date-mixin'
   mixins: [DateMixin],
   computed: {
     // Property definitions for runtime environment.
-    ...mapState(['currentDate', 'lastPreLoadFilingDate']),
-    ...mapGetters(['lastFilingDate', 'lastCODFilingDate'])
+    ...mapState(['currentDate', 'lastAnnualReportDate']),
+    ...mapGetters(['lastCODFilingDate'])
   },
   validations: {
     dateFormatted: { isNotNull, isValidFormat, isValidCODDate }
@@ -78,8 +78,7 @@ export default class CODDate extends Mixins(DateMixin) {
   // Local definitions of computed properties for static type checking.
   // Use non-null assertion operator to allow use before assignment.
   readonly currentDate!: string
-  readonly lastPreLoadFilingDate!: string
-  readonly lastFilingDate!: string
+  readonly lastAnnualReportDate!: string
   readonly lastCODFilingDate!: string
 
   /**
@@ -111,11 +110,9 @@ export default class CODDate extends Mixins(DateMixin) {
      * - the last AR filing in filing history (from the Legal DB)
      * - the last pre-load Cobrs filing
      */
-    const lastFilingDate = this.lastFilingDate == null ? 0 : +this.lastFilingDate.split('-').join('')
+    const lastARFilingDate = this.lastAnnualReportDate == null ? 0 : +this.lastAnnualReportDate.split('-').join('')
     const lastCODFilingDate = this.lastCODFilingDate == null ? 0 : +this.lastCODFilingDate.split('-').join('')
-    const lastPreLoadFilingDate = this.lastPreLoadFilingDate == null ? 0
-      : +this.lastPreLoadFilingDate.split('-').join('')
-    const minCODDate = Math.max(lastFilingDate, lastCODFilingDate, lastPreLoadFilingDate)
+    const minCODDate = Math.max(lastARFilingDate, lastCODFilingDate)
     return this.numToUsableString(minCODDate)
   }
 
