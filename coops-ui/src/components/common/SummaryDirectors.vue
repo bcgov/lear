@@ -214,8 +214,8 @@ export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixi
     */
   @Watch('directors', { deep: true, immediate: true })
   private onDirectorsChanged (val: Array<Director>): void {
-    this.directorSummary = val.filter(d => !d.actions.includes(CEASED))
-    this.directorsCeased = val.filter(d => d.actions.includes(CEASED))
+    this.directorSummary = val.filter(d => !d.actions || !d.actions.includes(CEASED))
+    this.directorsCeased = val.filter(d => d.actions && d.actions.includes(CEASED))
   }
 
   /**
