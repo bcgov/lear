@@ -347,7 +347,7 @@ class Filing:
                 reg_office = Office.get_current(identifier=identifier)
         else:
             reg_office = Office.get_current(identifier=identifier)
-        reg_office = reg_office.as_dict()
+        reg_office = reg_office
         # convert dates and date-times to correct json format
         agm_date = convert_to_json_date(filing_event_info.get('agm_date', None))
         ar_date = convert_to_json_date(filing_event_info['period_end_dt'])
