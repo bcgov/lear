@@ -62,6 +62,7 @@ describe('Directors as a COOP', () => {
                   'middleInitial': null,
                   'lastName': 'Griffin'
                 },
+                'id': '1',
                 'deliveryAddress': {
                   'streetAddress': 'mailing_address - address line one',
                   'streetAddressAdditional': null,
@@ -80,6 +81,7 @@ describe('Directors as a COOP', () => {
                   'middleInitial': 'P',
                   'lastName': 'Swanson'
                 },
+                'id': '2',
                 'deliveryAddress': {
                   'streetAddress': 'mailing_address - address line #1',
                   'streetAddressAdditional': 'Kirkintiloch',
@@ -153,6 +155,12 @@ describe('Directors as a COOP', () => {
   it('displays the list of directors', () => {
     const directorListUI = vm.$el.querySelectorAll('.director-list-item')
 
+    expect(directorListUI[1].textContent).toContain('Peter')
+    expect(directorListUI[1].textContent).toContain('Griffin')
+
+    expect(directorListUI[0].textContent).toContain('Joe')
+    expect(directorListUI[0].textContent).toContain('Swanson')
+
     // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(2)
     expect(directorListUI[1].textContent).toContain('Griffin')
@@ -163,6 +171,65 @@ describe('Directors as a COOP', () => {
     // shows "cease" button, indicating this is an active director, ie: starting state for list
     expect(directorListUI[0].innerHTML).toContain('<span>Cease</span>')
     expect(directorListUI[1].innerHTML).toContain('<span>Cease</span>')
+  })
+
+  it('displays the edit Director form when enabled', () => {
+    // Open the edit director
+    vm.editDirectorName(0)
+
+    // Verify the correct data in the text input field
+    expect(vm.$el.querySelector('#edit-director__first-name').value).toBe('Joe')
+
+    // Verify all the form field value
+    expect(vm.editFormShowHide.showAddress).toEqual(false)
+    expect(vm.editFormShowHide.showName).toEqual(true)
+    expect(vm.editFormShowHide.showDates).toEqual(false)
+  })
+
+  it('displays the edit Director form when enabled and stores the updated value', async () => {
+    // Open the edit director
+    vm.editDirectorName(0)
+
+    // Verify the correct data in the text input field
+    expect(vm.$el.querySelector('#edit-director__first-name').value).toBe('Joe')
+
+    // Change the text input
+    vm.$el.querySelector('#edit-director__first-name').value = 'Steve'
+
+    // Click and save the updated data
+    await vm.saveEditDirector(1, 2)
+
+    // Verify the updated text field value
+    expect(vm.$el.querySelector('#edit-director__first-name').value).toBe('Steve')
+
+    // Verify all the form field value
+    expect(vm.editFormShowHide.showAddress).toEqual(true)
+    expect(vm.editFormShowHide.showName).toEqual(true)
+    expect(vm.editFormShowHide.showDates).toEqual(true)
+  })
+
+  it('restores the directors name to its original value when the Cancel Edit Btn is clicked', async () => {
+    // Open the edit director
+    vm.editDirectorName(0)
+
+    // Verify the correct data in the text input field
+    expect(vm.$el.querySelector('#edit-director__first-name').value).toBe('Joe')
+
+    // Change the text input and mock save it
+    vm.$el.querySelector('#edit-director__first-name').value = 'Steve'
+    vm.directors[1].officer.firstName = 'Steve'
+
+    // Verify the saved data
+    expect(vm.directors[1].officer.firstName).toBe('Steve')
+
+    // Cancel Director edit and verify the name is back to its base name
+    await vm.$el.querySelector('#cancel-edit-btn').click()
+    expect(vm.directors[1].officer.firstName).toBe('Joe')
+
+    // // Verify the edit form is closed.
+    expect(vm.editFormShowHide.showAddress).toEqual(true)
+    expect(vm.editFormShowHide.showName).toEqual(true)
+    expect(vm.editFormShowHide.showDates).toEqual(true)
   })
 
   it('disables buttons/actions when instructed by parent component', done => {
