@@ -37,7 +37,7 @@
                 />
               </div>
               <div class="list-item__subtitle">
-                <div v-if="item.subtitle && !entityFilter(EntityTypes.BCORP)" class="todo-status">
+                <div v-if="item.subtitle && entityFilter(EntityTypes.COOP)" class="todo-status">
                   {{item.subtitle}}
                 </div>
                 <div v-if="isDraft(item)" class="todo-status">
@@ -89,64 +89,64 @@
                 >
                   due {{ item.nextArDate }}
                 </p>
-              <!-- pre-empt any buttons below -->
-              <template v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
-                <v-btn text loading disabled />
-              </template>
+                <!-- pre-empt any buttons below -->
+                <template v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
+                  <v-btn text loading disabled />
+                </template>
 
-              <template v-else-if="isDraft(item)">
-                <v-btn id="btn-draft-resume"
+                <template v-else-if="isDraft(item)">
+                  <v-btn id="btn-draft-resume"
+                    color="primary"
+                    :disabled="!item.enabled"
+                    @click.native.stop="doResumeFiling(item)"
+                  >
+                    Resume
+                  </v-btn>
+                  <!-- more DRAFT actions menu -->
+                  <v-menu offset-y left>
+                    <template v-slot:activator="{ on }">
+                      <v-btn color="primary" class="actions__more-actions__btn px-0"
+                        v-on="on" id="menu-activator" :disabled="!item.enabled"
+                      >
+                        <v-icon>mdi-menu-down</v-icon>
+                      </v-btn>
+                    </template>
+                    <v-list ref="draft_actions" class="actions__more-actions">
+                      <v-list-item id="btn-delete-draft" @click="confirmDeleteDraft(item)">
+                        <v-list-item-title>Delete Draft</v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
+                </template>
+
+                <v-btn v-else-if="isPending(item)"
                   color="primary"
                   :disabled="!item.enabled"
-                  @click.native.stop="doResumeFiling(item)"
+                  @click.native.stop="doResumePayment(item)"
                 >
-                  Resume
+                  Resume Payment
                 </v-btn>
-                <!-- more DRAFT actions menu -->
-                <v-menu offset-y left>
-                  <template v-slot:activator="{ on }">
-                    <v-btn color="primary" class="actions__more-actions__btn px-0"
-                      v-on="on" id="menu-activator" :disabled="!item.enabled"
-                    >
-                      <v-icon>mdi-menu-down</v-icon>
-                    </v-btn>
-                  </template>
-                  <v-list ref="draft_actions" class="actions__more-actions">
-                    <v-list-item id="btn-delete-draft" @click="confirmDeleteDraft(item)">
-                      <v-list-item-title>Delete Draft</v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
-              </template>
 
-              <v-btn v-else-if="isPending(item)"
-                color="primary"
-                :disabled="!item.enabled"
-                @click.native.stop="doResumePayment(item)"
-              >
-                Resume Payment
-              </v-btn>
+                <v-btn v-else-if="isError(item)"
+                  color="primary"
+                  :disabled="!item.enabled"
+                  @click.native.stop="doResumePayment(item)"
+                >
+                  Retry Payment
+                </v-btn>
 
-              <v-btn v-else-if="isError(item)"
-                color="primary"
-                :disabled="!item.enabled"
-                @click.native.stop="doResumePayment(item)"
-              >
-                Retry Payment
-              </v-btn>
+                <template v-else-if="isPaid(item)">
+                  <!-- no action button in this case -->
+                </template>
 
-              <template v-else-if="isPaid(item)">
-                <!-- no action button in this case -->
-              </template>
-
-              <v-btn v-else-if="!isCompleted(item)"
-                class="btn-file"
-                color="primary"
-                :disabled="(!item.enabled || coaPending) || !confirmCheckbox"
-                @click.native.stop="doFileNow(item)"
-              >
-                File Now
-              </v-btn>
+                <v-btn v-else-if="!isCompleted(item)"
+                  class="btn-file"
+                  color="primary"
+                  :disabled="(!item.enabled || coaPending) || !confirmCheckbox"
+                  @click.native.stop="doFileNow(item)"
+                >
+                  File Now
+                </v-btn>
               </v-col>
             </div>
           </div>
@@ -250,7 +250,8 @@ export default {
 
     loadData () {
       this.taskItems = []
-      this.confirmCheckbox = this.entityFilter(EntityTypes.COOP)
+      // If the Entity is a COOP, Enable the 'FileNow' Button without any user validation
+      if (this.entityFilter(EntityTypes.COOP)) this.confirmCheckbox = true
 
       // create task items
       this.tasks.forEach(task => {
