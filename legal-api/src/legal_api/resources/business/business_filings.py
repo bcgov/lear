@@ -78,7 +78,7 @@ class ListFilingResource(Resource):
                 HTTPStatus.NOT_ACCEPTABLE
 
         rv = []
-        filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
+        filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value, Filing.Status.PAID.value])
         for filing in filings:
             rv.append(filing.json)
 
