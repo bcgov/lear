@@ -199,6 +199,8 @@
                     :certifiedBy.sync="certifiedBy"
                     :currentDate="currentDate"
                     @valid="certifyFormValid=$event"
+                    :entityDisplay="this.configObject.displayName"
+                    :message="this.configObject.flows.find(x => x.feeCode === 'OTCDR').certifyText"
                   />
                 </section>
 
