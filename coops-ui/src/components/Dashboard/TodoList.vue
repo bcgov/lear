@@ -15,15 +15,31 @@
         v-for="(item, index) in orderBy(taskItems, 'order')"
         v-bind:key="index"
         expand-icon=""
-        :class="{ 'disabled': !item.enabled, 'draft': isDraft(item) }">
+        :class="{ 'disabled': !item.enabled, 'draft': isDraft(item),
+        'awaitConfirm': !confirmCheckbox && isConfirmEnabled(item.type, item.status)}">
 
         <v-expansion-panel-header class="no-dropdown">
           <div class="list-item">
             <div class="filing-type">
               <div class="list-item__title">{{item.title}}</div>
+              <div class="bcorps-ar-subtitle"
+                 v-if="entityFilter(EntityTypes.BCORP) &&
+                 isConfirmEnabled(item.type, item.status)"
+              >
+                <p>Verify your Office Address and Current Directors before filing your Annual Report.</p>
+                <v-checkbox
+                  id="confirm-checkbox"
+                  class="todo-list-checkbox"
+                  label="All information about the Office Addresses and Current Directors is correct."
+                  :disabled=!item.enabled
+                  v-model=confirmCheckbox
+                  @click.native.stop
+                />
+              </div>
               <div class="list-item__subtitle">
-                <div v-if="item.subtitle" class="todo-status">{{item.subtitle}}</div>
-
+                <div v-if="item.subtitle && entityFilter(EntityTypes.COOP)" class="todo-status">
+                  {{item.subtitle}}
+                </div>
                 <div v-if="isDraft(item)" class="todo-status">
                   DRAFT
                 </div>
@@ -67,63 +83,71 @@
             </div>
 
             <div class="list-item__actions">
-              <!-- pre-empt any buttons below -->
-              <template v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
-                <v-btn text loading disabled />
-              </template>
+              <v-col>
+                <p class="date-subtitle"
+                  v-if="entityFilter(EntityTypes.BCORP) && isConfirmEnabled(item.type, item.status)"
+                >
+                  due {{ item.nextArDate }}
+                </p>
+                <!-- pre-empt any buttons below -->
+                <template v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
+                  <v-btn text loading disabled />
+                </template>
 
-              <template v-else-if="isDraft(item)">
-                <v-btn id="btn-draft-resume"
+                <template v-else-if="isDraft(item)">
+                  <v-btn id="btn-draft-resume"
+                    color="primary"
+                    :disabled="!item.enabled"
+                    @click.native.stop="doResumeFiling(item)"
+                  >
+                    Resume
+                  </v-btn>
+                  <!-- more DRAFT actions menu -->
+                  <v-menu offset-y left>
+                    <template v-slot:activator="{ on }">
+                      <v-btn color="primary" class="actions__more-actions__btn px-0"
+                        v-on="on" id="menu-activator" :disabled="!item.enabled"
+                      >
+                        <v-icon>mdi-menu-down</v-icon>
+                      </v-btn>
+                    </template>
+                    <v-list ref="draft_actions" class="actions__more-actions">
+                      <v-list-item id="btn-delete-draft" @click="confirmDeleteDraft(item)">
+                        <v-list-item-title>Delete Draft</v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
+                </template>
+
+                <v-btn v-else-if="isPending(item)"
                   color="primary"
                   :disabled="!item.enabled"
-                  @click.native.stop="doResumeFiling(item)"
+                  @click.native.stop="doResumePayment(item)"
                 >
-                  Resume
+                  Resume Payment
                 </v-btn>
-                <!-- more DRAFT actions menu -->
-                <v-menu offset-y left>
-                  <template v-slot:activator="{ on }">
-                    <v-btn color="primary" class="actions__more-actions__btn px-0"
-                      v-on="on" id="menu-activator" :disabled="!item.enabled"
-                    >
-                      <v-icon>mdi-menu-down</v-icon>
-                    </v-btn>
-                  </template>
-                  <v-list ref="draft_actions" class="actions__more-actions">
-                    <v-list-item id="btn-delete-draft" @click="confirmDeleteDraft(item)">
-                      <v-list-item-title>Delete Draft</v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
-              </template>
 
-              <v-btn v-else-if="isPending(item)"
-                color="primary"
-                :disabled="!item.enabled"
-                @click.native.stop="doResumePayment(item)"
-              >
-                Resume Payment
-              </v-btn>
+                <v-btn v-else-if="isError(item)"
+                  color="primary"
+                  :disabled="!item.enabled"
+                  @click.native.stop="doResumePayment(item)"
+                >
+                  Retry Payment
+                </v-btn>
 
-              <v-btn v-else-if="isError(item)"
-                color="primary"
-                :disabled="!item.enabled"
-                @click.native.stop="doResumePayment(item)"
-              >
-                Retry Payment
-              </v-btn>
+                <template v-else-if="isPaid(item)">
+                  <!-- no action button in this case -->
+                </template>
 
-              <template v-else-if="isPaid(item)">
-                <!-- no action button in this case -->
-              </template>
-
-              <v-btn v-else-if="!isCompleted(item)"
-                color="primary"
-                :disabled="!item.enabled || coaPending"
-                @click.native.stop="doFileNow(item)"
-              >
-                File Now
-              </v-btn>
+                <v-btn v-else-if="!isCompleted(item)"
+                  class="btn-file"
+                  color="primary"
+                  :disabled="(!item.enabled || coaPending) || !confirmCheckbox"
+                  @click.native.stop="doFileNow(item)"
+                >
+                  File Now
+                </v-btn>
+              </v-col>
             </div>
           </div>
         </v-expansion-panel-header>
@@ -168,9 +192,19 @@
 
 <script>
 import axios from '@/axios-auth'
-import ExternalMixin from '@/mixins/external-mixin'
 import { mapState, mapActions } from 'vuex'
+
+// Dialogs
 import { ConfirmDialog, DeleteErrorDialog } from '@/components/dialogs'
+
+// Mixins
+import { ExternalMixin, EntityFilterMixin, DateMixin } from '@/mixins'
+
+// Enums
+import { EntityTypes, FilingStatus } from '@/enums'
+
+// Constants
+import { ANNUALREPORT, CHANGEOFADDRESS, CHANGEOFDIRECTORS } from '@/constants'
 
 export default {
   name: 'TodoList',
@@ -180,14 +214,20 @@ export default {
     ConfirmDialog
   },
 
-  mixins: [ExternalMixin],
+  mixins: [ExternalMixin, EntityFilterMixin, DateMixin],
 
   data () {
     return {
       taskItems: null,
       deleteErrors: [],
       deleteWarnings: [],
-      deleteErrorDialog: false
+      deleteErrorDialog: false,
+      confirmCheckbox: false,
+      confirmEnabled: false,
+
+      // Entity Types Enum
+      EntityTypes,
+      FilingStatus
     }
   },
 
@@ -210,6 +250,8 @@ export default {
 
     loadData () {
       this.taskItems = []
+      // If the Entity is a COOP, Enable the 'FileNow' Button without any user validation
+      if (this.entityFilter(EntityTypes.COOP)) this.confirmCheckbox = true
 
       // create task items
       this.tasks.forEach(task => {
@@ -238,16 +280,17 @@ export default {
       const todo = task.task.todo
       if (todo && todo.header) {
         switch (todo.header.name) {
-          case 'annualReport': {
+          case ANNUALREPORT: {
             const ARFilingYear = todo.header.ARFilingYear
             this.taskItems.push({
               type: todo.header.name,
               title: `File ${ARFilingYear} Annual Report`,
               subtitle: task.enabled ? '(including Address and/or Director Change)' : null,
               ARFilingYear,
-              status: todo.header.status || 'NEW',
+              status: todo.header.status || FilingStatus.NEW,
               enabled: Boolean(task.enabled),
-              order: task.order
+              order: task.order,
+              nextArDate: this.toReadableDate(todo.business.nextAnnualReport)
             })
             break
           }
@@ -264,13 +307,13 @@ export default {
       const filing = task.task.filing
       if (filing && filing.header) {
         switch (filing.header.name) {
-          case 'annualReport':
+          case ANNUALREPORT:
             this.loadAnnualReport(task)
             break
-          case 'changeOfDirectors':
+          case CHANGEOFDIRECTORS:
             this.loadChangeOfDirectors(task)
             break
-          case 'changeOfAddress':
+          case CHANGEOFADDRESS:
             this.loadChangeOfAddress(task)
             break
           default:
@@ -297,7 +340,7 @@ export default {
             title: `File ${ARFilingYear} Annual Report`,
             draftTitle: `${ARFilingYear} Annual Report`,
             ARFilingYear,
-            status: filing.header.status || 'NEW',
+            status: filing.header.status || FilingStatus.NEW,
             enabled: Boolean(task.enabled),
             order: task.order,
             paymentToken: filing.header.paymentToken || null
@@ -318,7 +361,7 @@ export default {
           id: filing.header.filingId,
           title: `File Director Change`,
           draftTitle: `Director Change`,
-          status: filing.header.status || 'NEW',
+          status: filing.header.status || FilingStatus.NEW,
           enabled: Boolean(task.enabled),
           order: task.order,
           paymentToken: filing.header.paymentToken || null
@@ -336,7 +379,7 @@ export default {
           id: filing.header.filingId,
           title: `File Address Change`,
           draftTitle: `Address Change`,
-          status: filing.header.status || 'NEW',
+          status: filing.header.status || FilingStatus.NEW,
           enabled: Boolean(task.enabled),
           order: task.order,
           paymentToken: filing.header.paymentToken || null
@@ -348,10 +391,10 @@ export default {
 
     doFileNow (item) {
       switch (item.type) {
-        case 'annualReport':
+        case ANNUALREPORT:
           // file the subject Annual Report
           this.setARFilingYear(item.ARFilingYear)
-          this.setCurrentFilingStatus('NEW')
+          this.setCurrentFilingStatus(FilingStatus.NEW)
           this.$router.push({ name: 'annual-report', params: { id: 0 } }) // 0 means "new AR"
           break
         default:
@@ -361,22 +404,22 @@ export default {
 
     doResumeFiling (item) {
       switch (item.type) {
-        case 'annualReport':
+        case ANNUALREPORT:
           // resume the subject Annual Report
           this.setARFilingYear(item.ARFilingYear)
-          this.setCurrentFilingStatus('DRAFT')
+          this.setCurrentFilingStatus(FilingStatus.DRAFT)
           this.$router.push({ name: 'annual-report', params: { id: item.id } })
           break
-        case 'changeOfDirectors':
+        case CHANGEOFDIRECTORS:
           // resume the subject Change Of Directors
           this.setARFilingYear(item.ARFilingYear)
-          this.setCurrentFilingStatus('DRAFT')
+          this.setCurrentFilingStatus(FilingStatus.DRAFT)
           this.$router.push({ name: 'standalone-directors', params: { id: item.id } })
           break
-        case 'changeOfAddress':
+        case CHANGEOFADDRESS:
           // resume the subject Change Of Address
           this.setARFilingYear(item.ARFilingYear)
-          this.setCurrentFilingStatus('DRAFT')
+          this.setCurrentFilingStatus(FilingStatus.DRAFT)
           this.$router.push({ name: 'standalone-addresses', params: { id: item.id } })
           break
         default:
@@ -400,27 +443,27 @@ export default {
     },
 
     isNew (item) {
-      return item.status === 'NEW'
+      return item.status === FilingStatus.NEW
     },
 
     isDraft (item) {
-      return item.status === 'DRAFT'
+      return item.status === FilingStatus.DRAFT
     },
 
     isPending (item) {
-      return item.status === 'PENDING'
+      return item.status === FilingStatus.PENDING
     },
 
     isError (item) {
-      return item.status === 'ERROR'
+      return item.status === FilingStatus.ERROR
     },
 
     isPaid (item) {
-      return item.status === 'PAID'
+      return item.status === FilingStatus.PAID
     },
 
     isCompleted (item) {
-      return item.status === 'COMPLETED'
+      return item.status === FilingStatus.COMPLETED
     },
 
     confirmDeleteDraft (item) {
@@ -473,6 +516,10 @@ export default {
       this.deleteErrorDialog = false
       this.deleteErrors = []
       this.deleteWarnings = []
+    },
+
+    isConfirmEnabled (type, status) {
+      return ((type === ANNUALREPORT) && (status === FilingStatus.NEW))
     }
   },
 
@@ -492,6 +539,14 @@ export default {
 .todo-list {
   // disable expansion
   pointer-events: none;
+
+  .todo-list-checkbox {
+    pointer-events: auto;
+  }
+}
+
+.awaitConfirm {
+  background-color: rgba(216,216,216,0.75)!important;
 }
 
 .todo-list.disabled {
@@ -517,9 +572,18 @@ export default {
 .todo-list .list-item {
   padding: 0;
   justify-content: space-evenly;
+
+  .bcorps-ar-subtitle {
+    padding: 1rem 0 .5rem 0;
+  }
 }
 
 .todo-list .list-item .list-item__actions {
+  .date-subtitle {
+    font-size: 0.875rem;
+    margin-bottom: 4.5rem;
+  }
+
   #btn-draft-resume {
     min-width: 103px;
     border-top-right-radius: 0;
@@ -528,6 +592,10 @@ export default {
 }
 
 .list-item__actions {
+  .btn-file{
+    width: inherit;
+  }
+
   .v-btn.actions__more-actions__btn {
     // make action button width same as its height (per Vuetify)
     min-width: 36px !important;
