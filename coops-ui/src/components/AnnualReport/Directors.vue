@@ -1379,7 +1379,6 @@ ul {
   margin: 0;
   padding: 0;
   list-style-type: none;
-  min-width: 56rem;
 }
 
 .meta-container {
@@ -1465,9 +1464,12 @@ ul {
 .address {
   display: flex;
   width: 12rem;
-  padding-right: 1rem;
-  padding-left: 1rem;
-  margin-right: 2rem;
+  padding-left: .5rem;
+  margin-right: 1.35rem;
+}
+
+.same-address {
+  width: 11.65rem;
 }
 
 .address__row {
@@ -1527,7 +1529,7 @@ ul {
 
 .director_dates {
   font-size: 0.8rem;
-  padding-left: 1rem;
+  padding-left: .75rem;
 }
 
 .actions .v-btn.actions__more-actions__btn {
@@ -1555,14 +1557,14 @@ ul {
 }
 
 .director-header {
+  width: 100%;
   padding: 1.25rem;
-  display: flex;
-  justify-content: flex-start;
+  display: inline-flex;
   height: 3rem;
   background-color: rgba(77, 112, 147, 0.15);
 
   span {
-    width: 14rem;
+    width: 13.5rem;
     color: #000014;
     font-size: 0.875rem;
     font-weight: 600;
