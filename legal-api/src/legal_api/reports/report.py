@@ -128,18 +128,27 @@ class Report:  # pylint: disable=too-few-public-methods
     def _get_template_filename(self):
         return '{}.html'.format(self._filing.filing_type)
 
-    def _get_template_data(self):
+    def _get_template_data(self):  # pylint: disable=too-many-branches
         filing = copy.deepcopy(self._filing.filing_json['filing'])
 
         # set registered office address from either the COA filing or status quo data in AR filing
         try:
             if filing.get('changeOfAddress'):
-                filing['registeredOfficeAddress'] = filing['changeOfAddress']
+                if filing.get('changeOfAddress').get('offices'):
+                    filing['registeredOfficeAddress'] = filing['changeOfAddress']['offices']['registeredOffice']
+                else:
+                    filing['registeredOfficeAddress'] = filing['changeOfAddress']
             else:
-                filing['registeredOfficeAddress'] = {
-                    'deliveryAddress': filing['annualReport']['deliveryAddress'],
-                    'mailingAddress': filing['annualReport']['mailingAddress']
-                }
+                if filing.get('annualReport', {}).get('deliveryAddress'):
+                    filing['registeredOfficeAddress'] = {
+                        'deliveryAddress': filing['annualReport']['deliveryAddress'],
+                        'mailingAddress': filing['annualReport']['mailingAddress']
+                    }
+                else:
+                    filing['registeredOfficeAddress'] = {
+                        'deliveryAddress': filing['annualReport']['offices']['registeredOffice']['deliveryAddress'],
+                        'mailingAddress': filing['annualReport']['offices']['registeredOffice']['mailingAddress']
+                    }
 
         except KeyError:
             pass
