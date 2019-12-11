@@ -39,18 +39,18 @@ objects:
                       name: legal-api-${ENV_TAG}-config
                 - name: AUTH_URL
                   valueFrom:
-                    secretKeyRef:
+                    configMapKeyRef:
                       key: AUTH_URL
-                      name: updater-job
-                - name: USERNAME
+                      name: updater-jobs-${ENV_TAG}-config
+                - name: AUTH_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      key: USERNAME
+                      key: AUTH_USERNAME
                       name: updater-job
-                - name: PASSWORD
+                - name: AUTH_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      key: PASSWORD
+                      key: AUTH_PASSWORD
                       name: updater-job
                 - name: SENTRY_DSN
                   valueFrom:
