@@ -31,12 +31,12 @@ objects:
                   valueFrom:
                     configMapKeyRef:
                       key: ROUTE
-                      name: colin-api-dev-config
+                      name: colin-api-${ENV_TAG}-config
                 - name: LEGAL_URL
                   valueFrom:
                     configMapKeyRef:
                       key: ROUTE
-                      name: legal-api-dev-config
+                      name: legal-api-${ENV_TAG}-config
                 - name: AUTH_URL
                   valueFrom:
                     secretKeyRef:
@@ -56,7 +56,34 @@ objects:
                   valueFrom:
                     configMapKeyRef:
                       key: SENTRY_DSN
-                      name: updater-jobs-dev-config
+                      name: updater-jobs-${ENV_TAG}-config
+                - name: NATS_SERVERS
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NATS_SERVERS
+                      name: entity-filer-${ENV_TAG}-config
+                - name: NATS_CLIENT_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NATS_CLIENT_NAME
+                      name: entity-filer-${ENV_TAG}-config
+                - name: NATS_CLUSTER_ID
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NATS_CLUSTER_ID
+                      name: entity-filer-${ENV_TAG}-config
+                - name: NATS_FILER_SUBJECT
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NATS_FILER_SUBJECT
+                      name: entity-filer-${ENV_TAG}-config
+                - name: NATS_QUEUE
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NATS_QUEUE
+                      name: entity-filer-${ENV_TAG}-config
+
+
             restartPolicy: "Never"
             concurrencyPolicy: "Forbid"
 parameters: [
