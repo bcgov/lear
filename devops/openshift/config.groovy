@@ -54,7 +54,22 @@ app {
 
         namespace = app.namespaces.'build'.namespace
         timeoutInSeconds = 60*20
-        templates = []
+        templates = [
+                [
+                    'file':'bc/legal-api.bc.json',
+                    'params':[
+                        'APP_NAME':             "bcros",
+                        'COMP_NAME':            "coops-ui",
+                        'SUFFIX':               "${app.deployment.version}",
+                        'GIT_REPO_URL':         "https://github.com/bsnopek-freshworks/lear.git",
+                        'GIT_REF':              "master",
+                        'SOURCE_CONTEXT_DIR':   "/legal-api",
+                        'SOURCE_IMAGE_KIND':    "ImageStreamTag",
+                        'SOURCE_IMAGE_TAG':     "3.7",
+                        'OUTPUT_IMAGE_TAG':     "latest"
+                    ]
+                ]
+        ]
     }
 
     deployment {
@@ -62,9 +77,10 @@ app {
             name = vars.deployment.env.name
             id = vars.deployment.env.id
         }
-        id = "${app.name}"
-        name = "${app.name}"
+
         version = opt.pr ? "pr${opt.'pr'}" :  opt.env
+        id = "${app.name}-${app.deployment.version}"
+        name = "${app.name}-${app.suffix}"
 
         namespace = "${vars.deployment.namespace}"
         timeoutInSeconds = 60*20
@@ -90,7 +106,6 @@ app {
                         'REPLICA_MAX':      "${vars.resources.frontend.replica_max}",
                     ]
                 ],
-*/
                 [
                     'file':'_legal-api.dc.json',
                     'params':[
@@ -130,7 +145,9 @@ app {
                         'REPLICA_MIN':      "${vars.resources.api.replica_min}",
                         'REPLICA_MAX':      "${vars.resources.api.replica_max}"
                     ]
-                ],
+                ]
+                /*
+                ,
                 [
                     'file':'_postgresql.dc.json',
                     'params':[
@@ -174,6 +191,7 @@ app {
                             'REPLICA_MAX':      "${vars.resources.filer.replica_max}",
                     ]
                 ]
+*/
         ]
     }
 }

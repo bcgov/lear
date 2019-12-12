@@ -107,20 +107,28 @@
             "kind": "Service",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${COMP_NAME}-${SUFFIX}",
-                "annotations": {
-                    "description": "Exposes and load balances the application pods"
+                "name": "${COMP_NAME}",
+                "creationTimestamp": null,
+                "labels": {
+                    "app": "${APP_NAME}-${SUFFIX}",
+                    "template": "caddy-dc"
                 }
             },
             "spec": {
                 "ports": [{
-                    "name": "web",
+                    "name": "${PORT}-tcp",
+                    "protocol": "TCP",
                     "port": "${{PORT}}",
                     "targetPort": "${{PORT}}"
                 }],
                 "selector": {
-                    "name": "${COMP_NAME}-${SUFFIX}"
-                }
+                    "deploymentconfig": "${COMP_NAME}-${SUFFIX}"
+                },
+                "type": "ClusterIP",
+                "sessionAffinity": "None"
+            },
+            "status": {
+                "loadBalancer": {}
             }
         },
         {
@@ -171,24 +179,27 @@
                     },
                     "spec": {
                         "volumes": [{
-                                "name": "coops-web-caddy-config",
+                                "name": "coops-web-caddy-config-${SUFFIX}",
                                 "configMap": {
-                                    "name": "coops-web-caddy-config",
+                                    "name": "coops-web-caddy-config-${SUFFIX}",
                                     "defaultMode": 420
                                 }
                             },
                             {
-                                "name": "coops-web-ui-configuration",
+                                "name": "coops-web-ui-configuration-${SUFFIX}",
                                 "configMap": {
-                                    "name": "coops-web-ui-configuration",
+                                    "name": "coops-web-ui-configuration-${SUFFIX}",
                                     "defaultMode": 420
                                 }
                             }
                         ],
                         "containers": [{
-                            "name": "app",
+                            "name": "coops-ui",
                             "image": " ",
-                            "env": [{
+                            "args": [
+                                "/tmp/scripts/run"
+                            ],
+                           "env": [{
                                     "name": "VUE_APP_API_URL",
                                     "value": "${VUE_APP_API_URL}"
                                 },
@@ -222,36 +233,15 @@
                             "ports": [{
                                 "containerPort": "${{PORT}}"
                             }],
-                            "livenessProbe": {
-                                "failureThreshold": 30,
-                                "httpGet": {
-                                    "path": "/health",
-                                    "port": "${{PORT}}",
-                                    "scheme": "HTTP"
-                                },
-                                "periodSeconds": 10,
-                                "successThreshold": 1,
-                                "timeoutSeconds": 3
-                            },
-                            "readinessProbe": {
-                                "failureThreshold": 30,
-                                "httpGet": {
-                                    "path": "/health",
-                                    "port": "${{PORT}}",
-                                    "scheme": "HTTP"
-                                },
-                                "periodSeconds": 10,
-                                "successThreshold": 1,
-                                "timeoutSeconds": 3
-                            },
-                        "volumeMounts": [{
-                                "name": "coops-web-caddy-config",
+                        "volumeMounts": [
+                            {
+                                "name": "coops-web-caddy-config-${SUFFIX}",
                                 "readOnly": true,
                                 "mountPath": "/etc/Caddyfile",
                                 "subPath": "Caddyfile"
                             },
                             {
-                                "name": "coops-web-ui-configuration",
+                                "name": "coops-web-ui-configuration-${SUFFIX}",
                                 "readOnly": true,
                                 "mountPath": "/var/www/html/${WEB_APP_CONTEXT_PATH}/config"
                             }
@@ -282,6 +272,28 @@
                     "name": "${COMP_NAME}-${SUFFIX}"
                 },
                 "targetCPUUtilizationPercentage": 95
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "data": {
+                "configuration.json": "{\"API_URL\":\"${VUE_APP_API_URL}\",\n\"AUTH_API_URL\":\"${VUE_APP_AUTH_API_URL}\",\n\"PAY_API_URL\":\"${VUE_APP_PAY_API_URL}\",\n\"ADDRESS_COMPLETE_KEY\":\"${VUE_APP_ADDRESS_COMPLETE_KEY}\",\n\"LD_CLIENT_ID\":\"5dc1c5fd1d213d087f9e1024\"\n}"
+            },
+            "kind": "ConfigMap",
+            "metadata": {
+                "name": "coops-web-ui-configuration-${SUFFIX}",
+                "app": "${APP_NAME}-${SUFFIX}"
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "data": {
+                "Caddyfile": "0.0.0.0:2015\n\nroot /var/www/html\n\nlog stdout\n\nerrors stdout\n\nrewrite /cooperatives {\n    regexp .*\n    to {path} /cooperatives/\n}\n"
+            },
+            "kind": "ConfigMap",
+            "metadata": {
+                "name": "coops-web-caddy-config-${SUFFIX}",
+                "app": "${APP_NAME}-${SUFFIX}"
             }
         }
     ]

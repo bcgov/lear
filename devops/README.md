@@ -22,6 +22,8 @@ __Status: Completed (Dec 2019)__
 
 ### Phase 2: Ensuring Environments are Testable
 
+- Hook into Enterprise DB:  Removed the postgres containers from the deployment process, and enable the EDB connection. This enables the `legal-api` to build new database-schemas on a persitant host at the time of deployment.
+
 __Status: To Do__
 
 - After plugging phase 1 into the container registry and environments are being created, there will be a need to ensure that its properly setting up the database, and that it can be accessed via postman/nightwatch to hook up the e2e/integration testing scripts.

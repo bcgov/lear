@@ -104,7 +104,15 @@ Deployment Configuration Parameters are expected to change from environment to e
 
 Environment variable parameters are properties that the source code generally needs to use, and often change from one deployed environment to another. Environment variable parameters are typically (but not limited to) service uri's, credentials, etc. All Environment variable parameters are exported into the containers as they are started up/deployed.
 
-### Secrets
+### Enterprise DB
+
+This service uses a persistant database host, with ephemoral database schemas (for ephemoral environments). The hostname, username and password used for connecting are stored in openshift as a secret named '`lear-db--admin`. Deployment configurations should be set to pull these values from the stored secret.
+
+The Legal API component contains a set of scripts for database-creation, migration and seeding, and is triggered through a lifecycle hook at the time of deployment.
+
+## Secrets
+
+Note: With Enterprise DB enabled there is no longer a need for database connection strings to be generated as openshift secrets.
 
 Parameters that contain sensitive information that should be included in the sourcecode are stored as secrets within Openshift at this time. In the future we may offload these into a secret/key management/rotation service - but for now they are required to be manually entered into openshift, and referenced in the templates and source code.
 
@@ -121,40 +129,41 @@ Secret templates require that the properties have their values base64 encoded, t
 Secret templates should use a format as follows:
 
 ```
-Assuming:
-$COMP_NAME=postgresql
-$SUFFIX=dev
-
 {
     "kind": "Template",
     "apiVersion": "v1",
     "metadata": {
         "annotations": {
-            "description": "Secrets Template for Postgresql.",
-            "tags": "postgresql-${SUFFIX}"
+            "description": "Secrets Template.",
+            "tags": "super-secret"
         },
-        "name": "postgresql-${SUFFIX}-template"
+        "name": "super-secret-template"
     },
     "objects": [{
         "kind": "Secret",
         "apiVersion": "v1",
         "type": "Opaque",
         "data": {
-            "database-username": "Zm9vYmFyCg==",
-            "database-password": "Zm9vYmFyCg==",
-            "database-admin-password": "Zm9vYmFyCg==",
-            "database-name": "Zm9vYmFyCg=="
+            "username": "Zm9vYmFyCg==",
+            "password": "Zm9vYmFyCg=="
         },
         "metadata": {
-            "name": "postgresql-${SUFFIX}",
+            "name": "super-secret-${SUFFIX}",
             "labels": {
-                "app": "postgresql-${SUFFIX}",
-                "app-name": "postgresql-${SUFFIX}",
+                "app": "${APP_NAME}-${SUFFIX}",
+                "app-name": "${APP_NAME}-${SUFFIX}",
                 "env-name": "${SUFFIX}"
             }
         }
     }],
     "parameters": [
+        {
+            "name": "APP_NAME",
+            "displayName": "APP_NAME",
+            "description": "The name of the application (grouped).",
+            "required": true,
+            "value": "bcros"
+        },
         {
             "name": "SUFFIX",
             "description": "The suffix or tagname, typically represented as the environment name.",
@@ -168,25 +177,22 @@ $SUFFIX=dev
 Once this is loaded into openshift, the secrets could then be referenced by any deployment configuration template using the follow syntax:
 
 ```
-Assuming:
-$COMP_NAME=postgresql
-$SUFFIX=dev
 ...
 {
-    "name": "DATABASE_USERNAME",
+    "name": "USERNAME",
     "valueFrom": {
         "secretKeyRef": {
-            "name": "postgresql-${SUFFIX}",
-            "key": "database-username"
+            "name": "super-secret-${SUFFIX}",
+            "key": "username"
         }
     }
 },
 {
-    "name": "DATABASE_PASSWORD",
+    "name": "PASSWORD",
     "valueFrom": {
         "secretKeyRef": {
-            "name": "postgresql-${SUFFIX}",
-            "key": "database-password"
+            "name": "super-secret-${SUFFIX}",
+            "key": "password"
         }
     }
 }
