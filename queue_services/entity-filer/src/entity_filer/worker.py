@@ -56,6 +56,39 @@ FLASK_APP.config.from_object(APP_CONFIG)
 db.init_app(FLASK_APP)
 
 
+def get_filing_types(legal_filings: dict):
+    """Get the filing type fee codes for the filing.
+
+    Returns: {
+        list: a list of filing types.
+    }
+    """
+    filing_types = []
+    for k in legal_filings['filing'].keys():
+        if Filing.FILINGS.get(k, None):
+            filing_types.append(k)
+    return filing_types
+
+
+async def publish_event(business: Business, filing: Filing):
+    """Publish the filing message onto the NATS filing subject."""
+    try:
+        payload = {'filing':
+                   {
+                       'identifier': business.identifier,
+                       'legalName': business.legal_name,
+                       'filingId': filing.id,
+                       'effectiveDate': filing.effective_date.isoformat(),
+                       'legalFilings': get_filing_types(filing.filing_json)
+                   }
+                   }
+        subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
+        await qsm.service.publish(subject, payload)
+    except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
+        capture_message('Queue Publish Event Error: filing.id=' + str(filing.id) + str(err), level='error')
+        logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
+
+
 def process_filing(filing_msg: Dict, flask_app: Flask):
     """Render the filings contained in the submission."""
     if not flask_app:
@@ -108,6 +141,8 @@ def process_filing(filing_msg: Dict, flask_app: Flask):
             db.session.add(business)
             db.session.add(filing_submission)
             db.session.commit()
+
+            publish_event(business, filing_submission)
         return
 
 

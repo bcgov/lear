@@ -98,6 +98,10 @@ class _Config():  # pylint: disable=too-few-public-methods
         'durable_name': os.getenv('NATS_QUEUE', 'error') + '_durable',
     }
 
+    ENTITY_EVENT_PUBLISH_OPTIONS = {
+        'subject': os.getenv('NATS_ENTITY_EVENT_SUBJECT', 'entity.events'),
+    }
+
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""
