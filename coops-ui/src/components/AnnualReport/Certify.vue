@@ -36,7 +36,6 @@
 
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
-import { configJson } from '@/resources'
 @Component({})
 export default class Certify extends Vue {
   // Props passed into this component.

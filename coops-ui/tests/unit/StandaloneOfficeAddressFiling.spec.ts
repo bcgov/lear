@@ -14,7 +14,7 @@ import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
 import VueRouter from 'vue-router'
 import mockRouter from './mockRouter'
 import { BAD_REQUEST } from 'http-status-codes'
-
+import { configJson } from '@/resources/business-config'
 // Entity Enum
 import { EntityTypes } from '@/enums'
 
@@ -262,6 +262,41 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
 
     // confirm that button is disabled
     expect(wrapper.find('#coa-file-pay-btn').attributes('disabled')).toBe('disabled')
+
+    wrapper.destroy()
+  })
+
+  it('Verify COA Certify contains correct section codes',() => {
+    const localVue = createLocalVue()
+    localVue.use(VueRouter)
+    const router = mockRouter.mock()
+    router.push({ name: 'standalone-addresses', params: { id: '0' } }) // new filing id
+    const wrapper = mount(StandaloneOfficeAddressFiling, {
+      store,
+      localVue,
+      router,
+      stubs: {
+        OfficeAddresses: true,
+        Certify: true,
+        StaffPayment: true,
+        Affix: true,
+        SbcFeeSummary: true,
+        ConfirmDialog: true,
+        PaymentErrorDialog: true,
+        ResumeErrorDialog: true,
+        SaveErrorDialog: true
+      },
+      vuetify
+    })
+    
+    store.state.entityType = 'BC'
+    store.state.configObject = configJson.find(x => x.typeEnum === store.state.entityType)
+
+    expect(wrapper.find(Certify).exists()).toBe(true)
+    const certify: any = wrapper.find(Certify)
+
+    expect(certify.vm.message).toContain('See sections 35 and 36 of the Business Corporations Act.')
+    expect(certify.vm.entityDisplay).toEqual('Benefits Company')
 
     wrapper.destroy()
   })

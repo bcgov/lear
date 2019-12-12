@@ -179,7 +179,7 @@ import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vu
 import { PAYMENT_REQUIRED, BAD_REQUEST } from 'http-status-codes'
 
 // Mixins
-import { EntityFilterMixin } from '@/mixins'
+import { EntityFilterMixin, ResourceLookupMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'
@@ -197,7 +197,7 @@ export default {
     ResumeErrorDialog,
     SaveErrorDialog
   },
-  mixins: [EntityFilterMixin],
+  mixins: [EntityFilterMixin, ResourceLookupMixin],
 
   data () {
     return {
@@ -234,7 +234,7 @@ export default {
       'entityFoundingDate', 'registeredAddress', 'recordsAddress', 'configObject']),
     ...mapGetters(['isRoleStaff']),
 
-    validated () {
+    validated () { 
       const staffPaymentValid = (!this.isRoleStaff || !this.isPayRequired || this.staffPaymentFormValid)
       const filingDataValid = (this.filingData.length > 0)
 

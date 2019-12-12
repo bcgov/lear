@@ -20,6 +20,7 @@ import Certify from '@/components/AnnualReport/Certify.vue'
 import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
 import { OfficeAddresses, SummaryDirectors, SummaryOfficeAddresses } from '@/components/common'
+import { configJson } from '@/resources/business-config'
 
 // Enums
 import { EntityTypes } from '@/enums'
@@ -50,6 +51,20 @@ describe('AnnualReport - Part 1 - UI', () => {
     expect(wrapper.find(Directors).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)
     expect(wrapper.find(StaffPayment).exists()).toBe(false) // normally not rendered
+
+    wrapper.destroy()
+  })
+
+  it('Verify AR Certify contains correct section codes',() => {
+    const $route = { params: { id: 0 } } // new filing id
+    const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
+    store.state.entityType = 'CP'
+    store.state.configObject = configJson.find(x => x.typeEnum === store.state.entityType)
+    expect(wrapper.find(Certify).exists()).toBe(true)
+    const certify: any = wrapper.find(Certify)
+
+    expect(certify.vm.message).toContain('See section 126 of the Cooperative Associations Act.')
+    expect(certify.vm.entityDisplay).toEqual('Cooperative')
 
     wrapper.destroy()
   })

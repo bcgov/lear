@@ -34,6 +34,7 @@ configHelper.fetchConfig()
   .then(() => {
     // ensure we have a Keycloak token
     if (!sessionStorage.getItem('KEYCLOAK_TOKEN')) {
+      console.log('Redirecting to Auth URL...')
       sessionStorage.setItem('REDIRECTED', 'true')
       const authUrl = sessionStorage.getItem('AUTH_URL')
       // assume Auth URL is always reachable

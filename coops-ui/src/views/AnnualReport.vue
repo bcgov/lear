@@ -308,11 +308,12 @@ import { FilingData } from '@/interfaces'
 
 // Enums
 import { EntityTypes, FilingCodes } from '@/enums'
+import { ResourceLookupMixin } from '../mixins'
 
 export default {
   name: 'AnnualReport',
 
-  mixins: [DateMixin, EntityFilterMixin],
+  mixins: [DateMixin, EntityFilterMixin, ResourceLookupMixin],
 
   components: {
     ARDate,
