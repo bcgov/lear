@@ -15,7 +15,30 @@
         <v-expansion-panel-header class="filing-item-toggle">
           <div class="list-item">
             <div class="filing-label">
-              <div class="list-item__title mb-1">{{item.name}}</div>
+              <v-row>
+                <v-col cols="6" class="v-col-padding">
+                  <div class="list-item__title mb-1">{{item.name}}</div>
+                </v-col>
+                <v-col cols="6" class="v-col-padding" v-if="isCoaFutureEffective(item.name, item.status)">
+                  <v-scale-transition>
+                    <v-tooltip
+                      top
+                      content-class="pending-tooltip"
+                    >
+                      <template v-slot:activator="{ on }">
+                        <div id="pending-alert" class="list-item__subtitle" v-on="on">
+                          <v-icon color="yellow" small>mdi-alert</v-icon>
+                          PAID AND PENDING
+                        </div>
+                      </template>
+                      <span>
+                      The updated office addresses will be legally effective on {{ item.filingEffectiveDate }},
+                      12:01 AM (Pacific Time). No other filings are allowed until then.
+                    </span>
+                    </v-tooltip>
+                  </v-scale-transition>
+                </v-col>
+              </v-row>
               <div class="list-item__subtitle">
                 <span>FILED AND PAID (filed by {{item.filingAuthor}} on {{item.filingDate}})</span>
               </div>
@@ -107,16 +130,25 @@
 </template>
 
 <script lang="ts">
-import ExternalMixin from '@/mixins/external-mixin'
-import DateMixin from '@/mixins/date-mixin'
+// Libraries
 import axios from '@/axios-auth'
 import { mapState } from 'vuex'
+
+// Dialogs
 import { DownloadErrorDialog } from '@/components/dialogs'
+
+// Enums
+import { EntityTypes, FilingStatus } from '@/enums'
+
+// Mixins
+import DateMixin from '@/mixins/date-mixin'
+import ExternalMixin from '@/mixins/external-mixin'
+import EntityFilterMixin from '@/mixins/entityFilter-mixin'
 
 export default {
   name: 'FilingHistoryList',
 
-  mixins: [ExternalMixin, DateMixin],
+  mixins: [DateMixin, ExternalMixin, EntityFilterMixin],
 
   components: {
     DownloadErrorDialog
@@ -129,7 +161,10 @@ export default {
       filedItems: null,
       loadingDocument: false,
       loadingReceipt: false,
-      loadingAll: false
+      loadingAll: false,
+
+      // Enum
+      EntityTypes
     }
   },
 
@@ -237,7 +272,12 @@ export default {
       if (section) {
         const localDateTime = this.convertUTCTimeToLocalTime(filing.header.date)
         const filingDate = this.formatDate(localDateTime)
-        const effectiveDate = this.formatDate(this.convertUTCTimeToLocalTime(filing.header.effectiveDate))
+
+        // Effective date is when the filing is applied to the backend, assigned by the backend when the filing is made.
+        // Currently, all filings will be applied immediately except a change of address for a Benefit Company
+        // The latter is always effective the following day at 12:01 AM Pacific Time
+        const effectiveDate = filing.header.effectiveDate.slice(0, 10)
+
         const item = {
           name: title,
           filingId: filing.header.filingId,
@@ -404,7 +444,21 @@ export default {
         await this.downloadOneReceipt(filing)
       }
       this.loadingAll = false
+    },
+
+    /**
+     * Function to return a boolean if this specific filing is future affective.
+     *
+     * @param filingType The type of the filing in the history list.
+     * @param status The status of the filing in the history list.
+     * @return A boolean indicating if the filing is future effective.
+     */
+    isCoaFutureEffective (filingType: string, status: string): boolean {
+      return this.entityFilter(EntityTypes.BCORP) &&
+        filingType === 'Address Change' &&
+        status === FilingStatus.PAID
     }
+
   },
 
   watch: {
@@ -426,6 +480,10 @@ export default {
   padding: 0;
 }
 
+.v-col-padding {
+  padding: 0 12px 0 12px;
+}
+
 .filing-label {
   flex-basis: 33.3333%;
   flex: 1 1 auto;
@@ -436,6 +494,14 @@ export default {
   width: 30%;
   text-align: right;
   font-weight: 700;
+}
+
+.pending-tooltip {
+  max-width: 16rem;
+}
+
+.pending-icon {
+  background-color: black;
 }
 
   // Document List
