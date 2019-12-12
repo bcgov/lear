@@ -25,37 +25,67 @@ from colin_api.resources.db import DB
 class Office:
     """Registered office object."""
 
+    OFFICE_TYPES_CODES = {
+        'RG': 'registeredOffice',
+        'RC': 'recordsOffice',
+        'registeredOffice': 'RG',
+        'recordsOffice': 'RC'
+    }
+
     delivery_address = None
     mailing_address = None
     event_id = None
     office_type = None
-
-    # TODO - Remove hardcoded dictionary
-    office_codes = {
-        'registeredOffice': {
-            'code': 'RG',
-            'description': 'Registered Office'
-        },
-        'recordsOffice': {
-            'code': 'RC',
-            'description': 'Records Office'
-        }
-    }
+    office_code = None
 
     def __init__(self):
         """Initialize with all values None."""
 
     def as_dict(self):
         """Return dict camel case version of self."""
+        print('here')
         return {
-            'deliveryAddress': self.delivery_address,
-            'mailingAddress': self.mailing_address,
-            'officeType': self.office_type
+            self.office_type: {
+                'deliveryAddress': self.delivery_address,
+                'mailingAddress': self.mailing_address,
+                'officeCode': self.office_code
+            }
         }
 
     @classmethod
+    def _build_offices_list(cls, querystring: str = None, event_id: str = None):
+        """Return the office objects for the given query."""
+        cursor = DB.connection.cursor()
+        if not event_id:
+            cursor.execute(querystring, event_id=event_id)
+        else:
+            cursor.execute(querystring, event_id=event_id)
+
+        office_info = cursor.fetchall()
+        offices = []
+        if not office_info:
+            raise OfficeNotFoundException()
+
+        for office_item in office_info:
+
+            office = dict(zip([x[0].lower() for x in cursor.description], office_item))
+            office_obj = Office()
+            office_obj.event_id = office['start_event_id']
+            office_obj.delivery_address = Address.get_by_address_id(office['delivery_addr_id']).as_dict()
+            office_obj.office_code = office['office_typ_cd']
+            office_obj.office_type = cls.OFFICE_TYPES_CODES[office['office_typ_cd']]
+
+            if office['mailing_addr_id']:
+                office_obj.mailing_address = Address.get_by_address_id(office['mailing_addr_id']).as_dict()
+            else:
+                office_obj.mailing_address = office_obj.delivery_address
+            offices.append(office_obj)
+
+        return offices
+
+    @classmethod
     def get_current(cls, identifier: str = None):
-        """Return current registered office address."""
+        """Return current registered and/or records office addresses."""
         if not identifier:
             return None
 
@@ -66,44 +96,15 @@ class Office:
             """)
 
         try:
-            cursor = DB.connection.cursor()
-            cursor.execute(querystring, identifier=identifier)
-
-            office_info = cursor.fetchall()
-            office_arr = {}
-
-            if not office_info:
-                raise OfficeNotFoundException(identifier=identifier)
-
-            for office_item in office_info:
-
-                office = dict(zip([x[0].lower() for x in cursor.description], office_item))
-                office_obj = Office()
-                office_obj.event_id = office['start_event_id']
-                office_obj.delivery_address = Address.get_by_address_id(office['delivery_addr_id']).as_dict()
-                office_obj.office_type = office['office_typ_cd']
-
-                if office['mailing_addr_id']:
-                    office_obj.mailing_address = Address.get_by_address_id(office['mailing_addr_id']).as_dict()
-                else:
-                    office_obj.mailing_address = office_obj.delivery_address
-
-                for item in office_obj.office_codes:
-                    k = office_obj.office_codes[item]['code']
-                    if k == office_obj.office_type:
-                        if item not in office_arr.keys():
-                            office_arr[item] = office_obj
-                        else:
-                            current_app.logger.error('got more than 1 current registered office address for {}'
-                                                     .format(identifier))
-            return office_arr
+            offices = cls._build_offices_list(querystring=querystring)
+            return offices
         except Exception as err:
             current_app.logger.error('error getting office for corp: {}'.format(identifier))
             raise err
 
     @classmethod
     def get_by_event(cls, event_id: str = None):
-        """Return current registered office address."""
+        """Return current registered and/or office address."""
         if not event_id:
             return None
 
@@ -114,23 +115,8 @@ class Office:
             """)
 
         try:
-            cursor = DB.connection.cursor()
-            cursor.execute(querystring, event_id=event_id)
-
-            office_info = cursor.fetchone()
-            if not office_info:
-                raise OfficeNotFoundException(event_id=event_id)
-
-            office_info = dict(zip([x[0].lower() for x in cursor.description], office_info))
-            office_obj = Office()
-            office_obj.event_id = office_info['start_event_id']
-            office_obj.delivery_address = Address.get_by_address_id(office_info['delivery_addr_id']).as_dict()
-            if office_info['mailing_addr_id']:
-                office_obj.mailing_address = Address.get_by_address_id(office_info['mailing_addr_id']).as_dict()
-            else:
-                office_obj.mailing_address = office_obj.delivery_address
-
-            return office_obj
+            offices = cls._build_offices_list(querystring=querystring, event_id=event_id)
+            return offices
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errs
             current_app.logger.error('error getting office from event : {}'.format(event_id))

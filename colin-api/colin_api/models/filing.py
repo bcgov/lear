@@ -338,16 +338,26 @@ class Filing:
         else:
             directors = Director.get_current(identifier=identifier)
         directors = [x.as_dict() for x in directors]
+        offices = {}
         if office_event_id:
             try:
-                reg_office = Office.get_by_event(event_id=office_event_id)
+                reg_office = (Office.get_by_event(event_id=office_event_id)).as_dict()
             except:  # noqa B901; pylint: disable=bare-except;
                 # should only get here if agm was before the bob date
                 recreated_dirs_and_office = False
-                reg_office = Office.get_current(identifier=identifier)
+                office_obj_list = Office.get_current(identifier=identifier)
+                for office_obj in office_obj_list:
+                    if office_obj.office_type not in offices.keys():
+                        print(office_obj.as_dict())
+                        offices.update(office_obj.as_dict())
+
         else:
-            reg_office = Office.get_current(identifier=identifier)
-        reg_office = reg_office
+            office_obj_list = Office.get_current(identifier=identifier)
+            for office_obj in office_obj_list:
+                if office_obj.office_type not in offices.keys():
+                    offices.update(office_obj.as_dict())
+                    print(office_obj.as_dict())
+        print(offices)
         # convert dates and date-times to correct json format
         agm_date = convert_to_json_date(filing_event_info.get('agm_date', None))
         ar_date = convert_to_json_date(filing_event_info['period_end_dt'])
@@ -360,7 +370,7 @@ class Filing:
             'annualReportDate': ar_date,
             'directors': directors,
             'eventId': filing_event_info['event_id'],
-            **reg_office
+            'offices': offices
         }
         filing_obj.filing_type = 'annualReport'
         filing_obj.paper_only = not recreated_dirs_and_office
@@ -370,7 +380,7 @@ class Filing:
 
     @classmethod
     def _get_coa(cls, identifier: str = None, filing_event_info: dict = None):
-        """Get change of address filing."""
+        """Get change of address filing for registered office."""
         registered_office_obj = Office.get_by_event(filing_event_info['event_id'])
 
         if not registered_office_obj:
@@ -738,15 +748,18 @@ class Filing:
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
 
                 # create new addresses for delivery + mailing, return address ids
-                for office in filing.body['offices']:
-                    office_arr = filing.body['offices'][office]
+                for office_type in filing.body['offices']:
+                    office_arr = filing.body['offices'][office_type]
                     delivery_addr_id = Address.create_new_address(cursor, office_arr['deliveryAddress'])
                     mailing_addr_id = Address.create_new_address(cursor, office_arr['mailingAddress'])
-                    office_desc = Office.office_codes[office]['description']
+                    office_desc = (office_type.replace('O', ' O')).title()
+                    office_code = Office.OFFICE_TYPES_CODES[office_type]
+                    print(office_code)
+                    print(office_desc)
 
                     # update office table to include new addresses
                     Office.update_office(cursor, event_id, corp_num, delivery_addr_id,
-                                         mailing_addr_id, Office.office_codes[office]['code'])
+                                         mailing_addr_id, office_code)
 
                     # create new ledger text for address change
                     cls._add_ledger_text(cursor, event_id, f'Change to the {office_desc}, effective on {date}')
