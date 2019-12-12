@@ -14,10 +14,10 @@ export default class ResourceLookupMixin extends Vue {
     readonly configObject
 
     /**
-     * Method to compare the conditional entity to the entityType defined from the Store.
+     * Method to return certify message using the configuration lookup object.
      *
      * @param entity The entity type of the component.
-     * @return boolean A boolean indicating if the entityType given matches the entityType assigned to the component.
+     * @return the appropriate message for the certify component for the current filing flow.
      */
     certifyText (feeCode: string): string {
       if (this.configObject && this.configObject.flows) {
@@ -27,6 +27,11 @@ export default class ResourceLookupMixin extends Vue {
       return ''
     }
 
+    /**
+     * Method to return the current entity's full display name.
+     *
+     * @return the entity display name (if the configuration has been loaded).
+     */
     displayName () {
       if (this.configObject && this.configObject.displayName) {
         return this.configObject.displayName

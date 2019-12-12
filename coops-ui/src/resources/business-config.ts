@@ -1,15 +1,13 @@
-
-export class Business {
-     typeEnum: string;
-     displayName:String;
-     flows: Array<Flow>;
+export class Flow {
+  feeCode: string
+  displayName: string
+  certifyText: string
 }
 
-export class Flow {
-     feeCode:String;
-     displayName:String;
-     certifyText:String;
-     // fields:Array<Fields>
+export class Business {
+     typeEnum: string
+     displayName: string
+     flows: Array<Flow>
 }
 
 export const configJson = [{

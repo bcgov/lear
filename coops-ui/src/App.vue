@@ -55,6 +55,7 @@ import { DashboardUnavailableDialog, AccountAuthorizationDialog } from '@/compon
 // Mixins
 import { DateMixin, CommonMixin } from '@/mixins'
 
+// Folder containing the array of configuration objects
 import { configJson } from '@/resources'
 
 export default {

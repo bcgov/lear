@@ -34,12 +34,10 @@ configHelper.fetchConfig()
   .then(() => {
     // ensure we have a Keycloak token
     if (!sessionStorage.getItem('KEYCLOAK_TOKEN')) {
-      resetAuth(() => {
-        sessionStorage.setItem('REDIRECTED', 'true')
-        const authUrl = sessionStorage.getItem('AUTH_URL')
-        // assume Auth URL is always reachable
-        window.location.assign(authUrl)
-      })
+      sessionStorage.setItem('REDIRECTED', 'true')
+      const authUrl = sessionStorage.getItem('AUTH_URL')
+      // assume Auth URL is always reachable
+      window.location.assign(authUrl)
       return // do not execute remaining code
     }
     new Vue({
@@ -54,20 +52,3 @@ configHelper.fetchConfig()
     console.error('error fetching config -', error)
     alert('Fatal error loading app')
   })
-
-async function resetAuth (func) {
-  var xhr = new XMLHttpRequest()
-  xhr.open('POST', 'https://auth-api-dev.pathfinder.gov.bc.ca/api/v1/token', true)
-  xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8')
-  xhr.onload = function () {
-    // do something to response
-    var data = JSON.parse(this.responseText)
-    if (data && data.access_token) {
-      sessionStorage['KEYCLOAK_TOKEN'] = data['access_token']
-      sessionStorage['BUSINESS_IDENTIFIER'] = 'CP0001327'
-    } else {
-      func()
-    }
-  }
-  await xhr.send(JSON.stringify({ 'username': 'CP0001327', 'password': '874702467' }))
-}

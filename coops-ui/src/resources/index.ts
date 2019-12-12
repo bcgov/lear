@@ -1,1 +1,1 @@
-export * from './config-objects'
+export * from './business-config'
