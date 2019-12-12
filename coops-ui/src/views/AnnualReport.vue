@@ -163,6 +163,8 @@
                 :certifiedBy.sync="certifiedBy"
                 :currentDate="currentDate"
                 @valid="certifyFormValid=$event"
+                :entityDisplay="displayName()"
+                :message="certifyText('OTANN')"
               />
             </section>
 
@@ -307,8 +309,6 @@ import { FilingData } from '@/interfaces'
 // Enums
 import { EntityTypes, FilingCodes } from '@/enums'
 
-import { configJson } from '@/resources'
-
 export default {
   name: 'AnnualReport',
 
@@ -372,7 +372,6 @@ export default {
       haveChanges: false,
       saveErrors: [],
       saveWarnings: [],
-      configObject: {},
       // EntityTypes Enum
       EntityTypes
     }
@@ -381,7 +380,7 @@ export default {
   computed: {
     ...mapState(['currentDate', 'ARFilingYear', 'nextARDate', 'lastAgmDate', 'entityType', 'entityName',
       'entityIncNo', 'entityFoundingDate', 'registeredAddress', 'recordsAddress', 'lastPreLoadFilingDate',
-      'directors']),
+      'directors', 'configObject']),
 
     ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState', 'lastCOAFilingDate', 'lastCODFilingDate']),
 
@@ -429,7 +428,6 @@ export default {
         event.returnValue = 'You have unsaved changes. Are you sure you want to leave?'
       }
     }
-    this.configObject = configJson.find(x => x.typeEnum === this.entityType)
     // NB: filing id of 0 means "new AR"
     // otherwise it's a draft AR filing id
     this.filingId = this.$route.params.id

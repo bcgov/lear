@@ -92,8 +92,8 @@
                     :certifiedBy.sync="certifiedBy"
                     :currentDate="currentDate"
                     @valid="certifyFormValid=$event"
-                    :entityDisplay="this.configObject.displayName"
-                    :message="this.configObject.flows.find(x => x.feeCode === 'OTCDR').certifyText"
+                    :entityDisplay="displayName()"
+                    :message="certifyText('OTCDR')"
                   />
                 </section>
 
@@ -199,8 +199,8 @@
                     :certifiedBy.sync="certifiedBy"
                     :currentDate="currentDate"
                     @valid="certifyFormValid=$event"
-                    :entityDisplay="this.configObject.displayName"
-                    :message="this.configObject.flows.find(x => x.feeCode === 'OTCDR').certifyText"
+                    :entityDisplay="displayName()"
+                    :message="certifyText('OTCDR')"
                   />
                 </section>
 
@@ -288,15 +288,13 @@ import { SummaryDirectors, SummaryCertify, SummaryStaffPayment } from '@/compone
 import { ConfirmDialog, PaymentErrorDialog, ResumeErrorDialog, SaveErrorDialog } from '@/components/dialogs'
 
 // Mixins
-import { EntityFilterMixin } from '@/mixins'
+import { EntityFilterMixin, ResourceLookupMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'
 
 // Constants
 import { CEASED, APPOINTED, ADDRESSCHANGED, NAMECHANGED } from '@/constants'
-
-import { configJson } from '@/resources'
 
 export default {
   name: 'StandaloneDirectorsFiling',
@@ -316,7 +314,7 @@ export default {
     SaveErrorDialog
   },
 
-  mixins: [EntityFilterMixin],
+  mixins: [EntityFilterMixin, ResourceLookupMixin],
 
   data () {
     return {
@@ -348,14 +346,13 @@ export default {
       routingSlipNumber: null,
       staffPaymentFormValid: false,
       totalFee: 0,
-      configObject: {},
       // EntityTypes Enum
       EntityTypes
     }
   },
 
   computed: {
-    ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo', 'entityFoundingDate']),
+    ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo', 'entityFoundingDate', 'configObject']),
 
     ...mapGetters(['isRoleStaff']),
 
@@ -394,8 +391,6 @@ export default {
         event.returnValue = 'You have unsaved changes. Are you sure you want to leave?'
       }
     }
-
-    this.configObject = configJson.find(x => x.typeEnum === this.entityType)
 
     // NB: filing id of 0 means "new"
     // otherwise it's a draft filing id
