@@ -10,12 +10,12 @@
         <v-chip id="entity-status" small label text-color="white"
           v-if="entityStatus"
           :class="{
-            'blue' : entityStatus === 'GOODSTANDING',
-            'red' : entityStatus === 'PENDINGDISSOLUTION' | 'NOTINCOMPLIANCE',
+            'blue' : isGoodStanding,
+            'red' : isPendingDissolution || isNotInCompliance
           }">
-          <span v-if="entityStatus === 'GOODSTANDING'">In Good Standing</span>
-          <span v-else-if="entityStatus === 'PENDINGDISSOLUTION'">Pending Dissolution</span>
-          <span v-else-if="entityStatus === 'NOTINCOMPLIANCE'">Not in Compliance</span>
+          <span v-if="isGoodStanding">In Good Standing</span>
+          <span v-else-if="isPendingDissolution">Pending Dissolution</span>
+          <span v-else-if="isNotInCompliance">Not in Compliance</span>
         </v-chip>
       </div>
 
@@ -69,6 +69,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
 import { mapState, mapGetters } from 'vuex'
+import { EntityStatus } from '@/enums'
 
 @Component({
   computed: {
@@ -97,6 +98,22 @@ export default class EntityInfo extends Vue {
   private get fullPhoneNumber (): string {
     if (!this.businessPhone) return null
     return `${this.businessPhone}${this.businessPhoneExtension ? (' x' + this.businessPhoneExtension) : ''}`
+  }
+
+  /**
+   * Computed values.
+   * @returns True if the entity has the subject status.
+   */
+  private get isGoodStanding (): boolean {
+    return this.entityStatus === EntityStatus.GOODSTANDING
+  }
+
+  private get isPendingDissolution (): boolean {
+    return this.entityStatus === EntityStatus.PENDINGDISSOLUTION
+  }
+
+  private get isNotInCompliance (): boolean {
+    return this.entityStatus === EntityStatus.NOTINCOMPLIANCE
   }
 
   /**
