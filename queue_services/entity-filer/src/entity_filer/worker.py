@@ -141,6 +141,8 @@ def process_filing(filing_msg: Dict, flask_app: Flask):
             db.session.add(business)
             db.session.add(filing_submission)
             db.session.commit()
+
+            publish_event(business, filing_submission)
         return
 
 
