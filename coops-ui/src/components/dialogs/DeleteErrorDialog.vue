@@ -1,14 +1,14 @@
 <template>
-  <v-dialog id="delete-error-dialog" v-model="dialog" width="45rem" persistent="">
+  <v-dialog v-model="dialog" width="45rem" persistent :attach="attach" content-class="delete-error-dialog">
       <v-card>
-        <v-card-title id="error-dialogue-title" v-if="errors.length > 0 || warnings.length < 1">
+        <v-card-title id="dialog-title" v-if="errors.length > 0 || warnings.length < 1">
           Unable to Delete Filing
         </v-card-title>
-        <v-card-title id="warning-dialogue-title" v-else>
+        <v-card-title id="dialog-title" v-else>
           Filing Deleted with Warnings
         </v-card-title>
 
-        <v-card-text id="dialogue-text">
+        <v-card-text id="dialog-text">
           <p class="genErr" v-if="errors.length + warnings.length < 1">
             We were unable to delete your filing.
           </p>
@@ -24,7 +24,6 @@
           <p class="genErr" v-for="(warning, index) in warnings" :key="index">
             {{warning.warning}}
           </p>
-
           <template v-if="!isRoleStaff">
             <p class="genErr">If you need help, please contact us.</p>
             <ErrorContact class="mt-5" />
@@ -35,7 +34,7 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn id="okay-btn" color="primary" text @click="okay()">OK</v-btn>
+          <v-btn id="dialog-ok-btn" color="primary" text @click="okay()">OK</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -59,6 +58,9 @@ export default class DeleteErrorDialog extends Vue {
 
   // Prop to display the dialog.
   @Prop() private dialog: boolean
+
+  // Prop to provide attachment selector.
+  @Prop() private attach: string
 
   // Prop containing error messages.
   @Prop() private errors: object[]

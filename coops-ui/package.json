@@ -12,6 +12,7 @@
     "test:unit-silent": "vue-cli-service test:unit --silent"
   },
   "dependencies": {
+    "@mdi/font": "^4.5.95",
     "axios": "^0.18.0",
     "core-js": "^3.1.4",
     "country-list": "^2.2.0",
@@ -31,7 +32,6 @@
     "vuex": "^3.0.1"
   },
   "devDependencies": {
-    "@mdi/font": "^4.5.95",
     "@types/jest": "^24.0.18",
     "@types/vuelidate": "^0.7.4",
     "@typescript-eslint/eslint-plugin": "^2.3.1",

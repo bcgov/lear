@@ -1,47 +1,55 @@
 <template>
-  <div>
-    <ConfirmDialog ref="confirm" />
+  <div id="todo-list">
+    <ConfirmDialog
+      ref="confirm"
+      attach="#todo-list"
+    />
 
     <DeleteErrorDialog
       :dialog="deleteErrorDialog"
       :errors="deleteErrors"
       :warnings="deleteWarnings"
       @okay="resetErrors"
+      attach="#todo-list"
     />
 
     <v-expansion-panels v-if="taskItems && taskItems.length > 0" accordion>
       <v-expansion-panel
-        class="todo-list"
-        v-for="(item, index) in orderBy(taskItems, 'order')"
-        v-bind:key="index"
+        class="align-items-top todo-item"
         expand-icon=""
-        :class="{ 'disabled': !item.enabled, 'draft': isDraft(item),
-        'awaitConfirm': !confirmCheckbox && isConfirmEnabled(item.type, item.status)}">
-
-        <v-expansion-panel-header class="no-dropdown">
+        v-for="(item, index) in orderBy(taskItems, 'order')"
+        :key="index"
+        :class="{
+          'disabled': !item.enabled,
+          'draft': isDraft(item),
+          'awaitConfirm': !confirmCheckbox && isConfirmEnabled(item.type, item.status)
+        }"
+      >
+        <v-expansion-panel-header class="todo-item-toggle no-dropdown">
           <div class="list-item">
-            <div class="filing-type">
+            <div class="todo-label">
               <div class="list-item__title">{{item.title}}</div>
+
               <div class="bcorps-ar-subtitle"
-                 v-if="entityFilter(EntityTypes.BCORP) &&
-                 isConfirmEnabled(item.type, item.status)"
+                v-if="entityFilter(EntityTypes.BCORP) && isConfirmEnabled(item.type, item.status)"
               >
                 <p>Verify your Office Address and Current Directors before filing your Annual Report.</p>
                 <v-checkbox
-                  id="confirm-checkbox"
                   class="todo-list-checkbox"
                   label="All information about the Office Addresses and Current Directors is correct."
                   :disabled=!item.enabled
-                  v-model=confirmCheckbox
+                  v-model="confirmCheckbox"
                   @click.native.stop
                 />
               </div>
+
               <div class="list-item__subtitle">
-                <div v-if="item.subtitle && entityFilter(EntityTypes.COOP)" class="todo-status">
-                  {{item.subtitle}}
+                <div v-if="entityFilter(EntityTypes.COOP) && item.subtitle" class="todo-status">
+                  <span>{{item.subtitle}}</span>
                 </div>
+
                 <div v-if="isDraft(item)" class="todo-status">
-                  DRAFT
+                  <div>DRAFT</div>
                 </div>
 
                 <div v-else-if="isPending(item)" class="todo-status">
@@ -52,7 +60,9 @@
                   </div>
                   <div class="payment-status" v-else>
                     <span>PAYMENT INCOMPLETE</span>
-                    <v-btn small icon color="black" class="info-btn"><v-icon>mdi-information-outline</v-icon></v-btn>
+                    <v-btn small icon color="black" class="info-btn">
+                      <v-icon>mdi-information-outline</v-icon>
+                    </v-btn>
                   </div>
                 </div>
 
@@ -64,7 +74,9 @@
                   </div>
                   <div class="payment-status" v-else>
                     <span>PAYMENT UNSUCCESSFUL</span>
-                    <v-btn small icon color="black" class="info-btn"><v-icon>mdi-information-outline</v-icon></v-btn>
+                    <v-btn small icon color="black" class="info-btn">
+                      <v-icon>mdi-information-outline</v-icon>
+                    </v-btn>
                   </div>
                 </div>
 
@@ -76,7 +88,9 @@
                   </div>
                   <div class="payment-status" v-else>
                     <span>PAID</span>
-                    <v-btn small icon color="black" class="info-btn"><v-icon>mdi-information-outline</v-icon></v-btn>
+                    <v-btn small icon color="black" class="info-btn">
+                      <v-icon>mdi-information-outline</v-icon>
+                    </v-btn>
                   </div>
                 </div>
               </div>
@@ -86,21 +100,20 @@
               <v-col>
                 <p class="date-subtitle"
                   v-if="entityFilter(EntityTypes.BCORP) && isConfirmEnabled(item.type, item.status)"
-                >
-                  due {{ item.nextArDate }}
-                </p>
+                >due {{ item.nextArDate }}</p>
+
                 <!-- pre-empt any buttons below -->
                 <template v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
                   <v-btn text loading disabled />
                 </template>
 
                 <template v-else-if="isDraft(item)">
-                  <v-btn id="btn-draft-resume"
+                  <v-btn class="btn-draft-resume"
                     color="primary"
                     :disabled="!item.enabled"
                     @click.native.stop="doResumeFiling(item)"
                   >
-                    Resume
+                    <span>Resume</span>
                   </v-btn>
                   <!-- more DRAFT actions menu -->
                   <v-menu offset-y left>
@@ -120,19 +133,21 @@
                 </template>
 
                 <v-btn v-else-if="isPending(item)"
+                  class="btn-resume-payment"
                   color="primary"
                   :disabled="!item.enabled"
                   @click.native.stop="doResumePayment(item)"
                 >
-                  Resume Payment
+                  <span>Resume Payment</span>
                 </v-btn>
 
                 <v-btn v-else-if="isError(item)"
+                  class="btn-retry-payment"
                   color="primary"
                   :disabled="!item.enabled"
                   @click.native.stop="doResumePayment(item)"
                 >
-                  Retry Payment
+                  <span>Retry Payment</span>
                 </v-btn>
 
                 <template v-else-if="isPaid(item)">
@@ -140,12 +155,12 @@
                 </template>
 
                 <v-btn v-else-if="!isCompleted(item)"
-                  class="btn-file"
+                  class="btn-file-now"
                   color="primary"
-                  :disabled="(!item.enabled || coaPending) || !confirmCheckbox"
+                  :disabled="!item.enabled || coaPending || !confirmCheckbox"
                   @click.native.stop="doFileNow(item)"
                 >
-                  File Now
+                  <span>File Now</span>
                 </v-btn>
               </v-col>
             </div>
@@ -153,30 +168,31 @@
         </v-expansion-panel-header>
 
         <v-expansion-panel-content>
-            <v-card v-if="isPending(item)">
-              <v-card-text>
-                <p class="font-weight-bold black--text">Payment Incomplete</P>
-                <p>This filing is pending payment. The payment may still be in progress or may have been
-                  interrupted for some reason.<p>
-                <p>You may continue this filing by selecting "Resume Payment".</p>
-              </v-card-text>
-            </v-card>
-            <v-card v-else-if="isError(item)">
-              <v-card-text>
-                <p class="font-weight-bold black--text">Payment Unsuccessful</p>
-                <p>This filing is pending payment. The payment appears to have been unsuccessful for some
-                  reason.</p>
-                <p>You may continue this filing by selecting "Retry Payment".</p>
-              </v-card-text>
-            </v-card>
-            <v-card v-else-if="isPaid(item)">
-              <v-card-text>
-                <p class="font-weight-bold black--text">Paid</p>
-                <p>This filing is paid but the filing is not yet complete. Please check again later.</p>
-              </v-card-text>
-            </v-card>
-        </v-expansion-panel-content>
+          <v-card v-if="isPending(item)" data-test-class="payment-incomplete">
+            <v-card-text>
+              <p class="font-weight-bold black--text">Payment Incomplete</P>
+              <p>This filing is pending payment. The payment may still be in progress or may have been
+                interrupted for some reason.<p>
+              <p>You may continue this filing by selecting "Resume Payment".</p>
+            </v-card-text>
+          </v-card>
 
+          <v-card v-else-if="isError(item)" data-test-class="payment-unsuccessful">
+            <v-card-text>
+              <p class="font-weight-bold black--text">Payment Unsuccessful</p>
+              <p>This filing is pending payment. The payment appears to have been unsuccessful for some
+                reason.</p>
+              <p>You may continue this filing by selecting "Retry Payment".</p>
+            </v-card-text>
+          </v-card>
+
+          <v-card v-else-if="isPaid(item)" data-test-class="payment-paid">
+            <v-card-text>
+              <p class="font-weight-bold black--text">Paid</p>
+              <p>This filing is paid but the filing is not yet complete. Please check again later.</p>
+            </v-card-text>
+          </v-card>
+        </v-expansion-panel-content>
       </v-expansion-panel>
     </v-expansion-panels>
 
@@ -536,7 +552,7 @@ export default {
 <style lang="scss" scoped>
 @import "@/assets/styles/theme.scss";
 
-.todo-list {
+.todo-item {
   // disable expansion
   pointer-events: none;
 
@@ -549,7 +565,7 @@ export default {
   background-color: rgba(216,216,216,0.75)!important;
 }
 
-.todo-list.disabled {
+.todo-item.disabled {
   opacity: 0.6;
 
   .info-btn {
@@ -558,18 +574,18 @@ export default {
   }
 }
 
-.todo-list:not(.disabled) {
+.todo-item:not(.disabled) {
   .v-btn {
     // enable action buttons
     pointer-events: auto;
   }
 }
 
-.todo-list.draft .v-expansion-panel-content {
+.todo-item.draft .v-expansion-panel-content {
   display: none;
 }
 
-.todo-list .list-item {
+.todo-item .list-item {
   padding: 0;
   justify-content: space-evenly;
 
@@ -578,13 +594,13 @@ export default {
   }
 }
 
-.todo-list .list-item .list-item__actions {
+.todo-item .list-item .list-item__actions {
   .date-subtitle {
     font-size: 0.875rem;
     margin-bottom: 4.5rem;
   }
 
-  #btn-draft-resume {
+  .btn-draft-resume {
     min-width: 103px;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
@@ -592,7 +608,7 @@ export default {
 }
 
 .list-item__actions {
-  .btn-file{
+  .btn-file-now {
     width: inherit;
   }
 
@@ -614,7 +630,7 @@ export default {
   }
 }
 
-.filing-type {
+.todo-label {
   flex: 1 1 auto;
 }
 
@@ -639,7 +655,6 @@ export default {
   margin-left: 0.75rem;
   margin-right: 0.75rem;
   height: 1rem;
-  border-left: 1px solid $gray6
+  border-left: 1px solid $gray6;
 }
-
 </style>

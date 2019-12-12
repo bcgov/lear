@@ -1,11 +1,14 @@
 <template>
-  <div>
-    <!-- Dialogs -->
-    <ConfirmDialog ref="confirm" />
+  <div id="standalone-office-address">
+    <ConfirmDialog
+      ref="confirm"
+      attach="standalone-office-address"
+    />
 
     <ResumeErrorDialog
       :dialog="resumeErrorDialog"
       @exit="navigateToDashboard"
+      attach="standalone-office-address"
     />
 
     <SaveErrorDialog
@@ -17,148 +20,142 @@
       @exit="navigateToDashboard"
       @retry="onClickFilePay"
       @okay="resetErrors"
+      attach="standalone-office-address"
     />
 
     <PaymentErrorDialog
       :dialog="paymentErrorDialog"
       @exit="navigateToDashboard"
+      attach="standalone-office-address"
     />
 
-    <div id="standalone-office-address">
-      <!-- Initial Page Load Transition -->
-      <div class="loading-container fade-out">
-        <div class="loading__content">
-          <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-          <div class="loading-msg">Preparing Your Filing</div>
-        </div>
+    <!-- Initial Page Load Transition -->
+    <div class="loading-container fade-out">
+      <div class="loading__content">
+        <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
+        <div class="loading-msg">{{loadingMessage}}</div>
+      </div>
+    </div>
+
+    <v-container id="standalone-office-address-container" class="view-container">
+      <v-row>
+        <v-col cols="12" lg="9">
+          <article id="standalone-office-address-article">
+            <header>
+              <h1 id="filing-header">Address Change</h1>
+
+              <p>
+                <span>Please change your Registered Office Address</span>
+                <span v-if="entityFilter(EntityTypes.BCORP)"> and Records Address</span>
+                <span>.</span>
+              </p>
+
+              <v-alert type="info" outlined
+                v-if="entityFilter(EntityTypes.BCORP)"
+                icon="mdi-information"
+                class="white-background"
+              >
+                <span>Any address update will be effective tomorrow.</span>
+              </v-alert>
+            </header>
+
+            <!-- Office Addresses -->
+            <section>
+              <OfficeAddresses
+                :changeButtonDisabled="false"
+                :addresses.sync="addresses"
+                :registeredAddress.sync="registeredAddress"
+                :recordsAddress.sync="recordsAddress"
+                @modified="officeModifiedEventHandler($event)"
+                @valid="officeAddressFormValid = $event"
+              />
+            </section>
+
+            <!-- Certify -->
+            <section>
+              <header>
+                <h2 id="AR-step-4-header">Certify Correct</h2>
+                <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+              </header>
+              <Certify
+                :isCertified.sync="isCertified"
+                :certifiedBy.sync="certifiedBy"
+                @valid="certifyFormValid=$event"
+              />
+            </section>
+
+            <!-- Staff Payment -->
+            <section v-if="isRoleStaff && isPayRequired">
+              <header>
+                <h2 id="AR-step-5-header">Staff Payment</h2>
+              </header>
+              <StaffPayment
+                :value.sync="routingSlipNumber"
+                @valid="staffPaymentFormValid=$event"
+              />
+            </section>
+          </article>
+        </v-col>
+
+        <v-col cols="12" lg="3" style="position: relative">
+          <aside>
+            <affix
+              relative-element-selector="#standalone-office-address-article"
+              :offset="{ top: 120, bottom: 40 }"
+            >
+              <sbc-fee-summary
+                v-bind:filingData="[...filingData]"
+                v-bind:payURL="payAPIURL"
+                @total-fee="totalFee=$event"
+              />
+            </affix>
+          </aside>
+        </v-col>
+      </v-row>
+    </v-container>
+
+    <!-- TODO: this container should have some container class not 'list-item' class -->
+    <v-container id="standalone-office-address-buttons-container" class="list-item">
+      <div class="buttons-left">
+        <v-btn id="coa-save-btn" large
+          :disabled="!saveAsDraftEnabled || busySaving"
+          :loading="saving"
+          @click="onClickSave"
+        >
+          <span>Save</span>
+        </v-btn>
+        <v-btn id="coa-save-resume-btn" large
+          :disabled="!saveAsDraftEnabled || busySaving"
+          :loading="savingResuming"
+          @click="onClickSaveResume"
+        >
+          <span>Save &amp; Resume Later</span>
+        </v-btn>
       </div>
 
-      <v-container id="standalone-office-address-container" class="view-container">
-        <v-row>
-          <v-col cols="12" lg="9">
-            <article id="standalone-office-address-article">
-              <header>
-                <h1 id="filing-header">Address Change</h1>
+      <div class="buttons-right">
+        <v-tooltip top color="#3b6cff">
+          <template v-slot:activator="{ on }">
+            <div v-on="on" class="d-inline">
+            <v-btn
+              id="coa-file-pay-btn"
+              color="primary"
+              large
+              :disabled="!validated || busySaving"
+              :loading="filingPaying"
+              @click="onClickFilePay"
+            >
+              <span>{{ isPayRequired ? "File &amp; Pay" : "File" }}</span>
+            </v-btn>
+            </div>
+          </template>
+          <span>Ensure all of your information is entered correctly before you File.<br>
+            There is no opportunity to change information beyond this point.</span>
+        </v-tooltip>
 
-                <p>
-                  <span>Please change your Registered Office Address</span>
-                  <span v-if="entityFilter(EntityTypes.BCORP)"> and Records Address</span>
-                  <span>.</span>
-                </p>
-
-                <v-alert
-                  v-if="entityFilter(EntityTypes.BCORP)"
-                  type="info"
-                  icon="mdi-information"
-                  outlined
-                  class="white-background"
-                >
-                  Any address update will be effective tomorrow.
-                </v-alert>
-              </header>
-
-              <!-- Office Addresses -->
-              <section>
-                <OfficeAddresses
-                  :changeButtonDisabled="false"
-                  :addresses.sync="addresses"
-                  :registeredAddress.sync="registeredAddress"
-                  :recordsAddress.sync="recordsAddress"
-                  @modified="officeModifiedEventHandler($event)"
-                  @valid="officeAddressFormValid = $event"
-                />
-              </section>
-
-              <!-- Certify -->
-              <section>
-                <header>
-                  <h2 id="AR-step-4-header">Certify Correct</h2>
-                  <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
-                </header>
-                <Certify
-                  :isCertified.sync="isCertified"
-                  :certifiedBy.sync="certifiedBy"
-                  @valid="certifyFormValid=$event"
-                />
-              </section>
-
-              <!-- Staff Payment -->
-              <section v-if="isRoleStaff && isPayRequired">
-                <header>
-                  <h2 id="AR-step-5-header">Staff Payment</h2>
-                </header>
-                <StaffPayment
-                  :value.sync="routingSlipNumber"
-                  @valid="staffPaymentFormValid=$event"
-                />
-              </section>
-            </article>
-          </v-col>
-
-          <v-col cols="12" lg="3" style="position: relative">
-            <aside>
-              <affix
-                relative-element-selector="#standalone-office-address-article"
-                :offset="{ top: 120, bottom: 40 }"
-              >
-                <sbc-fee-summary
-                  v-bind:filingData="[...filingData]"
-                  v-bind:payURL="payAPIURL"
-                  @total-fee="totalFee=$event"
-                />
-              </affix>
-            </aside>
-          </v-col>
-        </v-row>
-      </v-container>
-
-      <v-container id="buttons-container" class="list-item">
-        <div class="buttons-left">
-          <v-btn id="coa-save-btn" large
-            :disabled="!saveAsDraftEnabled || busySaving"
-            :loading="saving"
-            @click="onClickSave"
-          >
-            Save
-          </v-btn>
-          <v-btn id="coa-save-resume-btn" large
-            :disabled="!saveAsDraftEnabled || busySaving"
-            :loading="savingResuming"
-            @click="onClickSaveResume"
-          >
-            Save &amp; Resume Later
-          </v-btn>
-        </div>
-
-        <div class="buttons-right">
-          <v-tooltip top color="#3b6cff">
-            <template v-slot:activator="{ on }">
-              <div v-on="on" class="d-inline">
-              <v-btn
-                id="coa-file-pay-btn"
-                color="primary"
-                large
-                :disabled="!validated || busySaving"
-                :loading="filingPaying"
-                @click="onClickFilePay"
-              >
-                {{ isPayRequired ? "File &amp; Pay" : "File" }}
-              </v-btn>
-              </div>
-            </template>
-            <span>Ensure all of your information is entered correctly before you File.<br>
-              There is no opportunity to change information beyond this point.</span>
-          </v-tooltip>
-          <v-btn
-            id="coa-cancel-btn"
-            large
-            to="/dashboard"
-          >
-            Cancel
-          </v-btn>
-        </div>
-      </v-container>
-    </div>
+        <v-btn id="coa-cancel-btn" large to="/dashboard" :loading="filingPaying">Cancel</v-btn>
+      </div>
+    </v-container>
   </div>
 </template>
 
@@ -204,6 +201,7 @@ export default {
     return {
       addresses: null,
       filingId: null,
+      loadingMessage: 'Loading...', // initial generic message
       showLoading: false,
       filingData: [],
       resumeErrorDialog: false,
@@ -278,11 +276,13 @@ export default {
     // if tombstone data isn't set, route to home
     if (!this.entityIncNo || (this.filingId === undefined)) {
       this.$router.push('/')
-    }
-
-    if (this.filingId > 0) {
+    } else if (this.filingId > 0) {
       // resume draft filing
+      this.loadingMessage = `Resuming Your Address Change`
       this.fetchChangeOfAddressFiling()
+    } else {
+      // else just load new page
+      this.loadingMessage = `Preparing Your Address Change`
     }
   },
 
@@ -638,7 +638,7 @@ export default {
             if (response && response.data && response.data.tasks) {
               response.data.tasks.forEach((task) => {
                 if (task.task && task.task.filing &&
-                 task.task.filing.header && task.task.filing.header.status !== 'NEW') {
+                  task.task.filing.header && task.task.filing.header.status !== 'NEW') {
                   hasPendingItems = true
                 }
               })
@@ -648,8 +648,8 @@ export default {
             console.error('fetchData() error =', error)
             this.saveErrorDialog = true
           })
-        return hasPendingItems
       }
+      return hasPendingItems
     }
   },
 
@@ -700,7 +700,7 @@ h2 {
 }
 
 // Save & Filing Buttons
-#buttons-container {
+#standalone-office-address-buttons-container {
   padding-top: 2rem;
   border-top: 1px solid $gray5;
 

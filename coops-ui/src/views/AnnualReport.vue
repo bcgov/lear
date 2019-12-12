@@ -1,11 +1,14 @@
 <template>
-  <div>
-    <!-- Dialogs -->
-    <ConfirmDialog ref="confirm" />
+  <div id="annual-report">
+    <ConfirmDialog
+      ref="confirm"
+      attach="annual-report"
+    />
 
     <ResumeErrorDialog
       :dialog="resumeErrorDialog"
       @exit="navigateToDashboard"
+      attach="annual-report"
     />
 
     <SaveErrorDialog
@@ -17,271 +20,260 @@
       @exit="navigateToDashboard"
       @retry="onClickFilePay"
       @okay="resetErrors"
+      attach="annual-report"
     />
 
     <PaymentErrorDialog
       :dialog="paymentErrorDialog"
       @exit="navigateToDashboard"
+      attach="annual-report"
     />
 
-    <div id="annual-report">
-      <!-- Initial Page Load Transition -->
-      <div class="loading-container fade-out">
-        <div class="loading__content">
-          <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-          <div class="loading-msg">{{this.loadingMessage}}</div>
-        </div>
+    <!-- Initial Page Load Transition -->
+    <div class="loading-container fade-out">
+      <div class="loading__content">
+        <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
+        <div class="loading-msg">{{loadingMessage}}</div>
       </div>
+    </div>
 
-      <v-container id="annual-report-container" class="view-container">
-        <v-row>
-          <v-col cols="12" lg="9">
-            <section>
-              <!-- COOP only: -->
-              <article
-                class="annual-report-article"
-                :class="this.agmDate ? 'agm-date-selected' : 'no-agm-date-selected'"
-                v-if="entityFilter(EntityTypes.COOP)"
-              >
-                <!-- Page Title -->
-                <header>
-                  <h1 id="AR-header">File {{ ARFilingYear }} Annual Report
-                    <span class="font-italic" v-if="reportState">- {{ reportState }}</span>
-                  </h1>
-                  <p>Please verify or change your Office Addresses and Directors.</p>
-                </header>
+    <v-container id="annual-report-container" class="view-container">
+      <v-row>
+        <v-col cols="12" lg="9">
+          <section>
+            <!-- COOP only: -->
+            <article
+              class="annual-report-article"
+              :class="agmDate ? 'agm-date-selected' : 'no-agm-date-selected'"
+              v-if="entityFilter(EntityTypes.COOP)"
+            >
+              <!-- Page Title -->
+              <header>
+                <h1 id="AR-header">File {{ ARFilingYear }} Annual Report
+                  <span class="font-italic" v-if="reportState">- {{ reportState }}</span>
+                </h1>
+                <p>Please verify or change your Office Addresses and Directors.</p>
+              </header>
 
-                <template v-if="isAnnualReportEditable">
-                  <!-- Annual General Meeting Date -->
-                  <section>
-                    <header>
-                      <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
-                      <p>Select your Annual General Meeting (AGM) date</p>
-                    </header>
-                    <AGMDate
-                      :initialAgmDate="initialAgmDate"
-                      :allowCOA="allowChange('coa')"
-                      :allowCOD="allowChange('cod')"
-                      :noAGM="noAGM"
-                      @agmDate="agmDate=$event"
-                      @valid="agmDateValid=$event"
-                    />
-                  </section>
-
-                  <!-- Registered Office Addresses -->
-                  <section>
-                    <header>
-                      <h2 id="AR-step-2-header">2. Registered Office Addresses
-                        <span class="agm-date">(as of {{ ARFilingYear }} Annual General Meeting)</span>
-                      </h2>
-                      <p>Verify or change your Registered Office Addresses.</p>
-                    </header>
-                    <OfficeAddresses
-                      :changeButtonDisabled="!allowChange('coa')"
-                      :addresses.sync="addresses"
-                      :registeredAddress.sync="registeredAddress"
-                      :recordsAddress.sync="recordsAddress"
-                      @modified="officeModifiedEventHandler($event)"
-                      @valid="addressFormValid = $event"
-                    />
-                  </section>
-
-                  <!-- Directors -->
-                  <section>
-                    <header>
-                      <h2 id="AR-step-3-header">3. Directors</h2>
-                      <p v-if="allowChange('cod')">Tell us who was elected or appointed and who ceased to be
-                        a director at your {{ ARFilingYear }} AGM.</p>
-                      <p v-else-if="!allowChange('cod')">This is your list of directors active on
-                        {{agmDate ? agmDate : `${this.ARFilingYear}-01-01`}}, including
-                        directors that were ceased at a later date.</p>
-                    </header>
-                    <Directors ref="directorsList"
-                      @directorsChange="directorsChange"
-                      @directorsFreeChange="directorsFreeChange"
-                      @allDirectors="allDirectors=$event"
-                      @directorFormValid="directorFormValid=$event"
-                      @directorEditAction="directorEditInProgress=$event"
-                      :asOfDate="agmDate"
-                      :componentEnabled="allowChange('cod')"
-                    />
-                  </section>
-                </template>
-              </article>
-
-              <!-- BCORP only: -->
-              <article
-                class="annual-report-article"
-                v-if="entityFilter(EntityTypes.BCORP)"
-              >
-                <!-- Page Title -->
-                <header>
-                  <h1 id="AR-header-BC">File {{ ARFilingYear }} Annual Report
-                    <span style="font-style: italic" v-if="reportState">- {{ reportState }}</span>
-                  </h1>
-                  <p>Please review all the information before you file and pay.</p>
-                </header>
-
-                <!-- Business Details -->
+              <template v-if="isAnnualReportEditable">
+                <!-- Annual General Meeting Date -->
                 <section>
                   <header>
-                    <h2 id="AR-header-1-BC">1. Business Details</h2>
+                    <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
+                    <p>Select your Annual General Meeting (AGM) date</p>
                   </header>
-                  <ARDate />
-                  <br>
-                  <SummaryOfficeAddresses
-                    :registeredAddress="registeredAddress"
-                    :recordsAddress="recordsAddress"
+                  <AGMDate
+                    :initialAgmDate="initialAgmDate"
+                    :allowCOA="allowChange('coa')"
+                    :allowCOD="allowChange('cod')"
+                    :noAGM="noAGM"
+                    @agmDate="agmDate=$event"
+                    @valid="agmDateValid=$event"
+                  />
+                </section>
+
+                <!-- Registered Office Addresses -->
+                <section>
+                  <header>
+                    <h2 id="AR-step-2-header">2. Registered Office Addresses
+                      <span class="agm-date">(as of {{ ARFilingYear }} Annual General Meeting)</span>
+                    </h2>
+                    <p>Verify or change your Registered Office Addresses.</p>
+                  </header>
+                  <OfficeAddresses
+                    :changeButtonDisabled="!allowChange('coa')"
+                    :addresses.sync="addresses"
+                    :registeredAddress.sync="registeredAddress"
+                    :recordsAddress.sync="recordsAddress"
+                    @modified="officeModifiedEventHandler($event)"
+                    @valid="addressFormValid = $event"
                   />
                 </section>
 
                 <!-- Directors -->
                 <section>
                   <header>
-                    <h2 id="AR-header-2-BC">2. Directors</h2>
+                    <h2 id="AR-step-3-header">3. Directors</h2>
+                    <p v-if="allowChange('cod')">Tell us who was elected or appointed and who ceased to be
+                      a director at your {{ ARFilingYear }} AGM.</p>
+                    <p v-else-if="!allowChange('cod')">This is your list of directors active on
+                      {{agmDate ? agmDate : `${this.ARFilingYear}-01-01`}}, including
+                      directors that were ceased at a later date.</p>
                   </header>
-                  <SummaryDirectors
-                    :directors="directors"
+                  <Directors ref="directorsList"
+                    @directorsChange="directorsChange"
+                    @directorsFreeChange="directorsFreeChange"
+                    @allDirectors="allDirectors=$event"
+                    @directorFormValid="directorFormValid=$event"
+                    @directorEditAction="directorEditInProgress=$event"
+                    :asOfDate="agmDate"
+                    :componentEnabled="allowChange('cod')"
                   />
                 </section>
-              </article>
+              </template>
+            </article>
 
-              <!-- Both COOP and BCOMP: -->
+            <!-- BCORP only: -->
+            <article
+              class="annual-report-article"
+              v-if="entityFilter(EntityTypes.BCORP)"
+            >
+              <!-- Page Title -->
+              <header>
+                <h1 id="AR-header-BC">File {{ ARFilingYear }} Annual Report
+                  <span style="font-style: italic" v-if="reportState">- {{ reportState }}</span>
+                </h1>
+                <p>Please review all the information before you file and pay.</p>
+              </header>
 
-              <!-- Certify -->
+              <!-- Business Details -->
               <section>
                 <header>
-                  <h2 id="AR-step-4-header">{{this.entityFilter(EntityTypes.BCORP) ? '3.' : '4.' }} Certify Correct</h2>
-                  <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+                  <h2 id="AR-header-1-BC">1. Business Details</h2>
                 </header>
-                <Certify
-                  :isCertified.sync="isCertified"
-                  :certifiedBy.sync="certifiedBy"
-                  :currentDate="currentDate"
-                  @valid="certifyFormValid=$event"
+                <ARDate />
+                <br>
+                <SummaryOfficeAddresses
+                  :registeredAddress="registeredAddress"
+                  :recordsAddress="recordsAddress"
                 />
               </section>
 
-              <!-- Staff Payment -->
-              <section v-if="isRoleStaff && isPayRequired">
+              <!-- Directors -->
+              <section>
                 <header>
-                  <h2 id="AR-step-5-header">5. Staff Payment</h2>
+                  <h2 id="AR-header-2-BC">2. Directors</h2>
                 </header>
-                <StaffPayment
-                  :value.sync="routingSlipNumber"
-                  @valid="staffPaymentFormValid=$event"
+                <SummaryDirectors
+                  :directors="directors"
                 />
               </section>
+            </article>
+
+            <!-- Both COOP and BCOMP: -->
+
+            <!-- Certify -->
+            <section>
+              <header>
+                <h2 id="AR-step-4-header">{{this.entityFilter(EntityTypes.BCORP) ? '3.' : '4.' }} Certify Correct</h2>
+                <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+              </header>
+              <Certify
+                :isCertified.sync="isCertified"
+                :certifiedBy.sync="certifiedBy"
+                :currentDate="currentDate"
+                @valid="certifyFormValid=$event"
+              />
             </section>
-          </v-col>
 
-          <v-col cols="12" lg="3" style="position: relative">
-            <aside>
-              <affix relative-element-selector=".annual-report-article" :offset="{ top: 120, bottom: 40 }">
-                <sbc-fee-summary
-                  v-bind:filingData="[...filingData]"
-                  v-bind:payURL="payAPIURL"
-                  @total-fee="totalFee=$event"
-                />
-              </affix>
-            </aside>
-          </v-col>
-        </v-row>
-      </v-container>
+            <!-- Staff Payment -->
+            <section v-if="isRoleStaff && isPayRequired">
+              <header>
+                <h2 id="AR-step-5-header">5. Staff Payment</h2>
+              </header>
+              <StaffPayment
+                :value.sync="routingSlipNumber"
+                @valid="staffPaymentFormValid=$event"
+              />
+            </section>
+          </section>
+        </v-col>
 
-      <!-- Buttons ( COOP only ) -->
-      <v-container
-        id="buttons-container"
-        class="list-item"
-        v-if="entityFilter(EntityTypes.COOP)"
-      >
-        <div class="buttons-left">
-          <v-btn id="ar-save-btn" large
-            v-if="isAnnualReportEditable"
-            :disabled="!isSaveButtonEnabled || busySaving"
-            :loading="saving"
-            @click="onClickSave"
-          >
-            Save
-          </v-btn>
-          <v-btn id="ar-save-resume-btn" large
-            v-if="isAnnualReportEditable"
-            :disabled="!isSaveButtonEnabled || busySaving"
-            :loading="savingResuming"
-            @click="onClickSaveResume"
-          >
-            Save &amp; Resume Later
-          </v-btn>
-        </div>
+        <v-col cols="12" lg="3" style="position: relative">
+          <aside>
+            <affix relative-element-selector=".annual-report-article" :offset="{ top: 120, bottom: 40 }">
+              <sbc-fee-summary
+                v-bind:filingData="[...filingData]"
+                v-bind:payURL="payAPIURL"
+                @total-fee="totalFee=$event"
+              />
+            </affix>
+          </aside>
+        </v-col>
+      </v-row>
+    </v-container>
 
-        <div class="buttons-right">
-          <v-tooltip top color="#3b6cff">
-            <template v-slot:activator="{ on }">
-              <div v-on="on" class="d-inline">
-                <v-btn
-                  v-if="isAnnualReportEditable"
-                  id="ar-file-pay-btn"
-                  color="primary"
-                  large
-                  :disabled="!validated || busySaving"
-                  :loading="filingPaying"
-                  @click="onClickFilePay"
-                >
-                  {{ isPayRequired ? "File &amp; Pay" : "File" }}
-                </v-btn>
-              </div>
-            </template>
-            <span>Ensure all of your information is entered correctly before you File.<br>
-              There is no opportunity to change information beyond this point.</span>
-          </v-tooltip>
-          <v-btn
-            id="ar-cancel-btn"
-            large
-            to="/dashboard"
-          >
-            Cancel
-          </v-btn>
-        </div>
-      </v-container>
+    <!-- Buttons ( COOP only ) -->
+    <v-container
+      id="coop-buttons-container"
+      class="list-item"
+      v-if="entityFilter(EntityTypes.COOP)"
+    >
+      <div class="buttons-left">
+        <v-btn id="ar-save-btn" large
+          v-if="isAnnualReportEditable"
+          :disabled="!isSaveButtonEnabled || busySaving"
+          :loading="saving"
+          @click="onClickSave"
+        >
+          <span>Save</span>
+        </v-btn>
+        <v-btn id="ar-save-resume-btn" large
+          v-if="isAnnualReportEditable"
+          :disabled="!isSaveButtonEnabled || busySaving"
+          :loading="savingResuming"
+          @click="onClickSaveResume"
+        >
+          <span>Save &amp; Resume Later</span>
+        </v-btn>
+      </div>
 
-      <!-- Buttons ( BCORP only ) -->
-      <v-container
-        id="buttons-container"
-        class="list-item"
-        v-if="entityFilter(EntityTypes.BCORP)"
-      >
-        <div class="buttons-left">
-          <v-btn
-            id="ar-back-btn"
-            large
-            to="/dashboard"
-          >
-            Back
-          </v-btn>
-        </div>
+      <div class="buttons-right">
+        <v-tooltip top color="#3b6cff">
+          <template v-slot:activator="{ on }">
+            <div v-on="on" class="d-inline">
+              <v-btn
+                v-if="isAnnualReportEditable"
+                id="ar-file-pay-btn"
+                color="primary"
+                large
+                :disabled="!validated || busySaving"
+                :loading="filingPaying"
+                @click="onClickFilePay"
+              >
+                <span>{{ isPayRequired ? "File &amp; Pay" : "File" }}</span>
+              </v-btn>
+            </div>
+          </template>
+          <span>Ensure all of your information is entered correctly before you File.<br>
+            There is no opportunity to change information beyond this point.</span>
+        </v-tooltip>
 
-        <div class="buttons-right">
-          <v-tooltip top color="#3b6cff">
-            <template v-slot:activator="{ on }">
-              <div v-on="on" class="d-inline">
-                <v-btn
-                  id="ar-file-pay-bc-btn"
-                  color="primary"
-                  large
-                  :disabled="!validated"
-                  :loading="filingPaying"
-                  @click="onClickFilePay"
-                >
-                  File &amp; Pay
-                </v-btn>
-              </div>
-            </template>
-            <span>Ensure all of your information is entered correctly before you File.<br>
-              There is no opportunity to change information beyond this point.</span>
-          </v-tooltip>
-        </div>
-      </v-container>
-    </div>
+        <v-btn id="ar-cancel-btn" large to="/dashboard" :loading="filingPaying">Cancel</v-btn>
+      </div>
+    </v-container>
+
+    <!-- Buttons ( BCORP only ) -->
+    <v-container
+      id="bcorp-buttons-container"
+      class="list-item"
+      v-if="entityFilter(EntityTypes.BCORP)"
+    >
+      <div class="buttons-left">
+        <v-btn id="ar-back-btn" large to="/dashboard" :loading="filingPaying">Back</v-btn>
+      </div>
+
+      <div class="buttons-right">
+        <v-tooltip top color="#3b6cff">
+          <template v-slot:activator="{ on }">
+            <div v-on="on" class="d-inline">
+              <v-btn
+                id="ar-file-pay-bc-btn"
+                color="primary"
+                large
+                :disabled="!validated"
+                :loading="filingPaying"
+                @click="onClickFilePay"
+              >
+                <span>File &amp; Pay</span>
+              </v-btn>
+            </div>
+          </template>
+          <span>Ensure all of your information is entered correctly before you File.<br>
+            There is no opportunity to change information beyond this point.</span>
+        </v-tooltip>
+      </div>
+    </v-container>
   </div>
 </template>
 
@@ -887,7 +879,7 @@ export default {
             if (response && response.data && response.data.tasks) {
               response.data.tasks.forEach((task) => {
                 if (task.task && task.task.filing &&
-                 task.task.filing.header && task.task.filing.header.status !== 'NEW') {
+                  task.task.filing.header && task.task.filing.header.status !== 'NEW') {
                   hasPendingItems = true
                 }
               })
@@ -897,8 +889,8 @@ export default {
             console.error('fetchData() error =', error)
             this.saveErrorDialog = true
           })
-        return hasPendingItems
       }
+      return hasPendingItems
     }
   },
 
@@ -973,7 +965,8 @@ h2 {
 }
 
 // Save & Filing Buttons
-#buttons-container {
+#coop-buttons-container,
+#bcorp-buttons-container {
   padding-top: 2rem;
   border-top: 1px solid $gray5;
 

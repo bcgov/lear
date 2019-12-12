@@ -35,10 +35,10 @@ describe('EntityInfo', () => {
     vm.$store.state.entityIncNo = 'CP0001191'
 
     Vue.nextTick(() => {
-      expect(vm.$el.querySelector('.entity-name').textContent).toEqual('test name - CP0001191')
-      expect(vm.$el.querySelector('.entity-status').textContent).toContain('In Good Standing')
-      expect(vm.$el.querySelector('.business-number').textContent).toEqual('123456789')
-      expect(vm.$el.querySelector('.incorp-number').textContent).toEqual('CP0001191')
+      expect(vm.$el.querySelector('#entity-legal-name').textContent).toEqual('test name - CP0001191')
+      expect(vm.$el.querySelector('#entity-status').textContent).toContain('In Good Standing')
+      expect(vm.$el.querySelector('#entity-business-number').textContent).toEqual('123456789')
+      expect(vm.$el.querySelector('#entity-incorporation-number').textContent).toEqual('CP0001191')
       done()
     })
   })
@@ -50,10 +50,10 @@ describe('EntityInfo', () => {
     vm.$store.state.entityIncNo = null
 
     Vue.nextTick(() => {
-      expect(vm.$el.querySelector('.entity-name').textContent).toEqual('Not Available')
-      expect(vm.$el.querySelector('.entity-status')).toBeNull()
-      expect(vm.$el.querySelector('.business-number').textContent).toEqual('Not Available')
-      expect(vm.$el.querySelector('.incorp-number').textContent).toEqual('Not Available')
+      expect(vm.$el.querySelector('#entity-legal-name').textContent).toEqual('Not Available')
+      expect(vm.$el.querySelector('#entity-status')).toBeNull()
+      expect(vm.$el.querySelector('#entity-business-number').textContent).toEqual('Not Available')
+      expect(vm.$el.querySelector('#entity-incorporation-number').textContent).toEqual('Not Available')
       done()
     })
   })

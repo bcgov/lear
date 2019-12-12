@@ -1,11 +1,14 @@
 <template>
-  <div>
-    <!-- Dialogs -->
-    <ConfirmDialog ref="confirm" />
+  <div id="standalone-directors">
+    <ConfirmDialog
+      ref="confirm"
+      attach="standalone-directors"
+    />
 
     <ResumeErrorDialog
       :dialog="resumeErrorDialog"
       @exit="navigateToDashboard"
+      attach="standalone-directors"
     />
 
     <SaveErrorDialog
@@ -17,24 +20,26 @@
       @exit="navigateToDashboard"
       @retry="onClickFilePay"
       @okay="resetErrors"
+      attach="standalone-directors"
     />
 
     <PaymentErrorDialog
       :dialog="paymentErrorDialog"
       @exit="navigateToDashboard"
+      attach="standalone-directors"
     />
 
-    <!-- Change of Directors Filing -->
-    <div v-show="!inFilingReview">
-      <div id="standalone-directors">
-        <!-- Initial Page Load Transition -->
-        <div class="loading-container fade-out">
-          <div class="loading__content">
-            <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-            <div class="loading-msg">Preparing Your Filing</div>
-          </div>
-        </div>
+    <!-- Initial Page Load Transition -->
+    <div class="loading-container fade-out">
+      <div class="loading__content">
+        <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
+        <div class="loading-msg">{{loadingMessage}}</div>
+      </div>
+    </div>
 
+    <!-- Change of Directors Filing -->
+    <v-fade-transition hide-on-leave>
+      <div v-show="!inFilingReview">
         <v-container id="standalone-directors-container" class="view-container">
           <v-row>
             <v-col cols="12" lg="9">
@@ -46,14 +51,12 @@
                       different dates, you will need to perform multiple Director Change filings &mdash;
                       one for each unique date.</p>
 
-                  <v-alert
+                  <v-alert type="info" outlined
                     v-if="!entityFilter(EntityTypes.BCORP)"
-                    type="info"
                     icon="mdi-information"
-                    outlined
                     class="white-background"
                   >
-                    Director changes can be made as far back as {{ earliestDateToSet }}.
+                    <span>Director changes can be made as far back as {{ earliestDateToSet }}.</span>
                   </v-alert>
                 </header>
 
@@ -87,7 +90,7 @@
                   <Certify
                     :isCertified.sync="isCertified"
                     :certifiedBy.sync="certifiedBy"
-                    :currentDate="this.currentDate"
+                    :currentDate="currentDate"
                     @valid="certifyFormValid=$event"
                   />
                 </section>
@@ -122,21 +125,22 @@
           </v-row>
         </v-container>
 
-        <v-container id="buttons-container" class="list-item">
+        <!-- TODO: this container should have some container class not 'list-item' class -->
+        <v-container id="standalone-directors-buttons-container" class="list-item">
           <div class="buttons-left">
             <v-btn id="cod-save-btn" large
               :disabled="!isSaveButtonEnabled || busySaving"
               :loading="saving"
               @click="onClickSave"
             >
-              Save
+              <span>Save</span>
             </v-btn>
             <v-btn id="cod-save-resume-btn" large
               :disabled="!isSaveButtonEnabled || busySaving"
               :loading="savingResuming"
               @click="onClickSaveResume"
             >
-              Save &amp; Resume Later
+              <span>Save &amp; Resume Later</span>
             </v-btn>
           </div>
 
@@ -152,35 +156,22 @@
                     :loading="filingPaying"
                     @click="showSummary()"
                   >
-                    Next
+                    <span>Next</span>
                   </v-btn>
                 </div>
               </template>
               <span>Proceed to Filing Summary</span>
             </v-tooltip>
-            <v-btn
-              id="cod-cancel-btn"
-              large
-              to="/dashboard"
-            >
-              Cancel
-            </v-btn>
+
+            <v-btn id="cod-cancel-btn" large to="/dashboard" :loading="filingPaying">Cancel</v-btn>
           </div>
         </v-container>
       </div>
-    </div>
+    </v-fade-transition>
 
-    <!-- Directors Filing In Review -->
-    <div v-if="inFilingReview">
-      <div id="standalone-directors-review">
-        <!-- Initial Page Load Transition -->
-        <div class="loading-container fade-out">
-          <div class="loading__content">
-            <v-progress-circular color="primary" :size="50" indeterminate></v-progress-circular>
-            <div class="loading-msg">Preparing Your Filing</div>
-          </div>
-        </div>
-
+    <!-- Change of Directors Filing Summary -->
+    <v-fade-transition hide-on-leave>
+      <div v-show="inFilingReview">
         <v-container id="standalone-directors-container-review" class="view-container">
           <v-row>
             <v-col cols="12" lg="9">
@@ -204,7 +195,7 @@
                   <SummaryCertify
                     :isCertified.sync="isCertified"
                     :certifiedBy.sync="certifiedBy"
-                    :currentDate="this.currentDate"
+                    :currentDate="currentDate"
                     @valid="certifyFormValid=$event"
                   />
                 </section>
@@ -237,14 +228,15 @@
           </v-row>
         </v-container>
 
-        <v-container id="buttons-container-review" class="list-item">
+        <!-- TODO: this container should have some container class not 'list-item' class -->
+        <v-container id="standalone-directors-buttons-container-review" class="list-item">
           <div class="buttons-left">
             <v-btn
               id="cod-back-btn"
               large
               @click="returnToFiling()"
             >
-              Back
+              <span>Back</span>
             </v-btn>
           </div>
 
@@ -260,7 +252,7 @@
                     :loading="filingPaying"
                     @click="onClickFilePay"
                   >
-                    {{ isPayRequired ? "File &amp; Pay" : "File" }}
+                    <span>{{ isPayRequired ? "File &amp; Pay" : "File" }}</span>
                   </v-btn>
                 </div>
               </template>
@@ -270,7 +262,7 @@
           </div>
         </v-container>
       </div>
-    </div>
+    </v-fade-transition>
   </div>
 </template>
 
@@ -335,6 +327,7 @@ export default {
       directorFormValid: true,
       directorEditInProgress: false,
       filingId: null,
+      loadingMessage: 'Loading...', // initial generic message
       saving: false,
       savingResuming: false,
       filingPaying: false,
@@ -402,12 +395,13 @@ export default {
     // if tombstone data isn't set, route to home
     if (!this.entityIncNo || (this.filingId === undefined)) {
       this.$router.push('/')
-    }
-
-    if (this.filingId > 0) {
+    } else if (this.filingId > 0) {
       // resume draft filing
+      this.loadingMessage = `Resuming Your Director Change`
       this.fetchChangeOfDirectors()
     } else {
+      // else just load new page
+      this.loadingMessage = `Preparing Your Director Change`
       this.initialCODDate = this.currentDate.split('/').join('-')
     }
   },
@@ -744,6 +738,8 @@ export default {
      */
     returnToFiling (): void {
       this.inFilingReview = false
+      document.body.scrollTop = 0 // For Safari
+      document.documentElement.scrollTop = 0 // For Chrome, Firefox and IE
     },
 
     async hasTasks (businessId) {
@@ -754,7 +750,7 @@ export default {
             if (response && response.data && response.data.tasks) {
               response.data.tasks.forEach((task) => {
                 if (task.task && task.task.filing &&
-                 task.task.filing.header && task.task.filing.header.status !== 'NEW') {
+                  task.task.filing.header && task.task.filing.header.status !== 'NEW') {
                   hasPendingItems = true
                 }
               })
@@ -764,8 +760,8 @@ export default {
             console.error('fetchData() error =', error)
             this.saveErrorDialog = true
           })
-        return hasPendingItems
       }
+      return hasPendingItems
     }
   },
 
@@ -822,8 +818,8 @@ h2 {
 }
 
 // Save & Filing Buttons
-#buttons-container,
-#buttons-container-review {
+#standalone-directors-buttons-container,
+#standalone-directors-buttons-container-review {
   padding-top: 2rem;
   border-top: 1px solid $gray5;
 

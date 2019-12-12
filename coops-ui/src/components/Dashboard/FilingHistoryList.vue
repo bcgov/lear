@@ -1,56 +1,77 @@
 <template>
-  <div>
+  <div id="filing-history-list">
     <DownloadErrorDialog
       :dialog="downloadErrorDialog"
       @close="downloadErrorDialog = false"
+      attach="#filing-history-list"
     />
 
     <v-expansion-panels v-if="filedItems && filedItems.length > 0" v-model="panel" accordion>
       <v-expansion-panel
-        class="align-items-top filing-history-item"
+        class="align-items-top filing-item"
         v-for="(item, index) in filedItems"
-        v-bind:key="index">
-        <v-expansion-panel-header>
+        :key="index"
+      >
+        <v-expansion-panel-header class="filing-item-toggle">
           <div class="list-item">
-            <div class="filing-type">
+            <div class="filing-label">
               <div class="list-item__title mb-1">{{item.name}}</div>
               <div class="list-item__subtitle">
-                FILED AND PAID (filed by {{item.filingAuthor}} on {{item.filingDate}})
+                <span>FILED AND PAID (filed by {{item.filingAuthor}} on {{item.filingDate}})</span>
               </div>
             </div>
-            <div class="filing-view-docs mr-3">
-              <span v-if="panel === index && !item.paperOnly">Hide Documents</span>
-              <span v-else-if="panel === index && item.paperOnly">Close</span>
-              <span v-else-if="item.paperOnly">Request a Copy</span>
-              <span v-else>View Documents</span>
+            <div class="filing-action mr-3">
+              <template v-if="panel === index">
+                <span v-if="item.paperOnly">Close</span>
+                <span v-else>Hide Documents</span>
+              </template>
+              <template v-else>
+                <span v-if="item.paperOnly">Request a Copy</span>
+                <span v-else>View Documents</span>
+              </template>
             </div>
           </div>
         </v-expansion-panel-header>
+
         <v-expansion-panel-content>
           <ul v-if="!item.paperOnly" class="list document-list">
             <li class="list-item"
               v-for="(document, index) in item.filingDocuments"
-              v-bind:key="index">
-              <v-btn class="list-item__btn" text color="primary" @click="downloadDocument(document)"
-                :disabled="loadingDocument" :loading="loadingDocument">
+              :key="index"
+            >
+              <v-btn class="list-item__btn" text color="primary"
+                @click="downloadDocument(document)"
+                :disabled="loadingDocument"
+                :loading="loadingDocument"
+              >
                 <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
                 <div class="list-item__title">{{document.name}}</div>
               </v-btn>
             </li>
-            <li class="list-item"  v-if="item.paymentToken">
-              <v-btn class="list-item__btn" text color="primary" @click="downloadReceipt(item)"
-                :disabled="loadingReceipt" :loading="loadingReceipt">
+            <li class="list-item"
+              v-if="item.paymentToken"
+            >
+              <v-btn class="list-item__btn" text color="primary"
+                @click="downloadReceipt(item)"
+                :disabled="loadingReceipt"
+                :loading="loadingReceipt"
+              >
                 <img class="list-item__icon" src="@/assets/images/icons/file-pdf-outline.svg" />
                 <div class="list-item__title">Receipt</div>
               </v-btn>
             </li>
           </ul>
+
           <div v-if="!item.paperOnly" class="documents-actions-bar">
-            <v-btn class="download-all-btn" color="primary" @click="downloadAll(item)"
-              :disabled="loadingAll" :loading="loadingAll">
-              Download All
+            <v-btn class="download-all-btn" color="primary"
+              @click="downloadAll(item)"
+              :disabled="loadingAll"
+              :loading="loadingAll"
+            >
+              <span>Download All</span>
             </v-btn>
           </div>
+
           <v-card v-if="item.paperOnly" class="paper-filings" flat>
             <v-card-text>
               <div class="paper-filings__text">
@@ -66,8 +87,7 @@
                 </p>
                 <p class="paper-filings__text">
                   <v-icon medium>mdi-email</v-icon>
-                  <a href="mailto:BCRegistries@gov.bc.ca"
-                    >BCRegistries@gov.bc.ca</a>
+                  <a href="mailto:BCRegistries@gov.bc.ca">BCRegistries@gov.bc.ca</a>
                 </p>
               </div>
             </v-card-text>
@@ -83,7 +103,6 @@
         <div class="no-results__subtitle">Your completed filings and transactions will appear here</div>
       </v-card-text>
     </v-card>
-
   </div>
 </template>
 
@@ -407,17 +426,12 @@ export default {
   padding: 0;
 }
 
-.filing-type {
+.filing-label {
   flex-basis: 33.3333%;
   flex: 1 1 auto;
 }
 
-.filing-status {
-  width: 25%;
-  color: $gray6;
-}
-
-.filing-view-docs {
+.filing-action {
   flex: 0 0 auto;
   width: 30%;
   text-align: right;
@@ -462,6 +476,7 @@ export default {
     font-weight: 500;
   }
 }
+
 .paper-filings {
   border-top: 1px solid $gray3;
   text-align: left;

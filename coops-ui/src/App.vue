@@ -1,6 +1,20 @@
 <template>
   <v-app class="app-container theme--light" id="app">
 
+    <DashboardUnavailableDialog
+      :dialog="dashboardUnavailableDialog"
+      @exit="onClickExit"
+      @retry="onClickRetry"
+      attach="#app"
+    />
+
+    <AccountAuthorizationDialog
+      :dialog="accountAuthorizationDialog"
+      @exit="onClickExit"
+      @retry="onClickRetry"
+      attach="#app"
+    />
+
     <!-- Initial Page Load Transition -->
     <transition name="fade">
       <div class="loading-container" v-show="showLoadingContainer">
@@ -10,18 +24,6 @@
         </div>
       </div>
     </transition>
-
-    <DashboardUnavailableDialog
-      :dialog="dashboardUnavailableDialog"
-      @exit="onClickExit"
-      @retry="onClickRetry"
-    />
-
-    <AccountAuthorizationDialog
-      :dialog="accountAuthorizationDialog"
-      @exit="onClickExit"
-      @retry="onClickRetry"
-    />
 
     <sbc-header ref="sbcHeader" :brandLink="origin" :authURL="authAPIURL" />
 

@@ -1423,7 +1423,7 @@ describe('Standalone Office Address Filing - Part 5B (BCORPS) - Data', () => {
   })
 })
 
-describe('Standalone Office Address Filing - Part 6 - Error/Warning dialogues', () => {
+describe('Standalone Office Address Filing - Part 6 - Error/Warning dialogs', () => {
   const { assign } = window.location
 
   beforeAll(() => {
@@ -1576,7 +1576,7 @@ describe('Standalone Office Address Filing - Part 6 - Error/Warning dialogues', 
       // work-around because click trigger isn't working
       await vm.onClickFilePay()
 
-      // verify error dialogue values set to what was returned
+      // verify error dialog values set to what was returned
       expect(vm.saveErrorDialog).toBe(true)
       expect(vm.saveErrors.length).toBe(1)
       expect(vm.saveErrors[0].error).toBe('err msg post')
@@ -1627,7 +1627,7 @@ describe('Standalone Office Address Filing - Part 6 - Error/Warning dialogues', 
       // work-around because click trigger isn't working
       await vm.onClickFilePay()
 
-      // verify error dialogue values set to what was returned
+      // verify error dialog values set to what was returned
       expect(vm.saveErrorDialog).toBe(true)
       expect(vm.saveErrors.length).toBe(1)
       expect(vm.saveErrors[0].error).toBe('err msg put')

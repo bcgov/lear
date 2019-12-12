@@ -1,57 +1,64 @@
 <template>
-  <v-expansion-panels accordion multiple>
-    <v-expansion-panel class="align-items-top address-panel" v-for="director in directors" v-bind:key="director.id">
-      <v-expansion-panel-header class="panel-header-btn">
-        <div class="avatar-container">
-          <v-avatar color="primary" size="25">
-            <span class="">{{ director.officer.firstName.substring(0,1)}}</span>
-          </v-avatar>
-        </div>
-        <div class="list-item__title">{{ director.officer.firstName }} {{ director.officer.lastName }}</div>
-      </v-expansion-panel-header>
+  <div id="director-list-sm">
+    <v-expansion-panels accordion multiple>
+      <v-expansion-panel class="align-items-top address-panel"
+        v-for="director in directors"
+        :key="director.id"
+      >
+        <v-expansion-panel-header class="address-panel-toggle">
+          <div class="avatar-container">
+            <v-avatar color="primary" size="25">{{ director.officer.firstName.substring(0,1) }}</v-avatar>
+          </div>
+          <div class="list-item__title">{{ director.officer.firstName }} {{ director.officer.lastName }}</div>
+        </v-expansion-panel-header>
 
-      <v-expansion-panel-content>
-        <v-list class="pt-0 pb-0">
+        <v-expansion-panel-content>
+          <v-list class="pt-0 pb-0">
+            <v-list-item class="delivery-address-list-item"
+              v-if="director.deliveryAddress"
+            >
+              <v-list-item-content>
+                <v-list-item-title class="mb-2 address-title">Delivery Address</v-list-item-title>
+                <v-list-item-subtitle>
+                  <ul class="address-subtitle pre-wrap">
+                    <li class="address-line1">{{ director.deliveryAddress.streetAddress }}</li>
+                    <li class="address-line2">{{ director.deliveryAddress.streetAddressAdditional }}</li>
+                    <li class="address-line3">{{ director.deliveryAddress.addressCity }}
+                                              {{ director.deliveryAddress.addressRegion }}
+                                              {{ director.deliveryAddress.postalCode }}</li>
+                    <li class="address-line4">{{ getCountryName(director.deliveryAddress.addressCountry) }}</li>
+                  </ul>
+                </v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
 
-          <v-list-item v-if="director.deliveryAddress">
-            <v-list-item-content>
-              <v-list-item-title class="mb-2">Delivery Address</v-list-item-title>
-              <v-list-item-subtitle>
-                <ul class="address-info pre-wrap">
-                  <li>{{ director.deliveryAddress.streetAddress }}</li>
-                  <li>{{ director.deliveryAddress.streetAddressAdditional }}</li>
-                  <li>{{ director.deliveryAddress.addressCity }}
-                      {{ director.deliveryAddress.addressRegion }}
-                      {{ director.deliveryAddress.postalCode }}</li>
-                  <li>{{ getCountryName(director.deliveryAddress.addressCountry) }}</li>
-                </ul>
-              </v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
-
-          <v-list-item v-if="entityFilter(EntityTypes.BCORP) && director.mailingAddress">
-            <v-list-item-content>
-              <v-list-item-title class="mb-2">Mailing Address</v-list-item-title>
-              <v-list-item-subtitle>
-                <div v-if="isSame(director.deliveryAddress, director.mailingAddress)">
-                  Same as above
-                </div>
-                <ul v-else class="address-info pre-wrap">
-                  <li>{{ director.mailingAddress.streetAddress }}</li>
-                  <li>{{ director.mailingAddress.streetAddressAdditional }}</li>
-                  <li>{{ director.mailingAddress.addressCity }}
-                      {{ director.mailingAddress.addressRegion }}
-                      {{ director.mailingAddress.postalCode }}</li>
-                  <li>{{ getCountryName(director.mailingAddress.addressCountry) }}</li>
-                </ul>
-              </v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
-
-        </v-list>
-      </v-expansion-panel-content>
-    </v-expansion-panel>
-  </v-expansion-panels>
+            <v-list-item class="mailing-address-list-item"
+              v-if="director.mailingAddress"
+            >
+              <v-list-item-content>
+                <v-list-item-title class="mb-2 address-title">Mailing Address</v-list-item-title>
+                <v-list-item-subtitle>
+                  <div class="same-as-above"
+                    v-if="isSame(director.deliveryAddress, director.mailingAddress)"
+                  >
+                    <span>Same as above</span>
+                  </div>
+                  <ul v-else class="address-subtitle pre-wrap">
+                    <li class="address-line1">{{ director.mailingAddress.streetAddress }}</li>
+                    <li class="address-line2">{{ director.mailingAddress.streetAddressAdditional }}</li>
+                    <li class="address-line3">{{ director.mailingAddress.addressCity }}
+                                              {{ director.mailingAddress.addressRegion }}
+                                              {{ director.mailingAddress.postalCode }}</li>
+                    <li class="address-line4">{{ getCountryName(director.mailingAddress.addressCountry) }}</li>
+                  </ul>
+                </v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+    </v-expansion-panels>
+  </div>
 </template>
 
 <script lang="ts">
@@ -60,21 +67,15 @@ import { Component, Mixins } from 'vue-property-decorator'
 import { mapState } from 'vuex'
 
 // Mixins
-import { CountriesProvincesMixin, EntityFilterMixin, CommonMixin } from '@/mixins'
-
-// Constants
-import { EntityTypes } from '@/enums'
+import { CountriesProvincesMixin, CommonMixin } from '@/mixins'
 
 @Component({
   computed: {
     ...mapState(['directors'])
   }
 })
-export default class DirectorListSm extends Mixins(CountriesProvincesMixin, EntityFilterMixin, CommonMixin) {
+export default class DirectorListSm extends Mixins(CountriesProvincesMixin, CommonMixin) {
   readonly directors: Array<object>
-
-  // EntityTypes Enum
-  readonly EntityTypes: {} = EntityTypes
 }
 </script>
 
@@ -121,7 +122,7 @@ $avatar-width: 2.75rem;
   margin-left: $avatar-width;
 }
 
-.address-info {
+.address-subtitle {
   padding: 0;
   list-style-type: none;
   line-height: 1.25rem;

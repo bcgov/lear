@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
-import flushPromises from 'flush-promises'
 import { mount } from '@vue/test-utils'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
 

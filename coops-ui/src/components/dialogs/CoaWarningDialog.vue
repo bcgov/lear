@@ -1,5 +1,5 @@
 <template>
-  <v-dialog id="coa-warning-dialog" v-model="dialog" width="45rem" persistent>
+  <v-dialog v-model="dialog" width="45rem" persistent :attach="attach" content-class="coa-warning-dialog">
     <v-card>
       <v-card-title>Address Change Effective 12:01 AM</v-card-title>
 
@@ -13,13 +13,9 @@
       <v-divider class="my-0"></v-divider>
 
       <v-card-actions>
-        <v-btn id="btn-return-dashboard" color="primary" text @click="toggle()">
-          Return to Business Dashboard
-        </v-btn>
+        <v-btn id="dialog-toggle-button" color="primary" text @click="toggle()">Return to dashboard</v-btn>
         <v-spacer></v-spacer>
-        <v-btn id="btn-proceed-coa" color="primary" text @click="proceed()">
-          Continue to Address Change
-        </v-btn>
+        <v-btn id="dialog-proceed-button" color="primary" text @click="proceed()">Continue to Change of Address</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -33,6 +29,9 @@ export default class CoaWarningDialog extends Vue {
   // Prop to display the dialog.
   @Prop() private dialog: boolean
 
+  // Prop to provide attachment selector.
+  @Prop() private attach: string
+
   // Pass click event to parent.
   @Emit() private toggle () {}
 
@@ -42,5 +41,5 @@ export default class CoaWarningDialog extends Vue {
 </script>
 
 <style lang="scss" scoped>
-  // @import '@/assets/styles/theme.scss';
+// @import '@/assets/styles/theme.scss';
 </style>
