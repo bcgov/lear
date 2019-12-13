@@ -265,16 +265,12 @@ def test_add_invalid_json_after_payment(session):
     assert excinfo.value.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
-def test_updating_payment_token_fails(session):
+def test_updating_payment_token(session):
     """Assert that a payment token cannot be updated."""
     filing = Filing()
-    filing.payment_token = 'payment token'
+    filing.payment_token = None
     filing.save()
-
-    with pytest.raises(BusinessException) as excinfo:
-        filing.payment_token = 'payment token'
-
-    assert excinfo.value.status_code == HTTPStatus.FORBIDDEN
+    assert filing.payment_token is None
 
 
 def test_updating_filing_with_payment_token(session):

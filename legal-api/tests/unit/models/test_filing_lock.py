@@ -41,23 +41,13 @@ def test_saved_uninvoiced_filing_locked(session):
     assert not filing.locked
 
 
-def test_invoiced_filing_is_locked(session):
+def test_invoiced_filing_is_not_locked(session):
     """Assert a filing is locked once invoiced and saved."""
     # locked
     filing = Filing()
     filing.payment_token = 'payment_token'
     filing.save()
     assert filing.locked
-
-
-def test_invoiced_filing_raises_exception_when_changed(session):
-    """Assert a BusinessException is raised if a locked filing is altered."""
-    # locked
-    filing = Filing()
-    filing.payment_token = 'payment_token'
-    filing.save()
-    with pytest.raises(BusinessException):
-        filing.payment_token = 'should raise exception'
 
 
 def test_changing_unsaved_filing_is_unlocked(session):

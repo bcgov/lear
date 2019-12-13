@@ -7,6 +7,7 @@ import DownloadErrorDialog from './DownloadErrorDialog.vue'
 import PaymentErrorDialog from './PaymentErrorDialog.vue'
 import ResumeErrorDialog from './ResumeErrorDialog.vue'
 import SaveErrorDialog from './SaveErrorDialog.vue'
+import CancelPaymentErrorDialog from './CancelPaymentErrorDialog.vue'
 
 export {
   AccountAuthorizationDialog,
@@ -17,5 +18,6 @@ export {
   DownloadErrorDialog,
   PaymentErrorDialog,
   ResumeErrorDialog,
-  SaveErrorDialog
+  SaveErrorDialog,
+  CancelPaymentErrorDialog
 }
