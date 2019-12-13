@@ -406,7 +406,7 @@ describe('FilingHistoryList', () => {
     const wrapper = shallowMount(FilingHistoryList, { store, mocks: { $route }, vuetify })
     const vm = wrapper.vm as any
 
-    expect(vm.$el.querySelectorAll('.filing-history-item')[5].textContent)
+    expect(vm.$el.querySelectorAll('.filing-item')[5].textContent)
       .toContain('The updated office addresses will be legally effective on 2019-12-13')
 
     wrapper.destroy()
