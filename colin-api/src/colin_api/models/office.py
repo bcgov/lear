@@ -53,11 +53,11 @@ class Office:
         }
 
     @classmethod
-    def _build_offices_list(cls, querystring: str = None, event_id: str = None):
+    def _build_offices_list(cls, querystring: str = None, identifier: str = None, event_id: str = None):
         """Return the office objects for the given query."""
         cursor = DB.connection.cursor()
-        if not event_id:
-            cursor.execute(querystring, event_id=event_id)
+        if identifier:
+            cursor.execute(querystring, identifier=identifier)
         else:
             cursor.execute(querystring, event_id=event_id)
 
@@ -110,7 +110,8 @@ class Office:
             """)
 
         try:
-            offices = cls._build_offices_list(querystring=querystring)
+            offices = cls._build_offices_list(querystring=querystring, identifier=identifier)
+            print(offices)
             return offices
         except Exception as err:
             current_app.logger.error('error getting office for corp: {}'.format(identifier))
@@ -123,13 +124,14 @@ class Office:
             return None
 
         querystring = ("""
-            select start_event_id, mailing_addr_id, delivery_addr_id
+            select start_event_id, mailing_addr_id, delivery_addr_id, office_typ_cd
             from office
             where start_event_id=:event_id
             """)
 
         try:
             offices = cls._build_offices_list(querystring=querystring, event_id=event_id)
+            print(offices)
             return offices
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errs
