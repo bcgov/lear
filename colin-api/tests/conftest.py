@@ -15,8 +15,8 @@
 import pytest
 from sqlalchemy import event, text
 
-from colin_api import create_app
-from colin_api import jwt as _jwt
+from src.colin_api import create_app
+from src.colin_api import jwt as _jwt
 
 
 @pytest.fixture(scope='session')

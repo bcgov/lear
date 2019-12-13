@@ -19,7 +19,7 @@ Test-Suite to ensure that the logging setup is working as expected.
 
 import os
 
-from colin_api.utils.logging import setup_logging
+from src.colin_api.utils.logging import setup_logging
 
 
 def test_logging_with_file(capsys):

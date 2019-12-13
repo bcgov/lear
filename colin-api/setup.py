@@ -56,8 +56,8 @@ requirements = read_requirements('requirements/prod.txt')
 
 setup(
     name='colin_api',
-    packages=packages.keys(),
-    package_dir=packages,
+    packages=find_packages('src'),
+    package_dir={'': 'src'},
     include_package_data=True,
     license=read('LICENSE'),
     long_description =read('README.md'),

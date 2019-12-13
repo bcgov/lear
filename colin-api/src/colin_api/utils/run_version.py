@@ -11,25 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Meta information about the service.
+"""Supply version and commit hash info."""
+import os
 
-Currently this only provides API versioning information
-"""
-from flask import jsonify
-from flask_restplus import Namespace, Resource
-
-from colin_api.utils.run_version import get_run_version
+from src.colin_api.version import __version__
 
 
-API = Namespace('Meta', description='Metadata')
+def _get_build_openshift_commit_hash():
+    return os.getenv('OPENSHIFT_BUILD_COMMIT', None)
 
 
-@API.route('/info')
-class Info(Resource):
-    """Meta information about the overall service."""
-
-    @staticmethod
-    def get():
-        """Return a JSON object with meta information about the Service."""
-        version = get_run_version()
-        return jsonify(API=f'colin_api/{version}')
+def get_run_version():
+    """Return a formatted version string for this service."""
+    commit_hash = _get_build_openshift_commit_hash()
+    if commit_hash:
+        return f'{__version__}-{commit_hash}'
+    return __version__

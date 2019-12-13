@@ -15,35 +15,34 @@
 
 Currently this only provides API versioning information
 """
-
 from flask import current_app, jsonify
-from flask_restplus import Namespace, Resource, cors
+from flask_restplus import Resource, cors
 
-from colin_api.exceptions import GenericException
-from colin_api.models import Business
-from colin_api.utils.util import cors_preflight
-
-
-API = Namespace('businesses', description='Colin API Services - Businesses')
+from src.colin_api.exceptions import GenericException
+from src.colin_api.models import Director
+from src.colin_api.resources.business import API
+from src.colin_api.utils.util import cors_preflight
 
 
 @cors_preflight('GET')
-@API.route('/<string:identifier>')
-class BusinessInfo(Resource):
+@API.route('/<string:identifier>/directors')
+class DirectorsInfo(Resource):
     """Meta information about the overall service."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
     def get(identifier):
-        """Return the complete business info."""
+        """Return the current directors for a business."""
         if not identifier:
             return jsonify({'message': 'Identifier required'}), 404
 
         try:
-            business = Business.find_by_identifier(identifier)
-            if not business:
-                return jsonify({'message': f'{identifier} not found'}), 404
-            return jsonify(business.as_dict())
+            directors = Director.get_current(identifier)
+            if not directors:
+                return jsonify({'message': f'directors for {identifier} not found'}), 404
+            if len(directors) < 3:
+                current_app.logger.error('Less than 3 directors for {}'.format(identifier))
+            return jsonify({'directors': [x.as_dict() for x in directors]})
 
         except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify(
@@ -53,4 +52,4 @@ class BusinessInfo(Resource):
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
-                {'message': 'Error when trying to retrieve business record from COLIN'}), 500
+                {'message': 'Error when trying to retrieve directors from COLIN'}), 500

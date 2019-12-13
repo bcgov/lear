@@ -19,10 +19,10 @@ import datetime
 
 from flask import current_app
 
-from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
-from colin_api.models import Address, Business, Director, EntityName, Office
-from colin_api.resources.db import DB
-from colin_api.utils import convert_to_json_date, convert_to_json_datetime
+from src.colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
+from src.colin_api.models import Address, Business, Director, EntityName, Office
+from src.colin_api.resources.db import DB
+from src.colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
 
 class Filing:
@@ -338,25 +338,19 @@ class Filing:
         else:
             directors = Director.get_current(identifier=identifier)
         directors = [x.as_dict() for x in directors]
-        offices = {}
         if office_event_id:
             try:
-                reg_office = (Office.get_by_event(event_id=office_event_id)).as_dict()
+                office_obj_list = (Office.get_by_event(event_id=office_event_id)).as_dict()
+                offices = Office.convert_obj_list(office_obj_list)
             except:  # noqa B901; pylint: disable=bare-except;
                 # should only get here if agm was before the bob date
                 recreated_dirs_and_office = False
                 office_obj_list = Office.get_current(identifier=identifier)
-                for office_obj in office_obj_list:
-                    if office_obj.office_type not in offices.keys():
-                        print(office_obj.as_dict())
-                        offices.update(office_obj.as_dict())
+                offices = Office.convert_obj_list(office_obj_list)
 
         else:
             office_obj_list = Office.get_current(identifier=identifier)
-            for office_obj in office_obj_list:
-                if office_obj.office_type not in offices.keys():
-                    offices.update(office_obj.as_dict())
-                    print(office_obj.as_dict())
+            offices = Office.convert_obj_list(office_obj_list)
         print(offices)
         # convert dates and date-times to correct json format
         agm_date = convert_to_json_date(filing_event_info.get('agm_date', None))
@@ -380,12 +374,13 @@ class Filing:
 
     @classmethod
     def _get_coa(cls, identifier: str = None, filing_event_info: dict = None):
-        """Get change of address filing for registered office."""
-        registered_office_obj = Office.get_by_event(filing_event_info['event_id'])
-
-        if not registered_office_obj:
+        """Get change of address filing for registered and/or records office."""
+        office_obj_list = Office.get_by_event(filing_event_info['event_id'])
+        if not office_obj_list:
             raise FilingNotFoundException(identifier=identifier, filing_type='change_of_address',
                                           event_id=filing_event_info['event_id'])
+
+        offices = Office.convert_obj_list(office_obj_list)
 
         # check to see if this filing was made with an AR -> if it was then set the AR date as the effective date
         effective_date = filing_event_info['event_timestmp']
@@ -397,7 +392,7 @@ class Filing:
 
         filing_obj = Filing()
         filing_obj.body = {
-            **registered_office_obj.as_dict(),
+            'offices': offices,
             'eventId': filing_event_info['event_id']
         }
         filing_obj.filing_type = 'changeOfAddress'

@@ -19,10 +19,10 @@ import datetime
 
 from flask import current_app
 
-from colin_api.exceptions import DirectorsNotFoundException
-from colin_api.models import Address
-from colin_api.resources.db import DB
-from colin_api.utils import convert_to_json_date
+from src.colin_api.exceptions import DirectorsNotFoundException
+from src.colin_api.models import Address
+from src.colin_api.resources.db import DB
+from src.colin_api.utils import convert_to_json_date
 
 
 class Director:  # pylint: disable=too-many-instance-attributes; need all these fields

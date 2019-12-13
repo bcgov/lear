@@ -17,8 +17,8 @@ Currently this only provides API versioning information
 """
 from flask import current_app
 
-from colin_api.exceptions import GenericException
-from colin_api.resources.db import DB
+from src.colin_api.exceptions import GenericException
+from src.colin_api.resources.db import DB
 
 
 class EntityName:

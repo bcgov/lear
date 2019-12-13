@@ -15,9 +15,9 @@
 from flask import current_app, jsonify
 from flask_restplus import Resource, cors
 
-from colin_api.resources.business import API
-from colin_api.resources.db import DB
-from colin_api.utils.util import cors_preflight
+from src.colin_api.resources.business import API
+from src.colin_api.resources.db import DB
+from src.colin_api.utils.util import cors_preflight
 
 
 @cors_preflight('GET, POST')

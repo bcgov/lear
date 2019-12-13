@@ -17,9 +17,9 @@ Currently this only provides API versioning information
 """
 from flask import current_app
 
-from colin_api.exceptions import OfficeNotFoundException
-from colin_api.models import Address
-from colin_api.resources.db import DB
+from src.colin_api.exceptions import OfficeNotFoundException
+from src.colin_api.models import Address
+from src.colin_api.resources.db import DB
 
 
 class Office:
@@ -84,6 +84,20 @@ class Office:
         return offices
 
     @classmethod
+    def convert_obj_list(cls, office_obj_list: list = None):
+        """Return converted list of given office objects as one dict."""
+        if not office_obj_list:
+            return None
+
+        offices_dict = {}
+        for office_obj in office_obj_list:
+            if office_obj.office_type not in offices_dict.keys():
+                offices_dict.update(office_obj.as_dict())
+            else:
+                current_app.logger.error('Received more than 1 office for {}'.format(office_obj.office_type))
+        return offices_dict
+
+    @classmethod
     def get_current(cls, identifier: str = None):
         """Return current registered and/or records office addresses."""
         if not identifier:
@@ -111,7 +125,7 @@ class Office:
         querystring = ("""
             select start_event_id, mailing_addr_id, delivery_addr_id
             from office
-            where start_event_id=:event_id and office_typ_cd='RG'
+            where start_event_id=:event_id
             """)
 
         try:
