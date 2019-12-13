@@ -221,6 +221,6 @@ $icon-width: 2.75rem;
 }
 
 .address-overlay {
-  background-color: rgba(255, 249, 196, .6)!important;
+  background-color: rgba(255, 235, 59, .1)!important;
 }
 </style>
