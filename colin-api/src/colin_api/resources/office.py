@@ -42,7 +42,6 @@ class OfficeInfo(Resource):
             office_obj_list = Office.get_current(identifier=identifier)
             for office_obj in office_obj_list:
                 if office_obj.office_type not in offices.keys():
-                    print(office_obj.as_dict())
                     offices.update(office_obj.as_dict())
             if len(offices.keys()) < 1:
                 return jsonify({'message': f'registered/records office for {identifier} not found'}), 404

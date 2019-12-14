@@ -43,7 +43,6 @@ class Office:
 
     def as_dict(self):
         """Return dict camel case version of self."""
-        print('here')
         return {
             self.office_type: {
                 'deliveryAddress': self.delivery_address,
@@ -111,7 +110,6 @@ class Office:
 
         try:
             offices = cls._build_offices_list(querystring=querystring, identifier=identifier)
-            print(offices)
             return offices
         except Exception as err:
             current_app.logger.error('error getting office for corp: {}'.format(identifier))
@@ -131,7 +129,6 @@ class Office:
 
         try:
             offices = cls._build_offices_list(querystring=querystring, event_id=event_id)
-            print(offices)
             return offices
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errs

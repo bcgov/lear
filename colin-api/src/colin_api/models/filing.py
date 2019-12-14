@@ -743,8 +743,6 @@ class Filing:
                     mailing_addr_id = Address.create_new_address(cursor, office_arr['mailingAddress'])
                     office_desc = (office_type.replace('O', ' O')).title()
                     office_code = Office.OFFICE_TYPES_CODES[office_type]
-                    print(office_code)
-                    print(office_desc)
 
                     # update office table to include new addresses
                     Office.update_office(cursor, event_id, corp_num, delivery_addr_id,
