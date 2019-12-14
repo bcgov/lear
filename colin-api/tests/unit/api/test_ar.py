@@ -82,8 +82,10 @@ def test_post_ar_with_coa_cod(client):
     headers = {'content-type': 'application/json'}
     fake_filing = ANNUAL_REPORT
     fake_filing['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
-    fake_filing['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'Canada'
-    fake_filing['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'Canada'
+    fake_filing['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = \
+        'Canada'
+    fake_filing['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = \
+        'Canada'
     fake_filing['filing']['changeOfDirectors'] = CHANGE_OF_DIRECTORS
     for director in fake_filing['filing']['changeOfDirectors']['directors']:
         director['deliveryAddress']['addressCountry'] = 'Canada'

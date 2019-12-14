@@ -351,17 +351,11 @@ class Filing:
         else:
             office_obj_list = Office.get_current(identifier=identifier)
             offices = Office.convert_obj_list(office_obj_list)
-        print(offices)
-        # convert dates and date-times to correct json format
-        agm_date = convert_to_json_date(filing_event_info.get('agm_date', None))
-        ar_date = convert_to_json_date(filing_event_info['period_end_dt'])
-        # paper filings from colin don't enter in the agm_date and don't have no agm filings in the filings table
-        if filing_event_info['user_id'] != 'COOPER' and not agm_date:
-            agm_date = ar_date
+
         filing_obj = Filing()
         filing_obj.body = {
-            'annualGeneralMeetingDate': agm_date,
-            'annualReportDate': ar_date,
+            'annualGeneralMeetingDate': convert_to_json_date(filing_event_info.get('agm_date', None)),
+            'annualReportDate': convert_to_json_date(filing_event_info['period_end_dt']),
             'directors': directors,
             'eventId': filing_event_info['event_id'],
             'offices': offices
