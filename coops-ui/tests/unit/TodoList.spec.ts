@@ -1534,3 +1534,165 @@ describe('TodoList - Delete Draft', () => {
     })
   })
 })
+
+describe('TodoList - Cancel Payment', () => {
+  const { assign } = window.location
+  let patchCall
+
+  beforeEach(async () => {
+    patchCall = sinon.stub(axios, 'patch')
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  beforeAll(() => {
+    // mock the window.location.assign function
+    delete window.location
+    window.location = { assign: jest.fn() } as any
+  })
+
+  afterAll(() => {
+    window.location.assign = assign
+  })
+
+  it('shows confirmation popup when \'Cancel Payment\' is clicked', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'PENDING',
+              'filingId': 789,
+              'paymentToken': 123
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15',
+              'annualReportDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store, vuetify })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(async () => {
+      const button = wrapper.find('#pending-item-menu-activator')
+      await button.trigger('click')
+      const button1 = wrapper.find('#btn-cancel-payment')
+      await button1.trigger('click')
+      // verify confirmation popup is showing
+      expect(wrapper.vm.$refs.confirmCancelPaymentDialog).toBeTruthy()
+
+      await flushPromises()
+
+      done()
+    })
+  })
+
+  it('calls PATCH endpoint of the API when user clicks confirmation OK', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'PENDING',
+              'filingId': 789,
+              'paymentToken': 123
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15',
+              'annualReportDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store, vuetify })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(async () => {
+      const button = wrapper.find('#pending-item-menu-activator')
+      await button.trigger('click')
+      const button1 = wrapper.find('#btn-cancel-payment')
+      await button1.trigger('click')
+      // verify confirmation popup is showing
+      expect(vm.$refs.confirmCancelPaymentDialog.dialog).toBeTruthy()
+
+      // click the OK button (call the 'yes' callback function)
+      await vm.$refs.confirmCancelPaymentDialog.onClickYes()
+
+      // confirm that delete API was called
+      expect(patchCall.called).toBeTruthy()
+
+      wrapper.destroy()
+      done()
+    })
+  })
+
+  it('does not call the PATCH endpoint when user clicks confirmation cancel', done => {
+    // init store
+    store.state.tasks = [
+      {
+        'task': {
+          'filing': {
+            'header': {
+              'name': 'annualReport',
+              'ARFilingYear': 2019,
+              'status': 'PENDING',
+              'filingId': 789,
+              'paymentToken': 123
+            },
+            'annualReport': {
+              'annualGeneralMeetingDate': '2019-07-15',
+              'annualReportDate': '2019-07-15'
+            },
+            'changeOfAddress': { },
+            'changeOfDirectors': { }
+          }
+        },
+        'enabled': true,
+        'order': 1
+      }
+    ]
+
+    const wrapper = mount(TodoList, { store, vuetify })
+    const vm = wrapper.vm as any
+
+    Vue.nextTick(async () => {
+      const button = wrapper.find('#pending-item-menu-activator')
+      await button.trigger('click')
+      const button1 = wrapper.find('#btn-cancel-payment')
+      await button1.trigger('click')
+      // verify confirmation popup is showing
+      expect(vm.$refs.confirmCancelPaymentDialog.dialog).toBeTruthy()
+
+      // click the cancel button (call the 'cancel' callback function)
+      await vm.$refs.confirmCancelPaymentDialog.onClickCancel()
+
+      // confirm that delete API was not called
+      expect(patchCall.called).toBeFalsy()
+
+      wrapper.destroy()
+      done()
+    })
+  })
+})
