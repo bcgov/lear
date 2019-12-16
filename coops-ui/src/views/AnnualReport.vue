@@ -164,7 +164,7 @@
                 :currentDate="currentDate"
                 @valid="certifyFormValid=$event"
                 :entityDisplay="displayName()"
-                :message="certifyText('OTANN')"
+                :message="certifyText(FilingCodes.ANNUAL_REPORT_OT)"
               />
             </section>
 
@@ -374,14 +374,15 @@ export default {
       saveErrors: [],
       saveWarnings: [],
       // EntityTypes Enum
-      EntityTypes
+      EntityTypes,
+      FilingCodes
     }
   },
 
   computed: {
     ...mapState(['currentDate', 'ARFilingYear', 'nextARDate', 'lastAgmDate', 'entityType', 'entityName',
       'entityIncNo', 'entityFoundingDate', 'registeredAddress', 'recordsAddress', 'lastPreLoadFilingDate',
-      'directors', 'configObject']),
+      'directors']),
 
     ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState', 'lastCOAFilingDate', 'lastCODFilingDate']),
 

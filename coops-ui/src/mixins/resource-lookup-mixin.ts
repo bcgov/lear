@@ -2,7 +2,7 @@ import { Component, Vue } from 'vue-property-decorator'
 import { mapState } from 'vuex'
 
 /**
- * Mixin that provides an entity filter utility.
+ * Mixin for components to retrieve text/settings from json resource.
  */
 @Component({
   computed: {
@@ -22,7 +22,9 @@ export default class ResourceLookupMixin extends Vue {
     certifyText (feeCode: string): string {
       if (this.configObject && this.configObject.flows) {
         const flow = this.configObject.flows.find(x => x.feeCode === feeCode)
-        return flow.certifyText
+        if (flow && flow.certifyText) {
+          return flow.certifyText
+        }
       }
       return ''
     }

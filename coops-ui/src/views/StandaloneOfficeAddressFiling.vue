@@ -82,7 +82,7 @@
                   :certifiedBy.sync="certifiedBy"
                   @valid="certifyFormValid=$event"
                   :entityDisplay="displayName()"
-                  :message="certifyText('OTADD')"
+                  :message="certifyText(FilingCodes.ADDRESS_CHANGE_OT)"
               />
             </section>
 
@@ -182,7 +182,7 @@ import { PAYMENT_REQUIRED, BAD_REQUEST } from 'http-status-codes'
 import { EntityFilterMixin, ResourceLookupMixin } from '@/mixins'
 
 // Enums
-import { EntityTypes } from '@/enums'
+import { EntityTypes, FilingCodes } from '@/enums'
 
 export default {
   name: 'StandaloneOfficeAddressFiling',
@@ -225,13 +225,14 @@ export default {
       staffPaymentFormValid: false,
       totalFee: 0,
       // EntityTypes Enum
-      EntityTypes
+      EntityTypes,
+      FilingCodes
     }
   },
 
   computed: {
     ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo',
-      'entityFoundingDate', 'registeredAddress', 'recordsAddress', 'configObject']),
+      'entityFoundingDate', 'registeredAddress', 'recordsAddress']),
     ...mapGetters(['isRoleStaff']),
 
     validated () {

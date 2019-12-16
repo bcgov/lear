@@ -200,7 +200,7 @@
                     :currentDate="currentDate"
                     @valid="certifyFormValid=$event"
                     :entityDisplay="displayName()"
-                    :message="certifyText('OTCDR')"
+                    :message="certifyText(FilingCodes.DIRECTOR_CHANGE_OT)"
                   />
                 </section>
 
@@ -291,7 +291,7 @@ import { ConfirmDialog, PaymentErrorDialog, ResumeErrorDialog, SaveErrorDialog }
 import { EntityFilterMixin, ResourceLookupMixin } from '@/mixins'
 
 // Enums
-import { EntityTypes } from '@/enums'
+import { EntityTypes, FilingCodes } from '@/enums'
 
 // Constants
 import { CEASED, APPOINTED, ADDRESSCHANGED, NAMECHANGED } from '@/constants'
@@ -347,12 +347,13 @@ export default {
       staffPaymentFormValid: false,
       totalFee: 0,
       // EntityTypes Enum
-      EntityTypes
+      EntityTypes,
+      FilingCodes
     }
   },
 
   computed: {
-    ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo', 'entityFoundingDate', 'configObject']),
+    ...mapState(['currentDate', 'entityType', 'entityName', 'entityIncNo', 'entityFoundingDate']),
 
     ...mapGetters(['isRoleStaff']),
 

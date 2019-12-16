@@ -5,9 +5,9 @@ export class Flow {
 }
 
 export class Business {
-     typeEnum: string
-     displayName: string
-     flows: Array<Flow>
+  typeEnum: string
+  displayName: string
+  flows: Array<Flow>
 }
 
 export const configJson = [{
