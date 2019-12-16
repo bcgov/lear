@@ -16,6 +16,7 @@ import VueRouter from 'vue-router'
 import mockRouter from './mockRouter'
 import { BAD_REQUEST } from 'http-status-codes'
 import { EntityTypes } from '@/enums'
+import { configJson } from '@/resources/business-config'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -159,6 +160,20 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
 
     // confirm that flag is set correctly
     expect(vm.validated).toEqual(false)
+
+    wrapper.destroy()
+  })
+
+  it('Verify COD Certify contains correct section codes', () => {
+    const $route = { params: { id: 0 } } // new filing id
+    const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
+    store.state.entityType = 'CP'
+    store.state.configObject = configJson.find(x => x.typeEnum === store.state.entityType)
+    expect(wrapper.find(Certify).exists()).toBe(true)
+    const certify: any = wrapper.find(Certify)
+
+    expect(certify.vm.message).toContain('See section 78 of the Cooperative Associations Act.')
+    expect(certify.vm.entityDisplay).toEqual('Cooperative')
 
     wrapper.destroy()
   })

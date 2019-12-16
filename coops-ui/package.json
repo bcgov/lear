@@ -9,7 +9,8 @@
     "lint:nofix": "vue-cli-service lint --no-fix",
     "test:e2e": "vue-cli-service test:e2e",
     "test:unit": "vue-cli-service test:unit --testPathPattern=.",
-    "test:unit-silent": "vue-cli-service test:unit --silent"
+    "test:unit-silent": "vue-cli-service test:unit --silent",
+    "test:debug": "node --inspect-brk node_modules/.bin/vue-cli-service test:unit --testPathPattern --no-cache --watch --runInBand"
   },
   "dependencies": {
     "@mdi/font": "^4.5.95",

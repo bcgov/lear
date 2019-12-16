@@ -92,6 +92,8 @@
                     :certifiedBy.sync="certifiedBy"
                     :currentDate="currentDate"
                     @valid="certifyFormValid=$event"
+                    :entityDisplay="displayName()"
+                    :message="certifyText('OTCDR')"
                   />
                 </section>
 
@@ -197,6 +199,8 @@
                     :certifiedBy.sync="certifiedBy"
                     :currentDate="currentDate"
                     @valid="certifyFormValid=$event"
+                    :entityDisplay="displayName()"
+                    :message="certifyText(FilingCodes.DIRECTOR_CHANGE_OT)"
                   />
                 </section>
 
@@ -284,10 +288,10 @@ import { SummaryDirectors, SummaryCertify, SummaryStaffPayment } from '@/compone
 import { ConfirmDialog, PaymentErrorDialog, ResumeErrorDialog, SaveErrorDialog } from '@/components/dialogs'
 
 // Mixins
-import { EntityFilterMixin } from '@/mixins'
+import { EntityFilterMixin, ResourceLookupMixin } from '@/mixins'
 
 // Enums
-import { EntityTypes } from '@/enums'
+import { EntityTypes, FilingCodes } from '@/enums'
 
 // Constants
 import { CEASED, APPOINTED, ADDRESSCHANGED, NAMECHANGED } from '@/constants'
@@ -310,7 +314,7 @@ export default {
     SaveErrorDialog
   },
 
-  mixins: [EntityFilterMixin],
+  mixins: [EntityFilterMixin, ResourceLookupMixin],
 
   data () {
     return {
@@ -342,9 +346,9 @@ export default {
       routingSlipNumber: null,
       staffPaymentFormValid: false,
       totalFee: 0,
-
       // EntityTypes Enum
-      EntityTypes
+      EntityTypes,
+      FilingCodes
     }
   },
 
@@ -388,6 +392,7 @@ export default {
         event.returnValue = 'You have unsaved changes. Are you sure you want to leave?'
       }
     }
+
     // NB: filing id of 0 means "new"
     // otherwise it's a draft filing id
     this.filingId = this.$route.params.id

@@ -55,6 +55,9 @@ import { DashboardUnavailableDialog, AccountAuthorizationDialog } from '@/compon
 // Mixins
 import { DateMixin, CommonMixin } from '@/mixins'
 
+// Folder containing the array of configuration objects
+import { configJson } from '@/resources'
+
 export default {
   name: 'App',
 
@@ -104,7 +107,7 @@ export default {
       'setBusinessPhoneExtension', 'setCurrentDate', 'setEntityName', 'setEntityType', 'setEntityStatus',
       'setEntityBusinessNo', 'setEntityIncNo', 'setLastPreLoadFilingDate', 'setEntityFoundingDate', 'setLastAgmDate',
       'setNextARDate', 'setTasks', 'setFilings', 'setRegisteredAddress', 'setRecordsAddress', 'setDirectors',
-      'setTriggerDashboardReload', 'setLastAnnualReportDate']),
+      'setTriggerDashboardReload', 'setLastAnnualReportDate', 'setConfigObject']),
 
     fetchData () {
       this.dataLoaded = false
@@ -257,6 +260,7 @@ export default {
           ? response.data.business.lastLedgerTimestamp.split('T')[0] : null)
         this.setEntityFoundingDate(response.data.business.foundingDate) // datetime
         this.setLastAnnualReportDate(response.data.business.lastAnnualReport)
+        this.storeConfigObject(response.data.business.legalType)
         const date = response.data.business.lastAnnualGeneralMeetingDate
         if (
           date &&
@@ -319,6 +323,11 @@ export default {
       } else {
         throw new Error('Invalid directors')
       }
+    },
+
+    storeConfigObject (entityType) {
+      const configObject = configJson.find(x => x.typeEnum === entityType)
+      this.setConfigObject(configObject)
     },
 
     onClickExit () {

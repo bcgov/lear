@@ -29,5 +29,6 @@ export default {
 
   triggerDashboardReload: false as boolean,
 
-  currentFilingStatus: null as string
+  currentFilingStatus: null as string,
+  configObject: null as object
 }

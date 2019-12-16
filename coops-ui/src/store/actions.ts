@@ -70,5 +70,8 @@ export default {
   },
   setLastAnnualReportDate ({ commit }, value: string) {
     commit('lastAnnualReportDate', value)
+  },
+  setConfigObject ({ commit }, value: object) {
+    commit('configObject', value)
   }
 }

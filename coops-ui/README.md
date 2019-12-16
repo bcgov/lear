@@ -35,5 +35,11 @@ npm run test:e2e
 npm run test:unit
 ```
 
+### Run unit tests from Chrome devtools for debugging/ step-through
+```
+npm run test:debug
+```
+
+
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).

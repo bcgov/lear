@@ -70,5 +70,8 @@ export default {
   },
   lastAnnualReportDate (state, value) {
     state.lastAnnualReportDate = value
+  },
+  configObject (state, value) {
+    state.configObject = value
   }
 }
