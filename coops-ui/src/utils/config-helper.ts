@@ -33,23 +33,27 @@ export default {
       .then(response => {
         const apiUrl = response.data['API_URL']
         axios.defaults.baseURL = apiUrl
-        console.log('Set Legal API URL to: ' + apiUrl)
+        console.info('Set Legal API URL to: ' + apiUrl)
 
         const authApiUrl = response.data['AUTH_API_URL']
         sessionStorage.setItem('AUTH_API_URL', authApiUrl)
-        console.log('Set Auth API URL to: ' + authApiUrl)
+        console.info('Set Auth API URL to: ' + authApiUrl)
 
         const payApiUrl = response.data['PAY_API_URL']
         sessionStorage.setItem('PAY_API_URL', payApiUrl)
-        console.log('Set Pay API URL to: ' + payApiUrl)
+        console.info('Set Pay API URL to: ' + payApiUrl)
+
+        const keycloakConfigUrl = response.data['KEYCLOAK_CONFIG_URL']
+        sessionStorage.setItem('KEYCLOAK_CONFIG_URL', keycloakConfigUrl)
+        console.info('Set KeyCloak config URL to: ' + keycloakConfigUrl)
 
         const addressCompleteKey = response.data['ADDRESS_COMPLETE_KEY']
         window['addressCompleteKey'] = addressCompleteKey
-        console.log('Set Address Complete Key.')
+        console.info('Set Address Complete Key.')
 
         const ldClientId = response.data['LD_CLIENT_ID']
         window['ldClientId'] = ldClientId
-        console.log('Set LD Client Id.')
+        console.info('Set LD Client Id.')
       })
   }
 }
