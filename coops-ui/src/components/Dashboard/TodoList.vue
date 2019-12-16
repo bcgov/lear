@@ -7,7 +7,7 @@
 
     <ConfirmDialog
       ref="confirmCancelPaymentDialog"
-      attach="#todo-list"
+      attach="#todo-list" data-test-id="cancel-payment-confirm-dialog"
     />
 
     <DeleteErrorDialog
@@ -23,6 +23,7 @@
       :errors="cancelPaymentErrors"
       @okay="resetCancelPaymentErrors"
       attach="#todo-list"
+      data-test-id="cancel-pay-error-dialog"
     />
 
     <v-expansion-panels v-if="taskItems && taskItems.length > 0" accordion>
@@ -148,7 +149,8 @@
                   <v-btn class="btn-resume-payment"
                     color="primary"
                     :disabled="!item.enabled"
-                    @click.native.stop="doResumePayment(item)">
+                    @click.native.stop="doResumePayment(item)"
+                    data-test-id="btn-resume-payment">
                     <span>Resume Payment</span>
                     <!-- Cancel Payment -->
                   </v-btn>
@@ -157,12 +159,13 @@
                       <v-btn color="primary"
                         v-on="on" id="pending-item-menu-activator" :disabled="!item.enabled"
                         class="actions__more-actions__btn px-0"
-                      @click.native.stop>
+                      @click.native.stop  data-test-id="btn-pending-filing-menu">
                         <v-icon>mdi-menu-down</v-icon>
                       </v-btn>
                     </template>
                     <v-list ref="pending_actions" class="actions__more-actions">
-                      <v-list-item id="btn-cancel-payment" @click="confirmCancelPayment(item)">
+                      <v-list-item id="btn-cancel-payment" @click="confirmCancelPayment(item)"
+                      data-test-id="btn-cancel-payment">
                         <v-list-item-title>Cancel Payment</v-list-item-title>
                       </v-list-item>
                     </v-list>

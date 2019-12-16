@@ -1,11 +1,11 @@
 <template>
   <v-dialog v-model="dialog" width="45rem" persistent :attach="attach">
       <v-card>
-        <v-card-title id="dialog-title">
+        <v-card-title id="dialog-title" data-test-id="cancel-pay-dialog-title">
           Unable to Cancel Payment
         </v-card-title>
 
-        <v-card-text id="dialog-text">
+        <v-card-text id="dialog-text" data-test-id="cancel-pay-dialog-text">
           <p class="genErr" v-if="errors.length < 1">
             We were unable to cancel your payment.
           </p>
@@ -25,7 +25,8 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn id="dialog-ok-btn" color="primary" text @click="okay()">OK</v-btn>
+          <v-btn id="dialog-ok-btn" color="primary" text @click="okay()"
+          data-test-id="cancel-pay-dialog-ok-btn">OK</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
