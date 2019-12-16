@@ -12,6 +12,7 @@ objects:
   metadata:
     name: "future-effective-filings"
   spec:
+    concurrencyPolicy: "Forbid"
     schedule: "0 * * * *"
     suspend: false
     jobTemplate:
@@ -82,10 +83,7 @@ objects:
                     configMapKeyRef:
                       key: NATS_QUEUE
                       name: entity-filer-${ENV_TAG}-config
-
-
             restartPolicy: "Never"
-            concurrencyPolicy: "Forbid"
 parameters: [
         {
           "name": "ENV_TAG",
