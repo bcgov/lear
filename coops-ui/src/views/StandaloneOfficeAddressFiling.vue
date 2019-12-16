@@ -234,7 +234,7 @@ export default {
       'entityFoundingDate', 'registeredAddress', 'recordsAddress', 'configObject']),
     ...mapGetters(['isRoleStaff']),
 
-    validated () { 
+    validated () {
       const staffPaymentValid = (!this.isRoleStaff || !this.isPayRequired || this.staffPaymentFormValid)
       const filingDataValid = (this.filingData.length > 0)
 

@@ -164,7 +164,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     wrapper.destroy()
   })
 
-  it('Verify COD Certify contains correct section codes',() => {
+  it('Verify COD Certify contains correct section codes', () => {
     const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
     store.state.entityType = 'CP'

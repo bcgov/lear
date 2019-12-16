@@ -266,7 +266,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
     wrapper.destroy()
   })
 
-  it('Verify COA Certify contains correct section codes',() => {
+  it('Verify COA Certify contains correct section codes', () => {
     const localVue = createLocalVue()
     localVue.use(VueRouter)
     const router = mockRouter.mock()
@@ -288,7 +288,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
       },
       vuetify
     })
-    
+
     store.state.entityType = 'BC'
     store.state.configObject = configJson.find(x => x.typeEnum === store.state.entityType)
 

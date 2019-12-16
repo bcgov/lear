@@ -55,7 +55,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     wrapper.destroy()
   })
 
-  it('Verify AR Certify contains correct section codes',() => {
+  it('Verify AR Certify contains correct section codes', () => {
     const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
     store.state.entityType = 'CP'
