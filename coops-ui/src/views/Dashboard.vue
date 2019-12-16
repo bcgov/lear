@@ -51,6 +51,7 @@
                   <v-tooltip top content-class="pending-tooltip">
                     <template v-slot:activator="{ on }">
                       <v-chip small label color="yellow" text-color="black"
+                        class="pending-chip"
                         v-show="coaPending"
                         v-on="on"
                       >
@@ -63,6 +64,7 @@
                 </v-scale-transition>
                 <v-btn text small color="primary"
                   id="standalone-addresses-button"
+                  class="change-btn"
                   :disabled="hasBlockerFiling"
                   @click.native.stop="proceedCoa()"
                 >
@@ -82,6 +84,7 @@
                 <h2 data-test-id="dashboard-directors-subtitle">Current Directors</h2>
                 <v-btn text small color="primary"
                   id="standalone-directors-button"
+                  class="change-btn"
                   :disabled="hasBlockerFiling"
                   @click.native.stop="goToStandaloneDirectors()"
                 >
@@ -301,6 +304,16 @@ section header {
   h2 {
     font-size: 1.125rem;
   }
+}
+
+.pending-chip {
+  max-width: 3.75rem;
+  height: 1rem;
+  overflow: visible;
+  font-size: 8px;
+}
+.change-btn {
+  padding: 0 6px 0 6px!important;
 }
 
 .pending-tooltip {

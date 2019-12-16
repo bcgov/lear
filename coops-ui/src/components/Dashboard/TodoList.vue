@@ -34,8 +34,7 @@
         :key="index"
         :class="{
           'disabled': !item.enabled,
-          'draft': isDraft(item),
-          'awaitConfirm': !confirmCheckbox && isConfirmEnabled(item.type, item.status)
+          'draft': isDraft(item)
         }"
       >
         <v-expansion-panel-header class="todo-item-toggle no-dropdown">
@@ -643,11 +642,7 @@ export default {
   }
 }
 
-.awaitConfirm {
-  background-color: rgba(216,216,216,0.75)!important;
-}
-
-.todo-item.disabled {
+.todo-list.disabled {
   opacity: 0.6;
 
   .info-btn {
