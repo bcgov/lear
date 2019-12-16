@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="dialog" width="45rem" persistent :attach="attach" content-class="delete-error-dialog">
+  <v-dialog v-model="dialog" width="45rem" persistent :attach="attach">
       <v-card>
         <v-card-title id="dialog-title">
           Unable to Cancel Payment
@@ -9,7 +9,7 @@
           <p class="genErr" v-if="errors.length < 1">
             We were unable to cancel your payment.
           </p>
-          <p class="genErr" v-else-if="errors.length > 0">
+          <p class="genErr" v-else>
             We were unable to cancel your payment due to the following errors:
           </p>
           <p class="genErr" v-for="(error, index) in errors" :key="index">
@@ -44,7 +44,6 @@ import { ErrorContact } from '@/components/common'
   components: { ErrorContact }
 })
 export default class CancelPaymentErrorDialog extends Vue {
-  // Getter definition for static type checking.
   readonly isRoleStaff!: boolean
 
   // Prop to display the dialog.

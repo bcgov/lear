@@ -18,6 +18,13 @@ import DirectorListSm from '@/components/Dashboard/DirectorListSm.vue'
 // Enums
 import { EntityTypes } from '@/enums'
 
+// NB: test util async issue
+// in some cases, the elements are not updated during the test
+// the work-around is to first initialize the property we are changing
+// suppress update watchers warnings
+// ref: https://github.com/vuejs/vue-test-utils/issues/532
+Vue.config.silent = true
+
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 
