@@ -102,7 +102,7 @@ class TokenServices {
   private syncSessionStorage () {
     sessionStorage.setItem('KEYCLOAK_TOKEN', this.kc.token)
     sessionStorage.setItem('KEYCLOAK_REFRESH_TOKEN', this.kc.refreshToken)
-    sessionStorage.setItem('ID_TOKEN', this.kc.idToken)
+    sessionStorage.setItem('KEYCLOAK_ID_TOKEN', this.kc.idToken)
   }
 
   decodeToken () {
