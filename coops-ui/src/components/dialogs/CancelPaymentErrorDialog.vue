@@ -12,9 +12,6 @@
           <p class="genErr" v-else-if="errors.length > 0">
             We were unable to cancel your payment due to the following errors:
           </p>
-          <p class="genErr" v-else>
-            Please note the following:
-          </p>
           <p class="genErr" v-for="(error, index) in errors" :key="index">
             {{error.error}}
           </p>
@@ -57,7 +54,11 @@ export default class CancelPaymentErrorDialog extends Vue {
   @Prop() private attach: string
 
   // Prop containing error messages.
-  @Prop() private errors: object[]
+  @Prop({ default: () => {
+    return [ ]
+  }
+  })
+    private errors: object[]
 
   // Pass click event to parent.
   @Emit() private okay () { }
