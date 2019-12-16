@@ -465,10 +465,14 @@ describe('TodoList - UI', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store, vuetify })
+    const wrapper = mount(TodoList, { store,
+      vuetify,
+      propsData: {
+        inProcessFiling: 123
+      } })
     const vm = wrapper.vm as any
 
-    wrapper.setProps({ inProcessFiling: 123 })
+    // wrapper.setProps({ inProcessFiling: 123 })
 
     await flushPromises()
 
@@ -897,10 +901,14 @@ describe('TodoList - UI - BCOMP', () => {
       }
     ]
 
-    const wrapper = mount(TodoList, { store, vuetify })
+    const wrapper = mount(TodoList, { store,
+      vuetify,
+      propsData: {
+        inProcessFiling: 123
+      } })
     const vm = wrapper.vm as any
 
-    wrapper.setProps({ inProcessFiling: 123 })
+    // wrapper.setProps({ inProcessFiling: 123 })
 
     await flushPromises()
 
