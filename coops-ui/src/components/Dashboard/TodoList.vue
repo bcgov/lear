@@ -689,7 +689,6 @@ export default {
   }
 
   .btn-resume-payment {
-    min-width: 103px;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
   }
@@ -702,8 +701,8 @@ export default {
 
   .v-btn.actions__more-actions__btn {
     // make action button width same as its height (per Vuetify)
-    min-width: 30px !important;
-    width: 30px;
+    min-width: 36px !important;
+    width: 36px;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     margin-left: 1px;
