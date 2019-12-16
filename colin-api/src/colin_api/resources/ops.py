@@ -16,7 +16,7 @@ import cx_Oracle
 from flask import current_app
 from flask_restplus import Namespace, Resource
 
-from src.colin_api.resources.db import DB
+from colin_api.resources.db import DB
 
 
 API = Namespace('OPS', description='Service - OPS checks')

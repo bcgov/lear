@@ -19,7 +19,7 @@ import logging
 from flask import url_for
 from flask_script import Manager  # class for handling a set of commands
 
-from src.colin_api import create_app
+from colin_api import create_app
 
 APP = create_app()
 MANAGER = Manager(APP)

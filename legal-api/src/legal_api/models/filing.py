@@ -68,6 +68,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     colin_event_id = db.Column('colin_event_id', db.Integer)
     _status = db.Column('status', db.String(10), default='DRAFT')
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
+    source = db.Column('source', db.String(15), default='LEAR')
 
     # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,

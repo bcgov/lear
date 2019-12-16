@@ -18,7 +18,7 @@ Currently this only provides API versioning information
 from flask import jsonify
 from flask_restplus import Namespace, Resource
 
-from src.colin_api.utils.run_version import get_run_version
+from colin_api.utils.run_version import get_run_version
 
 
 API = Namespace('Meta', description='Metadata')

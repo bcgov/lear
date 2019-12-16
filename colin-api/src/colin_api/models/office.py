@@ -17,9 +17,9 @@ Currently this only provides API versioning information
 """
 from flask import current_app
 
-from src.colin_api.exceptions import OfficeNotFoundException
-from src.colin_api.models import Address
-from src.colin_api.resources.db import DB
+from colin_api.exceptions import OfficeNotFoundException
+from colin_api.models import Address
+from colin_api.resources.db import DB
 
 
 class Office:

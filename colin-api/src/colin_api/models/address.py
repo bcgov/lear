@@ -18,8 +18,8 @@ Currently this only provides API versioning information
 import pycountry
 from flask import current_app
 
-from src.colin_api.exceptions import AddressNotFoundException
-from src.colin_api.resources.db import DB
+from colin_api.exceptions import AddressNotFoundException
+from colin_api.resources.db import DB
 
 
 class Address:  # pylint: disable=too-many-instance-attributes; need all these fields

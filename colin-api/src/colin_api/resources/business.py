@@ -19,9 +19,9 @@ Currently this only provides API versioning information
 from flask import current_app, jsonify
 from flask_restplus import Namespace, Resource, cors
 
-from src.colin_api.exceptions import GenericException
-from src.colin_api.models import Business
-from src.colin_api.utils.util import cors_preflight
+from colin_api.exceptions import GenericException
+from colin_api.models import Business
+from colin_api.utils.util import cors_preflight
 
 
 API = Namespace('businesses', description='Colin API Services - Businesses')

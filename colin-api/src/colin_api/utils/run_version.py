@@ -14,7 +14,7 @@
 """Supply version and commit hash info."""
 import os
 
-from src.colin_api.version import __version__
+from colin_api.version import __version__
 
 
 def _get_build_openshift_commit_hash():

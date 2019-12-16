@@ -13,7 +13,7 @@
 # limitations under the License.
 """Provides the WSGI entry point for running the application
 """
-from src.colin_api import create_app
+from colin_api import create_app
 
 # Openshift s2i expects a lower case name of application
 application = create_app() # pylint: disable=invalid-name

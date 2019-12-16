@@ -19,10 +19,10 @@ import datetime
 
 from flask import current_app
 
-from src.colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
-from src.colin_api.models import Address, Business, Director, EntityName, Office
-from src.colin_api.resources.db import DB
-from src.colin_api.utils import convert_to_json_date, convert_to_json_datetime
+from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
+from colin_api.models import Address, Business, Director, EntityName, Office
+from colin_api.resources.db import DB
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
 
 class Filing:
