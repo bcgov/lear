@@ -70,5 +70,9 @@ export default {
       }
     }
     return lastFilingDate
+  },
+
+  getConfigObject (state): object {
+    return null
   }
 }

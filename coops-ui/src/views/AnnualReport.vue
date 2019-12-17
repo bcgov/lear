@@ -163,6 +163,8 @@
                 :certifiedBy.sync="certifiedBy"
                 :currentDate="currentDate"
                 @valid="certifyFormValid=$event"
+                :entityDisplay="displayName()"
+                :message="certifyText(FilingCodes.ANNUAL_REPORT_OT)"
               />
             </section>
 
@@ -306,11 +308,12 @@ import { FilingData } from '@/interfaces'
 
 // Enums
 import { EntityTypes, FilingCodes } from '@/enums'
+import { ResourceLookupMixin } from '../mixins'
 
 export default {
   name: 'AnnualReport',
 
-  mixins: [DateMixin, EntityFilterMixin],
+  mixins: [DateMixin, EntityFilterMixin, ResourceLookupMixin],
 
   components: {
     ARDate,
@@ -370,9 +373,9 @@ export default {
       haveChanges: false,
       saveErrors: [],
       saveWarnings: [],
-
       // EntityTypes Enum
-      EntityTypes
+      EntityTypes,
+      FilingCodes
     }
   },
 
@@ -427,7 +430,6 @@ export default {
         event.returnValue = 'You have unsaved changes. Are you sure you want to leave?'
       }
     }
-
     // NB: filing id of 0 means "new AR"
     // otherwise it's a draft AR filing id
     this.filingId = this.$route.params.id

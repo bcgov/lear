@@ -33,15 +33,19 @@ class OfficeInfo(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     def get(identifier):
-        """Return the complete business info."""
+        """Return the registered and/or records office for a corporation."""
         if not identifier:
             return jsonify({'message': 'Identifier required'}), 404
 
         try:
-            registered_office = Office.get_current(identifier)
-            if not registered_office:
-                return jsonify({'message': f'registered office for {identifier} not found'}), 404
-            return jsonify(registered_office)
+            offices = {}
+            office_obj_list = Office.get_current(identifier=identifier)
+            for office_obj in office_obj_list:
+                if office_obj.office_type not in offices.keys():
+                    offices.update(office_obj.as_dict())
+            if len(offices.keys()) < 1:
+                return jsonify({'message': f'registered/records office for {identifier} not found'}), 404
+            return {**offices}, 200
 
         except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify(

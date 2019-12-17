@@ -46,7 +46,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
         )
     app.register_blueprint(API_BLUEPRINT)
     app.register_blueprint(OPS_BLUEPRINT)
-    setup_jwt_manager(app, jwt)
+    # setup_jwt_manager(app, jwt)
 
     @app.after_request
     def add_version(response):  # pylint: disable=unused-variable

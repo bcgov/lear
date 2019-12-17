@@ -78,9 +78,11 @@
                 <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
               </header>
               <Certify
-                :isCertified.sync="isCertified"
-                :certifiedBy.sync="certifiedBy"
-                @valid="certifyFormValid=$event"
+                  :isCertified.sync="isCertified"
+                  :certifiedBy.sync="certifiedBy"
+                  @valid="certifyFormValid=$event"
+                  :entityDisplay="displayName()"
+                  :message="certifyText(FilingCodes.ADDRESS_CHANGE_OT)"
               />
             </section>
 
@@ -177,10 +179,10 @@ import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vu
 import { PAYMENT_REQUIRED, BAD_REQUEST } from 'http-status-codes'
 
 // Mixins
-import { EntityFilterMixin } from '@/mixins'
+import { EntityFilterMixin, ResourceLookupMixin } from '@/mixins'
 
 // Enums
-import { EntityTypes } from '@/enums'
+import { EntityTypes, FilingCodes } from '@/enums'
 
 export default {
   name: 'StandaloneOfficeAddressFiling',
@@ -195,7 +197,7 @@ export default {
     ResumeErrorDialog,
     SaveErrorDialog
   },
-  mixins: [EntityFilterMixin],
+  mixins: [EntityFilterMixin, ResourceLookupMixin],
 
   data () {
     return {
@@ -222,9 +224,9 @@ export default {
       routingSlipNumber: null,
       staffPaymentFormValid: false,
       totalFee: 0,
-
       // EntityTypes Enum
-      EntityTypes
+      EntityTypes,
+      FilingCodes
     }
   },
 

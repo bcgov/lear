@@ -5,6 +5,8 @@
 isort isort-save stop docker-clean logs
 .PHONY: mac-cov pylint flake8
 
+project_name := colin_api
+
 SHELL:=/bin/bash
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
@@ -83,15 +85,15 @@ pylint:
 	pylint --rcfile=setup.cfg \
 	 --load-plugins=pylint_flask \
 	 --disable=C0301,W0511 \
-	 colin_api
+	 src/$(project_name)
 
 ## run flake8 on the package and tests
 flake8:
-	flake8 colin_api tests
+	flake8 src/$(project_name) tests
 
 ## Verify source code license headers.
 license:
-	./scripts/verify_license_headers.sh colin_api tests
+	./scripts/verify_license_headers.sh src/$(project_name) tests
 
 #################################################################################
 # Self Documenting Commands                                                     #

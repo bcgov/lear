@@ -55,6 +55,38 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
         }
 
     @classmethod
+    def _build_directors_list(cls, cursor, event_id: int = None):
+
+        directors = cursor.fetchall()
+        if not directors:
+            return None
+
+        directors_list = []
+        for row in directors:
+            director = Director()
+            director.title = ''
+            row = dict(zip([x[0].lower() for x in cursor.description], row))
+            director.officer = {'firstName': row['first_nme'].strip() if row['first_nme'] else '',
+                                'lastName': row['last_nme'].strip() if row['last_nme'] else '',
+                                'middleInitial': row['middle_nme'] if row['middle_nme'] else ''}
+
+            director.delivery_address = Address.get_by_address_id(row['delivery_addr_id']).as_dict()
+            director.mailing_address = Address.get_by_address_id(row['mailing_addr_id']).as_dict() \
+                if row['mailing_addr_id'] else director.delivery_address
+            director.appointment_date = convert_to_json_date(row['appointment_dt']) if row['appointment_dt'] else None
+            director.cessation_date = convert_to_json_date(row['cessation_dt']) if row['cessation_dt'] else None
+            director.start_event_id = row['start_event_id'] if row['start_event_id'] else ''
+            director.end_event_id = row['end_event_id'] if row['end_event_id'] else ''
+
+            # this is in case the director was not ceased during this event
+            if event_id and director.end_event_id and director.end_event_id > event_id:
+                director.cessation_date = None
+
+            directors_list.append(director)
+
+        return directors_list
+
+    @classmethod
     def get_current(cls, identifier: str = None):
         """Return current directors for given identifier."""
         if not identifier:
@@ -219,35 +251,3 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
             raise err
 
         return corp_party_id
-
-    @classmethod
-    def _build_directors_list(cls, cursor, event_id: int = None):
-
-        directors = cursor.fetchall()
-        if not directors:
-            return None
-
-        directors_list = []
-        for row in directors:
-            director = Director()
-            director.title = ''
-            row = dict(zip([x[0].lower() for x in cursor.description], row))
-            director.officer = {'firstName': row['first_nme'].strip() if row['first_nme'] else '',
-                                'lastName': row['last_nme'].strip() if row['last_nme'] else '',
-                                'middleInitial': row['middle_nme'] if row['middle_nme'] else ''}
-
-            director.delivery_address = Address.get_by_address_id(row['delivery_addr_id']).as_dict()
-            director.mailing_address = Address.get_by_address_id(row['mailing_addr_id']).as_dict() \
-                if row['mailing_addr_id'] else director.delivery_address
-            director.appointment_date = convert_to_json_date(row['appointment_dt']) if row['appointment_dt'] else None
-            director.cessation_date = convert_to_json_date(row['cessation_dt']) if row['cessation_dt'] else None
-            director.start_event_id = row['start_event_id'] if row['start_event_id'] else ''
-            director.end_event_id = row['end_event_id'] if row['end_event_id'] else ''
-
-            # this is in case the director was not ceased during this event
-            if event_id and director.end_event_id and director.end_event_id > event_id:
-                director.cessation_date = None
-
-            directors_list.append(director)
-
-        return directors_list
