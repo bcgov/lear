@@ -22,7 +22,7 @@ from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 from flask import Flask
 from flask_jwt_oidc import JwtManager
 
-import config
+from colin_api import config
 from colin_api.resources import API_BLUEPRINT, OPS_BLUEPRINT
 from colin_api.utils.logging import setup_logging
 from colin_api.utils.run_version import get_run_version
