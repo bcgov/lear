@@ -110,6 +110,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     @payment_token.setter
     def payment_token(self, token: int):
+        if self.locked:
+            self._raise_default_lock_exception()
         self._payment_token = token
 
     @hybrid_property
@@ -326,7 +328,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     def reset_filing_to_draft(self):
         self._status = Filing.Status.DRAFT.value
-        self.payment_token = None
+        self._payment_token = None
         self.save()
 
     def legal_filings(self) -> List:
