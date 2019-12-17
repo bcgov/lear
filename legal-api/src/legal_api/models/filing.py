@@ -47,6 +47,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         PAID = 'PAID'
         PENDING = 'PENDING'
 
+    class Source(Enum):
+        """Render an Enum of the Filing Sources"""
+
+        COLIN = 'COLIN'
+        LEAR = 'LEAR'
+
     FILINGS = {'annualReport': {'name': 'annualReport', 'title': 'Annual Report Filing', 'code': 'OTANN'},
                'changeOfAddress': {'name': 'changeOfAddress', 'title': 'Change of Address Filing', 'code': 'OTADD'},
                'changeOfDirectors': {'name': 'changeOfDirectors', 'title': 'Change of Directors Filing',
@@ -67,8 +73,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _payment_token = db.Column('payment_id', db.String(4096))
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
     colin_event_id = db.Column('colin_event_id', db.Integer)
-    _status = db.Column('status', db.String(10), default='DRAFT')
+    _status = db.Column('status', db.String(10), default=Status.DRAFT)
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
+    source = db.Column('source', db.String(15), default=Source.LEAR)
 
     # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
