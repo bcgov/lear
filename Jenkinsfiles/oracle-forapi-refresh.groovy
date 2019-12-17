@@ -36,7 +36,7 @@ node {
                 - NAMESPACE: ${NAMESPACE}
                 - TAG_NAME: ${TAG_NAME}
                 - COMPONENT_NAME: ${COMPONENT_NAME}
-                - DB_TYPE: ${DB_TYPE}
+                - COMPONENT_TAG: ${COMPONENT_TAG}
             """
             openshift.withCluster() {
                 openshift.withProject('gl2uos-tools') {
