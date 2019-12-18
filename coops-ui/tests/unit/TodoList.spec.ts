@@ -1601,9 +1601,6 @@ describe('TodoList - Cancel Payment', () => {
       await button1.trigger('click')
       // verify confirmation popup is showing
       expect(wrapper.vm.$refs.confirmCancelPaymentDialog).toBeTruthy()
-
-      await flushPromises()
-
       done()
     })
   })

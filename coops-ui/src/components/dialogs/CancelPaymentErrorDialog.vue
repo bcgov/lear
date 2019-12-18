@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="dialog" width="45rem" persistent :attach="attach">
+  <v-dialog v-model="dialog" width="45rem" persistent :attach="attach" content-class="cancel-payment-error-dialog">
       <v-card>
         <v-card-title id="dialog-title" data-test-id="cancel-pay-dialog-title">
           Unable to Cancel Payment

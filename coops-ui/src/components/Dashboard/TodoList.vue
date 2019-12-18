@@ -7,7 +7,7 @@
 
     <ConfirmDialog
       ref="confirmCancelPaymentDialog"
-      attach="#todo-list" data-test-id="cancel-payment-confirm-dialog"
+      attach="#todo-list"
     />
 
     <DeleteErrorDialog
