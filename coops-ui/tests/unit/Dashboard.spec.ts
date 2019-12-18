@@ -34,7 +34,7 @@ describe('Dashboard - UI', () => {
   beforeEach(() => {
     // create wrapper for Dashboard
     // this stubs out the 5 sub-components
-    wrapper = shallowMount(Dashboard, { vuetify })
+    wrapper = shallowMount(Dashboard, { store, vuetify })
   })
 
   afterEach(() => {
@@ -78,30 +78,8 @@ describe('Dashboard - UI', () => {
   })
 
   it('disables standalone filing buttons & toDo filings when there is a future effective filing pending', () => {
-    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [{ 'status': 'PAID' }])
-    wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
+    store.state.entityType = 'BC'
 
-    expect(wrapper.vm.hasBlockerFiling).toEqual(true)
-    expect(wrapper.vm.coaPending).toEqual(true)
-    expect(wrapper.vm.$el.querySelector('#standalone-addresses-button')
-      .getAttribute('disabled')).toBe('true')
-    expect(wrapper.vm.$el.querySelector('#standalone-directors-button')
-      .getAttribute('disabled')).toBe('true')
-  })
-
-  it('disables standalone filing buttons & toDo filings when there is a future effective filing pending', () => {
-    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [{ 'status': 'PAID' }])
-    wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
-
-    expect(wrapper.vm.hasBlockerFiling).toEqual(true)
-    expect(wrapper.vm.coaPending).toEqual(true)
-    expect(wrapper.vm.$el.querySelector('#standalone-addresses-button')
-      .getAttribute('disabled')).toBeTruthy()
-    expect(wrapper.vm.$el.querySelector('#standalone-directors-button')
-      .getAttribute('disabled')).toBe('true')
-  })
-
-  it('disables standalone filing buttons & toDo filings when there is a future effective filing pending', () => {
     wrapper.find(FilingHistoryList).vm.$emit('filings-list', [{ 'status': 'PAID' }])
     wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
 
@@ -173,6 +151,7 @@ describe('Dashboard - Click Tests', () => {
   it('routes to Standalone Office Address Filing page when EDIT is clicked', done => {
     // init store
     store.state.entityIncNo = 'CP0001191'
+    store.state.entityType = 'CP'
     // create a Local Vue and install router on it
     const localVue = createLocalVue()
     localVue.use(VueRouter)

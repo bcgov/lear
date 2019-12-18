@@ -245,7 +245,8 @@ export default {
      */
     checkPendingFilings (filings) {
       filings.forEach(filing => {
-        if (filing.status === FilingStatus.PAID) {
+        if (this.entityFilter(EntityTypes.BCORP) &&
+          filing.status === FilingStatus.PAID) {
           this.effectiveDate = filing.filingEffectiveDate
           this.coaPending = true
           this.hasBlockerFiling = true
