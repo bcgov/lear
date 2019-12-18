@@ -177,7 +177,7 @@ describe('Directors as a COOP', () => {
     vm.editDirectorName(0)
 
     // Verify the correct data in the text input field
-    expect(vm.$el.querySelector('#edit-director__first-name').value).toBe('Joe')
+    expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Joe')
 
     // Verify all the form field value
     expect(vm.editFormShowHide.showAddress).toEqual(false)
@@ -190,16 +190,16 @@ describe('Directors as a COOP', () => {
     vm.editDirectorName(0)
 
     // Verify the correct data in the text input field
-    expect(vm.$el.querySelector('#edit-director__first-name').value).toBe('Joe')
+    expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Joe')
 
     // Change the text input
-    vm.$el.querySelector('#edit-director__first-name').value = 'Steve'
+    vm.$el.querySelectorAll('.edit-director__first-name input')[0].value = 'Steve'
 
     // Click and save the updated data
     await vm.saveEditDirector(1, 2)
 
     // Verify the updated text field value
-    expect(vm.$el.querySelector('#edit-director__first-name').value).toBe('Steve')
+    expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Steve')
 
     // Verify all the form field value
     expect(vm.editFormShowHide.showAddress).toEqual(true)
@@ -212,17 +212,17 @@ describe('Directors as a COOP', () => {
     vm.editDirectorName(0)
 
     // Verify the correct data in the text input field
-    expect(vm.$el.querySelector('#edit-director__first-name').value).toBe('Joe')
+    expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Joe')
 
     // Change the text input and mock save it
-    vm.$el.querySelector('#edit-director__first-name').value = 'Steve'
+    vm.$el.querySelectorAll('.edit-director__first-name input')[0].value = 'Steve'
     vm.directors[1].officer.firstName = 'Steve'
 
     // Verify the saved data
     expect(vm.directors[1].officer.firstName).toBe('Steve')
 
     // Cancel Director edit and verify the name is back to its base name
-    await vm.$el.querySelector('#cancel-edit-btn').click()
+    await vm.$el.querySelectorAll('.cancel-edit-btn')[0].click()
     expect(vm.directors[1].officer.firstName).toBe('Joe')
 
     // // Verify the edit form is closed.

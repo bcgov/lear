@@ -55,7 +55,7 @@
                       v-model="director.officer.firstName"
                       :rules="directorFirstNameRules"
                     />
-                    <v-text-field filled class="item director-initial"
+                    <v-text-field filled class="item"
                       label="Initial"
                       id="new-director__middle-initial"
                       v-model="director.officer.middleInitial"
@@ -71,7 +71,7 @@
 
                   <label class="address-sub-header">Delivery Address</label>
                   <div class="address-wrapper">
-                    <BaseAddress ref="baseAddressNew"
+                    <base-address ref="baseAddressNew"
                       :editing="true"
                       :schema="addressSchema"
                       @update:address="updateBaseAddress"
@@ -87,7 +87,7 @@
                     <div v-if="!inheritDeliveryAddress">
                       <label class="address-sub-header">Mailing Address</label>
                       <div class="address-wrapper">
-                        <BaseAddress ref="mailAddressNew"
+                        <base-address ref="mailAddressNew"
                           :editing="true"
                           :schema="addressSchema"
                           @update:address="updateMailingAddress"
@@ -229,13 +229,13 @@
               <v-expand-transition>
                 <div class="director-info" v-show="activeIndex !== index">
                   <div class="address">
-                    <BaseAddress :address="director.deliveryAddress" />
+                    <base-address :address="director.deliveryAddress" />
                   </div>
                   <div class="address same-address" v-if="entityFilter(EntityTypes.BCORP)">
                     <span v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                       Same as Delivery Address
                     </span>
-                    <BaseAddress v-else :address="director.mailingAddress" />
+                    <base-address v-else :address="director.mailingAddress" />
                   </div>
                   <div class="director_dates">
                     <div class="director_dates__date">{{ director.appointmentDate }}</div>
@@ -330,27 +330,24 @@
                   v-show="activeIndex === index"
                   v-model="directorFormValid" lazy-validation>
                   <div class="form__row three-column" v-show="editFormShowHide.showName">
-                    <v-text-field filled class="item"
+                    <v-text-field filled class="item edit-director__first-name"
                       label="First Name"
-                      id="edit-director__first-name"
                       v-model="director.officer.firstName"
                       :rules="directorFirstNameRules"
                     />
-                    <v-text-field filled class="item director-initial"
+                    <v-text-field filled class="item edit-director__middle-initial"
                       label="Initial"
-                      id="edit-director__middle-initial"
                       v-model="director.officer.middleInitial"
                       :rules="directorMiddleInitialRules"
                     />
-                    <v-text-field filled class="item"
+                    <v-text-field filled class="item edit-director__last-name"
                       label="Last Name"
-                      id="edit-director__last-name"
                       v-model="director.officer.lastName"
                       :rules="directorLastNameRules"
                     />
                   </div>
 
-                  <BaseAddress ref="baseAddressEdit"
+                  <base-address ref="baseAddressEdit"
                     v-show="editFormShowHide.showAddress"
                     :address="director.deliveryAddress"
                     :editing="true"
@@ -370,7 +367,7 @@
                     <div v-if="!inheritDeliveryAddress">
                       <label class="address-sub-header">Mailing Address</label>
                       <div class="address-wrapper">
-                        <BaseAddress ref="mailAddressEdit"
+                        <base-address ref="mailAddressEdit"
                           :address="director.mailingAddress"
                           :editing="true"
                           :schema="addressSchema"
@@ -443,21 +440,19 @@
 
                   <div class="form__row form__btns">
                     <v-btn color="error"
-                      id="remove-edit-btn"
+                      class="remove-edit-btn"
                       v-show="isNew(director)"
                       @click="deleteDirector(director.id)"
                     >
                       <span>Remove</span>
                     </v-btn>
                     <v-btn color="primary"
-                      class="form-primary-btn"
-                      id="done-edit-btn"
+                      class="form-primary-btn done-edit-btn"
                       @click="saveEditDirector(index, director.id)"
                     >
                       <span>Done</span>
                     </v-btn>
-                    <v-btn class="form-cancel-btn"
-                      id="cancel-edit-btn"
+                    <v-btn class="form-cancel-btn cancel-edit-btn"
                       @click="cancelEditDirector(director.id)"
                     >
                       <span>Cancel</span>
@@ -610,42 +605,33 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   }
 
   /**
-   * Computed value.
-   * @returns The array of validations rules for a director's first name.
+   * The array of validations rules for a director's first name.
    */
-  private get directorFirstNameRules (): Array<Function> {
-    return [
-      v => !!v || 'A first name is required',
-      v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
-      v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
-      v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
-    ]
-  }
+  private readonly directorFirstNameRules: Array<Function> = [
+    v => !!v || 'A first name is required',
+    v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
+    v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
+    v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
+  ]
 
   /**
-   * Computed value.
-   * @returns The array of validations rules for a director's middle initial.
+   * The array of validations rules for a director's middle initial.
    */
-  private get directorMiddleInitialRules (): Array<Function> {
-    return [
-      v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
-      v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
-      v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
-    ]
-  }
+  private readonly directorMiddleInitialRules: Array<Function> = [
+    v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
+    v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
+    v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
+  ]
 
   /**
-   * Computed value.
-   * @returns The array of validations rules for a director's last name.
+   * The array of validations rules for a director's last name.
    */
-  private get directorLastNameRules (): Array<Function> {
-    return [
-      v => !!v || 'A last name is required',
-      v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
-      v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
-      v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
-    ]
-  }
+  private readonly directorLastNameRules: Array<Function> = [
+    v => !!v || 'A last name is required',
+    v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
+    v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
+    v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
+  ]
 
   // Local definitions of computed properties for static type checking.
   // Use non-null assertion operator to allow use before assignment.
@@ -1496,7 +1482,8 @@ ul {
   }
 }
 
-.director-initial {
+#new-director__middle-initial,
+.edit-director__middle-initial {
   max-width: 6rem;
 }
 
