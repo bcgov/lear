@@ -70,7 +70,7 @@
 
       <!--Records Office-->
       <v-expansion-panel id="records-office-panel"
-        v-if="entityFilter(EntityTypes.BCORP)"
+        v-if="entityFilter(EntityTypes.BCOMP)"
         class="align-items-top"
         :class="{ 'address-overlay': coaPending }"
       >

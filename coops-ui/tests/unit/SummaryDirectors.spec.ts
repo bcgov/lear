@@ -160,13 +160,13 @@ describe('Directors as a COOP', () => {
   })
 })
 
-describe('Directors as a BCORP', () => {
+describe('Directors as a BCOMP', () => {
   let vm
 
   beforeEach(done => {
     // init store
     store.state.entityIncNo = 'BC0001191'
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
     const directors = [
       {
         'id': 1,

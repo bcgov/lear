@@ -30,7 +30,7 @@
               <div class="list-item__title">{{item.title}}</div>
 
               <div class="bcorps-ar-subtitle"
-                v-if="entityFilter(EntityTypes.BCORP) && isConfirmEnabled(item.type, item.status)"
+                v-if="entityFilter(EntityTypes.BCOMP) && isConfirmEnabled(item.type, item.status)"
               >
                 <p>Verify your Office Address and Current Directors before filing your Annual Report.</p>
                 <v-checkbox
@@ -98,7 +98,7 @@
             <div class="list-item__actions">
               <v-col>
                 <p class="date-subtitle"
-                  v-if="entityFilter(EntityTypes.BCORP) && isConfirmEnabled(item.type, item.status)"
+                  v-if="entityFilter(EntityTypes.BCOMP) && isConfirmEnabled(item.type, item.status)"
                 >due {{ item.nextArDate }}</p>
 
                 <!-- pre-empt any buttons below -->

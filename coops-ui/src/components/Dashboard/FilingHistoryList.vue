@@ -138,7 +138,7 @@ import { mapState } from 'vuex'
 import { DownloadErrorDialog } from '@/components/dialogs'
 
 // Enums
-import { EntityTypes, FilingStatus } from '@/enums'
+import { EntityTypes, FilingStatus, FilingTypes } from '@/enums'
 
 // Mixins
 import DateMixin from '@/mixins/date-mixin'
@@ -194,19 +194,19 @@ export default {
                 this.loadAnnualReport(filing)
                 break
               case 'changeOfDirectors':
-                this.loadReport('Director Change', filing, filing.changeOfDirectors)
+                this.loadReport(FilingTypes.DIRECTOR_CHANGE, filing, filing.changeOfDirectors)
                 break
               case 'changeOfAddress':
-                this.loadReport('Address Change', filing, filing.changeOfAddress)
+                this.loadReport(FilingTypes.ADDRESS_CHANGE, filing, filing.changeOfAddress)
                 break
               case 'changeOfName':
-                this.loadReport('Legal Name Change', filing, filing.changeOfName)
+                this.loadReport(FilingTypes.LEGAL_NAME_CHANGE, filing, filing.changeOfName)
                 break
               case 'specialResolution':
-                this.loadReport('Special Resolution', filing, filing.specialResolution)
+                this.loadReport(FilingTypes.SPECIAL_RESOLUTION, filing, filing.specialResolution)
                 break
               case 'voluntaryDissolution':
-                this.loadReport('Voluntary Dissolution', filing, filing.voluntaryDissolution)
+                this.loadReport(FilingTypes.VOLUNTARY_DISSOLUTION, filing, filing.voluntaryDissolution)
                 break
               default:
                 this.loadPaperFiling(filing)
@@ -454,8 +454,8 @@ export default {
      * @return A boolean indicating if the filing is future effective.
      */
     isCoaFutureEffective (filingType: string, status: string): boolean {
-      return this.entityFilter(EntityTypes.BCORP) &&
-        filingType === 'Address Change' &&
+      return this.entityFilter(EntityTypes.BCOMP) &&
+        filingType === FilingTypes.ADDRESS_CHANGE &&
         status === FilingStatus.PAID
     }
 

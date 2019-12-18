@@ -124,7 +124,7 @@ import { EntityFilterMixin } from '@/mixins'
 import { CoaWarningDialog } from '@/components/dialogs'
 
 // Enums
-import { EntityTypes, FilingStatus } from '@/enums'
+import { EntityTypes, FilingStatus, FilingTypes } from '@/enums'
 
 export default {
   name: 'Dashboard',
@@ -245,8 +245,8 @@ export default {
      */
     checkPendingFilings (filings) {
       filings.forEach(filing => {
-        if (this.entityFilter(EntityTypes.BCORP) &&
-          filing.name === 'Address Change' &&
+        if (this.entityFilter(EntityTypes.BCOMP) &&
+          filing.name === FilingTypes.ADDRESS_CHANGE &&
           filing.status === FilingStatus.PAID) {
           this.effectiveDate = filing.filingEffectiveDate
           this.coaPending = true
@@ -261,10 +261,10 @@ export default {
       this.coaWarningDialog = !this.coaWarningDialog
     },
     /**
-     * Display COA warning if BCORP else proceed to COA.
+     * Display COA warning if BCOMP else proceed to COA.
      */
     proceedCoa () {
-      this.entityFilter(EntityTypes.BCORP)
+      this.entityFilter(EntityTypes.BCOMP)
         ? this.toggleCoaWarning()
         : this.goToStandaloneAddresses()
     }

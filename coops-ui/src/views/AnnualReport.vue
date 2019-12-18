@@ -113,10 +113,10 @@
               </template>
             </article>
 
-            <!-- BCORP only: -->
+            <!-- BCOMP only: -->
             <article
               class="annual-report-article"
-              v-if="entityFilter(EntityTypes.BCORP)"
+              v-if="entityFilter(EntityTypes.BCOMP)"
             >
               <!-- Page Title -->
               <header>
@@ -155,7 +155,7 @@
             <!-- Certify -->
             <section>
               <header>
-                <h2 id="AR-step-4-header">{{this.entityFilter(EntityTypes.BCORP) ? '3.' : '4.' }} Certify Correct</h2>
+                <h2 id="AR-step-4-header">{{this.entityFilter(EntityTypes.BCOMP) ? '3.' : '4.' }} Certify Correct</h2>
                 <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
               </header>
               <Certify
@@ -245,11 +245,11 @@
       </div>
     </v-container>
 
-    <!-- Buttons ( BCORP only ) -->
+    <!-- Buttons ( BCOMP only ) -->
     <v-container
       id="bcorp-buttons-container"
       class="list-item"
-      v-if="entityFilter(EntityTypes.BCORP)"
+      v-if="entityFilter(EntityTypes.BCOMP)"
     >
       <div class="buttons-left">
         <v-btn id="ar-back-btn" large to="/dashboard" :loading="filingPaying">Back</v-btn>
@@ -445,7 +445,7 @@ export default {
       // else just load new page
       this.loadingMessage = `Preparing Your ${this.ARFilingYear} Annual Report`
       // TODO: This filing code needs to be updated to ANNUAL_REPORT_BC when Payments codes have been updated.
-      this.entityFilter(EntityTypes.BCORP) && this.toggleFiling('add', FilingCodes.ANNUAL_REPORT_OT)
+      this.entityFilter(EntityTypes.BCOMP) && this.toggleFiling('add', FilingCodes.ANNUAL_REPORT_OT)
     }
   },
 

@@ -532,7 +532,7 @@ describe('TodoList - UI', () => {
 
 describe('TodoList - UI - BCOMP', () => {
   beforeAll(() => {
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
   })
 
   it('handles empty data', async () => {
@@ -1187,7 +1187,7 @@ describe('TodoList - Click Tests - BCOMPs', () => {
     // mock the window.location.assign function
     delete window.location
     window.location = { assign: jest.fn() } as any
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
   })
 
   afterAll(() => {
