@@ -347,6 +347,45 @@ def test_post_valid_ar(session, client, jwt):
 
 
 @integration_payment
+def test_cancel_payment_for_pending_filing(session, client, jwt):
+    """Assert that a filing can be completed up to payment."""
+    from legal_api.models import Filing
+    identifier = 'CP7654321'
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    # check return
+    assert rv.status_code == HTTPStatus.CREATED
+    assert not rv.json.get('errors')
+    assert rv.json['filing']['header']['filingId']
+    assert rv.json['filing']['header']['paymentToken']
+    assert rv.json['filing']['header']['paymentToken'] == '153'
+
+    # check stored filing
+    filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
+    assert filing
+    assert filing.status == Filing.Status.PENDING.value
+
+    filing_id = rv.json['filing']['header']['filingId']
+    rv = client.patch(f'/api/v1/businesses/{identifier}/filings/{filing_id}', json={},
+                     headers=create_header(jwt, [STAFF_ROLE], identifier))
+    assert rv.status_code == HTTPStatus.ACCEPTED
+    assert not rv.json.get('errors')
+    assert rv.json['filing']['header']['paymentToken'] is None
+    assert rv.json['filing']['header']['status'] == 'DRAFT'
+
+
+@integration_payment
 def test_post_valid_ar_with_routing_slip(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
     from legal_api.models import Filing
@@ -401,6 +440,46 @@ def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
     assert rv.status_code == HTTPStatus.PAYMENT_REQUIRED
     assert rv.json.get('errors')
     assert rv.json['errors'][0]['message'] == 'unable to create invoice for payment.'
+
+
+@integration_payment
+def test_cancel_payment_failed(monkeypatch, session, client, jwt):
+    """Assert that cancel payment failure returns error."""
+    identifier = 'CP7654321'
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    # check return
+    assert rv.status_code == HTTPStatus.CREATED
+    assert not rv.json.get('errors')
+    assert rv.json['filing']['header']['filingId']
+    assert rv.json['filing']['header']['paymentToken']
+    assert rv.json['filing']['header']['paymentToken'] == '153'
+
+    filing_id = rv.json['filing']['header']['filingId']
+
+    old_svc = current_app.config.get('PAYMENT_SVC_URL')
+    current_app.config['PAYMENT_SVC_URL'] = 'http://nowhere.localdomain'
+
+    rv = client.patch(f'/api/v1/businesses/{identifier}/filings/{filing_id}',
+                     json={},
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    current_app.config['PAYMENT_SVC_URL'] = old_svc
+    assert rv.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+    assert rv.json.get('errors')
+    assert rv.json['errors'][0]['message'] == 'Unable to cancel payment for the filing.'
 
 
 @integration_payment

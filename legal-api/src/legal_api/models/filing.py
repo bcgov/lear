@@ -326,6 +326,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         db.session.delete(self)
         db.session.commit()
 
+    def reset_filing_to_draft(self):
+        self._status = Filing.Status.DRAFT.value
+        self._payment_token = None
+        self.save()
+
     def legal_filings(self) -> List:
         """Return a list of the filings extracted from this filing submission.
 
