@@ -328,10 +328,9 @@ class ListFilingResource(Resource):
             else:
                 filing.filing_date = datetime.datetime.utcnow()
 
-            # for coops, set effective date as set in json; otherwise leave as default
-            if business.legal_type == 'CP':
-                if filing.filing_json['filing']['header'].get('effectiveDate', None):
-                    filing.effective_date = \
+            # for any legal type, set effective date as set in json; otherwise leave as default
+            if filing.filing_json['filing']['header'].get('effectiveDate', None):
+                filing.effective_date = \
                         datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['effectiveDate'])
 
             filing.save()
