@@ -239,13 +239,14 @@ export default {
      * Searches the filings history for a 'paid' status.
      * Paid status indicates a filing that is paid but future effective.
      * Change the state of the UI when a filing is future effective.
-     * Currently only BCOMPS have future effective filings.
+     * Currently only BCOMPs change of addresses filing are future effective.
      *
      * @param filings The array of filings in history
      */
     checkPendingFilings (filings) {
       filings.forEach(filing => {
         if (this.entityFilter(EntityTypes.BCORP) &&
+          filing.name === 'Address Change' &&
           filing.status === FilingStatus.PAID) {
           this.effectiveDate = filing.filingEffectiveDate
           this.coaPending = true

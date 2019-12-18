@@ -77,10 +77,11 @@ describe('Dashboard - UI', () => {
       .getAttribute('disabled')).toBe('true')
   })
 
-  it('disables standalone filing buttons & toDo filings when there is a future effective filing pending', () => {
+  it('disables filing buttons when there is a future effective filing pending', () => {
     store.state.entityType = 'BC'
 
-    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [{ 'status': 'PAID' }])
+    wrapper.find(FilingHistoryList).vm.$emit('filings-list',
+      [{ 'name': 'Address Change', 'status': 'PAID' }])
     wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
 
     expect(wrapper.vm.hasBlockerFiling).toEqual(true)
