@@ -41,7 +41,7 @@ describe('Dashboard - UI', () => {
   beforeEach(() => {
     // create wrapper for Dashboard
     // this stubs out the 5 sub-components
-    wrapper = shallowMount(Dashboard, { vuetify })
+    wrapper = shallowMount(Dashboard, { store, vuetify })
   })
 
   afterEach(() => {
@@ -84,32 +84,11 @@ describe('Dashboard - UI', () => {
       .getAttribute('disabled')).toBe('true')
   })
 
-  it('disables standalone filing buttons & toDo filings when there is a future effective filing pending', () => {
-    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [{ 'status': 'PAID' }])
-    wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
+  it('disables filing buttons when there is a future effective filing pending', () => {
+    store.state.entityType = 'BC'
 
-    expect(wrapper.vm.hasBlockerFiling).toEqual(true)
-    expect(wrapper.vm.coaPending).toEqual(true)
-    expect(wrapper.vm.$el.querySelector('#standalone-addresses-button')
-      .getAttribute('disabled')).toBe('true')
-    expect(wrapper.vm.$el.querySelector('#standalone-directors-button')
-      .getAttribute('disabled')).toBe('true')
-  })
-
-  it('disables standalone filing buttons & toDo filings when there is a future effective filing pending', () => {
-    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [{ 'status': 'PAID' }])
-    wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
-
-    expect(wrapper.vm.hasBlockerFiling).toEqual(true)
-    expect(wrapper.vm.coaPending).toEqual(true)
-    expect(wrapper.vm.$el.querySelector('#standalone-addresses-button')
-      .getAttribute('disabled')).toBeTruthy()
-    expect(wrapper.vm.$el.querySelector('#standalone-directors-button')
-      .getAttribute('disabled')).toBe('true')
-  })
-
-  it('disables standalone filing buttons & toDo filings when there is a future effective filing pending', () => {
-    wrapper.find(FilingHistoryList).vm.$emit('filings-list', [{ 'status': 'PAID' }])
+    wrapper.find(FilingHistoryList).vm.$emit('filings-list',
+      [{ 'name': 'Address Change', 'status': 'PAID' }])
     wrapper.find(TodoList).vm.$emit('has-blocker-filing', true)
 
     expect(wrapper.vm.hasBlockerFiling).toEqual(true)
@@ -180,6 +159,7 @@ describe('Dashboard - Click Tests', () => {
   it('routes to Standalone Office Address Filing page when EDIT is clicked', done => {
     // init store
     store.state.entityIncNo = 'CP0001191'
+    store.state.entityType = 'CP'
     // create a Local Vue and install router on it
     const localVue = createLocalVue()
     localVue.use(VueRouter)
@@ -201,10 +181,10 @@ describe('Dashboard - Click Tests', () => {
     })
   })
 
-  it('displays the change of address warning dialog as a bcorp', done => {
+  it('displays the change of address warning dialog as a BCOMP', done => {
     // init store
     store.state.entityIncNo = 'BC0007291'
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
     // create a Local Vue and install router on it
     const localVue = createLocalVue()
     localVue.use(VueRouter)

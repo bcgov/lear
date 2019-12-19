@@ -93,7 +93,7 @@ describe('DirectorListSm', () => {
     })
   })
 
-  it('displays multiple directors as a bcorp', done => {
+  it('displays multiple directors as a BCOMP', done => {
     function click (id) {
       const button = vm.$el.querySelector(id)
       const window = button.ownerDocument.defaultView
@@ -102,7 +102,7 @@ describe('DirectorListSm', () => {
     }
 
     // init store
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
     store.state.directors = [
       {
         'officer': {

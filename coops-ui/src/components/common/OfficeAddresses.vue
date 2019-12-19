@@ -92,7 +92,7 @@
           </div>
         </li>
 
-        <div v-if="entityFilter(EntityTypes.BCORP)">
+        <div v-if="entityFilter(EntityTypes.BCOMP)">
           <div class="address-edit-header" v-if="showAddressForm">
             <label class="address-edit-title">Records Office</label>
             <v-checkbox

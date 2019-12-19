@@ -375,13 +375,13 @@ describe('Directors as a COOP', () => {
   // })
 })
 
-describe('Directors as a BCORP', () => {
+describe('Directors as a BCOMP', () => {
   let vm: any
 
   beforeEach(() => {
     // init store
     store.state.entityIncNo = 'CP0002291'
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
 
     // GET directors
     sinon.stub(axios, 'get').withArgs('CP0002291/directors?date=2019-04-01')

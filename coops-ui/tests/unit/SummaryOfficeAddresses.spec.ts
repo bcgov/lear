@@ -17,12 +17,12 @@ const app: HTMLDivElement = document.createElement('div')
 app.setAttribute('data-app', 'true')
 document.body.append(app)
 
-describe('OfficeAddresses as a BCORP', () => {
+describe('OfficeAddresses as a BCOMP', () => {
   let vm
 
   beforeAll(() => {
     // init store
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
     store.state.registeredAddress = {
       deliveryAddress: {
         addressCity: 'delCity',

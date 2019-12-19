@@ -451,10 +451,10 @@ describe('AnnualReport - Part 1B - UI - BCOMP', () => {
     store.state.ARFilingYear = 2018
     store.state.nextARDate = '2019-09-26T00:00:00+00:00'
     store.state.currentFilingStatus = 'NEW'
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
   })
 
-  it('renders the Annual Report sub-components properly when entity is a BCorp', () => {
+  it('renders the Annual Report sub-components properly when entity is a BCOMP', () => {
     const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
 
@@ -1022,7 +1022,7 @@ describe('AnnualReport - Part 3B - Submitting - BCOMP', () => {
     // init store
     store.state.entityIncNo = 'BC0007291'
     store.state.entityName = 'Legal Name - BC0007291'
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
     store.state.ARFilingYear = 2018
     store.state.nextARDate = '2019-09-26T00:00:00+00:00'
     store.state.currentFilingStatus = 'NEW'
@@ -1535,7 +1535,7 @@ describe('AnnualReport - Part 5B - Data - BCOMP', () => {
     // init store
     store.state.entityIncNo = 'BC0007291'
     store.state.entityName = 'Legal Name - BC0007291'
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
     store.state.ARFilingYear = 2018
     store.state.nextARDate = '2019-09-26T00:00:00+00:00'
     store.state.currentFilingStatus = 'NEW'

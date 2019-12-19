@@ -259,12 +259,12 @@ describe('OfficeAddresses as a COOP', () => {
   })
 })
 
-describe('OfficeAddresses as a BCORP', () => {
+describe('OfficeAddresses as a BCOMP', () => {
   let vm
 
   beforeAll(() => {
     // init store
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
     store.state.registeredAddress = {
       deliveryAddress: {
         addressCity: 'delCity',

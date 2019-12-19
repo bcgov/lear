@@ -124,7 +124,7 @@ import { EntityFilterMixin } from '@/mixins'
 import { CoaWarningDialog } from '@/components/dialogs'
 
 // Enums
-import { EntityTypes, FilingStatus } from '@/enums'
+import { EntityTypes, FilingStatus, FilingTypes } from '@/enums'
 
 export default {
   name: 'Dashboard',
@@ -239,13 +239,15 @@ export default {
      * Searches the filings history for a 'paid' status.
      * Paid status indicates a filing that is paid but future effective.
      * Change the state of the UI when a filing is future effective.
-     * Currently only BCOMPS have future effective filings.
+     * Currently only BCOMPs change of addresses filing are future effective.
      *
      * @param filings The array of filings in history
      */
     checkPendingFilings (filings) {
       filings.forEach(filing => {
-        if (filing.status === FilingStatus.PAID) {
+        if (this.entityFilter(EntityTypes.BCOMP) &&
+          filing.name === FilingTypes.ADDRESS_CHANGE &&
+          filing.status === FilingStatus.PAID) {
           this.effectiveDate = filing.filingEffectiveDate
           this.coaPending = true
           this.hasBlockerFiling = true
@@ -259,10 +261,10 @@ export default {
       this.coaWarningDialog = !this.coaWarningDialog
     },
     /**
-     * Display COA warning if BCORP else proceed to COA.
+     * Display COA warning if BCOMP else proceed to COA.
      */
     proceedCoa () {
-      this.entityFilter(EntityTypes.BCORP)
+      this.entityFilter(EntityTypes.BCOMP)
         ? this.toggleCoaWarning()
         : this.goToStandaloneAddresses()
     }

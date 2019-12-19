@@ -374,12 +374,12 @@ describe('Standalone Office Address Filing - Part 2 - Resuming', () => {
   })
 })
 
-describe('Standalone Office Address Filing - Part 2B (BCORPS) - Resuming', () => {
+describe('Standalone Office Address Filing - Part 2B (BCOMP) - Resuming', () => {
   beforeEach(() => {
     // init store
     store.state.entityIncNo = 'BC0001191'
     store.state.entityName = 'Legal Name - BC0001191'
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
 
     // mock "fetch a draft filing" endpoint
     sinon.stub(axios, 'get').withArgs('BC0001191/filings/123')
@@ -729,7 +729,7 @@ describe('Standalone Office Address Filing - Part 3 - Submitting', () => {
   })
 })
 
-describe('Standalone Office Address Filing - Part 3B (BCORP) - Submitting', () => {
+describe('Standalone Office Address Filing - Part 3B (BCOMP) - Submitting', () => {
   const { assign } = window.location
 
   beforeAll(() => {
@@ -746,7 +746,7 @@ describe('Standalone Office Address Filing - Part 3B (BCORP) - Submitting', () =
     // init store
     store.state.entityIncNo = 'BC0001191'
     store.state.entityName = 'Legal Name - BC0001191'
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
 
     let s = sinon.stub(axios, 'get')
 
@@ -1147,7 +1147,7 @@ describe('Standalone Office Address Filing - Part 4 - Saving', () => {
   })
 })
 
-describe('Standalone Office Address Filing - Part 4B (BCORPS) - Saving', () => {
+describe('Standalone Office Address Filing - Part 4B (BCOMP) - Saving', () => {
   const { assign } = window.location
 
   beforeAll(() => {
@@ -1164,7 +1164,7 @@ describe('Standalone Office Address Filing - Part 4B (BCORPS) - Saving', () => {
     // init store
     store.state.entityIncNo = 'BC0001191'
     store.state.entityName = 'Legal Name - BC0001191'
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
 
     // mock "save draft" endpoint
     sinon.stub(axios, 'post').withArgs('BC0001191/filings?draft=true')
@@ -1368,7 +1368,7 @@ describe('Standalone Office Address Filing - Part 5 - Data', () => {
   })
 })
 
-describe('Standalone Office Address Filing - Part 5B (BCORPS) - Data', () => {
+describe('Standalone Office Address Filing - Part 5B (BCOMP) - Data', () => {
   let wrapper
   let vm
   let spy

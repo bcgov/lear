@@ -46,12 +46,12 @@
 
               <p>
                 <span>Please change your Registered Office Address</span>
-                <span v-if="entityFilter(EntityTypes.BCORP)"> and Records Address</span>
+                <span v-if="entityFilter(EntityTypes.BCOMP)"> and Records Address</span>
                 <span>.</span>
               </p>
 
               <v-alert type="info" outlined
-                v-if="entityFilter(EntityTypes.BCORP)"
+                v-if="entityFilter(EntityTypes.BCOMP)"
                 icon="mdi-information"
                 class="white-background"
               >

@@ -329,7 +329,7 @@ describe('App as a COOP', () => {
   })
 })
 
-describe('BCORP APP', () => {
+describe('BCOMP APP', () => {
   // just need a token that can get parsed properly (will be expired but doesn't matter for tests)
   // must not include keycloakRoles=["staff"]
   let wrapper
