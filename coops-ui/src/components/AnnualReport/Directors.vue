@@ -504,7 +504,8 @@ import { FormType, BaseAddressType } from '@/interfaces'
   },
   computed: {
     // Property definitions for runtime environment.
-    ...mapState(['entityIncNo', 'lastPreLoadFilingDate', 'currentDate', 'currentFilingStatus']),
+    ...mapState(['entityIncNo', 'lastPreLoadFilingDate', 'currentDate', 'currentFilingStatus', 'lastAnnualReportDate',
+      'entityFoundingDate']),
     ...mapGetters(['lastCODFilingDate'])
   }
 })
@@ -654,6 +655,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   readonly currentDate!: string
   readonly currentFilingStatus!: string
   readonly lastCODFilingDate!: string
+  readonly lastAnnualReportDate!: string
+  readonly entityFoundingDate!: string
 
   /**
    * Computed value.
@@ -712,18 +715,23 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   }
 
   /**
-   * Computed value.
-   * @returns The latest of the most recent COD filing and the last pre-load Cobrs filing.
-   */
+     * Computed value.
+     * Determine the latest of the following dates:
+     * - the last COD filing in filing history (from legal DB)
+     * - the last AR filing in filing history (from the Legal DB)
+     *
+     * If the entity has no filing history, the founding date will be used.
+     */
   private get earliestDateToSet (): string {
     let earliestDateToSet = null
 
-    if (this.lastCODFilingDate === null) {
-      earliestDateToSet = this.lastPreLoadFilingDate
-    } else if (this.compareDates(this.lastCODFilingDate, this.lastPreLoadFilingDate, '>')) {
-      earliestDateToSet = this.lastCODFilingDate
+    if (this.lastCODFilingDate === null && this.lastAnnualReportDate == null) {
+      earliestDateToSet = this.entityFoundingDate
     } else {
-      earliestDateToSet = this.lastPreLoadFilingDate
+      const lastARFilingDate = this.lastAnnualReportDate == null ? 0 : +this.lastAnnualReportDate.split('-').join('')
+      const lastCODFilingDate = this.lastCODFilingDate == null ? 0 : +this.lastCODFilingDate.split('-').join('')
+      const minCODDate = Math.max(lastARFilingDate, lastCODFilingDate)
+      earliestDateToSet = this.numToUsableString(minCODDate)
     }
 
     // when earliest date is calculated, inform parent component

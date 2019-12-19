@@ -74,6 +74,22 @@ describe('CODDate', () => {
     store.state.lastPreLoadFilingDate = null
   })
 
+  it('sets Min Date to entity founding date if no filings are present', () => {
+    // verify initial state
+    expect(vm.$store.state.filings).toEqual([])
+  
+    // verify default Min Date
+    expect(vm.minDate).toBe(null)
+
+    // set Last Filing Date and verify new Min Date
+    store.state.entityFoundingDate = '2018-03-01'
+
+    expect(vm.minDate).toBe('2018-03-01')
+
+    // cleanup    
+    store.state.entityFoundingDate = null
+  })
+
   it('sets Max Date to current date in store', () => {
     expect(vm.maxDate).toBe(vm.$store.state.currentDate.split('/').join('-'))
   })
