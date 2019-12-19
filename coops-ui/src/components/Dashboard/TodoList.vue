@@ -109,7 +109,7 @@
             </div>
 
             <div class="list-item__actions">
-              <v-col>
+              <div style="width:100%">
                 <p class="date-subtitle"
                   v-if="entityFilter(EntityTypes.BCOMP) && isConfirmEnabled(item.type, item.status)"
                 >due {{ item.nextArDate }}</p>
@@ -144,7 +144,7 @@
                   </v-menu>
                 </template>
 
-                 <template v-else-if="isPending(item)">
+                <template v-else-if="isPending(item)">
                   <v-btn class="btn-resume-payment"
                     color="primary"
                     :disabled="!item.enabled"
@@ -153,7 +153,7 @@
                     <span>Resume Payment</span>
                     <!-- Cancel Payment -->
                   </v-btn>
-                   <v-menu offset-y left>
+                  <v-menu offset-y left>
                     <template v-slot:activator="{ on }">
                       <v-btn color="primary"
                         v-on="on" id="pending-item-menu-activator" :disabled="!item.enabled"
@@ -192,7 +192,7 @@
                 >
                   <span>File Now</span>
                 </v-btn>
-              </v-col>
+              </div>
             </div>
           </div>
         </v-expansion-panel-header>
