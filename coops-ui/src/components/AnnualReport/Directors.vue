@@ -725,7 +725,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private get earliestDateToSet (): string {
     let earliestDateToSet = null
 
-    if (this.lastCODFilingDate === null && this.lastAnnualReportDate == null) {
+    if (this.lastCODFilingDate == null && this.lastAnnualReportDate == null) {
       earliestDateToSet = this.entityFoundingDate
     } else {
       const lastARFilingDate = this.lastAnnualReportDate == null ? 0 : +this.lastAnnualReportDate.split('-').join('')
