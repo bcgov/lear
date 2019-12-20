@@ -113,11 +113,11 @@ export default class CODDate extends Mixins(DateMixin) {
      * If the entity has no filing history, the founding date will be used.
      */
     let minDate = null
-    if (this.lastCODFilingDate == null && this.lastAnnualReportDate == null) {
-      minDate = this.entityFoundingDate
+    if (!this.lastCODFilingDate && !this.lastAnnualReportDate) {
+      minDate = this.entityFoundingDate.split('T')[0]
     } else {
-      const lastARFilingDate = this.lastAnnualReportDate == null ? 0 : +this.lastAnnualReportDate.split('-').join('')
-      const lastCODFilingDate = this.lastCODFilingDate == null ? 0 : +this.lastCODFilingDate.split('-').join('')
+      const lastARFilingDate = !this.lastAnnualReportDate ? 0 : +this.lastAnnualReportDate.split('-').join('')
+      const lastCODFilingDate = !this.lastCODFilingDate ? 0 : +this.lastCODFilingDate.split('-').join('')
       const minCODDate = Math.max(lastARFilingDate, lastCODFilingDate)
       minDate = this.numToUsableString(minCODDate)
     }

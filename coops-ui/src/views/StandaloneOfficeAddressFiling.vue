@@ -2,13 +2,13 @@
   <div id="standalone-office-address">
     <ConfirmDialog
       ref="confirm"
-      attach="standalone-office-address"
+      attach="#standalone-office-address"
     />
 
     <ResumeErrorDialog
       :dialog="resumeErrorDialog"
       @exit="navigateToDashboard"
-      attach="standalone-office-address"
+      attach="#standalone-office-address"
     />
 
     <SaveErrorDialog
@@ -20,13 +20,13 @@
       @exit="navigateToDashboard"
       @retry="onClickFilePay"
       @okay="resetErrors"
-      attach="standalone-office-address"
+      attach="#standalone-office-address"
     />
 
     <PaymentErrorDialog
       :dialog="paymentErrorDialog"
       @exit="navigateToDashboard"
-      attach="standalone-office-address"
+      attach="#standalone-office-address"
     />
 
     <!-- Initial Page Load Transition -->
