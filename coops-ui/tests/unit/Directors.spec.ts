@@ -47,6 +47,7 @@ describe('Directors as a COOP', () => {
     // init store
     store.state.entityIncNo = 'CP0001191'
     store.state.entityType = EntityTypes.COOP
+    store.state.entityFoundingDate = '2018-03-01T00:00:00'
 
     // GET directors
     sinon.stub(axios, 'get').withArgs('CP0001191/directors?date=2019-04-01')

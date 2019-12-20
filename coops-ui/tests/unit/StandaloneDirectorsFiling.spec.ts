@@ -74,6 +74,8 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     // init store
     store.state.entityIncNo = 'CP0001191'
     store.state.currentDate = '2019/07/15'
+    // set Last Filing Date and verify new Min Date
+    store.state.entityFoundingDate = '2018-03-01T00:00:00'
   })
 
   it('renders the filing sub-components properly', () => {

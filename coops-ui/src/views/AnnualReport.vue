@@ -2,13 +2,13 @@
   <div id="annual-report">
     <ConfirmDialog
       ref="confirm"
-      attach="annual-report"
+      attach="#annual-report"
     />
 
     <ResumeErrorDialog
       :dialog="resumeErrorDialog"
       @exit="navigateToDashboard"
-      attach="annual-report"
+      attach="#annual-report"
     />
 
     <SaveErrorDialog
@@ -20,13 +20,13 @@
       @exit="navigateToDashboard"
       @retry="onClickFilePay"
       @okay="resetErrors"
-      attach="annual-report"
+      attach="#annual-report"
     />
 
     <PaymentErrorDialog
       :dialog="paymentErrorDialog"
       @exit="navigateToDashboard"
-      attach="annual-report"
+      attach="#annual-report"
     />
 
     <!-- Initial Page Load Transition -->
