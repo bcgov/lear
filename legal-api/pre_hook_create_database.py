@@ -8,16 +8,17 @@ import sqlalchemy.exc
 from legal_api.config import ProdConfig
 
 DB_ADMIN_PASSWORD = os.getenv('DB_ADMIN_PASSWORD', None)
+DB_ADMIN_USERNAME = os.getenv('DB_ADMIN_USERNAME', 'postgres')
 
 if not hasattr(ProdConfig, 'DB_NAME') or not DB_ADMIN_PASSWORD:
     print("Unable to create database.", sys.stdout)
     sys.exit(-1)
 
-DATABASE_URI = 'postgresql://postgres:{password}@{host}:{port}/{name}'.format(
+DATABASE_URI = 'postgresql://{name}:{password}@{host}:{port}/{name}'.format(
     password=DB_ADMIN_PASSWORD,
     host=ProdConfig.DB_HOST,
     port=int(ProdConfig.DB_PORT),
-    name='postgres',
+    name=DB_ADMIN_USERNAME,
 )
 
 with contextlib.suppress(sqlalchemy.exc.ProgrammingError):

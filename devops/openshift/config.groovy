@@ -50,7 +50,7 @@ app {
         }
         id = "${app.name}"
         name = "${app.name}"
-        version = opt.pr ? "pr${opt.'pr'}" :  opt.env
+        version = opt.pr ? "pr${opt.'pr'}" :  "dev"
 
         namespace = app.namespaces.'build'.namespace
         timeoutInSeconds = 60*20
@@ -59,14 +59,31 @@ app {
                     'file':'bc/legal-api.bc.json',
                     'params':[
                         'APP_NAME':             "bcros",
-                        'COMP_NAME':            "coops-ui",
+                        'COMP_NAME':            "legal-api",
                         'SUFFIX':               "${app.deployment.version}",
                         'GIT_REPO_URL':         "https://github.com/bsnopek-freshworks/lear.git",
                         'GIT_REF':              "master",
+                        'SOURCE_NAMESPACE':     "gl2uos-tools",
                         'SOURCE_CONTEXT_DIR':   "/legal-api",
                         'SOURCE_IMAGE_KIND':    "ImageStreamTag",
                         'SOURCE_IMAGE_TAG':     "3.7",
-                        'OUTPUT_IMAGE_TAG':     "latest"
+                        'OUTPUT_IMAGE_TAG':     "${app.build.version}"
+                    ]
+                ],
+                [
+                    'file':'bc/entity-filer.bc.json',
+                    'params':[
+                        'APP_NAME':             "bcros",
+                        'COMP_NAME':            "entity-filer",
+                        'SUFFIX':               "${app.deployment.version}",
+                        'GIT_REPO_URL':         "https://github.com/bsnopek-freshworks/lear.git",
+                        'GIT_REF':              "master",
+                        'SOURCE_NAMESPACE':     "gl2uos-tools",
+                        'SOURCE_CONTEXT_DIR':   "queue_services/entity-filer",
+                        'SOURCE_IMAGE_NAME':    "python",
+                        'SOURCE_IMAGE_KIND':    "ImageStreamTag",
+                        'SOURCE_IMAGE_TAG':     "3.7",
+                        'OUTPUT_IMAGE_TAG':     "${app.build.version}"
                     ]
                 ]
         ]
@@ -112,17 +129,18 @@ app {
                         'APP_NAME':             "bcros",
                         'COMP_NAME':            "legal-api",
                         'SUFFIX':               "${app.deployment.version}",
-                        'SECRET_SRC':           "dev",
+                        'DB_SECRET_ADMIN':      'lear-db-admin',
+                        'DB_SECRET_ACCESS':     'lear-db-access',
                         'IMAGE_NAMESPACE':      "${vars.deployment.namespace}",
                         'GO_LIVE_DATE':         "2019-08-02",
                         'SENTRY_DSN':           "https://account.sentry.ioo/project/id",
-                        'DATABASE_HOST':        "postgresql-${app.deployment.version}",
-                        'DATABASE_NAME':        "lear",
-                        'DB_PORT':              "5432",
-                        'DATABASE_TEST_HOST':   "postgresql-${app.deployment.version}",
-                        'DATABASE_TEST_NAME':   "lear_testdb",
+                        'DATABASE_HOST':        "sbc-dev-service.hak2zo-dev",
+                        'DATABASE_NAME':        "lear-${app.deployment.version}",
+                        'DATABASE_PORT':        "5444",
+                        'DATABASE_TEST_HOST':   "sbc-dev-service.hak2zo-dev",
+                        'DATABASE_TEST_NAME':   "lear_testdb-${app.deployment.version}",
                         'DATABASE_TEST_PASSWORD':"",
-                        'DATABASE_TEST_PORT':   "5432",
+                        'DATABASE_TEST_PORT':   "5444",
                         'DATABASE_TEST_USERNAME':"tester",
                         'PAYMENT_SVC_URL':      "${app.url.pay_api}/payments",
                         'AUTH_SVC_URL':         "${app.url.auth_api}",
@@ -145,44 +163,27 @@ app {
                         'REPLICA_MIN':      "${vars.resources.api.replica_min}",
                         'REPLICA_MAX':      "${vars.resources.api.replica_max}"
                     ]
-                ]
-                /*
-                ,
-                [
-                    'file':'_postgresql.dc.json',
-                    'params':[
-                            'NAME':                 "bcros-postgresql",
-                            'SUFFIX':               "${vars.deployment.suffix}",
-                            'DATABASE_SERVICE_NAME':"bcros-postgresql${vars.deployment.suffix}",
-                            'IMAGE_STREAM_NAMESPACE':'',
-                            'IMAGE_STREAM_NAME':    "bcros-postgresql",
-                            'IMAGE_STREAM_VERSION': "${app.deployment.version}",
-                            'POSTGRESQL_DATABASE':  'bcros',
-                            'CPU_REQUEST':          "${vars.resources.postgres.cpu_request}",
-                            'CPU_LIMIT':            "${vars.resources.postgres.cpu_limit}",
-                            'MEMORY_REQUEST':       "${vars.resources.postgres.memory_request}",
-                            'MEMORY_LIMIT':         "${vars.resources.postgres.memory_limit}",
-                            'VOLUME_CAPACITY':      "${vars.DB_PVC_SIZE}"
-                    ]
                 ],
                 [
                     'file':'_entity-filer.dc.json',
                     'params':[
-                            'NAME':             "bcros-entity-filer",
+                            'APP_NAME':         "bcros",
+                            'COMP_NAME':        "entity-filer",
                             'SUFFIX':           "${vars.deployment.suffix}",
-                            'APP_GROUP':        "entity-filer",
                             'APP_FILE':         "filer_service.py",
-                            'DATABASE_NAME':    "<database>",
+                            'DB_SECRET_ACCESS':     'lear-db-access',
+                            'IMAGE_NAMESPACE':      "${vars.deployment.namespace}",
+                            'DATABASE_HOST':        "sbc-dev-service.hak2zo-dev",
+                            'DATABASE_NAME':        "lear-${app.deployment.version}",
+                            'DATABASE_PORT':        "5444",
+                            'AUTH_SVC_URL':         "${app.url.auth_api}",
                             'SENTRY_DSN':       "https://<account>@sentry.io/<project>",
-                            'PAYMENT_SVC_URL':  "http:///api/v1/payments",
                             'NATS_SERVERS':     "nats://nats-streaming.<namespace>.svc:4222",
                             'NATS_CLUSTER_ID':  "test-cluster",
                             'NATS_CLIENT_NAME': "entity.filing.filer.worker",
                             'NATS_SUBJECT':     "entity.filing.filer",
                             'NATS_FILER_SUBJECT':"entity.filing.filer",
                             'NATS_QUEUE':       "filing-worker",
-                            'IMAGE_NAMESPACE':  "<namespace>",
-                            'TAG_NAME':         "dev",
                             'CPU_REQUEST':      "${vars.resources.filer.cpu_request}",
                             'CPU_LIMIT':        "${vars.resources.filer.cpu_limit}",
                             'MEMORY_REQUEST':   "${vars.resources.filer.memory_request}",
@@ -191,7 +192,6 @@ app {
                             'REPLICA_MAX':      "${vars.resources.filer.replica_max}",
                     ]
                 ]
-*/
         ]
     }
 }
