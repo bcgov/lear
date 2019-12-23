@@ -40,4 +40,8 @@ export default class ResourceLookupMixin extends Vue {
       }
       return ''
     }
+
+    directorWarning () {
+      return ''
+    }
 }

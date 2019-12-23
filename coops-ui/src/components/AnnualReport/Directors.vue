@@ -24,13 +24,22 @@
 
     <v-expand-transition>
       <div v-if="componentEnabled" v-show="!showNewDirectorForm">
-        <v-btn class="new-director-btn" outlined color="primary"
+        <v-container>
+          <v-row class="msg-director-compliance">
+            <v-col cols="3">
+          <v-btn class="new-director-btn" outlined color="primary"
           :disabled="directorEditInProgress"
           @click="addNewDirector"
         >
           <v-icon>mdi-plus</v-icon>
           <span>Appoint New Director</span>
         </v-btn>
+            </v-col>
+            <v-col cols="5">
+              <WarningPopover v-if="lastValidDirector > -1"/>
+            </v-col>
+          </v-row>
+        </v-container>
       </div>
     </v-expand-transition>
 
@@ -467,6 +476,16 @@
 
             </div>
           </div>
+                 <v-alert
+      close-text="Close Alert"
+      dismissible
+      icon="mdi-information"
+      class="white-background"
+      :id="'director-' + director.id + '-alert'"
+      v-show="director.id == lastValidDirector"
+    >
+              Test
+                 </v-alert>
         </li>
       </ul>
     </v-card>
@@ -480,7 +499,7 @@ import { Component, Mixins, Vue, Prop, Watch, Emit } from 'vue-property-decorato
 import axios from '@/axios-auth'
 import { mapState, mapGetters } from 'vuex'
 import { required, maxLength } from 'vuelidate/lib/validators'
-
+import { WarningPopover } from '@/components/dialogs'
 // Components
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
@@ -498,7 +517,8 @@ import { FormType, BaseAddressType } from '@/interfaces'
 
 @Component({
   components: {
-    BaseAddress
+    BaseAddress,
+    WarningPopover
   },
   computed: {
     // Property definitions for runtime environment.
@@ -529,7 +549,9 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   @Prop({ default: true })
   private componentEnabled: boolean
 
-  private directorEditInProgress:boolean = false;
+  private directorEditInProgress: boolean = false;
+
+  private lastValidDirector: number = -1
 
   // Local properties.
   private directors = []
@@ -975,6 +997,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private ceaseDirector (director): void {
     // if this is a Cease, apply a fee
     // otherwise it's just undoing a cease or undoing a new director, so remove fee
+    this.lastValidDirector = -1
     if (this.isActive(director)) director.isFeeApplied = true
     else director.isFeeApplied = false
 
@@ -989,6 +1012,11 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     // close standalone cessation date picker and reset date
     this.cessationDateTemp = null
     this.activeIndexCustomCease = null
+    console.log(this.directors)
+    if (this.directors.filter(x => x.cessationDate == null).length < 2) {
+      this.lastValidDirector = director.id
+    }
+    // Determine if there are enough directors to remain in compliance
   }
 
   /**
@@ -1376,6 +1404,15 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
 <style lang="scss" scoped>
 @import "@/assets/styles/theme.scss";
 
+.msg-director-compliance {
+  display:flex;
+  align-items: center;
+  margin-bottom:1.5rem !important;
+
+  .col-3 {
+    min-width:176px;
+  }
+}
 .v-card {
   line-height: 1.2rem;
   font-size: 0.875rem;
@@ -1507,8 +1544,7 @@ ul {
 }
 
 .new-director-btn {
-  margin-bottom: 1.5rem !important;
-
+  min-width: 176px !important;
   .v-icon {
     margin-left: -0.5rem;
   }

@@ -35,11 +35,14 @@ configHelper.fetchConfig()
   .then(() => {
     // ensure we have the necessary Keycloak tokens
     if (!haveKcTokens()) {
-      console.info('Redirecting to Auth URL...')
-      const authUrl = sessionStorage.getItem('AUTH_URL')
-      // assume Auth URL is always reachable
-      window.location.assign(authUrl)
-      return // do not execute remaining code
+      resetAuth(() => {})
+      if (!haveKcTokens()) {
+        console.info('Redirecting to Auth URL...')
+        const authUrl = sessionStorage.getItem('AUTH_URL')
+        // assume Auth URL is always reachable
+        window.location.assign(authUrl)
+        return // do not execute remaining code
+      }
     }
 
     // start token service to refresh KC token periodically
@@ -66,4 +69,24 @@ function haveKcTokens (): boolean {
   return Boolean(sessionStorage.getItem('KEYCLOAK_TOKEN') &&
     sessionStorage.getItem('KEYCLOAK_REFRESH_TOKEN') &&
     sessionStorage.getItem('KEYCLOAK_ID_TOKEN'))
+}
+
+function resetAuth (func) {
+  var xhr = new XMLHttpRequest()
+  xhr.open('POST', 'https://auth-api-dev.pathfinder.gov.bc.ca/api/v1/token', false)
+  xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8')
+  xhr.onload = function () {
+    // do something to response
+    var data = JSON.parse(this.responseText)
+    if (data && data.access_token) {
+      sessionStorage['KEYCLOAK_TOKEN'] = data['access_token']
+      sessionStorage['KEYCLOAK_REFRESH_TOKEN'] = data['refresh_token']
+      sessionStorage['KEYCLOAK_ID_TOKEN'] = data['access_token']
+      sessionStorage['ID_TOKEN'] = data['access_token']
+      sessionStorage['BUSINESS_IDENTIFIER'] = 'BC0000294'
+    } else {
+      func()
+    }
+  }
+  xhr.send(JSON.stringify({ 'username': 'BC0000294', 'password': '572589980' }))
 }

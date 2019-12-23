@@ -93,7 +93,7 @@
                     :currentDate="currentDate"
                     @valid="certifyFormValid=$event"
                     :entityDisplay="displayName()"
-                    :message="certifyText('OTCDR')"
+                    :message="certifyText(FilingCodes.DIRECTOR_CHANGE_OT)"
                   />
                 </section>
 
@@ -181,7 +181,23 @@
                 <header>
                   <h1 id="filing-header-review">Review: Director Change </h1>
                 </header>
-
+                <section>
+                  <v-alert type="info" outlined
+                  icon="mdi-information"
+                  class="white-background"
+                  >
+                  <v-card flat>
+                    <v-list-item>
+                        The following are required for your Cooperative Association to be in compliance with the Cooperative Association Act (Section xx):
+                    </v-list-item>
+                    <v-list-item>
+                      A minimum of three directors,
+                      One director ordinarily resident in British Columbia,
+                      A majority of directors ordinarily resident in Canada.
+                    </v-list-item>
+                  </v-card>
+                </v-alert>
+                </section>
                 <!-- Director Information -->
                 <section>
                   <SummaryDirectors

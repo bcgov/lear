@@ -33,7 +33,18 @@ export const configJson = [{
       displayName: 'Change Of Directors',
       certifyText: 'Note: It is an offence to make a false or misleading statement in ' +
            'respect of a material fact in a record submitted to the Corporate Registry for filing. ' +
-           'See section 127 of the Business Corporations Act.'
+           'See section 127 of the Business Corporations Act.',
+      warnings: {
+        minDirectors: {
+          title: 'One Director Required',
+          message: 'A minimum of one director is required, to be in compliance with the' +
+            'Business Corporations Act (Section xx). You can continue your filing, but you must' +
+            'become compliant with the  Business Corporations Act. as soon as possible.'
+        },
+        bcResident: null,
+        canadianResident: null,
+        multiCompliance: null
+      }
     }
   ]
 },
@@ -60,7 +71,35 @@ export const configJson = [{
       displayName: 'Change Of Directors',
       certifyText: 'Note: It is an offence to make a false or misleading statement in ' +
            'respect of a material fact in a record submitted to the Corporate Registry for filing. ' +
+<<<<<<< HEAD
            'See section 78 of the Cooperative Association Act.'
+=======
+           'See section 78 of the Cooperative Associations Act.',
+      warnings: {
+        minDirectors: {
+          title: 'Minimum Three Directors Required',
+          message: 'A minimum of three directors are required, to be in compliance with the Cooperative ' +
+            'Association Act (Section xx). You can continue your filing, but you must become compliant ' +
+            'with the Cooperative Association Act as soon as possible.'
+        },
+        bcResident: {
+          title: 'BC Resident Director Required',
+          message: 'One of the directors of the association is required to be an ' +
+            'individual ordinarily resident in British Columbia, to be in compliance ' +
+            'with the Cooperative Association Act (Section xx). You can continue your filing, ' +
+            'but you must become compliant with the Cooperative Association Act as soon as possible.'
+        },
+        canadianResident: {
+          title: 'Canadian Resident Directors Required',
+          message: 'A majority of the directors of the association are required to be individuals ordinarily ' +
+            'resident in Canada, to be in compliance with the Cooperative Association Act (Section xx). ' +
+            'You can continue your filing, but you must become compliant with the Cooperative ' +
+            'Association Act as soon as possible.'
+        },
+        multiCompliance: {
+        }
+      }
+>>>>>>> new component
     }
   ]
 }]
