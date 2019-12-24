@@ -230,7 +230,7 @@ export default {
     // Method to extract date from a local datetime string
     formatDate (dateString): string {
       if (!dateString) return null // safety check
-      var dateStrParts = dateString.split(',')
+      var dateStrParts = dateString.split(' ')
       var dateStr = dateStrParts[0]
       var dateParts = dateStr.split('/')
       return dateParts[2] + '-' +
