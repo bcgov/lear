@@ -766,6 +766,7 @@ def test_get_correct_fee_codes(session):
     assert free_cod_fee_code == 'OTFDR'
 
 
+@integration_payment
 def test_coa_future_effective(session, client, jwt):
     """Assert future effective changes do not affect Coops, and that BCORP change of address if future-effective."""
     import pytz
