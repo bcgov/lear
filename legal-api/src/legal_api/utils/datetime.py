@@ -12,10 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Date time utilities."""
-from datetime import datetime, timezone
+# from datetime import datetime, timezone
+import time as _time
+from datetime import date, datetime as _datetime, timezone  # pylint: disable=unused-import # noqa: F401, I001
 
 
-def utcnow_tz() -> datetime:
-    """Return the current UTC time with associated UTC timezone."""
-    utc_date = datetime.utcnow().replace(tzinfo=timezone.utc)
-    return utc_date
+class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha datetime is invalid??
+    """Alternative to the built-in datetime that has a timezone on the UTC call."""
+
+    @classmethod
+    def utcnow(cls):
+        """Construct a UTC non-naive datetime, meaning it includes timezone from time.time()."""
+        time_stamp = _time.time()
+        return super().utcfromtimestamp(time_stamp).replace(tzinfo=timezone.utc)

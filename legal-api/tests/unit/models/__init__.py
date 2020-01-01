@@ -13,11 +13,14 @@
 # limitations under the License.
 
 """The Test-Suite used to ensure that the Model objects are working correctly."""
-from datetime import datetime, timezone
+import base64
+import uuid
 
+from freezegun import freeze_time
 from sqlalchemy_continuum import versioning_manager
 
 from legal_api.models import Address, Business, Director, Filing, Office, db
+from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
 
@@ -142,20 +145,26 @@ def factory_filing(business, data_dict, filing_date=FROZEN_DATETIME):
     return filing
 
 
-def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME):
+def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, payment_token=None):
     """Create a completed filing."""
-    filing = Filing()
-    filing.business_id = business.id
-    filing.filing_date = filing_date
-    filing.filing_json = data_dict
-    filing.save()
+    if not payment_token:
+        payment_token = str(base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace('=', '')
 
-    uow = versioning_manager.unit_of_work(db.session)
-    transaction = uow.create_transaction(db.session)
-    filing.transaction_id = transaction.id
-    filing.payment_token = 1
-    filing.payment_completion_date = (datetime.now()).replace(tzinfo=timezone.utc)
-    filing.save()
+    with freeze_time(filing_date):
+
+        filing = Filing()
+        filing.business_id = business.id
+        filing.filing_date = filing_date
+        filing.filing_json = data_dict
+        filing.save()
+
+        uow = versioning_manager.unit_of_work(db.session)
+        transaction = uow.create_transaction(db.session)
+        filing.transaction_id = transaction.id
+        filing.payment_token = payment_token
+        filing.effective_date = filing_date
+        filing.payment_completion_date = filing_date
+        filing.save()
     return filing
 
 
