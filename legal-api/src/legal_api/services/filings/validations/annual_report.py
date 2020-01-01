@@ -88,7 +88,7 @@ def validate_ar_year(*, business: Business, current_annual_report: Dict) -> Erro
     return None
 
 
-# pylint: disable=too-many-return-statements; lots of rules to individually return from
+# pylint: disable=too-many-return-statements,unused-argument; lots of rules to individually return from
 def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, List[Dict]]:
     """Validate the AGM year."""
     ar_date = get_date(annual_report,

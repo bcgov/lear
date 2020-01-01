@@ -18,8 +18,9 @@ from enum import Enum
 from http import HTTPStatus
 from typing import List
 
-from sqlalchemy import desc, event, inspect
-from sqlalchemy.dialects.postgresql import JSONB
+from flask import current_app
+from sqlalchemy import desc, event, inspect, or_
+from sqlalchemy.dialects.postgresql import JSONB, dialect
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
@@ -289,6 +290,33 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type == filing_type). \
             filter(Filing._status == Filing.Status.COMPLETED.value)
+
+        return filing.one_or_none()
+
+    @staticmethod
+    def get_most_recent_legal_filing(business_id: str, filing_type: str):
+        """Return the most recent filing containing the legal_filing type."""
+        # Filing._filing_json.has_any(filing_type))).\
+
+        expr = Filing._filing_json[('filing', filing_type)]
+        max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
+            filter(Filing.business_id == business_id).\
+            filter(or_(Filing._filing_type == filing_type,
+                       expr.label('legal_filing_type').isnot(None))).\
+            filter(Filing._status == Filing.Status.COMPLETED.value).\
+            subquery()
+
+        filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._status == Filing.Status.COMPLETED.value)
+
+        # As the JSON query is new for most, leaving the debug stmnt
+        # that dumps the query for easier debugging.
+        current_app.logger.debug(
+            str(filing.statement.compile(
+                dialect=dialect(),
+                compile_kwargs={'literal_binds': True}))
+        )
 
         return filing.one_or_none()
 
