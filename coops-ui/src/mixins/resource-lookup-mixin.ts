@@ -41,7 +41,34 @@ export default class ResourceLookupMixin extends Vue {
       return ''
     }
 
-    directorWarning () {
-      return ''
+    directorWarning (directors: Array<any>): Object {
+      const configSection = this.configObject.flows.find(x => x.feeCode === 'OTCDR').warnings
+      let errors = []
+
+      if (configSection.bcResident != null) {
+        if (directors.filter(x => x.cessationDate != null && (x.deliveryAddress.addressRegion !== 'BC' ||
+        x.mailingAddress.addressRegion !== 'BC')).length > 0) {
+          errors.push({ 'title': configSection.bcResident.title, 'msg': configSection.bcResident.message })
+        }
+      }
+
+      if (configSection.canadianResident != null) {
+        if (directors.filter(x => x.cessationDate != null && (x.deliveryAddress.addressCountry !== 'CA' ||
+        x.mailingAddress.addressCountry !== 'CA')).length > 0) {
+          errors.push({ 'title': configSection.canadianResident.title, 'msg': configSection.canadianResident.message })
+        }
+      }
+
+      if (configSection.minDirectors != null) {
+        const min = configSection.minDirectors.count
+        if (directors.filter(x => x.cessationDate == null).length < min) {
+          errors.push({ 'title': configSection.minDirectors.title, 'msg': configSection.minDirectors.message })
+        }
+      }
+
+      if (errors.length > 0) {
+        return errors[0]
+      }
+      return null
     }
 }

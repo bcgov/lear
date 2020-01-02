@@ -36,7 +36,7 @@
         </v-btn>
             </v-col>
             <v-col cols="5">
-              <WarningPopover v-if="lastValidDirector > -1"/>
+              <WarningPopover :dialogObj="complianceMsg" />
             </v-col>
           </v-row>
         </v-container>
@@ -479,13 +479,14 @@
                  <v-alert
       close-text="Close Alert"
       dismissible
-      icon="mdi-information"
+      icon="mdi-information-outline"
       class="white-background"
       :id="'director-' + director.id + '-alert'"
-      v-show="director.id == lastValidDirector"
+      v-if="complianceMsg && director.id == lastValidDirector"
     >
-              Test
-                 </v-alert>
+    <h3>{{ complianceMsg.title }}</h3>
+    <p>{{ complianceMsg.msg }}</p>
+      </v-alert>
         </li>
       </ul>
     </v-card>
@@ -504,7 +505,7 @@ import { WarningPopover } from '@/components/dialogs'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
 // Mixins
-import { DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin, DirectorMixin } from '@/mixins'
+import { DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin, DirectorMixin, ResourceLookupMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'
@@ -527,7 +528,8 @@ import { FormType, BaseAddressType } from '@/interfaces'
     ...mapGetters(['lastCODFilingDate'])
   }
 })
-export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin, DirectorMixin) {
+export default class Directors extends Mixins(DateMixin, ExternalMixin,
+  EntityFilterMixin, CommonMixin, DirectorMixin, ResourceLookupMixin) {
   // To fix "property X does not exist on type Y" errors, annotate types for referenced components.
   // ref: https://github.com/vuejs/vetur/issues/1414
   $refs!: {
@@ -564,6 +566,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private activeDirectorToDelete = null
   private cessationDateTemp = null
   private isEditingDirector = false
+  private isCompliant = true
+
   private director = {
     id: '',
     officer: { firstName: '', lastName: '', middleInitial: '' },
@@ -633,6 +637,14 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     }
   }
 
+  private get complianceMsg (): object {
+    this.isCompliant = true
+    const complianceMsg = this.directorWarning(this.directors)
+    if (complianceMsg != null) {
+      this.isCompliant = false
+    }
+    return complianceMsg
+  }
   /**
    * The array of validations rules for a director's first name.
    * NB: do not validate inter word spacing because the Legal db needs to support
@@ -1357,6 +1369,11 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     this.emitDirectorEditInProgress(val)
   }
 
+  @Watch('complianceMsg')
+  private onCertifiedMsgChange (val: any): void {
+    this.emitCertifiedDialogMsg(val)
+  }
+
   /**
    * Emits an event containing the earliest director change date.
    */
@@ -1398,6 +1415,12 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    */
   @Emit('directorEditAction')
   private emitDirectorEditInProgress (val: boolean): void { }
+
+  /**
+   * Emits an event that indicates whether the director edit is in progress.
+   */
+  @Emit('certifiedDialogMsg')
+  private emitCertifiedDialogMsg (val: any): void { }
 }
 </script>
 

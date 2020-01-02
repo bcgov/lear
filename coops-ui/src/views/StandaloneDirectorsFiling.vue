@@ -77,6 +77,7 @@
                     @directorFormValid="directorFormValid=$event"
                     @allDirectors="allDirectors=$event"
                     @directorEditAction="directorEditInProgress=$event"
+                    @certifiedDialogMsg="certifiedDialogMsg=$event"
                     :asOfDate="codDate"
                   />
                 </section>
@@ -181,7 +182,7 @@
                 <header>
                   <h1 id="filing-header-review">Review: Director Change </h1>
                 </header>
-                <section>
+                <section v-if="certifiedDialogMsg">
                   <v-alert type="info" outlined
                   icon="mdi-information"
                   class="white-background"
@@ -189,6 +190,8 @@
                   <v-card flat>
                     <v-list-item>
                       <v-list-item-content>
+                        <h3>{{ certifiedDialogMsg.title }}</h3>
+                        <p>{{ certifiedDialogMsg.msg }}</p>
                       </v-list-item-content>
                     </v-list-item>
                   </v-card>
@@ -360,7 +363,8 @@ export default {
       totalFee: 0,
       // EntityTypes Enum
       EntityTypes,
-      FilingCodes
+      FilingCodes,
+      certifiedDialogMsg: null
     }
   },
 

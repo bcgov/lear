@@ -36,9 +36,10 @@ export const configJson = [{
            'See section 127 of the Business Corporations Act.',
       warnings: {
         minDirectors: {
+          count: 1,
           title: 'One Director Required',
-          message: 'A minimum of one director is required, to be in compliance with the' +
-            'Business Corporations Act (Section xx). You can continue your filing, but you must' +
+          message: 'A minimum of one director is required, to be in compliance with the ' +
+            'Business Corporations Act (Section xx). You can continue your filing, but you must ' +
             'become compliant with the  Business Corporations Act. as soon as possible.'
         },
         bcResident: null,
@@ -77,6 +78,7 @@ export const configJson = [{
            'See section 78 of the Cooperative Associations Act.',
       warnings: {
         minDirectors: {
+          count: 3,
           title: 'Minimum Three Directors Required',
           message: 'A minimum of three directors are required, to be in compliance with the Cooperative ' +
             'Association Act (Section xx). You can continue your filing, but you must become compliant ' +

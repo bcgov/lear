@@ -1,6 +1,5 @@
 <template>
-  <v-menu
-    v-model="menu"
+  <v-menu v-if="dialogObj != null"
     :close-on-content-click="false"
     :nudge-width="200"
     offset-y
@@ -8,15 +7,13 @@
   >
     <template v-slot:activator="{ on }">
       <span v-on="on">
-        <v-icon>mdi-information-outline</v-icon>Minimum three directors required
+        <v-icon  style="vertical-align: bottom">mdi-information-outline</v-icon>{{ dialogObj.title }}
       </span>
     </template>
     <v-card>
       <v-list-item>
         <v-list-item-content>
-          A minimum of three directors are required, to be in compliance with the Cooperative
-          Association Act (Section xx).You can continue your filing, but you must become
-          compliant with the Cooperative Association Act as soon as possible.
+         {{ dialogObj.msg }}
         </v-list-item-content>
       </v-list-item>
     </v-card>
@@ -28,6 +25,7 @@ import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 
 @Component({})
 export default class WarningPopover extends Vue {
-
+@Prop({ default: null })
+private dialogObj: any
 }
 </script>
