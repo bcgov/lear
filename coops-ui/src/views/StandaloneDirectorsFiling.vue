@@ -188,12 +188,8 @@
                   >
                   <v-card flat>
                     <v-list-item>
-                        The following are required for your Cooperative Association to be in compliance with the Cooperative Association Act (Section xx):
-                    </v-list-item>
-                    <v-list-item>
-                      A minimum of three directors,
-                      One director ordinarily resident in British Columbia,
-                      A majority of directors ordinarily resident in Canada.
+                      <v-list-item-content>
+                      </v-list-item-content>
                     </v-list-item>
                   </v-card>
                 </v-alert>
