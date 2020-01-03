@@ -148,7 +148,6 @@ def run():
             if not filings:
                 application.logger.debug(f'No completed filings to send to colin.')
             for filing in filings:
-                print(filing)
                 filing_id = filing['filingId']
                 colin_id = send_filing(app=application, filing=filing, filing_id=filing_id)
                 update = update_colin_id(app=application, filing_id=filing_id, colin_id=colin_id, token=token)
