@@ -1,7 +1,7 @@
 {% if listOfDirectors is defined %}
 
 {# only show Appointed and Ceased directors if filing did not come from Colin #}
-{% if colin_event_id is none %}
+{% if not source == 'COLIN' %}
 
     {# APPOINTED #}
 

@@ -463,14 +463,18 @@ class InternalFilings(Resource):
     @cors.crossdomain(origin='*')
     def get(status=None):
         """Get filings to send to colin."""
-        filings = []
+        pending_filings = []
 
         if status is None:
             pending_filings = Filing.get_completed_filings_for_colin()
         elif status == Filing.Status.PAID.value:
             pending_filings = Filing.get_all_filings_by_status(status)
 
-        filings = [x.json for x in pending_filings]
+        filings = []
+        for filing in pending_filings:
+            filing_json = filing.filing_json
+            filing_json['filingId'] = filing.id
+            filings.append(filing_json)
         return jsonify(filings), HTTPStatus.OK
 
     @staticmethod

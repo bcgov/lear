@@ -48,7 +48,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         PENDING = 'PENDING'
 
     class Source(Enum):
-        """Render an Enum of the Filing Sources"""
+        """Render an Enum of the Filing Sources."""
 
         COLIN = 'COLIN'
         LEAR = 'LEAR'
@@ -75,7 +75,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     colin_event_id = db.Column('colin_event_id', db.Integer)
     _status = db.Column('status', db.String(10), default=Status.DRAFT)
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
-    source = db.Column('source', db.String(15), default=Source.LEAR)
+    _source = db.Column('source', db.String(15), default=Source.LEAR)
 
     # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
@@ -146,6 +146,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def status(self):
         """Property containing the filing status."""
         return self._status
+
+    @property
+    def source(self):
+        """Property containing the filing status."""
+        return self._source
 
     @hybrid_property
     def filing_json(self):
@@ -400,12 +405,26 @@ def block_filing_delete_listener_function(mapper, connection, target):  # pylint
 
 
 @event.listens_for(Filing, 'before_insert')
+def set_source(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
+    """Set the source of the filing to COLIN if it has a colin event id set."""
+    # imported User here to avoid conflict with filing_submitter relationship.
+    # needed because the relationship hasn't been set yet for this filing.
+    from legal_api.models import User
+    filing = target
+    user = User.find_by_id(filing.submitter_id)
+    # if it is an epoch filing and there is no user then it was applied by the data-loader
+    if (Filing.filing_type == 'lear_epoch' and not user) or (user and user.username == 'coops-updater-job'):
+        filing._source = Filing.Source.COLIN.value  # pylint: disable=protected-access
+    else:
+        filing._source = Filing.Source.LEAR.value   # pylint: disable=protected-access
+
+
+@event.listens_for(Filing, 'before_insert')
 @event.listens_for(Filing, 'before_update')
 def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
     """Set the state of the filing, based upon column values."""
     filing = target
     # changes are part of the class and are not externalized
-
     if filing.filing_type == 'lear_epoch':
         filing._status = Filing.Status.EPOCH.value  # pylint: disable=protected-access
 

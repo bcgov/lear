@@ -196,7 +196,7 @@ def test_get_internal_filings(session, client, jwt):
     rv = client.get(f'/api/v1/businesses/internal/filings')
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json) == 1
-    assert rv.json[0]['filing']['header']['filingId'] == filing1.id
+    assert rv.json[0]['filingId'] == filing1.id
 
 
 def test_patch_internal_filings(session, client, jwt):

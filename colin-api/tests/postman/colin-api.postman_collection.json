@@ -3550,7 +3550,7 @@
 									"",
 									"pm.test(\"Data reflects the changes in the COD filing\", () => {",
 									"    var directors = jsonData.filing.changeOfDirectors.directors",
-									"    var ceased = [\"LAUREN\", \"TESTER2\", \"CUSTOM2\"]",
+									"    var ceased = [\"LAUREN\", \"CUSTOM2\"]",
 									"    var current = [\"MICHELLE\", \"PHIL\", \"GARNET\", \"JAMES\", \"SIMON\", \"DIANA\", \"DAVID\", \"CUSTOM1\"]",
 									"    for (var i=0; i<directors.length; i++) {",
 									"        pm.expect(directors[i].appointmentDate).to.exist",
