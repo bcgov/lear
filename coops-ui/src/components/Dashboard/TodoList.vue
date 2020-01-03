@@ -112,7 +112,7 @@
               <div style="width:100%">
                 <p class="date-subtitle"
                   v-if="entityFilter(EntityTypes.BCOMP) && isConfirmEnabled(item.type, item.status)"
-                >due {{ item.nextArDate }}</p>
+                >Due {{ item.nextArDate }}</p>
 
                 <!-- pre-empt any buttons below -->
                 <template v-if="inProcessFiling !== undefined && inProcessFiling === item.id">
