@@ -698,13 +698,13 @@ describe('Appoint New Director tests', () => {
     }, 250)
   })
 
-  it('displays error for invalid First Name - multiple inline spaces', done => {
+  it('allows First Name with multiple inline spaces', done => {
     setValue(vm, '#new-director__first-name', 'First  First')
     expect(vm.director.officer.firstName).toBe('First  First')
 
-    // verify that validation error is displayed
+    // verify that validation error is not displayed
     setTimeout(() => {
-      expect(vm.$el.querySelectorAll('.v-messages')[0].textContent).toContain('Invalid word spacing')
+      expect(vm.$el.querySelectorAll('.v-messages')[0].textContent).toBe('')
       done()
     }, 250)
   })
@@ -742,13 +742,13 @@ describe('Appoint New Director tests', () => {
     }, 250)
   })
 
-  it('displays error for invalid Middle Initial - multiple inline spaces', done => {
+  it('allows Middle Initial with multiple inline spaces', done => {
     setValue(vm, '#new-director__middle-initial', 'M  M')
     expect(vm.director.officer.middleInitial).toBe('M  M')
 
     // verify that validation error is displayed
     setTimeout(() => {
-      expect(vm.$el.querySelectorAll('.v-messages')[1].textContent).toContain('Invalid word spacing')
+      expect(vm.$el.querySelectorAll('.v-messages')[1].textContent).toBe('')
       done()
     }, 250)
   })
@@ -786,13 +786,13 @@ describe('Appoint New Director tests', () => {
     }, 250)
   })
 
-  it('displays error for invalid Last Name - multiple inline spaces', done => {
+  it('allows Last Name with multiple inline spaces', done => {
     setValue(vm, '#new-director__last-name', 'Last  Last')
     expect(vm.director.officer.lastName).toBe('Last  Last')
 
     // verify that validation error is displayed
     setTimeout(() => {
-      expect(vm.$el.querySelectorAll('.v-messages')[2].textContent).toContain('Invalid word spacing')
+      expect(vm.$el.querySelectorAll('.v-messages')[2].textContent).toBe('')
       done()
     }, 250)
   })

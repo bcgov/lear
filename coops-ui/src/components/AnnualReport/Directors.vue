@@ -607,31 +607,34 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
 
   /**
    * The array of validations rules for a director's first name.
+   * NB: do not validate inter word spacing because the Legal db needs to support
+   *     such records in order to correctly update Colin
    */
   private readonly directorFirstNameRules: Array<Function> = [
     v => !!v || 'A first name is required',
     v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
-    v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
-    v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
+    v => !/\s$/g.test(v) || 'Invalid spaces' // trailing spaces
   ]
 
   /**
    * The array of validations rules for a director's middle initial.
+   * NB: do not validate inter word spacing because the Legal db needs to support
+   *     such records in order to correctly update Colin
    */
   private readonly directorMiddleInitialRules: Array<Function> = [
     v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
-    v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
-    v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
+    v => !/\s$/g.test(v) || 'Invalid spaces' // trailing spaces
   ]
 
   /**
    * The array of validations rules for a director's last name.
+   * NB: do not validate inter word spacing because the Legal db needs to support
+   *     such records in order to correctly update Colin
    */
   private readonly directorLastNameRules: Array<Function> = [
     v => !!v || 'A last name is required',
     v => !/^\s/g.test(v) || 'Invalid spaces', // leading spaces
-    v => !/\s$/g.test(v) || 'Invalid spaces', // trailing spaces
-    v => !/\s\s/g.test(v) || 'Invalid word spacing' // multiple inline spaces
+    v => !/\s$/g.test(v) || 'Invalid spaces' // trailing spaces
   ]
 
   // Local definitions of computed properties for static type checking.
