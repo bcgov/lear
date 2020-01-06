@@ -5,12 +5,25 @@
       attach="#todo-list"
     />
 
+    <ConfirmDialog
+      ref="confirmCancelPaymentDialog"
+      attach="#todo-list"
+    />
+
     <DeleteErrorDialog
       :dialog="deleteErrorDialog"
       :errors="deleteErrors"
       :warnings="deleteWarnings"
       @okay="resetErrors"
       attach="#todo-list"
+    />
+
+    <CancelPaymentErrorDialog
+      :dialog="cancelPaymentErrorDialog"
+      :errors="cancelPaymentErrors"
+      @okay="resetCancelPaymentErrors"
+      attach="#todo-list"
+      data-test-id="cancel-pay-error-dialog"
     />
 
     <v-expansion-panels v-if="taskItems && taskItems.length > 0" accordion>
@@ -30,7 +43,7 @@
               <div class="list-item__title">{{item.title}}</div>
 
               <div class="bcorps-ar-subtitle"
-                v-if="entityFilter(EntityTypes.BCORP) && isConfirmEnabled(item.type, item.status)"
+                v-if="entityFilter(EntityTypes.BCOMP) && isConfirmEnabled(item.type, item.status)"
               >
                 <p>Verify your Office Address and Current Directors before filing your Annual Report.</p>
                 <v-checkbox
@@ -96,9 +109,9 @@
             </div>
 
             <div class="list-item__actions">
-              <v-col>
+              <div style="width:100%">
                 <p class="date-subtitle"
-                  v-if="entityFilter(EntityTypes.BCORP) && isConfirmEnabled(item.type, item.status)"
+                  v-if="entityFilter(EntityTypes.BCOMP) && isConfirmEnabled(item.type, item.status)"
                 >due {{ item.nextArDate }}</p>
 
                 <!-- pre-empt any buttons below -->
@@ -131,14 +144,32 @@
                   </v-menu>
                 </template>
 
-                <v-btn v-else-if="isPending(item)"
-                  class="btn-resume-payment"
-                  color="primary"
-                  :disabled="!item.enabled"
-                  @click.native.stop="doResumePayment(item)"
-                >
-                  <span>Resume Payment</span>
-                </v-btn>
+                <template v-else-if="isPending(item)">
+                  <v-btn class="btn-resume-payment"
+                    color="primary"
+                    :disabled="!item.enabled"
+                    @click.native.stop="doResumePayment(item)"
+                    data-test-id="btn-resume-payment">
+                    <span>Resume Payment</span>
+                    <!-- Cancel Payment -->
+                  </v-btn>
+                  <v-menu offset-y left>
+                    <template v-slot:activator="{ on }">
+                      <v-btn color="primary"
+                        v-on="on" id="pending-item-menu-activator" :disabled="!item.enabled"
+                        class="actions__more-actions__btn px-0"
+                      @click.native.stop  data-test-id="btn-pending-filing-menu">
+                        <v-icon>mdi-menu-down</v-icon>
+                      </v-btn>
+                    </template>
+                    <v-list ref="pending_actions" class="actions__more-actions">
+                      <v-list-item id="btn-cancel-payment" @click="confirmCancelPayment(item)"
+                      data-test-id="btn-cancel-payment">
+                        <v-list-item-title>Cancel Payment</v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
+                </template>
 
                 <v-btn v-else-if="isError(item)"
                   class="btn-retry-payment"
@@ -161,7 +192,7 @@
                 >
                   <span>File Now</span>
                 </v-btn>
-              </v-col>
+              </div>
             </div>
           </div>
         </v-expansion-panel-header>
@@ -210,7 +241,7 @@ import axios from '@/axios-auth'
 import { mapState, mapActions } from 'vuex'
 
 // Dialogs
-import { ConfirmDialog, DeleteErrorDialog } from '@/components/dialogs'
+import { ConfirmDialog, DeleteErrorDialog, CancelPaymentErrorDialog } from '@/components/dialogs'
 
 // Mixins
 import { ExternalMixin, EntityFilterMixin, DateMixin } from '@/mixins'
@@ -226,7 +257,8 @@ export default {
 
   components: {
     DeleteErrorDialog,
-    ConfirmDialog
+    ConfirmDialog,
+    CancelPaymentErrorDialog
   },
 
   mixins: [ExternalMixin, EntityFilterMixin, DateMixin],
@@ -237,6 +269,8 @@ export default {
       deleteErrors: [],
       deleteWarnings: [],
       deleteErrorDialog: false,
+      cancelPaymentErrors: [],
+      cancelPaymentErrorDialog: false,
       confirmCheckbox: false,
       confirmEnabled: false,
 
@@ -533,8 +567,56 @@ export default {
       this.deleteWarnings = []
     },
 
+    resetCancelPaymentErrors () {
+      this.cancelPaymentErrorDialog = false
+      this.cancelPaymentErrors = []
+    },
+
     isConfirmEnabled (type, status) {
       return ((type === ANNUALREPORT) && (status === FilingStatus.NEW))
+    },
+
+    confirmCancelPayment (item) {
+      // open confirmation dialog and wait for response
+      this.$refs.confirmCancelPaymentDialog.open(
+        'Cancel Payment?',
+        'Cancel payment for your ' + item.draftTitle + '?',
+        {
+          width: '40rem',
+          persistent: true,
+          yes: 'Cancel Payment',
+          no: null,
+          cancel: 'Don\'t Cancel'
+        }
+      ).then(async (confirm) => {
+        // if we get here, Yes or No was clicked
+        if (confirm) {
+          await this.cancelPaymentAndSetToDraft(item)
+        } else {
+          // do nothing
+        }
+      }).catch(() => {
+        // if we get here, Cancel was clicked - do nothing
+      })
+    },
+
+    async cancelPaymentAndSetToDraft (item) {
+      let url = this.entityIncNo + '/filings/' + item.id
+      await axios.patch(url, {}).then(res => {
+        if (!res) { throw new Error('invalid API response') }
+
+        // reload dashboard
+        this.setTriggerDashboardReload(true)
+      }).catch(error => {
+        if (error && error.response) {
+          if (error.response.data.errors) {
+            this.cancelPaymentErrors = error.response.data.errors
+          }
+          this.cancelPaymentErrorDialog = true
+        } else {
+          this.cancelPaymentErrorDialog = true
+        }
+      })
     }
   },
 
@@ -597,6 +679,11 @@ export default {
 
   .btn-draft-resume {
     min-width: 103px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .btn-resume-payment {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
   }

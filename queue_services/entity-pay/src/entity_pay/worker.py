@@ -137,11 +137,10 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
     except OperationalError as err:
         logger.error('Queue Blocked - Database Issue: %s', json.dumps(payment_token), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue
-    except FilingException as err:
-        logger.error('Queue Error - cannot find filing: %s'
-                     '\n\nThis message has been put back on the queue for reprocessing.',
-                     json.dumps(payment_token), exc_info=True)
-        raise err  # we don't want to handle the error, so that the message gets put back on the queue
+    except FilingException:
+        # log to sentry and absorb the error, ie: do NOT raise it, otherwise the message would be put back on the queue
+        capture_message('Queue Error: cannot find filing: %s' % json.dumps(payment_token), level='error')
+        logger.error('Queue Error - cannot find filing: %s', json.dumps(payment_token), exc_info=True)
     except (QueueException, Exception):  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
         capture_message('Queue Error:' + json.dumps(payment_token), level='error')

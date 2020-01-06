@@ -2,13 +2,13 @@
   <div id="standalone-directors">
     <ConfirmDialog
       ref="confirm"
-      attach="standalone-directors"
+      attach="#standalone-directors"
     />
 
     <ResumeErrorDialog
       :dialog="resumeErrorDialog"
       @exit="navigateToDashboard"
-      attach="standalone-directors"
+      attach="#standalone-directors"
     />
 
     <SaveErrorDialog
@@ -20,13 +20,13 @@
       @exit="navigateToDashboard"
       @retry="onClickFilePay"
       @okay="resetErrors"
-      attach="standalone-directors"
+      attach="#standalone-directors"
     />
 
     <PaymentErrorDialog
       :dialog="paymentErrorDialog"
       @exit="navigateToDashboard"
-      attach="standalone-directors"
+      attach="#standalone-directors"
     />
 
     <!-- Initial Page Load Transition -->
@@ -52,7 +52,7 @@
                       one for each unique date.</p>
 
                   <v-alert type="info" outlined
-                    v-if="!entityFilter(EntityTypes.BCORP)"
+                    v-if="!entityFilter(EntityTypes.BCOMP)"
                     icon="mdi-information"
                     class="white-background"
                   >

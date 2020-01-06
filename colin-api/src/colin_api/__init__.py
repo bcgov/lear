@@ -22,7 +22,7 @@ from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 from flask import Flask
 from flask_jwt_oidc import JwtManager
 
-import config
+from colin_api import config
 from colin_api.resources import API_BLUEPRINT, OPS_BLUEPRINT
 from colin_api.utils.logging import setup_logging
 from colin_api.utils.run_version import get_run_version
@@ -46,7 +46,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
         )
     app.register_blueprint(API_BLUEPRINT)
     app.register_blueprint(OPS_BLUEPRINT)
-    setup_jwt_manager(app, jwt)
+    # setup_jwt_manager(app, jwt)
 
     @app.after_request
     def add_version(response):  # pylint: disable=unused-variable

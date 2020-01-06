@@ -116,9 +116,9 @@ describe('AddressListSm', () => {
     })
   })
 
-  it('displays all addresses when a BCORP', async done => {
+  it('displays all addresses when a BCOMP', async done => {
     // Init Store
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
     store.state.registeredAddress = {
       'deliveryAddress':
         {
@@ -188,9 +188,9 @@ describe('AddressListSm', () => {
     })
   })
 
-  it('displays "same as above" when a BCORP', async done => {
+  it('displays "same as above" when a BCOMP', async done => {
     // Init Store
-    store.state.entityType = EntityTypes.BCORP
+    store.state.entityType = EntityTypes.BCOMP
     store.state.registeredAddress = {
       'deliveryAddress':
         {

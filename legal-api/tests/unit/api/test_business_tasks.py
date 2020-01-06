@@ -22,6 +22,7 @@ from http import HTTPStatus
 import datedelta
 
 from legal_api.services.authz import STAFF_ROLE
+from tests import integration_payment
 from tests.unit.models import factory_business, factory_business_mailing_address, factory_filing, factory_pending_filing
 from tests.unit.services.utils import create_header
 
@@ -94,6 +95,7 @@ def test_bcorps_get_tasks_no_filings(session, client):
     assert len(rv.json.get('tasks')) == 0  # To-do for the current year
 
 
+@integration_payment
 def test_bcorps_get_tasks_pending_filings(session, client, jwt):
     """Assert the correct number of todo items are returned when there is an AR filing pending."""
     identifier = 'CP7654321'
@@ -192,5 +194,5 @@ def test_get_tasks_error_filings(session, client, jwt):
     # test endpoint returned filing in tasks call
     rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
     assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json['tasks']) == 1
+    assert len(rv.json['tasks']) == 2
     assert rv.json['tasks'][0]['task']['filing']['header']['filingId'] == filing.id

@@ -27,6 +27,9 @@ describe('CODDate', () => {
     // init store
     store.state.currentDate = '2019/07/15'
 
+    // set Last Filing Date and verify new Min Date
+    store.state.entityFoundingDate = '2018-03-01T00:00:00'
+
     wrapper = mount(CODDate, { store, vuetify })
     vm = wrapper.vm as any
   })
@@ -60,7 +63,7 @@ describe('CODDate', () => {
     expect(vm.$store.state.lastPreLoadFilingDate).toBeNull()
 
     // verify default Min Date
-    expect(vm.minDate).toBe(null)
+    expect(vm.minDate).toBe('2018-03-01')
 
     // set Last Filing Date and verify new Min Date
     store.state.filings = [
@@ -72,6 +75,13 @@ describe('CODDate', () => {
     // cleanup
     store.state.filings = []
     store.state.lastPreLoadFilingDate = null
+  })
+
+  it('sets Min Date to entity founding date if no filings are present', () => {
+    // verify initial state
+    expect(vm.$store.state.filings).toEqual([])
+
+    expect(vm.minDate).toBe('2018-03-01')
   })
 
   it('sets Max Date to current date in store', () => {

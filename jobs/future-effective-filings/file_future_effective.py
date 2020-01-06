@@ -156,8 +156,6 @@ if __name__ == "__main__":
     try:
         event_loop = asyncio.get_event_loop()
         event_loop.run_until_complete(run(event_loop))
-        event_loop.run_forever()
     except Exception as err:  # pylint: disable=broad-except; Catching all errors from the frameworks
         print('problem in running the service: %s', err, stack_info=True, exc_info=True)
-    finally:
-        event_loop.close()
+

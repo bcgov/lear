@@ -42,9 +42,9 @@ from .api_namespace import API
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
 
-@cors_preflight('GET, POST, PUT, DELETE')
+@cors_preflight('GET, POST, PUT, DELETE, PATCH')
 @API.route('/<string:identifier>/filings', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
-@API.route('/<string:identifier>/filings/<int:filing_id>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+@API.route('/<string:identifier>/filings/<int:filing_id>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'])
 class ListFilingResource(Resource):
     """Business Filings service."""
 
@@ -185,6 +185,45 @@ class ListFilingResource(Resource):
         return {}, HTTPStatus.NOT_IMPLEMENTED
 
     @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_auth
+    def patch(identifier, filing_id=None):
+        """Cancel the payment and resets the filing status to DRAFT."""
+        if not filing_id:
+            return ({'message':
+                     _('No filing id provided for:') + identifier},
+                    HTTPStatus.BAD_REQUEST)
+
+        # check authorization
+        if not authorized(identifier, jwt, action=['edit']):
+            return jsonify({'message':
+                            _('You are not authorized to delete a filing for:') + identifier}), \
+                HTTPStatus.UNAUTHORIZED
+
+        filing = Business.get_filing_by_id(identifier, filing_id)
+
+        if not filing:
+            return jsonify({'message': ('Filing Not Found.')}), \
+                HTTPStatus.NOT_FOUND
+
+        try:
+            payment_svc_url = '{}/{}'.format(current_app.config.get('PAYMENT_SVC_URL'), filing.payment_token)
+            token = jwt.get_token_auth_header()
+            headers = {'Authorization': 'Bearer ' + token}
+            rv = requests.delete(url=payment_svc_url, headers=headers, timeout=20.0)
+            if rv.status_code == HTTPStatus.OK or rv.status_code == HTTPStatus.ACCEPTED:
+                filing.reset_filing_to_draft()
+
+        except (exceptions.ConnectionError, exceptions.Timeout) as err:
+            current_app.logger.error(f'Payment connection failure for {identifier}: filing:{filing.id}', err)
+            return {'message': 'Unable to cancel payment for the filing.'}, HTTPStatus.INTERNAL_SERVER_ERROR
+
+        except BusinessException as err:
+            return {'message': err.error}, err.status_code
+
+        return jsonify(filing.json), HTTPStatus.ACCEPTED
+
+    @staticmethod
     def _put_basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json()
@@ -289,11 +328,10 @@ class ListFilingResource(Resource):
             else:
                 filing.filing_date = datetime.datetime.utcnow()
 
-            # for coops, set effective date as set in json; otherwise leave as default
-            if business.legal_type == 'CP':
-                if filing.filing_json['filing']['header'].get('effectiveDate', None):
-                    filing.effective_date = \
-                        datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['effectiveDate'])
+            # for any legal type, set effective date as set in json; otherwise leave as default
+            if filing.filing_json['filing']['header'].get('effectiveDate', None):
+                filing.effective_date = \
+                    datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['effectiveDate'])
 
             filing.save()
         except BusinessException as err:

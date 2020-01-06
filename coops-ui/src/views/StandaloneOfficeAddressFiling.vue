@@ -2,13 +2,13 @@
   <div id="standalone-office-address">
     <ConfirmDialog
       ref="confirm"
-      attach="standalone-office-address"
+      attach="#standalone-office-address"
     />
 
     <ResumeErrorDialog
       :dialog="resumeErrorDialog"
       @exit="navigateToDashboard"
-      attach="standalone-office-address"
+      attach="#standalone-office-address"
     />
 
     <SaveErrorDialog
@@ -20,13 +20,13 @@
       @exit="navigateToDashboard"
       @retry="onClickFilePay"
       @okay="resetErrors"
-      attach="standalone-office-address"
+      attach="#standalone-office-address"
     />
 
     <PaymentErrorDialog
       :dialog="paymentErrorDialog"
       @exit="navigateToDashboard"
-      attach="standalone-office-address"
+      attach="#standalone-office-address"
     />
 
     <!-- Initial Page Load Transition -->
@@ -46,12 +46,12 @@
 
               <p>
                 <span>Please change your Registered Office Address</span>
-                <span v-if="entityFilter(EntityTypes.BCORP)"> and Records Address</span>
+                <span v-if="entityFilter(EntityTypes.BCOMP)"> and Records Address</span>
                 <span>.</span>
               </p>
 
               <v-alert type="info" outlined
-                v-if="entityFilter(EntityTypes.BCORP)"
+                v-if="entityFilter(EntityTypes.BCOMP)"
                 icon="mdi-information"
                 class="white-background"
               >

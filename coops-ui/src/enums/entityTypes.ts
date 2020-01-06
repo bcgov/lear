@@ -1,4 +1,4 @@
 export enum EntityTypes {
   COOP = 'CP',
-  BCORP = 'BC'
+  BCOMP = 'BC'
 }

@@ -78,11 +78,16 @@ export default class DateMixin extends Vue {
   convertUTCTimeToLocalTime (date: string): string {
     if (!date) return null
     const UTCTime: string = date.slice(0, 19) + 'Z'
-    return new Date(UTCTime).toLocaleDateString('en', {
+    const options = {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
       hour: 'numeric',
-      minute: '2-digit',
+      minute: 'numeric',
+      second: 'numeric',
       hour12: true,
       timeZone: 'America/Vancouver'
-    })
+    }
+    return new Intl.DateTimeFormat('en-US', options).format(new Date(UTCTime))
   }
 }

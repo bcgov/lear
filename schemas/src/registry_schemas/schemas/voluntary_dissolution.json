@@ -11,8 +11,7 @@
         "voluntaryDissolution": {
             "type": "object",
             "required": [
-                "dissolutionDate",
-                "hasLiabilities"
+                "dissolutionDate"
             ],
             "properties": {
                 "dissolutionDate": {
