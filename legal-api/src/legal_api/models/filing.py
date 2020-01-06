@@ -308,7 +308,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
             filter(Filing.business_id == business_id). \
-            filter(Filing._status == Filing.Status.COMPLETED.value)
+            filter(Filing._status == Filing.Status.COMPLETED.value). \
+            order_by(Filing.id.desc())
 
         # As the JSON query is new for most, leaving the debug stmnt
         # that dumps the query for easier debugging.
@@ -318,7 +319,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 compile_kwargs={'literal_binds': True}))
         )
 
-        return filing.one_or_none()
+        return filing.first()
 
     @staticmethod
     def get_completed_filings_for_colin():
