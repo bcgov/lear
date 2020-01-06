@@ -15,7 +15,7 @@ import '@/registerServiceWorker'
 import '@/assets/styles/base.scss'
 import '@/assets/styles/layout.scss'
 import '@/assets/styles/overrides.scss'
-import TokenServices from '@/services/token-services'
+import TokenServices from 'sbc-common-components/src/services/token.services'
 import App from '@/App.vue'
 
 // get rid of "You are running Vue in development mode" console message
