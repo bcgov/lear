@@ -176,7 +176,7 @@
           <span>Appointed/Elected</span>
         </v-subheader>
         <li class="director-list-item"
-          v-for="(director, index) in orderBy(directors, 'id', -1)"
+          v-for="(director, index) in directors"
           :id="'director-' + director.id"
           :class="{ 'remove' : !isActive(director) || !isActionable(director)}"
           :key="index"
@@ -968,7 +968,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     if (this.director.cessationDate !== null && this.director.cessationDate !== undefined) {
       this.addAction(newDirector, CEASED)
     }
-    this.directors.push(newDirector)
+    this.directors.unshift(newDirector)
   }
 
   /**
@@ -1056,7 +1056,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    */
   private saveEditDirector (index, id): void {
     // get current director
-    let director = this.directors[id - 1]
+    let director = this.directors.filter(el => el.id === id)[0]
 
     var mainFormIsValid = this.$refs.editDirectorForm[index].validate()
     var addressFormIsValid = this.$refs.baseAddressEdit[index].$refs.addressForm.validate()

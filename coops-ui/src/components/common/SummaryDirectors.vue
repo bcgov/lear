@@ -11,7 +11,7 @@
         </v-subheader>
 
         <li class="director-list-item"
-          v-for="(director, index) in orderBy(directorSummary, 'id', -1)"
+          v-for="(director, index) in directorSummary"
           :id="'director-' + director.id"
           :class="{ 'remove' : !isActionable(director)}"
           :key="index"
@@ -98,7 +98,7 @@
       <v-expand-transition>
         <ul class="list director-list" v-show="expand">
           <li class="director-list-item"
-            v-for="(director, index) in orderBy(directorsCeased, 'id', -1)"
+            v-for="(director, index) in directorsCeased"
             :id="'director-' + director.id"
             :class="{ 'remove' : !isActive(director) || !isActionable(director)}"
             :key="index"
