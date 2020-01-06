@@ -100,7 +100,7 @@ def check_for_manual_filings(application: Flask = None):
 
                 # for bringing in a specific filing
                 # colin_events = {
-                #     'events': [{'corp_num': 'CP0001483', 'event_id': 102110149, 'filing_typ_cd': 'OTCGM'}]
+                #     'events': [{'corp_num': 'CP0001489', 'event_id': 102127109, 'filing_typ_cd': 'OTCGM'}]
                 # }
 
             except Exception as err:
@@ -204,6 +204,9 @@ def run():
             application.logger.debug(f'skipped filings due to related erred filings: {len(skipped_filings)}')
             application.logger.debug(f'failed filings: {len(failed_filing_events)}')
             application.logger.debug(f'failed filings event info: {failed_filing_events}')
+
+            # uncomment for manually bringing across filings and set to first id so you don't skip any other filings
+            # first_failed_id = 102125621
 
             # if one of the events failed then save that id minus one so that the next run will try it again
             # this way failed filings wont get buried/forgotten after multiple runs
