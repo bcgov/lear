@@ -355,6 +355,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         db.session.commit()
 
     def reset_filing_to_draft(self):
+        """Reset Filing to draft and remove payment token."""
         self._status = Filing.Status.DRAFT.value
         self._payment_token = None
         self.save()

@@ -114,9 +114,26 @@ def test_authorized_user(monkeypatch, app_request, jwt,
     assert rv.status_code == expected
 
 
+TEST_INTEG_AUTHZ_DATA = [
+    ('staff_role',  # test name
+     'CP1234567',  # business identifier
+     'happy-staff',  # username
+     [STAFF_ROLE],  # roles
+     ['view', 'edit'],  # allowed actions
+     ['edit'],  # requested action
+     HTTPStatus.OK),  # expected response
+    ('colin svc role', 'CP1234567', 'CP1234567', [COLIN_SVC_ROLE], ['view', 'edit'], ['edit'],
+     HTTPStatus.OK),
+    ('unauthorized_user', 'CP1234567', 'Not-Match-Identifier', [BASIC_USER], None, ['edit'],
+     HTTPStatus.METHOD_NOT_ALLOWED),
+    ('missing_action', 'CP1234567', 'Not-Match-Identifier', [BASIC_USER], None, None,
+     HTTPStatus.METHOD_NOT_ALLOWED),
+    ('invalid_action', 'CP1234567', 'Not-Match-Identifier', [BASIC_USER], None, ['scrum'],
+     HTTPStatus.METHOD_NOT_ALLOWED),
+]
 @integration_authorization
 @pytest.mark.parametrize('test_name,identifier,username,roles,allowed_actions,requested_actions,expected',
-                         TEST_AUTHZ_DATA)
+                         TEST_INTEG_AUTHZ_DATA)
 def test_authorized_user_integ(monkeypatch, app, jwt,
                                test_name, identifier, username, roles, allowed_actions, requested_actions, expected):
     """Assert that the type of user authorization is correct, based on the expected outcome."""
