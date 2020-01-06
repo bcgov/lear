@@ -64,14 +64,14 @@
               <v-expand-transition>
                 <div class="director-info">
                   <div class="address">
-                    <BaseAddress :address="director.deliveryAddress" />
+                    <base-address :address="director.deliveryAddress" />
                   </div>
 
                   <div class="address same-address" v-if="entityFilter(EntityTypes.BCOMP)">
                     <span v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                       Same as Delivery Address
                     </span>
-                    <BaseAddress v-else :address="director.mailingAddress" />
+                    <base-address v-else :address="director.mailingAddress" />
                   </div>
 
                   <div class="director_dates">
@@ -151,13 +151,13 @@
                 <v-expand-transition>
                   <div class="director-info">
                     <div class="address">
-                      <BaseAddress :address="director.deliveryAddress" />
+                      <base-address :address="director.deliveryAddress" />
                     </div>
                     <div class="address same-address" v-if="entityFilter(EntityTypes.BCOMP)">
                       <span v-if="isSame(director.deliveryAddress, director.mailingAddress)">
                         Same as Delivery Address
                       </span>
-                      <BaseAddress v-else :address="director.mailingAddress" />
+                      <base-address v-else :address="director.mailingAddress" />
                     </div>
                     <div class="director_dates">
                       <div class="director_dates__date">{{ director.appointmentDate }}</div>
