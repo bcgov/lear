@@ -42,7 +42,7 @@ class User(db.Model):
 
     @classmethod
     def find_by_id(cls, submitter_id: int = None):
-        """Return a User if they exist and match the provided JWT."""
+        """Return a User if they exist and match the provided submitter id."""
         return cls.query.filter_by(id=submitter_id).one_or_none()
 
     @classmethod
