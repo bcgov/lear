@@ -378,7 +378,7 @@ def test_cancel_payment_for_pending_filing(session, client, jwt):
 
     filing_id = rv.json['filing']['header']['filingId']
     rv = client.patch(f'/api/v1/businesses/{identifier}/filings/{filing_id}', json={},
-                     headers=create_header(jwt, [STAFF_ROLE], identifier))
+                      headers=create_header(jwt, [STAFF_ROLE], identifier))
     assert rv.status_code == HTTPStatus.ACCEPTED
     assert not rv.json.get('errors')
     assert rv.json['filing']['header']['paymentToken'] is None
@@ -472,9 +472,9 @@ def test_cancel_payment_failed(monkeypatch, session, client, jwt):
     current_app.config['PAYMENT_SVC_URL'] = 'http://nowhere.localdomain'
 
     rv = client.patch(f'/api/v1/businesses/{identifier}/filings/{filing_id}',
-                     json={},
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+                      json={},
+                      headers=create_header(jwt, [STAFF_ROLE], identifier)
+                      )
 
     current_app.config['PAYMENT_SVC_URL'] = old_svc
     assert rv.status_code == HTTPStatus.INTERNAL_SERVER_ERROR

@@ -25,7 +25,7 @@ import datedelta
 import pytest
 from flask import current_app
 from freezegun import freeze_time
-from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, SPECIAL_RESOLUTION
+from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_DIRECTORS, FILING_HEADER, SPECIAL_RESOLUTION
 from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions import BusinessException
@@ -335,7 +335,9 @@ def test_get_filings_by_status(session):
 
 
 def test_get_filings_by_status__default_order(session):
-    """Assert that a filing can be retrieved by status and is returned in the default order.
+    """Assert that a filing can be retrieved.
+
+    by status and is returned in the default order.
     default order is submission_date, and then effective_date.
     """
     # setup
@@ -378,6 +380,98 @@ def test_get_filings_by_status__default_order(session):
     for filing in rv:
         assert filing.id == filing_ids[file_counter]
         file_counter -= 1
+
+
+def test_get_most_recent_filing_by_legal_type_in_json(session):
+    """Assert that the most recent legal filing can be retrieved."""
+    business = factory_business('CP1234567')
+    uow = versioning_manager.unit_of_work(session)
+    transaction = uow.create_transaction(session)
+
+    for i in range(1, 5):
+        effective_date = f'200{i}-07-01T00:00:00+00:00'
+        completion_date = datetime.datetime.fromisoformat(effective_date)
+
+        base_filing = copy.deepcopy(ANNUAL_REPORT)
+        cod = copy.deepcopy(CHANGE_OF_DIRECTORS)
+        base_filing['filing']['changeOfDirectors'] = cod
+
+        base_filing['filing']['header']['effectiveDate'] = effective_date
+        filing = Filing()
+        filing._filing_date = completion_date
+        filing.business_id = business.id
+        filing.filing_json = base_filing
+        filing.effective_date = datetime.datetime.fromisoformat(effective_date)
+        filing.payment_token = 'token'
+        filing.transaction_id = transaction.id
+        filing.payment_completion_date = completion_date
+        filing.save()
+
+    f = Filing.get_most_recent_legal_filing(business.id, 'changeOfDirectors')
+    assert f.effective_date == datetime.datetime.fromisoformat(effective_date)
+    assert f.filing_type == 'annualReport'
+    assert f.id == filing.id
+
+
+def test_get_most_recent_filing_by_legal_type_db_field(session):
+    """Assert that the most recent legal filing can be retrieved.
+
+    Create 3 filings, find the 2 one by the type only.
+    """
+    business = factory_business('CP1234567')
+    uow = versioning_manager.unit_of_work(session)
+    transaction = uow.create_transaction(session)
+
+    # filing 1
+    effective_date = '2001-07-01T00:00:00+00:00'
+    completion_date = datetime.datetime.fromisoformat(effective_date)
+    base_filing = copy.deepcopy(ANNUAL_REPORT)
+    base_filing['filing']['header']['effectiveDate'] = effective_date
+    filing1 = Filing()
+    filing1._filing_date = completion_date
+    filing1.business_id = business.id
+    filing1.filing_json = base_filing
+    filing1.effective_date = datetime.datetime.fromisoformat(effective_date)
+    filing1.payment_token = 'token'
+    filing1.transaction_id = transaction.id
+    filing1.payment_completion_date = completion_date
+    filing1.save()
+
+    # filing 2 <- target
+    effective_date = '2002-07-01T00:00:00+00:00'
+    completion_date = datetime.datetime.fromisoformat(effective_date)
+    base_filing = copy.deepcopy(FILING_HEADER)
+    base_filing['filing']['header']['effectiveDate'] = effective_date
+    base_filing['filing']['header']['name'] = 'changeOfDirectors'
+    base_filing['filing']['header']['availableOnPaperOnly'] = True
+    filing2 = Filing()
+    filing2._filing_date = completion_date
+    filing2.business_id = business.id
+    filing2.filing_json = base_filing
+    filing2.effective_date = datetime.datetime.fromisoformat(effective_date)
+    filing2.payment_token = 'token'
+    filing2.transaction_id = transaction.id
+    filing2.payment_completion_date = completion_date
+    filing2.save()
+
+    # filing 3
+    effective_date = '2003-07-01T00:00:00+00:00'
+    completion_date = datetime.datetime.fromisoformat(effective_date)
+    base_filing = copy.deepcopy(ANNUAL_REPORT)
+    base_filing['filing']['header']['effectiveDate'] = effective_date
+    filing3 = Filing()
+    filing3._filing_date = completion_date
+    filing3.business_id = business.id
+    filing3.filing_json = base_filing
+    filing3.effective_date = datetime.datetime.fromisoformat(effective_date)
+    filing3.payment_token = 'token'
+    filing3.transaction_id = transaction.id
+    filing3.payment_completion_date = completion_date
+    filing3.save()
+
+    f = Filing.get_most_recent_legal_filing(business.id, 'changeOfDirectors')
+    assert f.filing_type == 'changeOfDirectors'
+    assert f.id == filing2.id
 
 
 # testdata pattern is ({str: environment}, {expected return value})
@@ -455,7 +549,7 @@ def test_get_a_businesses_most_recent_filing_of_a_type(session):
     identifier = 'CP7654321'
     b = factory_business(identifier)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    base_ar_date = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362)
+    base_ar_date = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362, tzinfo=datetime.timezone.utc)
     filings = []
     for i in range(0, 5):
         filing_date = base_ar_date + datedelta.datedelta(years=i)

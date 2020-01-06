@@ -17,13 +17,24 @@ from datetime import datetime, timezone
 
 from freezegun import freeze_time
 
-from legal_api.utils.datetime import utcnow_tz
 
-
-def test_utcnow_tz():
-    """Assert that the utcnow call includes the utc timezone."""
+def test_datetime_utcnow():
+    """Assert that datetime.utcnow returns a non-naive datetime object."""
+    import legal_api.utils.datetime as _datetime
     now = datetime(2020, 9, 17, 0, 0, 0, 0)
 
     with freeze_time(now):
-        d = utcnow_tz()
+        d = _datetime.datetime.utcnow()
         assert d == now.replace(tzinfo=timezone.utc)
+
+
+def test_datetime_isoformat():
+    """Assert that the isoformat has the tzinfo set to +00:00."""
+    import legal_api.utils.datetime as _datetime
+    now = datetime(2020, 9, 17, 0, 0, 0, 0)
+
+    with freeze_time(now):
+        d = _datetime.datetime.utcnow()
+        iso = d.isoformat()
+        tz = iso[iso.find('+'):]
+        assert tz == '+00:00'

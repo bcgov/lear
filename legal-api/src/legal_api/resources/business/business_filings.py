@@ -188,23 +188,23 @@ class ListFilingResource(Resource):
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
     def patch(identifier, filing_id=None):
-        """Cancels the payment and resets the filing status to DRAFT."""
+        """Cancel the payment and resets the filing status to DRAFT."""
         if not filing_id:
             return ({'message':
-                         _('No filing id provided for:') + identifier},
+                     _('No filing id provided for:') + identifier},
                     HTTPStatus.BAD_REQUEST)
 
         # check authorization
         if not authorized(identifier, jwt, action=['edit']):
             return jsonify({'message':
-                                _('You are not authorized to delete a filing for:') + identifier}), \
-                   HTTPStatus.UNAUTHORIZED
+                            _('You are not authorized to delete a filing for:') + identifier}), \
+                HTTPStatus.UNAUTHORIZED
 
         filing = Business.get_filing_by_id(identifier, filing_id)
 
         if not filing:
-            return jsonify({'message':('Filing Not Found.')}), \
-                   HTTPStatus.NOT_FOUND
+            return jsonify({'message': ('Filing Not Found.')}), \
+                HTTPStatus.NOT_FOUND
 
         try:
             payment_svc_url = '{}/{}'.format(current_app.config.get('PAYMENT_SVC_URL'), filing.payment_token)
@@ -331,7 +331,7 @@ class ListFilingResource(Resource):
             # for any legal type, set effective date as set in json; otherwise leave as default
             if filing.filing_json['filing']['header'].get('effectiveDate', None):
                 filing.effective_date = \
-                        datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['effectiveDate'])
+                    datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['effectiveDate'])
 
             filing.save()
         except BusinessException as err:
