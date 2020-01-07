@@ -326,9 +326,12 @@
 
               <!-- Edit director form -->
               <v-expand-transition>
+                <!-- only render the form for the active director -->
                 <v-form ref="editDirectorForm"
-                  v-show="activeIndex === index"
-                  v-model="directorFormValid" lazy-validation>
+                  v-if="activeIndex === index"
+                  v-model="directorFormValid"
+                  lazy-validation
+                >
                   <div class="form__row three-column" v-show="editFormShowHide.showName">
                     <v-text-field filled class="item edit-director__first-name"
                       label="First Name"
@@ -508,11 +511,14 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   // To fix "property X does not exist on type Y" errors, annotate types for referenced components.
   // ref: https://github.com/vuejs/vetur/issues/1414
   $refs!: {
+    // form and components to appoint a new director:
     newDirectorForm: FormType,
     baseAddressNew: BaseAddressType,
     mailAddressNew: BaseAddressType,
+    // form and components to edit an existing director:
+    // (there is only 1 at a time but it's still an array)
     editDirectorForm: Array<FormType>,
-    baseAddressEdit: Array<BaseAddressType>
+    baseAddressEdit: Array<BaseAddressType>,
     mailAddressEdit: Array<BaseAddressType>
   }
 
@@ -1047,11 +1053,11 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     // get current director
     let director = this.directors[id - 1]
 
-    var mainFormIsValid = this.$refs.editDirectorForm[index].validate()
-    var addressFormIsValid = this.$refs.baseAddressEdit[index].$refs.addressForm.validate()
+    var mainFormIsValid = this.$refs.editDirectorForm[0].validate()
+    var addressFormIsValid = this.$refs.baseAddressEdit[0].$refs.addressForm.validate()
 
-    if (this.$refs.mailAddressEdit && this.$refs.mailAddressEdit[index]) {
-      var mailAddressFormIsValid = this.$refs.mailAddressEdit[index].$refs.addressForm.validate()
+    if (this.$refs.mailAddressEdit && this.$refs.mailAddressEdit[0]) {
+      var mailAddressFormIsValid = this.$refs.mailAddressEdit[0].$refs.addressForm.validate()
       if (!mailAddressFormIsValid) {
         addressFormIsValid = mailAddressFormIsValid
       }
