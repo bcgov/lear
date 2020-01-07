@@ -1,6 +1,6 @@
 {
   "name": "coops-ui",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -18,13 +18,12 @@
     "core-js": "^3.1.4",
     "country-list": "^2.2.0",
     "http-status-codes": "^1.3.2",
-    "keycloak-js": "^6.0.0",
     "ld-vue": "^0.1.1",
     "lodash": "^4.17.15",
     "provinces": "^1.11.0",
     "regenerator-runtime": "^0.13.3",
     "register-service-worker": "^1.6.2",
-    "sbc-common-components": "2.0.22",
+    "sbc-common-components": "2.0.32",
     "vue": "^2.6.10",
     "vue-affix": "^0.5.2",
     "vue-router": "^3.0.3",
