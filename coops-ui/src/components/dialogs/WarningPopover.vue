@@ -6,8 +6,8 @@
     max-width="18rem"
   >
     <template v-slot:activator="{ on }">
-      <span v-on="on">
-        <v-icon  style="vertical-align: bottom">mdi-information-outline</v-icon>{{ dialogObj.title }}
+      <span class="warning-text" v-on="on">
+        <v-icon style="vertical-align: bottom; color:#2196F3">mdi-information-outline</v-icon>{{ dialogObj.title }}
       </span>
     </template>
     <v-card>
@@ -29,3 +29,10 @@ export default class WarningPopover extends Vue {
 private dialogObj: any
 }
 </script>
+<style lang="scss">
+.warning-text {
+  font-weight: bold;
+  font-size: 14px;
+  color: #2196F3;
+}
+</style>

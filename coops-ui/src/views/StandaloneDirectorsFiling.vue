@@ -187,14 +187,7 @@
                   icon="mdi-information"
                   class="white-background"
                   >
-                  <v-card flat>
-                    <v-list-item>
-                      <v-list-item-content>
-                        <h3>{{ certifiedDialogMsg.title }}</h3>
-                        <p>{{ certifiedDialogMsg.msg }}</p>
-                      </v-list-item-content>
-                    </v-list-item>
-                  </v-card>
+                    <p style="font-size:16px; color:#495057">{{ certifiedDialogMsg.msg }}</p>
                 </v-alert>
                 </section>
                 <!-- Director Information -->

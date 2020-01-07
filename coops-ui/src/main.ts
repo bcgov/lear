@@ -83,10 +83,12 @@ function resetAuth (func) {
       sessionStorage['KEYCLOAK_REFRESH_TOKEN'] = data['refresh_token']
       sessionStorage['KEYCLOAK_ID_TOKEN'] = data['access_token']
       sessionStorage['ID_TOKEN'] = data['access_token']
-      sessionStorage['BUSINESS_IDENTIFIER'] = 'BC0000294'
+      // sessionStorage['BUSINESS_IDENTIFIER'] = 'BC0000294'
+      sessionStorage['BUSINESS_IDENTIFIER'] = 'CP0001184'
     } else {
       func()
     }
   }
-  xhr.send(JSON.stringify({ 'username': 'BC0000294', 'password': '572589980' }))
+  // xhr.send(JSON.stringify({ 'username': 'BC0000294', 'password': '572589980' }))
+  xhr.send(JSON.stringify({ 'username': 'CP0001184', 'password': '307844183' }))
 }

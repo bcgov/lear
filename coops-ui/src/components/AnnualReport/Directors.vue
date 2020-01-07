@@ -285,7 +285,7 @@
                       <v-btn small text color="primary" class="cease-btn"
                         :disabled="!componentEnabled || directorEditInProgress"
                         :id="'director-' + director.id + '-cease-btn'"
-                        @click="ceaseDirector(director)"
+                        @click="ceaseDirector(director, index)"
                       >
                         <v-icon small>{{isActive(director) ? 'mdi-close':'mdi-undo'}}</v-icon>
                         <span>{{isActive(director) ? 'Cease':'Undo'}}</span>
@@ -328,7 +328,7 @@
                     :max="currentDate"
                   >
                     <v-btn text color="primary" @click="activeIndexCustomCease = null">Cancel</v-btn>
-                    <v-btn text color="primary" @click="ceaseDirector(director)">OK</v-btn>
+                    <v-btn text color="primary" @click="ceaseDirector(director, index)">OK</v-btn>
                   </v-date-picker>
                 </div>
               </v-expand-transition>
@@ -482,10 +482,11 @@
       icon="mdi-information-outline"
       class="white-background"
       :id="'director-' + director.id + '-alert'"
-      v-if="complianceMsg && director.id == lastValidDirector"
+      v-if="complianceMsg && index == messageIndex"
+      v-once
     >
-    <h3>{{ complianceMsg.title }}</h3>
-    <p>{{ complianceMsg.msg }}</p>
+    <h3 style="font-size:14px; color:rgba(0,0,0,0.87">{{ complianceMsg.title }}</h3>
+    <p style="font-size:14px; color:rgba(0,0,0,0.87">{{ complianceMsg.msg }}</p>
       </v-alert>
         </li>
       </ul>
@@ -567,6 +568,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin,
   private cessationDateTemp = null
   private isEditingDirector = false
   private isCompliant = true
+  private messageIndex = -1
 
   private director = {
     id: '',
@@ -1006,10 +1008,11 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin,
    * Local helper to cease a director.
    * @param director The director object to cease.
    */
-  private ceaseDirector (director): void {
+  private ceaseDirector (director, index): void {
     // if this is a Cease, apply a fee
     // otherwise it's just undoing a cease or undoing a new director, so remove fee
     this.lastValidDirector = -1
+    this.messageIndex = index
     if (this.isActive(director)) director.isFeeApplied = true
     else director.isFeeApplied = false
 
@@ -1041,6 +1044,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin,
     this.inProgressMailAddress = {}
     this.directorEditInProgress = true
     this.activeIndex = index
+    this.messageIndex = index
     this.cancelNewDirector()
   }
 
@@ -1648,5 +1652,12 @@ ul {
 
 .director-list-item {
   padding: 1.25rem;
+}
+
+.compliance-alert {
+  .v-icon {
+      font-size: 14px;
+      color: #2196F3;
+  }
 }
 </style>

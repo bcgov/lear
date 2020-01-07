@@ -46,15 +46,15 @@ export default class ResourceLookupMixin extends Vue {
       let errors = []
 
       if (configSection.bcResident != null) {
-        if (directors.filter(x => x.cessationDate != null && (x.deliveryAddress.addressRegion !== 'BC' ||
-        x.mailingAddress.addressRegion !== 'BC')).length > 0) {
+        if (directors.filter(x => (x.deliveryAddress.addressRegion !== 'BC' ||
+        (x.mailingAddress && x.mailingAddress.addressRegion !== 'BC'))).length === directors.length) {
           errors.push({ 'title': configSection.bcResident.title, 'msg': configSection.bcResident.message })
         }
       }
 
       if (configSection.canadianResident != null) {
-        if (directors.filter(x => x.cessationDate != null && (x.deliveryAddress.addressCountry !== 'CA' ||
-        x.mailingAddress.addressCountry !== 'CA')).length > 0) {
+        if (directors.filter(x => (x.deliveryAddress.addressCountry !== 'CA' ||
+        (x.mailingAddress && x.mailingAddress.addressRegion !== 'BC'))).length === directors.length) {
           errors.push({ 'title': configSection.canadianResident.title, 'msg': configSection.canadianResident.message })
         }
       }
