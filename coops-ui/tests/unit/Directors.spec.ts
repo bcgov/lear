@@ -173,14 +173,14 @@ describe('Directors as a COOP', () => {
     expect(directorListUI[1].innerHTML).toContain('<span>Cease</span>')
   })
 
-  it('displays the edit Director form when enabled', () => {
+  it('displays the edit Director form when enabled', async () => {
     // Open the edit director
-    vm.editDirectorName(0)
+    await vm.editDirectorName(0)
 
     // Verify the correct data in the text input field
     expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Joe')
 
-    // Verify all the form field value
+    // Verify that only Change Name component is shown
     expect(vm.editFormShowHide.showAddress).toEqual(false)
     expect(vm.editFormShowHide.showName).toEqual(true)
     expect(vm.editFormShowHide.showDates).toEqual(false)
@@ -188,13 +188,13 @@ describe('Directors as a COOP', () => {
 
   it('displays the edit Director form when enabled and stores the updated value', async () => {
     // Open the edit director
-    vm.editDirectorName(0)
+    await vm.editDirectorName(0)
 
     // Verify the correct data in the text input field
     expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Joe')
 
     // Change the text input
-    vm.$el.querySelectorAll('.edit-director__first-name input')[0].value = 'Steve'
+    setValue(vm, '.edit-director__first-name input', 'Steve')
 
     // Click and save the updated data
     await vm.saveEditDirector(1, 2)
@@ -202,31 +202,30 @@ describe('Directors as a COOP', () => {
     // Verify the updated text field value
     expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Steve')
 
-    // Verify all the form field value
-    expect(vm.editFormShowHide.showAddress).toEqual(true)
+    // Verify that only Change Name component is shown
+    expect(vm.editFormShowHide.showAddress).toEqual(false)
     expect(vm.editFormShowHide.showName).toEqual(true)
-    expect(vm.editFormShowHide.showDates).toEqual(true)
+    expect(vm.editFormShowHide.showDates).toEqual(false)
   })
 
   it('restores the directors name to its original value when the Cancel Edit Btn is clicked', async () => {
     // Open the edit director
-    vm.editDirectorName(0)
+    await vm.editDirectorName(0)
 
     // Verify the correct data in the text input field
     expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Joe')
 
-    // Change the text input and mock save it
-    vm.$el.querySelectorAll('.edit-director__first-name input')[0].value = 'Steve'
-    vm.directors[1].officer.firstName = 'Steve'
+    // Change the text input
+    setValue(vm, '.edit-director__first-name input', 'Steve')
 
-    // Verify the saved data
+    // Verify the name is updated
     expect(vm.directors[1].officer.firstName).toBe('Steve')
 
     // Cancel Director edit and verify the name is back to its base name
     await vm.$el.querySelectorAll('.cancel-edit-btn')[0].click()
     expect(vm.directors[1].officer.firstName).toBe('Joe')
 
-    // // Verify the edit form is closed.
+    // Verify the edit form is closed.
     expect(vm.editFormShowHide.showAddress).toEqual(true)
     expect(vm.editFormShowHide.showName).toEqual(true)
     expect(vm.editFormShowHide.showDates).toEqual(true)
