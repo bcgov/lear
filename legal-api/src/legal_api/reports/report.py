@@ -44,7 +44,6 @@ class Report:  # pylint: disable=too-few-public-methods
             'template': "'" + base64.b64encode(bytes(self._get_template(), 'utf-8')).decode() + "'",
             'templateVars': self._get_template_data()
         }
-
         response = requests.post(url=current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
 
         if response.status_code != HTTPStatus.OK:
@@ -71,11 +70,14 @@ class Report:  # pylint: disable=too-few-public-methods
         return filings['annualReport']
 
     def _get_template(self):
+        try:
+            template_code = Path('report-templates/{}'.format(self._get_template_filename())).read_text()
 
-        template_code = Path('report-templates/{}'.format(self._get_template_filename())).read_text()
-
-        # substitute template parts
-        template_code = self._substitute_template_parts(template_code)
+            # substitute template parts
+            template_code = self._substitute_template_parts(template_code)
+        except Exception as err:
+            current_app.logger.error(err)
+            raise err
 
         return template_code
 
@@ -182,8 +184,8 @@ class Report:  # pylint: disable=too-few-public-methods
         effective_date = self._filing.filing_date.astimezone(local_timezone) if self._filing.effective_date is None\
             else self._filing.effective_date
 
-        # Get Colin Event Id
-        filing['colin_event_id'] = self._filing.colin_event_id
+        # Get source
+        filing['source'] = self._filing.source
 
         # TODO: best: custom date/time filters in the report-api. Otherwise: a subclass for filing-specific data.
         if self._filing.filing_type == 'annualReport':

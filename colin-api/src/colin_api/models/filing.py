@@ -224,8 +224,8 @@ class Filing:
         """
         try:
             cursor.execute("""
-                INSERT INTO ledger_text (event_id, ledger_text_dts, notation, dd_event_id)
-                  VALUES (:event_id, sysdate, :notation, :dd_event_id)
+                INSERT INTO ledger_text (event_id, ledger_text_dts, notation, dd_event_id, user_id)
+                  VALUES (:event_id, sysdate, :notation, :dd_event_id, 'COOPER')
                 """,
                            event_id=event_id,
                            notation=text,
@@ -713,6 +713,9 @@ class Filing:
                     last_year = datetime.datetime.now().year - 1
                     if agm_year >= last_year:
                         Business.update_corp_state(cursor, event_id, corp_num, state='ACT')
+
+                # create new ledger text for annual report
+                cls._add_ledger_text(cursor=cursor, event_id=event_id, text=f'ANNUAL REPORT - {ar_date}')
 
             elif filing.filing_type == 'changeOfAddress':
                 # set date to last ar date + 1

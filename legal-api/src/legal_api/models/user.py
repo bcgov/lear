@@ -41,6 +41,11 @@ class User(db.Model):
     creation_date = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
 
     @classmethod
+    def find_by_id(cls, submitter_id: int = None):
+        """Return a User if they exist and match the provided submitter id."""
+        return cls.query.filter_by(id=submitter_id).one_or_none()
+
+    @classmethod
     def find_by_jwt_token(cls, token: dict):
         """Return a User if they exist and match the provided JWT."""
         return cls.query.filter_by(sub=token['sub']).one_or_none()

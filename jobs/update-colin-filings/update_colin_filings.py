@@ -86,18 +86,18 @@ def get_filings(app: Flask = None):
     return r.json()
 
 
-def send_filing(app: Flask = None, filing: dict = None):
+def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
     """Post to colin-api with filing."""
-    clean_none(filing)
+    # clean_none(filing)
     # validate schema
-    is_valid, errors = validate(filing, 'filing', validate_schema=True)
+
+    is_valid, errors = validate(filing, 'filing')
     if errors:
         for err in errors:
             app.logger.error(err.message)
         raise Exception
     else:
-        filing_type = filing["filing"]["header"]["name"]
-        filing_id = filing["filing"]["header"]["filingId"]
+        filing_type = filing['filing']['header']['name']
         app.logger.debug(f'Filing {filing_id} in colin for {filing["filing"]["business"]["identifier"]}.')
         r = requests.post(f'{app.config["COLIN_URL"]}/{filing["filing"]["business"]["identifier"]}/filings/'
                           f'{filing_type}', json=filing)
@@ -148,8 +148,8 @@ def run():
             if not filings:
                 application.logger.debug(f'No completed filings to send to colin.')
             for filing in filings:
-                filing_id = filing["filing"]["header"]["filingId"]
-                colin_id = send_filing(app=application, filing=filing)
+                filing_id = filing['filingId']
+                colin_id = send_filing(app=application, filing=filing, filing_id=filing_id)
                 update = update_colin_id(app=application, filing_id=filing_id, colin_id=colin_id, token=token)
                 if update:
                     application.logger.error(f'Successfully updated filing {filing_id}')

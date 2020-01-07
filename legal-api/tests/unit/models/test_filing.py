@@ -47,6 +47,7 @@ def test_minimal_filing_json(session):
     filing.filing_data = json.dumps(data)
     filing.save()
 
+    assert filing.source == Filing.Source.LEAR.value
     assert filing.id is not None
 
 
@@ -246,7 +247,6 @@ def test_add_payment_completion_date_after_payment(session):
 
     filing.payment_completion_date = EPOCH_DATETIME
     filing.save()
-    print(filing.status)
     assert filing.status == Filing.Status.PAID.value
 
 
@@ -570,8 +570,13 @@ def test_save_filing_with_colin_id(session):
     # setup
     filing = Filing()
     filing.filing_json = ANNUAL_REPORT
+    user = User.create_from_jwt_token({'username': 'coops-updater-job', 'iss': 'test', 'sub': 'test'})
+    filing.submitter_id = user.id
     filing.save()
+
+    # test
     assert filing.status == Filing.Status.DRAFT.value
+    assert filing.source == Filing.Source.COLIN.value
     filing.colin_event_id = 1234
     filing.save()
     assert filing.status == Filing.Status.PAID.value
