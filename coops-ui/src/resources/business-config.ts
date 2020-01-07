@@ -39,7 +39,7 @@ export const configJson = [{
           count: 1,
           title: 'One Director Required',
           message: 'A minimum of one director is required, to be in compliance with the ' +
-            'Business Corporations Act (Section xx). You can continue your filing, but you must ' +
+            'Business Corporations Act (Section 120). You can continue your filing, but you must ' +
             'become compliant with the  Business Corporations Act. as soon as possible.'
         },
         bcResident: null,
@@ -81,20 +81,20 @@ export const configJson = [{
           count: 3,
           title: 'Minimum Three Directors Required',
           message: 'A minimum of three directors are required, to be in compliance with the Cooperative ' +
-            'Association Act (Section xx). You can continue your filing, but you must become compliant ' +
+            'Association Act (Section 72). You can continue your filing, but you must become compliant ' +
             'with the Cooperative Association Act as soon as possible.'
         },
         bcResident: {
           title: 'BC Resident Director Required',
           message: 'One of the directors of the association is required to be an ' +
             'individual ordinarily resident in British Columbia, to be in compliance ' +
-            'with the Cooperative Association Act (Section xx). You can continue your filing, ' +
+            'with the Cooperative Association Act (Section 72). You can continue your filing, ' +
             'but you must become compliant with the Cooperative Association Act as soon as possible.'
         },
         canadianResident: {
           title: 'Canadian Resident Directors Required',
           message: 'A majority of the directors of the association are required to be individuals ordinarily ' +
-            'resident in Canada, to be in compliance with the Cooperative Association Act (Section xx). ' +
+            'resident in Canada, to be in compliance with the Cooperative Association Act (Section 72). ' +
             'You can continue your filing, but you must become compliant with the Cooperative ' +
             'Association Act as soon as possible.'
         },

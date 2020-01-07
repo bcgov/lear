@@ -41,10 +41,15 @@ export default class ResourceLookupMixin extends Vue {
       return ''
     }
 
+    /**
+     * Method to validate directors on edit/cease and return any warning messages.
+     *
+     * @return the compliance message or null (if the configuration has been loaded).
+     */
     directorWarning (directors: Array<any>): Object {
       const configSection = this.configObject.flows.find(x => x.feeCode === 'OTCDR').warnings
       let errors = []
-
+      // FUTURE: Too much code for this. Can be condensed and made more reusable.
       if (configSection.bcResident != null) {
         if (directors.filter(x => (x.deliveryAddress.addressRegion !== 'BC' ||
         (x.mailingAddress && x.mailingAddress.addressRegion !== 'BC'))).length === directors.length) {

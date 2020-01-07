@@ -1375,7 +1375,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin,
 
   @Watch('complianceMsg')
   private onCertifiedMsgChange (val: any): void {
-    this.emitCertifiedDialogMsg(val)
+    this.emitcomplianceDialogMsg(val)
   }
 
   /**
@@ -1423,8 +1423,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin,
   /**
    * Emits an event that indicates whether the director edit is in progress.
    */
-  @Emit('certifiedDialogMsg')
-  private emitCertifiedDialogMsg (val: any): void { }
+  @Emit('complianceDialogMsg')
+  private emitcomplianceDialogMsg (val: any): void { }
 }
 </script>
 

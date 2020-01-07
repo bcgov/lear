@@ -77,7 +77,7 @@
                     @directorFormValid="directorFormValid=$event"
                     @allDirectors="allDirectors=$event"
                     @directorEditAction="directorEditInProgress=$event"
-                    @certifiedDialogMsg="certifiedDialogMsg=$event"
+                    @complianceDialogMsg="complianceDialogMsg=$event"
                     :asOfDate="codDate"
                   />
                 </section>
@@ -182,12 +182,12 @@
                 <header>
                   <h1 id="filing-header-review">Review: Director Change </h1>
                 </header>
-                <section v-if="certifiedDialogMsg">
+                <section v-if="complianceDialogMsg">
                   <v-alert type="info" outlined
                   icon="mdi-information"
                   class="white-background"
                   >
-                    <p style="font-size:16px; color:#495057">{{ certifiedDialogMsg.msg }}</p>
+                    <p style="font-size:16px; color:#495057">{{ complianceDialogMsg.msg }}</p>
                 </v-alert>
                 </section>
                 <!-- Director Information -->
@@ -357,7 +357,7 @@ export default {
       // EntityTypes Enum
       EntityTypes,
       FilingCodes,
-      certifiedDialogMsg: null
+      complianceDialogMsg: null
     }
   },
 
