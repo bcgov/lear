@@ -1,15 +1,10 @@
 from flask import Blueprint, jsonify, request, send_file
-from sqlalchemy import exc
 from legal_api import db
-from legal_api.models.business import Business, Director, Address
+from legal_api.models.business import Business
 from legal_api.models.office import OfficeType
-from legal_test_api.api.converter.ExcelConverter import ExcelConverter
-from legal_test_api.api.converter.ExcelWriter import ExcelWriter
-from legal_test_api.api.converter.JsonConverter import JsonConverter
-from datetime import datetime
+from data_reset_tool.converter import ExcelConverter, ExcelWriter, JsonConverter
 from http import HTTPStatus
 import logging
-import xlrd
 import io
 
 fixture_blueprint = Blueprint('fixture', __name__)
@@ -65,7 +60,7 @@ def get_all(business_identifier, format):
     business_list = []
 
     export_all_businesses_indicator = 'all_YES_IM_SURE'
-    if(business_identifier == export_all_businesses_indicator):
+    if business_identifier == export_all_businesses_indicator:
         business_list = Business.query.all()
     else:
         business = Business.find_by_identifier(business_identifier)
@@ -74,7 +69,7 @@ def get_all(business_identifier, format):
         business_list.append(business)
 
     excel_format_name = 'excel'
-    if(format == excel_format_name):
+    if format == excel_format_name:
         buf = __create_excel_file(business_list)
         excel_mimetype = 'application/vnd.ms-excel'
         return send_file(

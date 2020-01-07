@@ -9,7 +9,7 @@ RUN mkdir /opt/server
 WORKDIR /opt/server
 
 # Add and install requirements
-COPY requirements.txt .
+COPY requirements/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Add rest of files
