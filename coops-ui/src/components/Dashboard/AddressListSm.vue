@@ -22,7 +22,7 @@
               <v-list-item-content>
                 <v-list-item-title class="mb-2 address-title">Delivery Address</v-list-item-title>
                 <v-list-item-subtitle>
-                  <ul class="address-subtitle pre-wrap">
+                  <ul class="address-subtitle pre-line">
                     <li class="address-line1">{{ registeredAddress.deliveryAddress.streetAddress }}</li>
                     <li class="address-line2">{{ registeredAddress.deliveryAddress.streetAddressAdditional }}</li>
                     <li class="address-line3">{{ registeredAddress.deliveryAddress.addressCity }}
@@ -51,7 +51,7 @@
                   >
                     <span>Same as above</span>
                   </div>
-                  <ul v-else class="address-subtitle pre-wrap">
+                  <ul v-else class="address-subtitle pre-line">
                     <li class="address-line1">{{ registeredAddress.mailingAddress.streetAddress }}</li>
                     <li class="address-line2">{{ registeredAddress.mailingAddress.streetAddressAdditional }}</li>
                     <li class="address-line3">{{ registeredAddress.mailingAddress.addressCity }}
@@ -90,7 +90,7 @@
               <v-list-item-content>
                 <v-list-item-title class="mb-2 address-title">Delivery Address</v-list-item-title>
                 <v-list-item-subtitle>
-                  <ul class="address-subtitle pre-wrap">
+                  <ul class="address-subtitle pre-line">
                     <li class="address-line1">{{ recordsAddress.deliveryAddress.streetAddress }}</li>
                     <li class="address-line2">{{ recordsAddress.deliveryAddress.streetAddressAdditional }}</li>
                     <li class="address-line3">{{ recordsAddress.deliveryAddress.addressCity }}
@@ -119,7 +119,7 @@
                   >
                     <span>Same as above</span>
                   </div>
-                  <ul v-else class="address-subtitle pre-wrap">
+                  <ul v-else class="address-subtitle pre-line">
                     <li class="address-line1">{{ recordsAddress.mailingAddress.streetAddress }}</li>
                     <li class="address-line2">{{ recordsAddress.mailingAddress.streetAddressAdditional }}</li>
                     <li class="address-line3">{{ recordsAddress.mailingAddress.addressCity }}

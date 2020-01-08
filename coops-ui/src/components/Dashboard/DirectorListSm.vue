@@ -20,7 +20,7 @@
               <v-list-item-content>
                 <v-list-item-title class="mb-2 address-title">Delivery Address</v-list-item-title>
                 <v-list-item-subtitle>
-                  <ul class="address-subtitle pre-wrap">
+                  <ul class="address-subtitle pre-line">
                     <li class="address-line1">{{ director.deliveryAddress.streetAddress }}</li>
                     <li class="address-line2">{{ director.deliveryAddress.streetAddressAdditional }}</li>
                     <li class="address-line3">{{ director.deliveryAddress.addressCity }}
@@ -43,7 +43,7 @@
                   >
                     <span>Same as above</span>
                   </div>
-                  <ul v-else class="address-subtitle pre-wrap">
+                  <ul v-else class="address-subtitle pre-line">
                     <li class="address-line1">{{ director.mailingAddress.streetAddress }}</li>
                     <li class="address-line2">{{ director.mailingAddress.streetAddressAdditional }}</li>
                     <li class="address-line3">{{ director.mailingAddress.addressCity }}
