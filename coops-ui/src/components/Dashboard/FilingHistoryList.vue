@@ -276,7 +276,8 @@ export default {
         // Effective date is when the filing is applied to the backend, assigned by the backend when the filing is made.
         // Currently, all filings will be applied immediately except a change of address for a Benefit Company
         // The latter is always effective the following day at 12:01 AM Pacific Time
-        const effectiveDate = filing.header.effectiveDate.slice(0, 10)
+        let effectiveDate = filing.header.date.slice(0, 10)
+        if (filing.header.effectiveDate) effectiveDate = filing.header.effectiveDate.slice(0, 10)
 
         const item = {
           name: title,
