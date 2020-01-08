@@ -155,7 +155,7 @@
             There is no opportunity to change information beyond this point.</span>
         </v-tooltip>
 
-        <v-btn id="coa-cancel-btn" large to="/dashboard" :loading="filingPaying">Cancel</v-btn>
+        <v-btn id="coa-cancel-btn" large to="/dashboard" :disabled="busySaving || filingPaying">Cancel</v-btn>
       </div>
     </v-container>
   </div>
