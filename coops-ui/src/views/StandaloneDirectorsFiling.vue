@@ -187,7 +187,7 @@
                   icon="mdi-information"
                   class="white-background"
                   >
-                    <p style="font-size:16px; color:#495057">{{ complianceDialogMsg.msg }}</p>
+                    <p class="complianceDialogMsg">{{ complianceDialogMsg.msg }}</p>
                 </v-alert>
                 </section>
                 <!-- Director Information -->
@@ -852,5 +852,10 @@ h2 {
   #cod-cancel-btn {
     margin-left: 0.5rem;
   }
+}
+
+.complianceDialogMsg {
+  font-size:16px;
+  color:#495057
 }
 </style>

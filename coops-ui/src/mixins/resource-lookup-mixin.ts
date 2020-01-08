@@ -50,21 +50,21 @@ export default class ResourceLookupMixin extends Vue {
       const configSection = this.configObject.flows.find(x => x.feeCode === 'OTCDR').warnings
       let errors = []
       // FUTURE: Too much code for this. Can be condensed and made more reusable.
-      if (configSection.bcResident != null) {
+      if (configSection.bcResident) {
         if (directors.filter(x => (x.deliveryAddress.addressRegion !== 'BC' ||
         (x.mailingAddress && x.mailingAddress.addressRegion !== 'BC'))).length === directors.length) {
           errors.push({ 'title': configSection.bcResident.title, 'msg': configSection.bcResident.message })
         }
       }
 
-      if (configSection.canadianResident != null) {
+      if (configSection.canadianResident) {
         if (directors.filter(x => (x.deliveryAddress.addressCountry !== 'CA' ||
         (x.mailingAddress && x.mailingAddress.addressRegion !== 'BC'))).length === directors.length) {
           errors.push({ 'title': configSection.canadianResident.title, 'msg': configSection.canadianResident.message })
         }
       }
 
-      if (configSection.minDirectors != null) {
+      if (configSection.minDirectors) {
         const min = configSection.minDirectors.count
         if (directors.filter(x => x.cessationDate == null).length < min) {
           errors.push({ 'title': configSection.minDirectors.title, 'msg': configSection.minDirectors.message })

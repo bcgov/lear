@@ -567,7 +567,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin,
   private activeDirectorToDelete = null
   private cessationDateTemp = null
   private isEditingDirector = false
-  private isCompliant = true
   private messageIndex = -1
 
   private director = {
@@ -1645,13 +1644,6 @@ ul {
 
 .director-list-item {
   padding: 1.25rem;
-}
-
-.compliance-alert {
-  .v-icon {
-      font-size: 14px;
-      color: #2196F3;
-  }
 }
 
 .v-alert__icon {
