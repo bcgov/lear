@@ -69,10 +69,7 @@ export const configJson = [{
       displayName: 'Change Of Directors',
       certifyText: 'Note: It is an offence to make a false or misleading statement in ' +
            'respect of a material fact in a record submitted to the Corporate Registry for filing. ' +
-<<<<<<< HEAD
-           'See section 78 of the Cooperative Association Act.'
-=======
-           'See section 78 of the Cooperative Associations Act.',
+           'See section 78 of the Cooperative Association Act.',
       warnings: {
         minDirectors: {
           count: 3,
@@ -98,7 +95,6 @@ export const configJson = [{
         multiCompliance: {
         }
       }
->>>>>>> new component
     }
   ]
 }]
