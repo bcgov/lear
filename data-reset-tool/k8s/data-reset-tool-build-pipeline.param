@@ -1,0 +1,14 @@
+#=========================================================
+# Template parameters for:
+# Project: data-reset-tool
+# Component: pipeline
+# Action: build
+# Template File: templates/data-reset-tool-pipeline.json
+#=========================================================
+NAME="data-reset-tool"
+PIPELINE_PURPOSE="build"
+GIT_REPO_URL="https://github.com/bcgov/lear.git"
+GIT_REF="master"
+SOURCE_CONTEXT_DIR="data-reset-tool"
+JENKINS_FILE="Jenkinsfiles/build.groovy"
+WEBHOOK="github-lear"
