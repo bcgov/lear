@@ -1056,7 +1056,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    */
   private saveEditDirector (index, id): void {
     // get current director
-    let director = this.directors.filter(el => el.id === id)[0]
+    let director = this.directors[index]
 
     var mainFormIsValid = this.$refs.editDirectorForm[index].validate()
     var addressFormIsValid = this.$refs.baseAddressEdit[index].$refs.addressForm.validate()
