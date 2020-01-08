@@ -708,7 +708,7 @@ export default {
   padding: 0;
 
   .v-list-item {
-    min-width: 120px;
+    min-width: 140px;
   }
 
   .v-list-item__title {
