@@ -165,7 +165,7 @@
               <span>Proceed to Filing Summary</span>
             </v-tooltip>
 
-            <v-btn id="cod-cancel-btn" large to="/dashboard" :loading="filingPaying">Cancel</v-btn>
+            <v-btn id="cod-cancel-btn" large to="/dashboard" :disabled="busySaving || filingPaying">Cancel</v-btn>
           </div>
         </v-container>
       </div>
