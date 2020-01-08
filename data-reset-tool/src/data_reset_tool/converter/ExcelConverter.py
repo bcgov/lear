@@ -1,17 +1,13 @@
 from flask import json
-from sqlalchemy import exc
 from sqlalchemy_continuum import versioning_manager
 from legal_api import db
 from legal_api.models.business import Business, Director, Address, Filing
 from legal_api.models.office import Office, OfficeType
-from legal_test_api.api.converter.utils import format_date, format_non_date, format_boolean, SheetName
-from datetime import datetime
-from enum import Enum
-import logging
+from data_reset_tool.converter.utils import SheetName
 import xlrd
 
 
-class ExcelConverter():
+class ExcelConverter:
 
     def create_businesses_from_file(self, a_file, input_business_identifier, rebuild):
         book = xlrd.open_workbook(file_contents=a_file.stream.read())
@@ -42,6 +38,11 @@ class ExcelConverter():
 
                     for f in existing_business.filings.all():
                         f._payment_token = None
+                        f.colin_event_id = None
+                        f.save()
+                        print(f.locked)
+                        print(f.json)
+                        print(f)
                         db.session.delete(f)
 
                     for ma in existing_business.mailing_address.all():
@@ -193,7 +194,7 @@ class ExcelConverter():
                     office = registered_office
                 elif office_type == OfficeType.RECORDS:
                     office = records_office
-                
+
                 address = Address(
                     address_type=self.__get_value_from_row(business_address_row, 2),
                     street=self.__get_value_from_row(business_address_row, 3),
