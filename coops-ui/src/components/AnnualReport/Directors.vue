@@ -36,7 +36,7 @@
               </v-btn>
             </v-col>
             <v-col cols="5">
-              <WarningPopover :dialogObj="complianceMsg" />
+              <warning-popover :dialogObj="complianceMsg" />
             </v-col>
           </v-row>
         </v-container>
@@ -184,7 +184,7 @@
           <span v-if="entityFilter(EntityTypes.BCOMP)">Mailing Address</span>
           <span>Appointed/Elected</span>
         </v-subheader>
-        <li class="director-list-item"
+        <li class="director-list-item icon-blue"
           v-for="(director, index) in directors"
           :id="'director-' + director.id"
           :class="{ 'remove' : !isActive(director) || !isActionable(director)}"
@@ -1644,11 +1644,6 @@ ul {
 
 .director-list-item {
   padding: 1.25rem;
-}
-
-.v-alert__icon {
-    font-size: 14px;
-    color: #2196F3 !important;
 }
 
 .complianceCard {
