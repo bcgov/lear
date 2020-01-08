@@ -1554,6 +1554,10 @@ ul {
 .actions__more-actions {
   padding: 0;
 
+  .v-list-item {
+    min-width: 160px;
+  }
+
   .v-list-item__title {
     font-size: 0.875rem;
   }

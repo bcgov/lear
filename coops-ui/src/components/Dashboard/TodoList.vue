@@ -707,6 +707,10 @@ export default {
 .actions__more-actions {
   padding: 0;
 
+  .v-list-item {
+    min-width: 140px;
+  }
+
   .v-list-item__title {
     font-size: 0.875rem;
   }

@@ -200,4 +200,8 @@ dd + dt:before {
   margin-top: 0.1rem;
   margin-left: 0.25rem;
 }
+
+#update-business-profile-menuitem {
+  min-width: 220px;
+}
 </style>
