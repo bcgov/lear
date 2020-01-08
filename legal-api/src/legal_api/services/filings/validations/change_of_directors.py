@@ -45,7 +45,10 @@ def validate(business: Business, cod: Dict) -> Error:
 
 
 def validate_directors_addresses(cod: Dict) -> List:
-    """Return an error message if the directors address are invalid."""
+    """Return an error message if the directors address are invalid.
+
+    Address must contain a valid ISO-2 valid country.
+    """
     msg = []
 
     directors = cod['filing']['changeOfDirectors']['directors']
@@ -56,15 +59,6 @@ def validate_directors_addresses(cod: Dict) -> List:
                 try:
                     country = get_str(director, f'/{address_type}/addressCountry')
                     _ = pycountry.countries.search_fuzzy(country)[0].alpha_2
-
-                    if address_type == Address.JSON_DELIVERY:
-                        if country != 'CA':
-                            msg.append({'error': babel('Director Delivery country must be in CA.'),
-                                        'path': f'/filing/changeOfDirectors/directors/{idx}/{address_type}/addressCountry'})  # noqa: E501; line length too long
-
-                        if get_str(director, f'/{address_type}/addressRegion') != 'BC':
-                            msg.append({'error': babel('Director Delivery region must be in BC.'),
-                                        'path': f'/filing/changeOfDirectors/directors/{idx}/{address_type}/addressRegion'})  # noqa: E501; line length too long
 
                 except LookupError:
                     msg.append({'error': babel('Address Country must resolve to a valid ISO-2 country.'),
