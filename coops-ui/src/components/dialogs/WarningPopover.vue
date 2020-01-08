@@ -22,13 +22,15 @@
 
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
+import { AlertMessage } from '../../interfaces'
 
 @Component({})
 export default class WarningPopover extends Vue {
-@Prop({ default: null })
-private dialogObj: any
+  @Prop({ default: null })
+  private dialogObj: AlertMessage
 }
 </script>
+
 <style lang="scss">
 .warning-text {
   font-weight: bold;

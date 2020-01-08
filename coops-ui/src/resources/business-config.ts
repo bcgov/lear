@@ -41,10 +41,7 @@ export const configJson = [{
           message: 'A minimum of one director is required, to be in compliance with the ' +
             'Business Corporations Act (Section 120). You can continue your filing, but you must ' +
             'become compliant with the  Business Corporations Act. as soon as possible.'
-        },
-        bcResident: null,
-        canadianResident: null,
-        multiCompliance: null
+        }
       }
     }
   ]

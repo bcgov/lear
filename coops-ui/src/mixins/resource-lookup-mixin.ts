@@ -1,6 +1,6 @@
 import { Component, Vue } from 'vue-property-decorator'
 import { mapState } from 'vuex'
-
+import { AlertMessage } from '@/interfaces'
 /**
  * Mixin for components to retrieve text/settings from json resource.
  */
@@ -46,7 +46,7 @@ export default class ResourceLookupMixin extends Vue {
      *
      * @return the compliance message or null (if the configuration has been loaded).
      */
-    directorWarning (directors: Array<any>): Object {
+    directorWarning (directors: Array<any>): AlertMessage {
       const configSection = this.configObject.flows.find(x => x.feeCode === 'OTCDR').warnings
       let errors = []
       // FUTURE: Too much code for this. Can be condensed and made more reusable.

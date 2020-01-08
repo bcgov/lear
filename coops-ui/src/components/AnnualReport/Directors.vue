@@ -27,13 +27,13 @@
         <v-container>
           <v-row class="msg-director-compliance">
             <v-col cols="3">
-          <v-btn class="new-director-btn" outlined color="primary"
-          :disabled="directorEditInProgress"
-          @click="addNewDirector"
-        >
-          <v-icon>mdi-plus</v-icon>
-          <span>Appoint New Director</span>
-        </v-btn>
+              <v-btn class="new-director-btn" outlined color="primary"
+              :disabled="directorEditInProgress"
+              @click="addNewDirector"
+              >
+                <v-icon>mdi-plus</v-icon>
+                <span>Appoint New Director</span>
+              </v-btn>
             </v-col>
             <v-col cols="5">
               <WarningPopover :dialogObj="complianceMsg" />
@@ -476,18 +476,20 @@
 
             </div>
           </div>
-                 <v-alert
-      close-text="Close Alert"
-      dismissible
-      icon="mdi-information-outline"
-      class="white-background"
-      :id="'director-' + director.id + '-alert'"
-      v-if="complianceMsg && index == messageIndex"
-      v-once
-    >
-    <h3 style="font-size:14px; color:rgba(0,0,0,0.87">{{ complianceMsg.title }}</h3>
-    <p style="font-size:14px; color:rgba(0,0,0,0.87">{{ complianceMsg.msg }}</p>
-      </v-alert>
+          <v-alert
+          close-text="Close Alert"
+          dismissible
+          icon="mdi-information-outline"
+          class="white-background"
+          :id="'director-' + director.id + '-alert'"
+          v-if="complianceMsg && index == messageIndex"
+          v-once
+          >
+            <div class="complianceCard">
+              <h3>{{ complianceMsg.title }}</h3>
+              <p>{{ complianceMsg.msg }}</p>
+            </div>
+          </v-alert>
         </li>
       </ul>
     </v-card>
@@ -515,7 +517,7 @@ import { EntityTypes } from '@/enums'
 import { CEASED, NAMECHANGED, ADDRESSCHANGED, APPOINTED } from '@/constants'
 
 // Interfaces
-import { FormType, BaseAddressType } from '@/interfaces'
+import { FormType, BaseAddressType, AlertMessage } from '@/interfaces'
 
 @Component({
   components: {
@@ -553,8 +555,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin,
   private componentEnabled: boolean
 
   private directorEditInProgress: boolean = false;
-
-  private lastValidDirector: number = -1
 
   // Local properties.
   private directors = []
@@ -638,14 +638,13 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin,
       maxLength: maxLength(80)
     }
   }
-
-  private get complianceMsg (): object {
-    this.isCompliant = true
-    const complianceMsg = this.directorWarning(this.directors)
-    if (complianceMsg != null) {
-      this.isCompliant = false
-    }
-    return complianceMsg
+  /**
+   * Computed value.
+   * If a director change causes the business to be out of compliance
+   * return the relevant alert.
+   */
+  private get complianceMsg (): AlertMessage {
+    return this.directorWarning(this.directors)
   }
   /**
    * The array of validations rules for a director's first name.
@@ -1011,7 +1010,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin,
   private ceaseDirector (director, index): void {
     // if this is a Cease, apply a fee
     // otherwise it's just undoing a cease or undoing a new director, so remove fee
-    this.lastValidDirector = -1
     this.messageIndex = index
     if (this.isActive(director)) director.isFeeApplied = true
     else director.isFeeApplied = false
@@ -1027,11 +1025,6 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin,
     // close standalone cessation date picker and reset date
     this.cessationDateTemp = null
     this.activeIndexCustomCease = null
-    console.log(this.directors)
-    if (this.directors.filter(x => x.cessationDate == null).length < 2) {
-      this.lastValidDirector = director.id
-    }
-    // Determine if there are enough directors to remain in compliance
   }
 
   /**
@@ -1374,7 +1367,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin,
   }
 
   @Watch('complianceMsg')
-  private onCertifiedMsgChange (val: any): void {
+  private onComplianceMsgChange (val: AlertMessage): void {
     this.emitcomplianceDialogMsg(val)
   }
 
@@ -1421,10 +1414,10 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin,
   private emitDirectorEditInProgress (val: boolean): void { }
 
   /**
-   * Emits an event that indicates whether the director edit is in progress.
+   * Emits an event that indicates a director compliance warning has been triggered.
    */
   @Emit('complianceDialogMsg')
-  private emitcomplianceDialogMsg (val: any): void { }
+  private emitcomplianceDialogMsg (val: AlertMessage): void { }
 }
 </script>
 
@@ -1659,5 +1652,15 @@ ul {
       font-size: 14px;
       color: #2196F3;
   }
+}
+
+.v-alert__icon {
+    font-size: 14px;
+    color: #2196F3 !important;
+}
+
+.complianceCard {
+  font-size:14px;
+  color:rgba(0,0,0,0.87);
 }
 </style>
