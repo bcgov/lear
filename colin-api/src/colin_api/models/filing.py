@@ -167,13 +167,14 @@ class Filing:
         try:
             if filing_type_code == 'OTANN':
                 cursor.execute("""
-                    INSERT INTO filing (event_id, filing_typ_cd, effective_dt, period_end_dt, agm_date)
-                      VALUES (:event_id, :filing_type_code, sysdate, TO_DATE(:period_end_date, 'YYYY-mm-dd'),
-                      TO_DATE(:agm_date, 'YYYY-mm-dd'))
+                    INSERT INTO filing (event_id, filing_typ_cd, effective_dt, period_end_dt, agm_date, arrangement_ind,
+                    ods_typ_cd)
+                    VALUES (:event_id, :filing_type_code, sysdate, TO_DATE(:period_end_date, 'YYYY-mm-dd'),
+                    TO_DATE(:agm_date, 'YYYY-mm-dd'), 'N', 'P')
                     """,
                                event_id=event_id,
                                filing_type_code=filing_type_code,
-                               period_end_date=ar_date,
+                               period_end_date=ar_date if not agm_date else agm_date,
                                agm_date=agm_date
                                )
             elif filing_type_code == 'OTADD' or 'OTCDR':
@@ -193,7 +194,7 @@ class Filing:
             raise err
 
     @classmethod
-    def _create_filing_user(cls, cursor, event_id, filing):
+    def _create_filing_user(cls, cursor, event_id, filing, user_id):
         """Add to the FILING_USER table.
 
         :param cursor: oracle cursor
@@ -204,9 +205,10 @@ class Filing:
             cursor.execute("""
                 INSERT INTO filing_user (event_id, user_id, last_nme, first_nme, middle_nme, email_addr, party_typ_cd,
                 role_typ_cd)
-                  VALUES (:event_id, 'COOPER', :last_name, NULL, NULL, :email_address, NULL, NULL)
+                  VALUES (:event_id, :user_id, :last_name, NULL, NULL, :email_address, NULL, NULL)
                 """,
                            event_id=event_id,
+                           user_id=user_id,
                            last_name=filing.get_certified_by(),
                            email_address=filing.get_email()
                            )
@@ -215,7 +217,7 @@ class Filing:
             raise err
 
     @classmethod
-    def _add_ledger_text(cls, cursor, event_id, text):
+    def _add_ledger_text(cls, cursor, event_id, text, user_id):
         """Add note to ledger test table.
 
         :param cursor: oracle cursor
@@ -225,11 +227,12 @@ class Filing:
         try:
             cursor.execute("""
                 INSERT INTO ledger_text (event_id, ledger_text_dts, notation, dd_event_id, user_id)
-                  VALUES (:event_id, sysdate, :notation, :dd_event_id, 'COOPER')
+                  VALUES (:event_id, sysdate, :notation, :dd_event_id, :user_id)
                 """,
                            event_id=event_id,
                            notation=text,
-                           dd_event_id=event_id
+                           dd_event_id=event_id,
+                           user_id=user_id
                            )
         except Exception as err:
             current_app.logger.error(f'Failed to add ledger text: "{text}" for event {event_id}')
@@ -683,7 +686,7 @@ class Filing:
         """
         try:
             corp_num = filing.get_corp_num()
-
+            user_id = 'COOPER' if corp_num[:2] == 'CP' else None
             # get db connection and start a session, in case we need to roll back
             con = DB.connection
             con.begin()
@@ -693,7 +696,7 @@ class Filing:
             event_id = cls._get_event_id(cursor, corp_num, 'FILE')
 
             # create new filing user
-            cls._create_filing_user(cursor, event_id, filing)
+            cls._create_filing_user(cursor, event_id, filing, user_id)
             if filing.filing_type == 'annualReport':
                 ar_date = filing.body['annualReportDate']
                 agm_date = filing.body['annualGeneralMeetingDate']
@@ -715,25 +718,27 @@ class Filing:
                         Business.update_corp_state(cursor, event_id, corp_num, state='ACT')
 
                 # create new ledger text for annual report
-                cls._add_ledger_text(cursor=cursor, event_id=event_id, text=f'ANNUAL REPORT - {ar_date}')
+                cls._add_ledger_text(
+                    cursor=cursor, event_id=event_id, text=f'ANNUAL REPORT - {ar_date}', user_id=user_id)
 
             elif filing.filing_type == 'changeOfAddress':
-                # set date to last ar date + 1
-                last_ar_date = filing.business.business['lastArDate']
-                day = int(last_ar_date[-2:]) + 1
-                try:
-                    date = str(datetime.datetime.strptime(last_ar_date[:-2] + ('0' + str(day))[1:], '%Y-%m-%d'))[:10]
-                except ValueError:
-                    try:
-                        day = '-01'
-                        month = int(last_ar_date[5:7]) + 1
-                        date = str(datetime.datetime.strptime(last_ar_date[:5] + ('0' + str(month))[1:] + day,
-                                                              '%Y-%m-%d')
-                                   )[:10]
-                    except ValueError:
-                        mm_dd = '-01-01'
-                        yyyy = int(last_ar_date[:4]) + 1
-                        date = str(datetime.datetime.strptime(str(yyyy) + mm_dd, '%Y-%m-%d'))[:10]
+                # set date to last ar date + 1 -- Bob wants this to be set to null
+                # last_ar_date = filing.business.business['lastArDate']
+                # day = int(last_ar_date[-2:]) + 1
+                # try:
+                #     date = str(datetime.datetime.strptime(last_ar_date[:-2] + ('0' + str(day))[1:], '%Y-%m-%d'))[:10]
+                # except ValueError:
+                #     try:
+                #         day = '-01'
+                #         month = int(last_ar_date[5:7]) + 1
+                #         date = str(datetime.datetime.strptime(last_ar_date[:5] + ('0' + str(month))[1:] + day,
+                #                                               '%Y-%m-%d')
+                #                    )[:10]
+                #     except ValueError:
+                #         mm_dd = '-01-01'
+                #         yyyy = int(last_ar_date[:4]) + 1
+                #         date = str(datetime.datetime.strptime(str(yyyy) + mm_dd, '%Y-%m-%d'))[:10]
+                date = None
 
                 # create new filing
                 filing_type_cd = 'OTADD'
@@ -752,13 +757,15 @@ class Filing:
                                          mailing_addr_id, office_code)
 
                     # create new ledger text for address change
-                    cls._add_ledger_text(cursor, event_id, f'Change to the {office_desc}, effective on {date}')
+                    cls._add_ledger_text(cursor, event_id, f'Change to the {office_desc}.', user_id)
                 # update corporation record
                 Business.update_corporation(cursor, corp_num)
 
             elif filing.filing_type == 'changeOfDirectors':
                 # create new filing
-                date = filing.business.business['lastArDate']
+                # bob wants this to be null
+                # date = filing.business.business['lastArDate']
+                date = None
                 filing_type_cd = 'OTCDR'
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
 
@@ -790,7 +797,7 @@ class Filing:
                                                  business=filing.business.as_dict())
 
                 # create new ledger text for address change
-                cls._add_ledger_text(cursor=cursor, event_id=event_id, text=f'Director change.')
+                cls._add_ledger_text(cursor=cursor, event_id=event_id, text=f'Director change.', user_id=user_id)
                 # update corporation record
                 Business.update_corporation(cursor=cursor, corp_num=corp_num)
 

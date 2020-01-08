@@ -95,7 +95,7 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
     if errors:
         for err in errors:
             app.logger.error(err.message)
-        raise Exception
+        return None
     else:
         filing_type = filing['filing']['header']['name']
         app.logger.debug(f'Filing {filing_id} in colin for {filing["filing"]["business"]["identifier"]}.')
@@ -103,7 +103,8 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
                           f'{filing_type}', json=filing)
         if not r or r.status_code != 201:
             app.logger.error(f'Filing {filing_id} not created in colin {filing["filing"]["business"]["identifier"]}.')
-            raise Exception
+            # raise Exception
+            return None
         # if it's an AR containing multiple filings we match it with the colin id of the AR only
         return r.json()['filing'][filing_type]['eventId']
 
@@ -150,11 +151,12 @@ def run():
             for filing in filings:
                 filing_id = filing['filingId']
                 colin_id = send_filing(app=application, filing=filing, filing_id=filing_id)
-                update = update_colin_id(app=application, filing_id=filing_id, colin_id=colin_id, token=token)
-                if update:
-                    application.logger.error(f'Successfully updated filing {filing_id}')
-                else:
-                    application.logger.error(f'Failed to update filing {filing_id}')
+                if colin_id:
+                    update = update_colin_id(app=application, filing_id=filing_id, colin_id=colin_id, token=token)
+                    if update:
+                        application.logger.error(f'Successfully updated filing {filing_id}')
+                    else:
+                        application.logger.error(f'Failed to update filing {filing_id}')
         except Exception as err:
             application.logger.error(err)
 

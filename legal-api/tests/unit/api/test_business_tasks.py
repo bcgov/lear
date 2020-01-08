@@ -153,7 +153,7 @@ def test_get_tasks_prev_year_incomplete_filing_exists(session, client):
     rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
 
     assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json.get('tasks')) == 3  # Previous year filing and a disabled to-do for current year.
+    assert len(rv.json.get('tasks')) == 2  # Previous year filing and a disabled to-do for current year.
 
 
 def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client):
@@ -166,7 +166,7 @@ def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client):
     rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
 
     assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json.get('tasks')) == 3  # Previous year filing and a disabled to-do for current year.
+    assert len(rv.json.get('tasks')) == 2  # Previous year filing and a disabled to-do for current year.
 
 
 def test_get_404_filing_with_invalid_business(session, client):
