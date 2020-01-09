@@ -76,18 +76,38 @@ export default class DateMixin extends Vue {
      * is the timezone to be used.
      */
   convertUTCTimeToLocalTime (date: string): string {
-    if (!date) return null
+    if (!date) return null // safety check
+
     const UTCTime: string = date.slice(0, 19) + 'Z'
     const options = {
       year: 'numeric',
-      month: 'numeric',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
       hour12: true,
       timeZone: 'America/Vancouver'
     }
-    return new Intl.DateTimeFormat('en-US', options).format(new Date(UTCTime))
+
+    // locale 'en-CA' is the only one consistent between IE11 and other browsers
+    // example output: "2019-12-31 04:00:00 PM"
+    let localTime = new Intl.DateTimeFormat('en-CA', options).format(new Date(UTCTime))
+
+    // misc cleanup
+    localTime = localTime.replace(',', '')
+    localTime = localTime.replace('a.m.', 'AM')
+    localTime = localTime.replace('p.m.', 'PM')
+
+    // fix for Jest (which outputs MM/DD/YYYY no matter which 'en' locale is used)
+    if (localTime.indexOf('/') >= 0) {
+      let date = localTime.substr(0, 10)
+      const time = localTime.slice(11)
+      const dateParts = date.split('/')
+      date = `${dateParts[2]}-${dateParts[0]}-${dateParts[1]}`
+      localTime = `${date} ${time}`
+    }
+
+    return localTime
   }
 }
