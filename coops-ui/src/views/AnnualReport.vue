@@ -680,7 +680,9 @@ export default {
           name: 'annualReport',
           certifiedBy: this.certifiedBy || '',
           email: 'no_one@never.get',
-          date: this.currentDate
+          date: this.currentDate,
+          effectiveDate: this.agmDate ? this.agmDate + 'T00:00:00+00:00'
+            : this.annualReportDate + 'T00:00:00+00:00'
         }
       }
       // only save this if it's not null

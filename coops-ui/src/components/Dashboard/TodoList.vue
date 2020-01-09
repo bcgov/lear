@@ -378,8 +378,8 @@ export default {
       let date
       const filing = task.task.filing
       if (filing && filing.header && filing.annualReport) {
-        filing.annualReport.annualGeneralMeetingDate
-          ? date = filing.annualReport.annualGeneralMeetingDate
+        filing.annualReport.annualReportDate
+          ? date = filing.annualReport.annualReportDate
           : date = filing.annualReport.nextARDate
         if (date) {
           const ARFilingYear = +date.substring(0, 4)
