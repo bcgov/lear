@@ -31,32 +31,32 @@ objects:
                   valueFrom:
                     configMapKeyRef:
                       key: ROUTE
-                      name: colin-api-dev-config
-                - name: LEGAL_URL
-                  valueFrom:
-                    configMapKeyRef:
-                      key: ROUTE
-                      name: legal-api-dev-config
-                - name: AUTH_URL
-                  valueFrom:
-                    secretKeyRef:
-                      key: AUTH_URL
-                      name: updater-job
-                - name: USERNAME
-                  valueFrom:
-                    secretKeyRef:
-                      key: USERNAME
-                      name: updater-job
-                - name: PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      key: PASSWORD
-                      name: updater-job
+                      name: colin-api-${ENV_TAG}-config
                 - name: SENTRY_DSN
                   valueFrom:
                     configMapKeyRef:
                       key: SENTRY_DSN
-                      name: updater-jobs-dev-config
+                      name: updater-jobs-${ENV_TAG}-config
+                - name: LEGAL_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: ROUTE
+                      name: legal-api-${ENV_TAG}-config
+                - name: AUTH_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: AUTH_URL
+                      name: updater-jobs-${ENV_TAG}-config
+                - name: AUTH_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      key: AUTH_USERNAME
+                      name: updater-job
+                - name: AUTH_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: AUTH_PASSWORD
+                      name: updater-job
             restartPolicy: "Never"
             concurrencyPolicy: "Forbid"
 parameters: [
