@@ -228,14 +228,10 @@ export default {
     },
 
     // Method to extract date from a local datetime string
+    // Returns "yyyy-mm-dd"
     formatDate (dateString): string {
       if (!dateString) return null // safety check
-      var dateStrParts = dateString.replace(',', '').split(' ')
-      var dateStr = dateStrParts[0]
-      var dateParts = dateStr.split('/')
-      return dateParts[2] + '-' +
-        dateParts[0].toString().padStart(2, '0') + '-' +
-        dateParts[1].toString().padStart(2, '0')
+      return dateString.split(' ')[0]
     },
 
     loadAnnualReport (filing) {
