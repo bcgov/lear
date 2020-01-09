@@ -1514,9 +1514,8 @@ ul {
 
 // V-chip customization
 .v-size--x-small {
-  height: 1.25rem;
+  display: table;
   margin-top: 0.5rem;
-  font-size: 0.65rem;
   text-transform: uppercase;
   font-weight: 700;
 }

@@ -372,6 +372,13 @@ ul {
 }
 
 // V-chip customization
+.v-size--x-small {
+  display: table;
+  margin-top: 0.5rem;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
 .remove, .remove .director-info {
   color: $gray5 !important;
 }
