@@ -120,6 +120,45 @@ def test_process_ar_filing(app, session):
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
     assert datetime.datetime.date(business.last_agm_date) == agm_date
+    assert datetime.datetime.date(business.last_ar_date) == agm_date
+
+
+def test_process_ar_filing_no_agm(app, session):
+    """Assert that an AR filling can be applied to the model correctly."""
+    from entity_filer.worker import process_filing
+    from legal_api.models import Business, Filing
+
+    # vars
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    identifier = 'CP1234567'
+
+    # setup
+    business = create_business(identifier)
+    business_id = business.id
+    now = datetime.date(2020, 9, 17)
+    ar_date = datetime.date(2020, 8, 5)
+    agm_date = None
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business']['identifier'] = identifier
+    ar['filing']['annualReport']['annualReportDate'] = ar_date.isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
+
+    # TEST
+    with freeze_time(now):
+        filing = create_filing(payment_id, ar, business.id)
+        filing_id = filing.id
+        filing_msg = {'filing': {'id': filing_id}}
+        process_filing(filing_msg, app)
+
+    # Get modified data
+    filing = Filing.find_by_id(filing_id)
+    business = Business.find_by_internal_id(business_id)
+
+    # check it out
+    assert filing.transaction_id
+    assert filing.business_id == business_id
+    assert filing.status == Filing.Status.COMPLETED.value
+    assert business.last_agm_date == agm_date
     assert datetime.datetime.date(business.last_ar_date) == ar_date
 
 
@@ -358,7 +397,7 @@ def test_process_combined_filing(app, session):
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
     assert datetime.datetime.date(business.last_agm_date) == agm_date
-    assert datetime.datetime.date(business.last_ar_date) == ar_date
+    assert datetime.datetime.date(business.last_ar_date) == agm_date
 
     # check address filing
     delivery_address = business.delivery_address.one_or_none().json
