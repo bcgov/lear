@@ -87,8 +87,46 @@ def test_post_ar_with_coa_cod(client):
     fake_filing['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = \
         'Canada'
     fake_filing['filing']['changeOfDirectors'] = CHANGE_OF_DIRECTORS
+    # set actions to nothing because it contains directors that don't exist for this coop
     for director in fake_filing['filing']['changeOfDirectors']['directors']:
-        director['deliveryAddress']['addressCountry'] = 'Canada'
+        director['actions'] = []
+
+    # add director action for director that exists for CP0001965
+    fake_filing['filing']['changeOfDirectors']['directors'].append(
+        {
+            'actions': ['addressChanged'],
+            'appointmentDate': '2009-09-21',
+            'cessationDate': None,
+            'deliveryAddress': {
+                'actions': [],
+                'addressCity': 'TEST CHANGE 1',
+                'addressCountry': 'CANADA',
+                'addressId': 102554860,
+                'addressRegion': 'BC',
+                'deliveryInstructions': '',
+                'postalCode': '',
+                'streetAddress': '1038 DAIRY RD',
+                'streetAddressAdditional': ''
+            },
+            'mailingAddress': {
+                'actions': [],
+                'addressCity': 'WILLIAMS LAKE',
+                'addressCountry': 'CANADA',
+                'addressId': 102554860,
+                'addressRegion': 'BC',
+                'deliveryInstructions': '',
+                'postalCode': '',
+                'streetAddress': '1038 DAIRY RD',
+                'streetAddressAdditional': ''
+            },
+            'officer': {
+                'firstName': 'NANCY',
+                'lastName': 'GALE',
+                'middleInitial': ''
+            },
+            'title': ''
+        }
+    )
     fake_filing['filing']['business']['identifier'] = 'CP0001965'
     fake_filing['filing']['annualReport']['annualGeneralMeetingDate'] = '2019-04-08'
     fake_filing['filing']['annualReport']['annualReportDate'] = '2019-04-08'

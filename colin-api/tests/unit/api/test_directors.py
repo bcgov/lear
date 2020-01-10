@@ -50,8 +50,46 @@ def test_post_cod(client):
     fake_filing['filing']['header']['name'] = 'changeOfDirectors'
     fake_filing['filing']['business']['identifier'] = 'CP0001965'
     fake_filing['filing']['changeOfDirectors'] = CHANGE_OF_DIRECTORS
+    # set actions to nothing because it contains directors that don't exist for this coop
     for director in fake_filing['filing']['changeOfDirectors']['directors']:
-        director['deliveryAddress']['addressCountry'] = 'Canada'
+        director['actions'] = []
+
+    # add director action for director that exists for CP0001965
+    fake_filing['filing']['changeOfDirectors']['directors'].append(
+        {
+            'actions': ['addressChanged'],
+            'appointmentDate': '2009-09-21',
+            'cessationDate': None,
+            'deliveryAddress': {
+                'actions': [],
+                'addressCity': 'TEST CHANGE 2',
+                'addressCountry': 'CANADA',
+                'addressId': 102554860,
+                'addressRegion': 'BC',
+                'deliveryInstructions': '',
+                'postalCode': '',
+                'streetAddress': '1038 DAIRY RD',
+                'streetAddressAdditional': ''
+            },
+            'mailingAddress': {
+                'actions': [],
+                'addressCity': 'WILLIAMS LAKE',
+                'addressCountry': 'CANADA',
+                'addressId': 102554860,
+                'addressRegion': 'BC',
+                'deliveryInstructions': '',
+                'postalCode': '',
+                'streetAddress': '1038 DAIRY RD',
+                'streetAddressAdditional': ''
+            },
+            'officer': {
+                'firstName': 'NANCY',
+                'lastName': 'GALE',
+                'middleInitial': ''
+            },
+            'title': ''
+        }
+    )
 
     rv = client.post('/api/v1/businesses/CP0001965/filings/changeOfDirectors',
                      data=json.dumps(fake_filing), headers=headers)
@@ -67,6 +105,22 @@ def test_post_cod(client):
     assert "changeOfDirectors" == rv.json['filing']['header']['name']
     ids.append(str(rv.json['filing']['changeOfDirectors']['eventId']))
     assert str(rv.json['filing']['changeOfDirectors']['eventId']) in ids
+
+
+@oracle_integration
+def test_post_invalid_cod_fail(client):
+    """Assert that business for regular (not xpro) business is correct to spec."""
+    headers = {'content-type': 'application/json'}
+
+    fake_filing = FILING_HEADER
+    fake_filing['filing']['header']['name'] = 'changeOfDirectors'
+    fake_filing['filing']['business']['identifier'] = 'CP0001965'
+    fake_filing['filing']['changeOfDirectors'] = CHANGE_OF_DIRECTORS
+
+    rv = client.post('/api/v1/businesses/CP0001965/filings/changeOfDirectors',
+                     data=json.dumps(fake_filing), headers=headers)
+
+    assert 201 != rv.status_code
 
 
 @oracle_integration
