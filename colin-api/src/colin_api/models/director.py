@@ -192,6 +192,10 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
                 last_name=last_name.strip(),
                 middle_initial=middle_initial.strip()
             )
+            if cursor.rowcount < 1:
+                current_app.logger.error(f'Director name: {first_name} {middle_initial} {last_name}'
+                                         f' did not match any current directors in COLIN')
+                raise Exception
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error(f'Error in director: Failed to end director: {director}')
