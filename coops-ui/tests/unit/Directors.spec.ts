@@ -7,6 +7,7 @@ import store from '@/store/store'
 
 import Directors from '@/components/AnnualReport/Directors.vue'
 import { EntityTypes } from '@/enums'
+import { configJson } from '@/resources/business-config'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -48,7 +49,7 @@ describe('Directors as a COOP', () => {
     store.state.entityIncNo = 'CP0001191'
     store.state.entityType = EntityTypes.COOP
     store.state.entityFoundingDate = '2018-03-01T00:00:00'
-
+    store.state.configObject = configJson.find(x => x.typeEnum === store.state.entityType)
     // GET directors
     sinon.stub(axios, 'get').withArgs('CP0001191/directors?date=2019-04-01')
       .returns(new Promise((resolve) => resolve({
@@ -118,6 +119,12 @@ describe('Directors as a COOP', () => {
     expect(vm.directors.length).toEqual(2)
     expect(vm.directors[0].id).toEqual(1)
     expect(vm.directors[1].id).toEqual(2)
+  })
+
+  it('check the default warning message for too few directors', () => {
+    expect(vm.complianceMsg).toBeDefined()
+    const warning = store.state.configObject.flows.find(x=> x.feeCode == 'OTCDR').warnings
+    expect(vm.complianceMsg.msg).toEqual(warning.minDirectors.message)
   })
 
   it('initializes the director name data properly', () => {
@@ -202,7 +209,7 @@ describe('Directors as a COOP', () => {
     expect(vm.editFormShowHide.showDates).toEqual(false)
 
     // Click and save the updated data
-    await vm.saveEditDirector(1, 2)
+    await vm.saveEditDirector(0, 1)
 
     // Verify the updated text field value
     expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Steve')
@@ -285,7 +292,7 @@ describe('Directors as a COOP', () => {
 
       Vue.nextTick(() => {
         // check that button is hidden
-        expect(vm.$el.querySelector('.new-director-btn').closest('div')
+        expect(vm.$el.querySelector('.new-director-btn').closest('#wrapper-add-director')
           .getAttribute('style')).toContain('height: 0px;')
 
         // check that form is showing
@@ -382,7 +389,7 @@ describe('Directors as a BCOMP', () => {
     // init store
     store.state.entityIncNo = 'CP0002291'
     store.state.entityType = EntityTypes.BCOMP
-
+    store.state.configObject = configJson.find(x => x.typeEnum === store.state.entityType)
     // GET directors
     sinon.stub(axios, 'get').withArgs('CP0002291/directors?date=2019-04-01')
       .returns(new Promise((resolve) => resolve({
@@ -466,6 +473,30 @@ describe('Directors as a BCOMP', () => {
     expect(vm.directors.length).toEqual(2)
     expect(vm.directors[0].id).toEqual(1)
     expect(vm.directors[1].id).toEqual(2)
+  })
+
+  it('non-compliance due to too few directors displays accordingly', () => {
+    expect(vm.complianceMsg).toBeNull()
+    expect(vm.$el.querySelector('.complianceCard')).toBeNull()
+    expect(vm.$el.querySelector('.warning-text')).toBeNull()
+    // click first director's cease button
+    click(vm, '#director-1-cease-btn')
+    Vue.nextTick(() => {
+    // click second director's cease button
+      click(vm, '#director-2-cease-btn')
+        Vue.nextTick(() => {
+          expect(vm.complianceMsg.msg).toContain('A minimum of one director is required')
+          expect(vm.$el.querySelector('.complianceCard')).not.toBeNull()
+          expect(vm.$el.querySelector('.warning-text')).not.toBeNull()
+          // un-cease director
+          click(vm, '#director-2-cease-btn')
+          Vue.nextTick(() => {
+            expect(vm.complianceMsg).toBeNull()
+            expect(vm.$el.querySelector('.complianceCard')).toBeNull()
+            expect(vm.$el.querySelector('.warning-text')).toBeNull()
+          })
+      })
+    })
   })
 
   it('initializes the director name data properly', () => {
@@ -572,7 +603,7 @@ describe('Directors as a BCOMP', () => {
 
       Vue.nextTick(() => {
         // check that button is hidden
-        expect(vm.$el.querySelector('.new-director-btn').closest('div')
+        expect(vm.$el.querySelector('.new-director-btn').closest('#wrapper-add-director')
           .getAttribute('style')).toContain('height: 0px;')
 
         // check that form is showing

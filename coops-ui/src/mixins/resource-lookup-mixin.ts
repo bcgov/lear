@@ -66,7 +66,7 @@ export default class ResourceLookupMixin extends Vue {
 
       if (configSection.minDirectors) {
         const min = configSection.minDirectors.count
-        if (directors.filter(x => x.cessationDate == null).length < min) {
+        if (directors.filter(x => x.actions.indexOf('ceased') < 0).length < min) {
           errors.push({ 'title': configSection.minDirectors.title, 'msg': configSection.minDirectors.message })
         }
       }

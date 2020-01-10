@@ -23,7 +23,7 @@
     </v-dialog>
 
     <v-expand-transition>
-      <div v-if="componentEnabled" v-show="!showNewDirectorForm">
+      <div id="wrapper-add-director" v-if="componentEnabled" v-show="!showNewDirectorForm" >
         <v-container>
           <v-row class="msg-director-compliance">
             <v-col cols="3">
