@@ -28,7 +28,7 @@ from dotenv import load_dotenv, find_dotenv
 from flask import Flask
 from legal_api import db
 from legal_api.config import get_named_config
-from legal_api.models import Address, Business, Director, Filing, Office
+from legal_api.models import Address, Business, Director, Filing, Office, User
 from sqlalchemy_continuum import versioning_manager
 from sqlalchemy import text
 
@@ -40,8 +40,11 @@ FLASK_APP.config.from_object(get_named_config('production'))
 db.init_app(FLASK_APP)
 
 COLIN_API = os.getenv('COLIN_API', None)
+UPDATER_USERNAME = os.getenv('AUTH_USERNAME', None)
 if not COLIN_API:
     print('ERROR, no COLIN_API defined.')
+if not UPDATER_USERNAME:
+    print('ERROR, no AUTH_USERNAME defined.')
 
 
 def create_business(db, business_json):
@@ -82,7 +85,7 @@ def create_office(business, addresses, office_type):
         business.offices = []
 
     business.offices.append(office)
-    
+
 
 def add_business_addresses(business, offices_json):
     for office_type in offices_json:
@@ -248,6 +251,11 @@ with open('coops.csv', 'r') as csvfile:
                                 filing.paper_only = True
                                 filing.effective_date = datetime.datetime.strptime(
                                     historic_filing['filing']['header']['effectiveDate'], '%Y-%m-%d')
+
+                                # set user id to updater-job id (this will ensure that filing source is set to COLIN)
+                                updater_user = User.find_by_username(UPDATER_USERNAME)
+                                filing.submitter_id = updater_user.id
+
                                 db.session.add(filing)
                                 db.session.commit()
 

@@ -681,6 +681,7 @@ label:first-child {
   }
 
   .meta-container__inner {
+    flex: 1 1 auto;
     margin-top: 0;
   }
 }

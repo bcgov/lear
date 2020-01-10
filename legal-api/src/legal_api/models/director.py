@@ -88,5 +88,6 @@ class Director(db.Model):  # pylint: disable=too-many-instance-attributes
             filter(Director.business_id == business_id). \
             filter(cast(Director.appointment_date, Date) <= end_date). \
             filter(or_(Director.cessation_date.is_(None), cast(Director.cessation_date, Date) > end_date)). \
+            order_by(Director.last_name.asc(), Director.first_name.asc(), Director.middle_initial.asc()). \
             all()
         return directors

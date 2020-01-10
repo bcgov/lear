@@ -34,7 +34,7 @@ from tests.unit.services.filings.validations import lists_are_equal
         ('SUCCESS', datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc),
          'BC', 'CA', 'BC', 'CA',
          None, None),
-        ('SUCCESS', datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc),
+        ('SUCCESS-NON_CA_COUNTRY', datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc),
          'AM', 'DE', 'AM', 'DE',
          None, None),
         ('Director[1] Nonsense Country', datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc),
