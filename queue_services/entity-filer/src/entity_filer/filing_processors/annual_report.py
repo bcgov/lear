@@ -34,4 +34,8 @@ def process(business: Business, filing: Dict):
 
     if agm_date is not None:
         business.last_agm_date = agm_date
-    business.last_ar_date = ar_date
+
+    if agm_date is not None:
+        business.last_ar_date = agm_date
+    else:
+        business.last_ar_date = ar_date

@@ -120,7 +120,7 @@ def test_process_ar_filing(app, session):
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
     assert datetime.datetime.date(business.last_agm_date) == agm_date
-    assert datetime.datetime.date(business.last_ar_date) == ar_date
+    assert datetime.datetime.date(business.last_ar_date) == agm_date
 
 
 def test_process_coa_filing(app, session):
