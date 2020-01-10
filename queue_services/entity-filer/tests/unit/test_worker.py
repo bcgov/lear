@@ -158,7 +158,7 @@ def test_process_ar_filing_no_agm(app, session):
     assert filing.transaction_id
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
-    assert datetime.datetime.date(business.last_agm_date) == agm_date
+    assert business.last_agm_date == agm_date
     assert datetime.datetime.date(business.last_ar_date) == ar_date
 
 
@@ -397,7 +397,7 @@ def test_process_combined_filing(app, session):
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
     assert datetime.datetime.date(business.last_agm_date) == agm_date
-    assert datetime.datetime.date(business.last_ar_date) == ar_date
+    assert datetime.datetime.date(business.last_ar_date) == agm_date
 
     # check address filing
     delivery_address = business.delivery_address.one_or_none().json
