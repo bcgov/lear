@@ -154,7 +154,7 @@ def run():
                 if colin_id:
                     update = update_colin_id(app=application, filing_id=filing_id, colin_id=colin_id, token=token)
                     if update:
-                        application.logger.error(f'Successfully updated filing {filing_id}')
+                        application.logger.debug(f'Successfully updated filing {filing_id}')
                     else:
                         application.logger.error(f'Failed to update filing {filing_id}')
         except Exception as err:
