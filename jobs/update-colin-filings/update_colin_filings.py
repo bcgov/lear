@@ -88,9 +88,9 @@ def get_filings(app: Flask = None):
 
 def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
     """Post to colin-api with filing."""
-    # clean_none(filing)
-    # validate schema
+    clean_none(filing)
 
+    # validate schema
     is_valid, errors = validate(filing, 'filing')
     if errors:
         for err in errors:
