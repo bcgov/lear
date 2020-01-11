@@ -12,12 +12,14 @@ objects:
   metadata:
     name: "update-colin-filings"
   spec:
+    concurrencyPolicy: "Forbid"
     schedule: "0 * * * *"
     suspend: false
     jobTemplate:
       spec:
         template:
           spec:
+            restartPolicy: "Never"
             containers:
             - name: "update-colin-filings"
               image: "docker-registry.default.svc:5000/gl2uos-tools/update-colin-filings:${ENV_TAG}"
@@ -57,8 +59,6 @@ objects:
                     secretKeyRef:
                       key: AUTH_PASSWORD
                       name: updater-job
-            restartPolicy: "Never"
-            concurrencyPolicy: "Forbid"
 parameters: [
         {
           "name": "ENV_TAG",
