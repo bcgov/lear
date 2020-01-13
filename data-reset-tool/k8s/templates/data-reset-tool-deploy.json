@@ -27,72 +27,7 @@
                         "intervalSeconds": 1,
                         "timeoutSeconds": 600,
                         "maxUnavailable": "25%",
-                        "maxSurge": "25%",
-                        "pre": {
-                            "failurePolicy": "Abort",
-                            "execNewPod": {
-                                "command": [
-                                    "/opt/app-root/src/pre-hook-update-db.sh"
-                                ],
-                                "env": [
-                                    {
-                                        "name": "DB_ADMIN_PASSWORD",
-                                        "valueFrom": {
-                                            "secretKeyRef": {
-                                                "name": "postgresql-${TAG_NAME}",
-                                                "key": "admin-password"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "name": "DATABASE_USERNAME",
-                                        "valueFrom": {
-                                            "secretKeyRef": {
-                                                "name": "postgresql-${TAG_NAME}",
-                                                "key": "database-user"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "name": "DATABASE_PASSWORD",
-                                        "valueFrom": {
-                                            "secretKeyRef": {
-                                                "name": "postgresql-${TAG_NAME}",
-                                                "key": "database-password"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "name": "DATABASE_NAME",
-                                        "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "name": "${NAME}-${TAG_NAME}-config",
-                                                "key": "DATABASE_NAME"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "name": "DATABASE_HOST",
-                                        "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "name": "${NAME}-${TAG_NAME}-config",
-                                                "key": "DATABASE_HOST"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "name": "DATABASE_PORT",
-                                        "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "name": "${NAME}-${TAG_NAME}-config",
-                                                "key": "DB_PORT"
-                                            }
-                                        }
-                                    }
-                                ],
-                                "containerName": "${NAME}-${TAG_NAME}"
-                            }
-                        }
+                        "maxSurge": "25%"
                     }
                 },
                 "triggers": [
