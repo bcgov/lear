@@ -103,7 +103,7 @@
             />
           </div>
 
-          <div v-if="!isSame(registeredAddress, recordsAddress) || !inheritRegisteredAddress">
+          <div v-if="!inheritRegisteredAddress">
             <!-- Records Delivery Address -->
             <li class="address-list-container">
               <div class="meta-container">
@@ -286,7 +286,7 @@ export default class OfficeAddresses extends Mixins(CommonMixin, EntityFilterMix
   private inheritRecDeliveryAddress: boolean = true
 
   // State of the checkbox for determining whether the Record address is the same as the Registered address
-  private inheritRegisteredAddress: boolean = true
+  private inheritRegisteredAddress: boolean = this.isSame(this.registeredAddress, this.recordsAddress)
 
   // The Address schema containing Vuelidate rules.
   private addressSchema: {} = officeAddressSchema
@@ -534,6 +534,7 @@ export default class OfficeAddresses extends Mixins(CommonMixin, EntityFilterMix
     this.mailingAddress = { ...this.mailingAddressOriginal }
     this.recDeliveryAddress = { ...this.recDeliveryAddressOriginal }
     this.recMailingAddress = { ...this.recMailingAddressOriginal }
+    this.inheritRegisteredAddress = this.isSame(this.registeredAddress, this.recordsAddress)
     this.emitAddresses()
     this.emitModified()
   }
@@ -675,7 +676,6 @@ label:first-child {
 
     label:first-child {
       flex: 0 0 auto;
-      padding-right: 4rem;
       width: 12rem;
     }
   }
@@ -750,7 +750,7 @@ label:first-child {
 }
 .records-inherit-checkbox {
   margin-top: 0rem;
-  margin-left: 6rem;
+  margin-left: 4.65rem;
   margin-bottom: -1.5rem;
   padding: 0;
 
