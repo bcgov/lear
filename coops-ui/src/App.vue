@@ -313,7 +313,14 @@ export default {
 
     storeDirectors (response) {
       if (response && response.data && response.data.directors) {
-        const directors = response.data.directors
+        const directorsList = response.data.directors
+
+        const fieldSorter = (fields) => (a, b) => fields.map(o => {
+          return a['officer'][o] > b['officer'][o] ? 1 : a['officer'][o] < b['officer'][o] ? -1 : 0
+        }).reduce((p, n) => p || n, 0)
+
+        const directors = directorsList.sort(fieldSorter(['lastName', 'firstName', 'middleName']))
+
         for (var i = 0; i < directors.length; i++) {
           directors[i].id = i + 1
           directors[i].isNew = false

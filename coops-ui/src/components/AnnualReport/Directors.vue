@@ -820,6 +820,12 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
 
             var directors = response.data.directors
 
+            const fieldSorter = (fields) => (a, b) => fields.map(o => {
+              return a['officer'][o] > b['officer'][o] ? 1 : a['officer'][o] < b['officer'][o] ? -1 : 0
+            }).reduce((p, n) => p || n, 0)
+
+            directors = directors.sort(fieldSorter(['lastName', 'firstName', 'middleName']))
+
             for (var i = 0; i < directors.length; i++) {
               directors[i].id = i + 1
               directors[i].isFeeApplied = directors[i].isFeeApplied !== undefined ? directors[i].isFeeApplied : false
