@@ -141,8 +141,10 @@
                     "template.alpha.openshift.io/wait-for-ready": "true"
                 },
                 "labels": {
-                    "component": "${COMP_NAME}",
-                    "app": "${APP_NAME}-${SUFFIX}"
+                    "app": "${APP_NAME}-${SUFFIX}",
+                    "app-group": "${APP_NAME}-${SUFFIX}",
+                    "group": "${APP_NAME}",
+                    "component": "${COMP_NAME}"
                 }
             },
             "spec": {

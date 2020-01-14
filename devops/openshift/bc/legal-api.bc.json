@@ -44,7 +44,8 @@
                     "sourceStrategy": {
                         "from": {
                             "kind": "${SOURCE_IMAGE_KIND}",
-                            "name": "${SOURCE_IMAGE_NAME}:${SOURCE_IMAGE_TAG}"
+                            "name": "${SOURCE_IMAGE_NAME}:${SOURCE_IMAGE_TAG}",
+                            "namespace": "${SOURCE_NAMESPACE}"
                         }
                     }
                 },
@@ -98,6 +99,13 @@
             "description": "The source context directory.",
             "required": false,
             "value": "/legal-api"
+        },
+        {
+            "name": "SOURCE_NAMESPACE",
+            "displayName": "Source Namespace",
+            "description": "The source namespace to pull from.",
+            "required": false,
+            "value": "gl2uos-tools"
         },
         {
             "name": "SOURCE_IMAGE_KIND",

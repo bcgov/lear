@@ -6,18 +6,355 @@
             "description": "Deployment template for a legal api service.",
             "tags": "${COMP_NAME}"
         },
-        "name": "${COMP_NAME}-deploy-template"
+        "name": "${COMP_NAME}-${SUFFIX}"
     },
-    "objects": [{
-            "kind": "DeploymentConfig",
+    "parameters": [{
+            "name": "APP_NAME",
+            "displayName": "APP_NAME",
+            "description": "The name of the application (grouped).",
+            "required": true,
+            "value": "bcros"
+        }, {
+            "name": "COMP_NAME",
+            "displayName": "COMP_NAME",
+            "description": "The name of the application component.",
+            "required": true,
+            "value": "coops-ui"
+        }, {
+            "name": "SUFFIX",
+            "displayName": "Name",
+            "description": "The name assigned to all of the frontend objects defined in this template.",
+            "required": true
+        },
+        {
+            "name": "DATABASE_NAME",
+            "displayName": "Database Name",
+            "description": "A valid database name used by the service.",
+            "required": true,
+            "value": "lear"
+        },
+        {
+            "name": "GO_LIVE_DATE",
+            "displayName": "Go Live Date",
+            "description": "Go Live Date of the system, used for MVP for things such as blocking legacy filings.",
+            "required": true,
+            "value": "2019-08-12"
+        },
+        {
+            "name": "SENTRY_DSN",
+            "displayName": "Sentry Init URL",
+            "description": "Sentry DSN URL to initialize the Sentry SDK",
+            "required": true,
+            "value": "https://account.sentry.ioo/project/id"
+        },
+        {
+            "name": "DATABASE_PORT",
+            "displayName": "Database Port",
+            "description": "A valid database port used by the service.",
+            "required": true,
+            "value": "5432"
+        },
+        {
+            "name": "DATABASE_HOST",
+            "displayName": "Database Host",
+            "description": "A valid database hostname used by the service.",
+            "required": true,
+            "value": "localhost"
+        },
+        {
+            "name": "DATABASE_TEST_HOST",
+            "displayName": "Database Test Host",
+            "description": "A valid database hostname used by the test service.",
+            "required": true,
+            "value": "localhost"
+        },
+        {
+            "name": "DATABASE_TEST_NAME",
+            "displayName": "Database Test Name",
+            "description": "A valid database name used by the test service.",
+            "required": true,
+            "value": "lear-db"
+        },
+        {
+            "name": "IMAGE_NAMESPACE",
+            "displayName": "Image Namespace",
+            "required": true,
+            "description": "The namespace of the OpenShift project containing the imagestream for the application.",
+            "value": "gl2uos-tools"
+        },
+        {
+            "name": "CPU_REQUEST",
+            "displayName": "Resources CPU Request",
+            "description": "The resources CPU request (in cores) for this build.",
+            "required": true,
+            "value": "100m"
+        },
+        {
+            "name": "CPU_LIMIT",
+            "displayName": "Resources CPU Limit",
+            "description": "The resources CPU limit (in cores) for this build.",
+            "required": true,
+            "value": "750m"
+        },
+        {
+            "name": "MEMORY_REQUEST",
+            "displayName": "Resources Memory Request",
+            "description": "The resources Memory request (in Mi, Gi, etc) for this build.",
+            "required": true,
+            "value": "100Mi"
+        },
+        {
+            "name": "MEMORY_LIMIT",
+            "displayName": "Resources Memory Limit",
+            "description": "The resources Memory limit (in Mi, Gi, etc) for this build.",
+            "required": true,
+            "value": "4Gi"
+        },
+        {
+            "name": "REPLICA_MIN",
+            "displayName": "The min number of replicas to run",
+            "description": "The min number of replicas to run in this environment.",
+            "required": true,
+            "value": "1"
+        },
+        {
+            "name": "REPLICA_MAX",
+            "displayName": "The max number of replicas to run",
+            "description": "The max number of replicas to run in this environment.",
+            "required": true,
+            "value": "1"
+        },
+        {
+            "name": "JWT_OIDC_ALGORITHMS",
+            "displayName": "JWT Algorithms",
+            "description": "The supported JWT Algorithm.",
+            "required": true,
+            "value": "RS256"
+        },
+        {
+            "name": "JWT_OIDC_AUDIENCE",
+            "displayName": "JWT Audience",
+            "description": "The JWT Audience to use.",
+            "required": true,
+            "value": "my_client"
+        },
+        {
+            "name": "JWT_OIDC_CLIENT_SECRET",
+            "displayName": "JWT Client Secret",
+            "description": "The JWT Client Secret to use, provided by the OIDC server.",
+            "required": true,
+            "value": "my_shared_secret"
+        },
+        {
+            "name": "JWT_OIDC_WELL_KNOWN_CONFIG",
+            "displayName": "JWT .wellknown URI",
+            "description": "The well known URI for the meta info from the OIDC server.",
+            "required": true,
+            "value": "https://fqdn.domain/auth/realms/REALM_NAME/.well-known/openid-configuration"
+        },
+        {
+            "name": "JWT_OIDC_CACHING_ENABLED",
+            "displayName": "Enable JWT Server Key Caching?",
+            "description": "Set the JWT Server Key caching.",
+            "required": true,
+            "value": "True"
+        },
+        {
+            "name": "JWT_OIDC_JWKS_CACHE_TIMEOUT",
+            "displayName": "JWT Server Key Caching Duration",
+            "description": "Set how long to cache the OIDC Server Key.",
+            "required": true,
+            "value": "300"
+        },
+        {
+            "name": "PAYMENT_SVC_URL",
+            "displayName": "Payment Services URL",
+            "description": "The URL used to post invoice to the payment service.",
+            "required": true,
+            "value": "https://pay-api-dev.pathfinder.gov.bc.ca/api/v1/payments"
+        },
+        {
+            "name": "AUTH_SVC_URL",
+            "displayName": "Authorization Services URL",
+            "description": "The URL used to authorizations.",
+            "required": true,
+            "value": "https://auth-api-dev.pathfinder.gov.bc.ca/api/v1/entities/{identifier}/authorizations"
+        },
+        {
+            "name": "REPORT_SVC_URL",
+            "displayName": "Report Services URL",
+            "description": "The URL used to get PDF outputs.",
+            "required": true,
+            "value": "https://report-api-dev.pathfinder.gov.bc.ca/api/v1/reports"
+        },
+        {
+            "name": "NATS_SERVERS",
+            "displayName": "List of NATS Servers",
+            "description": "The list of NATS Servers in the Cluster.",
+            "required": true,
+            "value": "nats://nats-streaming.hak2zo-dev.svc:4222"
+        },
+        {
+            "name": "NATS_CLIENT_NAME",
+            "displayName": "NATS Client Name",
+            "description": "The name of this service connecting into NATS.",
+            "required": true,
+            "value": "entity.filing.payment.worker"
+        },
+        {
+            "name": "NATS_CLUSTER_ID",
+            "displayName": "Name of the NATS Cluster",
+            "description": "Name of the NATS cluster being used.",
+            "required": true,
+            "value": "test-cluster"
+        },
+        {
+            "name": "NATS_SUBJECT",
+            "displayName": "Publish to NATS Subject",
+            "description": "The subject this service is publishing to.",
+            "required": true,
+            "value": "entity.filing.payment"
+        },
+        {
+            "name": "NATS_QUEUE",
+            "displayName": "Queue being used",
+            "description": "The Queue being used.",
+            "required": true,
+            "value": "filing-worker"
+        },
+        {
+            "name": "DB_SECRET_ADMIN",
+            "displayName": "DB_SECRET_ADMIN",
+            "description": "Name of the secret that contains the admin-creds",
+            "required": true,
+            "value": "lear_db_admin"
+        },
+        {
+            "name": "DB_SECRET_ACCESS",
+            "displayName": "DB_SECRET_ACCCESS",
+            "description": "Name of the secret that contains the access-creds",
+            "required": true,
+            "value": "lear_db_access"
+        }
+    ],
+    "objects": [
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${COMP_NAME}",
+                "labels": {
+                    "shared": "true"
+                },
+                "annotations": {
+                    "description": "Keeps track of changes in the application image"
+                }
+            }
+        },
+        {
+            "kind": "Service",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${COMP_NAME}-${SUFFIX}",
+                "creationTimestamp": null,
+                "labels": {
+                    "name": "${COMP_NAME}-${SUFFIX}"
+                }
+            },
+            "spec": {
+                "ports": [{
+                    "name": "8080-tcp",
+                    "protocol": "TCP",
+                    "port": 8080,
+                    "targetPort": 8080
+                }],
+                "selector": {
+                    "name": "${COMP_NAME}-${SUFFIX}"
+                },
+                "type": "ClusterIP",
+                "sessionAffinity": "None"
+            },
+            "status": {
+                "loadBalancer": {}
+            }
+        },
+        {
+            "kind": "Route",
             "apiVersion": "v1",
             "metadata": {
                 "name": "${COMP_NAME}-${SUFFIX}",
                 "labels": {
-                    "app": "${APP_NAME}-${SUFFIX}",
-                    "app-group": "${APP_NAME}-${SUFFIX}",
-                    "group": "${APP_NAME}"
+                    "name": "${COMP_NAME}-${SUFFIX}"
                 }
+            },
+            "spec": {
+                "host": "${COMP_NAME}-${SUFFIX}.pathfinder.gov.bc.ca",
+                "to": {
+                    "kind": "Service",
+                    "name": "${COMP_NAME}-${SUFFIX}",
+                    "weight": 100
+                },
+                "port": {
+                    "targetPort": "8080-tcp"
+                },
+                "tls": {
+                    "termination": "edge"
+                },
+                "wildcardPolicy": "None"
+            },
+            "status": {
+                "ingress": [{
+                    "host": "${COMP_NAME}-${SUFFIX}.pathfinder.gov.bc.ca",
+                    "routerName": "router",
+                    "conditions": [{
+                        "type": "Admitted",
+                        "status": "True"
+                    }],
+                    "wildcardPolicy": "None"
+                }]
+            }
+        },
+        {
+            "kind": "ConfigMap",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${COMP_NAME}-${SUFFIX}-config",
+                "labels": {
+                    "name": "${COMP_NAME}-${SUFFIX}-config"
+                }
+            },
+            "data": {
+                "GO_LIVE_DATE": "${GO_LIVE_DATE}",
+                "SENTRY_DSN": "${SENTRY_DSN}",
+                "DATABASE_HOST": "${DATABASE_HOST}",
+                "DATABASE_NAME": "${DATABASE_NAME}",
+                "DB_PORT": "${DB_PORT}",
+                "DATABASE_TEST_HOST": "${DATABASE_TEST_HOST}",
+                "DATABASE_TEST_NAME": "${DATABASE_TEST_NAME}",
+                "DATABASE_TEST_PASSWORD": "",
+                "DATABASE_TEST_PORT": "${DB_PORT}",
+                "DATABASE_TEST_USERNAME": "tester",
+                "PAYMENT_SVC_URL": "${PAYMENT_SVC_URL}",
+                "AUTH_SVC_URL": "${AUTH_SVC_URL}",
+                "REPORT_SVC_URL": "${REPORT_SVC_URL}",
+                "JWT_OIDC_ALGORITHMS": "${JWT_OIDC_ALGORITHMS}",
+                "JWT_OIDC_AUDIENCE": "${JWT_OIDC_AUDIENCE}",
+                "JWT_OIDC_CLIENT_SECRET": "${JWT_OIDC_CLIENT_SECRET}",
+                "JWT_OIDC_WELL_KNOWN_CONFIG": "${JWT_OIDC_WELL_KNOWN_CONFIG}",
+                "JWT_OIDC_JWKS_CACHE_TIMEOUT": "${JWT_OIDC_JWKS_CACHE_TIMEOUT}",
+                "JWT_OIDC_CACHING_ENABLED": "${JWT_OIDC_CACHING_ENABLED}",
+                "NATS_SERVERS": "${NATS_SERVERS}",
+                "NATS_CLIENT_NAME": "${NATS_CLIENT_NAME}",
+                "NATS_CLUSTER_ID": "${NATS_CLUSTER_ID}",
+                "NATS_SUBJECT": "${NATS_SUBJECT}",
+                "NATS_QUEUE": "${NATS_QUEUE}"
+            }
+        },
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${COMP_NAME}-${SUFFIX}"
             },
             "spec": {
                 "strategy": {
@@ -38,8 +375,17 @@
                                         "name": "DB_ADMIN_PASSWORD",
                                         "valueFrom": {
                                             "secretKeyRef": {
-                                                "name": "postgresql-${SECRET_SRC}",
-                                                "key": "admin-password"
+                                                "name": "${DB_SECRET_ADMIN}",
+                                                "key": "password"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "DB_ADMIN_USERNAME",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "name": "${DB_SECRET_ADMIN}",
+                                                "key": "username"
                                             }
                                         }
                                     },
@@ -47,17 +393,17 @@
                                         "name": "DATABASE_USERNAME",
                                         "valueFrom": {
                                             "secretKeyRef": {
-                                                "name": "postgresql-${SECRET_SRC}",
-                                                "key": "database-user"
+                                                "name": "${DB_SECRET_ACCESS}",
+                                                "key": "username"
                                             }
                                         }
                                     },
                                     {
                                         "name": "DATABASE_PASSWORD",
                                         "valueFrom": {
-                                            "qqq": {
-                                                "name": "postgresql-${SECRET_SRC}",
-                                                "key": "database-password"
+                                            "secretKeyRef": {
+                                                "name": "${DB_SECRET_ACCESS}",
+                                                "key": "password"
                                             }
                                         }
                                     },
@@ -98,7 +444,7 @@
                         "type": "ImageChange",
                         "imageChangeParams": {
                             "automatic": true,
-                            "containerNames": ["{$COMP_NAME}"],
+                            "containerNames": ["${COMP_NAME}"],
                             "from": {
                                 "kind": "ImageStreamTag",
                                 "name": "${COMP_NAME}:${SUFFIX}"
@@ -109,23 +455,22 @@
                         "type": "ConfigChange"
                     }
                 ],
-                "replicas": "${REPLICAS}",
+                "replicas": "${{REPLICA_MIN}}",
                 "test": false,
                 "selector": {
-                    "app": "${COMP_NAME}-${SUFFIX}",
-                    "deploymentconfig": "${COMP_NAME}-${SUFFIX}"
+                    "name": "${COMP_NAME}-${SUFFIX}"
                 },
                 "template": {
                     "metadata": {
+                        "name": "${COMP_NAME}-${SUFFIX}",
                         "labels": {
-                            "app": "${COMP_NAME}-${SUFFIX}",
-                            "deploymentconfig": "${COMP_NAME}-${SUFFIX}"
+                            "name": "${COMP_NAME}-${SUFFIX}"
                         }
                     },
                     "spec": {
                         "containers": [{
                             "name": "${COMP_NAME}",
-                            "image": "docker-registry.default.svc:5000/${IMAGE_NAMESPACE}/${COMP_NAME}:${SUFFIX}",
+                            "image": " ",
                             "ports": [{
                                 "containerPort": 8080,
                                 "protocol": "TCP"
@@ -142,8 +487,8 @@
                                     "name": "DATABASE_USERNAME",
                                     "valueFrom": {
                                         "secretKeyRef": {
-                                            "name": "postgresql-${SECRET_SRC}",
-                                            "key": "database-user"
+                                            "name": "${DB_SECRET_ACCESS}",
+                                            "key": "username"
                                         }
                                     }
                                 },
@@ -151,8 +496,8 @@
                                     "name": "DATABASE_PASSWORD",
                                     "valueFrom": {
                                         "secretKeyRef": {
-                                            "name": "postgresql-${SECRET_SRC}",
-                                            "key": "database-password"
+                                            "name": "${DB_SECRET_ACCESS}",
+                                            "key": "password"
                                         }
                                     }
                                 },
@@ -250,8 +595,8 @@
                                     "name": "DATABASE_TEST_USERNAME",
                                     "valueFrom": {
                                         "secretKeyRef": {
-                                            "key": "database-user",
-                                            "name": "postgresql-${SECRET_SRC}"
+                                            "key": "username",
+                                            "name": "${DB_SECRET_ACCESS}"
                                         }
                                     }
                                 },
@@ -259,8 +604,8 @@
                                     "name": "DATABASE_TEST_PASSWORD",
                                     "valueFrom": {
                                         "secretKeyRef": {
-                                            "key": "database-password",
-                                            "name": "postgresql-${SECRET_SRC}"
+                                            "key": "password",
+                                            "name": "${DB_SECRET_ACCESS}"
                                         }
                                     }
                                 },
@@ -426,316 +771,9 @@
                     }
                 }
             }
-        },
-        {
-            "kind": "ConfigMap",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": "${COMP_NAME}-${SUFFIX}-config",
-                "labels": {
-                    "app": "${APP_NAME}-${SUFFIX}",
-                    "app-group": "${APP_NAME}-${SUFFIX}"
-                }
-            },
-            "data": {
-                "GO_LIVE_DATE": "${GO_LIVE_DATE}",
-                "SENTRY_DSN": "${SENTRY_DSN}",
-                "DATABASE_HOST": "postgresql-${SUFFIX}",
-                "DATABASE_NAME": "${DATABASE_NAME}",
-                "DB_PORT": "${DB_PORT}",
-                "DATABASE_TEST_HOST": "postgresql-${SUFFIX}",
-                "DATABASE_TEST_NAME": "${DATABASE_NAME}_testdb",
-                "DATABASE_TEST_PASSWORD": "",
-                "DATABASE_TEST_PORT": "${DB_PORT}",
-                "DATABASE_TEST_USERNAME": "tester",
-                "PAYMENT_SVC_URL": "${PAYMENT_SVC_URL}",
-                "AUTH_SVC_URL": "${AUTH_SVC_URL}",
-                "REPORT_SVC_URL": "${REPORT_SVC_URL}",
-                "JWT_OIDC_ALGORITHMS": "${JWT_OIDC_ALGORITHMS}",
-                "JWT_OIDC_AUDIENCE": "${JWT_OIDC_AUDIENCE}",
-                "JWT_OIDC_CLIENT_SECRET": "${JWT_OIDC_CLIENT_SECRET}",
-                "JWT_OIDC_WELL_KNOWN_CONFIG": "${JWT_OIDC_WELL_KNOWN_CONFIG}",
-                "JWT_OIDC_JWKS_CACHE_TIMEOUT": "${JWT_OIDC_JWKS_CACHE_TIMEOUT}",
-                "JWT_OIDC_CACHING_ENABLED": "${JWT_OIDC_CACHING_ENABLED}",
-                "NATS_SERVERS": "${NATS_SERVERS}",
-                "NATS_CLIENT_NAME": "${NATS_CLIENT_NAME}",
-                "NATS_CLUSTER_ID": "${NATS_CLUSTER_ID}",
-                "NATS_SUBJECT": "${NATS_SUBJECT}",
-                "NATS_QUEUE": "${NATS_QUEUE}"
-            }
-        },
-        {
-            "kind": "Service",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": "${COMP_NAME}-${SUFFIX}",
-                "creationTimestamp": null,
-                "labels": {
-                    "app": "${APP_NAME}-${SUFFIX}",
-                    "app-group": "${APP_NAME}-${SUFFIX}"
-                }
-            },
-            "spec": {
-                "ports": [{
-                    "name": "8080-tcp",
-                    "protocol": "TCP",
-                    "port": 8080,
-                    "targetPort": 8080
-                }],
-                "selector": {
-                    "deploymentconfig": "${COMP_NAME}-${SUFFIX}"
-                },
-                "type": "ClusterIP",
-                "sessionAffinity": "None"
-            },
-            "status": {
-                "loadBalancer": {}
-            }
-        },
-        {
-            "kind": "Route",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": "${COMP_NAME}-${SUFFIX}",
-                "labels": {
-                    "app": "${APP_NAME}-${SUFFIX}",
-                    "app-group": "${APP_NAME}-${SUFFIX}"
-                }
-            },
-            "spec": {
-                "host": "${COMP_NAME}-${SUFFIX}.pathfinder.gov.bc.ca",
-                "to": {
-                    "kind": "Service",
-                    "name": "${COMP_NAME}-${SUFFIX}",
-                    "weight": 100
-                },
-                "port": {
-                    "targetPort": "8080-tcp"
-                },
-                "tls": {
-                    "termination": "edge"
-                },
-                "wildcardPolicy": "None"
-            },
-            "status": {
-                "ingress": [{
-                    "host": "${COMP_NAME}-${SUFFIX}.pathfinder.gov.bc.ca",
-                    "routerName": "router",
-                    "conditions": [{
-                        "type": "Admitted",
-                        "status": "True"
-                    }],
-                    "wildcardPolicy": "None"
-                }]
-            }
-        },
-       {
-           "apiVersion": "autoscaling/v1",
-           "kind": "HorizontalPodAutoscaler",
-           "metadata": {
-               "name": "${COMP_NAME}-${SUFFIX}",
-               "labels": {
-                   "name": "${COMP_NAME}-${SUFFIX}"
-               }
-           },
-           "spec": {
-               "maxReplicas": "${{REPLICA_MAX}}",
-               "minReplicas": "${{REPLICA_MIN}}",
-               "scaleTargetRef": {
-                   "apiVersion": "v1",
-                   "kind": "DeploymentConfig",
-                   "name": "${COMP_NAME}-${SUFFIX}"
-               },
-               "targetCPUUtilizationPercentage": 95
-           }
-       }
-    ],
-    "parameters": [
-        {
-            "name": "APP_NAME",
-            "displayName": "APP_NAME",
-            "description": "The name of the application (grouped).",
-            "required": true,
-            "value": "bcros"
-        }, {
-            "name": "COMP_NAME",
-            "displayName": "COMP_NAME",
-            "description": "The name of the application component.",
-            "required": true,
-            "value": "coops-ui"
-        }, {
-            "name": "SUFFIX",
-            "displayName": "Name",
-            "description": "The name assigned to all of the frontend objects defined in this template.",
-            "required": true
-        },
-        {
-            "name": "DATABASE_NAME",
-            "displayName": "Database Name",
-            "description": "A valid database name used by the service.",
-            "required": true,
-            "value": "lear"
-        },
-        {
-            "name": "GO_LIVE_DATE",
-            "displayName": "Go Live Date",
-            "description": "Go Live Date of the system, used for MVP for things such as blocking legacy filings.",
-            "required": true,
-            "value": "2019-08-12"
-        },
-        {
-            "name": "SENTRY_DSN",
-            "displayName": "Sentry Init URL",
-            "description": "Sentry DSN URL to initialize the Sentry SDK",
-            "required": true,
-            "value": "https://account.sentry.ioo/project/id"
-        },
-        {
-            "name": "DB_PORT",
-            "displayName": "Database Port",
-            "description": "A valid database port used by the service.",
-            "required": true,
-            "value": "5432"
-        },
-        {
-            "name": "IMAGE_NAMESPACE",
-            "displayName": "Image Namespace",
-            "required": true,
-            "description": "The namespace of the OpenShift project containing the imagestream for the application.",
-            "value": "gl2uos-tools"
-        },
-        {
-            "name": "CPU_REQUEST",
-            "displayName": "Resources CPU Request",
-            "description": "The resources CPU request (in cores) for this build.",
-            "required": true,
-            "value": "100m"
-        },
-        {
-            "name": "CPU_LIMIT",
-            "displayName": "Resources CPU Limit",
-            "description": "The resources CPU limit (in cores) for this build.",
-            "required": true,
-            "value": "750m"
-        },
-        {
-            "name": "MEMORY_REQUEST",
-            "displayName": "Resources Memory Request",
-            "description": "The resources Memory request (in Mi, Gi, etc) for this build.",
-            "required": true,
-            "value": "100Mi"
-        },
-        {
-            "name": "MEMORY_LIMIT",
-            "displayName": "Resources Memory Limit",
-            "description": "The resources Memory limit (in Mi, Gi, etc) for this build.",
-            "required": true,
-            "value": "4Gi"
-        },
-        {
-            "name": "REPLICAS",
-            "displayName": "The number of replicas to run",
-            "description": "The number of replicas to run in this environment.",
-            "required": true,
-            "value": "1"
-        },
-        {
-            "name": "JWT_OIDC_ALGORITHMS",
-            "displayName": "JWT Algorithms",
-            "description": "The supported JWT Algorithm.",
-            "required": true,
-            "value": "RS256"
-        },
-        {
-            "name": "JWT_OIDC_AUDIENCE",
-            "displayName": "JWT Audience",
-            "description": "The JWT Audience to use.",
-            "required": true,
-            "value": "my_client"
-        },
-        {
-            "name": "JWT_OIDC_CLIENT_SECRET",
-            "displayName": "JWT Client Secret",
-            "description": "The JWT Client Secret to use, provided by the OIDC server.",
-            "required": true,
-            "value": "my_shared_secret"
-        },
-        {
-            "name": "JWT_OIDC_WELL_KNOWN_CONFIG",
-            "displayName": "JWT .wellknown URI",
-            "description": "The well known URI for the meta info from the OIDC server.",
-            "required": true,
-            "value": "https://fqdn.domain/auth/realms/REALM_NAME/.well-known/openid-configuration"
-        },
-        {
-            "name": "JWT_OIDC_CACHING_ENABLED",
-            "displayName": "Enable JWT Server Key Caching?",
-            "description": "Set the JWT Server Key caching.",
-            "required": true,
-            "value": "True"
-        },
-        {
-            "name": "JWT_OIDC_JWKS_CACHE_TIMEOUT",
-            "displayName": "JWT Server Key Caching Duration",
-            "description": "Set how long to cache the OIDC Server Key.",
-            "required": true,
-            "value": "300"
-        },
-        {
-            "name": "PAYMENT_SVC_URL",
-            "displayName": "Payment Services URL",
-            "description": "The URL used to post invoice to the payment service.",
-            "required": true,
-            "value": "https://pay-api-dev.pathfinder.gov.bc.ca/api/v1/payments"
-        },
-        {
-            "name": "AUTH_SVC_URL",
-            "displayName": "Authorization Services URL",
-            "description": "The URL used to authorizations.",
-            "required": true,
-            "value": "https://auth-api-dev.pathfinder.gov.bc.ca/api/v1/entities/{identifier}/authorizations"
-        },
-        {
-            "name": "REPORT_SVC_URL",
-            "displayName": "Report Services URL",
-            "description": "The URL used to get PDF outputs.",
-            "required": true,
-            "value": "https://report-api-dev.pathfinder.gov.bc.ca/api/v1/reports"
-        },
-        {
-            "name": "NATS_SERVERS",
-            "displayName": "List of NATS Servers",
-            "description": "The list of NATS Servers in the Cluster.",
-            "required": true,
-            "value": "nats://nats-streaming.hak2zo-dev.svc:4222"
-        },
-        {
-            "name": "NATS_CLIENT_NAME",
-            "displayName": "NATS Client Name",
-            "description": "The name of this service connecting into NATS.",
-            "required": true,
-            "value": "entity.filing.payment.worker"
-        },
-        {
-            "name": "NATS_CLUSTER_ID",
-            "displayName": "Name of the NATS Cluster",
-            "description": "Name of the NATS cluster being used.",
-            "required": true,
-            "value": "test-cluster"
-        },
-        {
-            "name": "NATS_SUBJECT",
-            "displayName": "Publish to NATS Subject",
-            "description": "The subject this service is publishing to.",
-            "required": true,
-            "value": "entity.filing.payment"
-        },
-        {
-            "name": "NATS_QUEUE",
-            "displayName": "Queue being used",
-            "description": "The Queue being used.",
-            "required": true,
-            "value": "filing-worker"
         }
-    ]
+
+
+
+       ]
 }
