@@ -42,15 +42,15 @@ podTemplate(label: py3nodejs_label, name: py3nodejs_label, serviceAccount: 'jenk
         workingDir: '/tmp',
         command: '',
         args: '${computer.jnlpmac} ${computer.name}',
-        envVars:([
-            secretEnvVar(key: 'AUTH_URL', secretName: "postman-${TAG_NAME}-secret", secretKey: 'auth_url'),
-            secretEnvVar(key: 'TOKEN_URL', secretName: "postman-${TAG_NAME}-secret", secretKey: 'token_url'),
-            secretEnvVar(key: 'REALM', secretName: "postman-${TAG_NAME}-secret", secretKey: 'realm'),
-            secretEnvVar(key: 'PASSWORD', secretName: "postman-${TAG_NAME}-secret", secretKey: 'password'),
-            secretEnvVar(key: 'CLIENT_SECRET', secretName: "postman-${TAG_NAME}-secret", secretKey: 'clientSecret'),
-            secretEnvVar(key: 'CLIENTID', secretName: "postman-${TAG_NAME}-secret", secretKey: 'clientId'),
-            secretEnvVar(key: 'DATA_RESET_TOOL_URL', secretName: "postman-${TAG_NAME}-secret", secretKey: 'data_reset_tool_url')
-        ])
+        envVars: [
+            secretEnvVar(key: 'AUTH_URL', secretName: "postman-dev-secret", secretKey: 'auth_url'),
+            secretEnvVar(key: 'TOKEN_URL', secretName: "postman-dev-secret", secretKey: 'token_url'),
+            secretEnvVar(key: 'REALM', secretName: "postman-dev-secret", secretKey: 'realm'),
+            secretEnvVar(key: 'PASSWORD', secretName: "postman-dev-secret", secretKey: 'password'),
+            secretEnvVar(key: 'CLIENT_SECRET', secretName: "postman-dev-secret", secretKey: 'clientSecret'),
+            secretEnvVar(key: 'CLIENTID', secretName: "postman-dev-secret", secretKey: 'clientId'),
+            secretEnvVar(key: 'DATA_RESET_TOOL_URL', secretName: "postman-dev-secret", secretKey: 'data_reset_tool_url')
+        ]
     )
 ])
 {
