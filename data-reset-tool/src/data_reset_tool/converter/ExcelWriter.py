@@ -199,7 +199,7 @@ class ExcelWriter:
         self.__director_address_sheet.write(
             self.__director_address_sheet_row_index, 1, format_non_date(director.first_name))
         self.__director_address_sheet.write(
-            self.__director_address_sheet_row_index, 2, format_non_date(director.middle_initial))
+            self.__director_address_sheet_row_index, 2, format_non_date(director.last_name))
         self.__director_address_sheet.write(
             self.__director_address_sheet_row_index, 3, format_non_date(director_address.address_type))
         self.__director_address_sheet.write(
