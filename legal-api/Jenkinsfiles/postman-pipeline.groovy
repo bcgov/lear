@@ -31,8 +31,6 @@ node {
         script {
             echo """
             Pipeline called with constants:
-                - NAMESPACE: ${NAMESPACE}
-                - TAG_NAME: ${TAG_NAME}
                 - COMPONENT_NAME: ${COMPONENT_NAME}
                 - COMPONENT_TAG: ${COMPONENT_TAG}
             """
@@ -40,7 +38,7 @@ node {
                 openshift.withProject('gl2uos-tools') {
                     // start + wait for generic postman pipeline to finish
                     def ora = openshift.selector('bc', 'postman-pipeline')
-                    ora.startBuild('--wait=true', "-e=component=${COMPONENT_NAME}", "-e=tag_name=${TAG_NAME}").logs('-f')
+                    ora.startBuild('--wait=true', "-e=component=${COMPONENT_NAME}", "-e=tag_name=${COMPONENT_TAG}").logs('-f')
                 }
             }
         }
