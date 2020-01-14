@@ -19,87 +19,31 @@
 //   -> hudson.model.DirectoryBrowserSupport.CSP : removes restrictions on CSS file load, thus html pages of test reports are displayed pretty
 //   See: https://docs.openshift.com/container-platform/3.9/using_images/other_images/jenkins.html for a complete list of JENKINS env vars
 
-// define constants
-// set from call
-
-def NAMESPACE = 'gl2uos'
+// define constants - values sent in as env vars from whatever calls this pipeline
 def COMPONENT_NAME = 'legal-api'
-def TAG_NAME = 'dev'
-def TESTS_PATH = 'legal-api/tests/postman'
+def COMPONENT_TAG = 'dev'
 
 // define groovy functions
 import groovy.json.JsonOutput
 
-def py3nodejs_label = "jenkins-py3nodejs-${UUID.randomUUID().toString()}"
-podTemplate(label: py3nodejs_label, name: py3nodejs_label, serviceAccount: 'jenkins', cloud: 'openshift', containers: [
-    containerTemplate(
-        name: 'jnlp',
-        image: '172.50.0.2:5000/openshift/jenkins-slave-py3nodejs',
-        resourceRequestCpu: '500m',
-        resourceLimitCpu: '1000m',
-        resourceRequestMemory: '1Gi',
-        resourceLimitMemory: '2Gi',
-        workingDir: '/tmp',
-        command: '',
-        args: '${computer.jnlpmac} ${computer.name}',
-        echo: "check envVar",
-        envVars:([
-            secretEnvVar(key: 'AUTH_URL', secretName: "postman-${TAG_NAME}-secret", secretKey: 'auth_url'),
-            secretEnvVar(key: 'TOKEN_URL', secretName: "postman-${TAG_NAME}-secret", secretKey: 'token_url'),
-            secretEnvVar(key: 'REALM', secretName: "postman-${TAG_NAME}-secret", secretKey: 'realm'),
-            secretEnvVar(key: 'PASSWORD', secretName: "postman-${TAG_NAME}-secret", secretKey: 'password'),
-            secretEnvVar(key: 'CLIENT_SECRET', secretName: "postman-${TAG_NAME}-secret", secretKey: 'clientSecret'),
-            secretEnvVar(key: 'CLIENTID', secretName: "postman-${TAG_NAME}-secret", secretKey: 'clientId'),
-            secretEnvVar(key: 'DATA_RESET_TOOL_URL', secretName: "postman-${TAG_NAME}-secret", secretKey: 'data_reset_tool_url')
-        ])
-    )
-])
-{
-    node(py3nodejs_label) {
+node {
+    stage('Run generic postman pipeline for legal-api-dev') {
         script {
             echo """
-            AUTH_URL:${AUTH_URL} \
-            TOKEN_URL:${TOKEN_URL} \
-            REALM:${REALM} \
-            PASSWORD:${PASSWORD} \
-            CLIENTID:${CLIENTID} \
-            CLIENT_SECRET:${CLIENT_SECRET} \
-            DATA_RESET_TOOL_URL:${DATA_RESET_TOOL_URL} \
+            Pipeline called with constants:
+                - NAMESPACE: ${NAMESPACE}
+                - TAG_NAME: ${TAG_NAME}
+                - COMPONENT_NAME: ${COMPONENT_NAME}
+                - COMPONENT_TAG: ${COMPONENT_TAG}
             """
-            checkout scm
-
-            dir("${TESTS_PATH}") {
-                all_passed = true
-                sh 'npm install newman'
-                stage("Running ${COMPONENT_NAME} pm tests") {
-                    try {
-                        echo "Running ${COMPONENT_NAME} pm collection"
-                        url = "https://${COMPONENT_NAME}-${TAG_NAME}.pathfinder.gov.bc.ca"
-
-                        sh """./node_modules/newman/bin/newman.js run ./${COMPONENT_NAME}.postman_collection.json \
-                        --global-var auth_url=${AUTH_URL} --global-var realm=${REALM} \
-                        --global-var password=${PASSWORD} --global-var client_secret=${CLIENT_SECRET} \
-                        --global-var clientid=${CLIENTID} --global-var url=${url} --global-var tokenUrl=${TOKEN_URL} \
-                        --global-var data_reset_tool_url=${DATA_RESET_TOOL_URL}
-
-                        """
-                    } catch (Exception e) {
-                        echo "One or more tests failed."
-                        echo "${e.getMessage()}"
-                        all_passed = false
-                    }
+            openshift.withCluster() {
+                openshift.withProject('gl2uos-tools') {
+                    // start + wait for generic postman pipeline to finish
+                    def ora = openshift.selector('bc', 'postman-pipeline')
+                    ora.startBuild('--wait=true', "-e=component=${COMPONENT_NAME}", "-e=tag_name=${TAG_NAME}").logs('-f')
                 }
+            }
+        }
+    }
+}
 
-                stage("Result") {
-                    if (!all_passed) {
-                        echo "Some tests failed."
-                        currentBuild.result = "FAILURE"
-                        error('Failure')
-                    } else {
-                        echo "All tests passed!"
-                    }
-                }
-            } // end dir
-        } // end script
-    } //end node
-} //end podTemplate

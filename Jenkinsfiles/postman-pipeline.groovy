@@ -22,7 +22,6 @@
 // define constants
 // set from call
 def COMPONENT = component
-def URL = url
 def TAG_NAME = environment
 
 // constant
