@@ -81,7 +81,6 @@ def test_validate_no_name_request():
 def test_validate_name_request_type():
     """Assert valid if name request legalType node is present."""
     inc_json = copy.deepcopy(INCORPORATION)
-    del inc_json['incorporation']['nameRequest']['legalType']
     inc_json['incorporation']['nameRequest']['legalType'] = 'BC'
 
     is_valid, errors = validate(inc_json, 'incorporation')
@@ -92,3 +91,46 @@ def test_validate_name_request_type():
     print(errors)
 
     assert is_valid
+
+def test_validate_invalid_name_request_type():
+    """Assert not valid if legalType is not an accepted type."""
+    inc_json = copy.deepcopy(INCORPORATION)
+    inc_json['incorporation']['nameRequest']['legalType'] = 'ZZ'
+
+    is_valid, errors = validate(inc_json, 'incorporation')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert not is_valid
+
+
+def test_validate_no_offices():
+    """Assert not valid if the required offices are not present."""
+    inc_json = copy.deepcopy(INCORPORATION)
+    del inc_json['incorporation']['offices']['registeredOffice']
+
+    is_valid, errors = validate(inc_json, 'incorporation')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert not is_valid
+
+def test_validate_no_contact():
+    """Assert not valid if the required contact info is not present."""
+    inc_json = copy.deepcopy(INCORPORATION)
+    del inc_json['incorporation']['businessContact']
+
+    is_valid, errors = validate(inc_json, 'incorporation')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert not is_valid
