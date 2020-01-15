@@ -44,7 +44,7 @@ podTemplate(label: py3nodejs_label, name: py3nodejs_label, serviceAccount: 'jenk
         args: '${computer.jnlpmac} ${computer.name}',
         echo: "check envVar",
         envVars:([
-            secretEnvVar(key: 'AUTH_URL', secretName: "postman-e2e-secret", secretKey: 'auth_url')
+            secretEnvVar(key: 'AUTH_URL', secretName: "postman-dev-secret", secretKey: 'auth_url')
 
 
 
@@ -69,7 +69,7 @@ podTemplate(label: py3nodejs_label, name: py3nodejs_label, serviceAccount: 'jenk
                         url = "https://${COMPONENT_NAME}-${COMPONENT_TAG}.pathfinder.gov.bc.ca"
 
                         sh """./node_modules/newman/bin/newman.js run ./${name}.postman_collection.json \
-                        --global-var auth_url=${AUTH_URL} --global-var realm=${REALM} 
+                        --global-var auth_url=${AUTH_URL} 
 
                         """
                     } catch (Exception e) {
