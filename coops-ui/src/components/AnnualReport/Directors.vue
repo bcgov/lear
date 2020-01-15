@@ -485,7 +485,7 @@ import { required, maxLength } from 'vuelidate/lib/validators'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
 // Mixins
-import { DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin } from '@/mixins'
+import { DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin, DirectorMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'
@@ -507,7 +507,7 @@ import { FormType, BaseAddressType } from '@/interfaces'
     ...mapGetters(['lastCODFilingDate'])
   }
 })
-export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin) {
+export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin, DirectorMixin) {
   // To fix "property X does not exist on type Y" errors, annotate types for referenced components.
   // ref: https://github.com/vuejs/vetur/issues/1414
   $refs!: {
@@ -819,6 +819,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
             // otherwise new attributes are not reflected in initial draw of HTML list.
 
             var directors = response.data.directors
+
+            directors = directors.sort(this.fieldSorter(['lastName', 'firstName', 'middleName']))
 
             for (var i = 0; i < directors.length; i++) {
               directors[i].id = i + 1

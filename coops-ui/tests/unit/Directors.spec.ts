@@ -155,18 +155,18 @@ describe('Directors as a COOP', () => {
   it('displays the list of directors', () => {
     const directorListUI = vm.$el.querySelectorAll('.director-list-item')
 
-    expect(directorListUI[1].textContent).toContain('Peter')
-    expect(directorListUI[1].textContent).toContain('Griffin')
+    expect(directorListUI[0].textContent).toContain('Peter')
+    expect(directorListUI[0].textContent).toContain('Griffin')
 
-    expect(directorListUI[0].textContent).toContain('Joe')
-    expect(directorListUI[0].textContent).toContain('Swanson')
+    expect(directorListUI[1].textContent).toContain('Joe')
+    expect(directorListUI[1].textContent).toContain('Swanson')
 
     // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(2)
-    expect(directorListUI[1].textContent).toContain('Griffin')
-    expect(directorListUI[1].textContent).toContain('mailing_address city')
-    expect(directorListUI[0].textContent).toContain('Joe')
-    expect(directorListUI[0].textContent).toContain('Glasgow')
+    expect(directorListUI[0].textContent).toContain('Griffin')
+    expect(directorListUI[0].textContent).toContain('mailing_address city')
+    expect(directorListUI[1].textContent).toContain('Joe')
+    expect(directorListUI[1].textContent).toContain('Glasgow')
 
     // shows "cease" button, indicating this is an active director, ie: starting state for list
     expect(directorListUI[0].innerHTML).toContain('<span>Cease</span>')
@@ -178,7 +178,7 @@ describe('Directors as a COOP', () => {
     await vm.editDirectorName(0)
 
     // Verify the correct data in the text input field
-    expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Joe')
+    expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Peter')
 
     // Verify that only Change Name component is shown
     expect(vm.editFormShowHide.showAddress).toEqual(false)
@@ -191,21 +191,21 @@ describe('Directors as a COOP', () => {
     await vm.editDirectorName(0)
 
     // Verify the correct data in the text input field
-    expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Joe')
+    expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Peter')
 
     // Change the text input
     setValue(vm, '.edit-director__first-name input', 'Steve')
+
+    // Verify that only Change Name component is shown
+    expect(vm.editFormShowHide.showAddress).toEqual(false)
+    expect(vm.editFormShowHide.showName).toEqual(true)
+    expect(vm.editFormShowHide.showDates).toEqual(false)
 
     // Click and save the updated data
     await vm.saveEditDirector(1, 2)
 
     // Verify the updated text field value
     expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Steve')
-
-    // Verify that only Change Name component is shown
-    expect(vm.editFormShowHide.showAddress).toEqual(false)
-    expect(vm.editFormShowHide.showName).toEqual(true)
-    expect(vm.editFormShowHide.showDates).toEqual(false)
   })
 
   it('restores the directors name to its original value when the Cancel Edit Btn is clicked', async () => {
@@ -213,17 +213,17 @@ describe('Directors as a COOP', () => {
     await vm.editDirectorName(0)
 
     // Verify the correct data in the text input field
-    expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Joe')
+    expect(vm.$el.querySelectorAll('.edit-director__first-name input')[0].value).toBe('Peter')
 
     // Change the text input
     setValue(vm, '.edit-director__first-name input', 'Steve')
 
     // Verify the name is updated
-    expect(vm.directors[1].officer.firstName).toBe('Steve')
+    expect(vm.directors[0].officer.firstName).toBe('Steve')
 
     // Cancel Director edit and verify the name is back to its base name
     await vm.$el.querySelectorAll('.cancel-edit-btn')[0].click()
-    expect(vm.directors[1].officer.firstName).toBe('Joe')
+    expect(vm.directors[0].officer.firstName).toBe('Peter')
 
     // Verify the edit form is closed.
     expect(vm.editFormShowHide.showAddress).toEqual(true)
@@ -505,17 +505,17 @@ describe('Directors as a BCOMP', () => {
 
     // shows list of all directors in the UI, in reverse order in which they are in the json
     expect(directorListUI.length).toEqual(2)
-    expect(directorListUI[1].textContent).toContain('Griffin')
-    expect(directorListUI[1].textContent).toContain('mailing_address city')
-    expect(directorListUI[1].textContent).toContain('4321')
-    expect(directorListUI[0].textContent).toContain('Joe')
-    expect(directorListUI[0].textContent).toContain('Glasgow')
-    expect(directorListUI[0].textContent).toContain('1234')
-    expect(directorListUI[0].querySelector('.same-address').textContent).toContain('Same as Delivery')
+    expect(directorListUI[0].textContent).toContain('Griffin')
+    expect(directorListUI[0].textContent).toContain('mailing_address city')
+    expect(directorListUI[0].textContent).toContain('4321')
+    expect(directorListUI[1].textContent).toContain('Joe')
+    expect(directorListUI[1].textContent).toContain('Glasgow')
+    expect(directorListUI[1].textContent).toContain('1234')
+    expect(directorListUI[1].querySelector('.same-address').textContent).toContain('Same as Delivery')
 
     // shows "cease" button, indicating this is an active director, ie: starting state for list
-    expect(directorListUI[0].innerHTML).toContain('<span>Cease</span>')
     expect(directorListUI[1].innerHTML).toContain('<span>Cease</span>')
+    expect(directorListUI[0].innerHTML).toContain('<span>Cease</span>')
   })
 
   it('disables buttons/actions when instructed by parent component', done => {

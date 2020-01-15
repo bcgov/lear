@@ -53,7 +53,7 @@ import EntityInfo from '@/components/EntityInfo.vue'
 import { DashboardUnavailableDialog, AccountAuthorizationDialog } from '@/components/dialogs'
 
 // Mixins
-import { DateMixin, CommonMixin } from '@/mixins'
+import { DateMixin, CommonMixin, DirectorMixin } from '@/mixins'
 
 // Folder containing the array of configuration objects
 import { configJson } from '@/resources'
@@ -61,7 +61,7 @@ import { configJson } from '@/resources'
 export default {
   name: 'App',
 
-  mixins: [DateMixin, CommonMixin],
+  mixins: [DateMixin, CommonMixin, DirectorMixin],
 
   data () {
     return {
@@ -313,7 +313,8 @@ export default {
 
     storeDirectors (response) {
       if (response && response.data && response.data.directors) {
-        const directors = response.data.directors
+        const directorsList = response.data.directors
+        const directors = directorsList.sort(this.fieldSorter(['lastName', 'firstName', 'middleName']))
         for (var i = 0; i < directors.length; i++) {
           directors[i].id = i + 1
           directors[i].isNew = false
