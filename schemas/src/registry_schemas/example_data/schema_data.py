@@ -343,6 +343,62 @@ FILING_TEMPLATE = {
     }
 }
 
+INCORPORATION = {
+    'incorporationHeader': {
+        'name': 'incorporation',
+        'date': '2020-10-12',
+        'certifiedBy': 'full name'
+    },
+    'incorporation': {
+        'nameRequest': {
+            'nrNumber': 'NR1234567',
+            'legalType': 'BC'
+        },
+        'offices': {
+            'registeredOffice': {
+                'deliveryAddress': {
+                    'streetAddress': 'delivery_address - address line one',
+                    'addressCity': 'delivery_address city',
+                    'addressCountry': 'delivery_address country',
+                    'postalCode': 'H0H0H0',
+                    'addressRegion': 'BC',
+                    'actions': []
+                },
+                'mailingAddress': {
+                    'streetAddress': 'mailing_address - address line one',
+                    'addressCity': 'mailing_address city',
+                    'addressCountry': 'mailing_address country',
+                    'postalCode': 'H0H0H0',
+                    'addressRegion': 'BC',
+                    'actions': ['addressChanged']
+                }
+            },
+            'recordsOffice': {
+                'deliveryAddress': {
+                    'streetAddress': 'delivery_address - address line one',
+                    'addressCity': 'delivery_address city',
+                    'addressCountry': 'delivery_address country',
+                    'postalCode': 'H0H0H0',
+                    'addressRegion': 'BC',
+                    'actions': []
+                },
+                'mailingAddress': {
+                    'streetAddress': 'mailing_address - address line one',
+                    'addressCity': 'mailing_address city',
+                    'addressCountry': 'mailing_address country',
+                    'postalCode': 'H0H0H0',
+                    'addressRegion': 'BC',
+                    'actions': ['addressChanged']
+                }
+            }
+        },
+        'businessContact': {
+            'email': 'no_one@never.get',
+            'phone': '123-456-7890'
+        }
+    }
+}
+
 
 STUB_FILING = {
 }

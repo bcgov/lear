@@ -1,0 +1,45 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://bcrs.gov.bc.ca/.well_known/schemas/name_request",
+    "type": "object",
+    "title": "Name Request Schema",
+    "properties": {
+        "nrNumber": {
+            "type": "string"
+        },
+        "nrName": {
+            "type": "string"
+        },
+        "legalType": {
+            "type": "string",
+            "title": "The Legal Type of the business.",
+            "default": "BC",
+            "enum": [
+                "BC",
+                "CP"
+            ]
+        },
+        "requestType": {
+            "type": "string"
+        },
+        "status": {
+            "type": "string"
+        },
+        "expDate": {
+            "type": "string",
+            "format": "date"
+        },
+        "condition": {
+            "type": "string"
+        },
+        "submittedBy": {
+            "type": "string"
+        },
+        "address": {
+          "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/address"
+        }
+    },
+    "required": [
+        "legalType"
+    ]
+}
