@@ -21,8 +21,8 @@
 
 // define constants
 // set from call
-def COMPONENT = component
-def TAG_NAME = environment
+def COMPONENT_NAME = "legal-api"
+def COMPONENT_TAG = 'dev'
 
 // constant
 def TESTS_PATH = '/tests/postman'
@@ -42,53 +42,48 @@ podTemplate(label: py3nodejs_label, name: py3nodejs_label, serviceAccount: 'jenk
         workingDir: '/tmp',
         command: '',
         args: '${computer.jnlpmac} ${computer.name}',
-        envVars: [
-            secretEnvVar(key: 'AUTH_URL', secretName: "postman-dev-secret", secretKey: 'auth_url'),
-            secretEnvVar(key: 'TOKEN_URL', secretName: "postman-dev-secret", secretKey: 'token_url'),
-            secretEnvVar(key: 'REALM', secretName: "postman-dev-secret", secretKey: 'realm'),
-            secretEnvVar(key: 'PASSWORD', secretName: "postman-dev-secret", secretKey: 'password'),
-            secretEnvVar(key: 'CLIENT_SECRET', secretName: "postman-dev-secret", secretKey: 'clientSecret'),
-            secretEnvVar(key: 'CLIENTID', secretName: "postman-dev-secret", secretKey: 'clientId'),
-            secretEnvVar(key: 'DATA_RESET_TOOL_URL', secretName: "postman-dev-secret", secretKey: 'data_reset_tool_url')
-        ]
+        echo: "check envVar",
+        envVars:([
+            secretEnvVar(key: 'AUTH_URL', secretName: "postman-e2e-secret", secretKey: 'auth_url')
+
+
+
+        ])
     )
 ])
 {
     node(py3nodejs_label) {
-        stage("Running ${COMPONENT} tests") {
-
+        script {
             echo """
             AUTH_URL:${AUTH_URL} \
-            TOKEN_URL:${TOKEN_URL} \
-            REALM:${REALM} \
-            PASSWORD:${PASSWORD} \
-            CLIENTID:${CLIENTID} \
-            CLIENT_SECRET:${CLIENT_SECRET} \
-            DATA_RESET_TOOL_URL:${DATA_RESET_TOOL_URL} \
             """
             checkout scm
 
-            dir("${COMPONENT}${TESTS_PATH}") {
+            dir("${COMPONENT_NAME}${TESTS_PATH}") {
+                all_passed = true
 
                 sh 'npm install newman'
+                stage("Running ${COMPONENT_NAME} pm tests") {
+                    try {
+                        echo "Running ${COMPONENT_NAME} pm collection"
+                        url = "https://${COMPONENT_NAME}-${COMPONENT_TAG}.pathfinder.gov.bc.ca"
 
-                try {
-                    url = "https://${COMPONENT}-${TAG_NAME}.pathfinder.gov.bc.ca"
+                        sh """./node_modules/newman/bin/newman.js run ./${name}.postman_collection.json \
+                        --global-var auth_url=${AUTH_URL} --global-var realm=${REALM} 
 
-                    sh """./node_modules/newman/bin/newman.js run ./${COMPONENT}.postman_collection.json \
-                    --global-var auth_url=${AUTH_URL} --global-var realm=${REALM} \
-                    --global-var password=${PASSWORD} --global-var client_secret=${CLIENT_SECRET} \
-                    --global-var clientid=${CLIENTID} --global-var url=${url} --global-var tokenUrl=${TOKEN_URL} \
-                    --global-var data_reset_tool_url=${DATA_RESET_TOOL_URL}
-                    """
-
-                } catch (Exception e) {
-                    echo "One or more tests failed."
-                    echo "${e.getMessage()}"
-                    currentBuild.result = "FAILED"
+                        """
+                    } catch (Exception e) {
+                        echo "One or more tests failed."
+                        echo "${e.getMessage()}"
+                        all_passed = false
+                    }
                 }
-
+                stage("Result") {
+                    if (!all_passed) {
+                        currentBuild.result = "FAILURE"
+                    }
+                }
             } // end dir
-        } //end stage
+        } // end script
     } //end node
 } //end podTemplate
