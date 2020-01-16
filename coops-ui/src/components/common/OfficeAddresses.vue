@@ -393,6 +393,13 @@ export default class OfficeAddresses extends Mixins(CommonMixin, EntityFilterMix
    */
   @Watch('addresses')
   onAddressesChanged (): void {
+    if (this.addresses) {
+      this.inheritRegisteredAddress =
+        this.isSame(this.addresses.registeredOffice.deliveryAddress,
+          this.addresses.recordsOffice.deliveryAddress, 'actions') &&
+        this.isSame(this.addresses.registeredOffice.mailingAddress,
+          this.addresses.recordsOffice.mailingAddress, 'actions')
+    }
     this.deliveryAddress = isEmpty(this.addresses)
       ? {} as AddressIF
       : this.addresses.registeredOffice['deliveryAddress']

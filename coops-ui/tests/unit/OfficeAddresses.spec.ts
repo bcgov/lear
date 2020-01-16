@@ -421,7 +421,7 @@ describe('OfficeAddresses as a BCOMP', () => {
     // Verify the `same as above text is not displayed
     expect(vm.$el.querySelector('#sameAsAbove')).toBeNull()
 
-    // Verify the `same as registered` text is not displayed
+    // Verify the `same as registered` text is displayed
     expect(vm.$el.querySelector('#sameAsRegistered').textContent).toContain('Same as Registered Office')
 
     const deliveryAddress = vm.registeredAddress.deliveryAddress
