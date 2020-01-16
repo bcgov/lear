@@ -20,7 +20,7 @@ from http import HTTPStatus
 from flask import jsonify
 from flask_restplus import Resource, cors
 
-from legal_api.models import Business
+from legal_api.models import Business, Filing
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
@@ -41,3 +41,33 @@ class BusinessResource(Resource):
             return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
 
         return jsonify(business=business.json())
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    def post():
+        return None
+
+    @staticmethod
+    def _create_incorporation_filing(incorporation_body):
+        # Either create the busines using the NR/numbered co. and then proceed with regular
+        # logic or save the filing with no business and perhaps a bridge table
+        # Are we creating a new set of endpoints for this?
+        # validate_identifier?
+        temp_corp_num = incorporation_body['filing']['incorporation']['nameRequest']['nrNumber']
+        business = Business.find_by_identifier(temp_corp_num)
+        if not business:
+            business = Business()
+            business.identifier = temp_corp_num
+            business.save()
+        filing = Filing.get_filings_by_type(business.id, 'incorporationApplication')
+
+        if len(filing) == 0:
+            filing = Filing()
+            filing.filing_type = 'incorporationApplication'
+            filing.business_id = business.id
+        elif len(filing) > 1:
+            return {'message': 'more than one incorporation filing found for corp'}, HTTPStatus.BAD_REQUEST
+        else:
+            filing = filing[0]
+        filing.save()
+        return None

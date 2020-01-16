@@ -98,7 +98,7 @@ class ListFilingResource(Resource):
     def put(identifier, filing_id):  # pylint: disable=too-many-return-statements
         """Modify an incomplete filing for the business."""
         if not identifier:
-            return ListFilingResource._create_incorporation_filing(request.get_json())
+            return ListFilingResource._save_incorporation_filing(request.get_json())
         
         # basic checks
         err_msg, err_code = ListFilingResource._put_basic_checks(identifier, filing_id, request)
@@ -456,7 +456,7 @@ class ListFilingResource(Resource):
                 filing.save()
 
     @staticmethod
-    def _create_incorporation_filing(incorporation_body):
+    def _save_incorporation_filing(incorporation_body):
         # Either create the busines using the NR/numbered co. and then proceed with regular
         # logic or save the filing with no business and perhaps a bridge table
         # Are we creating a new set of endpoints for this?
@@ -469,12 +469,15 @@ class ListFilingResource(Resource):
             business.save()
         filing = Filing.get_filings_by_type(business.id, 'incorporationApplication')
 
-        if not filing:
+        if len(filing) == 0:
             filing = Filing()
+            filing.business_id = business.id
         elif len(filing) > 1:
             return {'message': 'more than one incorporation filing found for corp'}, HTTPStatus.BAD_REQUEST
         else:
             filing = filing[0]
+        filing.filing_json = incorporation_body
+        filing.save()
         return None
 
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')
