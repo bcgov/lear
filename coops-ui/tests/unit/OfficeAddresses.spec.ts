@@ -407,32 +407,11 @@ describe('OfficeAddresses as a BCOMP', () => {
   })
 
   it('displays the `same as registered` text when records and registered addresses match', async () => {
-    const recordsAddress = {
-      deliveryAddress: {
-        addressCity: 'delCity',
-        addressCountry: 'delCountry',
-        addressRegion: 'delRegion',
-        deliveryInstructions: 'delInstructions',
-        postalCode: 'delPostal',
-        streetAddress: 'delStreet',
-        streetAddressAdditional: 'delStreetAdd'
-      },
-      mailingAddress: {
-        addressCity: 'mailCity',
-        addressCountry: 'mailCountry',
-        addressRegion: 'mailRegion',
-        deliveryInstructions: 'mailInstructions',
-        postalCode: 'mailPostal',
-        streetAddress: 'mailStreet',
-        streetAddressAdditional: 'mailStreetAdd'
-      }
-    }
-
     const Constructor = Vue.extend(OfficeAddresses)
     const instance = await new Constructor({
       propsData: {
         registeredAddress: store.state.registeredAddress,
-        recordsAddress: recordsAddress
+        recordsAddress: store.state.registeredAddress
       },
       store,
       vuetify
@@ -442,7 +421,7 @@ describe('OfficeAddresses as a BCOMP', () => {
     // Verify the `same as above text is not displayed
     expect(vm.$el.querySelector('#sameAsAbove')).toBeNull()
 
-    // Verify the `same as registered` text is not displayed
+    // Verify the `same as registered` text is displayed
     expect(vm.$el.querySelector('#sameAsRegistered').textContent).toContain('Same as Registered Office')
 
     const deliveryAddress = vm.registeredAddress.deliveryAddress

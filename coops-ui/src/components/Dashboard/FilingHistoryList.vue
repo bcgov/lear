@@ -19,28 +19,28 @@
                 <v-col cols="6" class="v-col-padding">
                   <div class="list-item__title mb-1">{{item.name}}</div>
                 </v-col>
-                <v-col cols="6" class="v-col-padding" v-if="isCoaFutureEffective(item.name, item.status)">
-                  <v-scale-transition>
-                    <v-tooltip
-                      top
-                      content-class="pending-tooltip"
-                    >
-                      <template v-slot:activator="{ on }">
-                        <div id="pending-alert" class="list-item__subtitle" v-on="on">
-                          <v-icon color="yellow" small>mdi-alert</v-icon>
-                          PAID AND PENDING
-                        </div>
-                      </template>
-                      <span>
+              </v-row>
+              <div class="list-item__subtitle">
+                <v-scale-transition v-if="isCoaFutureEffective(item.name, item.status)">
+                  <v-tooltip
+                    top
+                    content-class="pending-tooltip"
+                  >
+                    <template v-slot:activator="{ on }">
+                      <div id="pending-alert" class="list-item__subtitle" v-on="on">
+                        <span>
+                          FILED AND PENDING (filed by {{item.filingAuthor}} on {{item.filingDate}})
+                        </span>
+                        <v-icon color="yellow" small>mdi-alert</v-icon>
+                      </div>
+                    </template>
+                    <span>
                       The updated office addresses will be legally effective on {{ item.filingEffectiveDate }},
                       12:01 AM (Pacific Time). No other filings are allowed until then.
                     </span>
-                    </v-tooltip>
-                  </v-scale-transition>
-                </v-col>
-              </v-row>
-              <div class="list-item__subtitle">
-                <span>FILED AND PAID (filed by {{item.filingAuthor}} on {{item.filingDate}})</span>
+                  </v-tooltip>
+                </v-scale-transition>
+                <span v-else>FILED AND PAID (filed by {{item.filingAuthor}} on {{item.filingDate}})</span>
               </div>
             </div>
             <div class="filing-action mr-3">
