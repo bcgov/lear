@@ -146,6 +146,7 @@
             "allOf": [
                 {
                     "$ref": "#/definitions/filing_header"
+<<<<<<< HEAD
                 },
                 {
                   "if": {
@@ -164,6 +165,8 @@
                   "then": {
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/business"
                   }
+=======
+>>>>>>> Removed Incorporation Header. Changed the requirments of the filing.json
                 }
             ],
             "anyOf": [
