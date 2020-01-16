@@ -45,6 +45,7 @@ from .api_namespace import API
 @cors_preflight('GET, POST, PUT, DELETE, PATCH')
 @API.route('/<string:identifier>/filings', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 @API.route('/<string:identifier>/filings/<int:filing_id>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'])
+@API.route('/filings', methods=[ 'POST', 'PUT'])
 class ListFilingResource(Resource):
     """Business Filings service."""
 
@@ -87,7 +88,7 @@ class ListFilingResource(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def post(identifier, filing_id=None):
+    def post(identifier=None, filing_id=None):
         """Create a new filing for the business."""
         return ListFilingResource.put(identifier, filing_id)
 
@@ -96,6 +97,9 @@ class ListFilingResource(Resource):
     @jwt.requires_auth
     def put(identifier, filing_id):  # pylint: disable=too-many-return-statements
         """Modify an incomplete filing for the business."""
+        if not identifier:
+            return ListFilingResource._create_incorporation_filing(request.get_json())
+        
         # basic checks
         err_msg, err_code = ListFilingResource._put_basic_checks(identifier, filing_id, request)
         if err_msg:
@@ -451,6 +455,27 @@ class ListFilingResource(Resource):
                 filing.effective_date = effective_date
                 filing.save()
 
+    @staticmethod
+    def _create_incorporation_filing(incorporation_body):
+        # Either create the busines using the NR/numbered co. and then proceed with regular
+        # logic or save the filing with no business and perhaps a bridge table
+        # Are we creating a new set of endpoints for this?
+        # validate_identifier?
+        temp_corp_num = incorporation_body['filing']['incorporation']['nameRequest']['nrNumber']
+        business = Business.find_by_identifier(temp_corp_num)
+        if not business:
+            business = Business()
+            business.identifier = temp_corp_num
+            business.save()
+        filing = Filing.get_filings_by_type(business.id, 'incorporationApplication')
+
+        if not filing:
+            filing = Filing()
+        elif len(filing) > 1:
+            return {'message': 'more than one incorporation filing found for corp'}, HTTPStatus.BAD_REQUEST
+        else:
+            filing = filing[0]
+        return None
 
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')
 @API.route('/internal/filings', methods=['GET', 'OPTIONS'])
