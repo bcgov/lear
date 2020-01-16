@@ -2,37 +2,11 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "https://bcrs.gov.bc.ca/.well_known/schemas/incorporation",
     "required": [
-        "incorporationHeader",
         "incorporation"
     ],
     "type": "object",
     "title": "Incorporation Filing",
     "properties": {
-        "incorporationHeader": {
-            "type": "object",
-            "required": [
-                "name",
-                "date",
-                "certifiedBy"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "title": "The type of the filing.",
-                    "enum": [
-                        "incorporation"
-                    ]
-                },
-                "date": {
-                    "type": "string",
-                    "format": "date",
-                    "title": "The submission date of the final version of the filing."
-                },
-                "certifiedBy": {
-                    "type": "string"
-                }
-            }
-        },
         "incorporation": {
             "type": "object",
             "required": [

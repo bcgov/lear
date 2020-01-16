@@ -146,9 +146,6 @@
             "allOf": [
                 {
                     "$ref": "#/definitions/filing_header"
-                },
-                {
-                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/business"
                 }
             ],
             "anyOf": [

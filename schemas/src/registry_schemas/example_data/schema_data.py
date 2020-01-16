@@ -344,11 +344,6 @@ FILING_TEMPLATE = {
 }
 
 INCORPORATION = {
-    'incorporationHeader': {
-        'name': 'incorporation',
-        'date': '2020-10-12',
-        'certifiedBy': 'full name'
-    },
     'incorporation': {
         'nameRequest': {
             'nrNumber': 'NR1234567',

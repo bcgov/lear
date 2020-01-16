@@ -35,35 +35,6 @@ def test_incorporation_schema():
 
     assert is_valid
 
-
-def test_validate_no_header_name():
-    """Assert not valid if header name node is not present."""
-    inc_json = copy.deepcopy(INCORPORATION)
-    del inc_json['incorporationHeader']['name']
-
-    is_valid, errors = validate(inc_json, 'incorporation')
-
-    if errors:
-        for err in errors:
-            print(err.message)
-    print(errors)
-
-    assert not is_valid
-
-def test_validate_no_header_certifyBy():
-    """Assert not valid if header certifiedBy node is not present."""
-    inc_json = copy.deepcopy(INCORPORATION)
-    del inc_json['incorporationHeader']['certifiedBy']
-
-    is_valid, errors = validate(inc_json, 'incorporation')
-
-    if errors:
-        for err in errors:
-            print(err.message)
-    print(errors)
-
-    assert not is_valid
-
 def test_validate_no_name_request():
     """Assert not valid if name request node is not present."""
     inc_json = copy.deepcopy(INCORPORATION)
