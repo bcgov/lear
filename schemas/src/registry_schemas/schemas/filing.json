@@ -146,7 +146,6 @@
             "allOf": [
                 {
                     "$ref": "#/definitions/filing_header"
-<<<<<<< HEAD
                 },
                 {
                   "if": {
@@ -165,8 +164,6 @@
                   "then": {
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/business"
                   }
-=======
->>>>>>> Removed Incorporation Header. Changed the requirments of the filing.json
                 }
             ],
             "anyOf": [
@@ -189,11 +186,7 @@
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/change_of_name"
                 },
                 {
-<<<<<<< HEAD
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/incorporationApplication"
-=======
-                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/incorporation"
->>>>>>> Updated Filing Schema
                 },
                 {
                     "title": "Placeholder until all filing types are defined.",
