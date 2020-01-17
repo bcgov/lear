@@ -95,7 +95,7 @@ def test_validate_no_offices():
 def test_validate_no_contact():
     """Assert not valid if the required contact info is not present."""
     inc_json = copy.deepcopy(INCORPORATION)
-    del inc_json['incorporation']['businessContact']
+    del inc_json['incorporation']['contactPoint']
 
     is_valid, errors = validate(inc_json, 'incorporation')
 

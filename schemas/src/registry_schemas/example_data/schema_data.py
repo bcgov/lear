@@ -346,7 +346,6 @@ FILING_TEMPLATE = {
 INCORPORATION = {
     'incorporation': {
         'nameRequest': {
-            'nrNumber': 'NR1234567',
             'legalType': 'BC'
         },
         'offices': {
@@ -387,7 +386,7 @@ INCORPORATION = {
                 }
             }
         },
-        'businessContact': {
+        'contactPoint': {
             'email': 'no_one@never.get',
             'phone': '123-456-7890'
         }

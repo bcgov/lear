@@ -11,7 +11,7 @@
             "type": "object",
             "required": [
                 "nameRequest",
-                "businessContact"
+                "contactPoint"
             ],
             "properties": {
                 "nameRequest": {
@@ -28,21 +28,8 @@
                         "registeredOffice"
                     ]
                 },
-                "businessContact" : {
-                    "email": {
-                        "type": "string",
-                        "format": "email"
-                    },
-                    "phone": {
-                        "type": "number"
-                    },
-                    "extension": {
-                        "type": "number"
-                    },
-                    "required": [
-                        "email",
-                        "phone"
-                    ]
+                "contactPoint" : {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/contactPoint"
                 }
             }
         }
