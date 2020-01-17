@@ -155,10 +155,8 @@ async def run(loop, application: Flask = None):
 if __name__ == "__main__":
     try:
         event_loop = asyncio.get_event_loop()
-        print('here 1')
         event_loop.run_until_complete(run(event_loop))
-        print ('here 2')
     except Exception as err:  # pylint: disable=broad-except; Catching all errors from the frameworks
         print('problem in running the service: %s', err, stack_info=True, exc_info=True)
-    print('exited')
+
 
