@@ -168,6 +168,9 @@
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/change_of_name"
                 },
                 {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/incorporation"
+                },
+                {
                     "title": "Placeholder until all filing types are defined.",
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/stub_filing"
                 }
