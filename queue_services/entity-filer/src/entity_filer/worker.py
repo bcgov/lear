@@ -46,6 +46,7 @@ from entity_filer.filing_processors import (
     change_of_directors,
     change_of_name,
     voluntary_dissolution,
+    incorporation_filing,
 )
 
 
@@ -96,7 +97,7 @@ def process_filing(filing_msg: Dict, flask_app: Flask):
 
     with flask_app.app_context():
 
-        filing_submission = Filing.find_by_id(filing_msg['filing']['id'])
+        filing_submission = Filing.find_by_id(filing_msg['filing']['id']) #get_filing_by_payment_token(filing_msg['paymentToken']['id'])
 
         if not filing_submission:
             raise QueueException
@@ -134,6 +135,9 @@ def process_filing(filing_msg: Dict, flask_app: Flask):
 
                 elif filing.get('voluntaryDissolution'):
                     voluntary_dissolution.process(business, filing)
+
+                elif filing.get('incorporationApplication'):
+                    incorporation_filing.process(business, filing, flask_app)
 
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()

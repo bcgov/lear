@@ -33,7 +33,6 @@ from .schema_data import (
     SPECIAL_RESOLUTION,
     STUB_FILING,
     VOLUNTARY_DISSOLUTION,
-    INCORPORATION
 )
 
 

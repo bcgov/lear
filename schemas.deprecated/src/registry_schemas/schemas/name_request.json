@@ -5,9 +5,13 @@
     "title": "Name Request Schema",
     "properties": {
         "nrNumber": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 10,
+            "examples": [
+              "NR 1234567"
+            ]
         },
-        "nrName": {
+        "legalName": {
             "type": "string"
         },
         "legalType": {
@@ -20,16 +24,23 @@
             ]
         },
         "requestType": {
-            "type": "string"
+            "type": "string",
+            "title": "The type of Name Request",
+            "examples": [
+                "New Business"
+            ]
         },
         "status": {
             "type": "string"
         },
-        "expDate": {
+        "expires": {
             "type": "string",
-            "format": "date"
+            "format": "date-time",
+            "examples": [
+                "1970-01-01T00:00:00+00:00"
+            ]
         },
-        "condition": {
+        "consent": {
             "type": "string"
         },
         "submittedBy": {
