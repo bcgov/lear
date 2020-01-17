@@ -13,7 +13,7 @@ objects:
     name: "future-effective-filings"
   spec:
     concurrencyPolicy: "Forbid"
-    schedule: "0 * * * *"
+    schedule: "* * * * *"
     suspend: false
     jobTemplate:
       spec:
