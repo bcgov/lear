@@ -30,6 +30,7 @@ from .filing import API as FILING_API
 from .meta import API as META_API
 from .office import API as OFFICE_API
 from .ops import API as OPS_API
+from .reset import API as RESET_API
 
 
 __all__ = ('API_BLUEPRINT', 'OPS_BLUEPRINT')
@@ -69,3 +70,4 @@ API.add_namespace(DIRECTORS_API, path='/businesses/directors')
 API.add_namespace(EVENT_API, path='/businesses/event')
 API.add_namespace(DIRECTORS_API, path='/businesses/office')
 API.add_namespace(FILING_API, path='/businesses/filings')
+API.add_namespace(RESET_API, path='/reset')
