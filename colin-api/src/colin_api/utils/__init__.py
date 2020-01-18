@@ -50,7 +50,7 @@ def stringify_list(list_orig: list):
     list_str = ''
     for item in list_orig:
         # remove any spaces or end brackets to avoid sql injection that could end the list and execute another command
-        list_str += ('\'' + str(item) + '\',').replace(' ', '').replace(')', '')
+        list_str += ("'" + str(item) + "',").replace(' ', '').replace(')', '')
     if list_str:
         list_str = list_str[:-1]
     return list_str

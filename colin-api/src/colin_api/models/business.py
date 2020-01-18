@@ -279,13 +279,13 @@ class Business:
         for item in dates_by_corp_num:
             try:
                 cursor.execute("""
-                        UPDATE corporation
-                        SET
-                            LAST_AR_FILED_DT = :ar_filed_date,
-                            LAST_AGM_DATE = :agm_date,
-                            LAST_LEDGER_DT = :event_date
-                        WHERE corp_num = :corp_num 
-                        """,
+                    UPDATE corporation
+                    SET
+                        LAST_AR_FILED_DT = :ar_filed_date,
+                        LAST_AGM_DATE = :agm_date,
+                        LAST_LEDGER_DT = :event_date
+                    WHERE corp_num = :corp_num
+                """,
                                agm_date=item['agm_date'] if item['agm_date'] else item['ar_date'],
                                ar_filed_date=item['ar_filed_date'],
                                event_date=item['event_date'],

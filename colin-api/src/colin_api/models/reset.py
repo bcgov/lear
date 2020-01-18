@@ -47,7 +47,6 @@ class Reset:
 
     def get_filings_for_reset(self):
         """Return event/filing info for all filings getting reset."""
-
         # build base query string
         query_string = ("""
             select event.event_id, event.corp_num, filing_typ_cd

@@ -18,7 +18,7 @@ Currently this only resets changes made to COOP data made with user COOPER
 from flask import current_app, jsonify, request
 from flask_restplus import Namespace, Resource, cors
 
-from colin_api.models import Reset
+from colin_api.models.reset import Reset
 from colin_api.utils.util import cors_preflight
 
 
@@ -33,7 +33,7 @@ class ResetInfo(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     def post():
-        """Resets the changes in COLIN made by COOPER."""
+        """Reset the changes in COLIN made by COOPER."""
         try:
             json_data = request.get_json()
             start_date = json_data.get('start_date', None)
