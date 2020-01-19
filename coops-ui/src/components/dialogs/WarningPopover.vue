@@ -22,7 +22,7 @@
 
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
-import { AlertMessage } from '../../interfaces'
+import { AlertMessage } from '@/interfaces'
 
 @Component({})
 export default class WarningPopover extends Vue {
@@ -32,13 +32,14 @@ export default class WarningPopover extends Vue {
 </script>
 
 <style lang="scss">
+@import '@/assets/styles/theme.scss';
 .warning-text {
   font-weight: bold;
   font-size: 14px;
-  color: #2196F3;
+  color: $BCgovIconBlue;
     .v-icon {
     vertical-align: bottom !important;
-    color:#2196F3 !important;
+    color: $BCgovIconBlue !important;
   }
 }
 </style>

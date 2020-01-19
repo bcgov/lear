@@ -1,6 +1,4 @@
-import Vue from 'vue'
-
-export interface AlertMessage extends Vue {
+export interface AlertMessage {
   title: String
   msg: String
   additionalItems: Array<String>

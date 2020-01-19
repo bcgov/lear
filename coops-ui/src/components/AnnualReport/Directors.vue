@@ -477,15 +477,15 @@
             </div>
           </div>
           <v-alert
-          close-text="Close Alert"
-          dismissible
-          icon="mdi-information-outline"
-          class="white-background"
-          :id="'director-' + director.id + '-alert'"
-          v-if="complianceMsg && index == messageIndex"
-          v-once
+            close-text="Close Alert"
+            dismissible
+            icon="mdi-information-outline"
+            class="white-background icon-blue"
+            :id="'director-' + director.id + '-alert'"
+            v-if="complianceMsg && index == messageIndex"
+            v-once
           >
-            <div class="complianceCard">
+            <div class="complianceSection">
               <h3>{{ complianceMsg.title }}</h3>
               <p>{{ complianceMsg.msg }}</p>
             </div>
@@ -1646,8 +1646,17 @@ ul {
   padding: 1.25rem;
 }
 
-.complianceCard {
-  font-size:14px;
+.complianceSection {
+  font-size: 0.9rem;
   color:rgba(0,0,0,0.87);
 }
+
+.v-icon {
+  color: #2196F3 !important;
+}
+
+.mdi-information-outline::before {
+  color: #2196F3 !important;
+}
+
 </style>

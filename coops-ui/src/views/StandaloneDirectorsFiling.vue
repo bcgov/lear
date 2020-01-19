@@ -855,7 +855,7 @@ h2 {
 }
 
 .complianceDialogMsg {
-  font-size:16px;
-  color:#495057
+  font-size: 1rem;
+  color: $gray7;
 }
 </style>
