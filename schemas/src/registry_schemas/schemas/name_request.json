@@ -5,7 +5,11 @@
     "title": "Name Request Schema",
     "properties": {
         "nrNumber": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 10,
+            "examples": [
+              "NR 1234567"
+            ]
         },
         "legalName": {
             "type": "string"
