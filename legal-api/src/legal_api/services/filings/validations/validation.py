@@ -61,7 +61,7 @@ def validate(business: Business, filing_json: Dict) -> Error:
                 err = voluntary_dissolution_validate(business, filing_json)
 
             elif k == Filing.FILINGS['incorporationApplication'].get('name'):
-                err = voluntary_dissolution_validate(business, filing_json)
+                err = incorporation_application_validate(business, filing_json)
 
             if err:
                 return err

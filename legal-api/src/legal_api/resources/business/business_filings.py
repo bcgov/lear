@@ -455,31 +455,6 @@ class ListFilingResource(Resource):
                 filing.effective_date = effective_date
                 filing.save()
 
-    @staticmethod
-    def _save_incorporation_filing(incorporation_body):
-        # Either create the busines using the NR/numbered co. and then proceed with regular
-        # logic or save the filing with no business and perhaps a bridge table
-        # Are we creating a new set of endpoints for this?
-        # validate_identifier?
-        temp_corp_num = incorporation_body['filing']['incorporation']['nameRequest']['nrNumber']
-        business = Business.find_by_identifier(temp_corp_num)
-        if not business:
-            business = Business()
-            business.identifier = temp_corp_num
-            business.save()
-        filing = Filing.get_filings_by_type(business.id, 'incorporationApplication')
-
-        if len(filing) == 0:
-            filing = Filing()
-            filing.business_id = business.id
-        elif len(filing) > 1:
-            return {'message': 'more than one incorporation filing found for corp'}, HTTPStatus.BAD_REQUEST
-        else:
-            filing = filing[0]
-        filing.filing_json = incorporation_body
-        filing.save()
-        return None
-
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')
 @API.route('/internal/filings', methods=['GET', 'OPTIONS'])
 @API.route('/internal/filings/<string:status>', methods=['GET', 'OPTIONS'])
