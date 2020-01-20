@@ -28,8 +28,8 @@
           <v-row class="msg-director-compliance">
             <v-col cols="3">
               <v-btn class="new-director-btn" outlined color="primary"
-              :disabled="directorEditInProgress"
-              @click="addNewDirector"
+                :disabled="directorEditInProgress"
+                @click="addNewDirector"
               >
                 <v-icon>mdi-plus</v-icon>
                 <span>Appoint New Director</span>
@@ -184,7 +184,7 @@
           <span v-if="entityFilter(EntityTypes.BCOMP)">Mailing Address</span>
           <span>Appointed/Elected</span>
         </v-subheader>
-        <li class="director-list-item icon-blue"
+        <li class="director-list-item"
           v-for="(director, index) in directors"
           :id="'director-' + director.id"
           :class="{ 'remove' : !isActive(director) || !isActionable(director)}"
@@ -531,8 +531,8 @@ import { FormType, BaseAddressType, AlertMessage } from '@/interfaces'
     ...mapGetters(['lastCODFilingDate'])
   }
 })
-export default class Directors extends Mixins(DateMixin, ExternalMixin,
-  EntityFilterMixin, CommonMixin, DirectorMixin, ResourceLookupMixin) {
+export default class Directors extends Mixins(DateMixin, CommonMixin,
+  DirectorMixin, EntityFilterMixin, ResourceLookupMixin) {
   // To fix "property X does not exist on type Y" errors, annotate types for referenced components.
   // ref: https://github.com/vuejs/vetur/issues/1414
   $refs!: {
@@ -1651,12 +1651,14 @@ ul {
   color:rgba(0,0,0,0.87);
 }
 
-.v-icon {
-  color: #2196F3 !important;
-}
+::v-deep .v-alert.icon-blue {
+  .v-icon {
+    color: $BCgovIconBlue !important;
+  }
+}	
 
 .mdi-information-outline::before {
-  color: #2196F3 !important;
+  color: $BCgovIconBlue !important;
 }
 
 </style>

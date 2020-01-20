@@ -123,7 +123,7 @@ describe('Directors as a COOP', () => {
 
   it('check the default warning message for too few directors', () => {
     expect(vm.complianceMsg).toBeDefined()
-    const warning = store.state.configObject.flows.find(x=> x.feeCode == 'OTCDR').warnings
+    const warning = store.state.configObject.flows.find(x => x.feeCode === 'OTCDR').warnings
     expect(vm.complianceMsg.msg).toEqual(warning.minDirectors.message)
   })
 
@@ -475,26 +475,27 @@ describe('Directors as a BCOMP', () => {
     expect(vm.directors[1].id).toEqual(2)
   })
 
-  it('non-compliance due to too few directors displays accordingly', () => {
+  it('non-compliance due to too few directors displays accordingly', done => {
     expect(vm.complianceMsg).toBeNull()
-    expect(vm.$el.querySelector('.complianceCard')).toBeNull()
+    expect(vm.$el.querySelector('.complianceSection')).toBeNull()
     expect(vm.$el.querySelector('.warning-text')).toBeNull()
     // click first director's cease button
     click(vm, '#director-1-cease-btn')
     Vue.nextTick(() => {
     // click second director's cease button
       click(vm, '#director-2-cease-btn')
+      Vue.nextTick(() => {
+        expect(vm.complianceMsg.msg).toContain('A minimum of one director is required')
+        expect(vm.$el.querySelector('.complianceSection')).not.toBeNull()
+        expect(vm.$el.querySelector('.warning-text')).not.toBeNull()
+        // un-cease director
+        click(vm, '#director-2-cease-btn')
         Vue.nextTick(() => {
-          expect(vm.complianceMsg.msg).toContain('A minimum of one director is required')
-          expect(vm.$el.querySelector('.complianceCard')).not.toBeNull()
-          expect(vm.$el.querySelector('.warning-text')).not.toBeNull()
-          // un-cease director
-          click(vm, '#director-2-cease-btn')
-          Vue.nextTick(() => {
-            expect(vm.complianceMsg).toBeNull()
-            expect(vm.$el.querySelector('.complianceCard')).toBeNull()
-            expect(vm.$el.querySelector('.warning-text')).toBeNull()
-          })
+          expect(vm.complianceMsg).toBeNull()
+          expect(vm.$el.querySelector('.complianceSection')).toBeNull()
+          expect(vm.$el.querySelector('.warning-text')).toBeNull()
+          done()
+        })
       })
     })
   })

@@ -1,5 +1,5 @@
 export interface AlertMessage {
-  title: String
-  msg: String
-  additionalItems: Array<String>
+  title: string
+  msg: string
+  additionalItems: Array<string>
 }

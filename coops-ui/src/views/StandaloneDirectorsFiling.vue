@@ -184,11 +184,11 @@
                 </header>
                 <section v-if="complianceDialogMsg">
                   <v-alert type="info" outlined
-                  icon="mdi-information"
-                  class="white-background"
+                    icon="mdi-information"
+                    class="white-background"
                   >
                     <p class="complianceDialogMsg">{{ complianceDialogMsg.msg }}</p>
-                </v-alert>
+                  </v-alert>
                 </section>
                 <!-- Director Information -->
                 <section>
@@ -349,15 +349,17 @@ export default {
       initialCODDate: '',
       codDate: null,
       codDateValid: false,
+      complianceDialogMsg: null,
 
       // properties for Staff Payment component
       routingSlipNumber: null,
       staffPaymentFormValid: false,
       totalFee: 0,
+
       // EntityTypes Enum
       EntityTypes,
-      FilingCodes,
-      complianceDialogMsg: null
+      
+      FilingCodes
     }
   },
 

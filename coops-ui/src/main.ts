@@ -28,24 +28,6 @@ Vue.use(Affix)
 
 const vuetify = new Vuetify({ iconfont: 'mdi' })
 
-function resetAuth () {
-  var xhr = new XMLHttpRequest()
-  xhr.open('POST', 'https://auth-api-dev.pathfinder.gov.bc.ca/api/v1/token', false)
-  xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8')
-  xhr.onload = function () {
-    // do something to response
-    var data = JSON.parse(this.responseText)
-    if (data && data.access_token) {
-      sessionStorage['KEYCLOAK_REFRESH_TOKEN'] = data['refresh_token']
-      sessionStorage['KEYCLOAK_ID_TOKEN'] = data['access_token']
-      sessionStorage['KEYCLOAK_TOKEN'] = data['access_token']
-      sessionStorage['BUSINESS_IDENTIFIER'] = 'CP0001327'
-    }
-  }
-  xhr.send(JSON.stringify({ 'username': 'CP0001327', 'password': '874702467' }))
-}
-
-resetAuth()
 /**
  * first fetch config from server, then load Vue
  */

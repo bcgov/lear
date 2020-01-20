@@ -35,11 +35,13 @@ export default class WarningPopover extends Vue {
 @import '@/assets/styles/theme.scss';
 .warning-text {
   font-weight: bold;
-  font-size: 14px;
+  font-size: 0.9rem;
   color: $BCgovIconBlue;
-    .v-icon {
+
+  .v-icon {
     vertical-align: bottom !important;
     color: $BCgovIconBlue !important;
   }
+
 }
 </style>
