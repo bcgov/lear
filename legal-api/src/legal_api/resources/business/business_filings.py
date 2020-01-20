@@ -45,7 +45,6 @@ from .api_namespace import API
 @cors_preflight('GET, POST, PUT, DELETE, PATCH')
 @API.route('/<string:identifier>/filings', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 @API.route('/<string:identifier>/filings/<int:filing_id>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'])
-@API.route('/filings', methods=['POST', 'PUT'])
 class ListFilingResource(Resource):
     """Business Filings service."""
 
@@ -88,7 +87,7 @@ class ListFilingResource(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def post(identifier=None, filing_id=None):
+    def post(identifier, filing_id=None):
         """Create a new filing for the business."""
         return ListFilingResource.put(identifier, filing_id)
 
@@ -97,9 +96,6 @@ class ListFilingResource(Resource):
     @jwt.requires_auth
     def put(identifier, filing_id):  # pylint: disable=too-many-return-statements
         """Modify an incomplete filing for the business."""
-        if not identifier:
-            return ListFilingResource._save_incorporation_filing(request.get_json())
-        
         # basic checks
         err_msg, err_code = ListFilingResource._put_basic_checks(identifier, filing_id, request)
         if err_msg:
@@ -454,6 +450,7 @@ class ListFilingResource(Resource):
                 filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date
                 filing.effective_date = effective_date
                 filing.save()
+
 
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')
 @API.route('/internal/filings', methods=['GET', 'OPTIONS'])
