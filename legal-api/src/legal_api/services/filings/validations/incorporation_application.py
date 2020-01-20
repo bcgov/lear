@@ -13,19 +13,22 @@
 # limitations under the License.
 """Validation for the Change of Directors filing."""
 from http import HTTPStatus
-from typing import Dict, List
 
-import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 from legal_api.errors import Error
-from legal_api.models import Address, Business, Filing
-from legal_api.services.filings.utils import get_str
-from legal_api.utils.datetime import datetime
+from legal_api.models import Business
 
-def validate(incorporation_json):
+def validate(business, incorporation_json):
+    """Validate the Change ofAddress filing."""
+    if not business or not incorporation_json:
+        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
     # What are the rules for saving an incorporation
+    temp_identifier = incorporation_json['filing']['incorporationApplication']['nameRequest']['nrNumber']
+
+    if business.identifier != temp_identifier:
+        msg.append({'error' : babel('Business Identifier does not match the identifier in filing.')})
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
