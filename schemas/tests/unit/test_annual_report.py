@@ -11,23 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test Suite to ensure annual report schemas are valid.
-
-"""
-import copy
-from datetime import datetime
-
-import pytest
-
+"""Test Suite to ensure annual report schemas are valid."""
 from registry_schemas import validate
-from registry_schemas.example_data import (
-    ANNUAL_REPORT,
-)
+from registry_schemas.example_data import ANNUAL_REPORT
+
 
 def test_annual_report_schema():
-    """Assert that the JSONSchema validator is working.""" 
-    ar_json = { 'annualReport': ANNUAL_REPORT['filing']['annualReport']}
-    
+    """Assert that the JSONSchema validator is working."""
+    ar_json = {'annualReport': ANNUAL_REPORT['filing']['annualReport']}
+
     is_valid, errors = validate(ar_json, 'annual_report')
 
     if errors:
@@ -40,13 +32,13 @@ def test_annual_report_schema():
 
 def test_validate_no_office():
     """Assert that an offices node is present in the Annual Report."""
-    ar_json = { 'annualReport': ANNUAL_REPORT['filing']['annualReport']}
+    ar_json = {'annualReport': ANNUAL_REPORT['filing']['annualReport']}
     mailing_address = ar_json['annualReport']['offices']['registeredOffice']['mailingAddress']
     delivery_address = ar_json['annualReport']['offices']['registeredOffice']['deliveryAddress']
     del ar_json['annualReport']['offices']
     ar_json['annualReport']['mailingAddress'] = mailing_address
     ar_json['annualReport']['deliveryAddress'] = delivery_address
-    
+
     is_valid, errors = validate(ar_json, 'annual_report')
 
     if errors:

@@ -31,7 +31,6 @@ from .schema_data import (
     SPECIAL_RESOLUTION,
     STUB_FILING,
     VOLUNTARY_DISSOLUTION,
-    CORP_CHANGE_OF_ADDRESS,
 )
 
 
