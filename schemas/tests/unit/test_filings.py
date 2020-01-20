@@ -26,9 +26,9 @@ from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
-    FILING_HEADER,
-    CORP_CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS_MAILING,
+    CORP_CHANGE_OF_ADDRESS,
+    FILING_HEADER,
 )
 
 
@@ -144,7 +144,7 @@ def test_invalid_coa_filing_bcorp():
         'filing': {
             'header': {
                 'name': 'changeOfAddress',
-                'date': '2019-04-08',
+                'date': '',
                 'certifiedBy': 'full legal name',
                 'email': 'no_one@never.get'
             },
