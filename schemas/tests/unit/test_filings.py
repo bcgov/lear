@@ -29,6 +29,8 @@ from registry_schemas.example_data import (
     CHANGE_OF_DIRECTORS_MAILING,
     CORP_CHANGE_OF_ADDRESS,
     FILING_HEADER,
+    INCORPORATION_FILING_TEMPLATE,
+    INCORPORATION
 )
 
 
@@ -352,3 +354,14 @@ def test_effective_date():
     print(errors)
 
     assert not is_valid
+
+def test_incorporation_filing_schema():
+    """Assert that the JSONSchema validator is working."""
+    is_valid, errors = validate(INCORPORATION_FILING_TEMPLATE, 'filing')
+
+    if errors:
+        for err in errors:
+            print(err.message)
+    print(errors)
+
+    assert is_valid

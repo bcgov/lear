@@ -143,12 +143,28 @@
     ],
     "properties": {
         "filing": {
+            "properties": {
+                "filingType": {
+                    "enum": ["incorporation"]
+                }
+            },
             "allOf": [
                 {
                     "$ref": "#/definitions/filing_header"
                 },
                 {
-                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/business"
+                    "if": {
+                        "properties": {
+                            "filingType": {
+                                "not": {
+                                  "const": "incorporation"
+                                }
+                            }
+                        }
+                    },
+                    "then": {
+                        "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/business"
+                    }
                 }
             ],
             "anyOf": [
