@@ -143,28 +143,27 @@
     ],
     "properties": {
         "filing": {
-            "properties": {
-                "filingType": {
-                    "enum": ["incorporation"]
-                }
-            },
             "allOf": [
                 {
                     "$ref": "#/definitions/filing_header"
                 },
                 {
-                    "if": {
+                  "if": {
+                    "properties": {
+                      "header": {
                         "properties": {
-                            "filingType": {
-                                "not": {
-                                  "const": "incorporation"
-                                }
+                          "name": {
+                            "not": {
+                              "const": "incorporationApplication"
                             }
+                          }
                         }
-                    },
-                    "then": {
-                        "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/business"
+                      }
                     }
+                  },
+                  "then": {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/business"
+                  }
                 }
             ],
             "anyOf": [
@@ -187,7 +186,7 @@
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/change_of_name"
                 },
                 {
-                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/incorporation"
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/incorporationApplication"
                 },
                 {
                     "title": "Placeholder until all filing types are defined.",

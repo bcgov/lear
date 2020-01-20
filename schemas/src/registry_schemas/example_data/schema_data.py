@@ -322,7 +322,7 @@ CHANGE_OF_NAME = {
 }
 
 INCORPORATION = {
-    'incorporation': {
+    'incorporationApplication': {
         'nameRequest': {
             'legalType': 'BC'
         },
@@ -395,7 +395,6 @@ FILING_TEMPLATE = {
 
 INCORPORATION_FILING_TEMPLATE = {
     'filing': {
-        'filingType': 'incorporation',
         'header': {
             'name': 'incorporationApplication',
             'date': '2019-04-08',
@@ -404,7 +403,7 @@ INCORPORATION_FILING_TEMPLATE = {
             'filingId': 1,
             'effectiveDate': '2019-04-15T00:00:00+00:00'
         },
-        'incorporation': INCORPORATION
+        'incorporationApplication': INCORPORATION
     }
 }
 

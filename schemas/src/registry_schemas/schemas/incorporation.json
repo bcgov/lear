@@ -1,13 +1,13 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "https://bcrs.gov.bc.ca/.well_known/schemas/incorporation",
+    "$id": "https://bcrs.gov.bc.ca/.well_known/schemas/incorporationApplication",
     "required": [
-        "incorporation"
+        "incorporationApplication"
     ],
     "type": "object",
     "title": "Incorporation Filing",
     "properties": {
-        "incorporation": {
+        "incorporationApplication": {
             "type": "object",
             "required": [
                 "nameRequest",
