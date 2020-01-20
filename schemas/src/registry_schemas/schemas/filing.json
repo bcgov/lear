@@ -143,6 +143,11 @@
     ],
     "properties": {
         "filing": {
+            "properties": {
+                "filingType": {
+                    "enum": ["incorporation"]
+                }
+            },
             "allOf": [
                 {
                     "$ref": "#/definitions/filing_header"
