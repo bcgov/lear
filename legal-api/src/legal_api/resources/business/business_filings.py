@@ -45,7 +45,7 @@ from .api_namespace import API
 @cors_preflight('GET, POST, PUT, DELETE, PATCH')
 @API.route('/<string:identifier>/filings', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 @API.route('/<string:identifier>/filings/<int:filing_id>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'])
-@API.route('/filings', methods=[ 'POST', 'PUT'])
+@API.route('/filings', methods=['POST', 'PUT'])
 class ListFilingResource(Resource):
     """Business Filings service."""
 
