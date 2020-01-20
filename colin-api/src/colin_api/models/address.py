@@ -20,6 +20,7 @@ from flask import current_app
 
 from colin_api.exceptions import AddressNotFoundException
 from colin_api.resources.db import DB
+from colin_api.utils import stringify_list
 
 
 class Address:  # pylint: disable=too-many-instance-attributes; need all these fields
@@ -52,6 +53,40 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
         }
 
     @classmethod
+    def _build_address_obj(cls, address: dict = None):
+        # returns address obj given address dict
+        if address['addr_line_1'] and address['addr_line_2'] and address['addr_line_3']:
+            current_app.logger.error('Expected 2, but got 3 address lines for addr_id: {}'
+                                     .format(address['addr_id']))
+        if not address['addr_line_1'] and not address['addr_line_2'] and not address['addr_line_3']:
+            current_app.logger.error('Expected at least 1 addr_line, but got 0 for addr_id: {}'
+                                     .format(address['addr_id']))
+        if not address['city'] or not address['province'] or not address['full_desc'] or not address['postal_cd']:
+            current_app.logger.error('Missing field in address for addr_id: {}'.format(address['addr_id']))
+
+        # for cases where addresses were input out of order - shift them to lines 1 and 2
+        if not address['addr_line_1']:
+            if address['addr_line_2']:
+                address['addr_line_1'] = address['addr_line_2']
+                address['addr_line_2'] = None
+        if not address['addr_line_2']:
+            if address['addr_line_3']:
+                address['addr_line_2'] = address['addr_line_3']
+                address['addr_line_3'] = None
+
+        address_obj = Address()
+        address_obj.street_address = address['addr_line_1'].strip() if address['addr_line_1'] else ''
+        address_obj.street_address_additional = address['addr_line_2'].strip() if address['addr_line_2'] else ''
+        address_obj.address_city = address['city'].strip() if address['city'].strip() else ''
+        address_obj.address_region = address['province'].strip() if address['province'] else ''
+        address_obj.postal_code = address['postal_cd'].strip() if address['postal_cd'] else ''
+        address_obj.address_country = address['full_desc'].strip() if address['full_desc'] else ''
+        address_obj.delivery_instructions = address['delivery_instructions'] if address['delivery_instructions'] else ''
+        address_obj.address_id = address['addr_id'] if address['addr_id'] else ''
+
+        return address_obj
+
+    @classmethod
     def get_by_address_id(cls, address_id: str = None):
         """Return single address associated with given addr_id."""
         if not address_id:
@@ -65,7 +100,9 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
                 from ADDRESS
                 join COUNTRY_TYPE on ADDRESS.COUNTRY_TYP_CD = COUNTRY_TYPE.COUNTRY_TYP_CD
                 where ADDR_ID=:address_id
-                """, address_id=address_id)
+                """,
+                           address_id=address_id
+                           )
 
             address = cursor.fetchone()
             address = dict(zip([x[0].lower() for x in cursor.description], address))
@@ -113,35 +150,48 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
         return addr_id
 
     @classmethod
-    def _build_address_obj(cls, address: dict = None):
-        # returns address obj given address dict
-        if address['addr_line_1'] and address['addr_line_2'] and address['addr_line_3']:
-            current_app.logger.error('Expected 2, but got 3 address lines for addr_id: {}'
-                                     .format(address['addr_id']))
-        if not address['addr_line_1'] and not address['addr_line_2'] and not address['addr_line_3']:
-            current_app.logger.error('Expected at least 1 addr_line, but got 0 for addr_id: {}'
-                                     .format(address['addr_id']))
-        if not address['city'] or not address['province'] or not address['full_desc'] or not address['postal_cd']:
-            current_app.logger.error('Missing field in address for addr_id: {}'.format(address['addr_id']))
+    def get_addresses_by_event(cls, cursor, event_ids: list, table: str):
+        """Get associated addresses given event ids and table."""
+        try:
+            # table is a value set by the code: not possible to be sql injected from a request
+            cursor.execute(f"""
+                SELECT delivery_addr_id, mailing_addr_id
+                FROM {table}
+                WHERE start_event_id in ({stringify_list(event_ids)})
+            """)
+        except Exception as err:
+            current_app.logger.error(f'Error in Address: Failed to get address ids for events: {event_ids} in table: '
+                                     f'{table}')
+            raise err
 
-        # for cases where addresses were input out of order - shift them to lines 1 and 2
-        if not address['addr_line_1']:
-            if address['addr_line_2']:
-                address['addr_line_1'] = address['addr_line_2']
-                address['addr_line_2'] = None
-        if not address['addr_line_2']:
-            if address['addr_line_3']:
-                address['addr_line_2'] = address['addr_line_3']
-                address['addr_line_3'] = None
+        # make list of associated addresses
+        addr_ids = cursor.fetchall()
+        addrs_for_return = []
+        for row in addr_ids:
+            row = dict(zip([x[0].lower() for x in cursor.description], row))
+            if row['delivery_addr_id']:
+                addrs_for_return.append(row['delivery_addr_id'])
+            if row['mailing_addr_id']:
+                addrs_for_return.append(row['mailing_addr_id'])
+        return addrs_for_return
 
-        address_obj = Address()
-        address_obj.street_address = address['addr_line_1'].strip() if address['addr_line_1'] else ''
-        address_obj.street_address_additional = address['addr_line_2'].strip() if address['addr_line_2'] else ''
-        address_obj.address_city = address['city'].strip() if address['city'].strip() else ''
-        address_obj.address_region = address['province'].strip() if address['province'] else ''
-        address_obj.postal_code = address['postal_cd'].strip() if address['postal_cd'] else ''
-        address_obj.address_country = address['full_desc'].strip() if address['full_desc'] else ''
-        address_obj.delivery_instructions = address['delivery_instructions'] if address['delivery_instructions'] else ''
-        address_obj.address_id = address['addr_id'] if address['addr_id'] else ''
+    @classmethod
+    def delete(cls, cursor, address_ids: list = None):
+        """Delete given addresses from database."""
+        if not address_ids:
+            current_app.logger.debug('No addresses give to delete.')
+            return
+        try:
+            # delete addresses from database
+            cursor.execute(f"""
+                DELETE FROM address
+                WHERE addr_id in ({stringify_list(address_ids)})
+            """)
 
-        return address_obj
+            if cursor.rowcount < 1:
+                current_app.logger.error(f'Database not updated.')
+                raise Exception
+            return
+        except Exception as err:
+            current_app.logger.error(f'Failed to delete addresses {address_ids}')
+            raise err

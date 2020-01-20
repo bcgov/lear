@@ -21,7 +21,7 @@ from flask import current_app
 
 from colin_api.exceptions import BusinessNotFoundException
 from colin_api.resources.db import DB
-from colin_api.utils import convert_to_json_date, convert_to_json_datetime
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime, stringify_list
 
 
 class Business:
@@ -41,6 +41,41 @@ class Business:
         return {
             'business': self.business
         }
+
+    @classmethod
+    def _get_last_ar_dates_for_reset(cls, cursor, event_info: list, event_ids: list):
+        """Get the previous AR/AGM dates."""
+        events_by_corp_num = {}
+        for info in event_info:
+            if info['corp_num'] not in events_by_corp_num or events_by_corp_num[info['corp_num']] > info['event_id']:
+                events_by_corp_num[info['corp_num']] = info['event_id']
+        dates_by_corp_num = []
+        for corp_num in events_by_corp_num:
+            cursor.execute(f"""
+                SELECT event.corp_num, event.event_timestmp, filing.period_end_dt, filing.agm_date
+                FROM event
+                JOIN filing on filing.event_id = event.event_id
+                WHERE event.event_id not in ({stringify_list(event_ids)}) AND event.corp_num=:corp_num
+                ORDER BY event.event_timestmp desc
+                """,
+                           corp_num=corp_num
+                           )
+
+            dates = {'corp_num': corp_num}
+            for row in cursor.fetchall():
+                row = dict(zip([x[0].lower() for x in cursor.description], row))
+                if 'event_date' not in dates or dates['event_date'] < row['event_timestmp']:
+                    dates['event_date'] = row['event_timestmp']
+                # set ar_date to closest period_end_dt.
+                # this is not always the first one that gets returned if 2 were filed on the same day
+                if row['period_end_dt'] and ('ar_date' not in dates or dates['ar_date'] < row['period_end_dt']):
+                    dates['ar_date'] = row['period_end_dt']
+                    dates['ar_filed_date'] = row['event_timestmp']
+                # this may be different than ar_date if the last ar had no agm
+                if row['agm_date'] and ('agm_date' not in dates or dates['agm_date'] < row['agm_date']):
+                    dates['agm_date'] = row['agm_date']
+            dates_by_corp_num.append(dates)
+        return dates_by_corp_num
 
     @classmethod
     def find_by_identifier(cls, identifier: str = None):  # pylint: disable=too-many-statements;
@@ -205,6 +240,7 @@ class Business:
         :param cursor: oracle cursor
         :param event_id: (int) event id for corresponding event
         :param corp_num: (str) corporation number
+        :param state: (str) state of corporation
         """
         try:
             cursor.execute("""
@@ -222,8 +258,7 @@ class Business:
         try:
             cursor.execute("""
                 INSERT INTO corp_state (corp_num, start_event_id, state_typ_cd)
-                  VALUES (:corp_num, :event_id, :state
-                  )
+                VALUES (:corp_num, :event_id, :state)
                 """,
                            event_id=event_id,
                            corp_num=corp_num,
@@ -232,4 +267,58 @@ class Business:
 
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))
+            raise err
+
+    @classmethod
+    def reset_corporations(cls, cursor, event_info: list, event_ids: list):
+        """Reset the corporations to what they were before the given events."""
+        if len(event_info) < 1:
+            return
+
+        dates_by_corp_num = cls._get_last_ar_dates_for_reset(cursor=cursor, event_info=event_info, event_ids=event_ids)
+        for item in dates_by_corp_num:
+            try:
+                cursor.execute("""
+                    UPDATE corporation
+                    SET
+                        LAST_AR_FILED_DT = :ar_filed_date,
+                        LAST_AGM_DATE = :agm_date,
+                        LAST_LEDGER_DT = :event_date
+                    WHERE corp_num = :corp_num
+                """,
+                               agm_date=item['agm_date'] if item['agm_date'] else item['ar_date'],
+                               ar_filed_date=item['ar_filed_date'],
+                               event_date=item['event_date'],
+                               corp_num=item['corp_num']
+                               )
+
+            except Exception as err:
+                current_app.logger.error(f'Error in Business: Failed to reset corporation for {item["corp_num"]}')
+                raise err
+
+    @classmethod
+    def reset_corp_states(cls, cursor, event_ids: list):
+        """Reset the corp states to what they were before the given events."""
+        if len(event_ids) < 1:
+            return
+
+        # delete corp_state rows created on these events
+        try:
+            cursor.execute(f"""
+                DELETE FROM corp_state
+                WHERE start_event_id in ({stringify_list(event_ids)})
+            """)
+        except Exception as err:
+            current_app.logger.error(f'Error in Business: Failed delete corp_state rows for events {event_ids}')
+            raise err
+
+        # reset corp_state rows ended on these events
+        try:
+            cursor.execute(f"""
+                UPDATE corp_state
+                SET end_event_id = null
+                WHERE end_event_id in ({stringify_list(event_ids)})
+            """)
+        except Exception as err:
+            current_app.logger.error(f'Error in Business: Failed reset ended corp_state rows for events {event_ids}')
             raise err

@@ -20,6 +20,7 @@ from flask import current_app
 from colin_api.exceptions import OfficeNotFoundException
 from colin_api.models import Address
 from colin_api.resources.db import DB
+from colin_api.utils import delete_from_table_by_event_ids, stringify_list
 
 
 class Office:
@@ -170,4 +171,27 @@ class Office:
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errs
             current_app.logger.error('Error inserting into office table')
+            raise err
+
+    @classmethod
+    def reset_offices_by_events(cls, cursor, event_ids: list):
+        """Reset offices to what they were before the given event ids."""
+        # get address ids of offices that will be deleted
+        addrs_to_delete = Address.get_addresses_by_event(cursor=cursor, event_ids=event_ids, table='office')
+
+        # delete offices created on these events
+        delete_from_table_by_event_ids(cursor=cursor, event_ids=event_ids, table='office')
+
+        # delete addresses associated with directors that were deleted
+        Address.delete(cursor=cursor, address_ids=addrs_to_delete)
+
+        # reset offices ended on these events
+        try:
+            cursor.execute(f"""
+                UPDATE office
+                SET end_event_id = null
+                WHERE end_event_id in ({stringify_list(event_ids)})
+            """)
+        except Exception as err:
+            current_app.logger.error(f'Error in Office: Failed reset ended offices for events {event_ids}')
             raise err

@@ -22,7 +22,7 @@ from flask import current_app
 from colin_api.exceptions import DirectorsNotFoundException
 from colin_api.models import Address
 from colin_api.resources.db import DB
-from colin_api.utils import convert_to_json_date
+from colin_api.utils import convert_to_json_date, delete_from_table_by_event_ids, stringify_list
 
 
 class Director:  # pylint: disable=too-many-instance-attributes; need all these fields
@@ -255,3 +255,26 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
             raise err
 
         return corp_party_id
+
+    @classmethod
+    def reset_dirs_by_events(cls, cursor, event_ids: list):
+        """Delete all directors created with given events and make all directors ended on given events active."""
+        # get address ids of directors that will be deleted
+        addrs_to_delete = Address.get_addresses_by_event(cursor=cursor, event_ids=event_ids, table='corp_party')
+
+        # delete directors created on these events
+        delete_from_table_by_event_ids(cursor=cursor, event_ids=event_ids, table='corp_party')
+
+        # delete addresses associated with directors that were deleted
+        Address.delete(cursor=cursor, address_ids=addrs_to_delete)
+
+        # reset directors ended on these events
+        try:
+            cursor.execute(f"""
+                UPDATE corp_party
+                SET end_event_id = null, cessation_dt = null
+                WHERE end_event_id in ({stringify_list(event_ids)})
+            """)
+        except Exception as err:
+            current_app.logger.error(f'Error in director: Failed to reset ended directors for events {event_ids}')
+            raise err

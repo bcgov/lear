@@ -26,7 +26,7 @@ from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
 
 class Filing:
-    """Class to contain all model-like functions such as getting and setting from database."""
+    """Class to contain all model-like functions for filings such as getting and setting from database."""
 
     # in order of number filed by coops as of september 2019
     FILING_TYPES = {'OTANN': 'annualReport',
