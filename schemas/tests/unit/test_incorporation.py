@@ -30,6 +30,7 @@ def test_incorporation_schema():
 
     assert is_valid
 
+
 def test_validate_no_name_request():
     """Assert not valid if name request node is not present."""
     inc_json = copy.deepcopy(INCORPORATION)

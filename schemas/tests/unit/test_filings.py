@@ -354,10 +354,7 @@ def test_effective_date():
 
     assert not is_valid
 
-<<<<<<< HEAD
 
-=======
->>>>>>> Added Conditionall. Updated unit testing for filings
 def test_incorporation_filing_schema():
     """Assert that the JSONSchema validator is working."""
     is_valid, errors = validate(INCORPORATION_FILING_TEMPLATE, 'filing')
