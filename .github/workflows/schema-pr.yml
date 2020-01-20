@@ -26,14 +26,14 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements/dev.txt
       - name: Lint with pylint
+        working-directory: ./schemas
         run: |
-          working-directory: ./schemas
           pylint --rcfile=setup.cfg --load-plugins=pylint_flask src
       - name: Lint with flake8
+        working-directory: ./schemas
         run: |
-          working-directory: ./schemas
           flake8 src tests
       - name: Test with pytest
+        working-directory: ./schemas
         run: |
-          working-directory: ./schemas
           pytest
