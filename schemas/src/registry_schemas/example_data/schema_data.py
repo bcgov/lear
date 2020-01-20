@@ -333,8 +333,7 @@ INCORPORATION = {
                     'addressCity': 'delivery_address city',
                     'addressCountry': 'delivery_address country',
                     'postalCode': 'H0H0H0',
-                    'addressRegion': 'BC',
-                    'actions': []
+                    'addressRegion': 'BC'
                 },
                 'mailingAddress': {
                     'streetAddress': 'mailing_address - address line one',
@@ -351,8 +350,7 @@ INCORPORATION = {
                     'addressCity': 'delivery_address city',
                     'addressCountry': 'delivery_address country',
                     'postalCode': 'H0H0H0',
-                    'addressRegion': 'BC',
-                    'actions': []
+                    'addressRegion': 'BC'
                 },
                 'mailingAddress': {
                     'streetAddress': 'mailing_address - address line one',

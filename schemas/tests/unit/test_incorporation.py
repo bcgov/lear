@@ -11,18 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test Suite to ensure annual report schemas are valid.
+"""Test Suite to ensure annual report schemas are valid."""
 
-"""
 import copy
-from datetime import datetime
-
-import pytest
 
 from registry_schemas import validate
-from registry_schemas.example_data import (
-    INCORPORATION,
-)
+from registry_schemas.example_data import INCORPORATION
+
 
 def test_incorporation_schema():
     """Assert that the JSONSchema validator is working."""
@@ -34,6 +29,7 @@ def test_incorporation_schema():
     print(errors)
 
     assert is_valid
+
 
 def test_validate_no_name_request():
     """Assert not valid if name request node is not present."""
@@ -49,6 +45,7 @@ def test_validate_no_name_request():
 
     assert not is_valid
 
+
 def test_validate_name_request_type():
     """Assert valid if name request legalType node is present."""
     inc_json = copy.deepcopy(INCORPORATION)
@@ -62,6 +59,7 @@ def test_validate_name_request_type():
     print(errors)
 
     assert is_valid
+
 
 def test_validate_invalid_name_request_type():
     """Assert not valid if legalType is not an accepted type."""
@@ -91,6 +89,7 @@ def test_validate_no_offices():
     print(errors)
 
     assert not is_valid
+
 
 def test_validate_no_contact():
     """Assert not valid if the required contact info is not present."""

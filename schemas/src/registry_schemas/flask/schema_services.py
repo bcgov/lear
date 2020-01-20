@@ -21,7 +21,6 @@ Best practice is to validate the schemas using the pytest framework and only dep
 import json
 
 from flask import g
-
 from registry_schemas import get_schema_store, validate
 
 
