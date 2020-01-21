@@ -31,4 +31,7 @@ TEST_SCHEMAS_DATA = [
     ('change_of_name.json'),
     ('stub_filing.json'),
     ('office.json'),
+    ('incorporation.json'),
+    ('name_request.json'),
+    ('contact_point.json')
 ]
