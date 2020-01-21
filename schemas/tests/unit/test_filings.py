@@ -21,7 +21,6 @@ from datetime import datetime
 import pytest
 
 from registry_schemas import validate
-
 from registry_schemas.example_data import (
     ALL_FILINGS,
     ANNUAL_REPORT,
