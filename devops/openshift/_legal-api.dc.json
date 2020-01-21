@@ -44,7 +44,7 @@
             "name": "SENTRY_DSN",
             "displayName": "Sentry Init URL",
             "description": "Sentry DSN URL to initialize the Sentry SDK",
-            "required": true,
+            "required": false,
             "value": "https://account.sentry.ioo/project/id"
         },
         {
@@ -81,6 +81,13 @@
             "required": true,
             "description": "The namespace of the OpenShift project containing the imagestream for the application.",
             "value": "gl2uos-tools"
+        },
+        {
+            "name": "APP_NAMESPACE",
+            "displayName": "App Namespace",
+            "required": true,
+            "description": "The namespace of the OpenShift project that the application is deployed to.",
+            "value": "zcd4ou-dev"
         },
         {
             "name": "CPU_REQUEST",
@@ -288,7 +295,7 @@
                 }
             },
             "spec": {
-                "host": "${COMP_NAME}-${SUFFIX}.pathfinder.gov.bc.ca",
+                "host": "${COMP_NAME}-${SUFFIX}.${APP_NAMESPACE}.pathfinder.gov.bc.ca",
                 "to": {
                     "kind": "Service",
                     "name": "${COMP_NAME}-${SUFFIX}",
@@ -304,7 +311,7 @@
             },
             "status": {
                 "ingress": [{
-                    "host": "${COMP_NAME}-${SUFFIX}.pathfinder.gov.bc.ca",
+                    "host": "${COMP_NAME}-${SUFFIX}.${APP_NAMESPACE}.pathfinder.gov.bc.ca",
                     "routerName": "router",
                     "conditions": [{
                         "type": "Admitted",
@@ -328,11 +335,11 @@
                 "SENTRY_DSN": "${SENTRY_DSN}",
                 "DATABASE_HOST": "${DATABASE_HOST}",
                 "DATABASE_NAME": "${DATABASE_NAME}",
-                "DB_PORT": "${DB_PORT}",
+                "DB_PORT": "${DATABASE_PORT}",
                 "DATABASE_TEST_HOST": "${DATABASE_TEST_HOST}",
                 "DATABASE_TEST_NAME": "${DATABASE_TEST_NAME}",
                 "DATABASE_TEST_PASSWORD": "",
-                "DATABASE_TEST_PORT": "${DB_PORT}",
+                "DATABASE_TEST_PORT": "${DATABASE_PORT}",
                 "DATABASE_TEST_USERNAME": "tester",
                 "PAYMENT_SVC_URL": "${PAYMENT_SVC_URL}",
                 "AUTH_SVC_URL": "${AUTH_SVC_URL}",
@@ -520,7 +527,7 @@
                                     }
                                 },
                                 {
-                                    "name": "DB_PORT",
+                                    "name": "DATABASE_PORT",
                                     "valueFrom": {
                                         "configMapKeyRef": {
                                             "name": "${COMP_NAME}-${SUFFIX}-config",
@@ -736,28 +743,6 @@
                                     "cpu": "${CPU_REQUEST}",
                                     "memory": "${MEMORY_REQUEST}"
                                 }
-                            },
-                            "livenessProbe": {
-                                "httpGet": {
-                                    "path": "/ops/healthz",
-                                    "port": 8080,
-                                    "scheme": "HTTP"
-                                },
-                                "timeoutSeconds": 1,
-                                "periodSeconds": 10,
-                                "successThreshold": 1,
-                                "failureThreshold": 3
-                            },
-                            "readinessProbe": {
-                                "httpGet": {
-                                    "path": "/ops/readyz",
-                                    "port": 8080,
-                                    "scheme": "HTTP"
-                                },
-                                "timeoutSeconds": 1,
-                                "periodSeconds": 10,
-                                "successThreshold": 1,
-                                "failureThreshold": 3
                             },
                             "terminationMessagePath": "/dev/termination-log",
                             "terminationMessagePolicy": "File",

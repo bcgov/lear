@@ -2,7 +2,7 @@
 app {
     name = 'bcros'
     ns = 'zcd4ou'
-    hostname = 'bcregistry.ca'
+    hostname = 'pathfinder.gov.bc.ca'
     namespaces {
         'build'{
             namespace = "${app.ns}-tools"
@@ -33,9 +33,9 @@ app {
     url {
         api = "https://legal-api-${vars.deployment.env.name}.${app.hostname}/api/v1/businesses/"
         auth = "https://auth-${vars.deployment.env.name}.${app.hostname}/api/v1/"
-        auth_api = "https://auth-api-${vars.deployment.env.name}.${app.hostname}/api/v1/"
-        pay_api = "https://pay-api-${vars.deployment.env.name}.${app.hostname}/api/v1/"
-        nats = "nats://nats-streaming.${vars.deployment.namespace}.svc:4222"
+        auth_api = "https://auth-api-${vars.deployment.env.name}.${app.hostname}/api/v1/entities/{identifier}/authorizations"
+        pay_api = "https://pay-api-${vars.deployment.env.name}.${app.hostname}/api/v1/payment-requests"
+        nats = "nats://nats-streaming--${vars.deployment.env.name}.${vars.deployment.namespace}.svc:4222"
         reports = "https://report-api-${vars.deployment.env.name}/api/vi/reports"
     }
 
@@ -55,7 +55,7 @@ app {
         namespace = app.namespaces.'build'.namespace
         timeoutInSeconds = 60*20
         templates = [
-                [
+/*                [
                     'file':'bc/legal-api.bc.json',
                     'params':[
                         'APP_NAME':             "bcros",
@@ -85,6 +85,23 @@ app {
                         'SOURCE_IMAGE_TAG':     "3.7",
                         'OUTPUT_IMAGE_TAG':     "${app.build.version}"
                     ]
+                ],
+*/
+                [
+                    'file':'bc/entity-pay.bc.json',
+                    'params':[
+                        'APP_NAME':             "bcros",
+                        'COMP_NAME':            "entity-pay",
+                        'SUFFIX':               "${app.deployment.version}",
+                        'GIT_REPO_URL':         "https://github.com/bsnopek-freshworks/lear.git",
+                        'GIT_REF':              "master",
+                        'SOURCE_NAMESPACE':     "gl2uos-tools",
+                        'SOURCE_CONTEXT_DIR':   "queue_services/entity-pay",
+                        'SOURCE_IMAGE_NAME':    "python",
+                        'SOURCE_IMAGE_KIND':    "ImageStreamTag",
+                        'SOURCE_IMAGE_TAG':     "3.7",
+                        'OUTPUT_IMAGE_TAG':     "${app.build.version}"
+                    ]
                 ]
         ]
     }
@@ -108,6 +125,7 @@ app {
                         'APP_NAME':             "bcros",
                         'COMP_NAME':            "coops-ui",
                         'SUFFIX':               "${app.deployment.version}",
+                        'APP_NAMESPACE':        "${vars.deployment.namespace}",
                         'WEB_APP_CONTEXT_PATH': "cooperatives",
                         'VUE_APP_API_URL':      "${app.url.api}",
                         'VUE_APP_AUTH_URL':     "${app.url.auth}",
@@ -131,27 +149,28 @@ app {
                         'SUFFIX':               "${app.deployment.version}",
                         'DB_SECRET_ADMIN':      'lear-db-admin',
                         'DB_SECRET_ACCESS':     'lear-db-access',
+                        'APP_NAMESPACE':        "${vars.deployment.namespace}",
                         'IMAGE_NAMESPACE':      "${vars.deployment.namespace}",
                         'GO_LIVE_DATE':         "2019-08-02",
-                        'SENTRY_DSN':           "https://account.sentry.ioo/project/id",
-                        'DATABASE_HOST':        "sbc-dev-service.hak2zo-dev",
+                        'SENTRY_DSN':           "",
+                        'DATABASE_HOST':        "postgresdb-dev-tmp",
                         'DATABASE_NAME':        "lear-${app.deployment.version}",
                         'DATABASE_PORT':        "5444",
-                        'DATABASE_TEST_HOST':   "sbc-dev-service.hak2zo-dev",
+                        'DATABASE_TEST_HOST':   "postgresdb-dev-tmp",
                         'DATABASE_TEST_NAME':   "lear_testdb-${app.deployment.version}",
                         'DATABASE_TEST_PASSWORD':"",
                         'DATABASE_TEST_PORT':   "5444",
                         'DATABASE_TEST_USERNAME':"tester",
-                        'PAYMENT_SVC_URL':      "${app.url.pay_api}/payments",
+                        'PAYMENT_SVC_URL':      "${app.url.pay_api}",
                         'AUTH_SVC_URL':         "${app.url.auth_api}",
                         'REPORT_SVC_URL':       "${app.url.reports}",
                         'JWT_OIDC_ALGORITHMS':  "RS256",
-                        'JWT_OIDC_AUDIENCE':    "aud",
-                        'JWT_OIDC_CLIENT_SECRET':       "valid-client-secret",
-                        'JWT_OIDC_WELL_KNOWN_CONFIG':   "https://sso-${app.deployment.namespace}.pathfinder.gov.bc.ca/auth/realms/<realm-name>/.well-known/openid-configuration",  // Need to figure out what the realm-name is supposed to be here
+                        'JWT_OIDC_AUDIENCE':    "sbc-auth-web",
+                        'JWT_OIDC_CLIENT_SECRET':       "aeb2b9bc-672b-4574-8bc8-e76e853c37cbt",
+                        'JWT_OIDC_WELL_KNOWN_CONFIG':   "https://sso-dev.pathfinder.gov.bc.ca/auth/realms/fcf0kpqr/.well-known/openid-configuration",
                         'JWT_OIDC_JWKS_CACHE_TIMEOUT':  "300",
                         'JWT_OIDC_CACHING_ENABLED':     "True",
-                        'NATS_SERVERS':         "nats://nats-streaming.<k8s-namespace>.svc:4222",
+                        'NATS_SERVERS':         "${app.url.nats}",
                         'NATS_CLIENT_NAME':     "entity.filing.payment.worker",
                         'NATS_CLUSTER_ID':      "test-cluster",
                         'NATS_SUBJECT':         "entity.filing.payment",
@@ -169,16 +188,16 @@ app {
                     'params':[
                             'APP_NAME':         "bcros",
                             'COMP_NAME':        "entity-filer",
-                            'SUFFIX':           "${vars.deployment.suffix}",
+                            'SUFFIX':           "${app.deployment.version}",
                             'APP_FILE':         "filer_service.py",
-                            'DB_SECRET_ACCESS':     'lear-db-access',
+                            'APP_NAMESPACE':        "${vars.deployment.namespace}",
                             'IMAGE_NAMESPACE':      "${vars.deployment.namespace}",
-                            'DATABASE_HOST':        "sbc-dev-service.hak2zo-dev",
+                            'DB_SECRET_ACCESS':     'lear-db-access',
+                            'DATABASE_HOST':        "postgresdb-dev-tmp",
                             'DATABASE_NAME':        "lear-${app.deployment.version}",
                             'DATABASE_PORT':        "5444",
-                            'AUTH_SVC_URL':         "${app.url.auth_api}",
-                            'SENTRY_DSN':       "https://<account>@sentry.io/<project>",
-                            'NATS_SERVERS':     "nats://nats-streaming.<namespace>.svc:4222",
+                            'SENTRY_DSN':           "",
+                            'NATS_SERVERS':     "${app.url.nats}",
                             'NATS_CLUSTER_ID':  "test-cluster",
                             'NATS_CLIENT_NAME': "entity.filing.filer.worker",
                             'NATS_SUBJECT':     "entity.filing.filer",
@@ -190,6 +209,48 @@ app {
                             'MEMORY_LIMIT':     "${vars.resources.filer.memory_limit}",
                             'REPLICA_MIN':      "${vars.resources.filer.replica_min}",
                             'REPLICA_MAX':      "${vars.resources.filer.replica_max}",
+                    ]
+                ],
+                [
+                    'file':'_entity-pay.dc.json',
+                    'params':[
+                            'APP_NAME':         "bcros",
+                            'COMP_NAME':        "entity-pay",
+                            'SUFFIX':           "${app.deployment.version}",
+                            'APP_FILE':         "pay_filer.py",
+                            'APP_NAMESPACE':        "${vars.deployment.namespace}",
+                            'IMAGE_NAMESPACE':      "${vars.deployment.namespace}",
+                            'DB_SECRET_ACCESS':     'lear-db-access',
+                            'DATABASE_HOST':        "postgresdb-dev-tmp",
+                            'DATABASE_NAME':        "lear-${app.deployment.version}",
+                            'DATABASE_PORT':        "5444",
+                            'SENTRY_DSN':           "",
+                            'NATS_SERVERS':     "${app.url.nats}",
+                            'NATS_CLUSTER_ID':  "test-cluster",
+                            'NATS_CLIENT_NAME': "entity.filing.payment.worker",
+                            'NATS_SUBJECT':     "entity.filing.payment",
+                            'NATS_FILER_SUBJECT':"entity.filing.filer",
+                            'NATS_QUEUE':       "filing-worker",
+                            'CPU_REQUEST':      "${vars.resources.pay.cpu_request}",
+                            'CPU_LIMIT':        "${vars.resources.pay.cpu_limit}",
+                            'MEMORY_REQUEST':   "${vars.resources.pay.memory_request}",
+                            'MEMORY_LIMIT':     "${vars.resources.pay.memory_limit}",
+                            'REPLICA_MIN':      "${vars.resources.pay.replica_min}",
+                            'REPLICA_MAX':      "${vars.resources.pay.replica_max}",
+                    ]
+                ],
+                [
+                    'file':'_nats-streaming.dc.json',
+                    'params':[
+                            'APP_NAME':         "bcros",
+                            'COMP_NAME':        "nats-streaming",
+                            'SUFFIX':           "${app.deployment.version}",
+                            'CPU_REQUEST':      "${vars.resources.nats.cpu_request}",
+                            'CPU_LIMIT':        "${vars.resources.nats.cpu_limit}",
+                            'MEMORY_REQUEST':   "${vars.resources.nats.memory_request}",
+                            'MEMORY_LIMIT':     "${vars.resources.nats.memory_limit}",
+                            'REPLICA_MIN':      "${vars.resources.nats.replica_min}",
+                            'REPLICA_MAX':      "${vars.resources.nats.replica_max}"
                     ]
                 ]
         ]
@@ -237,6 +298,22 @@ environments {
                   cpu_limit = "750m"
                   memory_request = "100Mi"
                   memory_limit = "2Gi"
+                  replica_min = 1
+                  replica_max = 1
+              }
+              pay {
+                  cpu_request = "100m"
+                  cpu_limit = "750m"
+                  memory_request = "100Mi"
+                  memory_limit = "2Gi"
+                  replica_min = 1
+                  replica_max = 1
+              }
+              nats  {
+                  cpu_request = "100m"
+                  cpu_limit = "250m"
+                  memory_request = "256Mi"
+                  memory_limit = "1Gi"
                   replica_min = 1
                   replica_max = 1
               }

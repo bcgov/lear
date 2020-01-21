@@ -3,7 +3,7 @@
     "apiVersion": "v1",
     "metadata": {
         "annotations": {
-            "description": "Deployment template for a entity-filer service.",
+            "description": "Deployment template for a entity-pay service.",
             "tags": "${COMP_NAME}"
         },
         "name": "${COMP_NAME}-${SUFFIX}"
@@ -20,7 +20,7 @@
             "displayName": "COMP_NAME",
             "description": "The name of the application component.",
             "required": true,
-            "value": "entity-filer"
+            "value": "entity-pay"
         }, {
             "name": "SUFFIX",
             "displayName": "Name",
@@ -32,7 +32,7 @@
             "displayName": "APP_FILE",
             "description": "APP_FILE to run the service.",
             "required": true,
-            "value": "filer_service.py"
+            "value": "pay_filer.py"
         },
         {
             "name": "DATABASE_NAME",
@@ -87,14 +87,14 @@
             "displayName": "NATS Client Name",
             "description": "NATS client name as displayed in the connection info.",
             "required": true,
-            "value": "entity.filing.filer.worker"
+            "value": "entity.filing.payment.worker"
         },
         {
             "name": "NATS_SUBJECT",
             "displayName": "NATS Subject Name",
             "description": "A unique NATS subject name that is set to receive payment tokens.",
             "required": true,
-            "value": "entity.filing.filer"
+            "value": "entity.filing.payment"
         },
         {
             "name": "NATS_FILER_SUBJECT",

@@ -29,6 +29,13 @@
             "required": true
         },
         {
+            "name": "APP_NAMESPACE",
+            "displayName": "App Namespace",
+            "required": true,
+            "description": "The namespace of the OpenShift project that the application is deployed to.",
+            "value": "zcd4ou-dev"
+        },
+        {
             "name": "WEB_APP_CONTEXT_PATH",
             "displayName": "WEB_APP_CONTEXT_PATH",
             "description": "The path at which web application is deployed.Context root for the web applicaton",
@@ -107,7 +114,7 @@
             "kind": "Service",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${COMP_NAME}",
+                "name": "${COMP_NAME}-${SUFFIX}",
                 "creationTimestamp": null,
                 "labels": {
                     "app": "${APP_NAME}-${SUFFIX}",
@@ -129,6 +136,42 @@
             },
             "status": {
                 "loadBalancer": {}
+            }
+        },
+        {
+            "kind": "Route",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${COMP_NAME}-${SUFFIX}",
+                "labels": {
+                    "name": "${COMP_NAME}-${SUFFIX}"
+                }
+            },
+            "spec": {
+                "host": "${COMP_NAME}-${SUFFIX}.${APP_NAMESPACE}.pathfinder.gov.bc.ca",
+                "to": {
+                    "kind": "Service",
+                    "name": "${COMP_NAME}-${SUFFIX}",
+                    "weight": 100
+                },
+                "port": {
+                    "targetPort": "${PORT}-tcp"
+                },
+                "tls": {
+                    "termination": "edge"
+                },
+                "wildcardPolicy": "None"
+            },
+            "status": {
+                "ingress": [{
+                    "host": "${COMP_NAME}-${SUFFIX}.${APP_NAMESPACE}.pathfinder.gov.bc.ca",
+                    "routerName": "router",
+                    "conditions": [{
+                        "type": "Admitted",
+                        "status": "True"
+                    }],
+                    "wildcardPolicy": "None"
+                }]
             }
         },
         {
