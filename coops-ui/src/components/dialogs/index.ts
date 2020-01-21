@@ -8,6 +8,7 @@ import PaymentErrorDialog from './PaymentErrorDialog.vue'
 import ResumeErrorDialog from './ResumeErrorDialog.vue'
 import SaveErrorDialog from './SaveErrorDialog.vue'
 import CancelPaymentErrorDialog from './CancelPaymentErrorDialog.vue'
+import WarningPopover from './WarningPopover.vue'
 
 export {
   AccountAuthorizationDialog,
@@ -19,5 +20,6 @@ export {
   PaymentErrorDialog,
   ResumeErrorDialog,
   SaveErrorDialog,
-  CancelPaymentErrorDialog
+  CancelPaymentErrorDialog,
+  WarningPopover
 }

@@ -77,6 +77,7 @@
                     @directorFormValid="directorFormValid=$event"
                     @allDirectors="allDirectors=$event"
                     @directorEditAction="directorEditInProgress=$event"
+                    @complianceDialogMsg="complianceDialogMsg=$event"
                     :asOfDate="codDate"
                   />
                 </section>
@@ -93,7 +94,7 @@
                     :currentDate="currentDate"
                     @valid="certifyFormValid=$event"
                     :entityDisplay="displayName()"
-                    :message="certifyText('OTCDR')"
+                    :message="certifyText(FilingCodes.DIRECTOR_CHANGE_OT)"
                   />
                 </section>
 
@@ -181,7 +182,14 @@
                 <header>
                   <h1 id="filing-header-review">Review: Director Change </h1>
                 </header>
-
+                <section v-if="complianceDialogMsg">
+                  <v-alert type="info" outlined
+                    icon="mdi-information"
+                    class="white-background"
+                  >
+                    <p class="complianceDialogMsg">{{ complianceDialogMsg.msg }}</p>
+                  </v-alert>
+                </section>
                 <!-- Director Information -->
                 <section>
                   <SummaryDirectors
@@ -341,13 +349,16 @@ export default {
       initialCODDate: '',
       codDate: null,
       codDateValid: false,
+      complianceDialogMsg: null,
 
       // properties for Staff Payment component
       routingSlipNumber: null,
       staffPaymentFormValid: false,
       totalFee: 0,
+
       // EntityTypes Enum
       EntityTypes,
+
       FilingCodes
     }
   },
@@ -843,5 +854,10 @@ h2 {
   #cod-cancel-btn {
     margin-left: 0.5rem;
   }
+}
+
+.complianceDialogMsg {
+  font-size: 1rem;
+  color: $gray7;
 }
 </style>

@@ -295,7 +295,7 @@ describe('Standalone Office Address Filing - Part 1 - UI', () => {
     expect(wrapper.find(Certify).exists()).toBe(true)
     const certify: any = wrapper.find(Certify)
 
-    expect(certify.vm.message).toContain('See sections 35 and 36 of the Business Corporations Act.')
+    expect(certify.vm.message).toContain('See Sections 35 and 36 of the Business Corporations Act.')
     expect(certify.vm.entityDisplay).toEqual('Benefit Company')
 
     wrapper.destroy()

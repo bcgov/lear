@@ -174,7 +174,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     expect(wrapper.find(Certify).exists()).toBe(true)
     const certify: any = wrapper.find(Certify)
 
-    expect(certify.vm.message).toContain('See section 78 of the Cooperative Association Act.')
+    expect(certify.vm.message).toContain('See Section 78 of the Cooperative Association Act.')
     expect(certify.vm.entityDisplay).toEqual('Cooperative')
 
     wrapper.destroy()
