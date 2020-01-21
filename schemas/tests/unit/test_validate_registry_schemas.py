@@ -17,6 +17,7 @@ Every schema should be listed in the TEST_SCHEMAS_DATA to be validated.
 """
 import pytest
 from jsonschema import Draft7Validator, SchemaError
+
 from registry_schemas import get_schema, get_schema_store
 
 from .schema_data import TEST_SCHEMAS_DATA

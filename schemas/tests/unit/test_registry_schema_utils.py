@@ -19,6 +19,7 @@ import os
 import uuid
 
 import pytest
+
 from registry_schemas import get_schema_store, validate
 
 
