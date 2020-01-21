@@ -358,7 +358,7 @@ export default {
 
       // EntityTypes Enum
       EntityTypes,
-      
+
       FilingCodes
     }
   },

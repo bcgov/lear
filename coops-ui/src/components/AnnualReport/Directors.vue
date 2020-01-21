@@ -1655,7 +1655,7 @@ ul {
   .v-icon {
     color: $BCgovIconBlue !important;
   }
-}	
+}
 
 .mdi-information-outline::before {
   color: $BCgovIconBlue !important;
