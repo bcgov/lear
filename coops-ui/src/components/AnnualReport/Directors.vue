@@ -517,7 +517,7 @@ import { EntityTypes } from '@/enums'
 import { CEASED, NAMECHANGED, ADDRESSCHANGED, APPOINTED } from '@/constants'
 
 // Interfaces
-import { FormType, BaseAddressType, AlertMessage } from '@/interfaces'
+import { FormType, BaseAddressType, AlertMessageIF } from '@/interfaces'
 
 @Component({
   components: {
@@ -642,7 +642,7 @@ export default class Directors extends Mixins(DateMixin, CommonMixin,
    * If a director change causes the business to be out of compliance
    * return the relevant alert.
    */
-  private get complianceMsg (): AlertMessage {
+  private get complianceMsg (): AlertMessageIF {
     return this.directorWarning(this.directors)
   }
   /**
@@ -1366,7 +1366,7 @@ export default class Directors extends Mixins(DateMixin, CommonMixin,
   }
 
   @Watch('complianceMsg')
-  private onComplianceMsgChange (val: AlertMessage): void {
+  private onComplianceMsgChange (val: AlertMessageIF): void {
     this.emitcomplianceDialogMsg(val)
   }
 
@@ -1416,7 +1416,7 @@ export default class Directors extends Mixins(DateMixin, CommonMixin,
    * Emits an event that indicates a director compliance warning has been triggered.
    */
   @Emit('complianceDialogMsg')
-  private emitcomplianceDialogMsg (val: AlertMessage): void { }
+  private emitcomplianceDialogMsg (val: AlertMessageIF): void { }
 }
 </script>
 
