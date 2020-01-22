@@ -1,15 +1,20 @@
-from flask import json
-from sqlalchemy_continuum import versioning_manager
-from legal_api import db
-from legal_api.models.business import Business, Director, Address, Filing
-from legal_api.models.office import Office, OfficeType
-from data_reset_tool.converter.utils import SheetName
+# pylint: disable=invalid-name
+"""ExcelConverter - convert spreadsheet to objects."""
 import xlrd
+from flask import json
+from legal_api import db
+from legal_api.models.business import Address, Business, Director, Filing
+from legal_api.models.office import Office, OfficeType
+from sqlalchemy_continuum import versioning_manager
+
+from data_reset_tool.converter.utils import SheetName
 
 
 class ExcelConverter:
+    """ExcelConverter - convert spreadsheet to objects."""
 
     def create_businesses_from_file(self, a_file, input_business_identifier, rebuild):
+        """Create a business and sub-objects (filings, addresses, etc.) from spreadsheet."""
         book = xlrd.open_workbook(file_contents=a_file.stream.read())
 
         # Start to process the sheet with the businesses
@@ -26,41 +31,44 @@ class ExcelConverter:
             row_business_identifier = self.__get_business_identifier(row)
 
             # If business_identifier is provided then only process this row if the BI matches
-            if input_business_identifier and not (input_business_identifier == row_business_identifier):
+            if input_business_identifier and not input_business_identifier == row_business_identifier:
                 continue
 
             # If we are rebuilding, everything is already dropped. otherwise delete this single business
             if not rebuild:
                 # If this business is already in the database, delete it
-                existing_business = Business.find_by_identifier(
-                    row_business_identifier)
-                if existing_business:
-
-                    for f in existing_business.filings.all():
-                        f._payment_token = None
-                        f.colin_event_id = None
-                        f.save()
-                        print(f.locked)
-                        print(f.json)
-                        print(f)
-                        db.session.delete(f)
-
-                    for ma in existing_business.mailing_address.all():
-                        db.session.delete(ma)
-                    for da in existing_business.delivery_address.all():
-                        db.session.delete(da)
-                    for office in existing_business.offices.all():
-                        db.session.delete(office)
-
-                    db.session.delete(existing_business)
-                    db.session.delete(existing_business)
+                self.__delete_business(row_business_identifier)
 
             business = self.__create_business_from_row(row, book)
             business_list.append(business)
         return business_list
 
+    def delete_business(self, input_business_identifier):
+        """Delete a business and all sub-items from db."""
+        self.__delete_business(input_business_identifier)
+        db.session.commit()
+
     def __get_business_identifier(self, row):
         return self.__get_value_from_row(row, 0)
+
+    @classmethod
+    def __delete_business(cls, identifier):
+        existing_business = Business.find_by_identifier(identifier)
+        if existing_business:
+            for f in existing_business.filings.all():
+                f._payment_token = None  # pylint: disable=protected-access
+                f.colin_event_id = None
+                f.save()
+                db.session.delete(f)
+
+            for mailing_address in existing_business.mailing_address.all():
+                db.session.delete(mailing_address)
+            for delivery_address in existing_business.delivery_address.all():
+                db.session.delete(delivery_address)
+            for office in existing_business.offices.all():
+                db.session.delete(office)
+
+            db.session.delete(existing_business)
 
     def __create_business_from_row(self, row, book):
         # Get the business properties and create the business
@@ -125,7 +133,8 @@ class ExcelConverter:
                 director_address_row, 0)
             da_first_name = self.__get_value_from_row(director_address_row, 1)
             da_last_name = self.__get_value_from_row(director_address_row, 2)
-            if da_business_identifier == business_identifier and da_first_name == director.first_name and da_last_name == director.last_name:
+            if da_business_identifier == business_identifier and da_first_name == director.first_name \
+                    and da_last_name == director.last_name:
                 address = Address(
                     address_type=self.__get_value_from_row(
                         director_address_row, 3),
@@ -141,10 +150,10 @@ class ExcelConverter:
                         director_address_row, 10)
                 )
                 address.save()
-                if (address.address_type == Address.MAILING):
+                if address.address_type == Address.MAILING:
                     director.mailing_address = address
                     director.mailing_address_id = address.id
-                elif (address.address_type == Address.DELIVERY):
+                elif address.address_type == Address.DELIVERY:
                     director.delivery_address = address
                     director.delivery_address_id = address.id
 
@@ -168,7 +177,7 @@ class ExcelConverter:
             business_offices = business.offices.all()
 
             if business_address_row[0].value == business.identifier:
-                office_type=self.__get_value_from_row(business_address_row, 1)
+                office_type = self.__get_value_from_row(business_address_row, 1)
                 office = None
 
                 # Create the appropriate office if it does not exist
@@ -223,7 +232,7 @@ class ExcelConverter:
 
                 # If the filing is completed, it has to contain a transaction ID
                 status = self.__get_value_from_row(filing_row, 9)
-                if(Filing.Status.COMPLETED.value == status):
+                if Filing.Status.COMPLETED.value == status:
                     uow = versioning_manager.unit_of_work(db.session)
                     transaction = uow.create_transaction(db.session)
                     transaction_id = transaction.id
@@ -246,12 +255,13 @@ class ExcelConverter:
 
                 # need to convert this first before storing
                 filing_value = self.__get_value_from_row(filing_row, 1)
-                if(filing_value):
-                    filing._filing_json = json.loads(filing_value)
+                if filing_value:
+                    filing._filing_json = json.loads(filing_value)  # pylint: disable=protected-access
 
                 business.filings.append(filing)
                 db.session.add(filing)
                 db.session.commit()
 
-    def __get_value_from_row(self, row, index):
+    @classmethod
+    def __get_value_from_row(cls, row, index):
         return row[index].value if row[index].value else None

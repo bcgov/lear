@@ -1,13 +1,17 @@
-from flask import json, jsonify
-from legal_api.models.business import Business, Director, Address
-from legal_api.models.office import Office, OfficeType
-import logging
-from data_reset_tool.converter.utils import format_date, format_non_date, format_boolean, format_json
+# pylint: disable=invalid-name
+"""Util class to convert to json."""
+from flask import jsonify
+from legal_api.models.business import Address
+from legal_api.models.office import OfficeType
+
+from data_reset_tool.converter.utils import format_boolean, format_date, format_non_date
 
 
-class JsonConverter:
+class JsonConverter:  # pylint: disable=too-few-public-methods
+    """Util class to convert object to json."""
 
     def convert_to_json(self, business_list):
+        """Convert object to json."""
         json_list = []
 
         # convert each business to JSON
@@ -20,8 +24,8 @@ class JsonConverter:
     def __json_business(self, business):
 
         offices = business.offices.all()
-        registeredOffice = self.__create_office_addresses(offices, OfficeType.REGISTERED)
-        recordsOffice = self.__create_office_addresses(offices, OfficeType.RECORDS)
+        registered_office = self.__create_office_addresses(offices, OfficeType.REGISTERED)
+        records_office = self.__create_office_addresses(offices, OfficeType.RECORDS)
 
         d = {
             'identifier': format_non_date(business.identifier),
@@ -39,9 +43,9 @@ class JsonConverter:
             'submitterUserId': format_non_date(business.submitter_userid),
             'lastModified': format_date(business.last_modified),
             'directors': self.__json_directors(business.directors),
-            'registeredOffice': registeredOffice,
-            OfficeType.REGISTERED: format_non_date(registeredOffice),
-            OfficeType.RECORDS: format_non_date(recordsOffice),
+            'registeredOffice': registered_office,
+            OfficeType.REGISTERED: format_non_date(registered_office),
+            OfficeType.RECORDS: format_non_date(records_office),
             'filings': self.__json_filings(business.filings)
         }
 
@@ -65,7 +69,8 @@ class JsonConverter:
 
         return directors_json_list
 
-    def __format_address(self, value):
+    @classmethod
+    def __format_address(cls, value):
         return_value = None
         if value:
             return_value = {
@@ -79,23 +84,25 @@ class JsonConverter:
             }
         return return_value
 
-    def __json_filings(self, filings):
+    @classmethod
+    def __json_filings(cls, filings):
         filings_json_list = []
 
         for filing in filings:
             d = {
-                'completionDate': format_date(filing._completion_date),
-                'filingDate': format_date(filing._filing_date),
-                'filingType': format_non_date(filing._filing_type),
+                'completionDate': format_date(filing._completion_date),  # pylint: disable=protected-access
+                'filingDate': format_date(filing._filing_date),  # pylint: disable=protected-access
+                'filingType': format_non_date(filing._filing_type),  # pylint: disable=protected-access
                 'effectiveDate': format_date(filing.effective_date),
-                'paymentToken': format_non_date(filing._payment_token),
-                'paymentCompletionDate': format_date(filing._payment_completion_date),
+                'paymentToken': format_non_date(filing._payment_token),  # pylint: disable=protected-access
+                'paymentCompletionDate':
+                    format_date(filing._payment_completion_date),  # pylint: disable=protected-access
                 'colinEventId': format_non_date(filing.colin_event_id),
-                'status': format_non_date(filing._status),
+                'status': format_non_date(filing._status),  # pylint: disable=protected-access
                 'paperOnly': format_boolean(filing.paper_only),
                 # Don't want to use format_json here because we're
                 # running jsonify later and it will get all escaped
-                'filingJson': format_non_date(filing._filing_json)
+                'filingJson': format_non_date(filing._filing_json)  # pylint: disable=protected-access
             }
             filings_json_list.append(d)
 
@@ -119,4 +126,3 @@ class JsonConverter:
                     'deliveryAddress': self.__format_address(delivery_address)
                 }
         return office_addresses
-

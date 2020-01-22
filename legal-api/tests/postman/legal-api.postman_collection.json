@@ -561,6 +561,90 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "delete temp business NR 1234567",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b5998d44-e9e7-4caf-8911-f2d91e7c40c0",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"url": {
+							"raw": "{{data_reset_tool_url}}/api/fixture/delete/NR%201234567",
+							"host": [
+								"{{data_reset_tool_url}}"
+							],
+							"path": [
+								"api",
+								"fixture",
+								"delete",
+								"NR%201234567"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete temp business NR 1111111",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "862d7d15-fa0f-4389-a41d-1cd8201810e1",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"url": {
+							"raw": "{{data_reset_tool_url}}/api/fixture/delete/NR%201111111",
+							"host": [
+								"{{data_reset_tool_url}}"
+							],
+							"path": [
+								"api",
+								"fixture",
+								"delete",
+								"NR%201111111"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -7110,21 +7194,14 @@
 							"raw": "{\r\n    \"filing\": {\r\n        \"header\": {\r\n        \t\"certifiedBy\": \"full name\",\r\n            \"email\": \"no_one@never.get\",\r\n            \"name\": \"incorporationApplication\",\r\n            \"date\": \"{{today}}\"\r\n        },\r\n        \"incorporationApplication\": {\r\n\t        \"nameRequest\": {\r\n\t            \"legalType\": \"BC\",\r\n\t            \"nrNumber\": \"{{nr_num}}\"\r\n\t        },\r\n\t        \"offices\": {\r\n\t            \"registeredOffice\": {\r\n\t                \"deliveryAddress\": {\r\n\t                    \"streetAddress\": \"delivery_address - address line one\",\r\n\t                    \"addressCity\": \"delivery_address city\",\r\n\t                    \"addressCountry\": \"delivery_address country\",\r\n\t                    \"postalCode\": \"H0H0H0\",\r\n\t                    \"addressRegion\": \"BC\"\r\n\t                },\r\n\t                \"mailingAddress\": {\r\n\t                    \"streetAddress\": \"mailing_address - address line one\",\r\n\t                    \"addressCity\": \"mailing_address city\",\r\n\t                    \"addressCountry\": \"mailing_address country\",\r\n\t                    \"postalCode\": \"H0H0H0\",\r\n\t                    \"addressRegion\": \"BC\"\r\n\t                }\r\n\t            },\r\n\t            \"recordsOffice\": {\r\n\t                \"deliveryAddress\": {\r\n\t                    \"streetAddress\": \"delivery_address - address line one\",\r\n\t                    \"addressCity\": \"delivery_address city\",\r\n\t                    \"addressCountry\": \"delivery_address country\",\r\n\t                    \"postalCode\": \"H0H0H0\",\r\n\t                    \"addressRegion\": \"BC\"\r\n\t                },\r\n\t                \"mailingAddress\": {\r\n\t                    \"streetAddress\": \"mailing_address - address line one\",\r\n\t                    \"addressCity\": \"mailing_address city\",\r\n\t                    \"addressCountry\": \"mailing_address country\",\r\n\t                    \"postalCode\": \"H0H0H0\",\r\n\t                    \"addressRegion\": \"BC\"\r\n\t                }\r\n\t            }\r\n\t        },\r\n\t        \"contactPoint\": {\r\n\t            \"email\": \"no_one@never.get\",\r\n\t            \"phone\": \"123-456-7890\"\r\n\t        }\r\n    \t}\r\n    }\r\n}"
 						},
 						"url": {
-							"raw": "{{url}}/api/v1/businesses/:nr_num",
+							"raw": "{{url}}/api/v1/businesses",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"businesses",
-								":nr_num"
-							],
-							"variable": [
-								{
-									"key": "nr_num",
-									"value": "{{nr_num}}"
-								}
+								"businesses"
 							]
 						}
 					},
@@ -7263,21 +7340,14 @@
 							"raw": "{\r\n    \"filing\": {\r\n        \"header\": {\r\n        \t\"certifiedBy\": \"full name\",\r\n            \"email\": \"no_one@never.get\",\r\n            \"name\": \"incorporationApplication\",\r\n            \"date\": \"{{today}}\"\r\n        },\r\n        \"incorporationApplication\": {\r\n\t        \"nameRequest\": {\r\n\t            \"legalType\": \"BC\",\r\n\t            \"nrNumber\": \"{{nr_num}}\"\r\n\t        },\r\n\t        \"offices\": {\r\n\t            \"registeredOffice\": {\r\n\t                \"deliveryAddress\": {\r\n\t                    \"streetAddress\": \"delivery_address - address line one\",\r\n\t                    \"addressCity\": \"delivery_address city\",\r\n\t                    \"addressCountry\": \"delivery_address country\",\r\n\t                    \"postalCode\": \"H0H0H0\",\r\n\t                    \"addressRegion\": \"BC\"\r\n\t                },\r\n\t                \"mailingAddress\": {\r\n\t                    \"streetAddress\": \"mailing_address - address line one\",\r\n\t                    \"addressCity\": \"mailing_address city\",\r\n\t                    \"addressCountry\": \"mailing_address country\",\r\n\t                    \"postalCode\": \"H0H0H0\",\r\n\t                    \"addressRegion\": \"BC\"\r\n\t                }\r\n\t            },\r\n\t            \"recordsOffice\": {\r\n\t                \"deliveryAddress\": {\r\n\t                    \"streetAddress\": \"delivery_address - address line one\",\r\n\t                    \"addressCity\": \"delivery_address city\",\r\n\t                    \"addressCountry\": \"delivery_address country\",\r\n\t                    \"postalCode\": \"H0H0H0\",\r\n\t                    \"addressRegion\": \"BC\"\r\n\t                },\r\n\t                \"mailingAddress\": {\r\n\t                    \"streetAddress\": \"mailing_address - address line one\",\r\n\t                    \"addressCity\": \"mailing_address city\",\r\n\t                    \"addressCountry\": \"mailing_address country\",\r\n\t                    \"postalCode\": \"H0H0H0\",\r\n\t                    \"addressRegion\": \"BC\"\r\n\t                }\r\n\t            }\r\n\t        },\r\n\t        \"contactPoint\": {\r\n\t            \"email\": \"no_one@never.get\",\r\n\t            \"phone\": \"123-456-7890\"\r\n\t        }\r\n    \t}\r\n    }\r\n}"
 						},
 						"url": {
-							"raw": "{{url}}/api/v1/businesses/:nr_num",
+							"raw": "{{url}}/api/v1/businesses",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"businesses",
-								":nr_num"
-							],
-							"variable": [
-								{
-									"key": "nr_num",
-									"value": "{{nr_num}}"
-								}
+								"businesses"
 							]
 						}
 					},
@@ -7323,7 +7393,7 @@
 						}
 					],
 					"request": {
-						"method": "POST",
+						"method": "PUT",
 						"header": [
 							{
 								"key": "Content-Type",
