@@ -321,6 +321,54 @@ CHANGE_OF_NAME = {
     'legalName': 'My New Entity Name'
 }
 
+INCORPORATION = {
+    'incorporationApplication': {
+        'nameRequest': {
+            'legalType': 'BC'
+        },
+        'offices': {
+            'registeredOffice': {
+                'deliveryAddress': {
+                    'streetAddress': 'delivery_address - address line one',
+                    'addressCity': 'delivery_address city',
+                    'addressCountry': 'delivery_address country',
+                    'postalCode': 'H0H0H0',
+                    'addressRegion': 'BC'
+                },
+                'mailingAddress': {
+                    'streetAddress': 'mailing_address - address line one',
+                    'addressCity': 'mailing_address city',
+                    'addressCountry': 'mailing_address country',
+                    'postalCode': 'H0H0H0',
+                    'addressRegion': 'BC',
+                    'actions': ['addressChanged']
+                }
+            },
+            'recordsOffice': {
+                'deliveryAddress': {
+                    'streetAddress': 'delivery_address - address line one',
+                    'addressCity': 'delivery_address city',
+                    'addressCountry': 'delivery_address country',
+                    'postalCode': 'H0H0H0',
+                    'addressRegion': 'BC'
+                },
+                'mailingAddress': {
+                    'streetAddress': 'mailing_address - address line one',
+                    'addressCity': 'mailing_address city',
+                    'addressCountry': 'mailing_address country',
+                    'postalCode': 'H0H0H0',
+                    'addressRegion': 'BC',
+                    'actions': ['addressChanged']
+                }
+            }
+        },
+        'contactPoint': {
+            'email': 'no_one@never.get',
+            'phone': '123-456-7890'
+        }
+    }
+}
+
 FILING_TEMPLATE = {
     'filing': {
         'header': {
@@ -340,6 +388,20 @@ FILING_TEMPLATE = {
             'legalName': 'legal name - CP1234567',
             'legalType': 'CP'
         }
+    }
+}
+
+INCORPORATION_FILING_TEMPLATE = {
+    'filing': {
+        'header': {
+            'name': 'incorporationApplication',
+            'date': '2019-04-08',
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get',
+            'filingId': 1,
+            'effectiveDate': '2019-04-15T00:00:00+00:00'
+        },
+        'incorporationApplication': INCORPORATION
     }
 }
 

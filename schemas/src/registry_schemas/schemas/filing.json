@@ -148,7 +148,22 @@
                     "$ref": "#/definitions/filing_header"
                 },
                 {
+                  "if": {
+                    "properties": {
+                      "header": {
+                        "properties": {
+                          "name": {
+                            "not": {
+                              "const": "incorporationApplication"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "then": {
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/business"
+                  }
                 }
             ],
             "anyOf": [
@@ -169,6 +184,9 @@
                 },
                 {
                     "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/change_of_name"
+                },
+                {
+                    "$ref": "https://bcrs.gov.bc.ca/.well_known/schemas/incorporationApplication"
                 },
                 {
                     "title": "Placeholder until all filing types are defined.",
