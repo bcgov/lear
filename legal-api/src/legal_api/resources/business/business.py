@@ -19,7 +19,7 @@ from http import HTTPStatus
 
 from flask import jsonify, request
 from flask_restplus import Resource, cors
-import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
+# import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 
 from legal_api.models import Business, Filing
 from legal_api.utils.util import cors_preflight

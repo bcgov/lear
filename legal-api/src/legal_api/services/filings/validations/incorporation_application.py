@@ -14,10 +14,10 @@
 """Validation for the Change of Directors filing."""
 from http import HTTPStatus
 
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+from flask_babel import _ as babel # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 from legal_api.errors import Error
-from legal_api.models import Business
+from legal_api.models import Business # pylint: disable=unused-import
 
 def validate(business, incorporation_json):
     """Validate the Change ofAddress filing."""
