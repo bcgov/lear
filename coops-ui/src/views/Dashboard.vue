@@ -180,13 +180,14 @@ export default {
       clearTimeout(this.refreshTimer)
 
       let filingId = null
+      // NB: use unary plus operator to cast string to number
       if (this.$route !== undefined) filingId = +this.$route.query.filing_id // if missing, this is NaN
 
       // only consider refreshing the dashboard if we came from a filing
       if (!filingId) return
 
-      const isInFilingHistory = this.historyFilings.filter(el => el.filingId === filingId).length > 0
-      const isInTodoList = this.todoListFilings.filter(el => el.id === filingId).length > 0
+      const isInFilingHistory = Boolean(this.historyFilings.find(el => el.filingId === filingId))
+      const isInTodoList = Boolean(this.todoListFilings.find(el => el.id === filingId))
 
       // if this filing is NOT in the to-do list and IS in the filing history list, do nothing - there is no problem
       if (!isInTodoList && isInFilingHistory) return
@@ -196,18 +197,18 @@ export default {
         this.inProcessFiling = filingId
       }
 
-      // check for updated status to reload dashboard
+      // reset iteration counter
       this.checkFilingStatusCount = 0
+
+      // check for updated status to reload dashboard
       this.checkFilingStatus(filingId)
     },
 
+    // checks whether this filing's status has changed
+    // respawns itself approx. every 1 second for up to 10 iterations
     checkFilingStatus (filingId) {
-      // check whether this filing's status has changed - recursive, runs approx. every 1 second for up to 10 seconds
-
-      this.checkFilingStatusCount++
-
       // stop this cycle after 10 iterations
-      if (this.checkFilingStatusCount > 10) {
+      if (++this.checkFilingStatusCount >= 10) {
         this.inProcessFiling = null
         return
       }
@@ -217,7 +218,7 @@ export default {
       axios.get(url).then(res => {
         // if the filing status is now COMPLETE, reload the dashboard
         if (res && res.data && res.data.filing && res.data.filing.header &&
-          res.data.filing.header.status === FilingStatus.COMPLETED) {
+        res.data.filing.header.status === FilingStatus.COMPLETED) {
           this.setTriggerDashboardReload(true)
         } else {
           // call this function again in 1 second
@@ -246,20 +247,22 @@ export default {
     checkPendingFilings (filings) {
       filings.forEach(filing => {
         if (this.entityFilter(EntityTypes.BCOMP) &&
-          filing.name === FilingTypes.ADDRESS_CHANGE &&
-          filing.status === FilingStatus.PAID) {
+        filing.name === FilingTypes.ADDRESS_CHANGE &&
+        filing.status === FilingStatus.PAID) {
           this.effectiveDate = filing.filingEffectiveDate
           this.coaPending = true
           this.hasBlockerFiling = true
         }
       })
     },
+
     /**
      * Toggle the Change of address warning dialog.
      */
     toggleCoaWarning () {
       this.coaWarningDialog = !this.coaWarningDialog
     },
+
     /**
      * Display COA warning if BCOMP else proceed to COA.
      */
@@ -271,18 +274,20 @@ export default {
   },
 
   mounted () {
-    // Flag Usage Example.
-    // console.log(this.flags.coopsVersion)
-    this.checkToReloadDashboard()
+    // Launch Darkly flag usage example:
+    // console.log('coopsVersion =', this.flags.coopsVersion)
   },
 
   watch: {
     historyFilings () {
-      this.checkPendingFilings(this.historyFilings) // If a filing has a paid but pending state ( Currently BCOMPS )
+      // check if a filing has a paid but pending state ( Currently BCOMPS )
+      this.checkPendingFilings(this.historyFilings)
+      // check whether to reload the dashboard with updated data
       this.checkToReloadDashboard()
     },
 
     todoListFilings () {
+      // check whether to reload the dashboard with updated data
       this.checkToReloadDashboard()
     }
   },

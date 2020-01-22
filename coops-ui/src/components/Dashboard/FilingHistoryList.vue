@@ -306,6 +306,7 @@ export default {
       name = name.charAt(0).toLocaleUpperCase() + name.slice(1)
       const item = {
         name: name,
+        filingId: filing.header.filingId,
         filingAuthor: 'Registry Staff',
         filingDate: filingDate,
         filingYear: filing.header.date.slice(0, 4),

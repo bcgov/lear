@@ -899,9 +899,6 @@ export default {
   },
 
   mounted () {
-    // Flag Usage Example.
-    // console.log(this.flags.coopsVersion)
-
     // Annual report will always have the $30 fee.
     this.toggleFiling('add', 'OTANN')
   },

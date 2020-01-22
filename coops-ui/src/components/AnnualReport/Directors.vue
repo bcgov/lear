@@ -23,14 +23,23 @@
     </v-dialog>
 
     <v-expand-transition>
-      <div v-if="componentEnabled" v-show="!showNewDirectorForm">
-        <v-btn class="new-director-btn" outlined color="primary"
-          :disabled="directorEditInProgress"
-          @click="addNewDirector"
-        >
-          <v-icon>mdi-plus</v-icon>
-          <span>Appoint New Director</span>
-        </v-btn>
+      <div id="wrapper-add-director" v-if="componentEnabled" v-show="!showNewDirectorForm" >
+        <v-container>
+          <v-row class="msg-director-compliance">
+            <v-col cols="3">
+              <v-btn class="new-director-btn" outlined color="primary"
+                :disabled="directorEditInProgress"
+                @click="addNewDirector"
+              >
+                <v-icon>mdi-plus</v-icon>
+                <span>Appoint New Director</span>
+              </v-btn>
+            </v-col>
+            <v-col cols="5">
+              <warning-popover :dialogObj="complianceMsg" />
+            </v-col>
+          </v-row>
+        </v-container>
       </div>
     </v-expand-transition>
 
@@ -276,7 +285,7 @@
                       <v-btn small text color="primary" class="cease-btn"
                         :disabled="!componentEnabled || directorEditInProgress"
                         :id="'director-' + director.id + '-cease-btn'"
-                        @click="ceaseDirector(director)"
+                        @click="ceaseDirector(director, index)"
                       >
                         <v-icon small>{{isActive(director) ? 'mdi-close':'mdi-undo'}}</v-icon>
                         <span>{{isActive(director) ? 'Cease':'Undo'}}</span>
@@ -319,7 +328,7 @@
                     :max="currentDate"
                   >
                     <v-btn text color="primary" @click="activeIndexCustomCease = null">Cancel</v-btn>
-                    <v-btn text color="primary" @click="ceaseDirector(director)">OK</v-btn>
+                    <v-btn text color="primary" @click="ceaseDirector(director, index)">OK</v-btn>
                   </v-date-picker>
                 </div>
               </v-expand-transition>
@@ -467,6 +476,20 @@
 
             </div>
           </div>
+          <v-alert
+            close-text="Close Alert"
+            dismissible
+            icon="mdi-information-outline"
+            class="white-background icon-blue"
+            :id="'director-' + director.id + '-alert'"
+            v-if="complianceMsg && index == messageIndex"
+            v-once
+          >
+            <div class="complianceSection">
+              <h3>{{ complianceMsg.title }}</h3>
+              <p>{{ complianceMsg.msg }}</p>
+            </div>
+          </v-alert>
         </li>
       </ul>
     </v-card>
@@ -480,12 +503,12 @@ import { Component, Mixins, Vue, Prop, Watch, Emit } from 'vue-property-decorato
 import axios from '@/axios-auth'
 import { mapState, mapGetters } from 'vuex'
 import { required, maxLength } from 'vuelidate/lib/validators'
-
+import { WarningPopover } from '@/components/dialogs'
 // Components
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
 // Mixins
-import { DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin, DirectorMixin } from '@/mixins'
+import { DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin, DirectorMixin, ResourceLookupMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'
@@ -494,11 +517,12 @@ import { EntityTypes } from '@/enums'
 import { CEASED, NAMECHANGED, ADDRESSCHANGED, APPOINTED } from '@/constants'
 
 // Interfaces
-import { FormType, BaseAddressType } from '@/interfaces'
+import { FormType, BaseAddressType, AlertMessageIF } from '@/interfaces'
 
 @Component({
   components: {
-    BaseAddress
+    BaseAddress,
+    WarningPopover
   },
   computed: {
     // Property definitions for runtime environment.
@@ -507,7 +531,8 @@ import { FormType, BaseAddressType } from '@/interfaces'
     ...mapGetters(['lastCODFilingDate'])
   }
 })
-export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin, DirectorMixin) {
+export default class Directors extends Mixins(DateMixin, CommonMixin,
+  DirectorMixin, EntityFilterMixin, ResourceLookupMixin) {
   // To fix "property X does not exist on type Y" errors, annotate types for referenced components.
   // ref: https://github.com/vuejs/vetur/issues/1414
   $refs!: {
@@ -529,7 +554,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   @Prop({ default: true })
   private componentEnabled: boolean
 
-  private directorEditInProgress:boolean = false;
+  private directorEditInProgress: boolean = false;
 
   // Local properties.
   private directors = []
@@ -542,6 +567,8 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
   private activeDirectorToDelete = null
   private cessationDateTemp = null
   private isEditingDirector = false
+  private messageIndex = -1
+
   private director = {
     id: '',
     officer: { firstName: '', lastName: '', middleInitial: '' },
@@ -610,7 +637,14 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
       maxLength: maxLength(80)
     }
   }
-
+  /**
+   * Computed value.
+   * If a director change causes the business to be out of compliance
+   * return the relevant alert.
+   */
+  private get complianceMsg (): AlertMessageIF {
+    return this.directorWarning(this.directors)
+  }
   /**
    * The array of validations rules for a director's first name.
    * NB: do not validate inter word spacing because the Legal db needs to support
@@ -972,9 +1006,10 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    * Local helper to cease a director.
    * @param director The director object to cease.
    */
-  private ceaseDirector (director): void {
+  private ceaseDirector (director, index): void {
     // if this is a Cease, apply a fee
     // otherwise it's just undoing a cease or undoing a new director, so remove fee
+    this.messageIndex = index
     if (this.isActive(director)) director.isFeeApplied = true
     else director.isFeeApplied = false
 
@@ -1001,6 +1036,7 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     this.inProgressMailAddress = {}
     this.directorEditInProgress = true
     this.activeIndex = index
+    this.messageIndex = index
     this.cancelNewDirector()
   }
 
@@ -1329,6 +1365,11 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
     this.emitDirectorEditInProgress(val)
   }
 
+  @Watch('complianceMsg')
+  private onComplianceMsgChange (val: AlertMessageIF): void {
+    this.emitcomplianceDialogMsg(val)
+  }
+
   /**
    * Emits an event containing the earliest director change date.
    */
@@ -1370,12 +1411,27 @@ export default class Directors extends Mixins(DateMixin, ExternalMixin, EntityFi
    */
   @Emit('directorEditAction')
   private emitDirectorEditInProgress (val: boolean): void { }
+
+  /**
+   * Emits an event that indicates a director compliance warning has been triggered.
+   */
+  @Emit('complianceDialogMsg')
+  private emitcomplianceDialogMsg (val: AlertMessageIF): void { }
 }
 </script>
 
 <style lang="scss" scoped>
 @import "@/assets/styles/theme.scss";
 
+.msg-director-compliance {
+  display:flex;
+  align-items: center;
+  margin-bottom:1.5rem !important;
+
+  .col-3 {
+    min-width:176px;
+  }
+}
 .v-card {
   line-height: 1.2rem;
   font-size: 0.875rem;
@@ -1507,8 +1563,7 @@ ul {
 }
 
 .new-director-btn {
-  margin-bottom: 1.5rem !important;
-
+  min-width: 176px !important;
   .v-icon {
     margin-left: -0.5rem;
   }
@@ -1590,4 +1645,20 @@ ul {
 .director-list-item {
   padding: 1.25rem;
 }
+
+.complianceSection {
+  font-size: 0.9rem;
+  color:rgba(0,0,0,0.87);
+}
+
+::v-deep .v-alert.icon-blue {
+  .v-icon {
+    color: $BCgovIconBlue !important;
+  }
+}
+
+.mdi-information-outline::before {
+  color: $BCgovIconBlue !important;
+}
+
 </style>
