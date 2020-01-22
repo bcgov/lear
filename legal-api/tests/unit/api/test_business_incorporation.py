@@ -1,4 +1,4 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2020 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,3 +11,132 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import copy
+from datetime import date, datetime
+from http import HTTPStatus
+
+import datedelta
+from dateutil.parser import parse
+from flask import current_app
+from legal_api.services.authz import BASIC_USER, STAFF_ROLE
+from registry_schemas.example_data import INCORPORATION, INCORPORATION_FILING_TEMPLATE
+from tests.unit.services.utils import create_header
+from legal_api.models import Business, Filing
+
+def test_post_new_incorporation(session, client, jwt):
+    nr_number = 'NR1234567'
+    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    print(filing)
+    filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
+    # Post initial filing, 
+    rv = client.post(f'/api/v1/businesses',
+                    json=filing,
+                    headers=create_header(jwt, [STAFF_ROLE], nr_number)
+                    )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    assert rv.json['filing']['header']['status'] == 'DRAFT'
+
+    business = Business.find_by_identifier(nr_number)
+
+    assert business
+    assert business.identifier == nr_number
+
+ 
+def test_post_duplicate_incorporation(session, client, jwt):
+    nr_number = 'NR1234567'
+    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    print(filing)
+    filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
+    # Post initial filing, 
+    rv = client.post(f'/api/v1/businesses',
+                    json=filing,
+                    headers=create_header(jwt, [STAFF_ROLE], nr_number)
+                    )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    
+    rv = client.post(f'/api/v1/businesses',
+                    json=filing,
+                    headers=create_header(jwt, [STAFF_ROLE], nr_number)
+                    )
+    
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json['message'] == 'Incorporation filing for NR1234567 already exists'
+
+
+def test_update_incorporation_filing(session, client, jwt):
+    nr_number = 'NR1234567'
+    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    print(filing)
+    filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
+    # Post initial filing, 
+    rv = client.post(f'/api/v1/businesses',
+                    json=filing,
+                    headers=create_header(jwt, [STAFF_ROLE], nr_number)
+                    )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    assert rv.json['filing']['incorporationApplication']['contactPoint']['email'] == 'no_one@never.get'
+    filing['filing']['incorporationApplication']['contactPoint']['email'] = 'some_one@never.get'
+
+    rv = client.put(f'/api/v1/businesses/{nr_number}',
+                    json=filing,
+                    headers=create_header(jwt, [STAFF_ROLE], nr_number)
+                    )
+
+    assert rv.status_code == HTTPStatus.ACCEPTED
+    assert rv.json['filing']['incorporationApplication']['contactPoint']['email'] == 'some_one@never.get'
+
+
+def test_update_incorporation_mismatch(session, client, jwt):
+    nr_number = 'NR1234567'
+    nr_bad_number = 'NR7654321'
+    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    second_filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    print(filing)
+    filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
+    second_filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_bad_number
+    # Post initial filing, 
+    rv = client.post(f'/api/v1/businesses',
+                    json=filing,
+                    headers=create_header(jwt, [STAFF_ROLE], nr_number)
+                    )
+    
+    assert rv.status_code == HTTPStatus.CREATED
+
+    rv = client.post(f'/api/v1/businesses',
+                    json=second_filing,
+                    headers=create_header(jwt, [STAFF_ROLE], nr_bad_number)
+                    )
+    
+    assert rv.status_code == HTTPStatus.CREATED
+
+    rv = client.put(f'/api/v1/businesses/{nr_bad_number}',
+                    json=filing,
+                    headers=create_header(jwt, [STAFF_ROLE], nr_bad_number)
+                    )
+
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json[0]['error'] == 'Business Identifier does not match the identifier in filing.'
+
+def test_get_incorporation_filings(session, client, jwt):
+    nr_number = 'NR1234567'
+    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    print(filing)
+    filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
+    # Post initial filing, 
+    rv = client.post(f'/api/v1/businesses',
+                    json=filing,
+                    headers=create_header(jwt, [STAFF_ROLE], nr_number)
+                    )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    assert rv.json['filing']['header']['filingId']
+    filing_id = rv.json['filing']['header']['filingId']
+    rv = client.get(f'/api/v1/businesses/{nr_number}/filings/{filing_id}',
+                    headers=create_header(jwt, [STAFF_ROLE], nr_number))
+    
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['filing']['header']['filingId'] == filing_id

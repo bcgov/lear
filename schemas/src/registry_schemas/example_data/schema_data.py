@@ -322,7 +322,6 @@ CHANGE_OF_NAME = {
 }
 
 INCORPORATION = {
-    'incorporationApplication': {
         'nameRequest': {
             'legalType': 'BC'
         },
@@ -367,7 +366,6 @@ INCORPORATION = {
             'phone': '123-456-7890'
         }
     }
-}
 
 FILING_TEMPLATE = {
     'filing': {

@@ -80,7 +80,7 @@ class BusinessResource(Resource):
             business = Business.find_by_identifier(temp_corp_num)
 
             if business:
-                return  {'message': f'Incorporation filing for {business_id} already exists'}, \
+                return  {'message': f'Incorporation filing for {temp_corp_num} already exists'}, \
                 HTTPStatus.BAD_REQUEST
             # Create an empty business record, to be updated by the filer
             business = Business()
@@ -90,7 +90,8 @@ class BusinessResource(Resource):
         # Ensure the business identifier matches the NR in the filing
         err = validate(business, incorporation_body)
         if err:
-            return err
+            return jsonify(err.msg), err.code
+
 
         filing = Filing.get_filings_by_type(business.id, 'incorporationApplication')
         # There can only be zero or one incorporation filings, if there are none, this is an
