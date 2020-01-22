@@ -19,7 +19,6 @@ from http import HTTPStatus
 
 from flask import jsonify, request
 from flask_restplus import Resource, cors
-# import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 
 from legal_api.models import Business, Filing
 from legal_api.utils.util import cors_preflight
@@ -55,17 +54,16 @@ class BusinessResource(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     def put(identifier):
-        """Edit an incorporation filing. REturn the filing."""
+        """Edit an incorporation filing. Return the filing."""
         return BusinessResource._save_incorporation_filing(request.get_json(), request, identifier)
 
     @staticmethod
     def _save_incorporation_filing(incorporation_body, client_request, business_id=None):
-        """Create or update an incorporation filing. """
+        """Create or update an incorporation filing."""
         # Check that there is a JSON filing
         if not incorporation_body:
-            return  {'message': f'No filing json data in body of post for incorporation'}, \
+            return {'message': f'No filing json data in body of post for incorporation'}, \
                 HTTPStatus.BAD_REQUEST
-        # Validate Json
 
         temp_corp_num = incorporation_body['filing']['incorporationApplication']['nameRequest']['nrNumber']
         # temp_corp_num = business_id
@@ -73,15 +71,15 @@ class BusinessResource(Resource):
         if business_id:
             business = Business.find_by_identifier(business_id)
             if not business:
-                return  {'message': f'No incorporation filing exists for id {business_id}'}, \
-                HTTPStatus.BAD_REQUEST
+                return {'message': f'No incorporation filing exists for id {business_id}'}, \
+                    HTTPStatus.BAD_REQUEST
         else:
             # Ensure there are no current businesses with the NR/random identifier
             business = Business.find_by_identifier(temp_corp_num)
 
             if business:
-                return  {'message': f'Incorporation filing for {temp_corp_num} already exists'}, \
-                HTTPStatus.BAD_REQUEST
+                return {'message': f'Incorporation filing for {temp_corp_num} already exists'}, \
+                    HTTPStatus.BAD_REQUEST
             # Create an empty business record, to be updated by the filer
             business = Business()
             business.identifier = temp_corp_num
@@ -92,13 +90,12 @@ class BusinessResource(Resource):
         if err:
             return jsonify(err.msg), err.code
 
-
         filing = Filing.get_filings_by_type(business.id, 'incorporationApplication')
+
         # There can only be zero or one incorporation filings, if there are none, this is an
         # initial request for incorporation. Create and insert a filing.
         if not filing:
             filing = Filing()
-            # filing.filing_type = 'incorporationApplication'
             filing.business_id = business.id
         elif len(filing) > 1:
             return {'message': 'more than one incorporation filing found for corp'}, HTTPStatus.BAD_REQUEST
@@ -107,5 +104,4 @@ class BusinessResource(Resource):
         filing.filing_json = incorporation_body
         filing.save()
         return jsonify(filing.json),\
-        (HTTPStatus.CREATED if (client_request.method == 'POST') else HTTPStatus.ACCEPTED)
-            
+            (HTTPStatus.CREATED if (client_request.method == 'POST') else HTTPStatus.ACCEPTED)

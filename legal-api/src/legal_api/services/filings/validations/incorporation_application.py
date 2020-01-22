@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Validation for the Change of Directors filing."""
+"""Validation for the Incorporation filing."""
+from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 from http import HTTPStatus
 
-from flask_babel import _ as babel # noqa: N813, I004, I001; importing camelcase '_' as a name
-
 from legal_api.errors import Error
-from legal_api.models import Business # pylint: disable=unused-import
+from legal_api.models import Business  # noqa: F401 pylint: disable=unused-import
+
 
 def validate(business, incorporation_json):
     """Validate the Change ofAddress filing."""
@@ -28,7 +28,7 @@ def validate(business, incorporation_json):
     temp_identifier = incorporation_json['filing']['incorporationApplication']['nameRequest']['nrNumber']
 
     if business.identifier != temp_identifier:
-        msg.append({'error' : babel('Business Identifier does not match the identifier in filing.')})
+        msg.append({'error': babel('Business Identifier does not match the identifier in filing.')})
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
