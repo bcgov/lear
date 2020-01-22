@@ -35,10 +35,11 @@ configHelper.fetchConfig()
   .then(() => {
     // ensure we have the necessary Keycloak tokens
     if (!haveKcTokens()) {
-      console.info('Redirecting to Auth URL...')
-      const authUrl = sessionStorage.getItem('AUTH_URL')
+      console.info('Redirecting to Signin URL...') // eslint-disable-line no-console
+      const signinUrl: string = sessionStorage.getItem('SIGNIN_URL') || ''
+      const returnUrl: string = encodeURIComponent(window.location.href)
       // assume Auth URL is always reachable
-      window.location.assign(authUrl)
+      signinUrl && returnUrl && window.location.assign(signinUrl + returnUrl)
       return // do not execute remaining code
     }
 
@@ -47,7 +48,6 @@ configHelper.fetchConfig()
     const tokenServices = new TokenServices()
     tokenServices.initUsingUrl(sessionStorage.getItem('KEYCLOAK_CONFIG_URL'))
       .then(() => tokenServices.scheduleRefreshTimer())
-      .catch(err => console.error(err))
 
     new Vue({
       vuetify,
@@ -58,8 +58,15 @@ configHelper.fetchConfig()
     }).$mount('#app')
   })
   .catch(error => {
-    console.error('Error fetching config -', error)
-    alert('Fatal error loading app')
+    /**
+     * This catches any un-handled errors from fetchConfig()
+     * or anything else in then() block above.
+     */
+    console.error(error)
+    alert('There was an error starting this page. (See console for details.)' +
+      '\n\n' +
+      'Click OK to go to Cooperatives Online.')
+    window.location.assign('/cooperatives/auth/') // TODO: update this when new URLs are in place
   })
 
 function haveKcTokens (): boolean {

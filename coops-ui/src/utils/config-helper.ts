@@ -8,6 +8,7 @@ export default {
     const origin = window.location.origin
     const vueAppPath = process.env.VUE_APP_PATH
     const vueAppAuthPath = process.env.VUE_APP_AUTH_PATH
+    const vueAppSigninPath = process.env.VUE_APP_SIGNIN_PATH
 
     if (!vueAppPath || !vueAppAuthPath) {
       throw new Error('failed to get env variables')
@@ -20,6 +21,10 @@ export default {
     const authUrl = `${origin}/${vueAppAuthPath}/`
     sessionStorage.setItem('AUTH_URL', authUrl)
     console.log('Set Auth URL to: ' + authUrl)
+
+    const signinUrl = `${origin}/${vueAppSigninPath}/`
+    sessionStorage.setItem('SIGNIN_URL', signinUrl)
+    console.log('Set Signin URL to: ' + signinUrl)
 
     const url = `/${vueAppPath}/config/configuration.json`
     const headers = {
