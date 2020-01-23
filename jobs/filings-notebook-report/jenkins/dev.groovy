@@ -22,11 +22,11 @@
 import groovy.json.*
 
 // define constants - values sent in as env vars from whatever calls this pipeline 
-def APP_NAME = 'notebook-report'
-def APP_NAME_RUNTIME ='notebook-report-runtime'
+def APP_NAME = 'filings-notebook-report'
+def APP_NAME_RUNTIME ='filings-notebook-report-runtime'
 def DESTINATION_TAG = 'dev'
 def TOOLS_TAG = 'tools'
-def NAMESPACE_APP = 'servicebc-ne'
+def NAMESPACE_APP = 'gl2uos'
 def NAMESPACE_BUILD = "${NAMESPACE_APP}"  + '-' + "${TOOLS_TAG}"
 def NAMESPACE_DEPLOY = "${NAMESPACE_APP}" + '-' + "${DESTINATION_TAG}"
 

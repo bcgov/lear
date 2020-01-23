@@ -2,7 +2,7 @@
 kind: "Template"
 apiVersion: "v1"
 metadata:
-  name: "notebook-report"
+  name: "filings-notebook-report"
   annotations:
     description: "Scheduled Task to generate notebook report"
     tags: "cronjob,notebook"
@@ -10,7 +10,7 @@ objects:
 - kind: "CronJob"
   apiVersion: "batch/v1beta1"
   metadata:
-    name: "notebook-report"
+    name: "filings-notebook-report"
   spec:
     concurrencyPolicy: "Forbid"
     schedule: "30 7 * * *"
@@ -20,8 +20,8 @@ objects:
         template:
           spec:
             containers:
-            - name: "notebook-report"
-              image: "docker-registry.default.svc:5000/gl2uos-tools/notebook-report-runtime:${ENV_TAG}"
+            - name: "filings-notebook-report"
+              image: "docker-registry.default.svc:5000/gl2uos-tools/filings-notebook-report-runtime:${ENV_TAG}"
               imagePullPolicy: Always
               args:
               - /bin/sh
