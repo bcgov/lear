@@ -1,0 +1,172 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "notebook-report-runtime-dc-template.json",
+        "creationTimestamp": null
+    },
+    "objects": [
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "notebook-report-runtime",
+                "generation": 1,
+                "creationTimestamp": null,
+                "labels": {
+                    "app": "notebook-report-runtime"
+                },
+                "annotations": {
+                    "openshift.io/generated-by": "OpenShiftWebConsole"
+                }
+            },
+            "spec": {
+                "strategy": {
+                    "type": "Rolling",
+                    "rollingParams": {
+                        "updatePeriodSeconds": 1,
+                        "intervalSeconds": 1,
+                        "timeoutSeconds": 600,
+                        "maxUnavailable": "25%",
+                        "maxSurge": "25%"
+                    },
+                    "resources": {},
+                    "activeDeadlineSeconds": 21600
+                },
+                "triggers": [
+                    {
+                        "type": "ImageChange",
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "notebook-report-runtime"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "namespace": "gl2uos-tools",
+                                "name": "notebook-report-runtime:latest"
+                            }
+                        }
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ],
+                "replicas": 1,
+                "test": false,
+                "selector": {
+                    "app": "notebook-report-runtime",
+                    "deploymentconfig": "notebook-report-runtime"
+                },
+                "template": {
+                    "metadata": {
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "notebook-report-runtime",
+                            "deploymentconfig": "notebook-report-runtime"
+                        },
+                        "annotations": {
+                            "openshift.io/generated-by": "OpenShiftWebConsole"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "notebook-report-runtime",
+                                "image": "docker-registry.default.svc:5000/gl2uos-tools/notebook-report-runtime@sha256:3910dfa71fe19803fa1ce696c953b2ea66d92e7e865c7f0b5ddc280759908861",
+                                "ports": [
+                                    {
+                                        "containerPort": 8080,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "env": [
+                                    {
+                                        "name": "PG_USER",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "name": "postgresql-test",
+                                                "key": "database-user"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "PG_PASSWORD",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "name": "postgresql-test",
+                                                "key": "database-password"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "PG_DB_NAME",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "name": "postgresql",
+                                                "key": "database-name"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "PG_HOST",
+                                        "value": "postgresql-test"
+                                    },
+                                    {
+                                        "name": "PG_PORT",
+                                        "value": "5432"
+                                    },
+                                    {
+                                        "name": "APP_FILE",
+                                        "value": "notebookreport.py"
+                                    },
+                                    {
+                                        "name": "SENDER_EMAIL",
+                                        "value": "filings@noreply.github.com"
+                                    },
+                                    {
+                                        "name": "ERROR_EMAIL_RECIPIENTS",
+                                        "value": "[sbc_itoperationssupport@gov.bc.ca, steven.chen@gov.bc.ca]"
+                                    },
+                                    {
+                                        "name": "REPORT_RECIPIENTS",
+                                        "value": "[Debbie.Blyth@gov.bc.ca, Sinead.OCallaghan@gov.bc.ca]"
+                                    },
+                                    {
+                                        "name": "EMAIL_SMTP",
+                                        "value": "apps.smtp.gov.bc.ca"
+                                    },
+                                    {
+                                        "name": "ENVIRONMENT",
+                                        "value": "dev"
+                                    },
+                                    {
+                                        "name": "REPORT_DATES",
+                                        "value": "[1]"
+                                    }
+                                ],
+                                "resources": {},                                
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "imagePullPolicy": "Always"
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "terminationGracePeriodSeconds": 30,
+                        "dnsPolicy": "ClusterFirst",
+                        "securityContext": {},
+                        "schedulerName": "default-scheduler"
+                    }
+                }
+            },
+            "status": {
+                "latestVersion": 0,
+                "observedGeneration": 0,
+                "replicas": 0,
+                "updatedReplicas": 0,
+                "availableReplicas": 0,
+                "unavailableReplicas": 0
+            }
+        }
+    ]
+}
