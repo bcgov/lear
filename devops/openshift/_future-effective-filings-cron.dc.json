@@ -1,0 +1,299 @@
+{
+    "kind": "Template",
+    "apiVersion": "template.openshift.io/v1",
+    "metadata": {
+        "annotations": {
+            "description": "Deployment template for a entity-pay service.",
+            "tags": "${COMP_NAME}"
+        },
+        "name": "${COMP_NAME}-${SUFFIX}"
+    },
+    "parameters": [{
+            "name": "APP_NAME",
+            "displayName": "APP_NAME",
+            "description": "The name of the application (grouped).",
+            "required": true,
+            "value": "bcros"
+        }, {
+            "name": "COMP_NAME",
+            "displayName": "COMP_NAME",
+            "description": "The name of the application component.",
+            "required": true,
+            "value": "future-effective-filings"
+        }, {
+            "name": "SUFFIX",
+            "displayName": "SUFFIX",
+            "description": "The tag-name assigned to all of the frontend objects defined in this template.",
+            "required": true
+        },
+        {
+            "name": "CPU_REQUEST",
+            "displayName": "Resources CPU Request",
+            "description": "The resources CPU request (in cores) for this build.",
+            "required": true,
+            "value": "100m"
+        }, {
+            "name": "CPU_LIMIT",
+            "displayName": "Resources CPU Limit",
+            "description": "The resources CPU limit (in cores) for this build.",
+            "required": true,
+            "value": "750m"
+        }, {
+            "name": "MEMORY_REQUEST",
+            "displayName": "Resources Memory Request",
+            "description": "The resources Memory request (in Mi, Gi, etc) for this build.",
+            "required": true,
+            "value": "100Mi"
+        }, {
+            "name": "MEMORY_LIMIT",
+            "displayName": "Resources Memory Limit",
+            "description": "The resources Memory limit (in Mi, Gi, etc) for this build.",
+            "required": true,
+            "value": "200Mi"
+        }, {
+            "name": "REPLICA_MIN",
+            "displayName": "The min number of replicas to run",
+            "description": "The min number of replicas to run in this environment.",
+            "required": true,
+            "value": "1"
+        }, {
+            "name": "REPLICA_MAX",
+            "displayName": "The max number of replicas to run",
+            "description": "The max number of replicas to run in this environment.",
+            "required": true,
+            "value": "1"
+        }, {
+            "name": "SENTRY_DSN",
+            "displayName": "Sentry Init URL",
+            "description": "Sentry DSN URL to initialize the Sentry SDK",
+            "required": false,
+            "value": "https://account.sentry.ioo/project/id"
+        }, {
+            "name": "AUTH_URL",
+            "displayName": "Auth Service URL",
+            "description": "The auth service URL.",
+            "required": true
+        }
+     ],
+    "objects": [
+        {
+            "kind": "ConfigMap",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "updater-jobs-${SUFFIX}-config",
+                "labels": {
+                    "app": "${COMP_NAME}-${SUFFIX}"
+                }
+            },
+            "data": {
+                "AUTH_URL": "${AUTH_URL}",
+                "SENTRY_DSN": "${SENTRY_DSN}"
+            }
+        },
+        {
+            "kind": "Secret",
+            "apiVersion": "v1",
+            "type": "Opaque",
+            "data": {
+                "AUTH_PASSWORD": "Y29vcHMtdXBkYXRlci1qb2JzCg==",
+                "AUTH_USERNAME": "Y29vcHMtdXBkYXRlci1qb2JzCg=="
+            },
+            "metadata": {
+                "name": "updater-job-${SUFFIX}",
+                "labels": {
+                    "app": "updater-job-${SUFFIX}",
+                    "app-name": "updater-job-${SUFFIX}",
+                    "env-name": "${SUFFIX}"
+                }
+            }
+        },
+        {
+            "kind": "CronJob",
+            "apiVersion": "batch/v1beta1",
+            "metadata": {
+                "name": "${COMP_NAME}-${SUFFIX}",
+                "labels": {
+                    "name": "${COMP_NAME}-${SUFFIX}"
+                }
+            },
+            "name": "${COMP_NAME}-${SUFFIX}",
+            "selector": {
+                "name": "${COMP_NAME}-${SUFFIX}"
+            },
+            "spec": {
+                "schedule": "* * * * *",
+                "concurrencyPolicy": "Forbid",
+                "suspend": false,
+                "jobTemplate": {
+                    "spec": {
+                        "template": {
+                            "metadata": {
+                                "name": "${COMP_NAME}-${SUFFIX}",
+                                "labels": {
+                                    "name": "${COMP_NAME}-${SUFFIX}"
+                                }
+                            },
+                            "spec": {
+                                "containers": [
+                                    {
+                                        "name": "${COMP_NAME}",
+                                        "image": " ",
+                                        "command": null,
+                                        "args": [
+                                            "/bin/sh",
+                                            "-c",
+                                            "cd /opt/app-root/src; ./run.sh"
+                                        ],
+                                        "env": [
+                                            {
+                                                "name": "LEGAL_URL",
+                                                "value": "",
+                                                "valueFrom": {
+                                                    "fieldRef": null,
+                                                    "resourceFieldRef": null,
+                                                    "configMapKeyRef": {
+                                                        "name": "legal-api-${SUFFIX}-config",
+                                                        "key": "ROUTE",
+                                                        "optional": null
+                                                    },
+                                                    "secretKeyRef": null
+                                                }
+                                            },
+                                            {
+                                                "name": "AUTH_URL",
+                                                "value": "",
+                                                "valueFrom": {
+                                                    "fieldRef": null,
+                                                    "resourceFieldRef": null,
+                                                    "configMapKeyRef": {
+                                                        "name": "updater-jobs-${SUFFIX}-config",
+                                                        "key": "AUTH_URL",
+                                                        "optional": null
+                                                    },
+                                                    "secretKeyRef": null
+                                                }
+                                            },
+                                            {
+                                                "name": "AUTH_USERNAME",
+                                                "value": "",
+                                                "valueFrom": {
+                                                    "fieldRef": null,
+                                                    "resourceFieldRef": null,
+                                                    "configMapKeyRef": null,
+                                                    "secretKeyRef": {
+                                                        "name": "updater-job-${SUFFIX}",
+                                                        "key": "AUTH_USERNAME",
+                                                        "optional": null
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "name": "AUTH_PASSWORD",
+                                                "value": "",
+                                                "valueFrom": {
+                                                    "fieldRef": null,
+                                                    "resourceFieldRef": null,
+                                                    "configMapKeyRef": null,
+                                                    "secretKeyRef": {
+                                                        "name": "updater-job-${SUFFIX}",
+                                                        "key": "AUTH_PASSWORD",
+                                                        "optional": null
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "name": "SENTRY_DSN",
+                                                "value": "",
+                                                "valueFrom": {
+                                                    "fieldRef": null,
+                                                    "resourceFieldRef": null,
+                                                    "configMapKeyRef": {
+                                                        "name": "updater-jobs-${SUFFIX}-config",
+                                                        "key": "SENTRY_DSN",
+                                                        "optional": null
+                                                    },
+                                                    "secretKeyRef": null
+                                                }
+                                            },
+                                            {
+                                                "name": "NATS_SERVERS",
+                                                "value": "",
+                                                "valueFrom": {
+                                                    "fieldRef": null,
+                                                    "resourceFieldRef": null,
+                                                    "configMapKeyRef": {
+                                                        "name": "entity-filer-${SUFFIX}-config",
+                                                        "key": "NATS_SERVERS",
+                                                        "optional": null
+                                                    },
+                                                    "secretKeyRef": null
+                                                }
+                                            },
+                                            {
+                                                "name": "NATS_CLIENT_NAME",
+                                                "value": "",
+                                                "valueFrom": {
+                                                    "fieldRef": null,
+                                                    "resourceFieldRef": null,
+                                                    "configMapKeyRef": {
+                                                        "name": "entity-filer-${SUFFIX}-config",
+                                                        "key": "NATS_CLIENT_NAME",
+                                                        "optional": null
+                                                    },
+                                                    "secretKeyRef": null
+                                                }
+                                            },
+                                            {
+                                                "name": "NATS_CLUSTER_ID",
+                                                "value": "",
+                                                "valueFrom": {
+                                                    "fieldRef": null,
+                                                    "resourceFieldRef": null,
+                                                    "configMapKeyRef": {
+                                                        "name": "entity-filer-${SUFFIX}-config",
+                                                        "key": "NATS_CLUSTER_ID",
+                                                        "optional": null
+                                                    },
+                                                    "secretKeyRef": null
+                                                }
+                                            },
+                                            {
+                                                "name": "NATS_FILER_SUBJECT",
+                                                "value": "",
+                                                "valueFrom": {
+                                                    "fieldRef": null,
+                                                    "resourceFieldRef": null,
+                                                    "configMapKeyRef": {
+                                                        "name": "entity-filer-${SUFFIX}-config",
+                                                        "key": "NATS_FILER_SUBJECT",
+                                                        "optional": null
+                                                    },
+                                                    "secretKeyRef": null
+                                                }
+                                            },
+                                            {
+                                                "name": "NATS_QUEUE",
+                                                "value": "",
+                                                "valueFrom": {
+                                                    "fieldRef": null,
+                                                    "resourceFieldRef": null,
+                                                    "configMapKeyRef": {
+                                                        "name": "entity-filer-${SUFFIX}-config",
+                                                        "key": "NATS_QUEUE",
+                                                        "optional": null
+                                                    },
+                                                    "secretKeyRef": null
+                                                }
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "restartPolicy": "Never"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

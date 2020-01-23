@@ -52,6 +52,8 @@ for i in "${COMPLIST[@]}"; do
   oc delete services/${i}-${CLEAN_ENV} -n ${CLEAN_NS} --ignore-not-found ;
   oc delete route/${i}-${CLEAN_ENV} -n ${CLEAN_NS} --ignore-not-found ;
   oc delete configmaps/${i}-${CLEAN_ENV} -n ${CLEAN_NS} --ignore-not-found ;
+  oc delete secrets/${i}-${CLEAN_ENV} -n ${CLEAN_NS} --ignore-not-found ;
+  oc delete jobs/${i}-${CLEAN_ENV} -n ${CLEAN_NS} --ignore-not-found ;
   oc delete horizontalpodautoscaler/${i}-${CLEAN_ENV} -n ${CLEAN_NS} --ignore-not-found ;
 done
 

@@ -20,17 +20,19 @@ __Status: Completed (Dec 2019)__
 - Can use `deploy.sh` and `config.groovy` to create an environment loaded with the application components.
 - Noting that there will be some changes required the auth service to enable fully isolated environments, but this is released as a MVP for progression into the next steps.
 
-### Phase 2: Ensuring Environments are Testable
+### Phase 2: Extending Application Components
 
-- Hook into Enterprise DB:  Removed the postgres containers from the deployment process, and enable the EDB connection. This enables the `legal-api` to build new database-schemas on a persitant host at the time of deployment.
+- Added 'nats-streaming' application components
+- Added 'entity-filer' application components
+- Added 'pay-filer' application components
+- Added a (temp) postgres-db until cross-project EDB is working
+- Added the future-effective-filings cron components
 
-__Status: To Do__
+__Status: Completed (Jan 2020)__
 
-- After plugging phase 1 into the container registry and environments are being created, there will be a need to ensure that its properly setting up the database, and that it can be accessed via postman/nightwatch to hook up the e2e/integration testing scripts.
+- After plugging phase 1 and 2 into the container registry and environments are being created, we will need to address the auth (redirection) issues.
 
 ### Phase 3: Plugging into the CI Orchestrator (Jenkins)
 
 __Status: To Do__
-
-- Once the ability to create environments manually is done, and its possible to tested/seeded from our external tools, it should be hooked into the CI Orchestrator
 

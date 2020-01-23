@@ -86,7 +86,6 @@ app {
                         'OUTPUT_IMAGE_TAG':     "${app.build.version}"
                     ]
                 ],
-*/
                 [
                     'file':'bc/entity-pay.bc.json',
                     'params':[
@@ -104,6 +103,25 @@ app {
                     ]
                 ]
         ]
+*/
+                [
+                    'file':'bc/future-effective-filings.bc.json',
+                    'params':[
+                        'APP_NAME':             "bcros",
+                        'COMP_NAME':            "future-effective-filings",
+                        'SUFFIX':               "${app.deployment.version}",
+                        'GIT_REPO_URL':         "https://github.com/bsnopek-freshworks/lear.git",
+                        'GIT_REF':              "master",
+                        'SOURCE_NAMESPACE':     "gl2uos-tools",
+                        'SOURCE_CONTEXT_DIR':   "jobs/future-effective-filings",
+                        'SOURCE_IMAGE_NAME':    "python",
+                        'SOURCE_IMAGE_KIND':    "ImageStreamTag",
+                        'SOURCE_IMAGE_TAG':     "3.7",
+                        'OUTPUT_IMAGE_TAG':     "${app.build.version}"
+                    ]
+                ]
+        ]
+
     }
 
     deployment {
@@ -252,6 +270,22 @@ app {
                             'REPLICA_MIN':      "${vars.resources.nats.replica_min}",
                             'REPLICA_MAX':      "${vars.resources.nats.replica_max}"
                     ]
+                ],
+                [
+                    'file':'_future-effective-filings-cron.dc.json',
+                    'params':[
+                            'APP_NAME':         "bcros",
+                            'COMP_NAME':        "future-effective-filings",
+                            'SUFFIX':           "${app.deployment.version}",
+                            'AUTH_URL':         "${app.url.auth}",
+                            'SENTRY_DSN':       "",
+                            'CPU_REQUEST':      "${vars.resources.future-effective.cpu_request}",
+                            'CPU_LIMIT':        "${vars.resources.future-effective.cpu_limit}",
+                            'MEMORY_REQUEST':   "${vars.resources.future-effective.memory_request}",
+                            'MEMORY_LIMIT':     "${vars.resources.future-effective.memory_limit}",
+                            'REPLICA_MIN':      "${vars.resources.future-effective.replica_min}",
+                            'REPLICA_MAX':      "${vars.resources.future-effective.replica_max}"
+                    ]
                 ]
         ]
     }
@@ -310,6 +344,14 @@ environments {
                   replica_max = 1
               }
               nats  {
+                  cpu_request = "100m"
+                  cpu_limit = "250m"
+                  memory_request = "256Mi"
+                  memory_limit = "1Gi"
+                  replica_min = 1
+                  replica_max = 1
+              }
+              future-effective  {
                   cpu_request = "100m"
                   cpu_limit = "250m"
                   memory_request = "256Mi"
