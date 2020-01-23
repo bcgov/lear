@@ -32,7 +32,7 @@ def NAMESPACE_APP = 'gl2uos'
 def NAMESPACE_BUILD = "${NAMESPACE_APP}"  + '-' + "${TOOLS_TAG}"
 def NAMESPACE_DEPLOY = "${NAMESPACE_APP}" + '-' + "${DESTINATION_TAG}"
 
-def ROCKETCHAT_DEVELOPER_CHANNEL='#registries-namex'
+def ROCKETCHAT_DEVELOPER_CHANNEL='#registries-entities'
 
 // post a notification to rocketchat
 def rocketChatNotificaiton(token, channel, comments) {
