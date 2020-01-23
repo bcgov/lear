@@ -78,14 +78,14 @@ export const configJson = [{
             'Association Act (Section 72). You can continue your filing, but you must become compliant ' +
             'with the Cooperative Association Act as soon as possible.'
         },
-        _bcResident: {
+        bcResident: {
           title: 'BC Resident Director Required',
           message: 'One of the directors of the association is required to be an ' +
             'individual ordinarily resident in British Columbia, to be in compliance ' +
             'with the Cooperative Association Act (Section 72). You can continue your filing, ' +
             'but you must become compliant with the Cooperative Association Act as soon as possible.'
         },
-        _canadianResident: {
+        canadianResident: {
           title: 'Canadian Resident Directors Required',
           message: 'A majority of the directors of the association are required to be individuals ordinarily ' +
             'resident in Canada, to be in compliance with the Cooperative Association Act (Section 72). ' +

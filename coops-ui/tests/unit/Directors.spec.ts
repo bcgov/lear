@@ -68,7 +68,7 @@ describe('Directors as a COOP', () => {
                   'streetAddress': 'mailing_address - address line one',
                   'streetAddressAdditional': null,
                   'addressCity': 'mailing_address city',
-                  'addressCountry': 'mailing_address country',
+                  'addressCountry': 'CA',
                   'postalCode': 'H0H0H0',
                   'addressRegion': 'BC',
                   'deliveryInstructions': null
@@ -127,6 +127,62 @@ describe('Directors as a COOP', () => {
     expect(vm.complianceMsg.msg).toEqual(warning.minDirectors.message)
   })
 
+  it('check the default warning message for too few Canadian directors', () => {
+    vm.directors.push({
+      'actions': [],
+      'officer': {
+        'firstName': 'Peter',
+        'middleInitial': 'P',
+        'lastName': 'Parker'
+      },
+      'id': '3',
+      'deliveryAddress': {
+        'streetAddress': 'mailing_address - address line #1',
+        'streetAddressAdditional': 'Kirkintiloch',
+        'addressCity': 'Nanaimo',
+        'addressCountry': 'CA',
+        'postalCode': 'V1V 1V1',
+        'addressRegion': 'BC',
+        'deliveryInstructions': 'go to the back'
+      },
+      'title': 'Treasurer'
+    })
+
+    expect(vm.complianceMsg).toBeNull()
+    vm.directors[2].deliveryAddress.addressCountry = 'UK'
+    const warning = store.state.configObject.flows.find(x => x.feeCode === 'OTCDR').warnings
+    expect(vm.complianceMsg.msg).toEqual(warning.canadianResident.message)
+  })
+
+  it('check the default warning message for too few directors from B.C', () => {
+    vm.directors.push({
+      'actions': [],
+      'officer': {
+        'firstName': 'Peter',
+        'middleInitial': 'P',
+        'lastName': 'Parker'
+      },
+      'id': '3',
+      'deliveryAddress': {
+        'streetAddress': 'mailing_address - address line #1',
+        'streetAddressAdditional': 'Kirkintiloch',
+        'addressCity': 'Nanaimo',
+        'addressCountry': 'CA',
+        'postalCode': 'V1V 1V1',
+        'addressRegion': 'BC',
+        'deliveryInstructions': 'go to the back'
+      },
+      'title': 'Treasurer'
+    })
+
+    expect(vm.complianceMsg).toBeNull()
+    vm.directors[0].deliveryAddress.addressRegion = 'ON'
+    vm.directors[1].deliveryAddress.addressRegion = 'ON'
+    vm.directors[2].deliveryAddress.addressRegion = 'ON'
+    const warning = store.state.configObject.flows.find(x => x.feeCode === 'OTCDR').warnings
+    expect(vm.complianceMsg.msg).toEqual(warning.bcResident.message)
+  })
+
   it('initializes the director name data properly', () => {
     expect(vm.directors.length).toEqual(2)
     expect(vm.directors[0].officer.firstName).toEqual('Peter')
@@ -146,7 +202,7 @@ describe('Directors as a COOP', () => {
     expect(vm.directors[0].deliveryAddress.streetAddressAdditional).toEqual('')
     expect(vm.directors[0].deliveryAddress.addressCity).toEqual('mailing_address city')
     expect(vm.directors[0].deliveryAddress.addressRegion).toEqual('BC')
-    expect(vm.directors[0].deliveryAddress.addressCountry).toEqual('mailing_address country')
+    expect(vm.directors[0].deliveryAddress.addressCountry).toEqual('CA')
     expect(vm.directors[0].deliveryAddress.postalCode).toEqual('H0H0H0')
     expect(vm.directors[0].deliveryAddress.deliveryInstructions).toEqual('')
 

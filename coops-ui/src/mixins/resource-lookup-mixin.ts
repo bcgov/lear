@@ -59,8 +59,11 @@ export default class ResourceLookupMixin extends Vue {
       }
 
       if (configSection.canadianResident) {
-        if (directors.filter(x => (x.deliveryAddress.addressCountry !== 'CA' ||
-        (x.mailingAddress && x.mailingAddress.addressRegion !== 'BC'))).length === directors.length) {
+        const count = directors.length
+        const notCanadian = directors.filter(x => (x.deliveryAddress.addressCountry !== 'CA' ||
+        (x.mailingAddress && x.mailingAddress.addressCountry !== 'CA'))).length
+
+        if (notCanadian / count > 0.5) {
           errors.push({ 'title': configSection.canadianResident.title, 'msg': configSection.canadianResident.message })
         }
       }
