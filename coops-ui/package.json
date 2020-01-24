@@ -1,6 +1,6 @@
 {
   "name": "coops-ui",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -23,7 +23,7 @@
     "provinces": "^1.11.0",
     "regenerator-runtime": "^0.13.3",
     "register-service-worker": "^1.6.2",
-    "sbc-common-components": "2.0.32",
+    "sbc-common-components": "2.0.35",
     "vue": "^2.6.10",
     "vue-affix": "^0.5.2",
     "vue-router": "^3.0.3",
