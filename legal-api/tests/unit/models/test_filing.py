@@ -530,7 +530,7 @@ def test_get_internal_filings(session, client, jwt):
     # assert doesn't return completed filing with colin_event_ids set
     assert len(filings) == 0
     # assert returns completed filings with colin_event_id not set
-    filing.colin_event_ids.delete()
+    filing.colin_event_ids.clear()
     filing.save()
     filings = Filing.get_completed_filings_for_colin()
     assert len(filings) == 1

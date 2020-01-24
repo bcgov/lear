@@ -182,13 +182,14 @@ def test_get_internal_filings(session, client, jwt):
 
     assert filing1.status == Filing.Status.COMPLETED.value
     # completed with colin_event_id
-    assert filing2.colin_event_ids.count() == 0
+    print(filing2.colin_event_ids)
+    assert len(filing2.colin_event_ids) == 0
     colin_event_id = ColinEventId()
     colin_event_id.colin_event_id = 12345
     filing2.colin_event_ids.append(colin_event_id)
     filing2.save()
     assert filing2.status == Filing.Status.COMPLETED.value
-    assert filing2.colin_event_ids.count() > 0
+    assert filing2.colin_event_ids
     # pending with no colin_event_ids
     assert filing3.status == Filing.Status.PENDING.value
     # draft with no colin_event_ids
