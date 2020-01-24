@@ -39,12 +39,15 @@ objects:
                         key: database-password
                         name: postgresql-${ENV_TAG}
                   - name: PG_DB_NAME
-                    valueFrom:
-                      secretKeyRef:
-                        key: database-name
-                        name: postgresql
+                    valueFrom:                         
+                      configMapKeyRef:
+                        key: DATABASE_NAME
+                        name: legal-api-${ENV_TAG}-config
                   - name: PG_HOST
-                    value: 'postgresql-${ENV_TAG}'
+                    valueFrom:
+                      configMapKeyRef:
+                        key: DATABASE_HOST
+                        name: legal-api-${ENV_TAG}-config
                   - name: PG_PORT
                     value: '5432'      
                   - name: APP_FILE
