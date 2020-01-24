@@ -509,7 +509,7 @@ class InternalFilings(Resource):
 
             return jsonify(filing.json), HTTPStatus.ACCEPTED
         except Exception as err:
-            print(err)
+            current_app.logger.Error(f'Error patching colin event id for filing with id {filing_id}')
             raise err
 
 
@@ -530,7 +530,7 @@ class ColinLastUpdate(Resource):
                     return {'message': f'No colin ids found'}, HTTPStatus.NOT_FOUND
                 return {'colinId': colin_id_obj.colin_event_id}, HTTPStatus.OK
         except Exception as err:
-            print(err)
+            current_app.logger.Error(f'Failed to get last updated colin event id: {err}')
             raise err
 
         query = db.session.execute(
