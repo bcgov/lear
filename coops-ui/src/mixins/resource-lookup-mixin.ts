@@ -48,35 +48,44 @@ export default class ResourceLookupMixin extends Vue {
      * @return the compliance message or null (if the configuration has been loaded).
      */
     directorWarning (directors: Array<any>): AlertMessageIF {
-      const configSection = this.configObject.flows.find(x => x.feeCode === FilingCodes.DIRECTOR_CHANGE_OT).warnings
-      let errors = []
       // FUTURE: Too much code for this. Can be condensed and made more reusable.
-      if (configSection.bcResident) {
-        if (directors.filter(x => (x.deliveryAddress.addressRegion !== 'BC' ||
-        (x.mailingAddress && x.mailingAddress.addressRegion !== 'BC'))).length === directors.length) {
-          errors.push({ 'title': configSection.bcResident.title, 'msg': configSection.bcResident.message })
+      if (directors && directors.length) {
+        const configSection = this.configObject.flows.find(x => x.feeCode === FilingCodes.DIRECTOR_CHANGE_OT).warnings
+        let errors = []
+        // If this entity has a BC Residency requirement for directors, one of the
+        // directors specified needs to have both their mailing and delivery address within British Columbia
+        if (configSection.bcResident) {
+          if (directors.filter(x => (x.deliveryAddress.addressRegion !== 'BC' ||
+                                    (x.mailingAddress &&
+                                     x.mailingAddress.addressRegion !== 'BC'))).length === directors.length) {
+            // If no directors reside in BC, retrieve the appropriate alert message
+            errors.push({ 'title': configSection.bcResident.title, 'msg': configSection.bcResident.message })
+          }
         }
-      }
-
-      if (configSection.canadianResident) {
-        const count = directors.length
-        const notCanadian = directors.filter(x => (x.deliveryAddress.addressCountry !== 'CA' ||
-        (x.mailingAddress && x.mailingAddress.addressCountry !== 'CA'))).length
-
-        if (notCanadian / count > 0.5) {
-          errors.push({ 'title': configSection.canadianResident.title, 'msg': configSection.canadianResident.message })
+        // If this entity has a Canadian Residency requirement for directors, the majority
+        // of directors need to have both their mailing and delivery address within Canada
+        if (configSection.canadianResident) {
+          const count = directors.length
+          const notCanadian = directors.filter(x => (x.deliveryAddress.addressCountry !== 'CA' ||
+                                                    (x.mailingAddress &&
+                                                     x.mailingAddress.addressCountry !== 'CA'))).length
+          // If the majority of the directors do not reside in Canada, retrieve the appropriate alert message
+          if (notCanadian / count > 0.5) {
+            errors.push({ 'title': configSection.canadianResident.title,
+              'msg': configSection.canadianResident.message })
+          }
         }
-      }
-
-      if (configSection.minDirectors) {
-        const min = configSection.minDirectors.count
-        if (directors.filter(x => x.actions.indexOf('ceased') < 0).length < min) {
-          errors.push({ 'title': configSection.minDirectors.title, 'msg': configSection.minDirectors.message })
+        // Check if this entity has the minimum number of directors
+        if (configSection.minDirectors) {
+          const min = configSection.minDirectors.count
+          if (directors.filter(x => x.actions.indexOf('ceased') < 0).length < min) {
+            errors.push({ 'title': configSection.minDirectors.title, 'msg': configSection.minDirectors.message })
+          }
         }
-      }
 
-      if (errors.length > 0) {
-        return errors[0]
+        if (errors.length > 0) {
+          return errors[0]
+        }
       }
       return null
     }
