@@ -88,7 +88,7 @@ def send_email(subject, filename, emailtype, errormessage):
     server.quit()
 
 
-def processnotebooks(notebookdirectory, days=[], months=[]):
+def processnotebooks(notebookdirectory):
     status = False
     now = datetime.now()
     date = datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d')
@@ -100,8 +100,6 @@ def processnotebooks(notebookdirectory, days=[], months=[]):
         retry_times = int(os.getenv('RETRY_TIMES', '1'))
         retry_interval = int(os.getenv('RETRY_INTERVAL', '60'))
 
-        if len(days) == 0:
-            days = ast.literal_eval(os.getenv('REPORT_DATES', ''))
     except Exception:
         logging.exception("Error processing notebook for {}.".format(notebookdirectory))
         # we failed all the attempts
@@ -110,73 +108,69 @@ def processnotebooks(notebookdirectory, days=[], months=[]):
         send_email(subject, filename, "ERROR", traceback.format_exc())
         return status
 
-    if len(months) == 0 and len(days) > 0 and now.day in days:
+    logging.info('Processing: ' + notebookdirectory)
 
-        logging.info('Processing: ' + notebookdirectory)
+    # Each time a notebook is processed a snapshot is saved to a snapshot sub-directory
+    # This checks the sub-directory exists and creates it if not
+    if not os.path.isdir(os.path.join(notebookdirectory, snapshotDir)):
+        os.mkdir(os.path.join(notebookdirectory, snapshotDir))
 
-        # Each time a notebook is processed a snapshot is saved to a snapshot sub-directory
-        # This checks the sub-directory exists and creates it if not
-        if not os.path.isdir(os.path.join(notebookdirectory, snapshotDir)):
-            os.mkdir(os.path.join(notebookdirectory, snapshotDir))
+    for file in findfiles(notebookdirectory, '*.ipynb'):
+        for attempt in range(retry_times):
+            try:
+                nb = os.path.basename(file)
 
-        for file in findfiles(notebookdirectory, '*.ipynb'):
-            for attempt in range(retry_times):
-                try:
-                    nb = os.path.basename(file)
+                # Within the snapshot directory, each notebook output is stored in its own sub-directory
+                notebooksnapshot = os.path.join(notebookdirectory, snapshotDir, nb.split('.ipynb')[0])
 
-                    # Within the snapshot directory, each notebook output is stored in its own sub-directory
-                    notebooksnapshot = os.path.join(notebookdirectory, snapshotDir, nb.split('.ipynb')[0])
+                if not os.path.isdir(notebooksnapshot):
+                    os.mkdir(notebooksnapshot)
 
-                    if not os.path.isdir(notebooksnapshot):
-                        os.mkdir(notebooksnapshot)
+                # The output will be saved in a timestamp directory (snapshots/notebook/timestamp)
+                rundir = os.path.join(notebooksnapshot, now.strftime("%Y-%m-%d %H.%M.%S.%f"))
+                if not os.path.isdir(rundir):
+                    os.mkdir(rundir)
 
-                    # The output will be saved in a timestamp directory (snapshots/notebook/timestamp)
-                    rundir = os.path.join(notebooksnapshot, now.strftime("%Y-%m-%d %H.%M.%S.%f"))
-                    if not os.path.isdir(rundir):
-                        os.mkdir(rundir)
+                # The snapshot file includes a timestamp
+                output_file = os.path.join(rundir, nb)
 
-                    # The snapshot file includes a timestamp
-                    output_file = os.path.join(rundir, nb)
+                # Execute the notebook and save the snapshot
+                pm.execute_notebook(
+                    file,
+                    output_file,
+                    parameters=dict(snapshotDir=rundir + os.sep)
+                )
 
-                    # Execute the notebook and save the snapshot
-                    pm.execute_notebook(
-                        file,
-                        output_file,
-                        parameters=dict(snapshotDir=rundir + os.sep)
-                    )
-
-                    if notebookdirectory == 'monthly' or notebookdirectory == '../monthly':
-                        subject = "Filings Monthly Stats till " + date + ext
-                        filename = 'monthly_total_till_' + date + '.csv'
-                    # send email to receivers and remove files/directories which we don't want to keep
-                    send_email(subject, filename, "", "")
-                    os.remove(filename)
-                    shutil.rmtree(os.path.join(notebookdirectory, snapshotDir), ignore_errors=True)
-                    status = True
-                    break
-                except Exception:
-                    if attempt + 1 == retry_times:
-                        # If any errors occur with the notebook processing they will be logged to the log file
-                        logging.exception(
-                            "Error processing notebook {0} at {1}/{2} try.".format(notebookdirectory, attempt + 1,
-                                                                                   retry_times))
-                        # we failed all the attempts
-                        subject = "Filings Jupyter Notebook Error Notification for " + notebookdirectory + " on " \
-                                  + date + ext
-                        filename = ''
-                        send_email(subject, filename, "ERROR", traceback.format_exc())
-                    else:
-                        # If any errors occur with the notebook processing they will be logged to the log file
-                        logging.exception("Error processing notebook {0} at {1}/{2} try. "
-                                          "Sleeping for {3} secs before next try".format(notebookdirectory, attempt + 1,
-                                                                                         retry_times, retry_interval))
-                        time.sleep(retry_interval)
-                        continue
-            if not status:
+                if notebookdirectory == 'monthly' or notebookdirectory == '../monthly':
+                    subject = "Filings Monthly Stats till " + date + ext
+                    filename = 'monthly_total_till_' + date + '.csv'
+                # send email to receivers and remove files/directories which we don't want to keep
+                send_email(subject, filename, "", "")
+                os.remove(filename)
+                shutil.rmtree(os.path.join(notebookdirectory, snapshotDir), ignore_errors=True)
+                status = True
                 break
-        return status
-    else:
-        return True
+            except Exception:
+                if attempt + 1 == retry_times:
+                    # If any errors occur with the notebook processing they will be logged to the log file
+                    logging.exception(
+                        "Error processing notebook {0} at {1}/{2} try.".format(notebookdirectory, attempt + 1,
+                                                                               retry_times))
+                    # we failed all the attempts
+                    subject = "Filings Jupyter Notebook Error Notification for " + notebookdirectory + " on " \
+                              + date + ext
+                    filename = ''
+                    send_email(subject, filename, "ERROR", traceback.format_exc())
+                else:
+                    # If any errors occur with the notebook processing they will be logged to the log file
+                    logging.exception("Error processing notebook {0} at {1}/{2} try. "
+                                      "Sleeping for {3} secs before next try".format(notebookdirectory, attempt + 1,
+                                                                                     retry_times, retry_interval))
+                    time.sleep(retry_interval)
+                    continue
+        if not status:
+            break
+    return status
 
 
 if __name__ == '__main__':

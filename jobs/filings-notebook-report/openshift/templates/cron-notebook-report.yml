@@ -13,7 +13,7 @@ objects:
     name: "filings-notebook-report"
   spec:
     concurrencyPolicy: "Forbid"
-    schedule: "30 7 * * *"
+    schedule: "30 7 1 * *"
     suspend: false
     jobTemplate:
       spec:
@@ -66,8 +66,6 @@ objects:
                     value: '600'                      
                   - name: ENVIRONMENT
                     value: '${ENV_TAG}'  
-                  - name: REPORT_DATES
-                    value: '[1]'
             restartPolicy: "Never"
             concurrencyPolicy: "Forbid"
 parameters: [
