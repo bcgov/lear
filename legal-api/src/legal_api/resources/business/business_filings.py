@@ -31,6 +31,7 @@ from werkzeug.local import LocalProxy
 import legal_api.reports
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business, Filing, User, db
+from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import COLIN_SVC_ROLE, STAFF_ROLE, authorized, queue
 from legal_api.services.filings import validate
@@ -254,7 +255,7 @@ class ListFilingResource(Resource):
     @staticmethod
     def _process_colin_filing(identifier: str, filing: Filing, business: Business) -> Tuple[dict, int]:
         try:
-            if not filing.colin_event_id:
+            if not filing.colin_event_ids:
                 raise KeyError
             if not ListFilingResource._is_before_epoch_filing(filing.filing_json, business):
                 payload = {'filing': {'id': filing.id}}
@@ -320,7 +321,7 @@ class ListFilingResource(Resource):
             if user.username == 'coops-updater-job':
                 try:
                     filing.filing_date = datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['date'])
-                    filing.colin_event_id = filing.filing_json['filing']['header']['colinId']
+                    filing.colin_event_ids.append(filing.filing_json['filing']['header']['colinId'])
                 except KeyError:
                     current_app.logger.error('Business:%s missing filing/header values, unable to save',
                                              business.identifier)
@@ -473,7 +474,7 @@ class InternalFilings(Resource):
         filings = []
         for filing in pending_filings:
             filing_json = filing.filing_json
-            if filing_json and filing.filing_type is not 'lear_epoch':
+            if filing_json and filing.filing_type != 'lear_epoch':
                 filing_json['filingId'] = filing.id
                 filings.append(filing_json)
         return jsonify(filings), HTTPStatus.OK
@@ -484,25 +485,32 @@ class InternalFilings(Resource):
     def patch(filing_id):
         """Patch the colin_event_id for a filing."""
         # check authorization
-        if not jwt.validate_roles([COLIN_SVC_ROLE]):
-            return jsonify({'message': 'You are not authorized to update the colin id'}), HTTPStatus.UNAUTHORIZED
-
-        json_input = request.get_json()
-        if not json_input:
-            return None, None, {'message': f'No filing json data in body of patch for {filing_id}.'}, \
-                HTTPStatus.BAD_REQUEST
-
-        colin_id = json_input['colinId']
-        filing = Filing.find_by_id(filing_id)
-        if not filing:
-            return {'message': f'{filing_id} no filings found'}, HTTPStatus.NOT_FOUND
         try:
-            filing.colin_event_id = colin_id
-            filing.save()
-        except BusinessException as err:
-            return None, None, {'message': err.error}, err.status_code
+            if not jwt.validate_roles([COLIN_SVC_ROLE]):
+                return jsonify({'message': 'You are not authorized to update the colin id'}), HTTPStatus.UNAUTHORIZED
 
-        return jsonify(filing.json), HTTPStatus.ACCEPTED
+            json_input = request.get_json()
+            if not json_input:
+                return None, None, {'message': f'No filing json data in body of patch for {filing_id}.'}, \
+                    HTTPStatus.BAD_REQUEST
+
+            colin_id = json_input['colinId']
+            filing = Filing.find_by_id(filing_id)
+            if not filing:
+                return {'message': f'{filing_id} no filings found'}, HTTPStatus.NOT_FOUND
+            try:
+                colin_event_id_obj = ColinEventId()
+                colin_event_id_obj.colin_event_id = colin_id
+                filing.colin_event_ids.append(colin_event_id_obj)
+                filing.save()
+            except BusinessException as err:
+                print(err)
+                return None, None, {'message': err.error}, err.status_code
+
+            return jsonify(filing.json), HTTPStatus.ACCEPTED
+        except Exception as err:
+            print(err)
+            raise err
 
 
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')
@@ -515,19 +523,15 @@ class ColinLastUpdate(Resource):
     @cors.crossdomain(origin='*')
     def get(colin_id=None):
         """Get the last colin id updated in legal."""
-        if colin_id:
-            query = db.session.execute(
-                f"""
-                select colin_event_id
-                from filings
-                where colin_event_id={colin_id}
-                """
-            )
-            colin_id = query.fetchone()
-            if not colin_id:
-                return {'message': f'No colin ids found'}, HTTPStatus.NOT_FOUND
-
-            return {'colinId': colin_id[0]}, HTTPStatus.OK
+        try:
+            if colin_id:
+                colin_id_obj = ColinEventId.get_by_colin_id(colin_id)
+                if not colin_id_obj:
+                    return {'message': f'No colin ids found'}, HTTPStatus.NOT_FOUND
+                return {'colinId': colin_id_obj.colin_event_id}, HTTPStatus.OK
+        except Exception as err:
+            print(err)
+            raise err
 
         query = db.session.execute(
             """
