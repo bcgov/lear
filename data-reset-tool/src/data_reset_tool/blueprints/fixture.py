@@ -1,18 +1,24 @@
+"""Fixture for getting, resetting, and clearing complete business data."""
+import io
+import logging
+from http import HTTPStatus
+
 from flask import Blueprint, jsonify, request, send_file
 from legal_api import db
 from legal_api.models.business import Business
 from legal_api.models.office import OfficeType
+
 from data_reset_tool.converter import ExcelConverter, ExcelWriter, JsonConverter
-from http import HTTPStatus
-import logging
-import io
-
-fixture_blueprint = Blueprint('fixture', __name__)
 
 
-@fixture_blueprint.route('/api/fixture/import/', methods=['POST'], strict_slashes=False, defaults={'business_identifier': ''})
-@fixture_blueprint.route('/api/fixture/import/<business_identifier>', methods=['POST'], strict_slashes=False)
+FIXTURE_BLUEPRINT = Blueprint('fixture', __name__)
+
+
+@FIXTURE_BLUEPRINT.route('/api/fixture/import/', methods=['POST'], strict_slashes=False,
+                         defaults={'business_identifier': ''})
+@FIXTURE_BLUEPRINT.route('/api/fixture/import/<business_identifier>', methods=['POST'], strict_slashes=False)
 def post(business_identifier):
+    """Reset complete business data from spreadsheet."""
     args = request.args
     input_business_identifier = business_identifier
 
@@ -40,8 +46,6 @@ def post(business_identifier):
             db.session.add(records_office_type)
             db.session.commit()
 
-    # return "{businesses:[]}"
-
     # Open the workbook from the uploaded file
     file_form_attribute_name = 'file'
     a_file = request.files[file_form_attribute_name]
@@ -53,10 +57,11 @@ def post(business_identifier):
     return json_converter.convert_to_json(business_list)
 
 
-@fixture_blueprint.route('/api/fixture/export/<business_identifier>', methods=['GET'], strict_slashes=False, defaults={'format': 'JSON'})
-@fixture_blueprint.route('/api/fixture/export/<business_identifier>/<format>', methods=['GET'], strict_slashes=False)
-def get_all(business_identifier, format):
-
+@FIXTURE_BLUEPRINT.route('/api/fixture/export/<business_identifier>', methods=['GET'], strict_slashes=False,
+                         defaults={'format': 'JSON'})
+@FIXTURE_BLUEPRINT.route('/api/fixture/export/<business_identifier>/<format>', methods=['GET'], strict_slashes=False)
+def get_all(business_identifier, format):  # pylint: disable=redefined-builtin
+    """Get complete business data, output as spreadsheet."""
     business_list = []
 
     export_all_businesses_indicator = 'all_YES_IM_SURE'
@@ -79,9 +84,19 @@ def get_all(business_identifier, format):
             mimetype=excel_mimetype
         )
 
-    else:
-        json_converter = JsonConverter()
-        return json_converter.convert_to_json(business_list)
+    json_converter = JsonConverter()
+    return json_converter.convert_to_json(business_list)
+
+
+@FIXTURE_BLUEPRINT.route('/api/fixture/delete/<business_identifier>', methods=['DELETE'], strict_slashes=False)
+def delete(business_identifier):
+    """Delete complete business data."""
+    input_business_identifier = business_identifier
+
+    excel_converter = ExcelConverter()
+    excel_converter.delete_business(input_business_identifier)
+
+    return jsonify({})
 
 
 def __create_excel_file(business_list):

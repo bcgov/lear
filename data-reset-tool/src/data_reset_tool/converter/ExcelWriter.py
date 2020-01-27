@@ -1,9 +1,12 @@
-from data_reset_tool.converter.utils import format_date, format_non_date, format_boolean, format_json, SheetName
+# pylint: disable=invalid-name
+"""Class for creating excel spreadsheet output."""
 import xlwt
-import logging
+
+from data_reset_tool.converter.utils import SheetName, format_boolean, format_date, format_json, format_non_date
 
 
-class ExcelWriter:
+class ExcelWriter:  # pylint: disable=too-few-public-methods
+    """Class for creating excel spreadsheet output."""
 
     __business_sheet = None
     __business_address_sheet = None
@@ -19,6 +22,7 @@ class ExcelWriter:
     __filing_sheet_row_index = 1
 
     def convert_to_excel(self, business_list):
+        """Convert business to excel spreadsheet."""
         book = xlwt.Workbook(encoding='ascii')
 
         # Add the sheets
@@ -182,18 +186,19 @@ class ExcelWriter:
             self.__director_sheet_row_index, 6, format_date(director.cessation_date))
 
         delivery_address = director.delivery_address
-        if (delivery_address):
+        if delivery_address:
             self.__write_director_address_to_excel(
                 business_identifier, director, delivery_address, self.__director_sheet_row_index)
 
         mailing_address = director.mailing_address
-        if (mailing_address):
+        if mailing_address:
             self.__write_director_address_to_excel(
                 business_identifier, director, mailing_address, self.__director_sheet_row_index)
 
         self.__director_sheet_row_index += 1
 
-    def __write_director_address_to_excel(self, business_identifier, director, director_address, director_row_reference):
+    def __write_director_address_to_excel(self, business_identifier, director, director_address,
+                                          director_row_reference):
         self.__director_address_sheet.write(
             self.__director_address_sheet_row_index, 0, format_non_date(business_identifier))
         self.__director_address_sheet.write(
@@ -251,20 +256,21 @@ class ExcelWriter:
             self.__filing_sheet_row_index, 0, format_non_date(business_identifier))
 
         self.__filing_sheet.write(
-            self.__filing_sheet_row_index, 1, format_json(filing._filing_json))
+            self.__filing_sheet_row_index, 1, format_json(filing._filing_json))  # pylint: disable=protected-access
         self.__filing_sheet.write(
-            self.__filing_sheet_row_index, 2, format_date(filing._completion_date))
+            self.__filing_sheet_row_index, 2, format_date(filing._completion_date))  # pylint: disable=protected-access
         self.__filing_sheet.write(
-            self.__filing_sheet_row_index, 3, format_date(filing._filing_date))
+            self.__filing_sheet_row_index, 3, format_date(filing._filing_date))  # pylint: disable=protected-access
         self.__filing_sheet.write(
-            self.__filing_sheet_row_index, 4, format_non_date(filing._filing_type))
+            self.__filing_sheet_row_index, 4, format_non_date(filing._filing_type))  # pylint: disable=protected-access
         self.__filing_sheet.write(
             self.__filing_sheet_row_index, 5, format_date(filing.effective_date))
         self.__filing_sheet.write(
-            self.__filing_sheet_row_index, 6, format_non_date(filing._payment_token))
+            self.__filing_sheet_row_index, 6,
+            format_non_date(filing._payment_token))  # pylint: disable=protected-access
 
         self.__filing_sheet.write(self.__filing_sheet_row_index, 7, format_date(
-            filing._payment_completion_date))
+            filing._payment_completion_date))  # pylint: disable=protected-access
         self.__filing_sheet.write(
             self.__filing_sheet_row_index, 8, format_non_date(filing.colin_event_id))
         self.__filing_sheet.write(
