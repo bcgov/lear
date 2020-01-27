@@ -321,7 +321,10 @@ class ListFilingResource(Resource):
             if user.username == 'coops-updater-job':
                 try:
                     filing.filing_date = datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['date'])
-                    filing.colin_event_ids = filing.filing_json['filing']['header']['colinIds']
+                    for colin_id in filing.filing_json['filing']['header']['colinIds']:
+                        colin_event_id = ColinEventId()
+                        colin_event_id.colin_event_id = colin_id
+                        filing.colin_event_ids.append(colin_event_id)
                 except KeyError:
                     current_app.logger.error('Business:%s missing filing/header values, unable to save',
                                              business.identifier)
