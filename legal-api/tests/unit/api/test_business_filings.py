@@ -41,7 +41,7 @@ def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):
 
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['header']['filingId'] = filings.id
-    ar['filing']['header']['colinId'] = None
+    ar['filing']['header']['colinIds'] = []
 
     print('test_get_all_business_filings - filing:', filings)
 
@@ -84,7 +84,7 @@ def test_get_one_business_filing_by_id(session, client, jwt):
     filings = factory_filing(b, ANNUAL_REPORT)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['header']['filingId'] = filings.id
-    ar['filing']['header']['colinId'] = None
+    ar['filing']['header']['colinIds'] = []
 
     rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))

@@ -267,9 +267,9 @@ class ListFilingResource(Resource):
                 filing.save()
             return {'filing': {'id': filing.id}}, HTTPStatus.CREATED
         except KeyError:
-            current_app.logger.error('Business:%s missing filing/header/colinId, unable to post to queue',
+            current_app.logger.error('Business:%s missing filing/header/colinIds, unable to post to queue',
                                      identifier)
-            return {'errors': {'message': 'missing filing/header/colinId'}}, HTTPStatus.BAD_REQUEST
+            return {'errors': {'message': 'missing filing/header/colinIds'}}, HTTPStatus.BAD_REQUEST
         except Exception as err:  # pylint: disable=broad-except; final catch
             current_app.logger.error('Business:%s unable to post to queue, err=%s', identifier, err)
             return {'errors': {'message': 'unable to publish for post processing'}}, HTTPStatus.BAD_REQUEST
@@ -321,7 +321,7 @@ class ListFilingResource(Resource):
             if user.username == 'coops-updater-job':
                 try:
                     filing.filing_date = datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['date'])
-                    filing.colin_event_ids.append(filing.filing_json['filing']['header']['colinId'])
+                    filing.colin_event_ids.append(filing.filing_json['filing']['header']['colinIds'])
                 except KeyError:
                     current_app.logger.error('Business:%s missing filing/header values, unable to save',
                                              business.identifier)
@@ -494,18 +494,19 @@ class InternalFilings(Resource):
                 return None, None, {'message': f'No filing json data in body of patch for {filing_id}.'}, \
                     HTTPStatus.BAD_REQUEST
 
-            colin_id = json_input['colinId']
+            colin_ids = json_input['colinIds']
             filing = Filing.find_by_id(filing_id)
             if not filing:
                 return {'message': f'{filing_id} no filings found'}, HTTPStatus.NOT_FOUND
-            try:
-                colin_event_id_obj = ColinEventId()
-                colin_event_id_obj.colin_event_id = colin_id
-                filing.colin_event_ids.append(colin_event_id_obj)
-                filing.save()
-            except BusinessException as err:
-                print(err)
-                return None, None, {'message': err.error}, err.status_code
+            for colin_id in colin_ids:
+                try:
+                    colin_event_id_obj = ColinEventId()
+                    colin_event_id_obj.colin_event_id = colin_id
+                    filing.colin_event_ids.append(colin_event_id_obj)
+                    filing.save()
+                except BusinessException as err:
+                    current_app.logger.Error(f'Error adding colin event id {colin_id} to filing with id {filing_id}')
+                    return None, None, {'message': err.error}, err.status_code
 
             return jsonify(filing.json), HTTPStatus.ACCEPTED
         except Exception as err:

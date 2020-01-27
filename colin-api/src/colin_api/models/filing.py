@@ -598,7 +598,7 @@ class Filing:
             filing_obj.header = {
                 'availableOnPaperOnly': filing_obj.paper_only,
                 'certifiedBy': filing_event_info['certifiedBy'],
-                'colinId': filing_obj.body['eventId'],
+                'colinIds': [filing_obj.body['eventId']],
                 'date': convert_to_json_date(filing_event_info['event_timestmp']),
                 'effectiveDate': convert_to_json_datetime(filing_obj.effective_date),
                 'email': filing_event_info['email'],

@@ -52,7 +52,7 @@ class Business:
         dates_by_corp_num = []
         for corp_num in events_by_corp_num:
             cursor.execute(f"""
-                SELECT event.corp_num, event.event_timestmp, filing.period_end_dt, filing.agm_date
+                SELECT event.corp_num, event.event_timestmp, filing.period_end_dt, filing.agm_date, filing.filing_typ_cd
                 FROM event
                 JOIN filing on filing.event_id = event.event_id
                 WHERE event.event_id not in ({stringify_list(event_ids)}) AND event.corp_num=:corp_num
@@ -74,6 +74,10 @@ class Business:
                 # this may be different than ar_date if the last ar had no agm
                 if row['agm_date'] and ('agm_date' not in dates or dates['agm_date'] < row['agm_date']):
                     dates['agm_date'] = row['agm_date']
+                # if there are no ARs for this coop then use date of incorporation
+                if row['filing_typ_cd'] == 'OTINC' and 'agm_date' not in dates:
+                    dates['agm_date'] = row['event_timestmp']
+
             dates_by_corp_num.append(dates)
         return dates_by_corp_num
 

@@ -123,7 +123,7 @@ def test_filing_json(session):
 
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['header']['filingId'] = filing.id
-    ar['filing']['header']['colinId'] = None
+    ar['filing']['header']['colinIds'] = []
 
     assert filing.id
     assert filing.json['filing']['business'] == ANNUAL_REPORT['filing']['business']

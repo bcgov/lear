@@ -105,14 +105,14 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
             app.logger.error(f'Filing {filing_id} not created in colin {filing["filing"]["business"]["identifier"]}.')
             # raise Exception
             return None
-        # if it's an AR containing multiple filings we match it with the colin id of the AR only
-        return r.json()['filing'][filing_type]['eventId']
+        # if it's an AR containing multiple filings it will have multiple colinIds
+        return r.json()['filing']['header']['colinIds']
 
 
-def update_colin_id(app: Flask = None, filing_id: str = None, colin_id: str = None, token: jwt = None):
+def update_colin_id(app: Flask = None, filing_id: str = None, colin_ids: list = None, token: jwt = None):
     """Update the colin_id in the filings table."""
     r = requests.patch(f'{app.config["LEGAL_URL"]}/internal/filings/{filing_id}',
-                       json={'colinId': colin_id},
+                       json={'colinIds': colin_ids},
                        headers={'Authorization': f'Bearer {token}'}
                        )
     if not r or r.status_code != 202:
@@ -150,12 +150,11 @@ def run():
                 application.logger.debug(f'No completed filings to send to colin.')
             for filing in filings:
                 filing_id = filing['filingId']
-                colin_id = send_filing(app=application, filing=filing, filing_id=filing_id)
-                # this will prevent duplicates of the failed filings from being sent to colin
-                if not colin_id:
-                    colin_id = 0
-                update = update_colin_id(app=application, filing_id=filing_id, colin_id=colin_id, token=token)
-                if update and colin_id > 0:
+                colin_ids = send_filing(app=application, filing=filing, filing_id=filing_id)
+                update = None
+                if colin_ids:
+                    update = update_colin_id(app=application, filing_id=filing_id, colin_ids=colin_ids, token=token)
+                if update:
                     application.logger.debug(f'Successfully updated filing {filing_id}')
                 else:
                     application.logger.error(f'Failed to update filing {filing_id} with colin event id.')

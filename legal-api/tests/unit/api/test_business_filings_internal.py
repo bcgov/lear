@@ -106,7 +106,7 @@ def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server):
         ar = copy.deepcopy(ANNUAL_REPORT)
         ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
         ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
-        ar['filing']['header']['colinId'] = 1230 + i
+        ar['filing']['header']['colinIds'] = [1230 + i]
         ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
         ar['filing']['business']['identifier'] = identifier
 
@@ -150,7 +150,7 @@ def test_update_ar_with_colin_id_set(session, client, jwt):
 
     filings = factory_filing(business, ar)
 
-    ar['filing']['header']['colinId'] = 1234
+    ar['filing']['header']['colinIds'] = [1234]
 
     rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
                     json=ar,
@@ -160,7 +160,7 @@ def test_update_ar_with_colin_id_set(session, client, jwt):
     assert rv.status_code == HTTPStatus.ACCEPTED
     assert rv.json['filing']['business'] == ar['filing']['business']
     assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
-    assert not rv.json['filing']['header'].get('colinId')
+    assert not rv.json['filing']['header'].get('colinIds')
     assert rv.json['filing']['header']['filingId'] == filings.id
 
 
@@ -217,7 +217,7 @@ def test_patch_internal_filings(session, client, jwt):
 
     # make request
     rv = client.patch(f'/api/v1/businesses/internal/filings/{filing.id}',
-                      json={'colinId': colin_id},
+                      json={'colinIds': [colin_id]},
                       headers=create_header(jwt, [COLIN_SVC_ROLE])
                       )
 
