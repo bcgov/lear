@@ -5,7 +5,6 @@ import Vue from 'vue'
 import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
 import Vuelidate from 'vuelidate'
-import Vue2Filters from 'vue2-filters'
 import Affix from 'vue-affix'
 import configHelper from '@/utils/config-helper'
 import router from '@/router'
@@ -23,7 +22,6 @@ Vue.config.productionTip = false
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
-Vue.use(Vue2Filters)
 Vue.use(Affix)
 
 const vuetify = new Vuetify({ iconfont: 'mdi' })

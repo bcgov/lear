@@ -183,7 +183,7 @@ import { Component, Mixins, Prop, Watch } from 'vue-property-decorator'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
 // Mixins
-import { DateMixin, EntityFilterMixin, ExternalMixin, CommonMixin } from '@/mixins'
+import { DateMixin, EntityFilterMixin, CommonMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'
@@ -199,7 +199,7 @@ import { Director } from '@/interfaces'
     BaseAddress
   }
 })
-export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixin, ExternalMixin, CommonMixin) {
+export default class SummaryDirectors extends Mixins(DateMixin, EntityFilterMixin, CommonMixin) {
   // Directors array passed into this component.
   @Prop({ default: [] })
   private directors: Array<Director>

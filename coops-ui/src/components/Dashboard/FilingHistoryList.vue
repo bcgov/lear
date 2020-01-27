@@ -142,13 +142,12 @@ import { EntityTypes, FilingStatus, FilingTypes } from '@/enums'
 
 // Mixins
 import DateMixin from '@/mixins/date-mixin'
-import ExternalMixin from '@/mixins/external-mixin'
 import EntityFilterMixin from '@/mixins/entityFilter-mixin'
 
 export default {
   name: 'FilingHistoryList',
 
-  mixins: [DateMixin, ExternalMixin, EntityFilterMixin],
+  mixins: [DateMixin, EntityFilterMixin],
 
   components: {
     DownloadErrorDialog

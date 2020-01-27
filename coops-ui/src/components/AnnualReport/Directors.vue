@@ -508,7 +508,7 @@ import { WarningPopover } from '@/components/dialogs'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
 // Mixins
-import { DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin, DirectorMixin, ResourceLookupMixin } from '@/mixins'
+import { DateMixin, EntityFilterMixin, CommonMixin, DirectorMixin, ResourceLookupMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'

@@ -242,12 +242,13 @@
 <script>
 import axios from '@/axios-auth'
 import { mapState, mapActions } from 'vuex'
+import Vue2Filters from 'vue2-filters'
 
 // Dialogs
 import { ConfirmDialog, DeleteErrorDialog, CancelPaymentErrorDialog } from '@/components/dialogs'
 
 // Mixins
-import { ExternalMixin, EntityFilterMixin, DateMixin } from '@/mixins'
+import { EntityFilterMixin, DateMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes, FilingStatus } from '@/enums'
@@ -264,7 +265,7 @@ export default {
     CancelPaymentErrorDialog
   },
 
-  mixins: [ExternalMixin, EntityFilterMixin, DateMixin],
+  mixins: [EntityFilterMixin, DateMixin, Vue2Filters.mixin],
 
   data () {
     return {
