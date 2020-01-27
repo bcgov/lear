@@ -483,7 +483,9 @@ export default class OfficeAddresses extends Mixins(CommonMixin, EntityFilterMix
         this.recMailingAddressValid = isValid
         break
       default:
+        // eslint-disable-next-line no-console
         console.log(`Error: Address- ${addressToValidate} not found`)
+        break
     }
     this.emitValid()
   }
@@ -594,6 +596,7 @@ export default class OfficeAddresses extends Mixins(CommonMixin, EntityFilterMix
         this.deliveryAddress = { ...deliveryAddress }
       }
     } else {
+      // eslint-disable-next-line no-console
       console.log('invalid Delivery Address =', addressBase)
     }
 
@@ -606,6 +609,7 @@ export default class OfficeAddresses extends Mixins(CommonMixin, EntityFilterMix
         this.mailingAddress = { ...mailingAddress }
       }
     } else {
+      // eslint-disable-next-line no-console
       console.log('invalid Mailing Address =', addressBase)
     }
   }
@@ -625,6 +629,7 @@ export default class OfficeAddresses extends Mixins(CommonMixin, EntityFilterMix
         this.recDeliveryAddress = { ...deliveryAddress }
       }
     } else {
+      // eslint-disable-next-line no-console
       console.log('invalid Delivery Address =', addressBase)
     }
 
@@ -637,6 +642,7 @@ export default class OfficeAddresses extends Mixins(CommonMixin, EntityFilterMix
         this.recMailingAddress = { ...mailingAddress }
       }
     } else {
+      // eslint-disable-next-line no-console
       console.log('invalid Mailing Address =', addressBase)
     }
   }

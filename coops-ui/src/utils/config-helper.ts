@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 import axios from '@/axios-auth'
 
 export default {

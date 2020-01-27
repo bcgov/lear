@@ -313,6 +313,7 @@ export default {
         } else if (task && task.task && task.task.filing) {
           this.loadFilingItem(task)
         } else {
+          // eslint-disable-next-line no-console
           console.log('ERROR - got unknown task =', task)
         }
       })
@@ -348,10 +349,12 @@ export default {
             break
           }
           default:
+            // eslint-disable-next-line no-console
             console.log('ERROR - got unknown todo item =', todo)
             break
         }
       } else {
+        // eslint-disable-next-line no-console
         console.log('ERROR - invalid todo or header in task =', task)
       }
     },
@@ -370,10 +373,12 @@ export default {
             this.loadChangeOfAddress(task)
             break
           default:
+            // eslint-disable-next-line no-console
             console.log('ERROR - got unknown filing item =', filing)
             break
         }
       } else {
+        // eslint-disable-next-line no-console
         console.log('ERROR - invalid filing or header in task =', task)
       }
     },
@@ -399,9 +404,11 @@ export default {
             paymentToken: filing.header.paymentToken || null
           })
         } else {
+          // eslint-disable-next-line no-console
           console.log('ERROR - invalid date in filing =', filing)
         }
       } else {
+        // eslint-disable-next-line no-console
         console.log('ERROR - invalid filing or header or annualReport in task =', task)
       }
     },
@@ -420,6 +427,7 @@ export default {
           paymentToken: filing.header.paymentToken || null
         })
       } else {
+        // eslint-disable-next-line no-console
         console.log('ERROR - invalid filing or header or changeOfDirectors in task =', task)
       }
     },
@@ -438,6 +446,7 @@ export default {
           paymentToken: filing.header.paymentToken || null
         })
       } else {
+        // eslint-disable-next-line no-console
         console.log('ERROR - invalid filing or header or changeOfAddress in task =', task)
       }
     },
@@ -451,7 +460,9 @@ export default {
           this.$router.push({ name: 'annual-report', params: { id: 0 } }) // 0 means "new AR"
           break
         default:
+          // eslint-disable-next-line no-console
           console.log('doFileNow(), invalid type for item =', item)
+          break
       }
     },
 
@@ -476,7 +487,9 @@ export default {
           this.$router.push({ name: 'standalone-addresses', params: { id: item.id } })
           break
         default:
+          // eslint-disable-next-line no-console
           console.log('doFileNow(), invalid type for item =', item)
+          break
       }
     },
 

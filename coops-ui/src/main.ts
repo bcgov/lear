@@ -42,7 +42,7 @@ configHelper.fetchConfig()
     }
 
     // start token service to refresh KC token periodically
-    console.info('Starting token refresh service...')
+    console.info('Starting token refresh service...') // eslint-disable-line no-console
     const tokenServices = new TokenServices()
     tokenServices.initUsingUrl(sessionStorage.getItem('KEYCLOAK_CONFIG_URL'))
       .then(() => tokenServices.scheduleRefreshTimer())
@@ -60,7 +60,7 @@ configHelper.fetchConfig()
      * This catches any un-handled errors from fetchConfig()
      * or anything else in then() block above.
      */
-    console.error(error)
+    console.error(error) // eslint-disable-line no-console
     alert('There was an error starting this page. (See console for details.)' +
       '\n\n' +
       'Click OK to go to Cooperatives Online.')

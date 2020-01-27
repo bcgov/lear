@@ -378,15 +378,18 @@ export default {
               }
             }
           } catch (err) {
+            // eslint-disable-next-line no-console
             console.log(`fetchData() error - ${err.message}, filing =`, filing)
             this.resumeErrorDialog = true
             throw new Error('invalid change of address')
           }
         } else {
+          // eslint-disable-next-line no-console
           console.log('fetchData() error - invalid response =', response)
           this.resumeErrorDialog = true
         }
       }).catch(error => {
+        // eslint-disable-next-line no-console
         console.error('fetchData() error =', error)
         this.resumeErrorDialog = true
       })
@@ -647,6 +650,7 @@ export default {
             }
           })
           .catch(error => {
+            // eslint-disable-next-line no-console
             console.error('fetchData() error =', error)
             this.saveErrorDialog = true
           })
