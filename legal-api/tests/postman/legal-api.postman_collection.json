@@ -7142,7 +7142,7 @@
 									"pm.environment.set('nr_num', 'NR 1234567')",
 									"",
 									"// set second nr num for testing",
-									"pm.environment.set('nr_num', 'NR 1111111')",
+									"pm.environment.set('nr_num_2', 'NR 1111111')",
 									"",
 									"// clear filing_id ",
 									"pm.environment.set('filing_id', '')",
