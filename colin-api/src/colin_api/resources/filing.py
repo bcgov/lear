@@ -108,6 +108,7 @@ class FilingInfo(Resource):
             # return the completed filing data
             completed_filing = Filing()
             completed_filing.header = json_data['header']
+            completed_filing.header['colinIds'] = []
             # get business info again - could have changed since filings were applied
             completed_filing.business = Business.find_by_identifier(identifier)
             completed_filing.body = {}
@@ -118,6 +119,7 @@ class FilingInfo(Resource):
                     raise FilingNotFoundException(identifier=identifier, filing_type=filing_info['filing_type'],
                                                   event_id=filing_info['event_id'])
                 completed_filing.body.update({filing_info['filing_type']: filing.body})
+                completed_filing.header['colinIds'].append(filing_info['event_id'])
 
             return jsonify(completed_filing.as_dict()), 201
 

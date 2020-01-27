@@ -25,6 +25,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
+from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 
 from .db import db
@@ -72,7 +73,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _payment_token = db.Column('payment_id', db.String(4096))
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
-    colin_event_id = db.Column('colin_event_id', db.Integer)
     _status = db.Column('status', db.String(10), default=Status.DRAFT)
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
     _source = db.Column('source', db.String(15), default=Source.LEAR)
@@ -88,6 +88,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     filing_submitter = db.relationship('User',
                                        backref=backref('filing_submitter', uselist=False),
                                        foreign_keys=[submitter_id])
+
+    colin_event_ids = db.relationship('ColinEventId', lazy='select')
 
     # properties
     @property
@@ -188,12 +190,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
             self._status = Filing.Status.PENDING.value
         self._filing_json = json_data
-        try:
-            self.colin_event_id = int(json_data.get('filing').get('eventId'))
-        except (AttributeError, TypeError):
-            # eventId is from colin_api (will not be set until added in colin db)
-            # todo: could make the post call for filing with json_data to colin api here and then set the colin_event_Id
-            pass
 
     @property
     def locked(self):
@@ -205,8 +201,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         insp = inspect(self)
         attr_state = insp.attrs._payment_token  # pylint: disable=protected-access;
         # inspect requires the member, and the hybrid decorator doesn't help us here
-
-        if (self._payment_token and not attr_state.history.added) or self.colin_event_id:
+        if (self._payment_token and not attr_state.history.added) or self.colin_event_ids:
             return True
 
         return False
@@ -232,7 +227,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             json_submission['filing']['header']['date'] = self._filing_date.isoformat()
             json_submission['filing']['header']['filingId'] = self.id
             json_submission['filing']['header']['name'] = self.filing_type
-            json_submission['filing']['header']['colinId'] = self.colin_event_id
             json_submission['filing']['header']['status'] = self.status
 
             # if availableOnPaper is not defined in filing json, use the flag on the filing record
@@ -245,6 +239,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 json_submission['filing']['header']['paymentToken'] = self.payment_token
             if self.submitter_id:
                 json_submission['filing']['header']['submitter'] = self.filing_submitter.username
+
+            # add colin_event_ids
+            json_submission['filing']['header']['colinIds'] = ColinEventId.get_by_filing_id(self.id)
             return json_submission
         except Exception:  # noqa: B901, E722
             raise KeyError
@@ -337,7 +334,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def get_completed_filings_for_colin():
         """Return the filings with statuses in the status array input."""
         filings = db.session.query(Filing). \
-            filter(Filing.colin_event_id == None,  # pylint: disable=singleton-comparison # noqa: E711;
+            filter(Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
                    Filing._status == Filing.Status.COMPLETED.value).all()
         return filings
 
@@ -431,7 +428,7 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     elif filing.transaction_id:
         filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
 
-    elif filing.payment_completion_date or filing.colin_event_id:
+    elif filing.payment_completion_date or filing.source == Filing.Source.COLIN.value:
         filing._status = Filing.Status.PAID.value  # pylint: disable=protected-access
 
     elif filing.payment_token:

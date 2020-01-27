@@ -123,7 +123,7 @@ def test_filing_json(session):
 
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['header']['filingId'] = filing.id
-    ar['filing']['header']['colinId'] = None
+    ar['filing']['header']['colinIds'] = []
 
     assert filing.id
     assert filing.json['filing']['business'] == ANNUAL_REPORT['filing']['business']
@@ -513,13 +513,16 @@ def test_get_filings_by_status_before_go_live_date(session, test_type, days, exp
 def test_get_internal_filings(session, client, jwt):
     """Assert that the get_completed_filings_for_colin returns completed filings with no colin ids set."""
     from legal_api.models import Filing
+    from legal_api.models.colin_event_id import ColinEventId
     from tests.unit.models import factory_completed_filing
     # setup
     identifier = 'CP7654321'
     b = factory_business(identifier)
     filing = factory_completed_filing(b, ANNUAL_REPORT)
     assert filing.status == Filing.Status.COMPLETED.value
-    filing.colin_event_id = 1234
+    colin_event_id = ColinEventId()
+    colin_event_id.colin_event_id = 12346
+    filing.colin_event_ids.append(colin_event_id)
     filing.save()
     filings = Filing.get_completed_filings_for_colin()
 
@@ -527,12 +530,12 @@ def test_get_internal_filings(session, client, jwt):
     # assert doesn't return completed filing with colin_event_ids set
     assert len(filings) == 0
     # assert returns completed filings with colin_event_id not set
-    filing.colin_event_id = None
+    filing.colin_event_ids.clear()
     filing.save()
     filings = Filing.get_completed_filings_for_colin()
     assert len(filings) == 1
     assert filing.id == filings[0].json['filing']['header']['filingId']
-    assert filings[0].json['filing']['header']['colinId'] is None
+    assert filings[0].json['filing']['header']['colinIds'] == []
     # assert doesn't return non completed filings
     filing.transaction_id = None
     filing.save()
@@ -565,7 +568,7 @@ def test_get_a_businesses_most_recent_filing_of_a_type(session):
 
 
 def test_save_filing_with_colin_id(session):
-    """Assert that saving a filing with a colin event id is set to paid."""
+    """Assert that saving a filing from the coops-updater-job user is set to paid and source is colin."""
     from legal_api.models import Filing
     # setup
     filing = Filing()
@@ -575,8 +578,5 @@ def test_save_filing_with_colin_id(session):
     filing.save()
 
     # test
-    assert filing.status == Filing.Status.DRAFT.value
     assert filing.source == Filing.Source.COLIN.value
-    filing.colin_event_id = 1234
-    filing.save()
     assert filing.status == Filing.Status.PAID.value
