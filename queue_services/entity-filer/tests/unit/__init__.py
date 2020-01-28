@@ -350,7 +350,7 @@ COMBINED_FILING = {
         },
         'annualReport': {
             'annualGeneralMeetingDate': '2019-04-08',
-            'annualReportDate': '2018-04-08',
+            'annualReportDate': '2019-04-08',
             'directors': COD_FILING['filing']['changeOfDirectors']['directors'],
             'offices': COA_FILING['filing']['changeOfAddress']['offices']
         },
