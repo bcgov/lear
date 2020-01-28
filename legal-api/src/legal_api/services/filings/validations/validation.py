@@ -24,7 +24,7 @@ from .change_of_name import validate as con_validate
 from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
 from .voluntary_dissolution import validate as voluntary_dissolution_validate
-
+from .incorporation_application import validate as incorporation_application_validate
 
 def validate(business: Business, filing_json: Dict) -> Error:
     """Validate the annual report JSON."""
@@ -59,6 +59,9 @@ def validate(business: Business, filing_json: Dict) -> Error:
 
             elif k == Filing.FILINGS['voluntaryDissolution'].get('name'):
                 err = voluntary_dissolution_validate(business, filing_json)
+
+            elif k == Filing.FILINGS['incorporationApplication'].get('name'):
+                err = incorporation_application_validate(business, filing_json)
 
             if err:
                 return err

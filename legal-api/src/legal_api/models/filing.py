@@ -60,7 +60,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                                      'code': 'OTCDR'},
                'changeOfName': {'name': 'changeOfName', 'title': 'Change of Name Filing'},
                'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution'},
-               'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'}
+               'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'},
+               'incorporationApplication': {'name': 'incorporationApplication', 'title': 'Incorporation Application'}
                }
 
     __tablename__ = 'filings'
