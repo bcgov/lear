@@ -159,7 +159,8 @@
                       <v-btn color="primary"
                         v-on="on" id="pending-item-menu-activator" :disabled="!item.enabled"
                         class="actions__more-actions__btn px-0"
-                        @click.native.stop  data-test-id="btn-pending-filing-menu"
+                        @click.native.stop
+                        data-test-id="btn-pending-filing-menu"
                       >
                         <v-icon>mdi-menu-down</v-icon>
                       </v-btn>

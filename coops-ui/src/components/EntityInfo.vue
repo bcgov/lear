@@ -54,7 +54,7 @@
               </v-btn>
             </template>
             <v-list class="pt-0 pb-0">
-              <v-list-item id="update-business-profile-menuitem" @click="editBusinessProfile">
+              <v-list-item id="update-business-profile-menuitem" @click="editBusinessProfile()">
                 <v-list-item-title>Update business profile</v-list-item-title>
               </v-list-item>
             </v-list>

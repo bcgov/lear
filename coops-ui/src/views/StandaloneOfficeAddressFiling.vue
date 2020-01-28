@@ -122,14 +122,14 @@
         <v-btn id="coa-save-btn" large
           :disabled="!saveAsDraftEnabled || busySaving"
           :loading="saving"
-          @click="onClickSave"
+          @click="onClickSave()"
         >
           <span>Save</span>
         </v-btn>
         <v-btn id="coa-save-resume-btn" large
           :disabled="!saveAsDraftEnabled || busySaving"
           :loading="savingResuming"
-          @click="onClickSaveResume"
+          @click="onClickSaveResume()"
         >
           <span>Save &amp; Resume Later</span>
         </v-btn>
@@ -145,7 +145,7 @@
               large
               :disabled="!validated || busySaving"
               :loading="filingPaying"
-              @click="onClickFilePay"
+              @click="onClickFilePay()"
             >
               <span>{{ isPayRequired ? "File &amp; Pay" : "File" }}</span>
             </v-btn>

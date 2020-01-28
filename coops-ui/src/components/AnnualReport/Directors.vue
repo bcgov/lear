@@ -29,7 +29,7 @@
             <v-col cols="3">
               <v-btn class="new-director-btn" outlined color="primary"
                 :disabled="directorEditInProgress"
-                @click="addNewDirector"
+                @click="addNewDirector()"
               >
                 <v-icon>mdi-plus</v-icon>
                 <span>Appoint New Director</span>
@@ -166,7 +166,7 @@
 
                   <div class="form__row form__btns">
                     <v-btn color="error" disabled>Remove</v-btn>
-                    <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
+                    <v-btn class="form-primary-btn" @click="validateNewDirectorForm()" color="primary">Done</v-btn>
                     <v-btn class="form-cancel-btn" @click="cancelNewDirector()">Cancel</v-btn>
                   </div>
                 </v-form>

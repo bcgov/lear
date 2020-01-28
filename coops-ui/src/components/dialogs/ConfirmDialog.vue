@@ -14,11 +14,11 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn id="dialog-yes-button" color="primary" text v-show="!!options.yes"
-          @click.native="onClickYes">{{ options.yes }}</v-btn>
+          @click.native="onClickYes()">{{ options.yes }}</v-btn>
         <v-btn id="dialog-no-button" color="primary" text v-show="!!options.no"
-          @click.native="onClickNo">{{ options.no }}</v-btn>
+          @click.native="onClickNo()">{{ options.no }}</v-btn>
         <v-btn id="dialog-cancel-button" color="secondary" text v-show="!!options.cancel"
-          @click.native="onClickCancel">{{ options.cancel }}</v-btn>
+          @click.native="onClickCancel()">{{ options.cancel }}</v-btn>
       </v-card-actions>
     </v-card>
 
