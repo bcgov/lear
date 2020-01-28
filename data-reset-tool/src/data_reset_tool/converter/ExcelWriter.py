@@ -116,7 +116,7 @@ class ExcelWriter:  # pylint: disable=too-few-public-methods
             'effective_date',
             'payment_id',
             'payment_completion_date',
-            'colin_event_id',
+            'colin_event_ids',
             'status',
             'paper_only',
         ]
@@ -272,7 +272,7 @@ class ExcelWriter:  # pylint: disable=too-few-public-methods
         self.__filing_sheet.write(self.__filing_sheet_row_index, 7, format_date(
             filing._payment_completion_date))  # pylint: disable=protected-access
         self.__filing_sheet.write(
-            self.__filing_sheet_row_index, 8, format_non_date(filing.colin_event_id))
+            self.__filing_sheet_row_index, 8, format_json([x.colin_event_id for x in filing.colin_event_ids]))
         self.__filing_sheet.write(
             self.__filing_sheet_row_index, 9, format_non_date(filing.status))
         self.__filing_sheet.write(

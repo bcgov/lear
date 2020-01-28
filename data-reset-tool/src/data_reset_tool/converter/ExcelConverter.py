@@ -4,6 +4,7 @@ import xlrd
 from flask import json
 from legal_api import db
 from legal_api.models.business import Address, Business, Director, Filing
+from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.office import Office, OfficeType
 from sqlalchemy_continuum import versioning_manager
 
@@ -57,7 +58,10 @@ class ExcelConverter:
         if existing_business:
             for f in existing_business.filings.all():
                 f._payment_token = None  # pylint: disable=protected-access
-                f.colin_event_id = None
+
+                for colin_event_id in f.colin_event_ids:
+                    db.session.delete(colin_event_id)
+
                 f.save()
                 db.session.delete(f)
 
@@ -245,7 +249,6 @@ class ExcelConverter:
                     _payment_token=self.__get_value_from_row(filing_row, 6),
                     _payment_completion_date=self.__get_value_from_row(
                         filing_row, 7),
-                    colin_event_id=self.__get_value_from_row(filing_row, 8),
                     _status=status,
                     paper_only=self.__get_value_from_row(filing_row, 10),
                     # transaction_id comes from continuuum
@@ -261,6 +264,23 @@ class ExcelConverter:
                 business.filings.append(filing)
                 db.session.add(filing)
                 db.session.commit()
+
+                # add colin event ids
+                colin_event_ids = self.__get_value_from_row(filing_row, 8)
+
+                if colin_event_ids:
+                    # convert string to list
+                    colin_event_ids = eval(colin_event_ids)
+
+                    for colin_event_id in colin_event_ids:
+                        colin_event_id_obj = ColinEventId(
+                            colin_event_id=colin_event_id,
+                            filing_id=filing.id
+                        )
+                        filing.colin_event_ids.append(colin_event_id_obj)
+                        db.session.add(filing)
+
+                    db.session.commit()
 
     @classmethod
     def __get_value_from_row(cls, row, index):

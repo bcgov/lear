@@ -97,7 +97,7 @@ class JsonConverter:  # pylint: disable=too-few-public-methods
                 'paymentToken': format_non_date(filing._payment_token),  # pylint: disable=protected-access
                 'paymentCompletionDate':
                     format_date(filing._payment_completion_date),  # pylint: disable=protected-access
-                'colinEventId': format_non_date(filing.colin_event_id),
+                'colinEventIds': [x.colin_event_id for x in filing.colin_event_ids],
                 'status': format_non_date(filing._status),  # pylint: disable=protected-access
                 'paperOnly': format_boolean(filing.paper_only),
                 # Don't want to use format_json here because we're
