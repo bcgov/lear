@@ -57,7 +57,7 @@ objects:
                   - name: ERROR_EMAIL_RECIPIENTS
                     value: '[sbc_itoperationssupport@gov.bc.ca, steven.chen@gov.bc.ca]'
                   - name: REPORT_RECIPIENTS
-                    value: '[Debbie.Blyth@gov.bc.ca, Sinead.OCallaghan@gov.bc.ca, steven.chen@gov.bc.ca]'
+                    value: '[Trish.Reimer@gov.bc.ca, steven.chen@gov.bc.ca]'
                   - name: EMAIL_SMTP
                     value: 'apps.smtp.gov.bc.ca'  
                   - name: RETRY_TIMES
