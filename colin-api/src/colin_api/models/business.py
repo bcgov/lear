@@ -339,3 +339,19 @@ class Business:
         except Exception as err:
             current_app.logger.error(f'Error in Business: Failed reset ended corp_state rows for events {event_ids}')
             raise err
+    
+    @classmethod
+    def get_next_corp_num(cls, corp_type):
+        """Retrieve the next available corporation number and advance by one."""
+        try:
+            cursor = DB.connection.cursor()
+            cursor.execute(f"""
+                SELECT id_num
+                FROM system_id
+                WHERE id_typ_cd = :corp_type
+            """, corp_type)
+            corp_num = cursor.fetchone()
+            return corp_num
+        except Exception as err:
+            current_app.logger.error(f'Error looking up corp_num')
+            raise err
