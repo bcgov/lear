@@ -21,7 +21,7 @@ from registry_schemas import validate
 
 from colin_api.exceptions import FilingNotFoundException, GenericException
 from colin_api.models import Business
-from colin_api.models.filing import Filing
+from colin_api.models.filing import Filing, DB
 from colin_api.resources.business import API
 from colin_api.utils.util import cors_preflight
 
@@ -92,36 +92,48 @@ class FilingInfo(Resource):
                 return jsonify(
                     {'message': 'Error: Identifier in URL does not match identifier in filing data'}), 400
 
-            filings_added = []
-            for filing_type in filing_list:
-                if filing_list[filing_type]:
-                    filing = Filing()
-                    filing.business = Business.find_by_identifier(identifier)
-                    filing.header = json_data['header']
-                    filing.filing_type = filing_type
-                    filing.body = filing_list[filing_type]
+            try:
+                # get db connection and start a session, in case we need to roll back
+                con = DB.connection
+                con.begin()
+                filings_added = []
+                for filing_type in filing_list:
+                    if filing_list[filing_type]:
+                        filing = Filing()
+                        filing.business = Business.find_by_identifier(identifier)
+                        filing.header = json_data['header']
+                        filing.filing_type = filing_type
+                        filing.body = filing_list[filing_type]
 
-                    # add the new filing
-                    event_id = Filing.add_filing(filing)
-                    filings_added.append({'event_id': event_id, 'filing_type': filing_type})
+                        # add the new filing
+                        event_id = Filing.add_filing(con, filing)
+                        filings_added.append({'event_id': event_id, 'filing_type': filing_type})
 
-            # return the completed filing data
-            completed_filing = Filing()
-            completed_filing.header = json_data['header']
-            completed_filing.header['colinIds'] = []
-            # get business info again - could have changed since filings were applied
-            completed_filing.business = Business.find_by_identifier(identifier)
-            completed_filing.body = {}
-            for filing_info in filings_added:
-                filing = Filing.get_filing(business=completed_filing.business, event_id=filing_info['event_id'],
-                                           filing_type=filing_info['filing_type'])
-                if not filing:
-                    raise FilingNotFoundException(identifier=identifier, filing_type=filing_info['filing_type'],
-                                                  event_id=filing_info['event_id'])
-                completed_filing.body.update({filing_info['filing_type']: filing.body})
-                completed_filing.header['colinIds'].append(filing_info['event_id'])
+                # return the completed filing data
+                completed_filing = Filing()
+                completed_filing.header = json_data['header']
+                completed_filing.header['colinIds'] = []
+                # get business info again - could have changed since filings were applied
+                completed_filing.business = Business.find_by_identifier(identifier)
+                completed_filing.body = {}
+                for filing_info in filings_added:
+                    filing = Filing.get_filing(business=completed_filing.business, event_id=filing_info['event_id'],
+                                               filing_type=filing_info['filing_type'])
+                    if not filing:
+                        raise FilingNotFoundException(identifier=identifier, filing_type=filing_info['filing_type'],
+                                                      event_id=filing_info['event_id'])
+                    completed_filing.body.update({filing_info['filing_type']: filing.body})
+                    completed_filing.header['colinIds'].append(filing_info['event_id'])
 
-            return jsonify(completed_filing.as_dict()), 201
+                # success! commit the db changes
+                con.commit()
+                return jsonify(completed_filing.as_dict()), 201
+
+            except Exception as err:
+                current_app.logger.error(err.with_traceback(None))
+                if con:
+                    con.rollback()
+                raise err
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             # general catch-all exception

@@ -678,18 +678,16 @@ class Filing:
             raise err
 
     @classmethod
-    def add_filing(cls, filing):  # pylint: disable=too-many-locals,too-many-statements,too-many-branches;
+    def add_filing(cls, con, filing):  # pylint: disable=too-many-locals,too-many-statements,too-many-branches;
         """Add new filing to COLIN tables.
 
+        :param con: DB connection
         :param filing: Filing dict.
         :returns (int): the filing ID of the new filing.
         """
         try:
             corp_num = filing.get_corp_num()
             user_id = 'COOPER' if corp_num[:2] == 'CP' else None
-            # get db connection and start a session, in case we need to roll back
-            con = DB.connection
-            con.begin()
             cursor = con.cursor()
 
             # create new event record, return event ID
@@ -804,14 +802,10 @@ class Filing:
             else:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
-            # success! commit the db changes
-            con.commit()
             return event_id
 
         except Exception as err:
             # something went wrong, roll it all back
             current_app.logger.error(err.with_traceback(None))
-            if con:
-                con.rollback()
 
             raise err
