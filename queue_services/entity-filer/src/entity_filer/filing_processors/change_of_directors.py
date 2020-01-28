@@ -29,7 +29,7 @@ def process(business: Business, filing: Dict):  # pylint: disable=too-many-branc
 
     for new_director in new_directors:  # pylint: disable=too-many-nested-blocks;
         # Applies only for filings coming from colin.
-        if filing.get('colinId'):
+        if filing.get('colinIds'):
             director_found = False
             current_new_director_name = \
                 new_director['officer'].get('firstName') + new_director['officer'].get('middleInitial', '') + \
@@ -95,7 +95,7 @@ def process(business: Business, filing: Dict):  # pylint: disable=too-many-branc
                     update_director(director, new_director)
                     break
 
-    if filing.get('colinId'):
+    if filing.get('colinIds'):
         for director in business.directors:
             # get name of director in database for comparison *
             director_name = director.first_name + director.middle_initial + director.last_name

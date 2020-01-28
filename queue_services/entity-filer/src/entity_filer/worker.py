@@ -123,7 +123,7 @@ def process_filing(filing_msg: Dict, flask_app: Flask):
                     change_of_address.process(business, filing)
 
                 elif filing.get('changeOfDirectors'):
-                    filing['colinId'] = filing_submission.colin_event_id
+                    filing['colinIds'] = filing_submission.colin_event_ids
                     change_of_directors.process(business, filing)
 
                 elif filing.get('changeOfName'):
