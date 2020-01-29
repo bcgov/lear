@@ -6,7 +6,7 @@ import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
 import Vuelidate from 'vuelidate'
 import Affix from 'vue-affix'
-import configHelper from '@/utils/config-helper'
+import { fetchConfig } from '@/utils/config-helper'
 import router from '@/router'
 import store from '@/store/store'
 import { withFlagProvider } from 'ld-vue'
@@ -29,14 +29,14 @@ const vuetify = new Vuetify({ iconfont: 'mdi' })
 /**
  * first fetch config from server, then load Vue
  */
-configHelper.fetchConfig()
+fetchConfig()
   .then(() => {
     // ensure we have the necessary Keycloak tokens
     if (!haveKcTokens()) {
       console.info('Redirecting to Signin URL...') // eslint-disable-line no-console
       const signinUrl: string = sessionStorage.getItem('SIGNIN_URL') || ''
       const returnUrl: string = encodeURIComponent(window.location.href)
-      // assume Auth URL is always reachable
+      // assume Signin URL is always reachable
       signinUrl && returnUrl && window.location.assign(signinUrl + returnUrl)
       return // do not execute remaining code
     }
