@@ -47,6 +47,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         ERROR = 'ERROR'
         PAID = 'PAID'
         PENDING = 'PENDING'
+        SECONDARY = 'SECONDARY'
 
     class Source(Enum):
         """Render an Enum of the Filing Sources."""
