@@ -23,7 +23,7 @@
     "provinces": "^1.11.0",
     "regenerator-runtime": "^0.13.3",
     "register-service-worker": "^1.6.2",
-    "sbc-common-components": "2.0.36",
+    "sbc-common-components": "2.0.40",
     "vue": "^2.6.10",
     "vue-affix": "^0.5.2",
     "vue-router": "^3.0.3",
@@ -60,6 +60,7 @@
     "vue-plugin-helper-decorator": "^0.0.12",
     "vue-property-decorator": "^8.2.2",
     "vue-template-compiler": "^2.6.10",
-    "vue-test-utils-helpers": "git+https://github.com/AmpleOrganics/vue-test-utils-helpers.git"
+    "vue-test-utils-helpers": "git+https://github.com/AmpleOrganics/vue-test-utils-helpers.git",
+    "vuex-module-decorators": "^0.11.0"
   }
 }
