@@ -29,8 +29,8 @@ from .api_namespace import API
 
 @cors_preflight('GET, POST, PUT')
 @API.route('/<string:identifier>', methods=['GET', 'OPTIONS'])
-@API.route('/<string:identifier>', methods=['PUT'])
-@API.route('', methods=['POST'])
+@API.route('/<string:identifier>', methods=['PUT', 'OPTIONS'])
+@API.route('', methods=['POST', 'OPTIONS'])
 class BusinessResource(Resource):
     """Meta information about the overall service."""
 
