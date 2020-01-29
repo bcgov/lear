@@ -142,13 +142,12 @@ import { EntityTypes, FilingStatus, FilingTypes } from '@/enums'
 
 // Mixins
 import DateMixin from '@/mixins/date-mixin'
-import ExternalMixin from '@/mixins/external-mixin'
 import EntityFilterMixin from '@/mixins/entityFilter-mixin'
 
 export default {
   name: 'FilingHistoryList',
 
-  mixins: [DateMixin, ExternalMixin, EntityFilterMixin],
+  mixins: [DateMixin, EntityFilterMixin],
 
   components: {
     DownloadErrorDialog
@@ -214,6 +213,7 @@ export default {
             }
           }
         } else {
+          // eslint-disable-next-line no-console
           console.log('ERROR - invalid filing or filing header =', filing)
         }
       }
@@ -257,9 +257,11 @@ export default {
           }
           this.filedItems.push(item)
         } else {
+          // eslint-disable-next-line no-console
           console.log('ERROR - invalid date in filing =', filing)
         }
       } else {
+        // eslint-disable-next-line no-console
         console.log('ERROR - invalid annualReport in filing =', filing)
       }
     },
@@ -293,6 +295,7 @@ export default {
         }
         this.filedItems.push(item)
       } else {
+        // eslint-disable-next-line no-console
         console.log(`ERROR - invalid ${title} in filing =`, filing)
       }
     },
@@ -367,10 +370,12 @@ export default {
             a.remove()
           }
         } else {
+          // eslint-disable-next-line no-console
           console.log('downloadOneDocument() error - null response')
           this.downloadErrorDialog = true
         }
       }).catch(error => {
+        // eslint-disable-next-line no-console
         console.error('loadOneDocument() error =', error)
         this.downloadErrorDialog = true
       })
@@ -422,10 +427,12 @@ export default {
             a.remove()
           }
         } else {
+          // eslint-disable-next-line no-console
           console.log('downloadOneReceipt() error - null response')
           this.downloadErrorDialog = true
         }
       }).catch(error => {
+        // eslint-disable-next-line no-console
         console.error('downloadOneReceipt() error =', error)
         this.downloadErrorDialog = true
       })

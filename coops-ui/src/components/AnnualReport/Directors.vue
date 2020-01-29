@@ -29,7 +29,7 @@
             <v-col cols="3">
               <v-btn class="new-director-btn" outlined color="primary"
                 :disabled="directorEditInProgress"
-                @click="addNewDirector"
+                @click="addNewDirector()"
               >
                 <v-icon>mdi-plus</v-icon>
                 <span>Appoint New Director</span>
@@ -166,7 +166,7 @@
 
                   <div class="form__row form__btns">
                     <v-btn color="error" disabled>Remove</v-btn>
-                    <v-btn class="form-primary-btn" @click="validateNewDirectorForm" color="primary">Done</v-btn>
+                    <v-btn class="form-primary-btn" @click="validateNewDirectorForm()" color="primary">Done</v-btn>
                     <v-btn class="form-cancel-btn" @click="cancelNewDirector()">Cancel</v-btn>
                   </div>
                 </v-form>
@@ -508,7 +508,7 @@ import { WarningPopover } from '@/components/dialogs'
 import BaseAddress from 'sbc-common-components/src/components/BaseAddress.vue'
 
 // Mixins
-import { DateMixin, ExternalMixin, EntityFilterMixin, CommonMixin, DirectorMixin, ResourceLookupMixin } from '@/mixins'
+import { DateMixin, EntityFilterMixin, CommonMixin, DirectorMixin, ResourceLookupMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes } from '@/enums'
@@ -884,10 +884,14 @@ export default class Directors extends Mixins(DateMixin, CommonMixin,
             // save version of directors before changes (deep copy, not reference)
             this.directorsOriginal = JSON.parse(JSON.stringify(directors))
           } else {
-            console.log('getDirectors() error - invalid response data') // eslint-disable-line no-console
+            // eslint-disable-next-line no-console
+            console.log('getDirectors() error - invalid response data')
           }
         })
-        .catch(error => console.error('getDirectors() error =', error)) // eslint-disable-line no-console
+        .catch(error => {
+          // eslint-disable-next-line no-console
+          console.error('getDirectors() error =', error)
+        })
     }
   }
 

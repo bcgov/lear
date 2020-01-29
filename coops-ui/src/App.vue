@@ -25,7 +25,7 @@
       </div>
     </transition>
 
-    <sbc-header ref="sbcHeader" :brandLink="origin" :authURL="authAPIURL" />
+    <sbc-header ref="sbcHeader" />
 
     <div class="app-body">
       <main v-if="dataLoaded">
@@ -82,12 +82,6 @@ export default {
   computed: {
     ...mapState(['triggerDashboardReload']),
 
-    origin () {
-      const root = window.location.origin || ''
-      const path = process.env.VUE_APP_PATH
-      return `${root}/${path}`
-    },
-
     authAPIURL () {
       return sessionStorage.getItem('AUTH_API_URL')
     },
@@ -121,7 +115,8 @@ export default {
         businessId = this.getBusinessId()
         this.updateCurrentDate()
       } catch (error) {
-        console.error(error) // eslint-disable-line no-console
+        // eslint-disable-next-line no-console
+        console.error(error)
         this.dashboardUnavailableDialog = true
         return // do not execute remaining code
       }
@@ -148,11 +143,13 @@ export default {
           this.storeDirectors(data[5])
           this.dataLoaded = true
         }).catch(error => {
-          console.error(error) // eslint-disable-line no-console
+          // eslint-disable-next-line no-console
+          console.error(error)
           this.dashboardUnavailableDialog = true
         })
       }).catch(error => {
-        console.error(error) // eslint-disable-line no-console
+        // eslint-disable-next-line no-console
+        console.error(error)
         this.accountAuthorizationDialog = true
       })
     },

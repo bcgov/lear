@@ -206,7 +206,7 @@
           v-if="isAnnualReportEditable"
           :disabled="!isSaveButtonEnabled || busySaving"
           :loading="saving"
-          @click="onClickSave"
+          @click="onClickSave()"
         >
           <span>Save</span>
         </v-btn>
@@ -214,7 +214,7 @@
           v-if="isAnnualReportEditable"
           :disabled="!isSaveButtonEnabled || busySaving"
           :loading="savingResuming"
-          @click="onClickSaveResume"
+          @click="onClickSaveResume()"
         >
           <span>Save &amp; Resume Later</span>
         </v-btn>
@@ -231,7 +231,7 @@
                 large
                 :disabled="!validated || busySaving"
                 :loading="filingPaying"
-                @click="onClickFilePay"
+                @click="onClickFilePay()"
               >
                 <span>{{ isPayRequired ? "File &amp; Pay" : "File" }}</span>
               </v-btn>
@@ -265,7 +265,7 @@
                 large
                 :disabled="!validated"
                 :loading="filingPaying"
-                @click="onClickFilePay"
+                @click="onClickFilePay()"
               >
                 <span>File &amp; Pay</span>
               </v-btn>
@@ -564,14 +564,17 @@ export default {
               }
             }
           } catch (err) {
+            // eslint-disable-next-line no-console
             console.log(`fetchData() error - ${err.message}, filing =`, filing)
             this.resumeErrorDialog = true
           }
         } else {
+          // eslint-disable-next-line no-console
           console.log('fetchData() error - invalid response =', response)
           this.resumeErrorDialog = true
         }
       }).catch(error => {
+        // eslint-disable-next-line no-console
         console.error('fetchData() error =', error)
         this.resumeErrorDialog = true
       })
@@ -890,6 +893,7 @@ export default {
             }
           })
           .catch(error => {
+            // eslint-disable-next-line no-console
             console.error('fetchData() error =', error)
             this.saveErrorDialog = true
           })

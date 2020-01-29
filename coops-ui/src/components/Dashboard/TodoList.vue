@@ -159,7 +159,8 @@
                       <v-btn color="primary"
                         v-on="on" id="pending-item-menu-activator" :disabled="!item.enabled"
                         class="actions__more-actions__btn px-0"
-                        @click.native.stop  data-test-id="btn-pending-filing-menu"
+                        @click.native.stop
+                        data-test-id="btn-pending-filing-menu"
                       >
                         <v-icon>mdi-menu-down</v-icon>
                       </v-btn>
@@ -242,12 +243,13 @@
 <script>
 import axios from '@/axios-auth'
 import { mapState, mapActions } from 'vuex'
+import Vue2Filters from 'vue2-filters'
 
 // Dialogs
 import { ConfirmDialog, DeleteErrorDialog, CancelPaymentErrorDialog } from '@/components/dialogs'
 
 // Mixins
-import { ExternalMixin, EntityFilterMixin, DateMixin } from '@/mixins'
+import { EntityFilterMixin, DateMixin } from '@/mixins'
 
 // Enums
 import { EntityTypes, FilingStatus } from '@/enums'
@@ -264,7 +266,7 @@ export default {
     CancelPaymentErrorDialog
   },
 
-  mixins: [ExternalMixin, EntityFilterMixin, DateMixin],
+  mixins: [EntityFilterMixin, DateMixin, Vue2Filters.mixin],
 
   data () {
     return {
@@ -312,6 +314,7 @@ export default {
         } else if (task && task.task && task.task.filing) {
           this.loadFilingItem(task)
         } else {
+          // eslint-disable-next-line no-console
           console.log('ERROR - got unknown task =', task)
         }
       })
@@ -347,10 +350,12 @@ export default {
             break
           }
           default:
+            // eslint-disable-next-line no-console
             console.log('ERROR - got unknown todo item =', todo)
             break
         }
       } else {
+        // eslint-disable-next-line no-console
         console.log('ERROR - invalid todo or header in task =', task)
       }
     },
@@ -369,10 +374,12 @@ export default {
             this.loadChangeOfAddress(task)
             break
           default:
+            // eslint-disable-next-line no-console
             console.log('ERROR - got unknown filing item =', filing)
             break
         }
       } else {
+        // eslint-disable-next-line no-console
         console.log('ERROR - invalid filing or header in task =', task)
       }
     },
@@ -398,9 +405,11 @@ export default {
             paymentToken: filing.header.paymentToken || null
           })
         } else {
+          // eslint-disable-next-line no-console
           console.log('ERROR - invalid date in filing =', filing)
         }
       } else {
+        // eslint-disable-next-line no-console
         console.log('ERROR - invalid filing or header or annualReport in task =', task)
       }
     },
@@ -419,6 +428,7 @@ export default {
           paymentToken: filing.header.paymentToken || null
         })
       } else {
+        // eslint-disable-next-line no-console
         console.log('ERROR - invalid filing or header or changeOfDirectors in task =', task)
       }
     },
@@ -437,6 +447,7 @@ export default {
           paymentToken: filing.header.paymentToken || null
         })
       } else {
+        // eslint-disable-next-line no-console
         console.log('ERROR - invalid filing or header or changeOfAddress in task =', task)
       }
     },
@@ -450,7 +461,9 @@ export default {
           this.$router.push({ name: 'annual-report', params: { id: 0 } }) // 0 means "new AR"
           break
         default:
+          // eslint-disable-next-line no-console
           console.log('doFileNow(), invalid type for item =', item)
+          break
       }
     },
 
@@ -475,7 +488,9 @@ export default {
           this.$router.push({ name: 'standalone-addresses', params: { id: item.id } })
           break
         default:
+          // eslint-disable-next-line no-console
           console.log('doFileNow(), invalid type for item =', item)
+          break
       }
     },
 
