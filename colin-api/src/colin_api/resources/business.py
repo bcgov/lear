@@ -29,17 +29,20 @@ API = Namespace('businesses', description='Colin API Services - Businesses')
 
 @cors_preflight('GET')
 @API.route('/<string:identifier>')
-@API.route('/', methods='GET')
+@API.route('', methods=['GET'])
 class BusinessInfo(Resource):
     """Meta information about the overall service."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def get(identifier):
+    def get(identifier=None):
         """Return the complete business info."""
         if not identifier:
-            return Business.get_next_corp_num('BC')
-            # return jsonify({'message': 'Identifier required'}), 404
+            corp_num = Business.get_next_corp_num('BC')
+            if corp_num:
+                return jsonify({'corpNum': corp_num}), 200     
+
+            return jsonify({'message': 'Identifier required'}), 404
 
         try:
             business = Business.find_by_identifier(identifier)

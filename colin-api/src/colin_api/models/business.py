@@ -344,14 +344,29 @@ class Business:
     def get_next_corp_num(cls, corp_type):
         """Retrieve the next available corporation number and advance by one."""
         try:
-            cursor = DB.connection.cursor()
+            con = DB.connection
+            con.begin()
+            cursor = con.cursor()
+            DB.connection.begin()
             cursor.execute(f"""
                 SELECT id_num
                 FROM system_id
                 WHERE id_typ_cd = :corp_type
-            """, corp_type)
+                FOR UPDATE
+            """, corp_type=corp_type)
             corp_num = cursor.fetchone()
+            # TODO: Cache numbers? 
+
+            if (corp_num):
+                cursor.execute(f"""
+                UPDATE system_id
+                SET id_num = :new_num
+                WHERE id_typ_cd = :corp_type
+            """, new_num=corp_num[0]+1, corp_type=corp_type)
+
             return corp_num
         except Exception as err:
             current_app.logger.error(f'Error looking up corp_num')
             raise err
+        finally:
+            con.commit()
