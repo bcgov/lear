@@ -19,10 +19,10 @@ Test-Suite to ensure that incorporation is working as expected.
 import copy
 from http import HTTPStatus
 
-from legal_api.models import Business
-from legal_api.services.authz import STAFF_ROLE
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
+from legal_api.models import Business
+from legal_api.services.authz import STAFF_ROLE
 from tests.unit.services.utils import create_header
 
 
