@@ -383,9 +383,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         legal_filings = []
         filing = self.filing_json
-        for k in filing['filing'].keys():
+        for k in filing['filing'].keys():  # pylint: disable=unsubscriptable-object
             if Filing.FILINGS.get(k, None):
-                legal_filings.append({k: copy.deepcopy(filing['filing'].get(k))})
+                legal_filings.append(
+                    {k: copy.deepcopy(filing['filing'].get(k))})  # pylint: disable=unsubscriptable-object
 
         return legal_filings
 

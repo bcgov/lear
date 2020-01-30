@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Incorporation filing."""
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
-from http import HTTPStatus
+from http import HTTPStatus  # pylint: disable=wrong-import-order
 
 from legal_api.errors import Error
 from legal_api.models import Business  # noqa: F401 pylint: disable=unused-import
