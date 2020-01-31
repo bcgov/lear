@@ -335,7 +335,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Return the filings with statuses in the status array input."""
         filings = db.session.query(Filing). \
             filter(Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
-                   Filing._status == Filing.Status.COMPLETED.value).all()
+                   Filing._status == Filing.Status.COMPLETED.value).order_by(Filing.filing_date).all()
         return filings
 
     @staticmethod
