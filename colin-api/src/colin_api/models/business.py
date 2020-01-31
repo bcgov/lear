@@ -77,6 +77,7 @@ class Business:
                 # if there are no ARs for this coop then use date of incorporation
                 if row['filing_typ_cd'] == 'OTINC' and 'agm_date' not in dates:
                     dates['agm_date'] = row['event_timestmp']
+                    dates['ar_filed_date'] = row['event_timestmp']
 
             dates_by_corp_num.append(dates)
         return dates_by_corp_num
