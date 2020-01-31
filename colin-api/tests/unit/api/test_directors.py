@@ -115,7 +115,7 @@ def test_post_invalid_cod_fail(client):
     fake_filing = FILING_HEADER
     fake_filing['filing']['header']['name'] = 'changeOfDirectors'
     fake_filing['filing']['business']['identifier'] = 'CP0001965'
-    fake_filing['filing']['changeOfDirectors'] = CHANGE_OF_DIRECTORS
+    fake_filing['filing']['changeOfDirectors'] = {}
 
     rv = client.post('/api/v1/businesses/CP0001965/filings/changeOfDirectors',
                      data=json.dumps(fake_filing), headers=headers)
