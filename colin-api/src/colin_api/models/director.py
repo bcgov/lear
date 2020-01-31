@@ -62,16 +62,17 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
             return None
 
         directors_list = []
+        description = cursor.description
         for row in directors:
             director = Director()
             director.title = ''
-            row = dict(zip([x[0].lower() for x in cursor.description], row))
+            row = dict(zip([x[0].lower() for x in description], row))
             director.officer = {'firstName': row['first_nme'].strip() if row['first_nme'] else '',
                                 'lastName': row['last_nme'].strip() if row['last_nme'] else '',
                                 'middleInitial': row['middle_nme'] if row['middle_nme'] else ''}
 
-            director.delivery_address = Address.get_by_address_id(row['delivery_addr_id']).as_dict()
-            director.mailing_address = Address.get_by_address_id(row['mailing_addr_id']).as_dict() \
+            director.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
+            director.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
                 if row['mailing_addr_id'] else director.delivery_address
             director.appointment_date = convert_to_json_date(row['appointment_dt']) if row['appointment_dt'] else None
             director.cessation_date = convert_to_json_date(row['cessation_dt']) if row['cessation_dt'] else None
@@ -87,13 +88,14 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
         return directors_list
 
     @classmethod
-    def get_current(cls, identifier: str = None):
+    def get_current(cls, cursor, identifier: str = None):
         """Return current directors for given identifier."""
         if not identifier:
             return None
 
         try:
-            cursor = DB.connection.cursor()
+            if not cursor:
+                cursor = DB.connection.cursor()
             cursor.execute(
                 """
                 select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,
@@ -115,13 +117,14 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
         return directors_list
 
     @classmethod
-    def get_by_event(cls, identifier: str = None, event_id: int = None):
+    def get_by_event(cls, cursor, identifier: str = None, event_id: int = None):
         """Get all directors active or deleted during this event."""
         if not event_id:
             return None
 
         try:
-            cursor = DB.connection.cursor()
+            if not cursor:
+                cursor = DB.connection.cursor()
             cursor.execute(
                 """
                 select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,

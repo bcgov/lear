@@ -103,6 +103,7 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
                           f'{filing_type}', json=filing)
         if not r or r.status_code != 201:
             app.logger.error(f'Filing {filing_id} not created in colin {filing["filing"]["business"]["identifier"]}.')
+            print(r.json())
             # raise Exception
             return None
         # if it's an AR containing multiple filings it will have multiple colinIds
