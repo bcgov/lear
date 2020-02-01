@@ -201,26 +201,39 @@ class Business:
             raise err
 
     @classmethod
-    def update_corporation(cls, cursor, corp_num: str = None, date: str = None):
+    def update_corporation(cls, cursor, corp_num: str = None, date: str = None, annual_report: bool = False):
         """Update corporation record.
 
         :param cursor: oracle cursor
         :param corp_num: (str) corporation number
         :param date: (str) last agm date
+        :param annual_report: (bool) whether or not this was an annual report
         """
         try:
-            if date:
-                cursor.execute("""
-                    UPDATE corporation
-                    SET
-                        LAST_AR_FILED_DT = sysdate,
-                        LAST_AGM_DATE = TO_DATE(:agm_date, 'YYYY-mm-dd'),
-                        LAST_LEDGER_DT = sysdate
-                    WHERE corp_num = :corp_num
-                    """,
-                               agm_date=date,
-                               corp_num=corp_num
-                               )
+            if annual_report:
+                if date:
+                    cursor.execute("""
+                        UPDATE corporation
+                        SET
+                            LAST_AR_FILED_DT = sysdate,
+                            LAST_AGM_DATE = TO_DATE(:agm_date, 'YYYY-mm-dd'),
+                            LAST_LEDGER_DT = sysdate
+                        WHERE corp_num = :corp_num
+                        """,
+                                   agm_date=date,
+                                   corp_num=corp_num
+                                   )
+                else:
+                    cursor.execute("""
+                        UPDATE corporation
+                        SET
+                            LAST_AR_FILED_DT = sysdate,
+                            LAST_LEDGER_DT = sysdate
+                        WHERE corp_num = :corp_num
+                        """,
+                                   agm_date=date,
+                                   corp_num=corp_num
+                                   )
 
             else:
                 cursor.execute("""

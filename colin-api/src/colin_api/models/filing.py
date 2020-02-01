@@ -708,7 +708,7 @@ class Filing:
                 cls._create_filing(cursor, event_id, corp_num, ar_date, agm_date, filing_type_cd)
 
                 # update corporation record
-                Business.update_corporation(cursor, corp_num, agm_date)
+                Business.update_corporation(cursor, corp_num, agm_date, True)
 
                 # update corp_state TO ACT (active) if it is in good standing. From CRUD:
                 # - the current corp_state != 'ACT' and,
