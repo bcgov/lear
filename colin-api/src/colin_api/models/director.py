@@ -250,7 +250,6 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
                            last_nme=director['officer']['lastName'],
                            middle_nme=director['officer'].get('middleInitial', ''),
                            first_nme=director['officer']['firstName'],
-                           business_nme=business['business']['legalName'],
                            bus_company_num=business['business']['businessNumber']
                            )
         except Exception as err:
