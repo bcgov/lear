@@ -103,7 +103,6 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
                           f'{filing_type}', json=filing)
         if not r or r.status_code != 201:
             app.logger.error(f'Filing {filing_id} not created in colin {filing["filing"]["business"]["identifier"]}.')
-            print(r.json())
             # raise Exception
             return None
         # if it's an AR containing multiple filings it will have multiple colinIds
@@ -132,6 +131,14 @@ def clean_none(dictionary: dict = None):
             dictionary[key] = ''
 
 
+def is_bcomp(identifier: str):
+    return 'bc' in identifier.lower()
+
+
+def is_test_coop(identifier: str):
+    return 'CP1' in identifier
+
+
 def run():
     application = create_app()
     corps_with_failed_filing = []
@@ -150,9 +157,9 @@ def run():
             if not filings:
                 application.logger.debug(f'No completed filings to send to colin.')
             for filing in filings:
-                print(filing['filing']['header']['date'])
                 filing_id = filing['filingId']
-                if filing["filing"]["business"]["identifier"] in corps_with_failed_filing:
+                identifier = filing['filing']['business']['identifier']
+                if identifier in corps_with_failed_filing or is_bcomp(identifier) or is_test_coop(identifier):
                     application.logger.debug(f'Skipping filing {filing_id} for'
                                              f' {filing["filing"]["business"]["identifier"]}.')
                 else:
