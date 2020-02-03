@@ -65,7 +65,7 @@ def test_post_duplicate_incorporation(session, client, jwt):
                      headers=create_header(jwt, [STAFF_ROLE], nr_number))
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['message'] == 'Incorporation filing for NR1234567 already exists'
+    assert rv.json['errors'][0]['message'] == 'Incorporation filing for NR1234567 already exists'
 
 
 def test_update_incorporation_filing(session, client, jwt):
@@ -121,7 +121,7 @@ def test_update_incorporation_mismatch(session, client, jwt):
                     headers=create_header(jwt, [STAFF_ROLE], nr_bad_number))
     # Assert that validator does not allow mismatches
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json[0]['error'] == 'Business Identifier does not match the identifier in filing.'
+    assert rv.json['errors'][0]['error'] == 'Business Identifier does not match the identifier in filing.'
 
 
 def test_get_incorporation_filings(session, client, jwt):
