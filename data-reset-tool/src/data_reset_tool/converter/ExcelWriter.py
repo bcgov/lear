@@ -64,6 +64,7 @@ class ExcelWriter:  # pylint: disable=too-few-public-methods
 
         business_address_sheet_headings = [
             'business',
+            'office_type',
             'address_type',
             'street',
             'street_additional',
