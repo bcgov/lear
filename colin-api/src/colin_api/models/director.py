@@ -220,6 +220,8 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
             mailing_addr_id = Address.create_new_address(cursor=cursor, address_info=director['mailingAddress'])
         # create new corp party entry
         try:
+
+            print(1)
             cursor.execute("""select noncorp_party_seq.NEXTVAL from dual""")
             row = cursor.fetchone()
             corp_party_id = int(row[0])
