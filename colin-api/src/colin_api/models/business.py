@@ -231,7 +231,6 @@ class Business:
                             LAST_LEDGER_DT = sysdate
                         WHERE corp_num = :corp_num
                         """,
-                                   agm_date=date,
                                    corp_num=corp_num
                                    )
 
