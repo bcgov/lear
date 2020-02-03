@@ -212,8 +212,6 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
         if not director:
             current_app.logger.error('Error in director: No director data given to create director.')
 
-        # validate appointment + cessation dates
-
         # create new address
         delivery_addr_id = Address.create_new_address(cursor=cursor, address_info=director['deliveryAddress'])
         mailing_addr_id = delivery_addr_id
@@ -222,6 +220,8 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
             mailing_addr_id = Address.create_new_address(cursor=cursor, address_info=director['mailingAddress'])
         # create new corp party entry
         try:
+
+            print(1)
             cursor.execute("""select noncorp_party_seq.NEXTVAL from dual""")
             row = cursor.fetchone()
             corp_party_id = int(row[0])
@@ -232,10 +232,10 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
             cursor.execute("""
                 insert into corp_party (corp_party_id, mailing_addr_id, delivery_addr_id, corp_num, party_typ_cd,
                 start_event_id, end_event_id, appointment_dt, cessation_dt, last_nme, middle_nme, first_nme,
-                business_nme, bus_company_num)
+                bus_company_num)
                 values (:corp_party_id, :mailing_addr_id, :delivery_addr_id, :corp_num, :party_typ_cd, :start_event_id,
                 :end_event_id, TO_DATE(:appointment_dt, 'YYYY-mm-dd'), TO_DATE(:cessation_dt, 'YYYY-mm-dd'), :last_nme,
-                :middle_nme, :first_nme, :business_nme, :bus_company_num)
+                :middle_nme, :first_nme, :bus_company_num)
                 """,
                            corp_party_id=corp_party_id,
                            mailing_addr_id=mailing_addr_id,
