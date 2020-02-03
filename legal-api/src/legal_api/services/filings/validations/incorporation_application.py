@@ -12,15 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Incorporation filing."""
+import json
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 
 from legal_api.errors import Error
 from legal_api.models import Business  # noqa: F401 pylint: disable=unused-import
 
+import pycountry
+from flask_babel import _
+
 
 def validate(business, incorporation_json):
-    """Validate the Change ofAddress filing."""
+    """Validate the Incorporation filing."""
     if not business or not incorporation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
@@ -30,6 +34,44 @@ def validate(business, incorporation_json):
     if business.identifier != temp_identifier:
         msg.append({'error': babel('Business Identifier does not match the identifier in filing.')})
 
+    err = validate_offices(incorporation_json)
+    if err:
+        msg.append(err.msg)
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
+    return None
+
+
+def validate_offices(incorporation_json) -> Error:
+    """Validate the office addresses of the incorporation filing."""
+    offices_array = incorporation_json['filing']['incorporationApplication']['offices']
+    addresses = json.loads(offices_array)
+    msg = []
+
+    for item in addresses.keys():
+        for k, v in addresses[item].items():
+            region = v['addressRegion']
+            country = v['addressCountry']
+
+            if region != 'BC':
+                path = '/filing/incorporationApplication/offices/%s/%s/addressRegion' % (
+                    item, k
+                )
+                msg.append({'error': _("Address Region must be 'BC'."),
+                            'path': path})
+
+            try:
+                country = pycountry.countries.search_fuzzy(country)[0].alpha_2
+                if country != 'CA':
+                    raise LookupError
+            except LookupError:
+                err_path = '/filing/incorporationApplication/offices/%s/%s/addressCountry' % (
+                    item, k
+                )
+                msg.append({'error': _("Address Country must be 'CA'."),
+                            'path': err_path})
+    if msg:
+        return Error(HTTPStatus.BAD_REQUEST, msg)
+
     return None
