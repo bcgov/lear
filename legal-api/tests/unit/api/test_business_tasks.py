@@ -79,9 +79,13 @@ def test_get_tasks_no_filings(session, client):
     identifier = 'CP7654321'
     factory_business(identifier, founding_date='2017-02-01 00:00:00-00')  # incorporation in 2017
 
+    # To-do are all years from the year after incorporation until this year
+    this_year = datetime.now().year
+    num_filings_owed = this_year - 2017
+
     rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
     assert rv.status_code == HTTPStatus.OK
-    assert 2 == len(rv.json.get('tasks'))  # To-do are 2018, 2019
+    assert num_filings_owed == len(rv.json.get('tasks'))
 
 
 def test_bcorps_get_tasks_no_filings(session, client):

@@ -49,20 +49,28 @@ class BusinessResource(Resource):
     @cors.crossdomain(origin='*')
     def post():
         """Create an incorporation filing, return the filing."""
-        return BusinessResource._save_incorporation_filing(request.get_json(), request)
+        return BusinessResource.put()
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def put(identifier):
+    def put(identifier=None):
         """Edit an incorporation filing. Return the filing."""
-        return BusinessResource._save_incorporation_filing(request.get_json(), request, identifier)
+        filing, err_msg, err_code = BusinessResource._save_incorporation_filing(request.get_json(), request, identifier)
+        reply = filing.json if filing else {}
+
+        if isinstance(err_msg, list):
+            reply['errors'] = [err for err in err_msg]
+        elif err_msg:
+            reply['errors'] = [err_msg, ]
+
+        return jsonify(reply), err_code
 
     @staticmethod
     def _save_incorporation_filing(incorporation_body, client_request, business_id=None):
         """Create or update an incorporation filing."""
         # Check that there is a JSON filing
         if not incorporation_body:
-            return {'message': f'No filing json data in body of post for incorporation'}, \
+            return None, {'message': f'No filing json data in body of post for incorporation'}, \
                 HTTPStatus.BAD_REQUEST
 
         temp_corp_num = incorporation_body['filing']['incorporationApplication']['nameRequest']['nrNumber']
@@ -71,14 +79,14 @@ class BusinessResource(Resource):
         if business_id:
             business = Business.find_by_identifier(business_id)
             if not business:
-                return {'message': f'No incorporation filing exists for id {business_id}'}, \
+                return None, {'message': f'No incorporation filing exists for id {business_id}'}, \
                     HTTPStatus.BAD_REQUEST
         else:
             # Ensure there are no current businesses with the NR/random identifier
             business = Business.find_by_identifier(temp_corp_num)
 
             if business:
-                return {'message': f'Incorporation filing for {temp_corp_num} already exists'}, \
+                return None, {'message': f'Incorporation filing for {temp_corp_num} already exists'}, \
                     HTTPStatus.BAD_REQUEST
             # Create an empty business record, to be updated by the filer
             business = Business()
@@ -88,7 +96,7 @@ class BusinessResource(Resource):
         # Ensure the business identifier matches the NR in the filing
         err = validate(business, incorporation_body)
         if err:
-            return jsonify(err.msg), err.code
+            return None, err.msg, err.code
 
         filing = Filing.get_filings_by_type(business.id, 'incorporationApplication')
 
@@ -98,10 +106,9 @@ class BusinessResource(Resource):
             filing = Filing()
             filing.business_id = business.id
         elif len(filing) > 1:
-            return {'message': 'more than one incorporation filing found for corp'}, HTTPStatus.BAD_REQUEST
+            return None, {'message': 'more than one incorporation filing found for corp'}, HTTPStatus.BAD_REQUEST
         else:
             filing = filing[0]
         filing.filing_json = incorporation_body
         filing.save()
-        return jsonify(filing.json),\
-            (HTTPStatus.CREATED if (client_request.method == 'POST') else HTTPStatus.ACCEPTED)
+        return filing, None, (HTTPStatus.CREATED if (client_request.method == 'POST') else HTTPStatus.ACCEPTED)
