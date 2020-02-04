@@ -67,23 +67,25 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
             director = Director()
             director.title = ''
             row = dict(zip([x[0].lower() for x in description], row))
-            director.officer = {'firstName': row['first_nme'].strip() if row['first_nme'] else '',
-                                'lastName': row['last_nme'].strip() if row['last_nme'] else '',
-                                'middleInitial': row['middle_nme'] if row['middle_nme'] else ''}
+            if row['appointment_dt']:
+                director.officer = {'firstName': row['first_nme'].strip() if row['first_nme'] else '',
+                                    'lastName': row['last_nme'].strip() if row['last_nme'] else '',
+                                    'middleInitial': row['middle_nme'] if row['middle_nme'] else ''}
 
-            director.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
-            director.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
-                if row['mailing_addr_id'] else director.delivery_address
-            director.appointment_date = convert_to_json_date(row['appointment_dt']) if row['appointment_dt'] else None
-            director.cessation_date = convert_to_json_date(row['cessation_dt']) if row['cessation_dt'] else None
-            director.start_event_id = row['start_event_id'] if row['start_event_id'] else ''
-            director.end_event_id = row['end_event_id'] if row['end_event_id'] else ''
+                director.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
+                director.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
+                    if row['mailing_addr_id'] else director.delivery_address
+                director.appointment_date =\
+                    convert_to_json_date(row['appointment_dt']) if row['appointment_dt'] else None
+                director.cessation_date = convert_to_json_date(row['cessation_dt']) if row['cessation_dt'] else None
+                director.start_event_id = row['start_event_id'] if row['start_event_id'] else ''
+                director.end_event_id = row['end_event_id'] if row['end_event_id'] else ''
 
-            # this is in case the director was not ceased during this event
-            if event_id and director.end_event_id and director.end_event_id > event_id:
-                director.cessation_date = None
+                # this is in case the director was not ceased during this event
+                if event_id and director.end_event_id and director.end_event_id > event_id:
+                    director.cessation_date = None
 
-            directors_list.append(director)
+                directors_list.append(director)
 
         return directors_list
 
