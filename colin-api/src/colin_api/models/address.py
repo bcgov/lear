@@ -87,13 +87,14 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
         return address_obj
 
     @classmethod
-    def get_by_address_id(cls, address_id: str = None):
+    def get_by_address_id(cls, cursor, address_id: str = None):
         """Return single address associated with given addr_id."""
         if not address_id:
             return None
 
         try:
-            cursor = DB.connection.cursor()
+            if not cursor:
+                cursor = DB.connection.cursor()
             cursor.execute("""
                 select ADDR_ID, ADDR_LINE_1, ADDR_LINE_2, ADDR_LINE_3, CITY, PROVINCE, COUNTRY_TYPE.FULL_DESC,
                 POSTAL_CD, DELIVERY_INSTRUCTIONS

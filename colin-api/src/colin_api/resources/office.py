@@ -21,6 +21,7 @@ from flask_restplus import Resource, cors
 
 from colin_api.exceptions import GenericException
 from colin_api.models import Office
+from colin_api.models.filing import DB
 from colin_api.resources.business import API
 from colin_api.utils.util import cors_preflight
 
@@ -38,8 +39,9 @@ class OfficeInfo(Resource):
             return jsonify({'message': 'Identifier required'}), 404
 
         try:
+            cursor = DB.connection.cursor()
             offices = {}
-            office_obj_list = Office.get_current(identifier=identifier)
+            office_obj_list = Office.get_current(cursor=cursor, identifier=identifier)
             for office_obj in office_obj_list:
                 if office_obj.office_type not in offices.keys():
                     offices.update(office_obj.as_dict())

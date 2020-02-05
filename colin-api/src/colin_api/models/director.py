@@ -62,38 +62,42 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
             return None
 
         directors_list = []
+        description = cursor.description
         for row in directors:
             director = Director()
             director.title = ''
-            row = dict(zip([x[0].lower() for x in cursor.description], row))
-            director.officer = {'firstName': row['first_nme'].strip() if row['first_nme'] else '',
-                                'lastName': row['last_nme'].strip() if row['last_nme'] else '',
-                                'middleInitial': row['middle_nme'] if row['middle_nme'] else ''}
+            row = dict(zip([x[0].lower() for x in description], row))
+            if row['appointment_dt']:
+                director.officer = {'firstName': row['first_nme'].strip() if row['first_nme'] else '',
+                                    'lastName': row['last_nme'].strip() if row['last_nme'] else '',
+                                    'middleInitial': row['middle_nme'] if row['middle_nme'] else ''}
 
-            director.delivery_address = Address.get_by_address_id(row['delivery_addr_id']).as_dict()
-            director.mailing_address = Address.get_by_address_id(row['mailing_addr_id']).as_dict() \
-                if row['mailing_addr_id'] else director.delivery_address
-            director.appointment_date = convert_to_json_date(row['appointment_dt']) if row['appointment_dt'] else None
-            director.cessation_date = convert_to_json_date(row['cessation_dt']) if row['cessation_dt'] else None
-            director.start_event_id = row['start_event_id'] if row['start_event_id'] else ''
-            director.end_event_id = row['end_event_id'] if row['end_event_id'] else ''
+                director.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
+                director.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
+                    if row['mailing_addr_id'] else director.delivery_address
+                director.appointment_date =\
+                    convert_to_json_date(row['appointment_dt']) if row['appointment_dt'] else None
+                director.cessation_date = convert_to_json_date(row['cessation_dt']) if row['cessation_dt'] else None
+                director.start_event_id = row['start_event_id'] if row['start_event_id'] else ''
+                director.end_event_id = row['end_event_id'] if row['end_event_id'] else ''
 
-            # this is in case the director was not ceased during this event
-            if event_id and director.end_event_id and director.end_event_id > event_id:
-                director.cessation_date = None
+                # this is in case the director was not ceased during this event
+                if event_id and director.end_event_id and director.end_event_id > event_id:
+                    director.cessation_date = None
 
-            directors_list.append(director)
+                directors_list.append(director)
 
         return directors_list
 
     @classmethod
-    def get_current(cls, identifier: str = None):
+    def get_current(cls, cursor, identifier: str = None):
         """Return current directors for given identifier."""
         if not identifier:
             return None
 
         try:
-            cursor = DB.connection.cursor()
+            if not cursor:
+                cursor = DB.connection.cursor()
             cursor.execute(
                 """
                 select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,
@@ -115,13 +119,14 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
         return directors_list
 
     @classmethod
-    def get_by_event(cls, identifier: str = None, event_id: int = None):
+    def get_by_event(cls, cursor, identifier: str = None, event_id: int = None):
         """Get all directors active or deleted during this event."""
         if not event_id:
             return None
 
         try:
-            cursor = DB.connection.cursor()
+            if not cursor:
+                cursor = DB.connection.cursor()
             cursor.execute(
                 """
                 select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,
@@ -209,8 +214,6 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
         if not director:
             current_app.logger.error('Error in director: No director data given to create director.')
 
-        # validate appointment + cessation dates
-
         # create new address
         delivery_addr_id = Address.create_new_address(cursor=cursor, address_info=director['deliveryAddress'])
         mailing_addr_id = delivery_addr_id
@@ -229,10 +232,10 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
             cursor.execute("""
                 insert into corp_party (corp_party_id, mailing_addr_id, delivery_addr_id, corp_num, party_typ_cd,
                 start_event_id, end_event_id, appointment_dt, cessation_dt, last_nme, middle_nme, first_nme,
-                business_nme, bus_company_num)
+                bus_company_num)
                 values (:corp_party_id, :mailing_addr_id, :delivery_addr_id, :corp_num, :party_typ_cd, :start_event_id,
                 :end_event_id, TO_DATE(:appointment_dt, 'YYYY-mm-dd'), TO_DATE(:cessation_dt, 'YYYY-mm-dd'), :last_nme,
-                :middle_nme, :first_nme, :business_nme, :bus_company_num)
+                :middle_nme, :first_nme, :bus_company_num)
                 """,
                            corp_party_id=corp_party_id,
                            mailing_addr_id=mailing_addr_id,
@@ -247,7 +250,6 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
                            last_nme=director['officer']['lastName'],
                            middle_nme=director['officer'].get('middleInitial', ''),
                            first_nme=director['officer']['firstName'],
-                           business_nme=business['business']['legalName'],
                            bus_company_num=business['business']['businessNumber']
                            )
         except Exception as err:

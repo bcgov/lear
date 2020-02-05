@@ -57,7 +57,7 @@ class EntityName:
         return name_obj
 
     @classmethod
-    def get_current(cls, identifier: str = None):
+    def get_current(cls, cursor, identifier: str = None):
         """Get current entity name."""
         if not identifier:
             return None
@@ -69,7 +69,8 @@ class EntityName:
             """)
 
         try:
-            cursor = DB.connection.cursor()
+            if not cursor:
+                cursor = DB.connection.cursor()
             cursor.execute(querystring, identifier=identifier)
 
             return cls._create_name_obj(cursor=cursor, identifier=identifier)
@@ -79,7 +80,7 @@ class EntityName:
             raise err
 
     @classmethod
-    def get_by_event(cls, identifier: str = None, event_id: str = None):
+    def get_by_event(cls, cursor, identifier: str = None, event_id: str = None):
         """Get the entity name corresponding with the given event id."""
         if not identifier or not event_id:
             return None
@@ -91,7 +92,8 @@ class EntityName:
             """)
 
         try:
-            cursor = DB.connection.cursor()
+            if not cursor:
+                cursor = DB.connection.cursor()
             cursor.execute(querystring, identifier=identifier, event_id=event_id)
 
             return cls._create_name_obj(cursor=cursor, identifier=identifier)

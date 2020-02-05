@@ -131,9 +131,17 @@ def clean_none(dictionary: dict = None):
             dictionary[key] = ''
 
 
+def is_bcomp(identifier: str):
+    return 'bc' in identifier.lower()
+
+
+def is_test_coop(identifier: str):
+    return 'CP1' in identifier
+
+
 def run():
     application = create_app()
-
+    corps_with_failed_filing = []
     with application.app_context():
         try:
             # get updater-job token
@@ -150,14 +158,20 @@ def run():
                 application.logger.debug(f'No completed filings to send to colin.')
             for filing in filings:
                 filing_id = filing['filingId']
-                colin_ids = send_filing(app=application, filing=filing, filing_id=filing_id)
-                update = None
-                if colin_ids:
-                    update = update_colin_id(app=application, filing_id=filing_id, colin_ids=colin_ids, token=token)
-                if update:
-                    application.logger.debug(f'Successfully updated filing {filing_id}')
+                identifier = filing['filing']['business']['identifier']
+                if identifier in corps_with_failed_filing or is_bcomp(identifier) or is_test_coop(identifier):
+                    application.logger.debug(f'Skipping filing {filing_id} for'
+                                             f' {filing["filing"]["business"]["identifier"]}.')
                 else:
-                    application.logger.error(f'Failed to update filing {filing_id} with colin event id.')
+                    colin_ids = send_filing(app=application, filing=filing, filing_id=filing_id)
+                    update = None
+                    if colin_ids:
+                        update = update_colin_id(app=application, filing_id=filing_id, colin_ids=colin_ids, token=token)
+                    if update:
+                        application.logger.debug(f'Successfully updated filing {filing_id}')
+                    else:
+                        corps_with_failed_filing.append(filing["filing"]["business"]["identifier"])
+                        application.logger.error(f'Failed to update filing {filing_id} with colin event id.')
 
         except Exception as err:
             application.logger.error(err)

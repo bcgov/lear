@@ -20,6 +20,7 @@ from flask_restplus import Resource, cors
 
 from colin_api.exceptions import GenericException
 from colin_api.models import Director
+from colin_api.models.filing import DB
 from colin_api.resources.business import API
 from colin_api.utils.util import cors_preflight
 
@@ -37,7 +38,8 @@ class DirectorsInfo(Resource):
             return jsonify({'message': 'Identifier required'}), 404
 
         try:
-            directors = Director.get_current(identifier)
+            cursor = DB.connection.cursor()
+            directors = Director.get_current(cursor=cursor, identifier=identifier)
             if not directors:
                 return jsonify({'message': f'directors for {identifier} not found'}), 404
             if len(directors) < 3:
