@@ -243,7 +243,7 @@
 <script>
 import axios from '@/axios-auth'
 import { mapState, mapActions } from 'vuex'
-import Vue2Filters from 'vue2-filters'
+import Vue2Filters from 'vue2-filters' // needed for orderBy
 
 // Dialogs
 import { ConfirmDialog, DeleteErrorDialog, CancelPaymentErrorDialog } from '@/components/dialogs'

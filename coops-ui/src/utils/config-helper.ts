@@ -9,24 +9,14 @@ export default {
   fetchConfig () {
     const origin = window.location.origin
     const vueAppPath = process.env.VUE_APP_PATH
-    const vueAppAuthPath = process.env.VUE_APP_AUTH_PATH
-    const vueAppSigninPath = process.env.VUE_APP_SIGNIN_PATH
 
-    if (!vueAppPath || !vueAppAuthPath) {
+    if (!vueAppPath) {
       throw new Error('failed to get env variables')
     }
 
     const baseUrl = `${origin}/${vueAppPath}/`
     sessionStorage.setItem('BASE_URL', baseUrl)
     console.log('Set Base URL to: ' + baseUrl)
-
-    const authUrl = `${origin}/${vueAppAuthPath}/`
-    sessionStorage.setItem('AUTH_URL', authUrl)
-    console.log('Set Auth URL to: ' + authUrl)
-
-    const signinUrl = `${origin}/${vueAppSigninPath}/`
-    sessionStorage.setItem('SIGNIN_URL', signinUrl)
-    console.log('Set Signin URL to: ' + signinUrl)
 
     const url = `/${vueAppPath}/config/configuration.json`
     const headers = {
@@ -38,6 +28,18 @@ export default {
     return axios
       .get(url, { headers })
       .then(response => {
+        const signinUrl = response.data['SIGNIN_URL']
+        sessionStorage.setItem('SIGNIN_URL', signinUrl)
+        console.log('Set Signin URL to: ' + signinUrl)
+
+        const businessesUrl = response.data['BUSINESSES_URL']
+        sessionStorage.setItem('BUSINESSES_URL', businessesUrl)
+        console.log('Set Businesses URL to: ' + businessesUrl)
+
+        const authUrl = response.data['AUTH_URL']
+        sessionStorage.setItem('AUTH_URL', authUrl)
+        console.log('Set Auth URL to: ' + authUrl)
+
         const apiUrl = response.data['API_URL']
         axios.defaults.baseURL = apiUrl
         console.info('Set Legal API URL to: ' + apiUrl)
