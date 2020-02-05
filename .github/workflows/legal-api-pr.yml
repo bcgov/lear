@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: [3.7,3.8]
 
     services:
       postgres:
@@ -47,10 +47,6 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
-      - name: env
-        working-directory: ./legal-api
-        run: |
-          env
       - name: Install dependencies
         working-directory: ./legal-api
         run: |
