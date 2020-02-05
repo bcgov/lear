@@ -1,1 +1,0 @@
-git+https://github.com/bcgov/lear.git#egg=registry_schemas&subdirectory=schemas
