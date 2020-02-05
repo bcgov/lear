@@ -863,8 +863,8 @@ describe('AnnualReport - Part 3 - Submitting', () => {
   it('saves a new filing and redirects to Pay URL when this is a new AR and the File & Pay button ' +
     'is clicked', async () => {
     // set necessary session variables
-    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+    sessionStorage.setItem('BASE_URL', `${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', 'auth/')
 
     const localVue = createLocalVue()
     localVue.use(VueRouter)
@@ -924,8 +924,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
     await vm.onClickFilePay()
 
     // verify redirection
-    const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
-      encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
+    const payURL = 'auth/makepayment/321/' + encodeURIComponent('cooperatives/dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
     wrapper.destroy()
@@ -934,8 +933,8 @@ describe('AnnualReport - Part 3 - Submitting', () => {
   it('updates an existing filing and redirects to Pay URL when this is a draft AR and the File & Pay button ' +
     'is clicked', async () => {
     // set necessary session variables
-    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+    sessionStorage.setItem('BASE_URL', `${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', 'auth/')
 
     const localVue = createLocalVue()
     localVue.use(VueRouter)
@@ -997,8 +996,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
     await vm.onClickFilePay()
 
     // verify redirection
-    const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
-      encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
+    const payURL = 'auth/makepayment/321/' + encodeURIComponent('cooperatives/dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
     wrapper.destroy()
@@ -1073,8 +1071,8 @@ describe('AnnualReport - Part 3B - Submitting - BCOMP', () => {
   it('saves a new filing and redirects to Pay URL when this is a new AR and the File & Pay button ' +
     'is clicked', async () => {
     // set necessary session variables
-    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+    sessionStorage.setItem('BASE_URL', `${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', 'auth/')
 
     const localVue = createLocalVue()
     localVue.use(VueRouter)
@@ -1119,8 +1117,7 @@ describe('AnnualReport - Part 3B - Submitting - BCOMP', () => {
     await flushPromises()
 
     // verify redirection
-    const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
-      encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
+    const payURL = 'auth/makepayment/321/' + encodeURIComponent('cooperatives/dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
     wrapper.destroy()
