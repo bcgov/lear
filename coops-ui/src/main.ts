@@ -6,6 +6,7 @@ import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
 import Vuelidate from 'vuelidate'
 import Affix from 'vue-affix'
+import Vue2Filters from 'vue2-filters' // needed by SbcFeeSummary
 import configHelper from '@/utils/config-helper'
 import router from '@/router'
 import store from '@/store/store'
@@ -23,6 +24,7 @@ Vue.config.productionTip = false
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
 Vue.use(Affix)
+Vue.use(Vue2Filters)
 
 const vuetify = new Vuetify({ iconfont: 'mdi' })
 
@@ -35,9 +37,10 @@ configHelper.fetchConfig()
     if (!haveKcTokens()) {
       console.info('Redirecting to Signin URL...') // eslint-disable-line no-console
       const signinUrl: string = sessionStorage.getItem('SIGNIN_URL') || ''
-      const returnUrl: string = encodeURIComponent(window.location.href)
-      // assume Auth URL is always reachable
-      signinUrl && returnUrl && window.location.assign(signinUrl + returnUrl)
+      const businessesUrl: string = sessionStorage.getItem('BUSINESSES_URL') || ''
+      // assume Signin URL is always reachable
+      // append Businesses URL to return to
+      signinUrl && businessesUrl && window.location.assign(signinUrl + encodeURIComponent(businessesUrl))
       return // do not execute remaining code
     }
 

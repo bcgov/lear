@@ -547,8 +547,8 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
     store.state.entityType = EntityTypes.COOP
 
     // set necessary session variables
-    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+    sessionStorage.setItem('BASE_URL', `${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', 'auth/')
 
     const $route = { params: { id: 0 } } // new filing id
     const wrapper = mount(StandaloneDirectorsFiling, {
@@ -602,8 +602,7 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
     // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
     // verify redirection
-    const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
-      encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
+    const payURL = 'auth/makepayment/321/' + encodeURIComponent('cooperatives/dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
     wrapper.destroy()
@@ -615,8 +614,8 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
     store.state.entityType = EntityTypes.BCOMP
 
     // set necessary session variables
-    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+    sessionStorage.setItem('BASE_URL', `${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', 'auth/')
 
     const $route = { params: { id: 0 } } // new filing id
     const wrapper = mount(StandaloneDirectorsFiling, {
@@ -667,8 +666,7 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
     // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
     // verify redirection
-    const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
-      encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
+    const payURL = 'auth/makepayment/321/' + encodeURIComponent('cooperatives/dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
     wrapper.destroy()
@@ -677,8 +675,8 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
   it('updates an existing filing and redirects to Pay URL when this is a draft filing and the File & Pay button ' +
     'is clicked', async () => {
     // set necessary session variables
-    sessionStorage.setItem('BASE_URL', `myhost/${process.env.VUE_APP_PATH}/`)
-    sessionStorage.setItem('AUTH_URL', `myhost/${process.env.VUE_APP_AUTH_PATH}/`)
+    sessionStorage.setItem('BASE_URL', `${process.env.VUE_APP_PATH}/`)
+    sessionStorage.setItem('AUTH_URL', 'auth/')
 
     const $route = { params: { id: 123 } } // existing filing id
     const wrapper = mount(StandaloneDirectorsFiling, {
@@ -732,8 +730,7 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
     // expect(tooltipText).toContain('There is no opportunity to change information beyond this point.')
 
     // verify redirection
-    const payURL = 'myhost/cooperatives/auth/makepayment/321/' +
-      encodeURIComponent('myhost/cooperatives/dashboard?filing_id=123')
+    const payURL = 'auth/makepayment/321/' + encodeURIComponent('cooperatives/dashboard?filing_id=123')
     expect(window.location.assign).toHaveBeenCalledWith(payURL)
 
     wrapper.destroy()
