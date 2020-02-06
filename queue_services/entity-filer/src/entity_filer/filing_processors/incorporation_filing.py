@@ -14,10 +14,8 @@
 """File processing rules and actions for the incorporation of a business."""
 from typing import Dict
 
-from legal_api.models import Business, db, Filing, Address
+from legal_api.models import Business, db
 from flask import Flask
-from flask_jwt_oidc import JwtManager
-from entity_filer import config
 
 import requests
 
@@ -26,13 +24,13 @@ from entity_filer.filing_processors import create_office
 
 def get_next_corp_num(business_type, application: Flask):
     """Retrieve the next available sequential corp-num from COLIN"""
-    r = requests.get(f'{application.config["COLIN_API"]}/api/v1/businesses')
-    
-    if r.status_code == 200:
-        new_corpnum = r.json()['corpNum']
+    resp = requests.get(f'{application.config["COLIN_API"]}/api/v1/businesses')
+
+    if resp.status_code == 200:
+        new_corpnum = resp.json()['corpNum']
         if new_corpnum:
             # TODO: Fix endpoint
-            return business_type + str(new_corpnum[0])
+            return business_type + str(new_corpnum)
     return None
 
 def insert_business_info(corp_num: str, business: Business, business_info: Dict):
@@ -44,26 +42,27 @@ def insert_business_info(corp_num: str, business: Business, business_info: Dict)
     return business
 
 def process(business: Business, filing: Dict, app: Flask = None):
-    # Extract the filing information for incorporation 
-    incorpFiling = filing['incorporationApplication']
-    
-    if incorpFiling:
-        # Extract the office, business, addresses, directors etc. 
+    """Process the incoming incorporation filing."""
+    # Extract the filing information for incorporation
+    incorp_filing = filing['incorporationApplication']
+
+    if incorp_filing:
+        # Extract the office, business, addresses, directors etc.
         # these will have to be inserted into the db.
-        offices = incorpFiling['offices']
-        businessInfo = incorpFiling['nameRequest']
-        business = Business.find_by_identifier(businessInfo['nrNumber'])
-        
+        offices = incorp_filing['offices']
+        business_info = incorp_filing['nameRequest']
+        business = Business.find_by_identifier(business_info['nrNumber'])
+
         if business:
             # Reserve the Corp Numper for this entity
-            corp_num = get_next_corp_num(businessInfo['legalType'], app)
+            corp_num = get_next_corp_num(business_info['legalType'], app)
 
             # Initial insert of the business record
-            business = insert_business_info(corp_num, business, businessInfo)
+            business = insert_business_info(corp_num, business, business_info)
 
             if business:
                 for office_type, addresses in offices.items():
                     office = create_office(business, office_type, addresses)
                     db.session.add(office)
         else:
-            logger.error('No business exists for NR number: %s', businessInfo['nrNUmber'])
+            logger.error('No business exists for NR number: %s', business_info['nrNUmber'])
