@@ -59,4 +59,4 @@ strict-rfc3339==0.7
 typing==3.7.4.1
 urllib3==1.25.6
 zipp==0.6.0
-git+https://github.com/bcgov/lear.git#egg=registry_schemas&subdirectory=schemas
+git+https://github.com/bcgov/business-schemas.git@2.5.0#egg=registry_schemas
