@@ -97,7 +97,7 @@ def process_filing(filing_msg: Dict, flask_app: Flask):
 
     with flask_app.app_context():
 
-        filing_submission = Filing.find_by_id(filing_msg['filing']['id']) #get_filing_by_payment_token(filing_msg['paymentToken']['id'])
+        filing_submission = Filing.find_by_id(filing_msg['filing']['id'])
 
         if not filing_submission:
             raise QueueException

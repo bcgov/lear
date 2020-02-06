@@ -103,6 +103,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     }
 
     COLIN_API = os.getenv('COLIN_API', '')
+
+
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""
 

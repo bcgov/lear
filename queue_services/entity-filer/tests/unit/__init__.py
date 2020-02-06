@@ -370,51 +370,51 @@ INCORP_FILING = {
                 'effectiveDate': '2019-04-15T00:00:00+00:00'
             },
             'incorporationApplication': {
-            'nameRequest': {
-                'nrNumber': 'NR 1234567',
-                'legalType': 'BC'
-            },
-            'offices': {
-                'registeredOffice': {
-                    'deliveryAddress': {
-                        'streetAddress': '123 Fake Street',
-                        'addressCity': 'Duncan',
-                        'addressCountry': 'Canada',
-                        'postalCode': 'H0H0H0',
-                        'addressRegion': 'BC'
+                'nameRequest': {
+                    'nrNumber': 'NR 1234567',
+                    'legalType': 'BC'
+                },
+                'offices': {
+                    'registeredOffice': {
+                        'deliveryAddress': {
+                            'streetAddress': '123 Fake Street',
+                            'addressCity': 'Duncan',
+                            'addressCountry': 'Canada',
+                            'postalCode': 'H0H0H0',
+                            'addressRegion': 'BC'
+                        },
+                        'mailingAddress': {
+                            'streetAddress': '123 Fake Street',
+                            'addressCity': 'Duncan',
+                            'addressCountry': 'Canada',
+                            'postalCode': 'H0H0H0',
+                            'addressRegion': 'BC',
+                        }
                     },
-                    'mailingAddress': {
-                        'streetAddress': '123 Fake Street',
-                        'addressCity': 'Duncan',
-                        'addressCountry': 'Canada',
-                        'postalCode': 'H0H0H0',
-                        'addressRegion': 'BC',
+                    'recordsOffice': {
+                        'deliveryAddress': {
+                            'streetAddress': '123 Fake Street',
+                            'addressCity': 'Duncan',
+                            'addressCountry': 'Canada',
+                            'postalCode': 'H0H0H0',
+                            'addressRegion': 'BC'
+                        },
+                        'mailingAddress': {
+                            'streetAddress': '123 Fake Street',
+                            'addressCity': 'Duncan',
+                            'addressCountry': 'Canada',
+                            'postalCode': 'H0H0H0',
+                            'addressRegion': 'BC'
+                        }
                     }
                 },
-                'recordsOffice': {
-                    'deliveryAddress': {
-                        'streetAddress': '123 Fake Street',
-                        'addressCity': 'Duncan',
-                        'addressCountry': 'Canada',
-                        'postalCode': 'H0H0H0',
-                        'addressRegion': 'BC'
-                    },
-                    'mailingAddress': {
-                        'streetAddress': '123 Fake Street',
-                        'addressCity': 'Duncan',
-                        'addressCountry': 'Canada',
-                        'postalCode': 'H0H0H0',
-                        'addressRegion': 'BC'
-                    }
+                'contactPoint': {
+                    'email': 'no_one@never.get',
+                    'phone': '123-456-7890'
                 }
-            },
-            'contactPoint': {
-                'email': 'no_one@never.get',
-                'phone': '123-456-7890'
             }
         }
     }
-}
 
 
 def create_filing(token, json_filing=None, business_id=None):

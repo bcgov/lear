@@ -440,11 +440,13 @@ def test_process_filing_completed(app, session):
     assert business.last_agm_date
     assert business.last_ar_date
 
+
 @colin_api_integration
 def test_incorporation_filing(app, session):
+    """Assert we can retrieve a new corp number from COLIN and incorporate a business."""
     from entity_filer.worker import process_filing
     from legal_api.models import Business, Filing
-    
+
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing = copy.deepcopy(INCORP_FILING)
@@ -452,9 +454,9 @@ def test_incorporation_filing(app, session):
     business = create_business(identifier)
     filing_id = (create_filing(payment_id, filing, business.id)).id
     filing_msg = {'filing': {'id': filing_id}}
-    
+
     assert business.identifier == 'NR 1234567'
-    
+
     process_filing(filing_msg, app)
     filing = Filing.find_by_id(filing_id)
     business = Business.find_by_internal_id(filing.business_id)

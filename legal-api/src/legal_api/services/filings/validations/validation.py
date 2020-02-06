@@ -25,7 +25,7 @@ from .incorporation_application import validate as incorporation_application_val
 from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
 from .voluntary_dissolution import validate as voluntary_dissolution_validate
-from .incorporation_application import validate as incorporation_application_validate
+
 
 def validate(business: Business, filing_json: Dict) -> Error:
     """Validate the annual report JSON."""

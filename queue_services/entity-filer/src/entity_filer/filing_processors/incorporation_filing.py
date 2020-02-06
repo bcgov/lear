@@ -1,4 +1,4 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2020 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
 """File processing rules and actions for the incorporation of a business."""
 from typing import Dict
 
-from legal_api.models import Business, db
 from flask import Flask
-
 import requests
 
 from entity_queue_common.service_utils import logger
 from entity_filer.filing_processors import create_office
+from legal_api.models import Business, db
+
 
 def get_next_corp_num(business_type, application: Flask):
-    """Retrieve the next available sequential corp-num from COLIN"""
+    """Retrieve the next available sequential corp-num from COLIN."""
     resp = requests.get(f'{application.config["COLIN_API"]}/api/v1/businesses')
 
     if resp.status_code == 200:
@@ -33,13 +33,16 @@ def get_next_corp_num(business_type, application: Flask):
             return business_type + str(new_corpnum)
     return None
 
+
 def insert_business_info(corp_num: str, business: Business, business_info: Dict):
+    """Format and update the business entity from incorporation filing."""
     if corp_num and business and business_info:
         business.identifier = corp_num
         # TODO: Other properties contained in the NR
     else:
         return None
     return business
+
 
 def process(business: Business, filing: Dict, app: Flask = None):
     """Process the incoming incorporation filing."""
@@ -51,9 +54,9 @@ def process(business: Business, filing: Dict, app: Flask = None):
         # these will have to be inserted into the db.
         offices = incorp_filing['offices']
         business_info = incorp_filing['nameRequest']
-        business = Business.find_by_identifier(business_info['nrNumber'])
 
-        if business:
+        # Sanity check
+        if business and business.identifier == business_info['nrNumber']:
             # Reserve the Corp Numper for this entity
             corp_num = get_next_corp_num(business_info['legalType'], app)
 

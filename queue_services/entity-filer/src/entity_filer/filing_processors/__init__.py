@@ -65,6 +65,7 @@ def update_director(director: Director, new_info: dict):
 
     return director
 
+
 def create_office(business, office_type, addresses):
     """Create a new office for incorporation."""
     office = Office()
