@@ -1498,8 +1498,7 @@ describe('AnnualReport - Part 5 - Data', () => {
     store.state.currentDate = '2019-03-03'
 
     // set No AGM
-    vm.noAGM = true
-    vm.agmDate = null
+    vm.didNotHoldAgm = true
 
     // click the Save button
     wrapper.find('#ar-save-btn').trigger('click')

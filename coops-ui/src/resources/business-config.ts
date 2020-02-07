@@ -1,3 +1,5 @@
+import { EntityTypes, FilingCodes } from '@/enums'
+
 export class Flow {
   feeCode: string
   displayName: string
@@ -11,25 +13,25 @@ export class Business {
 }
 
 export const configJson = [{
-  typeEnum: 'BC',
+  typeEnum: EntityTypes.BCOMP,
   displayName: 'Benefit Company',
   flows: [
     {
-      feeCode: 'OTADD',
+      feeCode: FilingCodes.ADDRESS_CHANGE_OT,
       displayName: 'Change Of Address',
       certifyText: 'Note: It is an offence to make a false or misleading statement in ' +
            'respect of a material fact in a record submitted to the Corporate Registry for filing. ' +
            'See Sections 35 and 36 of the Business Corporations Act.'
     },
     {
-      feeCode: 'OTANN',
+      feeCode: FilingCodes.ANNUAL_REPORT_BC,
       displayName: 'Annual Report',
       certifyText: 'Note: It is an offence to make a false or misleading statement in ' +
            'respect of a material fact in a record submitted to the Corporate Registry for filing. ' +
            'See Section 51 of the Business Corporations Act.'
     },
     {
-      feeCode: 'OTCDR',
+      feeCode: FilingCodes.DIRECTOR_CHANGE_OT,
       displayName: 'Change Of Directors',
       certifyText: 'Note: It is an offence to make a false or misleading statement in ' +
            'respect of a material fact in a record submitted to the Corporate Registry for filing. ' +
@@ -47,25 +49,25 @@ export const configJson = [{
   ]
 },
 {
-  typeEnum: 'CP',
+  typeEnum: EntityTypes.COOP,
   displayName: 'Cooperative',
   flows: [
     {
-      feeCode: 'OTADD',
+      feeCode: FilingCodes.ADDRESS_CHANGE_OT,
       displayName: 'Change Of Address',
       certifyText: 'Note: It is an offence to make a false or misleading statement in ' +
            'respect of a material fact in a record submitted to the Corporate Registry for filing. ' +
            'See Section 27 of the Cooperative Association Act.'
     },
     {
-      feeCode: 'OTANN',
+      feeCode: FilingCodes.ANNUAL_REPORT_OT,
       displayName: 'Annual Report',
       certifyText: 'Note: It is an offence to make a false or misleading statement in ' +
            'respect of a material fact in a record submitted to the Corporate Registry for filing. ' +
            'See Section 126 of the Cooperative Association Act.'
     },
     {
-      feeCode: 'OTCDR',
+      feeCode: FilingCodes.DIRECTOR_CHANGE_OT,
       displayName: 'Change Of Directors',
       certifyText: 'Note: It is an offence to make a false or misleading statement in ' +
            'respect of a material fact in a record submitted to the Corporate Registry for filing. ' +

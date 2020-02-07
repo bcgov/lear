@@ -551,6 +551,9 @@ export default class Directors extends Mixins(DateMixin, CommonMixin,
   @Prop()
   private asOfDate: string
 
+  /**
+   * Indicates whether this component should be enabled or not.
+   */
   @Prop({ default: true })
   private componentEnabled: boolean
 
@@ -1652,7 +1655,7 @@ ul {
 
 .complianceSection {
   font-size: 0.9rem;
-  color:rgba(0,0,0,0.87);
+  color: rgba(0,0,0,0.87);
 }
 
 ::v-deep .v-alert.icon-blue {

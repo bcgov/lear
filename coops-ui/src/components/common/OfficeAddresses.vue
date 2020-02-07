@@ -35,7 +35,7 @@
                     id="reg-off-addr-change-btn"
                     small
                     v-if="!showAddressForm"
-                    :disabled="changeButtonDisabled"
+                    :disabled="!componentEnabled"
                     @click="editAddress()"
                   >
                     <v-icon small>mdi-pencil</v-icon>
@@ -225,10 +225,10 @@ import { EntityTypes } from '@/enums'
 })
 export default class OfficeAddresses extends Mixins(CommonMixin, EntityFilterMixin) {
   /**
-   * Indicates whether the change button should be disabled or not
+   * Indicates whether this component should be enabled or not.
    */
-  @Prop({ default: false })
-  readonly changeButtonDisabled: boolean
+  @Prop({ default: true })
+  readonly componentEnabled: boolean
 
   /**
    * Addresses object from the parent page.

@@ -62,7 +62,6 @@
             <!-- Office Addresses -->
             <section>
               <OfficeAddresses
-                :changeButtonDisabled="false"
                 :addresses.sync="addresses"
                 :registeredAddress.sync="registeredAddress"
                 :recordsAddress.sync="recordsAddress"

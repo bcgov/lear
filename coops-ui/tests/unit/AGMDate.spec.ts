@@ -36,6 +36,7 @@ describe('AGMDate', () => {
     store.state.currentDate = '2019/07/15'
     store.state.ARFilingYear = 2019
     store.state.entityType = EntityTypes.COOP
+    store.state.lastAnnualReportDate = '2018-07-15'
 
     wrapper = mount(AGMDate, { store, vuetify })
     vm = wrapper.vm as any
@@ -50,28 +51,48 @@ describe('AGMDate', () => {
 
   it('initializes the local variables properly', () => {
     // verify local variables
-    expect(vm.$data.date).toBe('2019-01-01')
-    expect(vm.$data.dateFormatted).toBe('2019/01/01')
-    expect(vm.$data.didNotHoldAgm).toBe(false)
-
-    // verify emitted AGM Dates
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(1)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
-
-    // verify emitted Valids
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(1)
-    expect(valids[0]).toEqual([true])
-
-    // verify emitted No AGMs
-    expect(wrapper.emitted('noAGM')).toBeUndefined()
+    expect(vm.$data.dateText).toBe('')
+    expect(vm.$data.datePicker).toBe('2019-07-15')
+    expect(vm.$data.noAgm).toBe(false)
 
     // verify that checkbox is not rendered (in current year)
     expect(vm.$el.querySelector('#agm-checkbox')).toBeNull()
+  })
 
-    // verify that there are no validation errors
-    expect(vm.$el.querySelector('.validationErrorInfo').textContent).toBe('')
+  it('sets Min Date properly', () => {
+    // verify initial state
+    expect(vm.$store.state.ARFilingYear).toBe(2019)
+
+    // first try with a later Last Annual Report date
+    store.state.lastAnnualReportDate = '2019-07-15'
+
+    // verify Min Date
+    expect(vm.minDate).toBe('2019-07-15')
+
+    // now try with original Last Annual Report Date
+    // this also resets the data for other tests
+    store.state.lastAnnualReportDate = '2018-07-15'
+
+    // verify Min Date
+    expect(vm.minDate).toBe('2019-01-01')
+  })
+
+  it('sets Max Date properly', () => {
+    // verify initial state
+    expect(vm.$store.state.ARFilingYear).toBe(2019)
+
+    // first try with a later Current Date
+    store.state.currentDate = '2020/02/07'
+
+    // verify Max Date
+    expect(vm.maxDate).toBe('2019-12-31')
+
+    // now try with original Current Date
+    // this also resets the data for other tests
+    store.state.currentDate = '2019/07/15'
+
+    // verify Max Date
+    expect(vm.maxDate).toBe('2019-07-15')
   })
 
   it('renders checkbox in past year', () => {
@@ -81,536 +102,110 @@ describe('AGMDate', () => {
     expect(vm.$el.querySelector('#agm-checkbox')).not.toBeNull()
   })
 
-  it('loads variables properly when initial AGM Date is set', () => {
-    wrapper.setProps({ initialAgmDate: '2019-05-10' })
+  it('loads variables properly when new AGM Date is set to a date', () => {
+    wrapper.setProps({ newAgmDate: '2019-05-10' })
 
     // verify local variables
-    expect(vm.$data.date).toBe('2019-05-10')
-    expect(vm.$data.dateFormatted).toBe('2019/05/10')
-    expect(vm.$data.didNotHoldAgm).toBe(false)
+    expect(vm.$data.dateText).toBe('2019-05-10')
+    expect(vm.$data.datePicker).toBe('2019-05-10')
+    expect(vm.$data.noAgm).toBe(false)
 
     // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from prop update
     const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
-    expect(agmDates[1]).toEqual(['2019-05-10'])
+    expect(agmDates.length).toBe(1)
+    expect(agmDates[0]).toEqual(['2019-05-10'])
 
     // verify emitted Valids
-    // first emit is from init
-    // second emit is from prop update
     const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
+    expect(valids.length).toBe(1)
     expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([true])
-
-    // verify emitted No AGMs
-    expect(wrapper.emitted('noAGM')).toBeUndefined()
   })
 
-  it('loads variables properly when initial AGM Date is cleared', () => {
-    wrapper.setProps({ initialAgmDate: null })
+  it('loads variables properly when new AGM Date is set to empty', () => {
+    wrapper.setProps({ newAgmDate: '' })
 
     // verify local variables
-    expect(vm.$data.date).toBe('')
-    expect(vm.$data.dateFormatted).toBeNull()
-    expect(vm.$data.didNotHoldAgm).toBe(true)
+    expect(vm.$data.dateText).toBe('')
+    expect(vm.$data.datePicker).toBe('2019-07-15')
+    expect(vm.$data.noAgm).toBe(false)
 
     // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from prop update
     const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
-    expect(agmDates[1]).toEqual([null])
+    expect(agmDates.length).toBe(1)
+    expect(agmDates[0]).toEqual([''])
 
     // verify emitted Valids
-    // first emit is from init
-    // second emit is from 'date' watcher
-    // third emit is from text field update
     const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(3)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([true])
-    expect(valids[2]).toEqual([true])
-
-    // verify emitted No AGMs
-    const noAGMs = wrapper.emitted('noAGM')
-    expect(noAGMs.length).toBe(1)
-    expect(noAGMs[0]).toEqual([true])
+    expect(valids.length).toBe(1)
+    expect(valids[0]).toEqual([false])
   })
 
-  it('sets Min Date properly based on global properties', () => {
-    // verify initial state
-    expect(vm.$store.state.ARFilingYear).toBe(2019)
-    expect(vm.$store.state.filings).toEqual([])
-    expect(vm.$store.state.lastPreLoadFilingDate).toBeNull()
-
-    // verify default Min Date
-    expect(vm.minDate).toBe('2019-01-01')
-  })
-
-  it('sets date picker when text field is set', () => {
-    wrapper.setData({ dateFormatted: '2019/05/10' })
+  it('loads variables properly when No AGM is set to true', () => {
+    wrapper.setProps({ newNoAgm: true })
 
     // verify local variables
-    expect(vm.$data.date).toBe('2019-05-10')
-    expect(vm.$data.didNotHoldAgm).toBe(false)
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from text field update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
-    expect(agmDates[1]).toEqual(['2019-05-10'])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([true])
+    expect(vm.$data.dateText).toBe('')
+    expect(vm.$data.datePicker).toBe('2019-07-15')
+    expect(vm.$data.noAgm).toBe(true)
 
     // verify emitted No AGMs
-    expect(wrapper.emitted('noAGM')).toBeUndefined()
+    const noAgms = wrapper.emitted('noAgm')
+    expect(noAgms.length).toBe(1)
+    expect(noAgms[0]).toEqual([true])
+
+    // verify emitted Valids
+    const valids = wrapper.emitted('valid')
+    expect(valids.length).toBe(1)
+    expect(valids[0]).toEqual([true])
   })
 
   it('sets text field when date picker is set', () => {
-    wrapper.setData({ date: '2019-05-10' })
+    wrapper.setData({ datePicker: '2019-05-10' })
+    vm.onDatePickerChanged('2019-05-10')
 
     // verify local variables
-    expect(vm.$data.dateFormatted).toBe('2019/05/10')
-    expect(vm.$data.didNotHoldAgm).toBe(false)
+    expect(vm.$data.dateText).toBe('2019-05-10')
+    expect(vm.$data.datePicker).toBe('2019-05-10')
+    expect(vm.$data.noAgm).toBe(false)
 
     // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from date picker update
     const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
-    expect(agmDates[1]).toEqual(['2019-05-10'])
+    expect(agmDates.length).toBe(1)
+    expect(agmDates[0]).toEqual(['2019-05-10'])
 
     // verify emitted Valids
-    // first emit is from init
-    // second emit is from date picker update
     const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
+    expect(valids.length).toBe(1)
     expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([true])
-
-    // verify emitted No AGMs
-    expect(wrapper.emitted('noAGM')).toBeUndefined()
   })
 
-  it('invalidates the component when date is empty', () => {
-    wrapper.setData({ dateFormatted: '' })
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([false])
-    setTimeout(() => {
-      expect(vm.$el.querySelector('.v-messages').textContent)
-        .toContain('An Annual General Meeting date is required.')
-    }, 1000)
-  })
-
-  it('invalidates the component when date has invalid length', () => {
-    wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
-    wrapper.setData({ dateFormatted: '2019/06/1' })
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from text field update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
-    expect(agmDates[1]).toEqual([null])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([false])
-
-    // verify validation error
-    expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Date must be in format YYYY/MM/DD.')
-  })
-
-  it('invalidates the component when date has invalid first slash', () => {
-    wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
-    wrapper.setData({ dateFormatted: '2019.06/15' })
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from text field update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
-    expect(agmDates[1]).toEqual([null])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([false])
-
-    // verify validation error
-    expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Date must be in format YYYY/MM/DD.')
-  })
-
-  it('invalidates the component when date has invalid second slash', () => {
-    wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
-    wrapper.setData({ dateFormatted: '2019/06.15' })
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from text field update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
-    expect(agmDates[1]).toEqual([null])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([false])
-
-    // verify validation error
-    expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Date must be in format YYYY/MM/DD.')
-  })
-
-  it('invalidates the component when date has invalid third slash', () => {
-    wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
-    wrapper.setData({ dateFormatted: '2019/06///' })
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from text field update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
-    expect(agmDates[1]).toEqual([null])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([false])
-
-    // verify validation error
-    expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Date must be in format YYYY/MM/DD.')
-  })
-
-  it('invalidates the component when entered year is invalid', () => {
-    wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
-    wrapper.setData({ dateFormatted: '2020/01/01' })
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from text field update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
-    expect(agmDates[1]).toEqual([null])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([false])
-
-    // verify validation error
-    expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Please enter a year within 2019.')
-  })
-
-  it('invalidates the component when entered month is an invalid number', () => {
-    wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
-    wrapper.setData({ dateFormatted: '2019/13/01' })
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from text field update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
-    expect(agmDates[1]).toEqual([null])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([false])
-
-    // verify validation error
-    expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Please enter a month between 2019/01/01 and 2019/07/15.')
-  })
-
-  it('invalidates the component when entered month is before Min Date', () => {
-    store.state.lastAnnualReportDate = '2019-03-01' // to set new Min Date
-
-    wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
-    wrapper.setData({ dateFormatted: '2019/02/01' })
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from text field update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
-    expect(agmDates[1]).toEqual([null])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([false])
-
-    // verify validation error
-    expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Please enter a month between 2019/03/01 and 2019/07/15.')
-
-    // cleanup
-    store.state.lastPreLoadFilingDate = null
-  })
-
-  it('invalidates the component when entered month is after Max Date', () => {
-    wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
-    wrapper.setData({ dateFormatted: '2019/08/15' })
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from text field update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-03-01'])
-    expect(agmDates[1]).toEqual([null])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([false])
-
-    // verify validation error
-    expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Please enter a month between 2019/03/01 and 2019/07/15.')
-  })
-
-  it('invalidates the component when entered day is an invalid number', () => {
-    wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
-    wrapper.setData({ dateFormatted: '2019/01/32' })
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from text field update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-03-01'])
-    expect(agmDates[1]).toEqual([null])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([false])
-
-    // verify validation error
-    expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Please enter a month between 2019/03/01 and 2019/07/15.')
-  })
-
-  it('invalidates the component when entered day is invalid in non leap year', () => {
-    wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
-    wrapper.setData({ dateFormatted: '2019/02/29' })
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from text field update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-03-01'])
-    expect(agmDates[1]).toEqual([null])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([false])
-
-    // verify validation error
-    expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Please enter a month between 2019/03/01 and 2019/07/15.')
-  })
-
-  it('validates the component when entered day is valid in leap year', () => {
-    store.state.ARFilingYear = 2020 // leap year
-
-    wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
-    wrapper.setData({ dateFormatted: '2020/02/29' })
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from first text field update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(3)
-    expect(agmDates[0]).toEqual(['2019-03-01'])
-    expect(agmDates[1]).toEqual([null])
-    expect(agmDates[2]).toEqual(['2020-02-29'])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from first text field update
-    // third emit is from second text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(3)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([false])
-    expect(valids[2]).toEqual([true])
-
-    // verify that there are no validation errors
-    expect(vm.$el.querySelector('.validationErrorInfo').textContent).toBe('')
-
-    // cleanup
-    store.state.ARFilingYear = 2019
-  })
-
-  it('invalidates the component when entered day is before Min Date', () => {
-    store.state.lastAnnualReportDate = '2019-04-15' // to set new Min Date
-
-    wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
-    wrapper.setData({ dateFormatted: '2019/04/01' })
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from text field update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-03-01'])
-    expect(agmDates[1]).toEqual([null])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([false])
-
-    // verify validation error
-    expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Please enter a day between 2019/04/15 and 2019/07/15.')
-
-    // cleanup
-    store.state.lastAnnualReportDate = null
-  })
-
-  it('invalidates the component when entered day is after Max Date', () => {
-    store.state.lastAnnualReportDate = '2019-04-15'
-    wrapper.setData({ dateFormatted: '' }) // work-around for test util async issue
-    wrapper.setData({ dateFormatted: '2019/07/20' })
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from text field update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-01-01'])
-    expect(agmDates[1]).toEqual([null])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(2)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([false])
-
-    // verify validation error
-    expect(vm.$el.querySelector('.validationErrorInfo').textContent)
-      .toContain('Please enter a day between 2019/04/15 and 2019/07/15.')
-  })
-
-  it('validates the component when Did Not Hold AGM is checked', () => {
-    wrapper.setData({ didNotHoldAgm: true })
-
-    // verify emitted AGM Dates
-    // first emit is from init
-    // second emit is from checkbox update
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(2)
-    expect(agmDates[0]).toEqual(['2019-04-15'])
-    expect(agmDates[1]).toEqual([null])
-
-    // verify emitted Valids
-    // first emit is from init
-    // second emit is from checkbox update
-    // third emit is from text field update
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(3)
-    expect(valids[0]).toEqual([true])
-    expect(valids[1]).toEqual([true])
-    expect(valids[2]).toEqual([true])
-
-    // verify emitted No AGMs
-    // first emit is from init
-    // second emit is from text field update
-    const noAGMs = wrapper.emitted('noAGM')
-    expect(noAGMs.length).toBe(1)
-    expect(noAGMs[0]).toEqual([true])
-
-    // verify that there are no validation errors
-    setTimeout(() => {
-      expect(vm.$el.querySelector('.validationErrorInfo')).toBeNull()
-    }, 1000)
-  })
-
-  it('Displays disabled address change message when allowCOA is false', () => {
+  it('displays disabled address change message when allowCOA is false', () => {
+    wrapper.setData({ dateText: '2019-07-15' })
     wrapper.setProps({ allowCOA: false })
+
+    // verify validation error
     expect(vm.$el.querySelector('.validationErrorInfo').textContent.trim()).toContain(
-      'You can not change your Registered Office Addresses in this Annual Report')
+      'You can not change your Registered Office Addresses in this Annual Report'
+    )
   })
-  it('Displays disabled director change message when allowCOD is false', () => {
+
+  it('displays disabled director change message when allowCOD is false', () => {
+    wrapper.setData({ dateText: '2019-07-15' })
     wrapper.setProps({ allowCOD: false })
+
+    // verify validation error
     expect(vm.$el.querySelector('.validationErrorInfo').textContent.trim()).toContain(
-      'You can not change your Directors in this Annual Report')
+      'You can not change your Directors in this Annual Report'
+    )
   })
-  it('Displays disabled address + director change message when allowCOA and allowCOD are both false', () => {
+
+  it('displays disabled address + director change message when allowCOA and allowCOD are both false', () => {
+    wrapper.setData({ dateText: '2019-07-15' })
     wrapper.setProps({ allowCOA: false, allowCOD: false })
+
+    // verify validation error
     expect(vm.$el.querySelector('.validationErrorInfo').textContent.trim()).toContain(
-      'You can not change your Registered Office Addresses or Directors in this Annual Report')
+      'You can not change your Registered Office Addresses or Directors in this Annual Report'
+    )
   })
 })
