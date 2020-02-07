@@ -55,8 +55,15 @@ describe('AGMDate', () => {
     expect(vm.$data.datePicker).toBe('2019-07-15')
     expect(vm.$data.noAgm).toBe(false)
 
-    // verify that checkbox is not rendered (in current year)
+    // verify that checkbox is _not_ rendered (in current year)
     expect(vm.$el.querySelector('#agm-checkbox')).toBeNull()
+  })
+
+  it('renders checkbox in past year', () => {
+    store.state.ARFilingYear = 2018
+
+    // verify that checkbox is rendered
+    expect(vm.$el.querySelector('#agm-checkbox')).not.toBeNull()
   })
 
   it('sets Min Date properly', () => {
@@ -95,14 +102,52 @@ describe('AGMDate', () => {
     expect(vm.maxDate).toBe('2019-07-15')
   })
 
-  it('renders checkbox in past year', () => {
-    store.state.ARFilingYear = 2018
+  it('sets AGM Date when date picker is set', () => {
+    wrapper.setData({ datePicker: '2019-05-10' })
+    vm.onDatePickerChanged('2019-05-10')
 
-    // verify that checkbox is rendered
-    expect(vm.$el.querySelector('#agm-checkbox')).not.toBeNull()
+    // verify local variables
+    expect(vm.$data.dateText).toBe('2019-05-10')
+    expect(vm.$data.datePicker).toBe('2019-05-10')
+    expect(vm.$data.noAgm).toBe(false)
+
+    // verify emitted AGM Dates
+    const agmDates = wrapper.emitted('agmDate')
+    expect(agmDates.length).toBe(1)
+    expect(agmDates[0]).toEqual(['2019-05-10'])
+
+    // verify emitted Valids
+    const valids = wrapper.emitted('valid')
+    expect(valids.length).toBe(1)
+    expect(valids[0]).toEqual([true])
   })
 
-  it('loads variables properly when new AGM Date is set to a date', () => {
+  it('sets No AGM when checkbox is checked', () => {
+    wrapper.setData({ noAgm: true })
+    vm.onCheckboxChanged(true)
+
+    // verify local variables
+    expect(vm.$data.dateText).toBe('')
+    expect(vm.$data.datePicker).toBe('2019-07-15')
+    expect(vm.$data.noAgm).toBe(true)
+
+    // verify emitted AGM Dates
+    const agmDates = wrapper.emitted('agmDate')
+    expect(agmDates.length).toBe(1)
+    expect(agmDates[0]).toEqual([''])
+
+    // verify emitted No AGMs
+    const noAgms = wrapper.emitted('noAgm')
+    expect(noAgms.length).toBe(1)
+    expect(noAgms[0]).toEqual([true])
+
+    // verify emitted Valids
+    const valids = wrapper.emitted('valid')
+    expect(valids.length).toBe(1)
+    expect(valids[0]).toEqual([true])
+  })
+
+  it('sets AGM Date when AGM Date prop is set to a date', () => {
     wrapper.setProps({ newAgmDate: '2019-05-10' })
 
     // verify local variables
@@ -121,7 +166,7 @@ describe('AGMDate', () => {
     expect(valids[0]).toEqual([true])
   })
 
-  it('loads variables properly when new AGM Date is set to empty', () => {
+  it('clears AGM Date when AGM Date prop is set to empty', () => {
     wrapper.setProps({ newAgmDate: '' })
 
     // verify local variables
@@ -140,7 +185,7 @@ describe('AGMDate', () => {
     expect(valids[0]).toEqual([false])
   })
 
-  it('loads variables properly when No AGM is set to true', () => {
+  it('sets No AGM when No AGM prop is set to true', () => {
     wrapper.setProps({ newNoAgm: true })
 
     // verify local variables
@@ -152,26 +197,6 @@ describe('AGMDate', () => {
     const noAgms = wrapper.emitted('noAgm')
     expect(noAgms.length).toBe(1)
     expect(noAgms[0]).toEqual([true])
-
-    // verify emitted Valids
-    const valids = wrapper.emitted('valid')
-    expect(valids.length).toBe(1)
-    expect(valids[0]).toEqual([true])
-  })
-
-  it('sets text field when date picker is set', () => {
-    wrapper.setData({ datePicker: '2019-05-10' })
-    vm.onDatePickerChanged('2019-05-10')
-
-    // verify local variables
-    expect(vm.$data.dateText).toBe('2019-05-10')
-    expect(vm.$data.datePicker).toBe('2019-05-10')
-    expect(vm.$data.noAgm).toBe(false)
-
-    // verify emitted AGM Dates
-    const agmDates = wrapper.emitted('agmDate')
-    expect(agmDates.length).toBe(1)
-    expect(agmDates[0]).toEqual(['2019-05-10'])
 
     // verify emitted Valids
     const valids = wrapper.emitted('valid')
