@@ -329,7 +329,9 @@ export default {
     },
 
     onClickExit () {
-      this.$refs.sbcHeader.logout()
+      const businessesUrl = sessionStorage.getItem('BUSINESSES_URL') || ''
+      // assume Businesses URL is always reachable
+      businessesUrl && window.location.assign(businessesUrl)
     },
 
     onClickRetry () {
