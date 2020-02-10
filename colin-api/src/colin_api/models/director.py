@@ -187,8 +187,9 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
             cursor.execute(
                 """
                 update corp_party set end_event_id=:event_id, cessation_dt=TO_DATE(:cessation_date, 'YYYY-mm-dd') where
-                corp_num=:corp_num and upper(trim(first_nme))=upper(:first_name) and upper(trim(last_nme))=upper(:last_name) and
-                (upper(trim(middle_nme))=upper(:middle_initial) or middle_nme is null)
+                corp_num=:corp_num and upper(trim(first_nme))=upper(:first_name) and
+                upper(trim(last_nme))=upper(:last_name) and (upper(trim(middle_nme))=upper(:middle_initial) or
+                middle_nme is null)
                 """,
                 event_id=event_id,
                 cessation_date=director.get('cessationDate', ''),

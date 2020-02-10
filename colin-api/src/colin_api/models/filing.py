@@ -713,15 +713,16 @@ class Filing:
                 # update corp_state TO ACT (active) if it is in good standing. From CRUD:
                 # - the current corp_state != 'ACT' and,
                 # - they just filed the last outstanding ARs
+                agm_year = int(ar_date[:4])
                 if filing.business.business['corpState'] != 'ACT':
-                    agm_year = int(ar_date[:4])
                     last_year = datetime.datetime.now().year - 1
                     if agm_year >= last_year:
                         Business.update_corp_state(cursor, event_id, corp_num, state='ACT')
 
                 # create new ledger text for annual report
+                text = agm_date if agm_date else f'NO AGM HELD IN {agm_year}'
                 cls._add_ledger_text(
-                    cursor=cursor, event_id=event_id, text=f'ANNUAL REPORT - {ar_date}', user_id=user_id)
+                    cursor=cursor, event_id=event_id, text=f'ANNUAL REPORT - {text}', user_id=user_id)
 
             elif filing.filing_type == 'changeOfAddress':
                 # set date to last ar date + 1 -- Bob wants this to be set to null
