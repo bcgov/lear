@@ -24,7 +24,7 @@ Flask
 pytest
 python-dotenv
 marshmallow==2.20.5
-git+https://github.com/bcgov/lear.git#egg=registry_schemas&subdirectory=schemas
+git+https://github.com/bcgov/business-schemas.git@2.5.0#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
 
 

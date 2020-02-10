@@ -30,4 +30,4 @@ sentry-sdk==0.13.5
 six==1.13.0
 urllib3==1.25.7
 zipp==0.6.0
-git+https://github.com/bcgov/lear.git#egg=registry_schemas&subdirectory=schemas
+git+https://github.com/bcgov/business-schemas.git@2.5.0#egg=registry_schemas
