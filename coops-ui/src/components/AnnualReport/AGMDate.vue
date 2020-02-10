@@ -5,53 +5,44 @@
         <span>Annual General<br>Meeting Date</span>
       </label>
 
-      <div class="value date">
+      <v-form ref="form" class="value date">
         <v-menu
           ref="menu"
           v-model="menu"
+          :close-on-content-click="false"
           :nudge-right="40"
           transition="scale-transition"
           offset-y
-          min-width="18rem">
+          max-width="290"
+        >
           <template v-slot:activator="{ on }">
             <v-text-field
-              id="agm-textfield"
               data-test-id="agm-date-text"
-              v-model="dateFormatted"
-              :disabled="didNotHoldAgm"
+              v-model="dateText"
+              :disabled="noAgm"
               :rules="agmDateRules"
-              label="Enter your Annual General Meeting Date"
-              hint="YYYY/MM/DD"
-              append-icon="mdi-calendar"
+              label="Annual General Meeting Date"
+              placeholder="Select your Annual General Meeting Date"
+              prepend-icon="mdi-calendar"
               v-on="on"
+              readonly
               filled
             />
           </template>
           <v-date-picker
-            id="agm-datepicker"
             data-test-id="agm-date-picker"
-            v-model="date"
+            v-model="datePicker"
             :min=minDate
             :max=maxDate
             no-title
-            @input="menu = true"
+            @input="menu=false"
+            @change="onDatePickerChanged($event)"
           />
         </v-menu>
 
-        <div class="validationErrorInfo" v-if="$v.dateFormatted.isNotNull">
-          <span v-if="!$v.dateFormatted.isValidFormat">
-            Date must be in format YYYY/MM/DD.
-          </span>
-          <span v-else-if="!$v.dateFormatted.isValidYear">
-            Please enter a year within {{ARFilingYear}}.
-          </span>
-          <span v-else-if="!$v.dateFormatted.isValidMonth">
-            Please enter a month between {{formatDate(minDate)}} and {{formatDate(maxDate)}}.
-          </span>
-          <span v-else-if="!$v.dateFormatted.isValidDay">
-            Please enter a day between {{formatDate(minDate)}} and {{formatDate(maxDate)}}.
-          </span>
-          <span v-else-if="!allowCOA&&!allowCOD">
+        <!-- only display this info if a date has been selected -->
+        <div class="validationErrorInfo" v-if="dateText">
+          <span v-if="!allowCOA && !allowCOD">
             You can not change your Registered Office Addresses or Directors in this Annual Report because your AGM
             predates another filing that may have conflicting changes.
           </span>
@@ -64,23 +55,24 @@
             filing that may have conflicting changes.
           </span>
         </div>
-      </div>
+      </v-form>
     </div>
 
     <!-- don't show checkbox in current year -->
     <v-checkbox id="agm-checkbox"
       v-if="this.ARFilingYear && this.ARFilingYear < this.currentYear"
-      v-model="didNotHoldAgm"
+      v-model="noAgm"
       :label=checkBoxLabel
+      @change="onCheckboxChanged($event)"
     />
   </v-card>
 </template>
 
 <script lang="ts">
 import { Component, Mixins, Vue, Prop, Watch, Emit } from 'vue-property-decorator'
-import { isNotNull, isValidFormat, isValidYear, isValidMonth, isValidDay } from '@/validators'
 import { mapState, mapGetters } from 'vuex'
 import DateMixin from '@/mixins/date-mixin'
+import { FormType } from '@/interfaces'
 
 @Component({
   mixins: [DateMixin],
@@ -88,18 +80,19 @@ import DateMixin from '@/mixins/date-mixin'
     // Property definitions for runtime environment.
     ...mapState(['ARFilingYear', 'currentDate', 'lastPreLoadFilingDate', 'lastAnnualReportDate']),
     ...mapGetters(['lastFilingDate'])
-  },
-  validations: {
-    dateFormatted: { isNotNull, isValidFormat, isValidYear, isValidMonth, isValidDay }
   }
 })
 export default class AGMDate extends Mixins(DateMixin) {
+  // annotate form to fix "Property X does not exist on type Y" error
+  $refs!: {
+    form: FormType
+  }
   // Prop passed into this component.
-  @Prop({ default: '' })
-  private initialAgmDate: string
+  @Prop({ default: null })
+  private newAgmDate: string | null
 
-  @Prop({ default: false })
-  private noAGM: boolean
+  @Prop({ default: null })
+  private newNoAgm: string | null
 
   @Prop({ default: true })
   private allowCOA: boolean
@@ -108,10 +101,11 @@ export default class AGMDate extends Mixins(DateMixin) {
   private allowCOD: boolean
 
   // Local properties.
-  private date: string = '' // bound to date picker
-  private dateFormatted: string = '' // bound to text field
-  private menu: boolean = false // bound to calendar menu
-  private didNotHoldAgm: boolean = false // bound to checkbox
+  private dateText: string = '' // value in text field
+  private datePicker: string = '' // value in date picker
+  private menu: boolean = false // whether calendar menu is visible
+  private noAgm: boolean = false // whether checkbox is checked
+  private backupDate: string = '' // for toggling No AGM
 
   // Local definitions of computed properties for static type checking.
   // Use non-null assertion operator to allow use before assignment.
@@ -122,172 +116,144 @@ export default class AGMDate extends Mixins(DateMixin) {
   readonly lastAnnualReportDate!: string
 
   /**
-   * Computed value.
-   * @returns The array of validations rules for the AGM Date text field.
+   * The array of validations rules for the AGM Date text field.
    */
   private get agmDateRules (): Array<Function> {
     return [
-      v => this.didNotHoldAgm || isNotNull(v) || 'An Annual General Meeting date is required.'
+      v => this.noAgm || !!v || 'An Annual General Meeting date is required.'
     ]
   }
 
   /**
-   * Computed value.
-   * @returns The label for the checkbox.
+   * The label for the checkbox.
    */
   private get checkBoxLabel (): string {
     return 'We did not hold an Annual General Meeting in ' + this.ARFilingYear
   }
 
   /**
-   * Computed value.
-   * @returns The maximum date that can be entered.
+   * The maximum date that can be entered.
    */
   private get maxDate (): string {
+    /*
+     * If filing is for current year then use current date,
+     * otherwise use last day in filing year.
+     */
     return (this.ARFilingYear === this.currentYear)
       ? this.currentDate.split('/').join('-')
       : `${this.ARFilingYear}-12-31`
   }
 
   /**
-   * Computed value.
-   * @returns The minimum date that can be entered.
+   * The minimum date that can be entered.
    */
   private get minDate (): string {
-    /**
+    /*
      * Determine the latest of the following dates:
      * - the first day of the AR filing year
-     * - the last filing in filing history (from the Legal DB)
-     * - the last pre-load Cobrs filing
+     * - the last Annual Report date
      */
     const firstDayOfYear = +`${this.ARFilingYear}-01-01`.split('-').join('')
-    const lastFilingDate = this.lastAnnualReportDate ? +this.lastAnnualReportDate.split('-').join('') : 0
-    const minAgmDate = Math.max(firstDayOfYear, lastFilingDate)
-    return this.numToUsableString(minAgmDate)
+    const lastAnnualReportDate = this.lastAnnualReportDate ? +this.lastAnnualReportDate.split('-').join('') : 0
+    return this.numToUsableString(Math.max(firstDayOfYear, lastAnnualReportDate))
   }
 
   /**
-   * Computed value.
-   * @returns The current year.
+   * The current year.
    */
   private get currentYear (): number {
     return this.currentDate ? +this.currentDate.substring(0, 4) : null
   }
 
   /**
-   * Lifecycle hook to load initial data.
+   * Lifecycle hook.
    */
   private mounted (): void {
-    this.dateFormatted = this.formatDate(this.minDate)
+    // initialize date picker but not text field
+    this.datePicker = this.newAgmDate || this.maxDate
   }
 
   /**
-   * Local helper to change date from YYYY-MM-DD to YYYY/MM/DD.
-   * @returns The formatted date.
+   * Called when prop changes (ie, due to resuming a draft).
    */
-  private formatDate (date: string): string {
-    if (!this.isValidDate(date, '-')) return ''
-    const [year, month, day] = date.split('-')
-    return `${year}/${month}/${day}`
+  @Watch('newAgmDate')
+  private onNewAgmDateChanged (val: string): void {
+    // always update text field
+    this.dateText = val
+    // only update date picker if we have a valid date
+    if (val) this.datePicker = val
+    // update parent
+    this.emitAgmDate()
+    this.emitValid()
   }
 
   /**
-   * Local helper to change date from YYYY/MM/DD to YYYY-MM-DD.
-   * @returns The parsed date.
+   * Called when prop changes (ie, due to resuming a draft)
    */
-  private parseDate (date: string): string {
-    // changes date from YYYY/MM/DD to YYYY-MM-DD
-    if (!this.isValidDate(date, '/')) return ''
-    const [year, month, day] = date.split('/')
-    return `${year}-${month}-${day}`
+  @Watch('newNoAgm')
+  private onNewNoAgmChanged (val: boolean): void {
+    // update model value
+    this.noAgm = val
+    // update parent
+    this.emitNoAgm()
+    this.emitValid()
   }
 
   /**
-   * Local helper to determine if passed-in date is valid.
-   * @returns True if date is valid, otherwise false.
+   * Called when date picker changes.
    */
-  private isValidDate (date, separator): boolean {
-    return (isNotNull.call(this, date) &&
-      isValidFormat.call(this, date, separator) &&
-      isValidYear.call(this, date) &&
-      isValidMonth.call(this, date) &&
-      isValidDay.call(this, date))
+  private onDatePickerChanged (val: string): void {
+    // update text field
+    this.dateText = val
+    // update parent
+    this.emitAgmDate()
+    this.emitValid()
   }
 
   /**
-   * When prop changes, load (initial) data.
+   * Called when checkbox changes.
    */
-  @Watch('initialAgmDate')
-  private onInitialAgmDateChanged (val: string): void {
+  private onCheckboxChanged (val: boolean): void {
     if (val) {
-      this.dateFormatted = this.formatDate(val)
+      // save and clear text field
+      this.backupDate = this.dateText
+      this.dateText = ''
     } else {
-      this.didNotHoldAgm = true
+      // restore text field
+      this.dateText = this.backupDate
     }
-  }
-
-  @Watch('noAGM')
-  private onNoAGMChanged (val: boolean): void {
-    this.didNotHoldAgm = this.noAGM
-  }
-
-  /**
-   * When text field changes, update date picker.
-   */
-  @Watch('dateFormatted')
-  private onDateFormattedChanged (val: string): void {
-    this.date = this.parseDate(val)
-    // NB: let date watcher update parent
+    // trigger validation to display any errors
+    this.$refs.form.validate()
+    // update parent
+    this.emitAgmDate()
+    this.emitNoAgm()
+    this.emitValid()
   }
 
   /**
-   * When date picker changes, update text field etc.
-   */
-  @Watch('date')
-  private onDateChanged (val: string): void {
-    const agmDate = this.isValidDate(val, '-') ? val : null
-    // only update text field if date is valid
-    // this is to retain previous invalid values
-    if (agmDate) {
-      this.dateFormatted = this.formatDate(val)
-    }
-    this.emitAgmDate(agmDate)
-    this.emitValid(Boolean(this.didNotHoldAgm || agmDate))
-  }
-
-  /**
-   * When checkbox changes, update text field etc.
-   */
-  @Watch('didNotHoldAgm')
-  private onDidNotHoldAgmChanged (val: boolean): void {
-    if (val) {
-      // clear text field value
-      this.dateFormatted = null
-    } else {
-      // reset text field value
-      this.dateFormatted = this.formatDate(this.initialAgmDate || this.minDate)
-    }
-    this.emitNoAGM(val)
-    this.emitValid(Boolean(this.didNotHoldAgm || this.dateFormatted))
-  }
-
-  /**
-   * Emits an event with the new value of AGM Date.
+   * Emits an event with the new value of AGM Date (from text field, which may be empty).
    */
   @Emit('agmDate')
-  private emitAgmDate (val: string): void { }
+  private emitAgmDate (): string {
+    return this.dateText
+  }
 
   /**
    * Emits an event with the new value of No AGM.
    */
-  @Emit('noAGM')
-  private emitNoAGM (val: boolean): void { }
+  @Emit('noAgm')
+  private emitNoAgm (): boolean {
+    return this.noAgm
+  }
 
   /**
    * Emits an event indicating whether or not this component is valid.
+   * This needs to be called after all changes.
    */
   @Emit('valid')
-  private emitValid (val: boolean): void { }
+  private emitValid (): boolean {
+    return this.noAgm || !!this.dateText
+  }
 }
 </script>
 
@@ -303,7 +269,9 @@ export default class AGMDate extends Mixins(DateMixin) {
 }
 
 .value.date {
-  min-width: 24rem;
+  .v-text-field {
+    min-width: 25rem;
+  }
 }
 
 .meta-container {
@@ -328,10 +296,7 @@ export default class AGMDate extends Mixins(DateMixin) {
   }
 }
 
-#agm-checkbox {
-  font-size: 0.875rem;
-  margin-top: 0;
-  margin-left: -3px;
-  padding: 0;
+::v-deep .v-input--checkbox .v-label {
+  color: rgba(0,0,0,0.87);
 }
 </style>

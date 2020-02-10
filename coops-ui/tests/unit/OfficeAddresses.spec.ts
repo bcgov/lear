@@ -232,7 +232,7 @@ describe('OfficeAddresses as a COOP', () => {
     const wrapper: Wrapper<OfficeAddresses> = mount(OfficeAddresses, {
       sync: false,
       propsData: {
-        changeButtonDisabled: false,
+        componentEnabled: true,
         registeredAddress: store.state.registeredAddress
       },
       store,
@@ -248,7 +248,7 @@ describe('OfficeAddresses as a COOP', () => {
     const wrapper: Wrapper<OfficeAddresses> = mount(OfficeAddresses, {
       sync: false,
       propsData: {
-        changeButtonDisabled: true,
+        componentEnabled: false,
         registeredAddress: store.state.registeredAddress
       },
       store,
@@ -505,7 +505,7 @@ describe('OfficeAddresses as a BCOMP', () => {
     const wrapper: Wrapper<OfficeAddresses> = mount(OfficeAddresses, {
       sync: false,
       propsData: {
-        changeButtonDisabled: false,
+        componentEnabled: true,
         registeredAddress: store.state.registeredAddress,
         recordsAddress: store.state.recordsAddress
       },
@@ -520,7 +520,7 @@ describe('OfficeAddresses as a BCOMP', () => {
     const wrapper: Wrapper<OfficeAddresses> = mount(OfficeAddresses, {
       sync: false,
       propsData: {
-        changeButtonDisabled: true,
+        componentEnabled: false,
         registeredAddress: store.state.registeredAddress,
         recordsAddress: store.state.recordsAddress
       },
