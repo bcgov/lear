@@ -102,7 +102,6 @@ venv.bak/
 /**/.temp
 
 # node
-/**/package-lock.json
 /**/node_modules
 
 # OS specific
