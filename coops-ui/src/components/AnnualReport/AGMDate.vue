@@ -136,12 +136,10 @@ export default class AGMDate extends Mixins(DateMixin) {
    */
   private get maxDate (): string {
     /*
-     * If filing is for current year then use current date,
-     * otherwise use last day in filing year.
+     * If filing is in past year then use last day in that year,
+     * otherwise use current date.
      */
-    return (this.ARFilingYear === this.currentYear)
-      ? this.currentDate.split('/').join('-')
-      : `${this.ARFilingYear}-12-31`
+    return (this.ARFilingYear < this.currentYear) ? `${this.ARFilingYear}-12-31` : this.currentDate
   }
 
   /**
@@ -162,7 +160,7 @@ export default class AGMDate extends Mixins(DateMixin) {
    * The current year.
    */
   private get currentYear (): number {
-    return this.currentDate ? +this.currentDate.substring(0, 4) : null
+    return this.currentDate ? +this.currentDate.substring(0, 4) : 0
   }
 
   /**

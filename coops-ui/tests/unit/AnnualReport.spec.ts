@@ -92,6 +92,9 @@ describe('AnnualReport - Part 1 - UI', () => {
   })
 
   it('initializes the store variables properly', () => {
+    // set current date in store
+    store.state.currentDate = '2019-03-03'
+
     const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route }, vuetify })
     const vm: any = wrapper.vm
@@ -103,8 +106,8 @@ describe('AnnualReport - Part 1 - UI', () => {
 
     // check titles and sub-titles
     expect(vm.$el.querySelector('#AR-header').textContent).toContain('2017')
-    expect(vm.$el.querySelector('#AR-step-2-header span').textContent).toContain('2017')
-    expect(vm.$el.querySelector('#AR-step-3-header + p').textContent).toContain('2017')
+    expect(vm.$el.querySelector('#AR-step-2-header span').textContent).toContain('2017-12-31')
+    expect(vm.$el.querySelector('#AR-step-3-header + p').textContent).toContain('2017-12-31')
 
     wrapper.destroy()
   })
