@@ -78,7 +78,7 @@
                   <header>
                     <h2 id="AR-step-2-header">2. Registered Office Addresses
                       <span class="agm-date" v-if="agmDate">(as of {{ARFilingYear}} Annual General Meeting)</span>
-                      <span class="agm-date" v-else>(as of {{annualReportDate}})</span>
+                      <span class="agm-date" v-else>(as of {{asOfDate}})</span>
                     </h2>
                     <p>Verify or change your Registered Office Addresses.</p>
                   </header>
@@ -86,7 +86,7 @@
                     :addresses.sync="addresses"
                     :registeredAddress.sync="registeredAddress"
                     :recordsAddress.sync="recordsAddress"
-                    :asOfDate="annualReportDate"
+                    :asOfDate="asOfDate"
                     :componentEnabled="allowChange('coa')"
                     @modified="officeModifiedEventHandler($event)"
                     @valid="addressFormValid = $event"
@@ -99,7 +99,7 @@
                     <h2 id="AR-step-3-header">3. Directors</h2>
                     <p v-if="allowChange('cod')">Tell us who was elected or appointed and who ceased to be
                       a director at your {{ ARFilingYear }} AGM.</p>
-                    <p v-else>This is your list of directors active as of {{annualReportDate}}, including
+                    <p v-else>This is your list of directors active as of {{asOfDate}}, including
                       directors that were ceased at a later date.</p>
                   </header>
                   <Directors ref="directorsList"
@@ -108,7 +108,7 @@
                     @allDirectors="allDirectors=$event"
                     @directorFormValid="directorFormValid=$event"
                     @directorEditAction="directorEditInProgress=$event"
-                    :asOfDate="annualReportDate"
+                    :asOfDate="asOfDate"
                     :componentEnabled="allowChange('cod')"
                   />
                 </section>
@@ -390,12 +390,9 @@ export default {
     ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState', 'lastCOAFilingDate', 'lastCODFilingDate']),
 
     /**
-     * The Annual Report date, used as:
-     * - As Of Date
-     * - Effective Date
-     * - Annual Report Date
+     * The As Of date, used to query data, as Effective Date, and as Annual Report Date.
      */
-    annualReportDate () {
+    asOfDate () {
       // if AGM Date is not empty then use it
       if (this.agmDate) return this.agmDate
       // if filing is in past year then use last day in that year
@@ -723,7 +720,7 @@ export default {
           certifiedBy: this.certifiedBy || '',
           email: 'no_one@never.get',
           date: this.currentDate,
-          effectiveDate: this.annualReportDate + 'T00:00:00+00:00'
+          effectiveDate: this.asOfDate + 'T00:00:00+00:00'
         }
       }
       // only save this if it's not null
@@ -744,7 +741,7 @@ export default {
           annualReport: {
             annualGeneralMeetingDate: this.agmDate || null, // API doesn't validate empty string
             didNotHoldAgm: this.noAgm || false,
-            annualReportDate: this.annualReportDate,
+            annualReportDate: this.asOfDate,
             offices: {
               registeredOffice: {
                 deliveryAddress: this.addresses.registeredOffice['deliveryAddress'],
@@ -757,7 +754,7 @@ export default {
       } else {
         annualReport = {
           annualReport: {
-            annualReportDate: this.annualReportDate,
+            annualReportDate: this.asOfDate,
             nextARDate: this.dateToUsableString(new Date(this.nextARDate)),
             offices: {
               registeredOffice: {
