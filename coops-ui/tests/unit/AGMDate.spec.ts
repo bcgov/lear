@@ -33,7 +33,7 @@ describe('AGMDate', () => {
   beforeEach(async () => {
     // init store
     store.state.entityIncNo = 'CP0001191'
-    store.state.currentDate = '2019/07/15'
+    store.state.currentDate = '2019-07-15'
     store.state.ARFilingYear = 2019
     store.state.entityType = EntityTypes.COOP
     store.state.lastAnnualReportDate = '2018-07-15'
@@ -89,14 +89,14 @@ describe('AGMDate', () => {
     expect(vm.$store.state.ARFilingYear).toBe(2019)
 
     // first try with a later Current Date
-    store.state.currentDate = '2020/02/07'
+    store.state.currentDate = '2020-02-07'
 
     // verify Max Date
     expect(vm.maxDate).toBe('2019-12-31')
 
     // now try with original Current Date
     // this also resets the data for other tests
-    store.state.currentDate = '2019/07/15'
+    store.state.currentDate = '2019-07-15'
 
     // verify Max Date
     expect(vm.maxDate).toBe('2019-07-15')

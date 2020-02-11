@@ -86,7 +86,7 @@
                     :addresses.sync="addresses"
                     :registeredAddress.sync="registeredAddress"
                     :recordsAddress.sync="recordsAddress"
-                    :asOfDate="agmDate || annualReportDate"
+                    :asOfDate="annualReportDate"
                     :componentEnabled="allowChange('coa')"
                     @modified="officeModifiedEventHandler($event)"
                     @valid="addressFormValid = $event"
@@ -99,7 +99,7 @@
                     <h2 id="AR-step-3-header">3. Directors</h2>
                     <p v-if="allowChange('cod')">Tell us who was elected or appointed and who ceased to be
                       a director at your {{ ARFilingYear }} AGM.</p>
-                    <p v-else>This is your list of directors active as of {{agmDate || annualReportDate}}, including
+                    <p v-else>This is your list of directors active as of {{annualReportDate}}, including
                       directors that were ceased at a later date.</p>
                   </header>
                   <Directors ref="directorsList"
@@ -108,7 +108,7 @@
                     @allDirectors="allDirectors=$event"
                     @directorFormValid="directorFormValid=$event"
                     @directorEditAction="directorEditInProgress=$event"
-                    :asOfDate="agmDate || annualReportDate"
+                    :asOfDate="annualReportDate"
                     :componentEnabled="allowChange('cod')"
                   />
                 </section>
@@ -389,9 +389,27 @@ export default {
 
     ...mapGetters(['isRoleStaff', 'isAnnualReportEditable', 'reportState', 'lastCOAFilingDate', 'lastCODFilingDate']),
 
+    /**
+     * The Annual Report date, used as:
+     * - As Of Date
+     * - Effective Date
+     * - Annual Report Date
+     */
     annualReportDate () {
-      // this value is used as Annual Report Date and Effective Date (when AGM Date is empty)
-      return `${this.ARFilingYear}-12-31`
+      // if AGM Date is not empty then use it
+      if (this.agmDate) return this.agmDate
+      // if filing is in past year then use last day in that year
+      if (this.ARFilingYear < this.currentYear) return `${this.ARFilingYear}-12-31`
+      // otherwise use current date
+      // (should never happen because either we should have an AGM Date or filing should be in past year)
+      return this.currentDate
+    },
+
+    /**
+     * The current year.
+     */
+    currentYear (): number {
+      return this.currentDate ? +this.currentDate.substring(0, 4) : 0
     },
 
     certifyMessage () {
@@ -705,8 +723,7 @@ export default {
           certifiedBy: this.certifiedBy || '',
           email: 'no_one@never.get',
           date: this.currentDate,
-          effectiveDate: this.agmDate ? this.agmDate + 'T00:00:00+00:00'
-            : this.annualReportDate + 'T00:00:00+00:00'
+          effectiveDate: this.annualReportDate + 'T00:00:00+00:00'
         }
       }
       // only save this if it's not null
