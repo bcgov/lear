@@ -513,15 +513,11 @@ export default {
                 this.$refs.directorsList.setDraftDate(annualReport.annualGeneralMeetingDate)
               }
               if (this.entityFilter(EntityTypes.COOP)) {
-                // set the new AGM date in the AGM Date component
-                // (this value is empty if user did not enter an AGM date)
-                this.newAgmDate = annualReport.annualGeneralMeetingDate
-                // set the new No AGM flag in the AGM Date component
-                this.newNoAgm = annualReport.didNotHoldAgm
+                // set the new AGM date in the AGM Date component (may be null or empty)
+                this.newAgmDate = annualReport.annualGeneralMeetingDate || ''
+                // set the new No AGM flag in the AGM Date component (may be undefined)
+                this.newNoAgm = annualReport.didNotHoldAgm || false
               }
-              // set appropriate filing code
-              this.entityFilter(EntityTypes.COOP) && this.toggleFiling('add', FilingCodes.ANNUAL_REPORT_OT)
-              this.entityFilter(EntityTypes.BCOMP) && this.toggleFiling('add', FilingCodes.ANNUAL_REPORT_BC)
             } else {
               throw new Error('missing annual report')
             }
@@ -729,8 +725,8 @@ export default {
       if (this.entityFilter(EntityTypes.COOP)) {
         annualReport = {
           annualReport: {
-            annualGeneralMeetingDate: this.agmDate,
-            didNotHoldAgm: this.noAgm,
+            annualGeneralMeetingDate: this.agmDate || null, // API doesn't validate empty string
+            didNotHoldAgm: this.noAgm || false,
             annualReportDate: this.annualReportDate,
             offices: {
               registeredOffice: {
@@ -929,6 +925,12 @@ export default {
       }
       return hasPendingItems
     }
+  },
+
+  mounted () {
+    // for BComp, add AR filing code now
+    // for Coop, code is added when AGM Date becomes valid
+    this.entityFilter(EntityTypes.BCOMP) && this.toggleFiling('add', FilingCodes.ANNUAL_REPORT_BC)
   },
 
   watch: {
