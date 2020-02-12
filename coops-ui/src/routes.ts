@@ -2,6 +2,7 @@ import Dashboard from '@/views/Dashboard.vue'
 import AnnualReport from '@/views/AnnualReport.vue'
 import StandaloneDirectorsFiling from '@/views/StandaloneDirectorsFiling.vue'
 import StandaloneOfficeAddressFiling from '@/views/StandaloneOfficeAddressFiling.vue'
+import Correction from '@/views/Correction.vue'
 
 export default [
   {
@@ -36,6 +37,14 @@ export default [
     path: '/standalone-addresses',
     name: 'standalone-addresses',
     component: StandaloneOfficeAddressFiling,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/correction',
+    name: 'correction',
+    component: Correction,
     meta: {
       requiresAuth: true
     }

@@ -1,16 +1,16 @@
 <template>
   <div id="todo-list">
-    <ConfirmDialog
+    <confirm-dialog
       ref="confirm"
       attach="#todo-list"
     />
 
-    <ConfirmDialog
+    <confirm-dialog
       ref="confirmCancelPaymentDialog"
       attach="#todo-list"
     />
 
-    <DeleteErrorDialog
+    <delete-error-dialog
       :dialog="deleteErrorDialog"
       :errors="deleteErrors"
       :warnings="deleteWarnings"
@@ -18,7 +18,7 @@
       attach="#todo-list"
     />
 
-    <CancelPaymentErrorDialog
+    <cancel-payment-error-dialog
       :dialog="cancelPaymentErrorDialog"
       :errors="cancelPaymentErrors"
       @okay="resetCancelPaymentErrors"
@@ -240,7 +240,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import axios from '@/axios-auth'
 import { mapState, mapActions } from 'vuex'
 import Vue2Filters from 'vue2-filters' // needed for orderBy
@@ -252,10 +252,7 @@ import { ConfirmDialog, DeleteErrorDialog, CancelPaymentErrorDialog } from '@/co
 import { EntityFilterMixin, DateMixin } from '@/mixins'
 
 // Enums
-import { EntityTypes, FilingStatus } from '@/enums'
-
-// Constants
-import { ANNUALREPORT, CHANGEOFADDRESS, CHANGEOFDIRECTORS } from '@/constants'
+import { EntityTypes, FilingStatus, FilingTypes } from '@/enums'
 
 export default {
   name: 'TodoList',
@@ -335,7 +332,7 @@ export default {
       const todo = task.task.todo
       if (todo && todo.header) {
         switch (todo.header.name) {
-          case ANNUALREPORT: {
+          case FilingTypes.ANNUAL_REPORT: {
             const ARFilingYear = todo.header.ARFilingYear
             this.taskItems.push({
               type: todo.header.name,
@@ -364,13 +361,13 @@ export default {
       const filing = task.task.filing
       if (filing && filing.header) {
         switch (filing.header.name) {
-          case ANNUALREPORT:
+          case FilingTypes.ANNUAL_REPORT:
             this.loadAnnualReport(task)
             break
-          case CHANGEOFDIRECTORS:
+          case FilingTypes.CHANGE_OF_DIRECTORS:
             this.loadChangeOfDirectors(task)
             break
-          case CHANGEOFADDRESS:
+          case FilingTypes.CHANGE_OF_ADDRESS:
             this.loadChangeOfAddress(task)
             break
           default:
@@ -454,7 +451,7 @@ export default {
 
     doFileNow (item) {
       switch (item.type) {
-        case ANNUALREPORT:
+        case FilingTypes.ANNUAL_REPORT:
           // file the subject Annual Report
           this.setARFilingYear(item.ARFilingYear)
           this.setCurrentFilingStatus(FilingStatus.NEW)
@@ -469,19 +466,19 @@ export default {
 
     doResumeFiling (item) {
       switch (item.type) {
-        case ANNUALREPORT:
+        case FilingTypes.ANNUAL_REPORT:
           // resume the subject Annual Report
           this.setARFilingYear(item.ARFilingYear)
           this.setCurrentFilingStatus(FilingStatus.DRAFT)
           this.$router.push({ name: 'annual-report', params: { id: item.id } })
           break
-        case CHANGEOFDIRECTORS:
+        case FilingTypes.CHANGE_OF_DIRECTORS:
           // resume the subject Change Of Directors
           this.setARFilingYear(item.ARFilingYear)
           this.setCurrentFilingStatus(FilingStatus.DRAFT)
           this.$router.push({ name: 'standalone-directors', params: { id: item.id } })
           break
-        case CHANGEOFADDRESS:
+        case FilingTypes.CHANGE_OF_ADDRESS:
           // resume the subject Change Of Address
           this.setARFilingYear(item.ARFilingYear)
           this.setCurrentFilingStatus(FilingStatus.DRAFT)
@@ -591,7 +588,7 @@ export default {
     },
 
     isConfirmEnabled (type, status) {
-      return ((type === ANNUALREPORT) && (status === FilingStatus.NEW))
+      return ((type === FilingTypes.ANNUAL_REPORT) && (status === FilingStatus.NEW))
     },
 
     confirmCancelPayment (item) {

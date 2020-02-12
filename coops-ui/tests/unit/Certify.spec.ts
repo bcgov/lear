@@ -13,6 +13,7 @@
 
 import Vue from 'vue'
 import Vuetify from 'vuetify'
+import store from '@/store/store'
 import { mount, Wrapper } from '@vue/test-utils'
 
 import Certify from '@/components/AnnualReport/Certify.vue'
@@ -57,10 +58,13 @@ function createComponent (
   isCertified: boolean = undefined,
   currentDate: string = defaultDate
 ): Wrapper<Certify> {
-  return mount(Certify, { sync: false,
+  store.state.currentDate = currentDate
+
+  return mount(Certify, {
+    store,
+    sync: false,
     propsData: {
       certifiedBy,
-      currentDate,
       isCertified
     }
   })

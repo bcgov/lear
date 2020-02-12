@@ -1,17 +1,17 @@
 <template>
   <div id="standalone-directors">
-    <ConfirmDialog
+    <confirm-dialog
       ref="confirm"
       attach="#standalone-directors"
     />
 
-    <ResumeErrorDialog
+    <resume-error-dialog
       :dialog="resumeErrorDialog"
       @exit="navigateToDashboard"
       attach="#standalone-directors"
     />
 
-    <SaveErrorDialog
+    <save-error-dialog
       filing="Change of Directors"
       :dialog="saveErrorDialog"
       :disableRetry="busySaving"
@@ -23,7 +23,7 @@
       attach="#standalone-directors"
     />
 
-    <PaymentErrorDialog
+    <payment-error-dialog
       :dialog="paymentErrorDialog"
       @exit="navigateToDashboard"
       attach="#standalone-directors"
@@ -46,7 +46,6 @@
               <article id="standalone-directors-article">
                 <header>
                   <h1 id="filing-header">Director Change</h1>
-
                   <p>Select the date of your director changes. If you have director changes that occured on
                       different dates, you will need to perform multiple Director Change filings &mdash;
                       one for each unique date.</p>
@@ -56,12 +55,12 @@
                     icon="mdi-information"
                     class="white-background"
                   >
-                    <span>Director changes can be made as far back as {{ earliestDateToSet }}.</span>
+                    <span>Director changes can be made as far back as {{earliestDateToSet}}.</span>
                   </v-alert>
                 </header>
 
                 <section>
-                  <CODDate
+                  <cod-date
                     :initialCODDate="initialCODDate"
                     @codDate="codDate=$event"
                     @valid="codDateValid=$event"
@@ -70,7 +69,7 @@
 
                 <!-- Director Information -->
                 <section>
-                  <Directors ref="directorsList"
+                  <directors ref="directorsList"
                     @directorsChange="directorsChange"
                     @directorsFreeChange="directorsFreeChange"
                     @earliestDateToSet="earliestDateToSet=$event"
@@ -86,15 +85,15 @@
                 <section>
                   <header>
                     <h2 id="AR-step-4-header">Certify Correct</h2>
-                    <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+                    <p>Enter the legal name of the current director, officer, or lawyer submitting this
+                      Director Change.</p>
                   </header>
-                  <Certify
+                  <certify
                     :isCertified.sync="isCertified"
                     :certifiedBy.sync="certifiedBy"
-                    :currentDate="currentDate"
-                    @valid="certifyFormValid=$event"
                     :entityDisplay="displayName()"
                     :message="certifyText(FilingCodes.DIRECTOR_CHANGE_OT)"
+                    @valid="certifyFormValid=$event"
                   />
                 </section>
 
@@ -103,7 +102,7 @@
                   <header>
                     <h2 id="AR-step-5-header">Staff Payment</h2>
                   </header>
-                  <StaffPayment
+                  <staff-payment
                     :value.sync="routingSlipNumber"
                     @valid="staffPaymentFormValid=$event"
                   />
@@ -187,12 +186,12 @@
                     icon="mdi-information"
                     class="white-background"
                   >
-                    <p class="complianceDialogMsg">{{ complianceDialogMsg.msg }}</p>
+                    <p class="complianceDialogMsg">{{complianceDialogMsg.msg}}</p>
                   </v-alert>
                 </section>
                 <!-- Director Information -->
                 <section>
-                  <SummaryDirectors
+                  <summary-directors
                     :directors="allDirectors"
                   />
                 </section>
@@ -202,13 +201,12 @@
                   <header>
                     <h2>Certify Correct</h2>
                   </header>
-                  <SummaryCertify
+                  <summary-certify
                     :isCertified.sync="isCertified"
                     :certifiedBy.sync="certifiedBy"
-                    :currentDate="currentDate"
-                    @valid="certifyFormValid=$event"
                     :entityDisplay="displayName()"
                     :message="certifyText(FilingCodes.DIRECTOR_CHANGE_OT)"
+                    @valid="certifyFormValid=$event"
                   />
                 </section>
 
@@ -217,7 +215,7 @@
                   <header>
                     <h2>Staff Payment</h2>
                   </header>
-                  <SummaryStaffPayment
+                  <summary-staff-payment
                     :value="routingSlipNumber"
                   />
                 </section>
@@ -264,7 +262,7 @@
                     :loading="filingPaying"
                     @click="onClickFilePay()"
                   >
-                    <span>{{ isPayRequired ? "File &amp; Pay" : "File" }}</span>
+                    <span>{{isPayRequired ? "File &amp; Pay" : "File"}}</span>
                   </v-btn>
                 </div>
               </template>
@@ -285,7 +283,7 @@ import { mapState, mapGetters } from 'vuex'
 import { BAD_REQUEST, PAYMENT_REQUIRED } from 'http-status-codes'
 
 // Components
-import CODDate from '@/components/StandaloneDirectorChange/CODDate.vue'
+import CodDate from '@/components/StandaloneDirectorChange/CODDate.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
@@ -308,7 +306,7 @@ export default {
   name: 'StandaloneDirectorsFiling',
 
   components: {
-    CODDate,
+    CodDate,
     Directors,
     SummaryDirectors,
     SummaryCertify,
@@ -356,9 +354,8 @@ export default {
       staffPaymentFormValid: false,
       totalFee: 0,
 
-      // EntityTypes Enum
+      // enums
       EntityTypes,
-
       FilingCodes
     }
   },
@@ -471,6 +468,7 @@ export default {
       this.saving = true
       const filing = await this.saveFiling(true)
       if (filing) {
+        // save Filing ID for future PUTs
         this.filingId = +filing.header.filingId
       }
       this.saving = false
@@ -777,7 +775,7 @@ export default {
           })
           .catch(error => {
             // eslint-disable-next-line no-console
-            console.error('fetchData() error =', error)
+            console.error('hasTasks() error =', error)
             this.saveErrorDialog = true
           })
       }
@@ -830,11 +828,6 @@ h2 {
   margin-bottom: 0.25rem;
   margin-top: 3rem;
   font-size: 1.125rem;
-}
-
-.agm-date {
-  margin-left: 0.25rem;
-  font-weight: 300;
 }
 
 // Save & Filing Buttons

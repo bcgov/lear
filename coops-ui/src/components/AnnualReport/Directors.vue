@@ -804,9 +804,10 @@ export default class Directors extends Mixins(DateMixin, CommonMixin,
   }
 
   /**
-   * Lifecycle hook to load initial data.
+   * Called when component is mounted.
    */
   private mounted (): void {
+    // load initial data
     if (['NEW', 'DRAFT'].includes(this.currentFilingStatus)) {
       // if draft: get original directors but doesn't overwrite this.directors
       this.getDirectors(this.currentFilingStatus === 'DRAFT')

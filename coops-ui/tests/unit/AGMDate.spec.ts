@@ -5,7 +5,7 @@ import { mount } from '@vue/test-utils'
 import flushPromises from 'flush-promises'
 
 import store from '@/store/store'
-import AGMDate from '@/components/AnnualReport/AGMDate.vue'
+import AgmDate from '@/components/AnnualReport/AGMDate.vue'
 import { EntityTypes } from '@/enums'
 
 // NB: test util async issue
@@ -26,7 +26,7 @@ Vue.use(Vuelidate)
 
 const vuetify = new Vuetify({})
 
-describe('AGMDate', () => {
+describe('AgmDate', () => {
   let wrapper
   let vm
 
@@ -38,7 +38,7 @@ describe('AGMDate', () => {
     store.state.entityType = EntityTypes.COOP
     store.state.lastAnnualReportDate = '2018-07-15'
 
-    wrapper = mount(AGMDate, { store, vuetify })
+    wrapper = mount(AgmDate, { store, vuetify })
     vm = wrapper.vm as any
 
     await flushPromises()

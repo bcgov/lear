@@ -5,7 +5,7 @@ import Vuelidate from 'vuelidate'
 import sinon from 'sinon'
 import { createLocalVue, shallowMount, mount } from '@vue/test-utils'
 import flushPromises from 'flush-promises'
-import CODDate from '@/components/StandaloneDirectorChange/CODDate.vue'
+import CodDate from '@/components/StandaloneDirectorChange/CODDate.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
@@ -82,7 +82,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
     const $route = { params: { id: 0 } } // new filing id
     const wrapper = shallowMount(StandaloneDirectorsFiling, { store, mocks: { $route } })
 
-    expect(wrapper.find(CODDate).exists()).toBe(true)
+    expect(wrapper.find(CodDate).exists()).toBe(true)
     expect(wrapper.find(Directors).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)
     expect(wrapper.find(StaffPayment).exists()).toBe(false) // normally not rendered
@@ -266,7 +266,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
       store,
       mocks: { $route },
       stubs: {
-        CODDate: true,
+        CodDate: true,
         Directors: true,
         Certify: true,
         StaffPayment: true,
@@ -301,7 +301,7 @@ describe('Standalone Directors Filing - Part 1 - UI', () => {
       store,
       mocks: { $route },
       stubs: {
-        CODDate: true,
+        CodDate: true,
         Directors: true,
         Certify: true,
         StaffPayment: true,
@@ -555,7 +555,7 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
       store,
       mocks: { $route },
       stubs: {
-        CODDate: true,
+        CodDate: true,
         Directors: true,
         Certify: true,
         StaffPayment: true,
@@ -683,7 +683,7 @@ describe('Standalone Directors Filing - Part 3A - Submitting filing that needs t
       store,
       mocks: { $route },
       stubs: {
-        CODDate: true,
+        CodDate: true,
         Directors: true,
         Certify: true,
         StaffPayment: true,

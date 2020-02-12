@@ -82,7 +82,7 @@ import { FormType } from '@/interfaces'
     ...mapGetters(['lastFilingDate'])
   }
 })
-export default class AGMDate extends Mixins(DateMixin) {
+export default class AgmDate extends Mixins(DateMixin) {
   // annotate form to fix "Property X does not exist on type Y" error
   $refs!: {
     form: FormType
@@ -164,7 +164,7 @@ export default class AGMDate extends Mixins(DateMixin) {
   }
 
   /**
-   * Lifecycle hook.
+   * Called when component is mounted.
    */
   private mounted (): void {
     // initialize date picker but not text field

@@ -11,33 +11,40 @@
             label="Enter Legal Name"
             hint="Legal name of current director, officer, or lawyer of the association"
             :value="certifiedBy"
-            @input="emitCertifiedBy"
+            :rules="[ v => !!v || 'Legal Name is required.']"
+            @input="emitCertifiedBy($event)"
           />
         </div>
       </div>
       <v-checkbox
         :value="isCertified"
-        @change="emitIsCertified"
+        @change="emitIsCertified($event)"
       >
         <template slot="label">
           <div class="certify-stmt">
             I, <b>{{trimmedCertifiedBy || '[Legal Name]'}}</b>, certify that I have relevant knowledge of the
-            {{ entityDisplay || 'association' }} and that I am authorized to make this filing.
+            {{entityDisplay || 'association'}} and that I am authorized to make this filing.
           </div>
         </template>
       </v-checkbox>
-      <p class="certify-clause">{{currentDate}}</p>
-      <p class="certify-clause">
-        {{message}}
-      </p>
+      <p class="certify-clause">Date: {{currentDate}}</p>
+      <p class="certify-clause">{{message}}</p>
     </div>
   </v-card>
 </template>
 
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
-@Component({})
+import { mapState } from 'vuex'
+
+@Component({
+  computed: {
+    ...mapState(['currentDate'])
+  }
+})
 export default class Certify extends Vue {
+  readonly currentDate!: string
+
   // Props passed into this component.
   @Prop({ default: '' })
   private certifiedBy: string
@@ -46,13 +53,11 @@ export default class Certify extends Vue {
   private isCertified: boolean
 
   @Prop({ default: '' })
-  private currentDate: string
-
-  @Prop({ default: '' })
   private message: string
 
   @Prop({ default: '' })
   private entityDisplay: string
+
   /**
    * Lifecycle callback to always give the parent a "valid" event for its property values.
    */
@@ -75,7 +80,6 @@ export default class Certify extends Vue {
     // remove repeated inline whitespace, and leading/trailing whitespace
     certifiedBy = certifiedBy && certifiedBy.replace(/\s+/g, ' ').trim()
     this.emitValid(Boolean(certifiedBy && this.isCertified))
-
     return certifiedBy
   }
 
@@ -83,7 +87,6 @@ export default class Certify extends Vue {
   @Emit('update:isCertified')
   private emitIsCertified (isCertified: boolean): boolean {
     this.emitValid(Boolean(this.trimmedCertifiedBy && isCertified))
-
     return isCertified
   }
 
@@ -142,7 +145,7 @@ export default class Certify extends Vue {
 }
 
 .certify-stmt {
-  display:inline;
+  display: inline;
   font-size: 0.875rem;
   color: black;
 }

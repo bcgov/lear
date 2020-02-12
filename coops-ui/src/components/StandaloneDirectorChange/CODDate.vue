@@ -31,7 +31,7 @@
             :min=minDate
             :max=maxDate
             no-title
-            @input="menu = true"
+            @input="menu=true"
           />
         </v-menu>
 
@@ -65,7 +65,7 @@ import DateMixin from '@/mixins/date-mixin'
     dateFormatted: { isNotNull, isValidFormat, isValidCODDate }
   }
 })
-export default class CODDate extends Mixins(DateMixin) {
+export default class CodDate extends Mixins(DateMixin) {
   // Prop passed into this component.
   @Prop({ default: '' })
   private initialCODDate: string
@@ -125,9 +125,10 @@ export default class CODDate extends Mixins(DateMixin) {
   }
 
   /**
-   * Lifecycle hook to load initial data.
+   * Called when component is mounted.
    */
   private mounted (): void {
+    // load initial data
     this.dateFormatted = this.formatDate(this.initialCODDate)
   }
 

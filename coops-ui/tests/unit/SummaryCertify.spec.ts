@@ -1,13 +1,11 @@
 // Libraries
 import Vue from 'vue'
 import Vuetify from 'vuetify'
+import store from '@/store/store'
 import { mount, Wrapper } from '@vue/test-utils'
 
 // Components
 import { SummaryCertify } from '@/components/common'
-
-// Store
-import store from '@/store/store'
 
 Vue.use(Vuetify)
 let vuetify = new Vuetify({})
@@ -25,28 +23,34 @@ const defaultDate = '2019-01-01'
  *
  * @returns a Wrapper<Certify> object with the given parameters.
  */
-function createComponent (certifiedBy: string = undefined, isCertified: boolean = undefined,
-  currentDate: string = defaultDate): Wrapper<SummaryCertify> {
-  return mount(SummaryCertify, { sync: false,
+function createComponent (
+  certifiedBy: string = undefined,
+  isCertified: boolean = undefined,
+  currentDate: string = defaultDate
+): Wrapper<SummaryCertify> {
+  store.state.currentDate = currentDate
+
+  return mount(SummaryCertify, {
+    store,
+    sync: false,
     propsData: {
-      'certifiedBy': certifiedBy,
-      'currentDate': currentDate,
-      'isCertified': isCertified
+      certifiedBy,
+      isCertified
     } })
 }
 
 describe('SummaryCertified', () => {
-  let vm
+  // let vm
 
-  beforeEach(done => {
-    const Constructor = Vue.extend(SummaryCertify)
-    const instance = new Constructor({ store, vuetify })
-    vm = instance.$mount()
+  // beforeEach(done => {
+  //   const Constructor = Vue.extend(SummaryCertify)
+  //   const instance = new Constructor({ store, vuetify })
+  //   vm = instance.$mount()
 
-    Vue.nextTick(() => {
-      done()
-    })
-  })
+  //   Vue.nextTick(() => {
+  //     done()
+  //   })
+  // })
 
   it('has date displayed', () => {
     const wrapper: Wrapper<SummaryCertify> = createComponent()

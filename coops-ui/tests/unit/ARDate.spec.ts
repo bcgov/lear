@@ -4,7 +4,7 @@ import Vuelidate from 'vuelidate'
 
 import store from '@/store/store'
 import { shallowMount } from '@vue/test-utils'
-import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
+import ArDate from '@/components/AnnualReport/BCorp/ARDate.vue'
 
 Vue.use(Vuetify)
 Vue.use(Vuelidate)
@@ -17,7 +17,7 @@ describe('AnnualReport - Part 1 - UI', () => {
   })
 
   it('initializes the store variables properly', () => {
-    const wrapper = shallowMount(ARDate, { store })
+    const wrapper = shallowMount(ArDate, { store })
     const vm: any = wrapper.vm
 
     expect(vm.$store.state.currentDate).toEqual('2019/07/15')
@@ -27,7 +27,7 @@ describe('AnnualReport - Part 1 - UI', () => {
   })
 
   it('succeeds when the Annual report date outputs are correct', () => {
-    const wrapper = shallowMount(ARDate, { store })
+    const wrapper = shallowMount(ArDate, { store })
     const vm: any = wrapper.vm
     const regex = / (?!.* )/
     const today = new Date().toDateString().split(' ').slice(1).join(' ').replace(regex, ', ')

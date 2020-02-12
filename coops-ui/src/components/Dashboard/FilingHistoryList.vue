@@ -1,12 +1,12 @@
 <template>
   <div id="filing-history-list">
-    <DownloadErrorDialog
+    <download-error-dialog
       :dialog="downloadErrorDialog"
       @close="downloadErrorDialog = false"
       attach="#filing-history-list"
     />
 
-    <v-expansion-panels v-if="filedItems && filedItems.length > 0" v-model="panel" accordion>
+    <v-expansion-panels v-if="filedItems.length > 0" v-model="panel" accordion>
       <v-expansion-panel
         class="align-items-top filing-item"
         v-for="(item, index) in filedItems"
@@ -17,11 +17,18 @@
             <div class="filing-label">
               <v-row>
                 <v-col cols="6" class="v-col-padding">
-                  <div class="list-item__title mb-1">{{item.name}}</div>
+                  <div class="list-item__title mb-1">{{item.title}}</div>
+                  <!-- <v-btn text icon color="error"
+                    v-if="isRoleStaff && !item.corrected"
+                    :disabled="hasBlockerFiling"
+                    @click="correctThisItem(item)"
+                  >
+                    <v-icon small>mdi-pencil</v-icon>
+                  </v-btn> -->
                 </v-col>
               </v-row>
               <div class="list-item__subtitle">
-                <v-scale-transition v-if="isCoaFutureEffective(item.name, item.status)">
+                <v-scale-transition v-if="isCoaFutureEffective(item.type, item.status)">
                   <v-tooltip
                     top
                     content-class="pending-tooltip"
@@ -120,7 +127,7 @@
     </v-expansion-panels>
 
     <!-- No Results Message -->
-    <v-card class="no-results" flat v-if="filedItems && filedItems.length === 0">
+    <v-card class="no-results" flat v-if="filedItems.length === 0">
       <v-card-text>
         <div class="no-results__title">You have no filing history</div>
         <div class="no-results__subtitle">Your completed filings and transactions will appear here</div>
@@ -132,13 +139,13 @@
 <script lang="ts">
 // Libraries
 import axios from '@/axios-auth'
-import { mapState } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 
 // Dialogs
 import { DownloadErrorDialog } from '@/components/dialogs'
 
 // Enums
-import { EntityTypes, FilingStatus, FilingTypes } from '@/enums'
+import { EntityTypes, FilingNames, FilingStatus, FilingTypes } from '@/enums'
 
 // Mixins
 import DateMixin from '@/mixins/date-mixin'
@@ -157,7 +164,7 @@ export default {
     return {
       downloadErrorDialog: false,
       panel: null, // currently expanded panel
-      filedItems: null,
+      filedItems: [],
       loadingDocument: false,
       loadingReceipt: false,
       loadingAll: false,
@@ -167,7 +174,13 @@ export default {
     }
   },
 
+  props: {
+    hasBlockerFiling: null
+  },
+
   computed: {
+    ...mapGetters(['isRoleStaff']),
+
     ...mapState(['entityIncNo', 'filings', 'entityName'])
   },
 
@@ -186,28 +199,35 @@ export default {
         if (filing && filing.header) {
           let filingDate = filing.header.date.slice(0, 10)
           if (filingDate < '2019-03-08' || filing.header.availableOnPaperOnly) {
+            // filings before Bob Date
             this.loadPaperFiling(filing)
           } else {
+            // filings on or after Bob Date
             switch (filing.header.name) {
-              case 'annualReport':
-                this.loadAnnualReport(filing)
+              case FilingTypes.ANNUAL_REPORT:
+                this.loadAnnualReport(filing, filing.annualReport)
                 break
-              case 'changeOfDirectors':
-                this.loadReport(FilingTypes.DIRECTOR_CHANGE, filing, filing.changeOfDirectors)
+              case FilingTypes.CHANGE_OF_DIRECTORS:
+                this.loadOtherReport(filing, filing.changeOfDirectors)
                 break
-              case 'changeOfAddress':
-                this.loadReport(FilingTypes.ADDRESS_CHANGE, filing, filing.changeOfAddress)
+              case FilingTypes.CHANGE_OF_ADDRESS:
+                this.loadOtherReport(filing, filing.changeOfAddress)
                 break
-              case 'changeOfName':
-                this.loadReport(FilingTypes.LEGAL_NAME_CHANGE, filing, filing.changeOfName)
+              case FilingTypes.CHANGE_OF_NAME:
+                this.loadOtherReport(filing, filing.changeOfName)
                 break
-              case 'specialResolution':
-                this.loadReport(FilingTypes.SPECIAL_RESOLUTION, filing, filing.specialResolution)
+              case FilingTypes.SPECIAL_RESOLUTION:
+                this.loadOtherReport(filing, filing.specialResolution)
                 break
-              case 'voluntaryDissolution':
-                this.loadReport(FilingTypes.VOLUNTARY_DISSOLUTION, filing, filing.voluntaryDissolution)
+              case FilingTypes.VOLUNTARY_DISSOLUTION:
+                this.loadOtherReport(FilingTypes.VOLUNTARY_DISSOLUTION, filing, filing.voluntaryDissolution)
                 break
+              // FUTURE
+              // case FilingTypes.CORRECTION:
+              //   this.loadOtherReport(filing, filing.correction)
+              //   break
               default:
+                // fallback for unknown filings
                 this.loadPaperFiling(filing)
                 break
             }
@@ -234,15 +254,20 @@ export default {
       return dateString.split(' ')[0]
     },
 
-    loadAnnualReport (filing) {
-      if (filing.annualReport) {
-        const date = filing.annualReport.annualReportDate
-        const localDateTime = this.convertUTCTimeToLocalTime(filing.header.date)
-        const filingDate = this.formatDate(localDateTime)
+    loadAnnualReport (filing, section) {
+      if (section) {
+        const date = section.annualReportDate
         if (date) {
-          const agmYear = +date.substring(0, 4)
+          const localDateTime = this.convertUTCTimeToLocalTime(filing.header.date)
+          const filingDate = this.formatDate(localDateTime)
+
+          const type = filing.header.name
+          const agmYear = +date.slice(0, 4)
+          const title = this.typeToTitle(type, agmYear)
+
           const item = {
-            name: `Annual Report (${agmYear})`,
+            type: type,
+            title: title,
             filingId: filing.header.filingId,
             filingAuthor: filing.header.certifiedBy,
             filingDateTime: localDateTime,
@@ -251,22 +276,23 @@ export default {
             filingDocuments: [{
               filingId: filing.header.filingId,
               name: 'Annual Report',
-              documentName: `${this.entityIncNo} - Annual Report (${agmYear}) - ${filingDate}.pdf`
+              documentName: `${this.entityIncNo} - ${title} - ${filingDate}.pdf`
             }],
-            paperOnly: false
+            paperOnly: false,
+            corrected: filing.header.isCorrected || false
           }
           this.filedItems.push(item)
         } else {
           // eslint-disable-next-line no-console
-          console.log('ERROR - invalid date in filing =', filing)
+          console.log('ERROR - invalid Annual Report Date in filing =', filing)
         }
       } else {
         // eslint-disable-next-line no-console
-        console.log('ERROR - invalid annualReport in filing =', filing)
+        console.log('ERROR - missing section in filing =', filing)
       }
     },
 
-    loadReport (title, filing, section) {
+    loadOtherReport (filing, section) {
       if (section) {
         const localDateTime = this.convertUTCTimeToLocalTime(filing.header.date)
         const filingDate = this.formatDate(localDateTime)
@@ -277,8 +303,13 @@ export default {
         let effectiveDate = filing.header.date.slice(0, 10)
         if (filing.header.effectiveDate) effectiveDate = filing.header.effectiveDate.slice(0, 10)
 
+        const type = filing.header.name
+        const agmYear = filing.header.date.slice(0, 4)
+        const title = this.typeToTitle(type, agmYear)
+
         const item = {
-          name: title,
+          type: type,
+          title: title,
           filingId: filing.header.filingId,
           filingAuthor: filing.header.certifiedBy,
           filingDateTime: localDateTime,
@@ -291,24 +322,30 @@ export default {
             documentName: `${this.entityIncNo} - ${title} - ${filingDate}.pdf`
           }],
           status: filing.header.status,
-          paperOnly: false
+          paperOnly: false,
+          corrected: filing.header.isCorrected || false
         }
         this.filedItems.push(item)
       } else {
         // eslint-disable-next-line no-console
-        console.log(`ERROR - invalid ${title} in filing =`, filing)
+        console.log(`ERROR - missing section in filing =`, filing)
       }
     },
 
     loadPaperFiling (filing) {
       // split name on camelcase and capitalize first letters
       if (!filing || !filing.header || !filing.header.name) return // safety check
-      let name = filing.header.name.split(/(?=[A-Z])/).join(' ')
+
       const localDateTime = this.convertUTCTimeToLocalTime(filing.header.date)
       const filingDate = this.formatDate(localDateTime)
-      name = name.charAt(0).toLocaleUpperCase() + name.slice(1)
+
+      const type = filing.header.name
+      const agmYear = filing.header.date.slice(0, 4)
+      const title = this.typeToTitle(type, agmYear)
+
       const item = {
-        name: name,
+        type: type,
+        title: title,
         filingId: filing.header.filingId,
         filingAuthor: 'Registry Staff',
         filingDate: filingDate,
@@ -316,12 +353,28 @@ export default {
         paymentToken: null,
         filingDocuments: [{
           filingId: filing.header.filingId,
-          name: name,
+          name: title,
           documentName: null
         }],
-        paperOnly: true
+        paperOnly: true,
+        corrected: filing.header.isCorrected || false
       }
       this.filedItems.push(item)
+    },
+
+    typeToTitle (type: string, agmYear: string): string {
+      if (!type) return '' // safety check
+      switch (type) {
+        case FilingTypes.ANNUAL_REPORT: return `${FilingNames.ANNUAL_REPORT} (${agmYear})`
+        case FilingTypes.CHANGE_OF_DIRECTORS: return FilingNames.DIRECTOR_CHANGE
+        case FilingTypes.CHANGE_OF_ADDRESS: return FilingNames.ADDRESS_CHANGE
+        case FilingTypes.CHANGE_OF_NAME: return FilingNames.LEGAL_NAME_CHANGE
+        case FilingTypes.SPECIAL_RESOLUTION: return FilingNames.SPECIAL_RESOLUTION
+        case FilingTypes.VOLUNTARY_DISSOLUTION: return FilingNames.VOLUNTARY_DISSOLUTION
+        case FilingTypes.CORRECTION: return FilingNames.CORRECTION
+      }
+      // fallback for unknown filings
+      return type.split(/(?=[A-Z])/).join(' ').replace(/^\w/, c => c.toUpperCase())
     },
 
     highlightFiling (highlightId) {
@@ -332,6 +385,33 @@ export default {
           this.panel = i
           break
         }
+      }
+    },
+
+    correctThisItem (item) {
+      if (!item || !item.type) return // safety check
+      switch (item.type) {
+        case FilingTypes.ANNUAL_REPORT:
+          // FUTURE:
+          // this.$router.push({ name: 'annual-report', params: { id: item.filingId, isCorrection: true } })
+          // FOR NOW:
+          this.$router.push({ name: 'correction', params: { id: item.filingId } })
+          break
+        case FilingTypes.CHANGE_OF_DIRECTORS:
+          // FUTURE:
+          // this.$router.push({ name: 'standalone-directors', params: { id: item.filingId, isCorrection: true } })
+          // FOR NOW:
+          this.$router.push({ name: 'correction', params: { id: item.filingId } })
+          break
+        case FilingTypes.CHANGE_OF_ADDRESS:
+          // FUTURE:
+          // this.$router.push({ name: 'standalone-addresses', params: { id: item.filingId, isCorrection: true } })
+          // FOR NOW:
+          this.$router.push({ name: 'correction', params: { id: item.filingId } })
+          break
+        default:
+          this.$router.push({ name: 'correction', params: { id: item.filingId } })
+          break
       }
     },
 
@@ -460,7 +540,7 @@ export default {
      */
     isCoaFutureEffective (filingType: string, status: string): boolean {
       return this.entityFilter(EntityTypes.BCOMP) &&
-        filingType === FilingTypes.ADDRESS_CHANGE &&
+        filingType === FilingTypes.CHANGE_OF_ADDRESS &&
         status === FilingStatus.PAID
     }
 

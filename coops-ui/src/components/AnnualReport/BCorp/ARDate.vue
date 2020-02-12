@@ -22,7 +22,7 @@ import DateMixin from '@/mixins/date-mixin'
     ...mapState(['nextARDate'])
   }
 })
-export default class ARDate extends DateMixin {
+export default class ArDate extends DateMixin {
   readonly nextARDate!: string
 }
 </script>

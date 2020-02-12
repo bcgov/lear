@@ -1,17 +1,17 @@
 <template>
   <div id="standalone-office-address">
-    <ConfirmDialog
+    <confirm-dialog
       ref="confirm"
       attach="#standalone-office-address"
     />
 
-    <ResumeErrorDialog
+    <resume-error-dialog
       :dialog="resumeErrorDialog"
       @exit="navigateToDashboard"
       attach="#standalone-office-address"
     />
 
-    <SaveErrorDialog
+    <save-error-dialog
       filing="Address Change"
       :dialog="saveErrorDialog"
       :disableRetry="busySaving"
@@ -23,7 +23,7 @@
       attach="#standalone-office-address"
     />
 
-    <PaymentErrorDialog
+    <payment-error-dialog
       :dialog="paymentErrorDialog"
       @exit="navigateToDashboard"
       attach="#standalone-office-address"
@@ -61,7 +61,7 @@
 
             <!-- Office Addresses -->
             <section>
-              <OfficeAddresses
+              <office-addresses
                 :addresses.sync="addresses"
                 :registeredAddress.sync="registeredAddress"
                 :recordsAddress.sync="recordsAddress"
@@ -74,14 +74,15 @@
             <section>
               <header>
                 <h2 id="AR-step-4-header">Certify Correct</h2>
-                <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+                <p>Enter the legal name of the current director, officer, or lawyer submitting this
+                  Address Change.</p>
               </header>
-              <Certify
-                  :isCertified.sync="isCertified"
-                  :certifiedBy.sync="certifiedBy"
-                  @valid="certifyFormValid=$event"
-                  :entityDisplay="displayName()"
-                  :message="certifyText(FilingCodes.ADDRESS_CHANGE_OT)"
+              <certify
+                :isCertified.sync="isCertified"
+                :certifiedBy.sync="certifiedBy"
+                :entityDisplay="displayName()"
+                :message="certifyText(FilingCodes.ADDRESS_CHANGE_OT)"
+                @valid="certifyFormValid=$event"
               />
             </section>
 
@@ -90,7 +91,7 @@
               <header>
                 <h2 id="AR-step-5-header">Staff Payment</h2>
               </header>
-              <StaffPayment
+              <staff-payment
                 :value.sync="routingSlipNumber"
                 @valid="staffPaymentFormValid=$event"
               />
@@ -146,7 +147,7 @@
               :loading="filingPaying"
               @click="onClickFilePay()"
             >
-              <span>{{ isPayRequired ? "File &amp; Pay" : "File" }}</span>
+              <span>{{isPayRequired ? "File &amp; Pay" : "File"}}</span>
             </v-btn>
             </div>
           </template>
@@ -223,7 +224,8 @@ export default {
       routingSlipNumber: null,
       staffPaymentFormValid: false,
       totalFee: 0,
-      // EntityTypes Enum
+
+      // enums
       EntityTypes,
       FilingCodes
     }
@@ -413,6 +415,7 @@ export default {
       const filing = await this.saveFiling(true)
 
       if (filing) {
+        // save Filing ID for future PUTs
         this.filingId = +filing.header.filingId
       }
       this.saving = false
@@ -650,7 +653,7 @@ export default {
           })
           .catch(error => {
             // eslint-disable-next-line no-console
-            console.error('fetchData() error =', error)
+            console.error('hasTasks() error =', error)
             this.saveErrorDialog = true
           })
       }
