@@ -4,6 +4,7 @@ import ConfirmDialog from './ConfirmDialog.vue'
 import DashboardUnavailableDialog from './DashboardUnavailableDialog.vue'
 import DeleteErrorDialog from './DeleteErrorDialog.vue'
 import DownloadErrorDialog from './DownloadErrorDialog.vue'
+import LoadCorrectionDialog from './LoadCorrectionDialog.vue'
 import PaymentErrorDialog from './PaymentErrorDialog.vue'
 import ResumeErrorDialog from './ResumeErrorDialog.vue'
 import SaveErrorDialog from './SaveErrorDialog.vue'
@@ -17,6 +18,7 @@ export {
   DashboardUnavailableDialog,
   DeleteErrorDialog,
   DownloadErrorDialog,
+  LoadCorrectionDialog,
   PaymentErrorDialog,
   ResumeErrorDialog,
   SaveErrorDialog,

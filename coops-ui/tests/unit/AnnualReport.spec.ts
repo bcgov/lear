@@ -14,10 +14,10 @@ import { shallowMount, createLocalVue, mount } from '@vue/test-utils'
 
 // Components
 import AnnualReport from '@/views/AnnualReport.vue'
-import AGMDate from '@/components/AnnualReport/AGMDate.vue'
+import AgmDate from '@/components/AnnualReport/AGMDate.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
-import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
+import ArDate from '@/components/AnnualReport/BCorp/ARDate.vue'
 import StaffPayment from '@/components/AnnualReport/StaffPayment.vue'
 import { OfficeAddresses, SummaryDirectors, SummaryOfficeAddresses } from '@/components/common'
 import { configJson } from '@/resources/business-config'
@@ -46,7 +46,7 @@ describe('AnnualReport - Part 1 - UI', () => {
     const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
 
-    expect(wrapper.find(AGMDate).exists()).toBe(true)
+    expect(wrapper.find(AgmDate).exists()).toBe(true)
     expect(wrapper.find(OfficeAddresses).exists()).toBe(true)
     expect(wrapper.find(Directors).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)
@@ -374,8 +374,8 @@ describe('AnnualReport - Part 1 - UI', () => {
       localVue,
       router,
       stubs: {
-        ARDate: true,
-        AGMDate: true,
+        ArDate: true,
+        AgmDate: true,
         OfficeAddresses: true,
         Directors: true,
         Certify: true,
@@ -416,8 +416,8 @@ describe('AnnualReport - Part 1 - UI', () => {
       localVue,
       router,
       stubs: {
-        ARDate: true,
-        AGMDate: true,
+        ArDate: true,
+        AgmDate: true,
         OfficeAddresses: true,
         Directors: true,
         Certify: true,
@@ -461,7 +461,7 @@ describe('AnnualReport - Part 1B - UI - BCOMP', () => {
     const $route = { params: { id: '0' } } // new filing id
     const wrapper = shallowMount(AnnualReport, { store, mocks: { $route } })
 
-    expect(wrapper.find(ARDate).exists()).toBe(true)
+    expect(wrapper.find(ArDate).exists()).toBe(true)
     expect(wrapper.find(SummaryOfficeAddresses).exists()).toBe(true)
     expect(wrapper.find(SummaryDirectors).exists()).toBe(true)
     expect(wrapper.find(Certify).exists()).toBe(true)
@@ -589,7 +589,7 @@ describe('AnnualReport - Part 1B - UI - BCOMP', () => {
       localVue,
       router,
       stubs: {
-        ARDate: true,
+        ArDate: true,
         SummaryDirectors: true,
         SummaryOfficeAddresses: true,
         Certify: true,
@@ -627,7 +627,7 @@ describe('AnnualReport - Part 1B - UI - BCOMP', () => {
       localVue,
       router,
       stubs: {
-        ARDate: true,
+        ArDate: true,
         SummaryDirectors: true,
         SummaryOfficeAddresses: true,
         Certify: true,
@@ -778,9 +778,9 @@ describe('AnnualReport - Part 3 - Submitting', () => {
                   date: '2017-06-06',
                   submitter: 'cp0001191',
                   status: 'DRAFT',
+                  filingId: 123,
                   certifiedBy: 'Full Name',
-                  email: 'no_one@never.get',
-                  filingId: 123
+                  email: 'no_one@never.get'
                 }
               }
             }
@@ -878,8 +878,8 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       localVue,
       router,
       stubs: {
-        ARDate: true,
-        AGMDate: true,
+        ArDate: true,
+        AgmDate: true,
         OfficeAddresses: true,
         Directors: true,
         Certify: true,
@@ -915,6 +915,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
     // make sure a fee is required
     vm.totalFee = 100
 
+    // sanity check
     expect(jest.isMockFunction(window.location.assign)).toBe(true)
 
     const button = wrapper.find('#ar-file-pay-btn')
@@ -948,8 +949,8 @@ describe('AnnualReport - Part 3 - Submitting', () => {
       localVue,
       router,
       stubs: {
-        ARDate: true,
-        AGMDate: true,
+        ArDate: true,
+        AgmDate: true,
         OfficeAddresses: true,
         Directors: true,
         Certify: true,
@@ -971,14 +972,12 @@ describe('AnnualReport - Part 3 - Submitting', () => {
     vm.addressesFormValid = true
     vm.directorFormValid = true
     vm.certifyFormValid = true
+    vm.directorEditInProgress = false
+    vm.filingData = [{ filingTypeCode: 'OTCDR', entityType: 'CP' }] // dummy data
 
     // stub address data
     vm.addresses = {
       registeredOffice: {
-        deliveryAddress: {},
-        mailingAddress: {}
-      },
-      recordsOffice: {
         deliveryAddress: {},
         mailingAddress: {}
       }
@@ -995,6 +994,7 @@ describe('AnnualReport - Part 3 - Submitting', () => {
 
     // click the File & Pay button
     button.trigger('click')
+    await flushPromises()
     // work-around because click trigger isn't working
     await vm.onClickFilePay()
 
@@ -1086,7 +1086,7 @@ describe('AnnualReport - Part 3B - Submitting - BCOMP', () => {
       localVue,
       router,
       stubs: {
-        ARDate: true,
+        ArDate: true,
         SummaryDirectors: true,
         SummaryOfficeAddresses: true,
         Certify: true,
@@ -1571,7 +1571,7 @@ describe('AnnualReport - Part 5B - Data - BCOMP', () => {
       localVue,
       router,
       stubs: {
-        ARDate: true,
+        ArDate: true,
         SummaryDirectors: true,
         SummaryOfficeAddresses: true,
         Certify: true,
@@ -1863,8 +1863,8 @@ describe('AnnualReport - Part 6 - Error/Warning dialogs', () => {
       localVue,
       router,
       stubs: {
-        ARDate: true,
-        AGMDate: true,
+        ArDate: true,
+        AgmDate: true,
         OfficeAddresses: true,
         Directors: true,
         Certify: true,
@@ -1980,8 +1980,8 @@ describe('AnnualReport - Part 7 - Save through multiple tabs', () => {
       localVue,
       router,
       stubs: {
-        ARDate: true,
-        AGMDate: true,
+        ArDate: true,
+        AgmDate: true,
         OfficeAddresses: true,
         Directors: true,
         Certify: true,

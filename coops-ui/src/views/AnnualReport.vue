@@ -1,17 +1,17 @@
 <template>
   <div id="annual-report">
-    <ConfirmDialog
+    <confirm-dialog
       ref="confirm"
       attach="#annual-report"
     />
 
-    <ResumeErrorDialog
+    <resume-error-dialog
       :dialog="resumeErrorDialog"
       @exit="navigateToDashboard"
       attach="#annual-report"
     />
 
-    <SaveErrorDialog
+    <save-error-dialog
       filing="Annual Report"
       :dialog="saveErrorDialog"
       :disableRetry="busySaving"
@@ -23,7 +23,7 @@
       attach="#annual-report"
     />
 
-    <PaymentErrorDialog
+    <payment-error-dialog
       :dialog="paymentErrorDialog"
       @exit="navigateToDashboard"
       attach="#annual-report"
@@ -49,8 +49,8 @@
             >
               <!-- Page Title -->
               <header>
-                <h1 id="AR-header">File {{ ARFilingYear }} Annual Report
-                  <span class="font-italic" v-if="reportState">- {{ reportState }}</span>
+                <h1 id="AR-header">File {{ARFilingYear}} Annual Report
+                  <span class="font-italic" v-if="reportState"> &mdash; {{reportState}}</span>
                 </h1>
                 <p>Please verify or change your Office Addresses and Directors.</p>
               </header>
@@ -62,7 +62,7 @@
                     <h2 id="AR-step-1-header">1. Annual General Meeting Date</h2>
                     <p>Select your Annual General Meeting (AGM) date.</p>
                   </header>
-                  <AGMDate
+                  <agm-date
                     :newAgmDate="newAgmDate"
                     :newNoAgm="newNoAgm"
                     :allowCOA="allowChange('coa')"
@@ -77,12 +77,12 @@
                 <section v-show="agmDate || noAgm">
                   <header>
                     <h2 id="AR-step-2-header">2. Registered Office Addresses
-                      <span class="agm-date" v-if="agmDate">(as of {{ARFilingYear}} Annual General Meeting)</span>
-                      <span class="agm-date" v-else>(as of {{asOfDate}})</span>
+                      <span class="as-of-date" v-if="agmDate">(as of {{ARFilingYear}} Annual General Meeting)</span>
+                      <span class="as-of-date" v-else>(as of {{asOfDate}})</span>
                     </h2>
                     <p>Verify or change your Registered Office Addresses.</p>
                   </header>
-                  <OfficeAddresses
+                  <office-addresses
                     :addresses.sync="addresses"
                     :registeredAddress.sync="registeredAddress"
                     :recordsAddress.sync="recordsAddress"
@@ -98,11 +98,11 @@
                   <header>
                     <h2 id="AR-step-3-header">3. Directors</h2>
                     <p v-if="allowChange('cod')">Tell us who was elected or appointed and who ceased to be
-                      a director at your {{ ARFilingYear }} AGM.</p>
+                      a director at your {{ARFilingYear}} AGM.</p>
                     <p v-else>This is your list of directors active as of {{asOfDate}}, including
                       directors that were ceased at a later date.</p>
                   </header>
-                  <Directors ref="directorsList"
+                  <directors ref="directorsList"
                     @directorsChange="directorsChange"
                     @directorsFreeChange="directorsFreeChange"
                     @allDirectors="allDirectors=$event"
@@ -122,8 +122,8 @@
             >
               <!-- Page Title -->
               <header>
-                <h1 id="AR-header-BC">File {{ ARFilingYear }} Annual Report
-                  <span style="font-style: italic" v-if="reportState">- {{ reportState }}</span>
+                <h1 id="AR-header-BC">File {{ARFilingYear}} Annual Report
+                  <span style="font-style: italic" v-if="reportState"> &mdash; {{reportState}}</span>
                 </h1>
                 <p>Please review all the information before you file and pay.</p>
               </header>
@@ -133,9 +133,9 @@
                 <header>
                   <h2 id="AR-header-1-BC">1. Business Details</h2>
                 </header>
-                <ARDate />
+                <ar-date />
                 <br>
-                <SummaryOfficeAddresses
+                <summary-office-addresses
                   :registeredAddress="registeredAddress"
                   :recordsAddress="recordsAddress"
                 />
@@ -146,7 +146,7 @@
                 <header>
                   <h2 id="AR-header-2-BC">2. Directors</h2>
                 </header>
-                <SummaryDirectors
+                <summary-directors
                   :directors="directors"
                 />
               </section>
@@ -157,16 +157,16 @@
             <!-- Certify -->
             <section v-show="entityFilter(EntityTypes.BCOMP) || agmDate || noAgm">
               <header>
-                <h2 id="AR-step-4-header">{{this.entityFilter(EntityTypes.BCOMP) ? '3.' : '4.' }} Certify Correct</h2>
-                <p>Enter the name of the current director, officer, or lawyer submitting this Annual Report.</p>
+                <h2 id="AR-step-4-header" v-if="entityFilter(EntityTypes.BCOMP)">3. Certify Correct</h2>
+                <h2 id="AR-step-4-header" v-else>4. Certify Correct</h2>
+                <p>Enter the legal name of the current director, officer, or lawyer submitting this Annual Report.</p>
               </header>
-              <Certify
+              <certify
                 :isCertified.sync="isCertified"
                 :certifiedBy.sync="certifiedBy"
-                :currentDate="currentDate"
-                @valid="certifyFormValid=$event"
                 :entityDisplay="displayName()"
                 :message="certifyMessage"
+                @valid="certifyFormValid=$event"
               />
             </section>
 
@@ -175,7 +175,7 @@
               <header>
                 <h2 id="AR-step-5-header">5. Staff Payment</h2>
               </header>
-              <StaffPayment
+              <staff-payment
                 :value.sync="routingSlipNumber"
                 @valid="staffPaymentFormValid=$event"
               />
@@ -235,7 +235,7 @@
                 :loading="filingPaying"
                 @click="onClickFilePay()"
               >
-                <span>{{ isPayRequired ? "File &amp; Pay" : "File" }}</span>
+                <span>{{isPayRequired ? "File &amp; Pay" : "File"}}</span>
               </v-btn>
             </div>
           </template>
@@ -288,8 +288,8 @@ import { mapState, mapGetters } from 'vuex'
 import { BAD_REQUEST, PAYMENT_REQUIRED } from 'http-status-codes'
 
 // Components
-import AGMDate from '@/components/AnnualReport/AGMDate.vue'
-import ARDate from '@/components/AnnualReport/BCorp/ARDate.vue'
+import AgmDate from '@/components/AnnualReport/AGMDate.vue'
+import ArDate from '@/components/AnnualReport/BCorp/ARDate.vue'
 import Directors from '@/components/AnnualReport/Directors.vue'
 import SbcFeeSummary from 'sbc-common-components/src/components/SbcFeeSummary.vue'
 import Certify from '@/components/AnnualReport/Certify.vue'
@@ -300,7 +300,7 @@ import { OfficeAddresses, SummaryDirectors, SummaryOfficeAddresses } from '@/com
 import { ConfirmDialog, PaymentErrorDialog, ResumeErrorDialog, SaveErrorDialog } from '@/components/dialogs'
 
 // Mixins
-import { DateMixin, EntityFilterMixin } from '@/mixins'
+import { DateMixin, EntityFilterMixin, ResourceLookupMixin } from '@/mixins'
 
 // Constants
 import { APPOINTED, CEASED, NAMECHANGED, ADDRESSCHANGED } from '@/constants'
@@ -310,7 +310,6 @@ import { FilingData } from '@/interfaces'
 
 // Enums
 import { EntityTypes, FilingCodes } from '@/enums'
-import { ResourceLookupMixin } from '../mixins'
 
 export default {
   name: 'AnnualReport',
@@ -318,8 +317,8 @@ export default {
   mixins: [DateMixin, EntityFilterMixin, ResourceLookupMixin],
 
   components: {
-    ARDate,
-    AGMDate,
+    ArDate,
+    AgmDate,
     OfficeAddresses,
     Directors,
     Certify,
@@ -335,7 +334,7 @@ export default {
 
   data () {
     return {
-      // properties for AGMDate component
+      // properties for AgmDate component
       newAgmDate: null, // for resuming draft
       newNoAgm: null, // for resuming draft
       agmDate: null,
@@ -356,7 +355,7 @@ export default {
       isCertified: false,
       certifyFormValid: null,
 
-      // properties for Staff Payment component
+      // properties for StaffPayment component
       routingSlipNumber: null,
       staffPaymentFormValid: false,
       totalFee: 0,
@@ -376,7 +375,8 @@ export default {
       haveChanges: false,
       saveErrors: [],
       saveWarnings: [],
-      // EntityTypes Enum
+
+      // enums
       EntityTypes,
       FilingCodes
     }
@@ -647,6 +647,7 @@ export default {
       this.saving = true
       const filing = await this.saveFiling(true)
       if (filing) {
+        // save Filing ID for future PUTs
         this.filingId = +filing.header.filingId
       }
       this.saving = false
@@ -933,7 +934,7 @@ export default {
           })
           .catch(error => {
             // eslint-disable-next-line no-console
-            console.error('fetchData() error =', error)
+            console.error('hasTasks() error =', error)
             this.saveErrorDialog = true
           })
       }
@@ -994,7 +995,7 @@ h2 {
   font-size: 1.125rem;
 }
 
-.agm-date {
+.as-of-date {
   margin-left: 0.25rem;
   font-weight: 300;
 }

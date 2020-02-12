@@ -1,6 +1,6 @@
 <template>
   <div id="dashboard">
-    <CoaWarningDialog
+    <coa-warning-dialog
       :dialog="coaWarningDialog"
       @toggle="toggleCoaWarning"
       @proceed="goToStandaloneAddresses"
@@ -37,6 +37,7 @@
                 </h2>
               </header>
               <filing-history-list
+                :hasBlockerFiling="hasBlockerFiling"
                 @filed-count="filedCount = $event"
                 @filings-list="historyFilings = $event"
               />
@@ -103,7 +104,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 // Libraries
 import axios from '@/axios-auth'
 import { mapState, mapActions } from 'vuex'
@@ -124,7 +125,7 @@ import { EntityFilterMixin } from '@/mixins'
 import { CoaWarningDialog } from '@/components/dialogs'
 
 // Enums
-import { EntityTypes, FilingStatus, FilingTypes } from '@/enums'
+import { EntityTypes, FilingNames, FilingStatus } from '@/enums'
 
 export default {
   name: 'Dashboard',
@@ -244,11 +245,9 @@ export default {
      *
      * @param filings The array of filings in history
      */
-    checkPendingFilings (filings) {
-      filings.forEach(filing => {
-        if (this.entityFilter(EntityTypes.BCOMP) &&
-        filing.name === FilingTypes.ADDRESS_CHANGE &&
-        filing.status === FilingStatus.PAID) {
+    checkPendingFilings (filings: Array<any>) {
+      filings.some(filing => {
+        if (filing.name === FilingNames.ADDRESS_CHANGE && filing.status === FilingStatus.PAID) {
           this.effectiveDate = filing.filingEffectiveDate
           this.coaPending = true
           this.hasBlockerFiling = true
@@ -281,7 +280,9 @@ export default {
   watch: {
     historyFilings () {
       // check if a filing has a paid but pending state ( Currently BCOMPS )
-      this.checkPendingFilings(this.historyFilings)
+      if (this.entityFilter(EntityTypes.BCOMP)) {
+        this.checkPendingFilings(this.historyFilings)
+      }
       // check whether to reload the dashboard with updated data
       this.checkToReloadDashboard()
     },

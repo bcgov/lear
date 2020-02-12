@@ -4,7 +4,7 @@ import Vuelidate from 'vuelidate'
 import { mount } from '@vue/test-utils'
 
 import store from '@/store/store'
-import CODDate from '@/components/StandaloneDirectorChange/CODDate.vue'
+import CodDate from '@/components/StandaloneDirectorChange/CODDate.vue'
 
 Vue.config.silent = true
 
@@ -19,7 +19,7 @@ Vue.config.devtools = false
 // get rid of "You are running Vue in development mode" console message
 Vue.config.productionTip = false
 
-describe('CODDate', () => {
+describe('CodDate', () => {
   let wrapper
   let vm
 
@@ -30,7 +30,7 @@ describe('CODDate', () => {
     // set Last Filing Date and verify new Min Date
     store.state.entityFoundingDate = '2018-03-01T00:00:00'
 
-    wrapper = mount(CODDate, { store, vuetify })
+    wrapper = mount(CodDate, { store, vuetify })
     vm = wrapper.vm as any
   })
 
@@ -123,7 +123,7 @@ describe('CODDate', () => {
   })
 
   it('invalidates the component when entered month is after Max Date', () => {
-    wrapper = mount(CODDate, { store,
+    wrapper = mount(CodDate, { store,
       vuetify,
       computed: {
         minDate () {
@@ -140,7 +140,7 @@ describe('CODDate', () => {
   })
 
   it('invalidates the component when entered month is before Min Date', () => {
-    wrapper = mount(CODDate, { store,
+    wrapper = mount(CodDate, { store,
       vuetify,
       computed: {
         minDate () {

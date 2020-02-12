@@ -1,7 +1,9 @@
 export enum FilingTypes {
-  ADDRESS_CHANGE = 'Address Change',
-  DIRECTOR_CHANGE = 'Director Change',
-  LEGAL_NAME_CHANGE = 'Legal Name Change',
-  SPECIAL_RESOLUTION = 'Special Resolution',
-  VOLUNTARY_DISSOLUTION = 'Voluntary Dissolution'
+  ANNUAL_REPORT = 'annualReport',
+  CHANGE_OF_ADDRESS = 'changeOfAddress',
+  CHANGE_OF_DIRECTORS = 'changeOfDirectors',
+  CHANGE_OF_NAME = 'changeOfName',
+  SPECIAL_RESOLUTION = 'specialResolution',
+  VOLUNTARY_DISSOLUTION = 'voluntaryDissolution',
+  CORRECTION = 'correction'
 }
