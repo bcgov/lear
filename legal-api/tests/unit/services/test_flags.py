@@ -98,19 +98,22 @@ def test_flags_bool_no_key_prod():
     assert not on
 
 
-def test_flags_bool(app):
+def test_flags_bool():
     """Assert that a boolean (True) is returned, when using the local Flag.json file."""
-    from legal_api import flags
+    app = Flask(__name__)
     app.env = 'development'
+    app.config['LD_SDK_KEY'] = 'https://no.flag/avail'
 
     with app.app_context():
+        flags = Flags()
+        flags.init_app(app)
         flag_on = flags.is_on('bool-flag')
 
-    assert flag_on
+        assert flag_on
 
 
 def test_flags_bool_missing_flag(app):
-    """Assert that a boolean (True) is returned, when using the local Flag.json file."""
+    """Assert that a boolean (False) is returned when flag doesn't exist, when using the local Flag.json file."""
     from legal_api import flags
     app_env = app.env
     try:
@@ -154,14 +157,19 @@ def test_flags_bool_value(test_name, flag_name, expected):
     assert val == expected
 
 
-def test_flag_bool_unique_user(app):
+def test_flag_bool_unique_user():
     """Assert that a unique user can retrieve a flag, when using the local Flag.json file."""
-    from legal_api import flags
+    app = Flask(__name__)
+    app.env = 'development'
+    app.config['LD_SDK_KEY'] = 'https://no.flag/avail'
+
     user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss')
 
     app_env = app.env
     try:
         with app.app_context():
+            flags = Flags()
+            flags.init_app(app)
             app.env = 'development'
             val = flags.value('bool-flag', user)
             flag_on = flags.is_on('bool-flag', user)

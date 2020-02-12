@@ -22,7 +22,7 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Business
 
-from ..utils import get_date
+from ...utils import get_date
 
 
 def requires_agm(business: Business) -> bool:

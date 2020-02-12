@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Incorporation filing."""
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 from http import HTTPStatus  # pylint: disable=wrong-import-order
+from typing import Dict
 
+from flask_babel import _ as babel  # noqa: N813, I004, I001, I003; importing camelcase '_' as a name
 from legal_api.errors import Error
-from legal_api.models import Business  # noqa: F401 pylint: disable=unused-import
+from legal_api.models import Business
+# noqa: I003; needed as the linter gets confused from the babel override above.
 
 
-def validate(business, incorporation_json):
+def validate(business: Business, incorporation_json: Dict):
     """Validate the Change ofAddress filing."""
     if not business or not incorporation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
