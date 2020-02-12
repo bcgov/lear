@@ -17,7 +17,7 @@ from datetime import date
 from hypothesis import example, given
 from hypothesis.strategies import text
 
-from legal_api.services.filings.utils import get_date, get_str
+from legal_api.services.utils import get_date, get_str
 
 
 @given(f=text(), p=text())

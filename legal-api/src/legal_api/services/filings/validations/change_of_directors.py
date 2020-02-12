@@ -20,7 +20,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, Filing
-from legal_api.services.filings.utils import get_str
+from ...utils import get_str
 from legal_api.utils.datetime import datetime
 # noqa: I003; needed as the linter gets confused from the babel override above.
 

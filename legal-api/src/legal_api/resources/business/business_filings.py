@@ -35,7 +35,7 @@ from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import COLIN_SVC_ROLE, STAFF_ROLE, authorized, queue
 from legal_api.services.filings import validate
-from legal_api.services.filings.utils import get_str
+from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
