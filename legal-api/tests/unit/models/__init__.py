@@ -17,9 +17,10 @@ import base64
 import uuid
 
 from freezegun import freeze_time
+from registry_schemas.example_data import ANNUAL_REPORT
 from sqlalchemy_continuum import versioning_manager
 
-from legal_api.models import Address, Business, Director, Filing, Office, db
+from legal_api.models import Address, Business, Comment, Director, Filing, Office, User, db
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
@@ -202,3 +203,23 @@ def factory_epoch_filing(business):
     filing.filing_json = {'filing': {'header': {'name': 'lear_epoch'}}}
     filing.save()
     return filing
+
+
+def factory_comment(
+        business: Business = None, filing: Filing = None, comment_text: str = 'some text', user: User = None):
+    """Create a comment."""
+    if not business:
+        business = factory_business('CP1234567')
+
+    if not filing:
+        filing = factory_filing(business, ANNUAL_REPORT)
+
+    c = Comment()
+    c.filing_id = filing.id
+    c.timestamp = EPOCH_DATETIME
+    c.comment = comment_text
+    if user:
+        c.staff_id = user.id
+    c.save()
+
+    return c

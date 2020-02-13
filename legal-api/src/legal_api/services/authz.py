@@ -28,7 +28,8 @@ COLIN_SVC_ROLE = 'colin'
 PUBLIC_USER = 'public_user'
 
 
-def authorized(identifier: str, jwt: JwtManager, action: List[str]) -> bool:
+def authorized(  # pylint: disable=too-many-return-statements
+        identifier: str, jwt: JwtManager, action: List[str]) -> bool:
     """Assert that the user is authorized to create filings against the business identifier."""
     # if they are registry staff, they are always authorized
     if not action or not identifier or not jwt:
@@ -39,6 +40,10 @@ def authorized(identifier: str, jwt: JwtManager, action: List[str]) -> bool:
         return True
 
     if jwt.has_one_of_roles([BASIC_USER, PUBLIC_USER]):
+
+        # if the action is create_comment, disallow - only staff are allowed
+        if action == 'add_comment':
+            return False
 
         template_url = current_app.config.get('AUTH_SVC_URL')
         auth_url = template_url.format(**vars())

@@ -31,6 +31,9 @@ from legal_api.schemas import rsbc_schemas
 from .db import db
 
 
+from .comment import Comment  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+
+
 class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     # allowing the model to be deep.
     """Immutable filing record.
@@ -91,6 +94,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                                        foreign_keys=[submitter_id])
 
     colin_event_ids = db.relationship('ColinEventId', lazy='select')
+
+    comments = db.relationship('Comment', lazy='dynamic')
 
     # properties
     @property
@@ -243,13 +248,17 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
             # add colin_event_ids
             json_submission['filing']['header']['colinIds'] = ColinEventId.get_by_filing_id(self.id)
+
+            # add comments
+            json_submission['filing']['header']['comments'] = [comment.json for comment in self.comments]
+
             return json_submission
         except Exception:  # noqa: B901, E722
             raise KeyError
 
     @classmethod
     def find_by_id(cls, filing_id: str = None):
-        """Return a Business by the id assigned by the Registrar."""
+        """Return a Filing by the id."""
         filing = None
         if filing_id:
             filing = cls.query.filter_by(id=filing_id).one_or_none()

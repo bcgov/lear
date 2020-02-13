@@ -20,49 +20,28 @@ import datetime
 from http import HTTPStatus
 
 import pytest
+from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Comment
-from tests import EPOCH_DATETIME, FROZEN_DATETIME
+from legal_api.models import Comment
+from tests import EPOCH_DATETIME
+from tests.unit.models import factory_business, factory_comment, factory_filing
 
 
-def factory_business(session, identifier):
-    """Create a business entity."""
-    business = Business(legal_name=f'legal_name-{identifier}',
-                        founding_date=EPOCH_DATETIME,
-                        dissolution_date=EPOCH_DATETIME,
-                        identifier=identifier,
-                        tax_id='BN123456789',
-                        fiscal_year_end_date=FROZEN_DATETIME)
-    business.save()
-    return business
+def test_minimal_comment(session):
+    """Assert that a minimal comment can be created."""
+    comment = Comment()
+    comment.comment = 'some words'
+    comment.save()
 
-
-# def test_minimal_filing_json(session):
-#     """Assert that a minimal filing can be created."""
-#     b = factory_business('CP1234567')
-
-#     data = {'filing': 'not a real filing, fail validation'}
-
-#     filing = Filing()
-#     filing.business_id = b.id
-#     filing.filing_date = datetime.datetime.utcnow()
-#     filing.filing_data = json.dumps(data)
-#     filing.save()
-
-#     assert filing.id is not None
+    assert comment.id is not None
 
 
 def test_comment_block_orm_delete(session):
     """Assert that attempting to delete a filing will raise a BusinessException."""
     from legal_api.exceptions import BusinessException
 
-    b = factory_business(session, 'CP1234567')
-    c = Comment()
-    c.business_id = b.id
-    c.timestamp = EPOCH_DATETIME
-    c.comment = 'a comment'
-    c.save()
+    c = factory_comment()
 
     with pytest.raises(BusinessException) as excinfo:
         session.delete(c)
@@ -74,7 +53,7 @@ def test_comment_block_orm_delete(session):
 
 def test_comment_delete_is_blocked(session):
     """Assert that an AR filing can be saved."""
-    c = Comment()
+    c = factory_comment()
 
     with pytest.raises(BusinessException) as excinfo:
         c.delete()
@@ -83,26 +62,27 @@ def test_comment_delete_is_blocked(session):
     assert excinfo.value.error == 'Deletion not allowed.'
 
 
-def test_comment_dump_json(session):
+def test_filing_comment_dump_json(session):
     """Assert the comment json serialization works correctly."""
     identifier = 'CP7654321'
-    b = factory_business(session, identifier)
-    c = Comment()
-    c.business_id = b.id
-    c.timestamp = EPOCH_DATETIME
-    c.comment = 'a comment'
+    b = factory_business(identifier)
+    f = factory_filing(b, ANNUAL_REPORT)
+    c = factory_comment(b, f, 'a comment')
 
-    assert c.json() == {'comment': 'a comment',
-                        'id': None,
-                        'staff': 'unknown',
-                        'timestamp': datetime.datetime(1970, 1, 1, 0, 0).replace(tzinfo=datetime.timezone.utc)}
+    assert c.json == {
+        'comment': {
+            'id': c.id,
+            'staff': 'unknown',
+            'comment': 'a comment',
+            'filingId': f.id,
+            'businessId': None,
+            'timestamp': datetime.datetime(1970, 1, 1, 0, 0).replace(tzinfo=datetime.timezone.utc)}
+    }
 
 
 def test_comment_save_to_session(session):
-    """Assert the comment is saved toThe session, but not committed."""
+    """Assert that the comment is saved to the session but not committed."""
     from sqlalchemy.orm.session import Session
-    # b = factory_business('CP1234567')
-    # filing = factory_filing(b, AR_FILING)
 
     comment = Comment()
 
@@ -119,10 +99,8 @@ def test_comment_save_to_session(session):
 def test_comment_save(session):
     """Assert that the comment was saved."""
     from sqlalchemy.orm.session import Session
-    b = factory_business(session, 'CP1234567')
 
     comment = Comment()
-    comment.business_id = b.id
     comment.timestamp = EPOCH_DATETIME
     comment.comment = 'a comment'
 
