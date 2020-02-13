@@ -11,17 +11,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Business Entity End-Points.
+"""Common validation entry point for all filing submissions."""
+from typing import Dict
 
-Provides all business entity externalized services.
-"""
-from .api_namespace import API
-from .business import BusinessResource
-from .business_address import AddressResource
-from .business_directors import DirectorResource
-from .business_filings import ListFilingResource
-from .business_tasks import TaskListResource
-from .filing_comments import CommentResource
+from legal_api.errors import Error
+
+from .comment import validate as comment_validate
+from .schemas import validate_against_schema
 
 
-__all__ = ('API')
+def validate(comment_json: Dict) -> Error:
+    """Validate the annual report JSON."""
+    err = validate_against_schema(comment_json)
+    if err:
+        return err
+
+    err = None
+    err = comment_validate(comment_json)
+    if err:
+        return err
+
+    return None

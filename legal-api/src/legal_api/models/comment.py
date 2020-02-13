@@ -42,22 +42,25 @@ class Comment(db.Model):
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
     staff_id = db.Column('staff_id', db.Integer, db.ForeignKey('users.id'), index=True)
+    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
 
     # Relationships - Users
     staff = db.relationship('User',
                             backref=backref('staff_comments'),
                             foreign_keys=[staff_id])
-    business_comments = db.relationship('Business',
-                                        backref=backref('comments', uselist=False),
-                                        foreign_keys=[business_id])
 
+    @property
     def json(self):
         """Return the json repressentation of a comment."""
         return {
-            'id': self.id,
-            'staff': 'unknown' if (self.staff is None) else self.staff.username,
-            'comment': self.comment,
-            'timestamp': self.timestamp
+            'comment': {
+                'id': self.id,
+                'staff': 'unknown' if (self.staff is None) else self.staff.username,
+                'comment': self.comment,
+                'filingId': self.filing_id,
+                'businessId': self.business_id,
+                'timestamp': self.timestamp
+            }
         }
 
     def save(self):
