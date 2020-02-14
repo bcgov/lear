@@ -138,3 +138,21 @@ def test_user_delete(session):
     user.delete()
 
     assert user.id is not None
+
+
+TEST_USER_DISPLAY_NAME = [
+    ('nothing to show', '', '', '', None),
+    ('simple username', 'someone', '', '', 'someone'),
+    # below: idir is idir\blablabla; flake thinks we're trying to escape a character
+    ('username - idir', 'idir\\joefresh', '', '', 'joefresh'),
+    ('username - services card', 'bcsc/abc123', '', '', None),
+    ('simple name', 'anything', 'First', 'Last', 'First Last'),
+    ('name - first name only', 'anything', 'First', '', 'First'),
+    ('name - last name only', 'anything', '', 'Last', 'Last'),
+]
+@pytest.mark.parametrize('test_description, username, firstname, lastname, display_name', TEST_USER_DISPLAY_NAME)
+def test_user_display_name(session, test_description, username, firstname, lastname, display_name):
+    """Assert the User record is deleted."""
+    user = User(username=username, firstname=firstname, lastname=lastname, sub='sub', iss='iss')
+
+    assert user.display_name == display_name

@@ -29,7 +29,7 @@ from tests.unit.services.utils import create_header
 # prep sample post data for single comment
 SAMPLE_JSON_DATA = copy.deepcopy(COMMENT_FILING)
 del SAMPLE_JSON_DATA['comment']['timestamp']
-del SAMPLE_JSON_DATA['comment']['submitterId']
+del SAMPLE_JSON_DATA['comment']['submitterDisplayName']
 
 
 def test_get_all_filing_comments_no_results(session, client, jwt):

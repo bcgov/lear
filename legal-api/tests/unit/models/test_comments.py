@@ -72,7 +72,7 @@ def test_filing_comment_dump_json(session):
     assert c.json == {
         'comment': {
             'id': c.id,
-            'staff': 'unknown',
+            'submitterDisplayName': None,
             'comment': 'a comment',
             'filingId': f.id,
             'businessId': None,
