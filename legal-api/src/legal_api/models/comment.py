@@ -24,7 +24,7 @@ from sqlalchemy.orm import backref
 from legal_api.exceptions import BusinessException
 
 from .db import db, ma
-from .user import UserSchema
+from .user import User, UserSchema
 
 
 class Comment(db.Model):
@@ -52,14 +52,15 @@ class Comment(db.Model):
     @property
     def json(self):
         """Return the json repressentation of a comment."""
+        user = User.find_by_id(self.staff_id)
         return {
             'comment': {
                 'id': self.id,
-                'staff': 'unknown' if (self.staff is None) else self.staff.username,
+                'submitterDisplayName': user.display_name if user else None,
                 'comment': self.comment,
                 'filingId': self.filing_id,
                 'businessId': self.business_id,
-                'timestamp': self.timestamp
+                'timestamp': self.timestamp.isoformat()
             }
         }
 

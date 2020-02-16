@@ -40,6 +40,27 @@ class User(db.Model):
     iss = db.Column(db.String(1024))
     creation_date = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
 
+    @property
+    def display_name(self):
+        """Display name of user; do not show sensitive data like BCSC username.
+
+        If there is actual name info, return that; otherwise username.
+        """
+        if self.firstname or self.lastname:
+            return ' '.join([self.firstname, self.lastname]).strip()
+
+        # parse off idir\ or @idir
+        if self.username[:4] == 'idir':
+            return self.username[5:]
+        if self.username[-4:] == 'idir':
+            return self.username[:-5]
+
+        # do not show services card usernames
+        if self.username[:4] == 'bcsc':
+            return None
+
+        return self.username if self.username else None
+
     @classmethod
     def find_by_id(cls, submitter_id: int = None):
         """Return a User if they exist and match the provided submitter id."""

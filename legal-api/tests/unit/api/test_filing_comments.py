@@ -17,10 +17,12 @@
 Test-Suite to ensure that the filings/<filing_id>/comments endpoint is working as expected.
 """
 import copy
+import datetime
 from http import HTTPStatus
 
 from registry_schemas.example_data import ANNUAL_REPORT, COMMENT_FILING
 
+from legal_api.models import User
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from tests.unit.models import factory_business, factory_comment, factory_filing
 from tests.unit.services.utils import create_header
@@ -29,7 +31,7 @@ from tests.unit.services.utils import create_header
 # prep sample post data for single comment
 SAMPLE_JSON_DATA = copy.deepcopy(COMMENT_FILING)
 del SAMPLE_JSON_DATA['comment']['timestamp']
-del SAMPLE_JSON_DATA['comment']['submitterId']
+del SAMPLE_JSON_DATA['comment']['submitterDisplayName']
 
 
 def test_get_all_filing_comments_no_results(session, client, jwt):
@@ -86,6 +88,28 @@ def test_get_one_filing_comment_by_id(session, client, jwt):
 
     assert HTTPStatus.OK == rv.status_code
     assert 'some specific text' == rv.json.get('comment').get('comment')
+
+
+def test_comment_json_output(session, client, jwt):
+    """Assert the json output of a comment is correctly formatted."""
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    f = factory_filing(b, ANNUAL_REPORT)
+    u = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss')
+    u.save()
+    c = factory_comment(b, f, 'some specific text', u)
+
+    system_timezone = datetime.datetime.now().astimezone().tzinfo
+    expected_timestamp = \
+        datetime.datetime(1970, 1, 1, 0, 0).replace(tzinfo=datetime.timezone.utc).astimezone(tz=system_timezone)
+
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings/{f.id}/comments/{c.id}',
+                    headers=create_header(jwt, [STAFF_ROLE]))
+
+    assert HTTPStatus.OK == rv.status_code
+    assert 'some specific text' == rv.json.get('comment').get('comment')
+    assert 'firstname lastname' == rv.json.get('comment').get('submitterDisplayName')
+    assert expected_timestamp.isoformat() == rv.json.get('comment').get('timestamp')
 
 
 def test_get_comments_mismatch_business_filing_error(session, client, jwt):
