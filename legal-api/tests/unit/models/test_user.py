@@ -143,8 +143,9 @@ def test_user_delete(session):
 TEST_USER_DISPLAY_NAME = [
     ('nothing to show', '', '', '', None),
     ('simple username', 'someone', '', '', 'someone'),
-    # below: idir is idir\blablabla; flake thinks we're trying to escape a character
-    ('username - idir', 'idir\\joefresh', '', '', 'joefresh'),
+    # below: idir is idir\blablabla; flake thinks we're trying to escape a character, hence the double slashes
+    ('username - idir with slash', 'idir\\joefresh', '', '', 'joefresh'),
+    ('username - idir with @', 'joefresh@idir', '', '', 'joefresh'),
     ('username - services card', 'bcsc/abc123', '', '', None),
     ('simple name', 'anything', 'First', 'Last', 'First Last'),
     ('name - first name only', 'anything', 'First', '', 'First'),
@@ -155,4 +156,4 @@ def test_user_display_name(session, test_description, username, firstname, lastn
     """Assert the User record is deleted."""
     user = User(username=username, firstname=firstname, lastname=lastname, sub='sub', iss='iss')
 
-    assert user.display_name == display_name
+    assert display_name == user.display_name

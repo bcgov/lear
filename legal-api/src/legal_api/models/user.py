@@ -49,9 +49,11 @@ class User(db.Model):
         if self.firstname or self.lastname:
             return ' '.join([self.firstname, self.lastname]).strip()
 
-        # parse off idir\
+        # parse off idir\ or @idir
         if self.username[:4] == 'idir':
             return self.username[5:]
+        if self.username[-4:] == 'idir':
+            return self.username[:-5]
 
         # do not show services card usernames
         if self.username[:4] == 'bcsc':
