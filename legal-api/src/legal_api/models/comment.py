@@ -60,7 +60,7 @@ class Comment(db.Model):
                 'comment': self.comment,
                 'filingId': self.filing_id,
                 'businessId': self.business_id,
-                'timestamp': self.timestamp
+                'timestamp': self.timestamp.isoformat()
             }
         }
 
