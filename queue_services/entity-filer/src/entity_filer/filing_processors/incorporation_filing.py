@@ -18,9 +18,8 @@ from flask import Flask
 import requests
 
 from entity_queue_common.service_utils import logger
-from entity_filer.filing_processors import create_office
 from legal_api.models import Business, db
-
+from entity_filer.filing_processors import create_office
 
 def get_next_corp_num(business_type, application: Flask):
     """Retrieve the next available sequential corp-num from COLIN."""
@@ -34,7 +33,7 @@ def get_next_corp_num(business_type, application: Flask):
     return None
 
 
-def insert_business_info(corp_num: str, business: Business, business_info: Dict):
+def update_business_info(corp_num: str, business: Business, business_info: Dict):
     """Format and update the business entity from incorporation filing."""
     if corp_num and business and business_info:
         business.identifier = corp_num
@@ -61,7 +60,7 @@ def process(business: Business, filing: Dict, app: Flask = None):
             corp_num = get_next_corp_num(business_info['legalType'], app)
 
             # Initial insert of the business record
-            business = insert_business_info(corp_num, business, business_info)
+            business = update_business_info(corp_num, business, business_info)
 
             if business:
                 for office_type, addresses in offices.items():

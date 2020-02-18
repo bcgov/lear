@@ -18,7 +18,7 @@ Processors hold the business logic for how a filing is interpreted and saved to 
 from typing import Dict
 
 import pycountry
-from legal_api.models import Address, Director, Office, Business
+from legal_api.models import Address, Business, Director, Office
 
 
 def create_address(address_info: Dict, address_type: str):
