@@ -4,47 +4,18 @@
 
 # Application Name
 
-BC Registries Names Examination, research and approval system API
+BC Registries Names Entity Filer Service
 
 ## Technology Stack Used
+* NATS-streaming
 * Python, Flask
 * Postgres -  SQLAlchemy, psycopg2-binary & alembic 
 
-## Third-Party Products/Libraries used and the the License they are covert by
-
 ## Project Status
-As of 2018-02-22 in **ALPHA**
 
 ## Documnentation
 
-GitHub Pages (https://guides.github.com/features/pages/) are a neat way to document you application/project.
-
 ## Security
-
-Future - BCGov Keycloak
-
-Current - JWT hack
-
-## Files in this repository
-
-```
-docs/           - Project Documentation
-└── images        
-└── icons         
-
-openshift/      - OpenShift-specific files
-├── scripts     - helper scripts
-└── templates   - application templates
-```
-
-## Deployment (Local Development)
-
-* Developer Workstation Requirements/Setup
-* Application Specific Setup
-
-## Deployment (OpenShift)
-
-See (openshift/Readme.md)
 
 ## Getting Help or Reporting an Issue
 
@@ -59,7 +30,7 @@ By participating in this project you agree to abide by its terms.
 
 ## License
 
-    Copyright 2018 Province of British Columbia
+    Copyright 2020 Province of British Columbia
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
