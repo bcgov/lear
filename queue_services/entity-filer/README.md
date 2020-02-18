@@ -11,8 +11,6 @@ BC Registries Names Entity Filer Service
 * Python, Flask
 * Postgres -  SQLAlchemy, psycopg2-binary & alembic 
 
-## Project Status
-
 ## Documnentation
 
 ## Security
