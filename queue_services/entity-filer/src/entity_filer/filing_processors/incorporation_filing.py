@@ -14,12 +14,13 @@
 """File processing rules and actions for the incorporation of a business."""
 from typing import Dict
 
-from flask import Flask
 import requests
-
 from entity_queue_common.service_utils import logger
+from flask import Flask
 from legal_api.models import Business, db
+
 from entity_filer.filing_processors import create_office
+
 
 def get_next_corp_num(business_type, application: Flask):
     """Retrieve the next available sequential corp-num from COLIN."""
