@@ -223,7 +223,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         except ValueError:
             return False
         # TODO This is not correct for entity types that are not Coops
-        if identifier[:-7] not in ('CP', 'XCP', 'NR'):
+        if identifier[:-7] not in ('CP', 'XCP', 'BC'):
             return False
 
         return True
