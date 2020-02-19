@@ -109,7 +109,7 @@ class Business:
                 left join JURISDICTION on JURISDICTION.corp_num = corp.corp_num
                 join event on corp.corp_num = event.corp_num
                 left join filing on event.event_id = filing.event_id and filing.filing_typ_cd = 'OTANN'
-                where corp_typ_cd = 'CP'
+                where corp_typ_cd in ('CP', 'BC')
                 and corp.CORP_NUM=:corp_num
                 order by last_ar_date desc nulls last""", corp_num=identifier)
             business = cursor.fetchone()
@@ -370,3 +370,64 @@ class Business:
             raise err
         finally:
             con.commit()
+
+    @classmethod
+    def insert_new_business(cls, incorporation):
+        """Insert a new business from an incorporation filing."""
+        try:
+            con = DB.connection
+            con.begin()
+            cursor = con.cursor()
+            corp_num = incorporation['nameRequest']['nrNumber']
+            creation_date = datetime.now()
+            legal_type = incorporation['nameRequest']['legalType']
+            # TODO expand query as NR data/ business info becomes more aparent
+            cursor.execute(f"""insert into CORPORATION 
+            (CORP_NUM, CORP_TYP_CD, RECOGNITION_DTS) 
+            values (:corp_num, :legal_type, :creation_date)
+            """,corp_num=corp_num, legal_type=legal_type, creation_date=creation_date)
+            con.commit()
+
+            business = {'identifier': corp_num}
+            
+            business_obj = Business()
+            business_obj.business = business
+            
+            return business_obj
+
+        except Exception as err:
+
+            raise err
+
+    @classmethod
+    def create_corp_name(cls, cursor, corp_num, corp_name, event_id):
+        try:
+            search_name = ''.join(e for e in corp_name if e.isalnum())
+            # cursor.execute("select 0 from corp_name for update")
+            # cursor.fetchone()
+            cursor.execute(f"""insert into CORP_NAME
+            (CORP_NAME_TYP_CD, CORP_NAME_SEQ_NUM, DD_CORP_NUM, END_EVENT_ID, CORP_NME, CORP_NUM, START_EVENT_ID, SRCH_NME)
+            values ('CO', 0, NULL, NULL, '{corp_name}', '{corp_num}', {event_id}, '{search_name}')"""
+            )
+        except Exception as err:
+            raise err
+
+    @classmethod
+    def create_corp_state(cls, cursor, corp_num, event_id):
+        try:
+            cursor.execute(f"""insert into CORP_STATE
+            (CORP_NUM, START_EVENT_ID, STATE_TYP_CD)
+            values ('{corp_num}', {event_id}, 'ACT')"""
+            )
+        except Exception as err:
+            raise err
+    
+    @classmethod
+    def create_corp_jurisdiction(cls, cursor, corp_num, event_id):
+        try:
+            cursor.execute(f"""insert into JURISDICTION
+            (CORP_NUM, START_EVENT_ID, STATE_TYP_CD)
+            values ('{corp_num}', {event_id}, 'ACT')"""
+            )
+        except Exception as err:
+            raise err 

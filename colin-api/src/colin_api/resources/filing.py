@@ -85,7 +85,8 @@ class FilingInfo(Resource):
 
             filing_list = {'changeOfAddress': json_data.get('changeOfAddress', None),
                            'changeOfDirectors': json_data.get('changeOfDirectors', None),
-                           'annualReport': json_data.get('annualReport', None)}
+                           'annualReport': json_data.get('annualReport', None),
+                           'incorporationApplication': json_data.get('incorporationApplication', None)}
 
             # ensure that the business in the AR matches the business in the URL
             if identifier != json_data['business']['identifier']:
@@ -100,7 +101,10 @@ class FilingInfo(Resource):
                 for filing_type in filing_list:
                     if filing_list[filing_type]:
                         filing = Filing()
-                        filing.business = Business.find_by_identifier(identifier)
+                        if filing_type != 'incorporationApplication':
+                            filing.business = Business.find_by_identifier(identifier)
+                        else:
+                            filing.business = Business.insert_new_business(filing_list[filing_type])
                         filing.header = json_data['header']
                         filing.filing_type = filing_type
                         filing.body = filing_list[filing_type]
