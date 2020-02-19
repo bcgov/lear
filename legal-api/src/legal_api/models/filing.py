@@ -64,6 +64,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                'changeOfName': {'name': 'changeOfName', 'title': 'Change of Name Filing'},
                'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution'},
                'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'},
+               'correction': {'name': 'correction', 'title': 'Correction'},
                'incorporationApplication': {'name': 'incorporationApplication', 'title': 'Incorporation Application'}
                }
 
@@ -345,7 +346,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Return the filings with statuses in the status array input."""
         filings = db.session.query(Filing). \
             filter(Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
-                   Filing._status == Filing.Status.COMPLETED.value).order_by(Filing.filing_date).all()
+                   Filing._status == Filing.Status.COMPLETED.value,
+                   Filing._filing_type != Filing.FILINGS['correction'].get('name'))\
+            .order_by(Filing.filing_date).all()
         return filings
 
     @staticmethod
