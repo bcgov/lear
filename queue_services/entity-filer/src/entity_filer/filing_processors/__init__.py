@@ -18,7 +18,7 @@ Processors hold the business logic for how a filing is interpreted and saved to 
 from typing import Dict
 
 import pycountry
-from legal_api.models import Address, Director
+from legal_api.models import Address, Business, Director, Office
 
 
 def create_address(address_info: Dict, address_type: str):
@@ -64,3 +64,18 @@ def update_director(director: Director, new_info: dict):
             director.mailing_address = update_address(director.mailing_address, new_info['mailingAddress'])
 
     return director
+
+
+def create_office(business, office_type, addresses):
+    """Create a new office for incorporation."""
+    office = Office()
+    office.business_id = business.id
+    office.office_type = office_type
+    office.addresses = []
+    # Iterate addresses and add to this office
+    for k, v in addresses.items():
+        address = create_address(v, k)
+        address.business_id = business.id
+        if address:
+            office.addresses.append(address)
+    return office

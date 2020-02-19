@@ -45,6 +45,7 @@ from entity_filer.filing_processors import (
     change_of_address,
     change_of_directors,
     change_of_name,
+    incorporation_filing,
     voluntary_dissolution,
 )
 
@@ -134,6 +135,9 @@ def process_filing(filing_msg: Dict, flask_app: Flask):
 
                 elif filing.get('voluntaryDissolution'):
                     voluntary_dissolution.process(business, filing)
+
+                elif filing.get('incorporationApplication'):
+                    incorporation_filing.process(business, filing, flask_app)
 
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()

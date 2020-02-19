@@ -102,6 +102,8 @@ class _Config():  # pylint: disable=too-few-public-methods
         'subject': os.getenv('NATS_ENTITY_EVENT_SUBJECT', 'entity.events'),
     }
 
+    COLIN_API = os.getenv('COLIN_API', '')
+
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""
