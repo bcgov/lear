@@ -572,31 +572,31 @@ class Filing:
 
             # get the filing event info
             filing_event_info = cls._get_filing_event_info(identifier=identifier, event_id=event_id,
-                                                           filing_type_cd=code[0], year=year, cursor=con)
+                                                           filing_type_cd=code[0], year=year, cursor=cursor)
             if not filing_event_info:
                 raise FilingNotFoundException(identifier=identifier, filing_type=filing_type, event_id=event_id)
 
             if filing_type == 'annualReport':
-                filing_obj = cls._get_ar(identifier=identifier, filing_event_info=filing_event_info, cursor=con)
+                filing_obj = cls._get_ar(identifier=identifier, filing_event_info=filing_event_info, cursor=cursor)
 
             elif filing_type == 'changeOfAddress':
-                filing_obj = cls._get_coa(identifier=identifier, filing_event_info=filing_event_info, cursor=con)
+                filing_obj = cls._get_coa(identifier=identifier, filing_event_info=filing_event_info, cursor=cursor)
 
             elif filing_type == 'changeOfDirectors':
-                filing_obj = cls._get_cod(identifier=identifier, filing_event_info=filing_event_info, cursor=con)
+                filing_obj = cls._get_cod(identifier=identifier, filing_event_info=filing_event_info, cursor=cursor)
 
             elif filing_type == 'changeOfName':
-                filing_obj = cls._get_con(identifier=identifier, filing_event_info=filing_event_info, cursor=con)
+                filing_obj = cls._get_con(identifier=identifier, filing_event_info=filing_event_info, cursor=cursor)
 
             elif filing_type == 'specialResolution':
-                filing_obj = cls._get_sr(identifier=identifier, filing_event_info=filing_event_info, cursor=con)
+                filing_obj = cls._get_sr(identifier=identifier, filing_event_info=filing_event_info, cursor=cursor)
 
             elif filing_type == 'voluntaryDissolution':
-                filing_obj = cls._get_vd(identifier=identifier, filing_event_info=filing_event_info, cursor=con)
+                filing_obj = cls._get_vd(identifier=identifier, filing_event_info=filing_event_info, cursor=cursor)
 
             else:
                 # uncomment to bring in other filings as available on paper only
-                # filing_obj = cls._get_other(identifier=identifier, filing_event_info=filing_event_info, cursor=con)
+                # filing_obj = cls._get_other(identifier=identifier, filing_event_info=filing_event_info, cursor=cursor)
                 raise InvalidFilingTypeException(filing_type=filing_type)
 
             filing_obj.header = {
