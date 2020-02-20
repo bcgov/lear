@@ -429,6 +429,27 @@ class Filing:
         filing_obj.effective_date = effective_date
 
         return filing_obj
+    
+    @classmethod
+    def _get_inc(cls, cursor, identifier: str = None, filing_event_info: dict = None):
+        """Get incorporation filing."""
+        # business_obj
+        office_obj_list = Office.get_by_event(cursor, filing_event_info['event_id'])
+        if not office_obj_list:
+            raise FilingNotFoundException(identifier=identifier, filing_type='change_of_address',
+                                          event_id=filing_event_info['event_id'])
+
+        offices = Office.convert_obj_list(office_obj_list)
+
+        filing_obj = Filing()
+        filing_obj.body = {
+            'offices': offices,
+            'eventId': filing_event_info['event_id']
+        }
+        filing_obj.filing_type = 'incorporationApplication'
+        filing_obj.paper_only = False
+
+        return filing_obj
 
     @classmethod
     def _get_inc(cls, cursor, identifier: str = None, filing_event_info: dict = None):
