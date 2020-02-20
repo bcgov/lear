@@ -16,7 +16,7 @@
 Currently this only provides API versioning information
 """
 
-from flask import current_app, jsonify
+from flask import current_app, jsonify, request
 from flask_restplus import Namespace, Resource, cors
 
 from colin_api.exceptions import GenericException
@@ -38,7 +38,8 @@ class BusinessInfo(Resource):
     def get(identifier=None):
         """Return the complete business info."""
         if not identifier:
-            corp_num = Business.get_next_corp_num('BC')
+            corp_type = request.args.get('legal_type', None).upper()
+            corp_num = Business.get_next_corp_num(corp_type)
             if corp_num:
                 return jsonify({'corpNum': corp_num}), 200     
 

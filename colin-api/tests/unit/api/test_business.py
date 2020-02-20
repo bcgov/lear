@@ -43,3 +43,11 @@ def test_get_business_no_results(client):
 
     assert 404 == rv.status_code
     assert None is not rv.json['message']
+
+@oracle_integration
+def test_get_business_new_corp(client):
+    """Assert that a new corp number can be retrieved from COLIN."""
+    rv = client.get('/api/v1/businesses?legal_type=BC')
+
+    assert 200 == rv.status_code
+
