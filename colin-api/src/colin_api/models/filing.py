@@ -425,7 +425,7 @@ class Filing:
         filing_obj.effective_date = effective_date
 
         return filing_obj
-    
+
     @classmethod
     def _get_inc(cls, cursor, identifier: str = None, filing_event_info: dict = None):
         """Get incorporation filing."""
@@ -580,9 +580,9 @@ class Filing:
             return None
 
         try:
-            if not con:	
-                con = DB.connection	
-                con.begin()	
+            if not con:
+                con = DB.connection
+                con.begin()
             cursor = con.cursor()
             identifier = business.get_corp_num()
 
@@ -715,7 +715,7 @@ class Filing:
         """
         try:
             corp_num = filing.get_corp_num()
-            user_id = 'COOPER' if corp_num[:2] in ('CP','BC') else None
+            user_id = 'COOPER' if corp_num[:2] in ('CP', 'BC') else None
             cursor = con.cursor()
 
             # create new event record, return event ID
@@ -834,13 +834,9 @@ class Filing:
                 filing_type_cd = 'OTINC'
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
                 # Do incorporation here
-                #  CORPORATION, CORP_NAME, CORP_STATE, CORP_OP_STATE, JURISDICTION, 
                 Business.create_corp_name(cursor, corp_num, 'test name', event_id)
                 Business.create_corp_state(cursor, corp_num, event_id)
-                #Business.update_corp_state()
-                #create_business_jurisdiction()
-                #remove
-                # create new addresses for delivery + mailing, return address ids
+
                 for office_type in filing.body['offices']:
                     office_arr = filing.body['offices'][office_type]
                     delivery_addr_id = Address.create_new_address(cursor, office_arr['deliveryAddress'])
@@ -854,10 +850,7 @@ class Filing:
 
                     # create new ledger text for address change
                     cls._add_ledger_text(cursor, event_id, f'Change to the {office_desc}.', user_id)
-                    con.commit()
-                #cls._add_ledger_text(
-                #    cursor=cursor, event_id=event_id, text=f'INCORPORATION FILING - {ar_date}', user_id=user_id)
-                
+                    # con.commit()
             else:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 

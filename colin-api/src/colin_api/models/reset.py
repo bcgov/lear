@@ -85,21 +85,21 @@ class Reset:
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error('error getting filing/event info for reset for: {}'.format(self.as_dict()))
             raise err
-    
+
     @classmethod
     def get_incorporations_by_event(cls, cursor, event_ids: list):
         """Find all corporation entries associated with an incorporation."""
         new_corps = {}
         try:
             events = stringify_list(event_ids)
-            events = events.replace("'","")
+            events = events.replace("'", '')
             cursor.execute(f"""SELECT A.CORP_NUM, B.EVENT_ID FROM
             EVENT A JOIN FILING B ON A.EVENT_ID = B.EVENT_ID
             WHERE B.EVENT_ID IN({events}) AND B.FILING_TYP_CD = 'OTINC'""")
             for row in cursor.fetchall():
                 new_corps[row[0]] = row[1]
             return new_corps
-        except  Exception as err:
+        except Exception as err:
             raise err
 
     @classmethod
@@ -146,7 +146,7 @@ class Reset:
         except Exception as err:
             current_app.logger.error(f'Error in Reset: failed to delete from filing_user table.')
             raise err
-    
+
     @classmethod
     def _delete_corp_name(cls, cursor, event_ids: list):
         events_str = ', '.join(str(x) for x in event_ids)
@@ -169,7 +169,6 @@ class Reset:
         except Exception as err:
             current_app.logger.error(f'Error in Reset: failed to delete from corp_name table.')
             raise err
-
 
     @classmethod
     def reset_filings(cls, start_date: str = None, end_date: str = None, identifiers: list = None,

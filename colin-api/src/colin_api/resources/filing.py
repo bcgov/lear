@@ -66,7 +66,7 @@ class FilingInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def post(identifier, **kwargs):  # pylint: disable=unused-argument; filing_type is only used for the get
+    def post(identifier, **kwargs):  # pylint: disable=unused-argument,too-many-branches; filing_type is only used for the get
         """Create a new filing."""
         try:
             json_data = request.get_json()

@@ -41,7 +41,7 @@ class BusinessInfo(Resource):
             corp_type = request.args.get('legal_type', None).upper()
             corp_num = Business.get_next_corp_num(corp_type)
             if corp_num:
-                return jsonify({'corpNum': corp_num}), 200     
+                return jsonify({'corpNum': corp_num}), 200
 
             return jsonify({'message': 'Identifier required'}), 404
 
