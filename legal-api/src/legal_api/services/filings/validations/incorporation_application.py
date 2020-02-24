@@ -14,15 +14,17 @@
 """Validation for the Incorporation filing."""
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Dict
+from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
-from flask_babel import _ as babel  # noqa: N813, I004, I001, I003; importing camelcase '_' as a name
+import pycountry
+
 from legal_api.errors import Error
 from legal_api.models import Business
 # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
 def validate(business: Business, incorporation_json: Dict):
-    """Validate the Change ofAddress filing."""
+    """Validate the Incorporation filing."""
     if not business or not incorporation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
@@ -32,6 +34,44 @@ def validate(business: Business, incorporation_json: Dict):
     if business.identifier != temp_identifier:
         msg.append({'error': babel('Business Identifier does not match the identifier in filing.')})
 
+    err = validate_offices(incorporation_json)
+    if err:
+        msg.append(err)
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
+    return None
+
+
+def validate_offices(incorporation_json) -> Error:
+    """Validate the office addresses of the incorporation filing."""
+    offices_array = incorporation_json['filing']['incorporationApplication']['offices']
+    addresses = offices_array
+    msg = []
+
+    for item in addresses.keys():
+        for k, v in addresses[item].items():
+            region = v['addressRegion']
+            country = v['addressCountry']
+
+            if region != 'BC':
+                path = '/filing/incorporationApplication/offices/%s/%s/addressRegion' % (
+                    item, k
+                )
+                msg.append({'error': "Address Region must be 'BC'.",
+                            'path': path})
+
+            try:
+                country = pycountry.countries.search_fuzzy(country)[0].alpha_2
+                if country != 'CA':
+                    raise LookupError
+            except LookupError:
+                err_path = '/filing/incorporationApplication/offices/%s/%s/addressCountry' % (
+                    item, k
+                )
+                msg.append({'error': "Address Country must be 'CA'.",
+                            'path': err_path})
+    if msg:
+        return msg
+
     return None

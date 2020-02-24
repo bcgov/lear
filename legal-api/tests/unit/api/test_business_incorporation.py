@@ -19,7 +19,7 @@ Test-Suite to ensure that incorporation is working as expected.
 import copy
 from http import HTTPStatus
 
-from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
+from registry_schemas.example_data import INCORPORATION, INCORPORATION_FILING_TEMPLATE
 
 from legal_api.models import Business
 from legal_api.services.authz import STAFF_ROLE
@@ -30,6 +30,19 @@ def test_post_new_incorporation(session, client, jwt):
     """Assert that an incorporation filing can be posted to businesses."""
     nr_number = 'NR1234567'
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing['filing']['incorporationApplication'] = INCORPORATION
+
+    regoffice = filing['filing']['incorporationApplication']['offices']['registeredOffice']
+    regoffice['deliveryAddress']['addressRegion'] = 'BC'
+    regoffice['deliveryAddress']['addressCountry'] = 'CA'
+    regoffice['mailingAddress']['addressRegion'] = 'BC'
+    regoffice['mailingAddress']['addressCountry'] = 'CA'
+
+    recoffice = filing['filing']['incorporationApplication']['offices']['recordsOffice']
+    recoffice['deliveryAddress']['addressRegion'] = 'BC'
+    recoffice['deliveryAddress']['addressCountry'] = 'CA'
+    recoffice['mailingAddress']['addressRegion'] = 'BC'
+    recoffice['mailingAddress']['addressCountry'] = 'CA'
 
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
     # Post initial filing

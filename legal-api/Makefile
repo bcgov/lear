@@ -68,7 +68,7 @@ install-dev: venv/bin/activate
 
 .PHONY: activate
 activate: venv/bin/activate
-	. venv/bin/activate 
+	. venv/bin/activate
 
 .PHONY: local-test
 local-test: venv/bin/activate
@@ -84,10 +84,10 @@ local-coverage: venv/bin/activate
 coverage-report: local-coverage
 	. venv/bin/activate ; \
 	coverage report ; \
-	coverage html 
+	coverage html
 
 ## Run the coverage report and display in a browser window
-mac-cov:	install-dev coverage-report 
+mac-cov:	install-dev coverage-report
 	open -a "Google Chrome" htmlcov/index.html
 
 ## run pylint on the package and tests
