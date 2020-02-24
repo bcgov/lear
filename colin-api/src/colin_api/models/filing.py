@@ -715,7 +715,7 @@ class Filing:
         """
         try:
             corp_num = filing.get_corp_num()
-            user_id = 'COOPER' if corp_num[:2] == 'CP' else None
+            user_id = 'COOPER' if corp_num[:2] in ('CP','BC') else None
             cursor = con.cursor()
 
             # create new event record, return event ID

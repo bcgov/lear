@@ -47,8 +47,10 @@ class Business:
         """Get the previous AR/AGM dates."""
         events_by_corp_num = {}
         for info in event_info:
-            if info['corp_num'] not in events_by_corp_num or events_by_corp_num[info['corp_num']] > info['event_id']:
-                events_by_corp_num[info['corp_num']] = info['event_id']
+            if info['filing_typ_cd'] != 'OTINC':
+                if info['corp_num'] not in events_by_corp_num or events_by_corp_num[info['corp_num']] > info['event_id']:
+                    events_by_corp_num[info['corp_num']] = info['event_id']
+
         dates_by_corp_num = []
         for corp_num in events_by_corp_num:
             cursor.execute(f"""
@@ -295,6 +297,7 @@ class Business:
         dates_by_corp_num = cls._get_last_ar_dates_for_reset(cursor=cursor, event_info=event_info, event_ids=event_ids)
         for item in dates_by_corp_num:
             try:
+
                 cursor.execute("""
                     UPDATE corporation
                     SET
