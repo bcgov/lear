@@ -25,7 +25,7 @@ from http import HTTPStatus
 import datedelta
 import dpath.util
 import pytest
-from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, FILING_HEADER
+from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CORRECTION_AR, FILING_HEADER
 
 from legal_api.services import QueueService
 from legal_api.services.authz import COLIN_SVC_ROLE, STAFF_ROLE
@@ -179,6 +179,7 @@ def test_get_internal_filings(session, client, jwt):
     filing3 = factory_pending_filing(b, ANNUAL_REPORT)
     filing4 = factory_filing(b, ANNUAL_REPORT)
     filing5 = factory_error_filing(b, ANNUAL_REPORT)
+    filing6 = factory_completed_filing(b, CORRECTION_AR)
 
     assert filing1.status == Filing.Status.COMPLETED.value
     # completed with colin_event_id
@@ -196,8 +197,10 @@ def test_get_internal_filings(session, client, jwt):
     assert filing4.status == Filing.Status.DRAFT.value
     # error with no colin_event_ids
     assert filing5.status == Filing.Status.PAID.value
+    # completed correction with no colin_event_ids
+    assert filing6.status == Filing.Status.COMPLETED.value
 
-    # test endpoint returned filing1 only (completed with no colin id set)
+    # test endpoint returned filing1 only (completed, no corrections, with no colin id set)
     rv = client.get(f'/api/v1/businesses/internal/filings')
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json) == 1
