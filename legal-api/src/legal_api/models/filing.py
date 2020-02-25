@@ -64,7 +64,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                'changeOfName': {'name': 'changeOfName', 'title': 'Change of Name Filing'},
                'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution'},
                'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'},
-               'correction': {'name': 'correction', 'title': 'Correction'},
+               'correction': {'name': 'correction', 'title': 'Correction', 'code': 'CRCTN'},
                'incorporationApplication': {'name': 'incorporationApplication', 'title': 'Incorporation Application'}
                }
 
@@ -97,6 +97,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     colin_event_ids = db.relationship('ColinEventId', lazy='select')
 
     comments = db.relationship('Comment', lazy='dynamic')
+
+    parent_filing_id = db.Column(db.Integer, db.ForeignKey('filings.id'))
+    parent_filing = db.relationship('Filing', remote_side=[id], backref=backref('children'))
 
     # properties
     @property
@@ -252,6 +255,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
             # add comments
             json_submission['filing']['header']['comments'] = [comment.json for comment in self.comments]
+
+            # add affected filings list
+            json_submission['filing']['header']['affectedFilings'] = [filing.id for filing in self.children]
+
+            # add corrected flag
+            json_submission['filing']['header']['isCorrected'] = \
+                True if self.parent_filing else False  # pylint: disable=simplifiable-if-expression
 
             return json_submission
         except Exception:  # noqa: B901, E722

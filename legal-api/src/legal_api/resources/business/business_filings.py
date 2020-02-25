@@ -382,10 +382,16 @@ class ListFilingResource(Resource):
                         free = False
                         break
                 filing_types.append({
-                    'filingTypeCode': 'OTFDR' if free else Filing.FILINGS[k].get('code')
+                    'filingTypeCode': 'OTFDR' if free else Filing.FILINGS[k].get('code'),
+                    'priority': filing_json['filing']['header'].get('priority', False),
+                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
                 })
             elif Filing.FILINGS.get(k, None):
-                filing_types.append({'filingTypeCode': Filing.FILINGS[k].get('code')})
+                filing_types.append({
+                    'filingTypeCode': Filing.FILINGS[k].get('code'),
+                    'priority': filing_json['filing']['header'].get('priority', False),
+                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+                })
         return filing_types
 
     @staticmethod
