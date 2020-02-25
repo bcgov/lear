@@ -87,22 +87,6 @@ class Reset:
             raise err
 
     @classmethod
-    def get_incorporations_by_event(cls, cursor, event_ids: list):
-        """Find all corporation entries associated with an incorporation."""
-        new_corps = {}
-        try:
-            events = stringify_list(event_ids)
-            events = events.replace("'", '')
-            cursor.execute(f"""SELECT A.CORP_NUM, B.EVENT_ID FROM
-            EVENT A JOIN FILING B ON A.EVENT_ID = B.EVENT_ID
-            WHERE B.EVENT_ID IN({events}) AND B.FILING_TYP_CD = 'OTINC'""")
-            for row in cursor.fetchall():
-                new_corps[row[0]] = row[1]
-            return new_corps
-        except Exception as err:
-            raise err
-
-    @classmethod
     def _delete_events_and_filings(cls, cursor, event_ids: list):
         """Delete rows in the filing and event tables with the given event ids."""
         try:

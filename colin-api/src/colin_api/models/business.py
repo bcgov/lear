@@ -47,17 +47,10 @@ class Business:
         """Get the previous AR/AGM dates."""
         events_by_corp_num = {}
         for info in event_info:
-<<<<<<< HEAD
             if info['filing_typ_cd'] != 'OTINC' and \
              (info['corp_num'] not in events_by_corp_num or
               events_by_corp_num[info['corp_num']] > info['event_id']):
                 events_by_corp_num[info['corp_num']] = info['event_id']
-=======
-            if info['filing_typ_cd'] != 'OTINC':
-                if info['corp_num'] not in events_by_corp_num or \
-                 events_by_corp_num[info['corp_num']] > info['event_id']:
-                    events_by_corp_num[info['corp_num']] = info['event_id']
->>>>>>> flake8 and pylint errors
 
         dates_by_corp_num = []
         for corp_num in events_by_corp_num:
@@ -368,10 +361,6 @@ class Business:
                 FOR UPDATE
             """, corp_type=corp_type)
             corp_num = cursor.fetchone()
-<<<<<<< HEAD
-=======
-            # TODO: Cache numbers?
->>>>>>> flake8 and pylint errors
 
             if corp_num:
                 cursor.execute(f"""
@@ -393,19 +382,11 @@ class Business:
             corp_num = incorporation['nameRequest']['nrNumber']
             creation_date = datetime.now()
             legal_type = incorporation['nameRequest']['legalType']
-<<<<<<< HEAD
             # Expand query as NR data/ business info becomes more aparent
-=======
-            # TODO expand query as NR data/ business info becomes more aparent
->>>>>>> flake8 and pylint errors
             cursor.execute(f"""insert into CORPORATION
             (CORP_NUM, CORP_TYP_CD, RECOGNITION_DTS)
             values (:corp_num, :legal_type, :creation_date)
             """, corp_num=corp_num, legal_type=legal_type, creation_date=creation_date)
-<<<<<<< HEAD
-=======
-            con.commit()
->>>>>>> flake8 and pylint errors
 
             business = {'identifier': corp_num}
 
@@ -453,8 +434,5 @@ class Business:
             values ('{corp_num}', {event_id}, 'ACT')""")
 
         except Exception as err:
-<<<<<<< HEAD
             current_app.logger.error(f'Error inserting jurisdiction.')
-=======
->>>>>>> flake8 and pylint errors
             raise err
