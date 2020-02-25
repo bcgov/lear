@@ -89,6 +89,7 @@ class FilingInfo(Resource):
                            'annualReport': json_data.get('annualReport', None),
                            'incorporationApplication': json_data.get('incorporationApplication', None)}
 
+            # Filter out null-values in the filing_list dictionary
             filing_list = {k: v for k, v in filing_list.items() if v is not None}
 
             # ensure that the business in the AR matches the business in the URL

@@ -94,10 +94,11 @@ class Business:
 
         try:
             # get record
-            if con is None:
-                cursor = DB.connection.cursor()
-            else:
-                cursor = con.cursor()
+            if not con:
+                con = DB.connection
+                con.begin()
+
+            cursor = con.cursor()
 
             cursor.execute("""
                 select corp.CORP_NUM as identifier, CORP_FROZEN_TYP_CD, corp_typ_cd type,
