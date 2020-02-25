@@ -100,6 +100,7 @@ class Reset:
                 new_corps[row[0]] = row[1]
             return new_corps
         except Exception as err:
+            current_app.logger.error(f'Error in Reset: failed to retrieve incorporation filing.')
             raise err
 
     @classmethod

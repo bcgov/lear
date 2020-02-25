@@ -47,10 +47,10 @@ class Business:
         """Get the previous AR/AGM dates."""
         events_by_corp_num = {}
         for info in event_info:
-            if info['filing_typ_cd'] != 'OTINC':
-                if info['corp_num'] not in events_by_corp_num or \
-                 events_by_corp_num[info['corp_num']] > info['event_id']:
-                    events_by_corp_num[info['corp_num']] = info['event_id']
+            if info['filing_typ_cd'] != 'OTINC' and \
+             (info['corp_num'] not in events_by_corp_num or \
+             events_by_corp_num[info['corp_num']] > info['event_id']):
+                events_by_corp_num[info['corp_num']] = info['event_id']
 
         dates_by_corp_num = []
         for corp_num in events_by_corp_num:
@@ -86,7 +86,7 @@ class Business:
         return dates_by_corp_num
 
     @classmethod
-    def find_by_identifier(cls, identifier: str = None):  # pylint: disable=too-many-statements;
+    def find_by_identifier(cls, identifier: str = None, con = None):  # pylint: disable=too-many-statements;
         """Return a Business by identifier."""
         business = None
         if not identifier:
@@ -94,7 +94,11 @@ class Business:
 
         try:
             # get record
-            cursor = DB.connection.cursor()
+            if con == None:
+                cursor = DB.connection.cursor()
+            else:
+                cursor = con.cursor()
+
             cursor.execute("""
                 select corp.CORP_NUM as identifier, CORP_FROZEN_TYP_CD, corp_typ_cd type,
                 filing.period_end_dt as last_ar_date, LAST_AR_FILED_DT as last_ar_filed_date, LAST_AGM_DATE,
@@ -368,19 +372,16 @@ class Business:
                 WHERE id_typ_cd = :corp_type
             """, new_num=corp_num[0]+1, corp_type=corp_type)
 
+            con.commit()
             return corp_num
         except Exception as err:
             current_app.logger.error(f'Error looking up corp_num')
             raise err
-        finally:
-            con.commit()
 
     @classmethod
-    def insert_new_business(cls, incorporation):
+    def insert_new_business(cls, con, incorporation):
         """Insert a new business from an incorporation filing."""
         try:
-            con = DB.connection
-            con.begin()
             cursor = con.cursor()
             corp_num = incorporation['nameRequest']['nrNumber']
             creation_date = datetime.now()
@@ -390,7 +391,6 @@ class Business:
             (CORP_NUM, CORP_TYP_CD, RECOGNITION_DTS)
             values (:corp_num, :legal_type, :creation_date)
             """, corp_num=corp_num, legal_type=legal_type, creation_date=creation_date)
-            con.commit()
 
             business = {'identifier': corp_num}
 
@@ -400,7 +400,7 @@ class Business:
             return business_obj
 
         except Exception as err:
-
+            current_app.logger.error(f'Error inserting business.')
             raise err
 
     @classmethod
@@ -408,14 +408,13 @@ class Business:
         """Add record to the CORP NAME table on incorporation."""
         try:
             search_name = ''.join(e for e in corp_name if e.isalnum())
-            # cursor.execute("select 0 from corp_name for update")
-            # cursor.fetchone()
             cursor.execute(f"""insert into CORP_NAME
             (CORP_NAME_TYP_CD, CORP_NAME_SEQ_NUM, DD_CORP_NUM, END_EVENT_ID,
             CORP_NME, CORP_NUM, START_EVENT_ID, SRCH_NME)
             values ('CO', 0, NULL, NULL, '{corp_name}', '{corp_num}', {event_id}, '{search_name}')""")
 
         except Exception as err:
+            current_app.logger.error(f'Error inserting corp name.')
             raise err
 
     @classmethod
@@ -427,6 +426,7 @@ class Business:
             values ('{corp_num}', {event_id}, 'ACT')""")
 
         except Exception as err:
+            current_app.logger.error(f'Error inserting corp state.')
             raise err
 
     @classmethod
@@ -438,4 +438,5 @@ class Business:
             values ('{corp_num}', {event_id}, 'ACT')""")
 
         except Exception as err:
+            current_app.logger.error(f'Error inserting jurisdiction.')
             raise err
