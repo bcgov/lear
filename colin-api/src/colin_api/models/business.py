@@ -48,8 +48,8 @@ class Business:
         events_by_corp_num = {}
         for info in event_info:
             if info['filing_typ_cd'] != 'OTINC' and \
-             (info['corp_num'] not in events_by_corp_num or \
-             events_by_corp_num[info['corp_num']] > info['event_id']):
+             (info['corp_num'] not in events_by_corp_num or
+              events_by_corp_num[info['corp_num']] > info['event_id']):
                 events_by_corp_num[info['corp_num']] = info['event_id']
 
         dates_by_corp_num = []
@@ -86,7 +86,7 @@ class Business:
         return dates_by_corp_num
 
     @classmethod
-    def find_by_identifier(cls, identifier: str = None, con = None):  # pylint: disable=too-many-statements;
+    def find_by_identifier(cls, identifier: str = None, con=None):  # pylint: disable=too-many-statements;
         """Return a Business by identifier."""
         business = None
         if not identifier:
@@ -94,7 +94,7 @@ class Business:
 
         try:
             # get record
-            if con == None:
+            if con is None:
                 cursor = DB.connection.cursor()
             else:
                 cursor = con.cursor()
@@ -139,10 +139,9 @@ class Business:
 
             # if this is an XPRO, get correct jurisdiction; otherwise, it's BC
             if business['type'] == 'XCP':
+                business['jurisdiction'] = business['can_jur_typ_cd']
                 if business['can_jur_typ_cd'] == 'OT':
                     business['jurisdiction'] = business['othr_juris_desc']
-                else:
-                    business['jurisdiction'] = business['can_jur_typ_cd']
             else:
                 business['jurisdiction'] = 'BC'
 
@@ -156,10 +155,11 @@ class Business:
                     isinstance(business['last_ar_filed_date'], datetime) and \
                     business['last_agm_date'] is not None and isinstance(business['last_agm_date'], datetime):
 
+                business['status'] = business['state']
+
                 if business['last_ar_filed_date'] > business['last_agm_date']:
                     business['status'] = 'In Good Standing'
-                else:
-                    business['status'] = business['state']
+
             else:
                 business['status'] = business['state']
 
