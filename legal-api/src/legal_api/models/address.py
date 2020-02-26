@@ -15,6 +15,8 @@
 
 Currently this only provides API versioning information
 """
+import pycountry
+
 from .db import db
 
 
@@ -74,3 +76,18 @@ class Address(db.Model):  # pylint: disable=too-many-instance-attributes
             'postalCode': self.postal_code,
             'deliveryInstructions': self.delivery_instructions
         }
+
+    @staticmethod
+    def create_address(new_info: dict):
+        """Create an address object from dict/json."""
+        address = Address()
+
+        address.street = new_info.get('streetAddress')
+        address.street_additional = new_info.get('streetAddressAdditional')
+        address.city = new_info.get('addressCity')
+        address.region = new_info.get('addressRegion')
+        address.country = pycountry.countries.search_fuzzy(new_info.get('addressCountry'))[0].alpha_2
+        address.postal_code = new_info.get('postalCode')
+        address.delivery_instructions = new_info.get('deliveryInstructions')
+
+        return address

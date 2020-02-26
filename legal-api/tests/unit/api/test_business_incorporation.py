@@ -19,55 +19,58 @@ Test-Suite to ensure that incorporation is working as expected.
 import copy
 from http import HTTPStatus
 
-from registry_schemas.example_data import INCORPORATION, INCORPORATION_FILING_TEMPLATE
+from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
-from legal_api.models import Business
+from legal_api.models import Business, Filing
 from legal_api.services.authz import STAFF_ROLE
+from tests import integration_payment
 from tests.unit.services.utils import create_header
 
 
-def test_post_new_incorporation(session, client, jwt):
+def test_post_new_draft_incorporation(session, client, jwt):
     """Assert that an incorporation filing can be posted to businesses."""
-    nr_number = 'NR1234567'
+    nr_number = 'NR 1234567'
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    filing['filing']['incorporationApplication'] = INCORPORATION
-
-    regoffice = filing['filing']['incorporationApplication']['offices']['registeredOffice']
-    regoffice['deliveryAddress']['addressRegion'] = 'BC'
-    regoffice['deliveryAddress']['addressCountry'] = 'CA'
-    regoffice['mailingAddress']['addressRegion'] = 'BC'
-    regoffice['mailingAddress']['addressCountry'] = 'CA'
-
-    recoffice = filing['filing']['incorporationApplication']['offices']['recordsOffice']
-    recoffice['deliveryAddress']['addressRegion'] = 'BC'
-    recoffice['deliveryAddress']['addressCountry'] = 'CA'
-    recoffice['mailingAddress']['addressRegion'] = 'BC'
-    recoffice['mailingAddress']['addressCountry'] = 'CA'
-
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
+
+    # Post initial filing
+    rv = client.post(f'/api/v1/businesses?draft=true',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], nr_number))
+
+    assert HTTPStatus.CREATED == rv.status_code
+    assert 'DRAFT' == rv.json['filing']['header']['status']
+
+    # verify business has actually been inserted with NR as identifier
+    business = Business.find_by_identifier(nr_number)
+    assert business
+
+
+@integration_payment
+def test_post_new_incorporation(session, client, jwt):
+    """Assert that an incorporation filing can be posted to businesses and completed."""
+    nr_number = 'NR 1234567'
+    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing['filing']['header']['routingSlipNumber'] = '111111111'
+    filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
+
     # Post initial filing
     rv = client.post(f'/api/v1/businesses',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], nr_number))
 
-    assert rv.status_code == HTTPStatus.CREATED
-    assert rv.json['filing']['header']['status'] == 'DRAFT'
-
-    # verify business has actually been inserted
-    business = Business.find_by_identifier(nr_number)
-
-    assert business
-    assert business.identifier == nr_number
+    assert HTTPStatus.CREATED == rv.status_code
+    assert 'PENDING' == rv.json['filing']['header']['status']
+    assert rv.json['filing']['header']['paymentToken'] is not None
 
 
 def test_post_duplicate_incorporation(session, client, jwt):
     """Assert that only one incorporation filing can be created per NR number."""
-    nr_number = 'NR1234567'
+    nr_number = 'NR 1234567'
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
 
-    rv = client.post(f'/api/v1/businesses',
+    rv = client.post(f'/api/v1/businesses?draft=true',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], nr_number))
 
@@ -77,84 +80,89 @@ def test_post_duplicate_incorporation(session, client, jwt):
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], nr_number))
 
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0]['message'] == 'Incorporation filing for NR1234567 already exists'
+    assert HTTPStatus.BAD_REQUEST == rv.status_code
+    assert 'Incorporation filing for NR 1234567 already exists' == rv.json['errors'][0]['message']
 
 
-def test_update_incorporation_filing(session, client, jwt):
-    """Assert that incorporation filings can be edited/updated via businesses."""
-    nr_number = 'NR1234567'
-    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-
-    filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
-    # Post initial filing
-    rv = client.post(f'/api/v1/businesses',
-                     json=filing,
-                     headers=create_header(jwt, [STAFF_ROLE], nr_number))
-
-    assert rv.status_code == HTTPStatus.CREATED
-    assert rv.json['filing']['incorporationApplication']['contactPoint']['email'] == 'no_one@never.get'
-    filing['filing']['incorporationApplication']['contactPoint']['email'] = 'some_one@never.get'
-    # Update the incorporation filing
-    rv = client.put(f'/api/v1/businesses/{nr_number}',
-                    json=filing,
-                    headers=create_header(jwt, [STAFF_ROLE], nr_number))
-    # Ensure accepted response
-    assert rv.status_code == HTTPStatus.ACCEPTED
-    # Check that the change (the email address) has in fact been changed and returned in the response JSON
-    assert rv.json['filing']['incorporationApplication']['contactPoint']['email'] == 'some_one@never.get'
-
-
-def test_update_incorporation_mismatch(session, client, jwt):
-    """Assert that an incorporation filing can be posted to businesses."""
-    # Create two NR numbers
-    nr_number = 'NR1234567'
-    nr_bad_number = 'NR7654321'
-    # Create two separate filings for incorporation
-    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    second_filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-
-    filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
-    second_filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_bad_number
-    # Post initial filing
-    rv = client.post(f'/api/v1/businesses',
-                     json=filing,
-                     headers=create_header(jwt, [STAFF_ROLE], nr_number))
-
-    assert rv.status_code == HTTPStatus.CREATED
-    # Post second incorporation filing for second company
-    rv = client.post(f'/api/v1/businesses',
-                     json=second_filing,
-                     headers=create_header(jwt, [STAFF_ROLE], nr_bad_number))
-
-    assert rv.status_code == HTTPStatus.CREATED
-    # Attempt to update NR-1 with the identifier from NR-2
-    rv = client.put(f'/api/v1/businesses/{nr_bad_number}',
-                    json=filing,
-                    headers=create_header(jwt, [STAFF_ROLE], nr_bad_number))
-    # Assert that validator does not allow mismatches
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0]['error'] == 'Business Identifier does not match the identifier in filing.'
-
-
-def test_get_incorporation_filings(session, client, jwt):
+def test_get_incorporation_filing(session, client, jwt):
     """Assert that an incorporation filing can be retrieved for resuming."""
-    nr_number = 'NR1234567'
+    nr_number = 'NR 1234567'
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    print(filing)
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
+
     # Post initial filing
-    rv = client.post(f'/api/v1/businesses',
+    rv = client.post(f'/api/v1/businesses?draft=true',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], nr_number))
 
-    assert rv.status_code == HTTPStatus.CREATED
+    assert HTTPStatus.CREATED == rv.status_code
     assert rv.json['filing']['header']['filingId']
+
     filing_id = rv.json['filing']['header']['filingId']
 
     # Retrieve the incorporation filing
     rv = client.get(f'/api/v1/businesses/{nr_number}/filings/{filing_id}',
                     headers=create_header(jwt, [STAFF_ROLE], nr_number))
 
-    assert rv.status_code == HTTPStatus.OK
-    assert rv.json['filing']['header']['filingId'] == filing_id
+    assert HTTPStatus.OK == rv.status_code
+    assert filing_id == rv.json['filing']['header']['filingId']
+
+
+def test_put_draft_incorporation_filing(session, client, jwt):
+    """Assert that an incorporation filing can be put (updated) to filings endpoint."""
+    nr_number = 'NR 1234567'
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
+
+    business = Business()
+    business.identifier = nr_number
+    business.save()
+
+    filing = Filing()
+    filing.filing_json = filing_json
+    filing.business_id = business.id
+    filing.save()
+
+    # PUT updated filing
+    rv = client.put(f'/api/v1/businesses/{nr_number}/filings/{filing.id}?draft=true',
+                    json=filing_json,
+                    headers=create_header(jwt, [STAFF_ROLE], nr_number))
+
+    assert HTTPStatus.ACCEPTED == rv.status_code
+
+
+def test_put_incorporation_to_business_fails(session, client, jwt):
+    """Assert that an incorporation cannot be PUT to the business endpoint."""
+    nr_number = 'NR 1234567'
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
+
+    business = Business()
+    business.identifier = nr_number
+    business.save()
+
+    filing = Filing()
+    filing.filing_json = filing_json
+    filing.business_id = business.id
+    filing.save()
+
+    # Post initial filing
+    rv = client.put(f'/api/v1/businesses/{nr_number}',
+                    json=filing_json,
+                    headers=create_header(jwt, [STAFF_ROLE], nr_number))
+
+    assert HTTPStatus.METHOD_NOT_ALLOWED == rv.status_code
+
+
+def test_post_incorporation_to_filing_fails(session, client, jwt):
+    """Assert that an incorporation cannot be POSTed to the filings endpoint."""
+    nr_number = 'NR 1234567'
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
+
+    # Post initial filing
+    rv = client.post(f'/api/v1/businesses/{nr_number}/filings/',
+                     json=filing_json,
+                     headers=create_header(jwt, [STAFF_ROLE], nr_number))
+
+    assert HTTPStatus.NOT_FOUND == rv.status_code
