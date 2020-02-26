@@ -17,19 +17,21 @@ Provides all the search and retrieval from the business entity datastore.
 """
 from http import HTTPStatus
 
-from flask import jsonify, request
+from flask import g, jsonify, request
 from flask_restplus import Resource, cors
 
-from legal_api.models import Business, Filing
+from legal_api.models import Business, User
+from legal_api.resources.business.business_filings import ListFilingResource
+from legal_api.services import authorized
 from legal_api.services.filings import validate
+from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
 
 
-@cors_preflight('GET, POST, PUT')
+@cors_preflight('GET, POST')
 @API.route('/<string:identifier>', methods=['GET', 'OPTIONS'])
-@API.route('/<string:identifier>', methods=['PUT', 'OPTIONS'])
 @API.route('', methods=['POST', 'OPTIONS'])
 class BusinessResource(Resource):
     """Meta information about the overall service."""
@@ -47,68 +49,71 @@ class BusinessResource(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @jwt.requires_auth
     def post():
-        """Create an incorporation filing, return the filing."""
-        return BusinessResource.put()
+        """Create a business from an incorporation filing, return the filing."""
+        draft = (request.args.get('draft', None).lower() == 'true') \
+            if request.args.get('draft', None) else False
 
-    @staticmethod
-    @cors.crossdomain(origin='*')
-    def put(identifier=None):
-        """Edit an incorporation filing. Return the filing."""
-        filing, err_msg, err_code = BusinessResource._save_incorporation_filing(request.get_json(), request, identifier)
-        reply = filing.json if filing else {}
+        json_input = request.get_json()
 
-        if isinstance(err_msg, list):
-            reply['errors'] = [err for err in err_msg]
-        elif err_msg:
+        # validate filing
+        err = validate(None, json_input)
+        if err:
+            json_input['errors'] = err.msg
+            return jsonify(json_input), err.code
+
+        # create business
+        business, err_msg, err_code = BusinessResource._create_business(json_input, request)
+        if err_msg:
+            if isinstance(err_msg, list):
+                json_input['errors'] = [err for err in err_msg]
+            elif err_msg:
+                json_input['errors'] = [err_msg, ]
+            return jsonify(json_input), err_code
+
+        # create filing
+        user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
+        business, filing, err_msg, err_code = ListFilingResource._save_filing(  # pylint: disable=protected-access
+            request, business.identifier, user, None)
+        if err_msg or draft:
+            reply = filing.json if filing else json_input
             reply['errors'] = [err_msg, ]
+            return jsonify(reply), err_code or HTTPStatus.CREATED
 
-        return jsonify(reply), err_code
+        # complete filing
+        response, response_code = ListFilingResource.complete_filing(business, filing, draft)
+        if response:
+            return response, response_code
+
+        # all done
+        return jsonify(filing.json), HTTPStatus.CREATED
 
     @staticmethod
-    def _save_incorporation_filing(incorporation_body, client_request, business_id=None):
-        """Create or update an incorporation filing."""
+    def _create_business(incorporation_body, client_request):
+        """Create a business from an incorporation filing."""
         # Check that there is a JSON filing
         if not incorporation_body:
             return None, {'message': f'No filing json data in body of post for incorporation'}, \
                 HTTPStatus.BAD_REQUEST
 
         temp_corp_num = incorporation_body['filing']['incorporationApplication']['nameRequest']['nrNumber']
-        # temp_corp_num = business_id
-        # If this is an update to an incorporation filing, a temporary business identifier is passed in
-        if business_id:
-            business = Business.find_by_identifier(business_id)
-            if not business:
-                return None, {'message': f'No incorporation filing exists for id {business_id}'}, \
-                    HTTPStatus.BAD_REQUEST
-        else:
-            # Ensure there are no current businesses with the NR/random identifier
-            business = Business.find_by_identifier(temp_corp_num)
 
-            if business:
-                return None, {'message': f'Incorporation filing for {temp_corp_num} already exists'}, \
-                    HTTPStatus.BAD_REQUEST
-            # Create an empty business record, to be updated by the filer
-            business = Business()
-            business.identifier = temp_corp_num
-            business.save()
+        # check authorization
+        if not authorized(temp_corp_num, jwt, action=['edit']):
+            return None, {'message': f'You are not authorized to incorporate for {temp_corp_num}.'}, \
+                   HTTPStatus.UNAUTHORIZED
 
-        # Ensure the business identifier matches the NR in the filing
-        err = validate(business, incorporation_body)
-        if err:
-            return None, err.msg, err.code
+        # Ensure there are no current businesses with the NR/random identifier
+        business = Business.find_by_identifier(temp_corp_num)
 
-        filing = Filing.get_filings_by_type(business.id, 'incorporationApplication')
+        if business:
+            return None, {'message': f'Incorporation filing for {temp_corp_num} already exists'}, \
+                HTTPStatus.BAD_REQUEST
 
-        # There can only be zero or one incorporation filings, if there are none, this is an
-        # initial request for incorporation. Create and insert a filing.
-        if not filing:
-            filing = Filing()
-            filing.business_id = business.id
-        elif len(filing) > 1:
-            return None, {'message': 'more than one incorporation filing found for corp'}, HTTPStatus.BAD_REQUEST
-        else:
-            filing = filing[0]
-        filing.filing_json = incorporation_body
-        filing.save()
-        return filing, None, (HTTPStatus.CREATED if (client_request.method == 'POST') else HTTPStatus.ACCEPTED)
+        # Create an empty business record, to be updated by the filer
+        business = Business()
+        business.identifier = temp_corp_num
+        business.save()
+
+        return business, None, (HTTPStatus.CREATED if (client_request.method == 'POST') else HTTPStatus.ACCEPTED)
