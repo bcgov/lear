@@ -67,7 +67,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                'correction': {'name': 'correction', 'title': 'Correction', 'code': 'CRCTN'},
                'incorporationApplication': {'name': 'incorporationApplication', 'title': 'Incorporation Application',
                                             'code': 'OTINC'}
-              }
+               }
 
     __tablename__ = 'filings'
 
