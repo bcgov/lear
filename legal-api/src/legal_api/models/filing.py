@@ -229,6 +229,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             status_code=HTTPStatus.FORBIDDEN
         )
 
+    @property
+    def is_corrected(self):
+        """Has this filing been corrected."""
+        if self.parent_filing:
+            return True
+        return False
+
     # json serializer
     @property
     def json(self):
@@ -261,8 +268,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             json_submission['filing']['header']['affectedFilings'] = [filing.id for filing in self.children]
 
             # add corrected flag
-            json_submission['filing']['header']['isCorrected'] = \
-                True if self.parent_filing else False  # pylint: disable=simplifiable-if-expression
+            json_submission['filing']['header']['isCorrected'] = self.is_corrected
 
             return json_submission
         except Exception:  # noqa: B901, E722
@@ -446,6 +452,13 @@ def set_source(mapper, connection, target):  # pylint: disable=unused-argument; 
 def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
     """Set the state of the filing, based upon column values."""
     filing = target
+
+    # skip this status updater if the flag is set
+    # Scenario: if this is a correction filing, and would have been set to COMPLETE by the entity filer, leave it as is
+    # because it's been set to PENDING by the entity filer.
+    if hasattr(filing, 'skip_status_listener') and filing.skip_status_listener:
+        return
+
     # changes are part of the class and are not externalized
     if filing.filing_type == 'lear_epoch':
         filing._status = Filing.Status.EPOCH.value  # pylint: disable=protected-access
