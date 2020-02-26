@@ -29,6 +29,7 @@ from flask import Flask
 from legal_api import db
 from legal_api.config import get_named_config
 from legal_api.models import Address, Business, Director, Filing, Office, User
+from legal_api.models.colin_event_id import ColinEventId
 from sqlalchemy_continuum import versioning_manager
 from sqlalchemy import text
 
@@ -210,6 +211,7 @@ with open('coops.csv', 'r') as csvfile:
                                               {'header':
                                                {'name': 'lear_epoch'}
                                                }}
+                        filing._filing_type = 'lear_epoch'
                         filing.transaction_id = transaction.id
                         db.session.add(filing)
                         db.session.commit()
@@ -245,9 +247,13 @@ with open('coops.csv', 'r') as csvfile:
                                 filing.filing_date = datetime.datetime.strptime(filing_date, '%Y-%m-%d')
                                 filing.business_id = business.id
                                 filing.filing_json = historic_filing
+                                for colin_id in filing.filing_json['filing']['header']['colinIds']:
+                                    colin_event_id = ColinEventId()
+                                    colin_event_id.colin_event_id = colin_id
+                                    filing.colin_event_ids.append(colin_event_id)
                                 filing.transaction_id = transaction.id
                                 filing_type = historic_filing['filing']['header']['name']
-                                filing.colin_event_id = historic_filing['filing'][filing_type]['eventId']
+                                
                                 filing.paper_only = True
                                 filing.effective_date = datetime.datetime.strptime(
                                     historic_filing['filing']['header']['effectiveDate'], '%Y-%m-%d')
