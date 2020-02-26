@@ -87,23 +87,6 @@ class Reset:
             raise err
 
     @classmethod
-    def get_incorporations_by_event(cls, cursor, event_ids: list):
-        """Find all corporation entries associated with an incorporation."""
-        new_corps = {}
-        try:
-            events = stringify_list(event_ids)
-            events = events.replace("'", '')
-            cursor.execute(f"""SELECT A.CORP_NUM, B.EVENT_ID FROM
-            EVENT A JOIN FILING B ON A.EVENT_ID = B.EVENT_ID
-            WHERE B.EVENT_ID IN({events}) AND B.FILING_TYP_CD = 'OTINC'""")
-            for row in cursor.fetchall():
-                new_corps[row[0]] = row[1]
-            return new_corps
-        except Exception as err:
-            current_app.logger.error(f'Error in Reset: failed to retrieve incorporation filing.')
-            raise err
-
-    @classmethod
     def _delete_events_and_filings(cls, cursor, event_ids: list):
         """Delete rows in the filing and event tables with the given event ids."""
         try:
@@ -172,6 +155,23 @@ class Reset:
             raise err
 
     @classmethod
+    def _get_incorporations_by_event(cls, cursor, event_ids: list):
+        """Find all corporation entries associated with an incorporation."""
+        new_corps = {}
+        try:
+            events = stringify_list(event_ids)
+            events = events.replace("'", '')
+            cursor.execute(f"""SELECT A.CORP_NUM, B.EVENT_ID FROM
+            EVENT A JOIN FILING B ON A.EVENT_ID = B.EVENT_ID
+            WHERE B.EVENT_ID IN({events}) AND B.FILING_TYP_CD = 'OTINC'""")
+            for row in cursor.fetchall():
+                new_corps[row[0]] = row[1]
+            return new_corps
+        except Exception as err:
+            current_app.logger.error(f'Error in Reset: failed to retrieve incorporation filing.')
+            raise err
+
+    @classmethod
     def reset_filings(cls, start_date: str = None, end_date: str = None, identifiers: list = None,
                       filing_types: list = None):
         """Reset changes made by COOPER for given identifiers/dates/filing types."""
@@ -208,7 +208,7 @@ class Reset:
                 cursor = con.cursor()
 
                 # reset data in oracle for events
-                new_corps = cls.get_incorporations_by_event(cursor, events)
+                new_corps = cls._get_incorporations_by_event(cursor, events)
                 Director.reset_dirs_by_events(cursor=cursor, event_ids=events)
                 Office.reset_offices_by_events(cursor=cursor, event_ids=events)
                 Business.reset_corp_states(cursor=cursor, event_ids=annual_report_events)
