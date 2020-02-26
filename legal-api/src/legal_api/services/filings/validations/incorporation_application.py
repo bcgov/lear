@@ -19,20 +19,14 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 import pycountry
 
 from legal_api.errors import Error
-from legal_api.models import Business
 # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
-def validate(business: Business, incorporation_json: Dict):
+def validate(incorporation_json: Dict):
     """Validate the Incorporation filing."""
-    if not business or not incorporation_json:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+    if not incorporation_json:
+        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
     msg = []
-    # What are the rules for saving an incorporation
-    temp_identifier = incorporation_json['filing']['incorporationApplication']['nameRequest']['nrNumber']
-
-    if business.identifier != temp_identifier:
-        msg.append({'error': babel('Business Identifier does not match the identifier in filing.')})
 
     err = validate_offices(incorporation_json)
     if err:
