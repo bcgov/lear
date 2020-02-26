@@ -53,7 +53,7 @@ class Reset:
             from event
             join filing on filing.event_id = event.event_id
             left join filing_user on event.event_id = filing_user.event_id
-            where filing_user.user_id like 'COOPER'
+            where filing_user.user_id in ('COOPER', 'BCOMPS')
             AND event.event_timestmp>=TO_DATE(:start_date, 'yyyy-mm-dd')
             AND event.event_timestmp<=TO_DATE(:end_date, 'yyyy-mm-dd')
         """)

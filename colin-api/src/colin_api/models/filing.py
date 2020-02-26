@@ -47,6 +47,10 @@ class Filing:
                     'OTCON': 'continuedOut'
                     }
 
+    USERS = {'CP': 'COOPER',
+             'BC': 'BCOMPS'
+             }
+
     # dicts containing data
     business = None
     header = None
@@ -715,7 +719,8 @@ class Filing:
         """
         try:
             corp_num = filing.get_corp_num()
-            user_id = 'COOPER' if corp_num[:2] in ('CP', 'BC') else None
+            legal_type = corp_num[:2]
+            user_id = Filing.USERS[legal_type] if legal_type in ('CP', 'BC') else None
             cursor = con.cursor()
 
             # create new event record, return event ID
