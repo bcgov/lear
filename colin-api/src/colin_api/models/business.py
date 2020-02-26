@@ -364,7 +364,6 @@ class Business:
                 FOR UPDATE
             """, corp_type=corp_type)
             corp_num = cursor.fetchone()
-            # TODO: Cache numbers?
 
             if corp_num:
                 cursor.execute(f"""
@@ -387,7 +386,7 @@ class Business:
             corp_num = incorporation['nameRequest']['nrNumber']
             creation_date = datetime.now()
             legal_type = incorporation['nameRequest']['legalType']
-            # TODO expand query as NR data/ business info becomes more aparent
+            # Expand query as NR data/ business info becomes more aparent
             cursor.execute(f"""insert into CORPORATION
             (CORP_NUM, CORP_TYP_CD, RECOGNITION_DTS)
             values (:corp_num, :legal_type, :creation_date)

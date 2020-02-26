@@ -102,7 +102,7 @@ class FilingInfo(Resource):
                 con = DB.connection
                 con.begin()
                 filings_added = FilingInfo._add_filings(con, json_data, filing_list, identifier)
-                
+
                 # return the completed filing data
                 completed_filing = Filing()
                 completed_filing.header = json_data['header']

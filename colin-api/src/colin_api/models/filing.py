@@ -577,6 +577,21 @@ class Filing:
             raise err
 
     @classmethod
+    def _add_office_from_filing(cls, cursor,  # pylint: disable=too-many-arguments
+                                event_id, corp_num, user_id, filing):
+        for office_type in filing.body['offices']:
+            office_arr = filing.body['offices'][office_type]
+            delivery_addr_id = Address.create_new_address(cursor, office_arr['deliveryAddress'])
+            mailing_addr_id = Address.create_new_address(cursor, office_arr['mailingAddress'])
+            office_desc = (office_type.replace('O', ' O')).title()
+            office_code = Office.OFFICE_TYPES_CODES[office_type]
+            # update office table to include new addresses
+            Office.update_office(cursor, event_id, corp_num, delivery_addr_id,
+                                 mailing_addr_id, office_code)
+            # create new ledger text for address change
+            cls._add_ledger_text(cursor, event_id, f'Change to the {office_desc}.', user_id)
+
+    @classmethod
     def get_filing(cls, con=None,  # pylint: disable=too-many-arguments, too-many-branches;
                    business: Business = None, event_id: str = None, filing_type: str = None, year: int = None):
         """Get a Filing."""
@@ -777,19 +792,8 @@ class Filing:
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
 
                 # create new addresses for delivery + mailing, return address ids
-                for office_type in filing.body['offices']:
-                    office_arr = filing.body['offices'][office_type]
-                    delivery_addr_id = Address.create_new_address(cursor, office_arr['deliveryAddress'])
-                    mailing_addr_id = Address.create_new_address(cursor, office_arr['mailingAddress'])
-                    office_desc = (office_type.replace('O', ' O')).title()
-                    office_code = Office.OFFICE_TYPES_CODES[office_type]
 
-                    # update office table to include new addresses
-                    Office.update_office(cursor, event_id, corp_num, delivery_addr_id,
-                                         mailing_addr_id, office_code)
-
-                    # create new ledger text for address change
-                    cls._add_ledger_text(cursor, event_id, f'Change to the {office_desc}.', user_id)
+                cls._add_office_from_filing(cursor, event_id, corp_num, user_id, filing)
                 # update corporation record
                 Business.update_corporation(cursor, corp_num)
 
@@ -842,20 +846,8 @@ class Filing:
                 Business.create_corp_name(cursor, corp_num, 'test name', event_id)
                 Business.create_corp_state(cursor, corp_num, event_id)
 
-                for office_type in filing.body['offices']:
-                    office_arr = filing.body['offices'][office_type]
-                    delivery_addr_id = Address.create_new_address(cursor, office_arr['deliveryAddress'])
-                    mailing_addr_id = Address.create_new_address(cursor, office_arr['mailingAddress'])
-                    office_desc = (office_type.replace('O', ' O')).title()
-                    office_code = Office.OFFICE_TYPES_CODES[office_type]
+                cls._add_office_from_filing(cursor, event_id, corp_num, user_id, filing)
 
-                    # update office table to include new addresses
-                    Office.update_office(cursor, event_id, corp_num, delivery_addr_id,
-                                         mailing_addr_id, office_code)
-
-                    # create new ledger text for address change
-                    cls._add_ledger_text(cursor, event_id, f'Change to the {office_desc}.', user_id)
-                    # con.commit()
             else:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
