@@ -1,12 +1,10 @@
-name: entity-filer PR CI
+name: colin-api PR CI
 
 on:
   pull_request:
     types: [assigned, synchronize]
     paths:
-      - "queue_services/entity-filer/**"
-      - "queue_services/common/**"
-
+      - "colin-api/**"
 
 jobs:
   pr-checks:
