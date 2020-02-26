@@ -21,7 +21,7 @@ from .pytest_marks import (
     integration_payment,
     integration_reports,
     integration_sentry,
-    not_github_ci
+    not_github_ci,
 )
 
 
