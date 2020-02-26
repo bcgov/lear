@@ -101,20 +101,8 @@ class FilingInfo(Resource):
                 # get db connection and start a session, in case we need to roll back
                 con = DB.connection
                 con.begin()
-                filings_added = []
-                for filing_type in filing_list:
-                    filing = Filing()
-                    if filing_type != 'incorporationApplication':
-                        filing.business = Business.find_by_identifier(identifier, con)
-                    else:
-                        filing.business = Business.insert_new_business(con, filing_list[filing_type])
-                    filing.header = json_data['header']
-                    filing.filing_type = filing_type
-                    filing.body = filing_list[filing_type]
-                    # add the new filing
-                    event_id = Filing.add_filing(con, filing)
-                    filings_added.append({'event_id': event_id, 'filing_type': filing_type})
-
+                filings_added = FilingInfo._add_filings(con, json_data, filing_list, identifier)
+                
                 # return the completed filing data
                 completed_filing = Filing()
                 completed_filing.header = json_data['header']
@@ -146,3 +134,20 @@ class FilingInfo(Resource):
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
                 {'message': 'Error when trying to retrieve business record from COLIN'}), 500
+
+    @staticmethod
+    def _add_filings(con, json_data, filing_list, identifier):
+        filings_added = []
+        for filing_type in filing_list:
+            filing = Filing()
+            if filing_type != 'incorporationApplication':
+                filing.business = Business.find_by_identifier(identifier, con)
+            else:
+                filing.business = Business.insert_new_business(con, filing_list[filing_type])
+            filing.header = json_data['header']
+            filing.filing_type = filing_type
+            filing.body = filing_list[filing_type]
+            # add the new filing
+            event_id = Filing.add_filing(con, filing)
+            filings_added.append({'event_id': event_id, 'filing_type': filing_type})
+        return filings_added
