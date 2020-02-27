@@ -50,6 +50,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         ERROR = 'ERROR'
         PAID = 'PAID'
         PENDING = 'PENDING'
+        PENDING_CORRECTION = 'PENDING_CORRECTION'
 
     class Source(Enum):
         """Render an Enum of the Filing Sources."""
@@ -79,7 +80,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _payment_token = db.Column('payment_id', db.String(4096))
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
-    _status = db.Column('status', db.String(10), default=Status.DRAFT)
+    _status = db.Column('status', db.String(20), default=Status.DRAFT)
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
     _source = db.Column('source', db.String(15), default=Source.LEAR)
 
@@ -455,7 +456,7 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
 
     # skip this status updater if the flag is set
     # Scenario: if this is a correction filing, and would have been set to COMPLETE by the entity filer, leave it as is
-    # because it's been set to PENDING by the entity filer.
+    # because it's been set to PENDING_CORRECTION by the entity filer.
     if hasattr(filing, 'skip_status_listener') and filing.skip_status_listener:
         return
 

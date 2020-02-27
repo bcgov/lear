@@ -200,3 +200,28 @@ def test_get_tasks_error_filings(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json['tasks']) == 2
     assert rv.json['tasks'][0]['task']['filing']['header']['filingId'] == filing.id
+
+
+def test_get_tasks_pending_correction_filings(session, client, jwt):
+    """Assert that to-do list returns the error filings."""
+    from freezegun import freeze_time
+    from legal_api.models import Filing
+    from tests import FROZEN_2018_DATETIME
+    from registry_schemas.example_data import CORRECTION_AR
+    # setup
+    identifier = 'CP7654321'
+    b = factory_business(identifier, last_ar_date='2016-08-13')
+    filing = factory_pending_filing(b, CORRECTION_AR)
+    filing.save()
+    filing._status = Filing.Status.PENDING_CORRECTION.value
+    setattr(filing, 'skip_status_listener', True)
+    filing.save()
+    assert filing.status == Filing.Status.PENDING_CORRECTION.value
+
+    # freeze time so we get the same number of tasks in the to-do list regardless of when this test is run
+    with freeze_time(FROZEN_2018_DATETIME):
+        # test endpoint returned filing in tasks call
+        rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+        assert rv.status_code == HTTPStatus.OK
+        assert len(rv.json['tasks']) == 3
+        assert rv.json['tasks'][0]['task']['filing']['header']['filingId'] == filing.id

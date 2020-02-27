@@ -496,8 +496,8 @@ def test_correction_filing(app, session):
     assert correction_filing_comment == correction_filing.comments.all()[-1].comment
     assert staff_user.id == correction_filing.comments.all()[-1].staff.id
 
-    # check that the correction filing is PENDING
-    assert correction_filing.status == 'PENDING'
+    # check that the correction filing is PENDING_CORRECTION
+    assert correction_filing.status == 'PENDING_CORRECTION'
 
     # check that the original filing is marked as corrected
     assert True is original_filing.is_corrected
