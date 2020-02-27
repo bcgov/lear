@@ -417,12 +417,12 @@ INCORP_FILING = {
     }
 
 
-def create_filing(token, json_filing=None, business_id=None):
+def create_filing(token, json_filing=None, business_id=None, filing_date=EPOCH_DATETIME):
     """Return a test filing."""
     from legal_api.models import Filing
     filing = Filing()
     filing.payment_token = str(token)
-    filing.filing_date = EPOCH_DATETIME
+    filing.filing_date = filing_date
 
     if json_filing:
         filing.filing_json = json_filing
@@ -488,3 +488,19 @@ def create_director(director):
     )
     new_director.save()
     return new_director
+
+
+def create_user(username='temp_user', firstname='firstname', lastname='lastname', sub='sub', iss='iss'):
+    """Create a user."""
+    from legal_api.models import User
+
+    new_user = User(
+        username=username,
+        firstname=firstname,
+        lastname=lastname,
+        sub=sub,
+        iss=iss,
+    )
+    new_user.save()
+
+    return new_user

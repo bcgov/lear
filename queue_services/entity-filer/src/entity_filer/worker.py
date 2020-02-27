@@ -45,6 +45,7 @@ from entity_filer.filing_processors import (
     change_of_address,
     change_of_directors,
     change_of_name,
+    correction,
     incorporation_filing,
     voluntary_dissolution,
 )
@@ -90,7 +91,7 @@ async def publish_event(business: Business, filing: Filing):
         logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
 
 
-def process_filing(filing_msg: Dict, flask_app: Flask):
+def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches
     """Render the filings contained in the submission."""
     if not flask_app:
         raise QueueException('Flask App not available.')
@@ -138,6 +139,9 @@ def process_filing(filing_msg: Dict, flask_app: Flask):
 
                 elif filing.get('incorporationApplication'):
                     incorporation_filing.process(business, filing, flask_app)
+
+                elif filing.get('correction'):
+                    correction.process(filing_submission, filing)
 
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()
