@@ -623,3 +623,25 @@ def test_iscorrected_filing(session):
     assert filing2.json['filing']['header']['affectedFilings'] is not None
 
     assert filing2.json['filing']['header']['affectedFilings'][0] == filing1.id
+
+
+def test_linked_not_correction(session):
+    """Assert that if a filing has a parent that is not a correction, the isCorrected flag is not set."""
+    from legal_api.models import Filing
+    # setup
+    filing1 = Filing()
+    filing1.filing_json = ANNUAL_REPORT
+    filing1.save()
+
+    f = copy.deepcopy(FILING_HEADER)
+    f['filing']['changeOfDirectors'] = CHANGE_OF_DIRECTORS
+    filing2 = Filing()
+    filing2.filing_json = f
+    filing2.save()
+
+    filing1.parent_filing = filing2
+    filing1.save()
+
+    # test
+    assert filing1.json['filing']['header']['isCorrected'] is False
+    assert filing2.json['filing']['header']['affectedFilings'] is not None

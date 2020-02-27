@@ -233,7 +233,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @property
     def is_corrected(self):
         """Has this filing been corrected."""
-        if self.parent_filing:
+        if self.parent_filing and self.parent_filing.filing_type == Filing.FILINGS['correction'].get('name'):
             return True
         return False
 
