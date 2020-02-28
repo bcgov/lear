@@ -38,7 +38,7 @@ from legal_api.exceptions import BusinessException
 from legal_api.models import Filing, User
 from tests import EPOCH_DATETIME
 from tests.conftest import not_raises
-from tests.unit.models import factory_business, factory_filing
+from tests.unit.models import factory_business, factory_completed_filing, factory_filing
 
 
 def test_minimal_filing_json(session):
@@ -600,7 +600,7 @@ def test_uncorrected_filing(session):
     assert filing.json['filing']['header']['isCorrected'] is False
 
 
-def test_iscorrected_filing(session):
+def test_is_corrected_filing(session):
     """Assert that corrected filing has the isCorrected flag set.
 
     Assert linkage is set from parent to child and otherway.
@@ -611,15 +611,43 @@ def test_iscorrected_filing(session):
     filing1.filing_json = ANNUAL_REPORT
     filing1.save()
 
-    filing2 = Filing()
-    filing2.filing_json = CORRECTION_AR
-    filing2.save()
+    b = factory_business('CP1234567')
+    filing2 = factory_completed_filing(b, CORRECTION_AR)
 
     filing1.parent_filing = filing2
     filing1.save()
 
     # test
     assert filing1.json['filing']['header']['isCorrected'] is True
+    assert filing1.json['filing']['header']['isCorrectionPending'] is False
+    assert filing2.json['filing']['header']['affectedFilings'] is not None
+
+    assert filing2.json['filing']['header']['affectedFilings'][0] == filing1.id
+
+
+def test_is_pending_correction_filing(session):
+    """Assert that a filing has the isPendingCorrection flag set if the correction is pending approval.
+
+    Assert linkage is set from parent to child and otherway.
+    """
+    from legal_api.models import Filing
+    # setup
+    filing1 = Filing()
+    filing1.filing_json = ANNUAL_REPORT
+    filing1.save()
+
+    b = factory_business('CP1234567')
+    filing2 = factory_completed_filing(b, CORRECTION_AR)
+    filing2._status = 'PENDING_CORRECTION'
+    setattr(filing2, 'skip_status_listener', True)
+    filing2.save()
+
+    filing1.parent_filing = filing2
+    filing1.save()
+
+    # test
+    assert filing1.json['filing']['header']['isCorrected'] is False
+    assert filing1.json['filing']['header']['isCorrectionPending'] is True
     assert filing2.json['filing']['header']['affectedFilings'] is not None
 
     assert filing2.json['filing']['header']['affectedFilings'][0] == filing1.id
