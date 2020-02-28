@@ -233,7 +233,22 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @property
     def is_corrected(self):
         """Has this filing been corrected."""
-        if self.parent_filing and self.parent_filing.filing_type == Filing.FILINGS['correction'].get('name'):
+        if (
+                self.parent_filing and
+                self.parent_filing.filing_type == Filing.FILINGS['correction'].get('name') and
+                self.parent_filing.status == Filing.Status.COMPLETED.value
+        ):
+            return True
+        return False
+
+    @property
+    def is_correction_pending(self):
+        """Is there a pending correction for this filing."""
+        if (
+                self.parent_filing and
+                self.parent_filing.filing_type == Filing.FILINGS['correction'].get('name') and
+                self.parent_filing.status == Filing.Status.PENDING_CORRECTION.value
+        ):
             return True
         return False
 
@@ -268,8 +283,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             # add affected filings list
             json_submission['filing']['header']['affectedFilings'] = [filing.id for filing in self.children]
 
-            # add corrected flag
+            # add corrected flags
             json_submission['filing']['header']['isCorrected'] = self.is_corrected
+            json_submission['filing']['header']['isCorrectionPending'] = self.is_correction_pending
 
             return json_submission
         except Exception:  # noqa: B901, E722
