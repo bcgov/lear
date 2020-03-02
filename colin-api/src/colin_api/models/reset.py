@@ -155,6 +155,17 @@ class Reset:
             raise err
 
     @classmethod
+    def _delete_corp_state(cls, cursor, corp_nums: list):
+        try:
+            cursor.execute(f"""
+                    DELETE FROM corp_state
+                    WHERE corp_num in ({stringify_list(corp_nums)})
+                """)
+        except Exception as err:
+            current_app.logger.error(f'Error in Reset: failed to delete from corp_name table.')
+            raise err
+
+    @classmethod
     def _get_incorporations_by_event(cls, cursor, event_ids: list):
         """Find all corporation entries associated with an incorporation."""
         new_corps = {}
@@ -218,6 +229,7 @@ class Reset:
                 cls._delete_corp_name(cursor=cursor, event_ids=list(new_corps.values()))
                 cls._delete_events_and_filings(cursor=cursor, event_ids=events)
                 cls._delete_new_corps(cursor=cursor, corp_nums=list(new_corps.keys()))
+                cls._delete_corp_state(cursor=cursor, corp_nums=list(new_corps.keys()))
                 con.commit()
                 return
         except Exception as err:
