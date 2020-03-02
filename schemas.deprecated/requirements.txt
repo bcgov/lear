@@ -1,4 +1,0 @@
-flask
-jsonschema
-requests
-strict-rfc3339

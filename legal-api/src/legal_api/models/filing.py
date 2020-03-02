@@ -50,6 +50,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         ERROR = 'ERROR'
         PAID = 'PAID'
         PENDING = 'PENDING'
+        PENDING_CORRECTION = 'PENDING_CORRECTION'
 
     class Source(Enum):
         """Render an Enum of the Filing Sources."""
@@ -64,8 +65,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                'changeOfName': {'name': 'changeOfName', 'title': 'Change of Name Filing'},
                'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution'},
                'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'},
-               'correction': {'name': 'correction', 'title': 'Correction'},
-               'incorporationApplication': {'name': 'incorporationApplication', 'title': 'Incorporation Application'}
+               'correction': {'name': 'correction', 'title': 'Correction', 'code': 'CRCTN'},
+               'incorporationApplication': {'name': 'incorporationApplication', 'title': 'Incorporation Application',
+                                            'code': 'OTINC'}
                }
 
     __tablename__ = 'filings'
@@ -78,7 +80,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _payment_token = db.Column('payment_id', db.String(4096))
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
-    _status = db.Column('status', db.String(10), default=Status.DRAFT)
+    _status = db.Column('status', db.String(20), default=Status.DRAFT)
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
     _source = db.Column('source', db.String(15), default=Source.LEAR)
 
@@ -97,6 +99,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     colin_event_ids = db.relationship('ColinEventId', lazy='select')
 
     comments = db.relationship('Comment', lazy='dynamic')
+
+    parent_filing_id = db.Column(db.Integer, db.ForeignKey('filings.id'))
+    parent_filing = db.relationship('Filing', remote_side=[id], backref=backref('children'))
 
     # properties
     @property
@@ -225,6 +230,28 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             status_code=HTTPStatus.FORBIDDEN
         )
 
+    @property
+    def is_corrected(self):
+        """Has this filing been corrected."""
+        if (
+                self.parent_filing and
+                self.parent_filing.filing_type == Filing.FILINGS['correction'].get('name') and
+                self.parent_filing.status == Filing.Status.COMPLETED.value
+        ):
+            return True
+        return False
+
+    @property
+    def is_correction_pending(self):
+        """Is there a pending correction for this filing."""
+        if (
+                self.parent_filing and
+                self.parent_filing.filing_type == Filing.FILINGS['correction'].get('name') and
+                self.parent_filing.status == Filing.Status.PENDING_CORRECTION.value
+        ):
+            return True
+        return False
+
     # json serializer
     @property
     def json(self):
@@ -252,6 +279,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
             # add comments
             json_submission['filing']['header']['comments'] = [comment.json for comment in self.comments]
+
+            # add affected filings list
+            json_submission['filing']['header']['affectedFilings'] = [filing.id for filing in self.children]
+
+            # add corrected flags
+            json_submission['filing']['header']['isCorrected'] = self.is_corrected
+            json_submission['filing']['header']['isCorrectionPending'] = self.is_correction_pending
 
             return json_submission
         except Exception:  # noqa: B901, E722
@@ -435,6 +469,13 @@ def set_source(mapper, connection, target):  # pylint: disable=unused-argument; 
 def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
     """Set the state of the filing, based upon column values."""
     filing = target
+
+    # skip this status updater if the flag is set
+    # Scenario: if this is a correction filing, and would have been set to COMPLETE by the entity filer, leave it as is
+    # because it's been set to PENDING_CORRECTION by the entity filer.
+    if hasattr(filing, 'skip_status_listener') and filing.skip_status_listener:
+        return
+
     # changes are part of the class and are not externalized
     if filing.filing_type == 'lear_epoch':
         filing._status = Filing.Status.EPOCH.value  # pylint: disable=protected-access

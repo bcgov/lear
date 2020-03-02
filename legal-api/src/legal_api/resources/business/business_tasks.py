@@ -72,6 +72,7 @@ class TaskListResource(Resource):
         # Retrieve filings that are either incomplete, or drafts
         pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
                                                                      Filing.Status.PENDING.value,
+                                                                     Filing.Status.PENDING_CORRECTION.value,
                                                                      Filing.Status.ERROR.value])
         # Create a todo item for each pending filing
         for filing in pending_filings:

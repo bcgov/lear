@@ -699,11 +699,11 @@ class Filing:
                         'name': filing_info['filing_type'],
                         'effectiveDate': convert_to_json_date(filing_info['effective_dt']),
                         'historic': True,
-                        'availableOnPaperOnly': True
+                        'availableOnPaperOnly': True,
+                        'colinIds': [filing_info['event_id']]
                     }
                     filing.body = {
                         filing_info['filing_type']: {
-                            'eventId': filing_info['event_id'],
                             'annualReportDate': convert_to_json_date(filing_info['period_end_dt']),
                             'annualGeneralMeetingDate': convert_to_json_date(filing_info['agm_date'])
                         }

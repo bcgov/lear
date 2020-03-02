@@ -6,6 +6,7 @@ Flask-RESTplus
 flask-jwt-oidc>=0.1.5
 python-dotenv
 sentry-sdk[flask]
+werkzeug<1.0
 
 git+https://github.com/bcgov/business-schemas.git@2.5.0#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#subdirectory=colin-api

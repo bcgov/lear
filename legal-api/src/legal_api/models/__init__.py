@@ -25,4 +25,4 @@ from .user import User, UserSchema
 
 
 __all__ = ('db', 'ma', 'Business', 'BusinessSchema', 'ColinLastUpdate', 'Comment', 'Filing', 'User',
-           'UserSchema', 'Director', 'Office', 'OfficeType')
+           'UserSchema', 'Director', 'Office', 'OfficeType', 'Address')

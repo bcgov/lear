@@ -17,11 +17,26 @@ import datetime
 import random
 
 import pytest
+import pytz
 from freezegun import freeze_time
-from registry_schemas.example_data import ANNUAL_REPORT
+from legal_api.models import Business, Director, Filing, User
+from legal_api.resources.business import DirectorResource
+from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR
 
+from entity_filer.worker import process_filing
 from tests.pytest_marks import colin_api_integration
-from tests.unit import AR_FILING, COA_FILING, COD_FILING, COD_FILING_TWO_ADDRESSES, COMBINED_FILING, INCORP_FILING, create_business, create_director, create_filing  # noqa I001, E501;
+from tests.unit import (
+    AR_FILING,
+    COA_FILING,
+    COD_FILING,
+    COD_FILING_TWO_ADDRESSES,
+    COMBINED_FILING,
+    INCORP_FILING,
+    create_business,
+    create_director,
+    create_filing,
+    create_user,
+)
 
 
 def compare_addresses(business_address: dict, filing_address: dict):
@@ -47,7 +62,6 @@ def active_ceased_lists(filing):
 
 def check_directors(business, directors, director_ceased_id, ceased_directors, active_directors):
     """Assert basic checks on directors."""
-    from legal_api.resources.business import DirectorResource
     assert len(directors) == len(active_directors)
     for director in directors:
         # check that director in setup is not in the list (should've been ceased)
@@ -69,8 +83,6 @@ def check_directors(business, directors, director_ceased_id, ceased_directors, a
 
 def test_process_filing_missing_app(app, session):
     """Assert that a filling will fail with no flask app supplied."""
-    from entity_filer.worker import process_filing
-
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
@@ -87,9 +99,6 @@ def test_process_filing_missing_app(app, session):
 
 def test_process_ar_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
-    from entity_filer.worker import process_filing
-    from legal_api.models import Business, Filing
-
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
@@ -126,9 +135,6 @@ def test_process_ar_filing(app, session):
 
 def test_process_ar_filing_no_agm(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
-    from entity_filer.worker import process_filing
-    from legal_api.models import Business, Filing
-
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
@@ -165,9 +171,6 @@ def test_process_ar_filing_no_agm(app, session):
 
 def test_process_coa_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
-    from entity_filer.worker import process_filing
-    from legal_api.models import Business, Filing
-
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
@@ -202,9 +205,6 @@ def test_process_coa_filing(app, session):
 
 def test_process_cod_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
-    from legal_api.models import Business, Director, Filing
-    from entity_filer.worker import process_filing
-
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
@@ -262,9 +262,6 @@ def test_process_cod_filing(app, session):
 
 def test_process_cod_mailing_address(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
-    from legal_api.models import Business, Director, Filing
-    from entity_filer.worker import process_filing
-
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
@@ -341,9 +338,6 @@ def test_process_cod_mailing_address(app, session):
 
 def test_process_combined_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
-    from legal_api.models import Business, Director, Filing
-    from entity_filer.worker import process_filing
-
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
@@ -413,9 +407,6 @@ def test_process_combined_filing(app, session):
 
 def test_process_filing_completed(app, session):
     """Assert that an AR filling status is set to completed once processed."""
-    from entity_filer.worker import process_filing
-    from legal_api.models import Business, Filing
-
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
@@ -444,9 +435,6 @@ def test_process_filing_completed(app, session):
 @colin_api_integration
 def test_incorporation_filing(app, session):
     """Assert we can retrieve a new corp number from COLIN and incorporate a business."""
-    from entity_filer.worker import process_filing
-    from legal_api.models import Business, Filing
-
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing = copy.deepcopy(INCORP_FILING)
@@ -461,3 +449,61 @@ def test_incorporation_filing(app, session):
     filing = Filing.find_by_id(filing_id)
     business = Business.find_by_internal_id(filing.business_id)
     assert business.identifier != 'NR 1234567'
+
+
+def test_correction_filing(app, session):
+    """Assert we can process a correction filing."""
+    # vars
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    identifier = 'CP1111111'
+    correction_filing_comment = 'We need to fix directors'
+
+    # get a fixed datetime to use in comparisons, in "local" (Pacific) timezone
+    local_timezone = pytz.timezone('US/Pacific')
+    correction_filing_date = \
+        datetime.datetime(2019, 9, 17, 0, 0).replace(tzinfo=datetime.timezone.utc).astimezone(tz=local_timezone)
+
+    # setup - create business, staff user, and original filing to be corrected
+    business_id = create_business(identifier).id
+    staff_user_id = create_user(username='staff_user').id
+    original_filing_id = create_filing(payment_id, copy.deepcopy(ANNUAL_REPORT), business_id).id
+
+    # setup - create correction filing
+    filing = copy.deepcopy(CORRECTION_AR)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['comment'] = correction_filing_comment
+    filing['filing']['correction']['correctedFilingId'] = original_filing_id
+    correction_filing = create_filing(payment_id, filing, business_id, filing_date=correction_filing_date)
+    correction_filing.submitter_id = staff_user_id
+    correction_filing.save()
+
+    correction_filing_id = correction_filing.id
+    filing_msg = {'filing': {'id': correction_filing_id}}
+
+    process_filing(filing_msg, app)
+
+    # Get modified data
+    original_filing = Filing.find_by_id(original_filing_id)
+    correction_filing = Filing.find_by_id(correction_filing_id)
+    staff_user = User.find_by_username('staff_user')
+
+    # check that the correction filing is linked to the original filing
+    assert original_filing.parent_filing
+    assert original_filing.parent_filing == correction_filing
+
+    # check that the correction comment has been added to the correction filing
+    assert 0 < len(correction_filing.comments.all())
+    assert correction_filing_comment == correction_filing.comments.all()[-1].comment
+    assert staff_user.id == correction_filing.comments.all()[-1].staff.id
+
+    # check that the correction filing is PENDING_CORRECTION
+    assert correction_filing.status == 'PENDING_CORRECTION'
+
+    # check that the original filing is marked as corrected
+    assert True is original_filing.is_corrected
+
+    # check that the original filing has the new comment
+    assert 0 < len(original_filing.comments.all())
+    assert f'This filing was corrected on {correction_filing_date.date().isoformat()}.' == \
+           original_filing.comments.all()[-1].comment
+    assert staff_user.id == original_filing.comments.all()[-1].staff.id

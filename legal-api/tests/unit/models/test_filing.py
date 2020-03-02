@@ -25,14 +25,20 @@ import datedelta
 import pytest
 from flask import current_app
 from freezegun import freeze_time
-from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_DIRECTORS, FILING_HEADER, SPECIAL_RESOLUTION
+from registry_schemas.example_data import (
+    ANNUAL_REPORT,
+    CHANGE_OF_DIRECTORS,
+    CORRECTION_AR,
+    FILING_HEADER,
+    SPECIAL_RESOLUTION,
+)
 from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Filing, User
 from tests import EPOCH_DATETIME
 from tests.conftest import not_raises
-from tests.unit.models import factory_business, factory_filing
+from tests.unit.models import factory_business, factory_completed_filing, factory_filing
 
 
 def test_minimal_filing_json(session):
@@ -580,3 +586,90 @@ def test_save_filing_with_colin_id(session):
     # test
     assert filing.source == Filing.Source.COLIN.value
     assert filing.status == Filing.Status.PAID.value
+
+
+def test_uncorrected_filing(session):
+    """Assert that a uncorrected filing is unaffected."""
+    from legal_api.models import Filing
+    # setup
+    filing = Filing()
+    filing.filing_json = ANNUAL_REPORT
+    filing.save()
+
+    # test
+    assert filing.json['filing']['header']['isCorrected'] is False
+
+
+def test_is_corrected_filing(session):
+    """Assert that corrected filing has the isCorrected flag set.
+
+    Assert linkage is set from parent to child and otherway.
+    """
+    from legal_api.models import Filing
+    # setup
+    filing1 = Filing()
+    filing1.filing_json = ANNUAL_REPORT
+    filing1.save()
+
+    b = factory_business('CP1234567')
+    filing2 = factory_completed_filing(b, CORRECTION_AR)
+
+    filing1.parent_filing = filing2
+    filing1.save()
+
+    # test
+    assert filing1.json['filing']['header']['isCorrected'] is True
+    assert filing1.json['filing']['header']['isCorrectionPending'] is False
+    assert filing2.json['filing']['header']['affectedFilings'] is not None
+
+    assert filing2.json['filing']['header']['affectedFilings'][0] == filing1.id
+
+
+def test_is_pending_correction_filing(session):
+    """Assert that a filing has the isPendingCorrection flag set if the correction is pending approval.
+
+    Assert linkage is set from parent to child and otherway.
+    """
+    from legal_api.models import Filing
+    # setup
+    filing1 = Filing()
+    filing1.filing_json = ANNUAL_REPORT
+    filing1.save()
+
+    b = factory_business('CP1234567')
+    filing2 = factory_completed_filing(b, CORRECTION_AR)
+    filing2._status = 'PENDING_CORRECTION'
+    setattr(filing2, 'skip_status_listener', True)
+    filing2.save()
+
+    filing1.parent_filing = filing2
+    filing1.save()
+
+    # test
+    assert filing1.json['filing']['header']['isCorrected'] is False
+    assert filing1.json['filing']['header']['isCorrectionPending'] is True
+    assert filing2.json['filing']['header']['affectedFilings'] is not None
+
+    assert filing2.json['filing']['header']['affectedFilings'][0] == filing1.id
+
+
+def test_linked_not_correction(session):
+    """Assert that if a filing has a parent that is not a correction, the isCorrected flag is not set."""
+    from legal_api.models import Filing
+    # setup
+    filing1 = Filing()
+    filing1.filing_json = ANNUAL_REPORT
+    filing1.save()
+
+    f = copy.deepcopy(FILING_HEADER)
+    f['filing']['changeOfDirectors'] = CHANGE_OF_DIRECTORS
+    filing2 = Filing()
+    filing2.filing_json = f
+    filing2.save()
+
+    filing1.parent_filing = filing2
+    filing1.save()
+
+    # test
+    assert filing1.json['filing']['header']['isCorrected'] is False
+    assert filing2.json['filing']['header']['affectedFilings'] is not None

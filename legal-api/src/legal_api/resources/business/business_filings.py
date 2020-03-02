@@ -30,7 +30,7 @@ from werkzeug.local import LocalProxy
 
 import legal_api.reports
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Filing, User, db
+from legal_api.models import Address, Business, Filing, User, db
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import COLIN_SVC_ROLE, STAFF_ROLE, authorized, queue
@@ -132,20 +132,11 @@ class ListFilingResource(Resource):
             return jsonify(reply), err_code or \
                 (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
 
-        # if filing is from COLIN, place on queue and return
-        if jwt.validate_roles([COLIN_SVC_ROLE]):
-            err_msg, err_code = ListFilingResource._process_colin_filing(identifier, filing, business)
-            return jsonify(err_msg), err_code
+        # complete filing
+        response, response_code = ListFilingResource.complete_filing(business, filing, draft)
+        if response:
+            return response, response_code
 
-        # create invoice ??
-        if not draft:
-            filing_types = ListFilingResource._get_filing_types(filing.filing_json)
-            err_msg, err_code = ListFilingResource._create_invoice(business, filing, filing_types, jwt)
-            if err_code:
-                reply = filing.json
-                reply['errors'] = [err_msg, ]
-                return jsonify(reply), err_code
-            ListFilingResource._set_effective_date(business, filing)
         # all done
         return jsonify(filing.json),\
             (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
@@ -223,6 +214,29 @@ class ListFilingResource(Resource):
             return {'message': err.error}, err.status_code
 
         return jsonify(filing.json), HTTPStatus.ACCEPTED
+
+    @staticmethod
+    def complete_filing(business, filing, draft) -> Tuple[dict, int]:
+        """Complete the filing, either to COLIN or by getting an invoice.
+
+        Used for encapsulation of common functionality used in Filing and Business endpoints.
+        """
+        # if filing is from COLIN, place on queue and return
+        if jwt.validate_roles([COLIN_SVC_ROLE]):
+            err_msg, err_code = ListFilingResource._process_colin_filing(business.identifier, filing, business)
+            return jsonify(err_msg), err_code
+
+        # create invoice
+        if not draft:
+            filing_types = ListFilingResource._get_filing_types(filing.filing_json)
+            err_msg, err_code = ListFilingResource._create_invoice(business, filing, filing_types, jwt)
+            if err_code:
+                reply = filing.json
+                reply['errors'] = [err_msg, ]
+                return jsonify(reply), err_code
+            ListFilingResource._set_effective_date(business, filing)
+
+        return None, None
 
     @staticmethod
     def _put_basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
@@ -382,10 +396,16 @@ class ListFilingResource(Resource):
                         free = False
                         break
                 filing_types.append({
-                    'filingTypeCode': 'OTFDR' if free else Filing.FILINGS[k].get('code')
+                    'filingTypeCode': 'OTFDR' if free else Filing.FILINGS[k].get('code'),
+                    'priority': filing_json['filing']['header'].get('priority', False),
+                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
                 })
             elif Filing.FILINGS.get(k, None):
-                filing_types.append({'filingTypeCode': Filing.FILINGS[k].get('code')})
+                filing_types.append({
+                    'filingTypeCode': Filing.FILINGS[k].get('code'),
+                    'priority': filing_json['filing']['header'].get('priority', False),
+                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+                })
         return filing_types
 
     @staticmethod
@@ -403,13 +423,20 @@ class ListFilingResource(Resource):
         }
         """
         payment_svc_url = current_app.config.get('PAYMENT_SVC_URL')
-        mailing_address = business.mailing_address.one_or_none()
+
+        if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name'):
+            mailing_address = Address.create_address(
+                filing.json['filing']['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
+            corp_type = filing.json['filing']['incorporationApplication']['nameRequest']['legalType']
+        else:
+            mailing_address = business.mailing_address.one_or_none()
+            corp_type = business.identifier[:-7]
 
         payload = {
             'paymentInfo': {'methodOfPayment': 'CC'},
             'businessInfo': {
                 'businessIdentifier': f'{business.identifier}',
-                'corpType': f'{business.identifier[:-7]}',
+                'corpType': f'{corp_type}',
                 'businessName': f'{business.legal_name}',
                 'contactInfo': {'city': mailing_address.city,
                                 'postalCode': mailing_address.postal_code,
