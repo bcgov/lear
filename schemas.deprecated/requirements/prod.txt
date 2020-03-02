@@ -1,5 +1,0 @@
-attrs==19.1.0
-flask
-jsonschema
-requests
-strict-rfc3339
