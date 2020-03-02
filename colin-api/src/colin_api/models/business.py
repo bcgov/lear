@@ -350,13 +350,10 @@ class Business:
             raise err
 
     @classmethod
-    def get_next_corp_num(cls, corp_type):
+    def get_next_corp_num(cls, corp_type, con):
         """Retrieve the next available corporation number and advance by one."""
         try:
-            con = DB.connection
-            con.begin()
             cursor = con.cursor()
-            DB.connection.begin()
             cursor.execute(f"""
                 SELECT id_num
                 FROM system_id
@@ -372,7 +369,6 @@ class Business:
                 WHERE id_typ_cd = :corp_type
             """, new_num=corp_num[0]+1, corp_type=corp_type)
 
-            con.commit()
             return corp_num
         except Exception as err:
             current_app.logger.error(f'Error looking up corp_num')
