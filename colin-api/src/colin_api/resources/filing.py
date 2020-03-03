@@ -66,8 +66,9 @@ class FilingInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def post(identifier, **kwargs):  # pylint: disable=unused-argument; filing_type is only used for the get
+    def post(identifier, **kwargs):
         """Create a new filing."""
+        # pylint: disable=unused-argument,too-many-branches; filing_type is only used for the get
         try:
             json_data = request.get_json()
             if not json_data:
@@ -85,7 +86,11 @@ class FilingInfo(Resource):
 
             filing_list = {'changeOfAddress': json_data.get('changeOfAddress', None),
                            'changeOfDirectors': json_data.get('changeOfDirectors', None),
-                           'annualReport': json_data.get('annualReport', None)}
+                           'annualReport': json_data.get('annualReport', None),
+                           'incorporationApplication': json_data.get('incorporationApplication', None)}
+
+            # Filter out null-values in the filing_list dictionary
+            filing_list = {k: v for k, v in filing_list.items() if filing_list[k]}
 
             # ensure that the business in the AR matches the business in the URL
             if identifier != json_data['business']['identifier']:
@@ -96,25 +101,14 @@ class FilingInfo(Resource):
                 # get db connection and start a session, in case we need to roll back
                 con = DB.connection
                 con.begin()
-                filings_added = []
-                for filing_type in filing_list:
-                    if filing_list[filing_type]:
-                        filing = Filing()
-                        filing.business = Business.find_by_identifier(identifier)
-                        filing.header = json_data['header']
-                        filing.filing_type = filing_type
-                        filing.body = filing_list[filing_type]
-
-                        # add the new filing
-                        event_id = Filing.add_filing(con, filing)
-                        filings_added.append({'event_id': event_id, 'filing_type': filing_type})
+                filings_added = FilingInfo._add_filings(con, json_data, filing_list, identifier)
 
                 # return the completed filing data
                 completed_filing = Filing()
                 completed_filing.header = json_data['header']
                 completed_filing.header['colinIds'] = []
                 # get business info again - could have changed since filings were applied
-                completed_filing.business = Business.find_by_identifier(identifier)
+                completed_filing.business = Business.find_by_identifier(identifier, con)
                 completed_filing.body = {}
                 for filing_info in filings_added:
                     filing = Filing.get_filing(con=con, business=completed_filing.business,
@@ -140,3 +134,20 @@ class FilingInfo(Resource):
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
                 {'message': 'Error when trying to retrieve business record from COLIN'}), 500
+
+    @staticmethod
+    def _add_filings(con, json_data, filing_list, identifier):
+        filings_added = []
+        for filing_type in filing_list:
+            filing = Filing()
+            if filing_type != 'incorporationApplication':
+                filing.business = Business.find_by_identifier(identifier, con)
+            else:
+                filing.business = Business.insert_new_business(con, filing_list[filing_type])
+            filing.header = json_data['header']
+            filing.filing_type = filing_type
+            filing.body = filing_list[filing_type]
+            # add the new filing
+            event_id = Filing.add_filing(con, filing)
+            filings_added.append({'event_id': event_id, 'filing_type': filing_type})
+        return filings_added

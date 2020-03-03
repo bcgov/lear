@@ -53,7 +53,7 @@ class Reset:
             from event
             join filing on filing.event_id = event.event_id
             left join filing_user on event.event_id = filing_user.event_id
-            where filing_user.user_id like 'COOPER'
+            where filing_user.user_id in ('COOPER', 'BCOMPS')
             AND event.event_timestmp>=TO_DATE(:start_date, 'yyyy-mm-dd')
             AND event.event_timestmp<=TO_DATE(:end_date, 'yyyy-mm-dd')
         """)
@@ -132,6 +132,60 @@ class Reset:
             raise err
 
     @classmethod
+    def _delete_corp_name(cls, cursor, event_ids: list):
+        events_str = ', '.join(str(x) for x in event_ids)
+        if events_str:
+            try:
+                cursor.execute(f"""
+                        DELETE FROM corp_name
+                        WHERE start_event_id in ({events_str})
+                    """)
+            except Exception as err:
+                current_app.logger.error(f'Error in Reset: failed to delete from corp_name table.')
+                raise err
+
+    @classmethod
+    def _delete_new_corps(cls, cursor, corp_nums: list):
+        if corp_nums:
+            try:
+                cursor.execute(f"""
+                        DELETE FROM corporation
+                        WHERE corp_num in ({stringify_list(corp_nums)})
+                    """)
+            except Exception as err:
+                current_app.logger.error(f'Error in Reset: failed to delete from corp_name table.')
+                raise err
+
+    @classmethod
+    def _delete_corp_state(cls, cursor, corp_nums: list):
+        if corp_nums:
+            try:
+                cursor.execute(f"""
+                        DELETE FROM corp_state
+                        WHERE corp_num in ({stringify_list(corp_nums)})
+                    """)
+            except Exception as err:
+                current_app.logger.error(f'Error in Reset: failed to delete from corp_name table.')
+                raise err
+
+    @classmethod
+    def _get_incorporations_by_event(cls, cursor, event_ids: list):
+        """Find all corporation entries associated with an incorporation."""
+        new_corps = {}
+        try:
+            events = stringify_list(event_ids)
+            events = events.replace("'", '')
+            cursor.execute(f"""SELECT A.CORP_NUM, B.EVENT_ID FROM
+            EVENT A JOIN FILING B ON A.EVENT_ID = B.EVENT_ID
+            WHERE B.EVENT_ID IN({events}) AND B.FILING_TYP_CD = 'OTINC'""")
+            for row in cursor.fetchall():
+                new_corps[row[0]] = row[1]
+            return new_corps
+        except Exception as err:
+            current_app.logger.error(f'Error in Reset: failed to retrieve incorporation filing.')
+            raise err
+
+    @classmethod
     def reset_filings(cls, start_date: str = None, end_date: str = None, identifiers: list = None,
                       filing_types: list = None):
         """Reset changes made by COOPER for given identifiers/dates/filing types."""
@@ -168,14 +222,17 @@ class Reset:
                 cursor = con.cursor()
 
                 # reset data in oracle for events
+                new_corps = cls._get_incorporations_by_event(cursor, events)
                 Director.reset_dirs_by_events(cursor=cursor, event_ids=events)
                 Office.reset_offices_by_events(cursor=cursor, event_ids=events)
                 Business.reset_corp_states(cursor=cursor, event_ids=annual_report_events)
                 Business.reset_corporations(cursor=cursor, event_info=events_info, event_ids=events)
                 cls._delete_filing_user(cursor=cursor, event_ids=events)
                 cls._delete_ledger_text(cursor=cursor, event_ids=events)
+                cls._delete_corp_name(cursor=cursor, event_ids=list(new_corps.values()))
+                cls._delete_corp_state(cursor=cursor, corp_nums=list(new_corps.keys()))
                 cls._delete_events_and_filings(cursor=cursor, event_ids=events)
-
+                cls._delete_new_corps(cursor=cursor, corp_nums=list(new_corps.keys()))
                 con.commit()
                 return
         except Exception as err:

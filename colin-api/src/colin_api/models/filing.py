@@ -47,6 +47,10 @@ class Filing:
                     'OTCON': 'continuedOut'
                     }
 
+    USERS = {'CP': 'COOPER',
+             'BC': 'BCOMPS'
+             }
+
     # dicts containing data
     business = None
     header = None
@@ -427,6 +431,27 @@ class Filing:
         return filing_obj
 
     @classmethod
+    def _get_inc(cls, cursor, identifier: str = None, filing_event_info: dict = None):
+        """Get incorporation filing."""
+        # business_obj
+        office_obj_list = Office.get_by_event(cursor, filing_event_info['event_id'])
+        if not office_obj_list:
+            raise FilingNotFoundException(identifier=identifier, filing_type='change_of_address',
+                                          event_id=filing_event_info['event_id'])
+
+        offices = Office.convert_obj_list(office_obj_list)
+
+        filing_obj = Filing()
+        filing_obj.body = {
+            'offices': offices,
+            'eventId': filing_event_info['event_id']
+        }
+        filing_obj.filing_type = 'incorporationApplication'
+        filing_obj.paper_only = False
+
+        return filing_obj
+
+    @classmethod
     def _get_con(cls, cursor, identifier: str = None, filing_event_info: dict = None):
         """Get change of name filing."""
         name_obj = EntityName.get_by_event(identifier=identifier, event_id=filing_event_info['event_id'], cursor=cursor)
@@ -552,6 +577,27 @@ class Filing:
             raise err
 
     @classmethod
+    def _add_office_from_filing(cls, cursor,  # pylint: disable=too-many-arguments
+                                event_id, corp_num, user_id, filing):
+        office_desc = ''
+        text = 'Change to the %s.'
+
+        if filing.filing_type == 'incorporationApplication':
+            text = 'Incorporation for %s.'
+
+        for office_type in filing.body['offices']:
+            office_arr = filing.body['offices'][office_type]
+            delivery_addr_id = Address.create_new_address(cursor, office_arr['deliveryAddress'])
+            mailing_addr_id = Address.create_new_address(cursor, office_arr['mailingAddress'])
+            office_desc = (office_type.replace('O', ' O')).title()
+            office_code = Office.OFFICE_TYPES_CODES[office_type]
+            # update office table to include new addresses
+            Office.update_office(cursor, event_id, corp_num, delivery_addr_id,
+                                 mailing_addr_id, office_code)
+        # create new ledger text for address change
+        cls._add_ledger_text(cursor, event_id, text % (office_desc), user_id)
+
+    @classmethod
     def get_filing(cls, con=None,  # pylint: disable=too-many-arguments, too-many-branches;
                    business: Business = None, event_id: str = None, filing_type: str = None, year: int = None):
         """Get a Filing."""
@@ -593,6 +639,9 @@ class Filing:
 
             elif filing_type == 'voluntaryDissolution':
                 filing_obj = cls._get_vd(identifier=identifier, filing_event_info=filing_event_info, cursor=cursor)
+
+            elif filing_type == 'incorporationApplication':
+                filing_obj = cls._get_inc(identifier=identifier, filing_event_info=filing_event_info, cursor=cursor)
 
             else:
                 # uncomment to bring in other filings as available on paper only
@@ -691,7 +740,8 @@ class Filing:
         """
         try:
             corp_num = filing.get_corp_num()
-            user_id = 'COOPER' if corp_num[:2] == 'CP' else None
+            legal_type = corp_num[:2]
+            user_id = Filing.USERS[legal_type] if legal_type in ('CP', 'BC') else None
             cursor = con.cursor()
 
             # create new event record, return event ID
@@ -748,19 +798,8 @@ class Filing:
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
 
                 # create new addresses for delivery + mailing, return address ids
-                for office_type in filing.body['offices']:
-                    office_arr = filing.body['offices'][office_type]
-                    delivery_addr_id = Address.create_new_address(cursor, office_arr['deliveryAddress'])
-                    mailing_addr_id = Address.create_new_address(cursor, office_arr['mailingAddress'])
-                    office_desc = (office_type.replace('O', ' O')).title()
-                    office_code = Office.OFFICE_TYPES_CODES[office_type]
 
-                    # update office table to include new addresses
-                    Office.update_office(cursor, event_id, corp_num, delivery_addr_id,
-                                         mailing_addr_id, office_code)
-
-                    # create new ledger text for address change
-                    cls._add_ledger_text(cursor, event_id, f'Change to the {office_desc}.', user_id)
+                cls._add_office_from_filing(cursor, event_id, corp_num, user_id, filing)
                 # update corporation record
                 Business.update_corporation(cursor, corp_num)
 
@@ -803,6 +842,17 @@ class Filing:
                 cls._add_ledger_text(cursor=cursor, event_id=event_id, text=f'Director change.', user_id=user_id)
                 # update corporation record
                 Business.update_corporation(cursor=cursor, corp_num=corp_num)
+            elif filing.filing_type == 'incorporationApplication':
+                # Add business, update business info
+                # Add offices
+                date = None
+                filing_type_cd = 'OTINC'
+                cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
+                # Do incorporation here
+                Business.create_corp_name(cursor, corp_num, 'test name', event_id)
+                Business.create_corp_state(cursor, corp_num, event_id)
+
+                cls._add_office_from_filing(cursor, event_id, corp_num, user_id, filing)
 
             else:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
