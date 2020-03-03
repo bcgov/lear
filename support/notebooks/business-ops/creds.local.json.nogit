@@ -1,0 +1,6 @@
+{
+"username": "thor",
+"hostname": "docker.for.mac.localhost",
+"port_num": "5432",
+"db_name": "legal"
+}
