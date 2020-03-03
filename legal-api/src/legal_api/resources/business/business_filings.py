@@ -385,6 +385,9 @@ class ListFilingResource(Resource):
         }
         """
         filing_types = []
+        priority_flag = filing_json['filing']['header'].get('priority', False)
+        filing_type = filing_json['filing']['header'].get('name', None)
+
         for k in filing_json['filing'].keys():
             # check if changeOfDirectors is a free filing
             if k == 'changeOfDirectors':
@@ -397,13 +400,19 @@ class ListFilingResource(Resource):
                         break
                 filing_types.append({
                     'filingTypeCode': 'OTFDR' if free else Filing.FILINGS[k].get('code'),
-                    'priority': filing_json['filing']['header'].get('priority', False),
+                    'priority': False if filing_type == 'annualReport' else priority_flag,
+                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+                })
+            elif k == 'changeOfAddress':
+                filing_types.append({
+                    'filingTypeCode': Filing.FILINGS[k].get('code'),
+                    'priority': False if filing_type == 'annualReport' else priority_flag,
                     'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
                 })
             elif Filing.FILINGS.get(k, None):
                 filing_types.append({
                     'filingTypeCode': Filing.FILINGS[k].get('code'),
-                    'priority': filing_json['filing']['header'].get('priority', False),
+                    'priority': priority_flag,
                     'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
                 })
         return filing_types
