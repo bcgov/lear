@@ -90,7 +90,7 @@ class FilingInfo(Resource):
                            'incorporationApplication': json_data.get('incorporationApplication', None)}
 
             # Filter out null-values in the filing_list dictionary
-            filing_list = {k: v for k, v in filing_list.items() if v is not None}
+            filing_list = {k: v for k, v in filing_list.items() if filing_list[k]}
 
             # ensure that the business in the AR matches the business in the URL
             if identifier != json_data['business']['identifier']:

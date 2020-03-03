@@ -134,36 +134,39 @@ class Reset:
     @classmethod
     def _delete_corp_name(cls, cursor, event_ids: list):
         events_str = ', '.join(str(x) for x in event_ids)
-        try:
-            cursor.execute(f"""
-                    DELETE FROM corp_name
-                    WHERE start_event_id in ({events_str})
-                """)
-        except Exception as err:
-            current_app.logger.error(f'Error in Reset: failed to delete from corp_name table.')
-            raise err
+        if events_str:
+            try:
+                cursor.execute(f"""
+                        DELETE FROM corp_name
+                        WHERE start_event_id in ({events_str})
+                    """)
+            except Exception as err:
+                current_app.logger.error(f'Error in Reset: failed to delete from corp_name table.')
+                raise err
 
     @classmethod
     def _delete_new_corps(cls, cursor, corp_nums: list):
-        try:
-            cursor.execute(f"""
-                    DELETE FROM corporation
-                    WHERE corp_num in ({stringify_list(corp_nums)})
-                """)
-        except Exception as err:
-            current_app.logger.error(f'Error in Reset: failed to delete from corp_name table.')
-            raise err
+        if corp_nums:
+            try:
+                cursor.execute(f"""
+                        DELETE FROM corporation
+                        WHERE corp_num in ({stringify_list(corp_nums)})
+                    """)
+            except Exception as err:
+                current_app.logger.error(f'Error in Reset: failed to delete from corp_name table.')
+                raise err
 
     @classmethod
     def _delete_corp_state(cls, cursor, corp_nums: list):
-        try:
-            cursor.execute(f"""
-                    DELETE FROM corp_state
-                    WHERE corp_num in ({stringify_list(corp_nums)})
-                """)
-        except Exception as err:
-            current_app.logger.error(f'Error in Reset: failed to delete from corp_name table.')
-            raise err
+        if corp_nums:
+            try:
+                cursor.execute(f"""
+                        DELETE FROM corp_state
+                        WHERE corp_num in ({stringify_list(corp_nums)})
+                    """)
+            except Exception as err:
+                current_app.logger.error(f'Error in Reset: failed to delete from corp_name table.')
+                raise err
 
     @classmethod
     def _get_incorporations_by_event(cls, cursor, event_ids: list):
