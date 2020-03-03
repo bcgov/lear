@@ -230,9 +230,9 @@ class Reset:
                 cls._delete_filing_user(cursor=cursor, event_ids=events)
                 cls._delete_ledger_text(cursor=cursor, event_ids=events)
                 cls._delete_corp_name(cursor=cursor, event_ids=list(new_corps.values()))
+                cls._delete_corp_state(cursor=cursor, corp_nums=list(new_corps.keys()))
                 cls._delete_events_and_filings(cursor=cursor, event_ids=events)
                 cls._delete_new_corps(cursor=cursor, corp_nums=list(new_corps.keys()))
-                cls._delete_corp_state(cursor=cursor, corp_nums=list(new_corps.keys()))
                 con.commit()
                 return
         except Exception as err:
