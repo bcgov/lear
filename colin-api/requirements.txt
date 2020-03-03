@@ -9,13 +9,17 @@ aniso8601==8.0.0
 attrs==19.1.0
 blinker==1.4
 certifi==2019.11.28
+Click==7.0
 cx-Oracle==7.3.0
 ecdsa==0.15
 flask-jwt-oidc==0.1.5
+Flask-Moment==0.9.0
 flask-restplus==0.13.0
+Flask-Script==2.0.6
 gunicorn==20.0.4
 importlib-metadata==1.5.0
 itsdangerous==1.1.0
+Jinja2==2.11.1
 jsonschema==3.2.0
 psycopg2-binary==2.8.4
 pyasn1==0.4.8
@@ -29,4 +33,4 @@ sentry-sdk==0.14.1
 six==1.14.0
 urllib3==1.25.8
 zipp==3.0.0
-git+https://github.com/bcgov/business-schemas.git@2.5.5#egg=registry_schemas
+git+https://github.com/bcgov/business-schemas.git@2.5.0#egg=registry_schemas
