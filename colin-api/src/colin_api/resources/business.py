@@ -39,7 +39,6 @@ class BusinessInfo(Resource):
     def get(identifier=None):
         """Return the complete business info."""
         if not identifier:
-<<<<<<< HEAD
             try:
                 con = DB.connection
                 con.begin()
@@ -51,10 +50,6 @@ class BusinessInfo(Resource):
                 if con:
                     con.rollback()
 
-=======
-            corp_type = request.args.get('legal_type', None).upper()
-            corp_num = Business.get_next_corp_num(corp_type)
->>>>>>> add postman tests
             if corp_num:
                 return jsonify({'corpNum': corp_num}), 200
 

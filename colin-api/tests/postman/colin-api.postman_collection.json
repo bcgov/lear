@@ -4949,15 +4949,7 @@
 			"name": "Incorporation",
 			"item": [
 				{
-<<<<<<< HEAD
-<<<<<<< HEAD
 					"name": "GET New Corp Number, BCOMP",
-=======
-					"name": "GET New Corp Number",
->>>>>>> add postman tests
-=======
-					"name": "GET New Corp Number, BCOMP",
->>>>>>> add records office to postman test
 					"event": [
 						{
 							"listen": "test",
