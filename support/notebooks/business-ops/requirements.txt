@@ -1,0 +1,17 @@
+jupyter
+requests
+d6tstack
+d6tstack[psql]
+d6tstack[xls]
+pandas
+sqlalchemy
+psycopg2
+simplejson
+matplotlib
+ipython-sql
+tlaplus_jupyter
+ipytest
+pytest
+git+https://github.com/bcgov/business-schemas.git@2.5.0#egg=registry_schemas
+git+https://github.com/bcgov/lear.git@2.5.2#egg=legal_api&subdirectory=legal-api
+
