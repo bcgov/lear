@@ -579,6 +579,12 @@ class Filing:
     @classmethod
     def _add_office_from_filing(cls, cursor,  # pylint: disable=too-many-arguments
                                 event_id, corp_num, user_id, filing):
+        office_desc = ''
+        text = 'Change to the %s.'
+
+        if filing.filing_type == 'incorporationApplication':
+            text = 'Incorporation for %s.'
+
         for office_type in filing.body['offices']:
             office_arr = filing.body['offices'][office_type]
             delivery_addr_id = Address.create_new_address(cursor, office_arr['deliveryAddress'])
@@ -588,8 +594,8 @@ class Filing:
             # update office table to include new addresses
             Office.update_office(cursor, event_id, corp_num, delivery_addr_id,
                                  mailing_addr_id, office_code)
-            # create new ledger text for address change
-            cls._add_ledger_text(cursor, event_id, f'Change to the {office_desc}.', user_id)
+        # create new ledger text for address change
+        cls._add_ledger_text(cursor, event_id, text % (office_desc), user_id)
 
     @classmethod
     def get_filing(cls, con=None,  # pylint: disable=too-many-arguments, too-many-branches;
