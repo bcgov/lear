@@ -13,7 +13,7 @@ BC Registries Names Examination, research and approval system API
 ## Third-Party Products/Libraries used and the the License they are covert by
 
 ## Project Status
-As of 2018-02-22 in **ALPHA**
+As of 2019-08-22 in **Production**
 
 ## Documnentation
 
