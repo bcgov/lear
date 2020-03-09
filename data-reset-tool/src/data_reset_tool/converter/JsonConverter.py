@@ -92,6 +92,7 @@ class JsonConverter:  # pylint: disable=too-few-public-methods
             d = {
                 'completionDate': format_date(filing._completion_date),  # pylint: disable=protected-access
                 'filingDate': format_date(filing._filing_date),  # pylint: disable=protected-access
+                'filingId': filing.id,
                 'filingType': format_non_date(filing._filing_type),  # pylint: disable=protected-access
                 'effectiveDate': format_date(filing.effective_date),
                 'paymentToken': format_non_date(filing._payment_token),  # pylint: disable=protected-access
