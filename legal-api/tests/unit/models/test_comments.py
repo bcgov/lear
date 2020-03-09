@@ -20,6 +20,7 @@ import datetime
 from http import HTTPStatus
 
 import pytest
+from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.exceptions import BusinessException
@@ -69,20 +70,18 @@ def test_filing_comment_dump_json(session):
     f = factory_filing(b, ANNUAL_REPORT)
     c = factory_comment(b, f, 'a comment')
 
-    system_timezone = datetime.datetime.now().astimezone().tzinfo
-    expected_timestamp = \
-        datetime.datetime(1970, 1, 1, 0, 0).replace(tzinfo=datetime.timezone.utc).astimezone(tz=system_timezone)
-
-    assert c.json == {
-        'comment': {
-            'id': c.id,
-            'submitterDisplayName': None,
-            'comment': 'a comment',
-            'filingId': f.id,
-            'businessId': None,
-            'timestamp': expected_timestamp.isoformat()
+    now = datetime.datetime(1970, 1, 1, 0, 0).replace(tzinfo=datetime.timezone.utc)
+    with freeze_time(now):
+        assert c.json == {
+            'comment': {
+                'id': c.id,
+                'submitterDisplayName': None,
+                'comment': 'a comment',
+                'filingId': f.id,
+                'businessId': None,
+                'timestamp': now.isoformat()
+            }
         }
-    }
 
 
 def test_comment_save_to_session(session):
