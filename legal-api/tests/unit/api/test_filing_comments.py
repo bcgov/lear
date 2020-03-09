@@ -17,7 +17,6 @@
 Test-Suite to ensure that the filings/<filing_id>/comments endpoint is working as expected.
 """
 import copy
-# import datetime
 from http import HTTPStatus
 
 from freezegun import freeze_time
