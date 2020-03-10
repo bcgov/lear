@@ -21,8 +21,9 @@ from .comment import Comment
 from .director import Director
 from .filing import Filing
 from .office import Office, OfficeType
+from .party_role import PartyMember, PartyRole
 from .user import User, UserSchema
 
 
-__all__ = ('db', 'ma', 'Business', 'BusinessSchema', 'ColinLastUpdate', 'Comment', 'Filing', 'User',
-           'UserSchema', 'Director', 'Office', 'OfficeType', 'Address')
+__all__ = ('db', 'ma', 'Address', 'Business', 'BusinessSchema', 'ColinLastUpdate', 'Comment', 'Filing',
+           'UserSchema', 'Director', 'Office', 'OfficeType', 'PartyMember', 'PartyRole', 'User')

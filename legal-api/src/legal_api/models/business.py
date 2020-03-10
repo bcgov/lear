@@ -32,6 +32,7 @@ from .address import Address  # noqa: F401 pylint: disable=unused-import; needed
 from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+from .party_role import PartyRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 
 
 class Business(db.Model):  # pylint: disable=too-many-instance-attributes
@@ -67,6 +68,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     filings = db.relationship('Filing', lazy='dynamic')
     directors = db.relationship('Director', lazy='dynamic')
     offices = db.relationship('Office', lazy='dynamic')
+    corp_party = db.relationship('PartyRole', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):
