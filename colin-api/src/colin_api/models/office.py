@@ -47,8 +47,7 @@ class Office:
         return {
             self.office_type: {
                 'deliveryAddress': self.delivery_address,
-                'mailingAddress': self.mailing_address,
-                'officeCode': self.office_code
+                'mailingAddress': self.mailing_address
             }
         }
 
