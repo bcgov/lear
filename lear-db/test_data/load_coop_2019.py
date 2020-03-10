@@ -143,7 +143,7 @@ FAILED_COOPS = []
 NEW_COOPS = []
 LOADED_COOPS_HISTORY = []
 
-with open('2020_mar10_2new.csv', 'r') as csvfile:
+with open('coops.csv', 'r') as csvfile:
     reader = csv.DictReader(csvfile)
     with FLASK_APP.app_context():
         for row in reader:
