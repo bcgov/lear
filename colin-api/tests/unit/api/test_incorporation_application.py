@@ -24,7 +24,7 @@ from tests import oracle_integration
 
 @oracle_integration
 def test_incorporate_bcomp(client):
-    """Assert that a new corp number can be retrieved from COLIN."""
+    """Assert that a new BCOMP can be created via incorporation application."""
     headers = {'content-type': 'application/json'}
     rv = client.get('/api/v1/businesses?legal_type=BC')
     test_bcomp = f"BC{rv.json['corpNum'][0]}"
@@ -58,7 +58,7 @@ def test_incorporate_bcomp(client):
 
 @oracle_integration
 def test_incorporate_coop(client):
-    """Assert that a new corp number can be retrieved from COLIN."""
+    """Assert that a new COOP can be created via incorporation application."""
     headers = {'content-type': 'application/json'}
     rv = client.get('/api/v1/businesses?legal_type=CP')
     test_coop = f"CP{rv.json['corpNum'][0]}"
