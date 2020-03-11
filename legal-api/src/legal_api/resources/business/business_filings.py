@@ -208,10 +208,12 @@ class ListFilingResource(Resource):
 
         except (exceptions.ConnectionError, exceptions.Timeout) as err:
             current_app.logger.error(f'Payment connection failure for {identifier}: filing:{filing.id}', err)
-            return {'message': 'Unable to cancel payment for the filing.'}, HTTPStatus.INTERNAL_SERVER_ERROR
+            return {'errors':
+                    [{'message': 'Unable to cancel payment for the filing.'}]
+                    }, HTTPStatus.INTERNAL_SERVER_ERROR
 
         except BusinessException as err:
-            return {'message': err.error}, err.status_code
+            return {'errors': [{'message': err.error}]}, err.status_code
 
         return jsonify(filing.json), HTTPStatus.ACCEPTED
 
@@ -464,7 +466,8 @@ class ListFilingResource(Resource):
                 payload['accountInfo'] = {'routingSlip': routing_slip_number}
         try:
             token = user_jwt.get_token_auth_header()
-            headers = {'Authorization': 'Bearer ' + token}
+            headers = {'Authorization': 'Bearer ' + token,
+                       'Content-Type': 'application/json'}
             rv = requests.post(url=payment_svc_url,
                                json=payload,
                                headers=headers,
@@ -478,6 +481,11 @@ class ListFilingResource(Resource):
             filing.payment_token = pid
             filing.save()
             return None, None
+
+        if rv.status_code == HTTPStatus.BAD_REQUEST:
+            return {'code': rv.json().get('code'),
+                    'message': rv.json().get('message')}, HTTPStatus.PAYMENT_REQUIRED
+
         return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
     @staticmethod
