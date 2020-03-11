@@ -381,7 +381,7 @@ def test_cancel_payment_for_pending_filing(session, client, jwt):
                       headers=create_header(jwt, [STAFF_ROLE], identifier))
     assert rv.status_code == HTTPStatus.ACCEPTED
     assert not rv.json.get('errors')
-    assert rv.json['filing']['header']['paymentToken'] is None
+    assert rv.json['filing']['header'].get('paymentToken', None) is None
     assert rv.json['filing']['header']['status'] == 'DRAFT'
 
 
@@ -443,7 +443,7 @@ def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
 
 
 @integration_payment
-def test_cancel_payment_failed(monkeypatch, session, client, jwt):
+def test_cancel_payment_failed_connection_pay_api(monkeypatch, session, client, jwt):
     """Assert that cancel payment failure returns error."""
     identifier = 'CP7654321'
     business = factory_business(identifier,
@@ -510,6 +510,35 @@ def test_update_annual_report_to_a_business(session, client, jwt):
     assert rv.json['filing']['header']['filingId']
     assert rv.json['filing']['header']['submitter']
     assert rv.json['filing']['header']['paymentToken']
+
+
+@integration_payment
+def test_payment_failed(session, client, jwt):
+    """Assert that a failed call to a BCOL payment returns an error code and message."""
+    identifier = 'CP7654321'
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+
+    old_svc = current_app.config.get('PAYMENT_SVC_URL')
+    current_app.config['PAYMENT_SVC_URL'] = old_svc + '?__code=400'
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    current_app.config['PAYMENT_SVC_URL'] = old_svc
+
+    # check return
+    assert rv.status_code == HTTPStatus.PAYMENT_REQUIRED
+    assert rv.json.get('errors')
+    assert rv.json['errors'][0]['code']
+    assert rv.json['errors'][0]['message']
 
 
 def test_update_draft_ar(session, client, jwt):
