@@ -20,7 +20,7 @@ from sqlalchemy import Date, cast, or_
 from .db import db
 
 
-from .party_member import PartyMember  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
+from .party import Party  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
 
 
 class PartyRole(db.Model):
@@ -30,6 +30,7 @@ class PartyRole(db.Model):
         """Render an Enum of the role types."""
 
         DIRECTOR = 'director'
+        INCORPORATOR = 'incorporator'
 
     __versioned__ = {}
     __tablename__ = 'party_roles'
@@ -40,10 +41,10 @@ class PartyRole(db.Model):
     cessation_date = db.Column('cessation_date', db.DateTime(timezone=True))
 
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
-    party_member_id = db.Column('party_member_id', db.Integer, db.ForeignKey('party_members.id'))
+    party_id = db.Column('party_id', db.Integer, db.ForeignKey('parties.id'))
 
     # relationships
-    party_member = db.relationship('PartyMember')
+    party = db.relationship('Party')
 
     def save(self):
         """Save the object to the database immediately."""
@@ -53,21 +54,21 @@ class PartyRole(db.Model):
     @property
     def json(self):
         """Return the party member as a json object."""
-        member = {
-            **self.party_member.json,
+        party = {
+            **self.party.json,
             'appointmentDate': datetime.date(self.appointment_date).isoformat(),
             'cessationDate': datetime.date(self.cessation_date).isoformat() if self.cessation_date else None,
             'role': self.role
         }
 
-        return member
+        return party
 
     @staticmethod
-    def get_by_role(business_id: int, role: RoleTypes):
-        """Return all party members with the given role for this business."""
+    def get_parties_by_role(business_id: int, role: str):
+        """Return all people/oraganizations with the given role for this business (ceased + current)."""
         members = db.session.query(PartyRole). \
             filter(PartyRole.business_id == business_id). \
-            filter(PartyRole.role == role.value). \
+            filter(PartyRole.role == role). \
             all()
         return members
 

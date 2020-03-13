@@ -18,12 +18,27 @@ Test-Suite to ensure that the PartyRole Model is working as expected.
 """
 import datetime
 
-from legal_api.models import PartyMember, PartyRole
+from legal_api.models import Party, PartyRole
+from tests.unit.models import factory_business
+
+
+def test_party_member_save(session):
+    """Assert that the party role saves correctly."""
+    party_role = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None
+    )
+
+    party_role.save()
+    assert party_role.id
 
 
 def test_party_role_json(session):
     """Assert the json format of party role."""
-    member = PartyMember(
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    member = Party(
         first_name='Michael',
         last_name='Crane',
         middle_initial='Joe',
@@ -35,7 +50,8 @@ def test_party_role_json(session):
         role=PartyRole.RoleTypes.DIRECTOR.value,
         appointment_date=datetime.datetime(2017, 5, 17),
         cessation_date=None,
-        party_member_id=member.id
+        party_id=member.id,
+        business_id=business.id
     )
     party_role.save()
 
@@ -52,15 +68,3 @@ def test_party_role_json(session):
     }
 
     assert party_role.json == party_role_json
-
-
-def test_party_member_save(session):
-    """Assert that the party role saves correctly."""
-    party_role = PartyRole(
-        role=PartyRole.RoleTypes.DIRECTOR.value,
-        appointment_date=datetime.datetime(2017, 5, 17),
-        cessation_date=None
-    )
-
-    party_role.save()
-    assert party_role.id
