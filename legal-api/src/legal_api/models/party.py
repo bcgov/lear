@@ -48,11 +48,11 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
     organization_name = db.Column('organization_name', db.String(150))
 
     # parent keys
-    address_id = db.Column('address_id', db.Integer, db.ForeignKey('addresses.id'))
+    delivery_address_id = db.Column('delivery_address_id', db.Integer, db.ForeignKey('addresses.id'))
     mailing_address_id = db.Column('mailing_address_id', db.Integer, db.ForeignKey('addresses.id'))
 
     # Relationships - Address
-    delivery_address = db.relationship('Address', foreign_keys=[address_id])
+    delivery_address = db.relationship('Address', foreign_keys=[delivery_address_id])
     mailing_address = db.relationship('Address', foreign_keys=[mailing_address_id])
 
     def save(self):
@@ -96,20 +96,16 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
         return member
 
     @property
-    def validate_party_type(self):
+    def valid_party_type_data(self):
         """Validate the model based on the party type (person/organization)."""
         if self.party_type == Party.PartyTypes.ORGANIZATION.value:
             if not self.organization_name or self.first_name or self.middle_initial or self.last_name:
-                raise BusinessException(
-                    error=f'Attempt to change/add {Party.PartyTypes.ORGANIZATION.value} had invalid data.',
-                    status_code=HTTPStatus.BAD_REQUEST
-                )
+                return False
+
         elif self.party_type == Party.PartyTypes.PERSON.value:
             if self.organization_name or not (self.first_name or self.middle_initial or self.last_name):
-                raise BusinessException(
-                    error=f'Attempt to change/add {Party.PartyTypes.PERSON.value} had invalid data.',
-                    status_code=HTTPStatus.BAD_REQUEST
-                )
+                return False
+        return True
 
 
 @event.listens_for(Party, 'before_insert')
@@ -117,4 +113,9 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
 def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
     """Run checks/updates before adding/changing the party model data."""
     party = target
-    party.validate_party_type
+
+    if not party.valid_party_type_data:
+        raise BusinessException(
+            error=f'Attempt to change/add {party.party_type} had invalid data.',
+            status_code=HTTPStatus.BAD_REQUEST
+        )

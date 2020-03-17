@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 520f79f5c683
+Revision ID: b9165c3187fc
 Revises: 361b51b824c0
-Create Date: 2020-03-13 09:11:55.921273
+Create Date: 2020-03-17 11:14:17.143705
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '520f79f5c683'
+revision = 'b9165c3187fc'
 down_revision = '361b51b824c0'
 branch_labels = None
 depends_on = None
@@ -26,7 +26,7 @@ def upgrade():
     sa.Column('last_name', sa.String(length=30), autoincrement=False, nullable=True),
     sa.Column('title', sa.String(length=1000), autoincrement=False, nullable=True),
     sa.Column('organization_name', sa.String(length=150), autoincrement=False, nullable=True),
-    sa.Column('address_id', sa.Integer(), autoincrement=False, nullable=True),
+    sa.Column('delivery_address_id', sa.Integer(), autoincrement=False, nullable=True),
     sa.Column('mailing_address_id', sa.Integer(), autoincrement=False, nullable=True),
     sa.Column('transaction_id', sa.BigInteger(), autoincrement=False, nullable=False),
     sa.Column('end_transaction_id', sa.BigInteger(), nullable=True),
@@ -61,9 +61,9 @@ def upgrade():
     sa.Column('last_name', sa.String(length=30), nullable=True),
     sa.Column('title', sa.String(length=1000), nullable=True),
     sa.Column('organization_name', sa.String(length=150), nullable=True),
-    sa.Column('address_id', sa.Integer(), nullable=True),
+    sa.Column('delivery_address_id', sa.Integer(), nullable=True),
     sa.Column('mailing_address_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['address_id'], ['addresses.id'], ),
+    sa.ForeignKeyConstraint(['delivery_address_id'], ['addresses.id'], ),
     sa.ForeignKeyConstraint(['mailing_address_id'], ['addresses.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

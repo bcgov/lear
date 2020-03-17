@@ -68,7 +68,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     filings = db.relationship('Filing', lazy='dynamic')
     directors = db.relationship('Director', lazy='dynamic')
     offices = db.relationship('Office', lazy='dynamic')
-    corp_party = db.relationship('PartyRole', lazy='dynamic')
+    party_roles = db.relationship('PartyRole', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):

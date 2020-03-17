@@ -63,6 +63,14 @@ class PartyRole(db.Model):
 
         return party
 
+    @classmethod
+    def find_by_internal_id(cls, internal_id: int):
+        """Return a party role by the internal id."""
+        party_role = None
+        if internal_id:
+            party_role = cls.query.filter_by(id=internal_id).one_or_none()
+        return party_role
+
     @staticmethod
     def get_parties_by_role(business_id: int, role: str):
         """Return all people/oraganizations with the given role for this business (ceased + current)."""
