@@ -20,7 +20,7 @@ from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 from sqlalchemy_continuum import versioning_manager
 
-from legal_api.models import Address, Business, Comment, Director, Filing, Office, User, db
+from legal_api.models import Address, Business, Comment, Director, Filing, Office, Party, PartyRole, User, db
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
@@ -223,3 +223,23 @@ def factory_comment(
     c.save()
 
     return c
+
+
+def factory_party_role(delivery_address: Address, mailing_address: Address, officer: dict, appointment_date: datetime,
+                       cessation_date: datetime, role_type: PartyRole.RoleTypes):
+    """Create a role."""
+    party = Party(
+        first_name=officer['firstName'],
+        last_name=officer['lastName'],
+        middle_initial=officer['middleInitial']
+    )
+    party.delivery_address = delivery_address
+    party.mailing_address = mailing_address
+    party.save()
+    party_role = PartyRole(
+        role=role_type.value,
+        appointment_date=appointment_date,
+        cessation_date=cessation_date,
+        party_id=party.id
+    )
+    return party_role
