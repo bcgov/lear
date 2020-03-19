@@ -38,7 +38,7 @@ jwt = JwtManager()  # pylint: disable=invalid-name
 SENTRY_LOGGING = LoggingIntegration(
     event_level=logging.ERROR  # send errors as events
 )
-
+SET_EVENTS_MANUALLY = False
 
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
@@ -99,6 +99,7 @@ def check_for_manual_filings(application: Flask = None):
                 colin_events = dict(r.json())
 
                 # for bringing in a specific filing
+                # SET_EVENTS_MANUALLY = True
                 # colin_events = {
                 #     'events': [{'corp_num': 'CP0001489', 'event_id': 102127109, 'filing_typ_cd': 'OTCGM'}]
                 # }
@@ -205,8 +206,9 @@ def run():
             application.logger.debug(f'failed filings: {len(failed_filing_events)}')
             application.logger.debug(f'failed filings event info: {failed_filing_events}')
 
-            # uncomment for manually bringing across filings and set to first id so you don't skip any other filings
-            # first_failed_id = 102125621
+            # if manually bringing across filings, set to first id so you don't skip any filings on the next run
+            if SET_EVENTS_MANUALLY:
+                first_failed_id = 102125621
 
             # if one of the events failed then save that id minus one so that the next run will try it again
             # this way failed filings wont get buried/forgotten after multiple runs
