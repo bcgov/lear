@@ -35,7 +35,6 @@ def copy_over_dirs():
     directors = db.session.execute(select_string)
 
     for row in directors:
-        director_id = row[0]
         first_name = row[1]
         middle_initial = row[2]
         last_name = row[3]
@@ -52,7 +51,7 @@ def copy_over_dirs():
             middle_initial=middle_initial,
             last_name=last_name,
             title=title,
-            address_id=address_id,
+            delivery_address_id=address_id,
             mailing_address_id=mailing_address_id
         )
         db.session.add(member)
