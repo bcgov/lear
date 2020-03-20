@@ -106,7 +106,7 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
             if self.organization_name or not (self.first_name or self.middle_initial or self.last_name):
                 return False
         return True
-    
+
     @classmethod
     def find_by_name(cls, first_name: str, last_name: str, organization_name: str):
         """Return a Party by the name given."""
