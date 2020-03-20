@@ -4,5 +4,5 @@ export LD_LIBRARY_PATH=/opt/rh/rh-python35/root/usr/lib64::/opt/rh/httpd24/root/
 export PATH=/opt/app-root/bin:/opt/rh/rh-python35/root/usr/bin::/opt/rh/httpd24/root/usr/bin:/opt/rh/httpd24/root/usr/sbin:/opt/app-root/src/.local/bin/:/opt/app-root/src/bin:/opt/app-root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 cd /opt/app-root/src
-echo 'run load_coop_2019.py'
-/opt/app-root/bin/python load_coop_2019.py
+echo 'run data_loader.py'
+/opt/app-root/bin/python data_loader.py

@@ -28,7 +28,7 @@ from dotenv import load_dotenv, find_dotenv
 from flask import Flask
 from legal_api import db
 from legal_api.config import get_named_config
-from legal_api.models import Address, Business, Director, Filing, Office, User
+from legal_api.models import Address, Business, Director, Filing, Office, Party, PartyRole, User
 from legal_api.models.colin_event_id import ColinEventId
 from sqlalchemy_continuum import versioning_manager
 from sqlalchemy import text
@@ -127,6 +127,34 @@ def add_business_directors(business, directors_json):
         d.title = director['title']
         d.delivery_address = delivery_address
         business.directors.append(d)
+
+        # create person/organization get them if they already exist
+        party = Party.find_by_name(
+            first_name=director['officer'].get('firstName', '').upper(),
+            last_name=director['officer'].get('lastName', '').upper(),
+            organization_name=director.get('organization_name', '').upper()
+        )
+        if not party:
+            party = Party(
+                first_name=director['officer'].get('firstName', '').upper(),
+                last_name=director['officer'].get('lastName', '').upper(),
+                middle_initial=director['officer'].get('middleInitial', '').upper(),
+                title=director.get('title', '').upper(),
+                organization_name=director.get('organization_name', '').upper()
+            )
+
+        # add addresses to party
+        party.delivery_address = delivery_address
+
+        # create party role and link party to it
+        party_role = PartyRole(
+            role=PartyRole.RoleTypes.DIRECTOR.value,
+            appointment_date=director.get('appointmentDate'),
+            cessation_date=director.get('cessationDate'),
+            party=party
+        )
+
+        party_role = PartyRole()
 
 
 def historic_filings_exist(business_id):
