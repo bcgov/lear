@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module holds data for corp parties (people/organizations)."""
+from __future__ import annotations
+
 from enum import Enum
 from http import HTTPStatus
 
@@ -61,7 +63,7 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
         db.session.commit()
 
     @property
-    def json(self):
+    def json(self) -> dict:
         """Return the party member as a json object."""
         if self.party_type == Party.PartyTypes.PERSON.value:
             member = {
@@ -96,7 +98,7 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
         return member
 
     @property
-    def valid_party_type_data(self):
+    def valid_party_type_data(self) -> bool:
         """Validate the model based on the party type (person/organization)."""
         if self.party_type == Party.PartyTypes.ORGANIZATION.value:
             if not self.organization_name or self.first_name or self.middle_initial or self.last_name:
@@ -108,7 +110,7 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
         return True
 
     @classmethod
-    def find_by_name(cls, first_name: str, last_name: str, organization_name: str):
+    def find_by_name(cls, first_name: str, last_name: str, organization_name: str) -> Party:
         """Return a Party by the name given."""
         party = None
         if organization_name:

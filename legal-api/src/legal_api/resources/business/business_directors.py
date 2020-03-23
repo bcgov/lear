@@ -58,15 +58,12 @@ class DirectorResource(Resource):
         # party role code to replace director
         party_list = []
         active_directors = PartyRole.get_active_directors(business.id, end_date)
-        print(active_directors)
         for director in active_directors:
-            print(director)
             director_json = director.json
-            print(director_json)
             if business.legal_type == 'CP':
                 del director_json['mailingAddress']
             party_list.append(director_json)
-
+        current_app.logger.debug(f'Active parties with director role: {party_list}')
         return jsonify(directors=res)
 
     @staticmethod
