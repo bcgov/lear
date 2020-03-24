@@ -27,7 +27,6 @@ from legal_api.exceptions import BusinessException
 from .db import db, ma
 
 
-from .director import Director  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .address import Address  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
@@ -66,7 +65,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
-    directors = db.relationship('Director', lazy='dynamic')
     offices = db.relationship('Office', lazy='dynamic')
     party_roles = db.relationship('PartyRole', lazy='dynamic')
 
