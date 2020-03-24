@@ -93,10 +93,9 @@ run this cell if you want to see an image of the domain model
 ```python
 import pycountry
 from legal_api import db
-from legal_api.models import Address, Business, Filing, Office
+from legal_api.models import Address, Business, Filing, Office, Party, PartyRole
 from sqlalchemy_continuum import versioning_manager
 ```
-
 
 ```python
 uow = versioning_manager.unit_of_work(db.session)
@@ -183,28 +182,27 @@ address_to_fix.json
 
 
 ```python
-for director in business.directors:
-        print (f"\x1b[31mDirector.id=\x1b[0m{director.id}, \x1b[31mName=\x1b[0m{director.first_name} {director.last_name}\n\x1b[31mjson=\x1b[0m{director.json}")
+for director in legal_api.models.PartyRole.get_parties_by_role(business.id, 'director'):
+    print (f"\x1b[31mDirector.id=\x1b[0m{director.id}, \x1b[31mName=\x1b[0m{director.party.first_name} {director.party.last_name}\n\x1b[31mjson=\x1b[0m{director.json}")
         
 ```
 
 
 ```python
-director_to_fix = business.directors.filter_by(id=1520).one_or_none()
-director_delivery_address = director_to_fix.delivery_address
-director_mailing_address = director_to_fix.mailing_address
+director_to_fix = business.party_roles.filter_by(id=1520).one_or_none()
+director_delivery_address = director_to_fix.party.delivery_address
+director_mailing_address = director_to_fix.party.mailing_address
 director_to_fix.json
 ```
 
 
 ```python
-# director_to_fix.first_name = 
-# director_to_fix.middle_initial = 
-# director_to_fix.last_name = 
-# director_to_fix.title = 
+# director_to_fix.party.first_name = 
+# director_to_fix.party.middle_initial = 
+# director_to_fix.party.last_name = 
+# director_to_fix.party.title = 
 # director_to_fix.appointment_date = 
 # director_to_fix.cessation_date =
-# director_delivery_address = 
 ```
 
 
