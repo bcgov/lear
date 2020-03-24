@@ -20,7 +20,7 @@ from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 from sqlalchemy_continuum import versioning_manager
 
-from legal_api.models import Address, Business, Comment, Director, Filing, Office, Party, PartyRole, User, db
+from legal_api.models import Address, Business, Comment, Filing, Office, Party, PartyRole, User, db
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 

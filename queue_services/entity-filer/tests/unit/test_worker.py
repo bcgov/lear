@@ -19,10 +19,11 @@ import random
 import pytest
 import pytz
 from freezegun import freeze_time
-from legal_api.models import Business, Director, Filing, User
+from legal_api.models import Business, Filing, PartyRole, User
 from legal_api.resources.business import DirectorResource
 from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR
 
+from entity_filer.filing_processors import create_director
 from entity_filer.worker import process_filing
 from tests.pytest_marks import colin_api_integration
 from tests.unit import (
@@ -33,7 +34,6 @@ from tests.unit import (
     COMBINED_FILING,
     INCORP_FILING,
     create_business,
-    create_director,
     create_filing,
     create_user,
 )
@@ -66,18 +66,21 @@ def check_directors(business, directors, director_ceased_id, ceased_directors, a
     for director in directors:
         # check that director in setup is not in the list (should've been ceased)
         assert director.id != director_ceased_id
-        assert director.first_name not in ceased_directors
-        assert director.first_name in active_directors
-        active_directors.remove(director.first_name)
+        assert director.party.first_name not in ceased_directors
+        assert director.party.first_name in active_directors
+        active_directors.remove(director.party.first_name)
         # check returned only active directors
         assert director.cessation_date is None
         assert director.appointment_date
-        assert director.delivery_address
-        assert director.first_name == director.delivery_address.delivery_instructions.upper()
+        assert director.party.delivery_address
+        assert director.party.first_name == director.party.delivery_address.delivery_instructions.upper()
 
     # check added all active directors in filing
     assert active_directors == []
     # check cessation date set on ceased director
+    print(business)
+    print(director_ceased_id)
+    print(DirectorResource._get_director(business, director_ceased_id))
     assert DirectorResource._get_director(business, director_ceased_id)[0]['director']['cessationDate'] is not None
 
 
@@ -220,7 +223,6 @@ def test_process_cod_filing(app, session):
     director2 = create_director(director2)
     # prep director for cease
     director3 = create_director(filing_data['filing']['changeOfDirectors']['directors'][2])
-    director_ceased_id = director3.id
     # prep director for address change
     director4 = filing_data['filing']['changeOfDirectors']['directors'][3]
     director4['deliveryAddress']['streetAddress'] = 'should get changed'
@@ -231,13 +233,14 @@ def test_process_cod_filing(app, session):
 
     # setup
     business = create_business(identifier)
-    business.directors.append(director1)
-    business.directors.append(director2)
-    business.directors.append(director3)
-    business.directors.append(director4)
+    business.party_roles.append(director1)
+    business.party_roles.append(director2)
+    business.party_roles.append(director3)
+    business.party_roles.append(director4)
     business.save()
+    director_ceased_id = director3.id
     # check that adding the director during setup was successful
-    directors = Director.get_active_directors(business.id, end_date)
+    directors = PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value)
     assert len(directors) == 4
     # create filing
     business_id = business.id
@@ -256,7 +259,7 @@ def test_process_cod_filing(app, session):
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
 
-    directors = Director.get_active_directors(business.id, end_date)
+    directors = PartyRole.get_active_directors(business.id, end_date)
     check_directors(business, directors, director_ceased_id, ceased_directors, active_directors)
 
 
@@ -273,7 +276,7 @@ def test_process_cod_mailing_address(app, session):
     business = create_business(identifier)
     business.save()
 
-    directors = Director.get_active_directors(business.id, end_date)
+    directors = PartyRole.get_active_directors(business.id, end_date)
     assert len(directors) == 0
 
     # create filing
@@ -288,14 +291,14 @@ def test_process_cod_mailing_address(app, session):
     filing = Filing.find_by_id(filing_id)
     business = Business.find_by_internal_id(business_id)
 
-    directors = Director.get_active_directors(business.id, end_date)
+    directors = PartyRole.get_active_directors(business.id, end_date)
 
-    has_mailing = list(filter(lambda x: x.mailing_address is not None, directors))
-    no_mailing = list(filter(lambda x: x.mailing_address is None, directors))
+    has_mailing = list(filter(lambda x: x.party.mailing_address is not None, directors))
+    no_mailing = list(filter(lambda x: x.party.mailing_address is None, directors))
 
     assert len(has_mailing) == 1
-    assert has_mailing[0].mailing_address.street == 'test mailing 1'
-    assert no_mailing[0].mailing_address is None
+    assert has_mailing[0].party.mailing_address.street == 'test mailing 1'
+    assert no_mailing[0].party.mailing_address is None
 
     # Add/update mailing address to a director
 
@@ -322,18 +325,16 @@ def test_process_cod_mailing_address(app, session):
     filing = Filing.find_by_id(filing_id)
     business = Business.find_by_internal_id(business_id)
 
-    directors = Director.get_active_directors(business.id, end_date)
+    directors = PartyRole.get_active_directors(business.id, end_date)
     # Get modified data
     filing = Filing.find_by_id(filing_id)
     business = Business.find_by_internal_id(business_id)
 
     # check it out
-    assert len(list(filter(lambda x: x.mailing_address is not None, directors))) == 2
+    assert len(list(filter(lambda x: x.party.mailing_address is not None, directors))) == 2
     assert filing.transaction_id
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
-
-    directors = Director.get_active_directors(business.id, end_date)
 
 
 def test_process_combined_filing(app, session):
@@ -357,7 +358,6 @@ def test_process_combined_filing(app, session):
     director2 = create_director(director2)
     # prep director for cease
     director3 = create_director(filing_data['filing']['changeOfDirectors']['directors'][2])
-    director_ceased_id = director3.id
     # prep director for address change
     director4 = filing_data['filing']['changeOfDirectors']['directors'][3]
     director4['deliveryAddress']['streetAddress'] = 'should get changed'
@@ -368,13 +368,14 @@ def test_process_combined_filing(app, session):
 
     # setup
     business = create_business(identifier)
-    business.directors.append(director1)
-    business.directors.append(director2)
-    business.directors.append(director3)
-    business.directors.append(director4)
+    business.party_roles.append(director1)
+    business.party_roles.append(director2)
+    business.party_roles.append(director3)
+    business.party_roles.append(director4)
     business.save()
-    # check that adding the director during setup was successful
-    directors = Director.get_active_directors(business.id, end_date)
+    director_ceased_id = director3.id
+    # check that adding the directors during setup was successful
+    directors = PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value)
     assert len(directors) == 4
     business_id = business.id
     filing_id = (create_filing(payment_id, COMBINED_FILING, business.id)).id
@@ -401,7 +402,7 @@ def test_process_combined_filing(app, session):
     compare_addresses(mailing_address, new_mailing_address)
 
     # check director filing
-    directors = Director.get_active_directors(business.id, end_date)
+    directors = PartyRole.get_active_directors(business.id, end_date)
     check_directors(business, directors, director_ceased_id, ceased_directors, active_directors)
 
 

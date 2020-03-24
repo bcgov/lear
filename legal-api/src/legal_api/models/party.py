@@ -17,9 +17,8 @@ from __future__ import annotations
 from enum import Enum
 from http import HTTPStatus
 
-from sqlalchemy import event
-
 from legal_api.exceptions import BusinessException
+from sqlalchemy import event
 
 from .db import db
 
