@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of directors."""
-from contextlib import suppress
 from datetime import datetime
 from typing import Dict
 
 from entity_queue_common.service_utils import QueueException, logger
-from legal_api.models import Address, Business, PartyRole
+from legal_api.models import Business, PartyRole
 
-from entity_filer.filing_processors import create_address, create_director, update_director
+from entity_filer.filing_processors import create_director, update_director
 
 
 def process(business: Business, filing: Dict):  # pylint: disable=too-many-branches;
