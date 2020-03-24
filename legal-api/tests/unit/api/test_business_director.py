@@ -20,7 +20,7 @@ import datetime
 from http import HTTPStatus
 
 from legal_api.services.authz import STAFF_ROLE
-from tests.unit.models import Address, Director, PartyRole, factory_business, factory_party_role
+from tests.unit.models import Address, PartyRole, factory_business, factory_party_role
 from tests.unit.services.utils import create_header
 
 
@@ -29,17 +29,7 @@ def test_get_business_directors(session, client, jwt):
     # setup
     identifier = 'CP7654321'
     business = factory_business(identifier)
-    director = Director(
-        first_name='Michael',
-        last_name='Crane',
-        middle_initial='Joe',
-        title='VP',
-        appointment_date=datetime.datetime(2017, 5, 17),
-        cessation_date=None
-    )
     director_address = Address(city='Test Mailing City', address_type=Address.DELIVERY)
-    director.delivery_address = director_address
-    business.directors.append(director)
     officer = {
         'firstName': 'Michael',
         'lastName': 'Crane',
@@ -71,19 +61,8 @@ def test_bcorp_get_business_directors(session, client, jwt):
     # setup
     identifier = 'CP7654321'
     business = factory_business(identifier, datetime.datetime.now(), None, 'BC')
-    director = Director(
-        first_name='Michael',
-        last_name='Crane',
-        middle_initial='Joe',
-        title='VP',
-        appointment_date=datetime.datetime(2017, 5, 17),
-        cessation_date=None
-    )
     director_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
     director_mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
-    director.delivery_address = director_address
-    director.mailing_address = director_mailing_address
-    business.directors.append(director)
     officer = {
         'firstName': 'Michael',
         'lastName': 'Crane',
@@ -130,15 +109,6 @@ def test_get_business_ceased_directors(session, client, jwt):
     # setup
     identifier = 'CP7654321'
     business = factory_business(identifier)
-    director = Director(
-        first_name='Michael',
-        last_name='Crane',
-        middle_initial='Joe',
-        title='VP',
-        appointment_date=datetime.datetime(2012, 5, 17),
-        cessation_date=datetime.datetime(2013, 5, 17)
-    )
-    business.directors.append(director)
     officer = {
         'firstName': 'Michael',
         'lastName': 'Crane',
@@ -169,15 +139,6 @@ def test_get_business_director_by_id(session, client, jwt):
     # setup
     identifier = 'CP7654321'
     business = factory_business(identifier)
-    director = Director(
-        first_name='Michael',
-        last_name='Crane',
-        middle_initial='Joe',
-        title='VP',
-        appointment_date=datetime.datetime(2017, 5, 17),
-        cessation_date=None
-    )
-    business.directors.append(director)
     officer = {
         'firstName': 'Michael',
         'lastName': 'Crane',
@@ -194,7 +155,7 @@ def test_get_business_director_by_id(session, client, jwt):
     business.party_roles.append(party_role)
     business.save()
     # test
-    rv = client.get(f'/api/v1/businesses/{identifier}/directors/{director.id}',
+    rv = client.get(f'/api/v1/businesses/{identifier}/directors/{party_role.id}',
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
                     )
     # check
@@ -237,19 +198,8 @@ def test_directors_mailing_address(session, client, jwt):
     # setup
     identifier = 'CP7654321'
     business = factory_business(identifier, datetime.datetime(2017, 4, 17), None, 'BC')
-    director = Director(
-        first_name='Michael',
-        last_name='Crane',
-        middle_initial='Joe',
-        title='VP',
-        appointment_date=datetime.datetime(2017, 5, 17),
-        cessation_date=None
-    )
     delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
     mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
-    director.delivery_address = delivery_address
-    director.mailing_address = mailing_address
-    business.directors.append(director)
     officer = {
         'firstName': 'Michael',
         'lastName': 'Crane',
@@ -282,17 +232,7 @@ def test_directors_coop_no_mailing_address(session, client, jwt):
     # setup
     identifier = 'CP7654321'
     business = factory_business(identifier)
-    director = Director(
-        first_name='Michael',
-        last_name='Crane',
-        middle_initial='Joe',
-        title='VP',
-        appointment_date=datetime.datetime(2017, 5, 17),
-        cessation_date=None
-    )
     delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
-    director.delivery_address = delivery_address
-    business.directors.append(director)
     officer = {
         'firstName': 'Michael',
         'lastName': 'Crane',

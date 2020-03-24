@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of directors."""
-from contextlib import suppress
 from datetime import datetime
 from typing import Dict
 
 from entity_queue_common.service_utils import QueueException, logger
-from legal_api.models import Address, Business, Director, PartyRole
+from legal_api.models import Business, PartyRole
 
-from entity_filer.filing_processors import create_address, create_director, update_director
+from entity_filer.filing_processors import create_director, update_director
 
 
 def process(business: Business, filing: Dict):  # pylint: disable=too-many-branches;
@@ -36,8 +35,9 @@ def process(business: Business, filing: Dict):  # pylint: disable=too-many-branc
                 new_director['officer'].get('lastName')
             new_director_names.append(current_new_director_name.upper())
 
-            for director in business.directors:
-                existing_director_name = director.first_name + director.middle_initial + director.last_name
+            for director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
+                existing_director_name = \
+                    director.party.first_name + director.party.middle_initial + director.party.last_name
                 if existing_director_name.upper() == current_new_director_name.upper():
                     # Creates a new director record in Lear if a matching ceased director exists in Lear
                     # and the colin json contains the same director record with cessation date null.
@@ -55,25 +55,7 @@ def process(business: Business, filing: Dict):  # pylint: disable=too-many-branc
                 new_director['actions'] = ['appointed']
 
         if 'appointed' in new_director['actions']:
-            # create address
-            address = create_address(new_director['deliveryAddress'], Address.DELIVERY)
 
-            director_to_add = Director(first_name=new_director['officer'].get('firstName', '').upper(),
-                                       middle_initial=new_director['officer'].get('middleInitial', '').upper(),
-                                       last_name=new_director['officer'].get('lastName', '').upper(),
-                                       title=new_director.get('title', '').upper(),
-                                       appointment_date=new_director.get('appointmentDate'),
-                                       cessation_date=new_director.get('cessationDate'),
-                                       delivery_address=address)
-
-            # if 'mailingAddress' in new_director and len(new_director['mailingAddress']): <- fails lint
-            # if new_director.get('mailingAddress', None): <- slightly more pythonic
-            with suppress(KeyError):  # <- since we're only going to do this if the key exists, it's easier to read
-                mailing_address = create_address(new_director['mailingAddress'], Address.MAILING)
-                director_to_add.mailing_address = mailing_address
-
-            # add new director to the list
-            business.directors.append(director_to_add)
             # add new diretor party role to the business
             new_director_role = create_director(director_info=new_director)
             business.party_roles.append(new_director_role)
@@ -90,28 +72,15 @@ def process(business: Business, filing: Dict):  # pylint: disable=too-many-branc
                 logger.error('Could not resolve director name from json %s.', new_director)
                 raise QueueException
 
-            for director in business.directors:
-                # get name of director in database for comparison *
-                director_name = director.first_name + director.middle_initial + director.last_name
-                # Update only an active director
-                if director_name.upper() == new_director_name.upper() and director.cessation_date is None:
-                    update_director(director=director, party_role=None, new_info=new_director)
-                    break
             for director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
                 # get name of director in database for comparison *
                 director_name = director.party.first_name + director.party.middle_initial + director.party.last_name
                 # Update only an active director
                 if director_name.upper() == new_director_name.upper() and director.cessation_date is None:
-                    update_director(director=None, party_role=director, new_info=new_director)
+                    update_director(director=director, new_info=new_director)
                     break
 
     if filing.get('colinIds'):
-        # cease any active directors not included in the filing
-        for director in business.directors:
-            # get name of director in database for comparison *
-            director_name = director.first_name + director.middle_initial + director.last_name
-            if director_name.upper() not in new_director_names and director.cessation_date is None:
-                director.cessation_date = datetime.utcnow()
         for director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
             # get name of director in database for comparison *
             director_name = director.first_name + director.middle_initial + director.last_name
