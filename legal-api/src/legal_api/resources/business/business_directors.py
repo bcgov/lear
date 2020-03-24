@@ -15,10 +15,10 @@
 from datetime import datetime
 from http import HTTPStatus
 
-from flask import jsonify, request
+from flask import current_app, jsonify, request
 from flask_restplus import Resource, cors
 
-from legal_api.models import Business, Director, db
+from legal_api.models import Business, Director, PartyRole, db
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
@@ -55,10 +55,19 @@ class DirectorResource(Resource):
                 del director_json['mailingAddress']
             res.append(director_json)
 
+        # party role code to replace director
+        party_list = []
+        active_directors = PartyRole.get_active_directors(business.id, end_date)
+        for director in active_directors:
+            director_json = director.json
+            if business.legal_type == 'CP':
+                del director_json['mailingAddress']
+            party_list.append(director_json)
+        current_app.logger.debug(f'Active parties with director role: {party_list}')
         return jsonify(directors=res)
 
     @staticmethod
-    def _get_director(business, director_id=None):
+    def _get_director(business, director_id=None, party_id=None):
         # find by ID
         director = None
         if director_id:
@@ -72,5 +81,12 @@ class DirectorResource(Resource):
 
         if not director:
             return None, {'message': f'{business.identifier} director not found'}, HTTPStatus.NOT_FOUND
+
+        party = None
+        if party_id:
+            rv = PartyRole.find_by_internal_id(internal_id=party_id)
+            if rv:
+                party = {'director': rv.json}
+        current_app.logger.debug(party)
 
         return director, None, HTTPStatus.OK

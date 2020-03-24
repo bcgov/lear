@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module holds data for corp parties (people/organizations)."""
+from __future__ import annotations
+
 from enum import Enum
 from http import HTTPStatus
 
@@ -61,7 +63,7 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
         db.session.commit()
 
     @property
-    def json(self):
+    def json(self) -> dict:
         """Return the party member as a json object."""
         if self.party_type == Party.PartyTypes.PERSON.value:
             member = {
@@ -96,7 +98,7 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
         return member
 
     @property
-    def valid_party_type_data(self):
+    def valid_party_type_data(self) -> bool:
         """Validate the model based on the party type (person/organization)."""
         if self.party_type == Party.PartyTypes.ORGANIZATION.value:
             if not self.organization_name or self.first_name or self.middle_initial or self.last_name:
@@ -106,6 +108,16 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
             if self.organization_name or not (self.first_name or self.middle_initial or self.last_name):
                 return False
         return True
+
+    @classmethod
+    def find_by_name(cls, first_name: str, last_name: str, organization_name: str) -> Party:
+        """Return a Party by the name given."""
+        party = None
+        if organization_name:
+            party = cls.query.filter_by(organization_name=organization_name).one_or_none()
+        else:
+            party = cls.query.filter_by(first_name=first_name, last_name=last_name).one_or_none()
+        return party
 
 
 @event.listens_for(Party, 'before_insert')

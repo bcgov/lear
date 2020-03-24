@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module holds data for party roles in a business."""
+from __future__ import annotations
+
 from datetime import datetime
 from enum import Enum
 
@@ -52,7 +54,7 @@ class PartyRole(db.Model):
         db.session.commit()
 
     @property
-    def json(self):
+    def json(self) -> dict:
         """Return the party member as a json object."""
         party = {
             **self.party.json,
@@ -64,7 +66,7 @@ class PartyRole(db.Model):
         return party
 
     @classmethod
-    def find_by_internal_id(cls, internal_id: int):
+    def find_by_internal_id(cls, internal_id: int) -> PartyRole:
         """Return a party role by the internal id."""
         party_role = None
         if internal_id:
@@ -72,7 +74,7 @@ class PartyRole(db.Model):
         return party_role
 
     @staticmethod
-    def get_parties_by_role(business_id: int, role: str):
+    def get_parties_by_role(business_id: int, role: str) -> list:
         """Return all people/oraganizations with the given role for this business (ceased + current)."""
         members = db.session.query(PartyRole). \
             filter(PartyRole.business_id == business_id). \
@@ -81,7 +83,7 @@ class PartyRole(db.Model):
         return members
 
     @staticmethod
-    def get_active_directors(business_id: int, end_date: datetime):
+    def get_active_directors(business_id: int, end_date: datetime) -> list:
         """Return the active directors as of given date."""
         directors = db.session.query(PartyRole). \
             filter(PartyRole.business_id == business_id). \

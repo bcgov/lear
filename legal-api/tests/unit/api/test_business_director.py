@@ -20,7 +20,7 @@ import datetime
 from http import HTTPStatus
 
 from legal_api.services.authz import STAFF_ROLE
-from tests.unit.models import Address, Director, factory_business
+from tests.unit.models import Address, Director, PartyRole, factory_business, factory_party_role
 from tests.unit.services.utils import create_header
 
 
@@ -40,6 +40,20 @@ def test_get_business_directors(session, client, jwt):
     director_address = Address(city='Test Mailing City', address_type=Address.DELIVERY)
     director.delivery_address = director_address
     business.directors.append(director)
+    officer = {
+        'firstName': 'Michael',
+        'lastName': 'Crane',
+        'middleInitial': 'Joe'
+    }
+    party_role = factory_party_role(
+        director_address,
+        None,
+        officer,
+        datetime.datetime(2017, 5, 17),
+        None,
+        PartyRole.RoleTypes.DIRECTOR
+    )
+    business.party_roles.append(party_role)
     business.save()
 
     # test
@@ -70,6 +84,20 @@ def test_bcorp_get_business_directors(session, client, jwt):
     director.delivery_address = director_address
     director.mailing_address = director_mailing_address
     business.directors.append(director)
+    officer = {
+        'firstName': 'Michael',
+        'lastName': 'Crane',
+        'middleInitial': 'Joe'
+    }
+    party_role = factory_party_role(
+        director_address,
+        director_mailing_address,
+        officer,
+        datetime.datetime(2017, 5, 17),
+        None,
+        PartyRole.RoleTypes.DIRECTOR
+    )
+    business.party_roles.append(party_role)
     business.save()
 
     # test
@@ -111,6 +139,20 @@ def test_get_business_ceased_directors(session, client, jwt):
         cessation_date=datetime.datetime(2013, 5, 17)
     )
     business.directors.append(director)
+    officer = {
+        'firstName': 'Michael',
+        'lastName': 'Crane',
+        'middleInitial': 'Joe'
+    }
+    party_role = factory_party_role(
+        None,
+        None,
+        officer,
+        datetime.datetime(2012, 5, 17),
+        datetime.datetime(2013, 5, 17),
+        PartyRole.RoleTypes.DIRECTOR
+    )
+    business.party_roles.append(party_role)
     business.save()
 
     # test
@@ -136,6 +178,20 @@ def test_get_business_director_by_id(session, client, jwt):
         cessation_date=None
     )
     business.directors.append(director)
+    officer = {
+        'firstName': 'Michael',
+        'lastName': 'Crane',
+        'middleInitial': 'Joe'
+    }
+    party_role = factory_party_role(
+        None,
+        None,
+        officer,
+        datetime.datetime(2017, 5, 17),
+        None,
+        PartyRole.RoleTypes.DIRECTOR
+    )
+    business.party_roles.append(party_role)
     business.save()
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/directors/{director.id}',
@@ -194,6 +250,20 @@ def test_directors_mailing_address(session, client, jwt):
     director.delivery_address = delivery_address
     director.mailing_address = mailing_address
     business.directors.append(director)
+    officer = {
+        'firstName': 'Michael',
+        'lastName': 'Crane',
+        'middleInitial': 'Joe'
+    }
+    party_role = factory_party_role(
+        delivery_address,
+        mailing_address,
+        officer,
+        datetime.datetime(2017, 5, 17),
+        None,
+        PartyRole.RoleTypes.DIRECTOR
+    )
+    business.party_roles.append(party_role)
     business.save()
 
     # test
@@ -223,6 +293,20 @@ def test_directors_coop_no_mailing_address(session, client, jwt):
     delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
     director.delivery_address = delivery_address
     business.directors.append(director)
+    officer = {
+        'firstName': 'Michael',
+        'lastName': 'Crane',
+        'middleInitial': 'Joe'
+    }
+    party_role = factory_party_role(
+        delivery_address,
+        None,
+        officer,
+        datetime.datetime(2017, 5, 17),
+        None,
+        PartyRole.RoleTypes.DIRECTOR
+    )
+    business.party_roles.append(party_role)
     business.save()
 
     # test

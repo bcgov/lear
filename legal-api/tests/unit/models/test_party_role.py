@@ -45,6 +45,7 @@ def test_party_role_json(session):
         title='VP',
     )
     member.save()
+    # sanity check
     assert member.id
     party_role = PartyRole(
         role=PartyRole.RoleTypes.DIRECTOR.value,
