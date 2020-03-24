@@ -3,7 +3,7 @@
 import xlrd
 from flask import json
 from legal_api import db
-from legal_api.models.business import Address, Business, Director, Filing
+from legal_api.models.business import Address, Business, Filing, Party, PartyRole
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.office import Office, OfficeType
 from sqlalchemy_continuum import versioning_manager
@@ -108,24 +108,27 @@ class ExcelConverter:
         next(iter_director_rows)
         for director_row in iter_director_rows:
             if director_row[0].value == business.identifier:
-                director = Director(
-                    business_id=business.id,
+                party = Party(
                     first_name=self.__get_value_from_row(director_row, 1),
-                    middle_initial=self.__get_value_from_row(director_row, 2),
                     last_name=self.__get_value_from_row(director_row, 3),
-                    title=self.__get_value_from_row(director_row, 4),
-                    appointment_date=self.__get_value_from_row(
-                        director_row, 5),
-                    cessation_date=self.__get_value_from_row(director_row, 6)
+                    middle_initial=self.__get_value_from_row(director_row, 2),
+                    title=self.__get_value_from_row(director_row, 4)
                 )
-                self.__add_director_addresses(
-                    business.identifier, director, book)
+                self.__add_director_addresses(business.identifier, party, book)
+                # create party role and link party to it
+                party_role = PartyRole(
+                    role=PartyRole.RoleTypes.DIRECTOR.value,
+                    appointment_date=self.__get_value_from_row(director_row, 5),
+                    cessation_date=self.__get_value_from_row(director_row, 6),
+                    party=party
+                )
 
-                business.directors.append(director)
-                db.session.add(director)
-                director.save()
+                business.party_role.append(party_role)
 
-    def __add_director_addresses(self, business_identifier, director, book):
+        db.session.add(business)
+        business.save()
+
+    def __add_director_addresses(self, business_identifier, party, book):
         # Find Mailing and Delivery Addresses
         director_address_sheet = book.sheet_by_name(
             SheetName.DIRECTOR_ADDRESS.value)
@@ -137,8 +140,8 @@ class ExcelConverter:
                 director_address_row, 0)
             da_first_name = self.__get_value_from_row(director_address_row, 1)
             da_last_name = self.__get_value_from_row(director_address_row, 2)
-            if da_business_identifier == business_identifier and da_first_name == director.first_name \
-                    and da_last_name == director.last_name:
+            if da_business_identifier == business_identifier and da_first_name == party.first_name \
+                    and da_last_name == party.last_name:
                 address = Address(
                     address_type=self.__get_value_from_row(
                         director_address_row, 3),
@@ -155,14 +158,14 @@ class ExcelConverter:
                 )
                 address.save()
                 if address.address_type == Address.MAILING:
-                    director.mailing_address = address
-                    director.mailing_address_id = address.id
+                    party.mailing_address = address
+                    party.mailing_address_id = address.id
                 elif address.address_type == Address.DELIVERY:
-                    director.delivery_address = address
-                    director.delivery_address_id = address.id
+                    party.delivery_address = address
+                    party.delivery_address_id = address.id
 
             # If the mailing anddress and the delivery address are both found, no need to continue
-            if director.mailing_address_id and director.delivery_address_id:
+            if party.mailing_address_id and party.delivery_address_id:
                 break
 
     def __add_business_addresses(self, business, book):
