@@ -32,6 +32,10 @@ def validate(incorporation_json: Dict):
     if err:
         msg.append(err)
 
+    err = validate_completing_party(incorporation_json)
+    if err:
+        msg.append(err)
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
@@ -65,6 +69,32 @@ def validate_offices(incorporation_json) -> Error:
                 )
                 msg.append({'error': "Address Country must be 'CA'.",
                             'path': err_path})
+    if msg:
+        return msg
+
+    return None
+
+def validate_completing_party(incorporation_json) -> Error:
+    """Validate the required completing party of the incorporation filing."""
+    parties_array = incorporation_json['filing']['incorporationApplication']['parties']
+    parties = parties_array
+    msg = []
+    completing_party_count = 0
+
+    for item in parties:
+        role_array = item['roles']
+
+        if role_array.count('Completing Party') == 1:
+            completing_party_count += 1
+
+    if completing_party_count == 0:
+        err_path = '/filing/incorporationApplication/parties/roles'
+        msg.append({'error': "Must have a minimum of one completing party", 'path': err_path})
+
+    if completing_party_count >= 2:
+            err_path = '/filing/incorporationApplication/parties/roles'
+            msg.append({'error': "Must have a Maximum of one completing party", 'path': err_path})
+
     if msg:
         return msg
 
