@@ -25,8 +25,8 @@ from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, delete_from_table_by_event_ids, stringify_list
 
 
-class Director:  # pylint: disable=too-many-instance-attributes; need all these fields
-    """Director object."""
+class Party:  # pylint: disable=too-many-instance-attributes; need all these fields
+    """Party object."""
 
     officer = None
     delivery_address = None
@@ -36,6 +36,9 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
     cessation_date = None
     start_event_id = None
     end_event_id = None
+    party_type = None
+    org_name = None
+    org_num = None
 
     def __init__(self):
         """Initialize with all values None."""
@@ -51,68 +54,66 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
             'cessationDate': self.cessation_date,
             'startEventId': self.start_event_id,
             'endEventId': self.end_event_id,
-            'actions': []
+            'actions': [],
+            'partyType': self.party_type,
+            'orgName': self.org_name,
+            'orgNum': self.org_num
         }
 
     @classmethod
-    def _build_directors_list(cls, cursor, event_id: int = None):
+    def _build_parties_list(cls, cursor, event_id: int = None):
 
-        directors = cursor.fetchall()
-        if not directors:
+        parties = cursor.fetchall()
+        if not parties:
             return None
 
-        directors_list = []
+        party_list = []
         description = cursor.description
-        for row in directors:
-            director = Director()
-            director.title = ''
+        for row in parties:
+            party = Party()
+            party.title = ''
             row = dict(zip([x[0].lower() for x in description], row))
             if row['appointment_dt']:
-                director.officer = {'firstName': row['first_nme'].strip() if row['first_nme'] else '',
+                party.officer = {'firstName': row['first_nme'].strip() if row['first_nme'] else '',
                                     'lastName': row['last_nme'].strip() if row['last_nme'] else '',
                                     'middleInitial': row['middle_nme'] if row['middle_nme'] else ''}
 
-                director.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
-                director.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
-                    if row['mailing_addr_id'] else director.delivery_address
-                director.appointment_date =\
+                party.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
+                party.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
+                    if row['mailing_addr_id'] else party.delivery_address
+                party.appointment_date =\
                     convert_to_json_date(row['appointment_dt']) if row['appointment_dt'] else None
-                director.cessation_date = convert_to_json_date(row['cessation_dt']) if row['cessation_dt'] else None
-                director.start_event_id = row['start_event_id'] if row['start_event_id'] else ''
-                director.end_event_id = row['end_event_id'] if row['end_event_id'] else ''
+                party.cessation_date = convert_to_json_date(row['cessation_dt']) if row['cessation_dt'] else None
+                party.start_event_id = row['start_event_id'] if row['start_event_id'] else ''
+                party.end_event_id = row['end_event_id'] if row['end_event_id'] else ''
 
                 # this is in case the director was not ceased during this event
-                if event_id and director.end_event_id and director.end_event_id > event_id:
-                    director.cessation_date = None
+                if event_id and party.end_event_id and party.end_event_id > event_id:
+                    party.cessation_date = None
 
-                directors_list.append(director)
+                party_list.append(party)
 
-        return directors_list
+        return party_list
 
     @classmethod
-    def get_current(cls, cursor, identifier: str = None, party_type: str = None):
-        """Return current directors for given identifier."""
+    def get_current(cls, cursor, identifier: str = None):
+        """Return current corp_parties for given identifier."""
         if not identifier:
             return None
-
-        query = """
-                select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,
-                start_event_id, end_event_id
-                from corp_party
-                where end_event_id is NULL and corp_num=:identifier
-                """
-        if party_type:
-            query += f" and party_typ_cd='{party_type}'"
 
         try:
             if not cursor:
                 cursor = DB.connection.cursor()
-
-            cursor.execute(query,
+            cursor.execute(
+                """
+                select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,
+                start_event_id, end_event_id
+                from corp_party
+                where end_event_id is NULL and corp_num=:identifier and party_typ_cd='DIR'
+                """,
                 identifier=identifier
             )
-
-            directors_list = cls._build_directors_list(cursor)
+            directors_list = cls._build_parties_list(cursor)
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error('error getting current directors info for {}'.format(identifier))
@@ -213,19 +214,29 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
             raise err
 
     @classmethod
-    def create_new_director(cls, cursor, event_id: int = None, director: dict = None, business: dict = None):
-        """Insert new director into the corp_party table."""
+    def create_new_corp_party(cls, cursor, event_id: int = None, party: dict = None, business: dict = None):
+        """Insert new party into the corp_party table."""
+
+        query = """
+                insert into corp_party (corp_party_id, mailing_addr_id, delivery_addr_id, corp_num, party_typ_cd,
+                start_event_id, end_event_id, appointment_dt, cessation_dt, last_nme, middle_nme, first_nme,
+                bus_company_num)
+                values (:corp_party_id, :mailing_addr_id, :delivery_addr_id, :corp_num, :party_typ_cd, :start_event_id,
+                :end_event_id, TO_DATE(:appointment_dt, 'YYYY-mm-dd'), TO_DATE(:cessation_dt, 'YYYY-mm-dd'), :last_nme,
+                :middle_nme, :first_nme, :bus_company_num)
+                """
+
         if not event_id:
-            current_app.logger.error('Error in director: No event id given to create director.')
-        if not director:
-            current_app.logger.error('Error in director: No director data given to create director.')
+            current_app.logger.error('Error in director: No event id given to create party.')
+        if not party:
+            current_app.logger.error('Error in director: No director data given to create party.')
 
         # create new address
-        delivery_addr_id = Address.create_new_address(cursor=cursor, address_info=director['deliveryAddress'])
+        delivery_addr_id = Address.create_new_address(cursor=cursor, address_info=party['deliveryAddress'])
         mailing_addr_id = delivery_addr_id
 
-        if 'mailingAddress' in director:
-            mailing_addr_id = Address.create_new_address(cursor=cursor, address_info=director['mailingAddress'])
+        if 'mailingAddress' in party:
+            mailing_addr_id = Address.create_new_address(cursor=cursor, address_info=party['mailingAddress'])
         # create new corp party entry
         try:
             cursor.execute("""select noncorp_party_seq.NEXTVAL from dual""")
@@ -235,27 +246,20 @@ class Director:  # pylint: disable=too-many-instance-attributes; need all these 
             current_app.logger.error('Error in director: Failed to get next corp_party_id.')
             raise err
         try:
-            cursor.execute("""
-                insert into corp_party (corp_party_id, mailing_addr_id, delivery_addr_id, corp_num, party_typ_cd,
-                start_event_id, end_event_id, appointment_dt, cessation_dt, last_nme, middle_nme, first_nme,
-                bus_company_num)
-                values (:corp_party_id, :mailing_addr_id, :delivery_addr_id, :corp_num, :party_typ_cd, :start_event_id,
-                :end_event_id, TO_DATE(:appointment_dt, 'YYYY-mm-dd'), TO_DATE(:cessation_dt, 'YYYY-mm-dd'), :last_nme,
-                :middle_nme, :first_nme, :bus_company_num)
-                """,
+            cursor.execute(query,
                            corp_party_id=corp_party_id,
                            mailing_addr_id=mailing_addr_id,
                            delivery_addr_id=delivery_addr_id,
                            corp_num=business['business']['identifier'],
                            party_typ_cd='DIR',
                            start_event_id=event_id,
-                           end_event_id=event_id if director['cessationDate'] else None,
-                           appointment_dt=str(datetime.datetime.strptime(director['appointmentDate'], '%Y-%m-%d'))[:10],
-                           cessation_dt=str(datetime.datetime.strptime(director['cessationDate'], '%Y-%m-%d'))[:10]
-                           if director['cessationDate'] else None,
-                           last_nme=director['officer']['lastName'],
-                           middle_nme=director['officer'].get('middleInitial', ''),
-                           first_nme=director['officer']['firstName'],
+                           end_event_id=event_id if party['cessationDate'] else None,
+                           appointment_dt=str(datetime.datetime.strptime(party['appointmentDate'], '%Y-%m-%d'))[:10],
+                           cessation_dt=str(datetime.datetime.strptime(party['cessationDate'], '%Y-%m-%d'))[:10]
+                           if party['cessationDate'] else None,
+                           last_nme=party['officer']['lastName'],
+                           middle_nme=party['officer'].get('middleInitial', ''),
+                           first_nme=party['officer']['firstName'],
                            bus_company_num=business['business']['businessNumber']
                            )
         except Exception as err:
