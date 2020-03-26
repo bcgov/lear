@@ -732,12 +732,21 @@ class Filing:
 
     @classmethod
     def _add_parties_from_filing(cls, cursor,  # pylint: disable=too-many-arguments
+<<<<<<< HEAD
                                  event_id, filing):
+=======
+                                event_id, filing):
+>>>>>>> remove directors, replace with parties
         parties = filing.body['parties']
         business = filing.business.as_dict()
         for party in parties:
             for role in party['roles']:
+<<<<<<< HEAD
                 party['role_type'] = Party.role_types[(role['roleType']).lower()]
+=======
+                party['officer'] = party['person']
+                party['role_type'] = Party.roleTypes[role.lower()]
+>>>>>>> remove directors, replace with parties
                 Party.create_new_corp_party(cursor, event_id, party, business)
 
     @classmethod
@@ -826,12 +835,20 @@ class Filing:
                 for director in filing.body['directors']:
                     if 'appointed' in director['actions']:
                         Party.create_new_corp_party(cursor=cursor, event_id=event_id, party=director,
+<<<<<<< HEAD
                                                     business=filing.business.as_dict())
 
                     if 'ceased' in director['actions'] and not any(elem in ['nameChanged', 'addressChanged']
                                                                    for elem in director['actions']):
                         Party.end_director_by_name(cursor=cursor, director=director, event_id=event_id,
                                                    corp_num=corp_num)
+=======
+                                                     business=filing.business.as_dict())
+
+                    if 'ceased' in director['actions'] and not any(elem in ['nameChanged', 'addressChanged']
+                                                                   for elem in director['actions']):
+                        Party.end_director_by_name(cursor=cursor, director=director, event_id=event_id, corp_num=corp_num)
+>>>>>>> remove directors, replace with parties
 
                     elif 'nameChanged' in director['actions'] or 'addressChanged' in director['actions']:
                         if 'appointed' in director['actions']:
@@ -847,7 +864,11 @@ class Filing:
                 # cessation date + end event id filled
                 for director in changed_dirs:
                     Party.create_new_corp_party(cursor=cursor, event_id=event_id, party=director,
+<<<<<<< HEAD
                                                 business=filing.business.as_dict())
+=======
+                                                 business=filing.business.as_dict())
+>>>>>>> remove directors, replace with parties
 
                 # create new ledger text for address change
                 cls._add_ledger_text(cursor=cursor, event_id=event_id, text=f'Director change.', user_id=user_id)
