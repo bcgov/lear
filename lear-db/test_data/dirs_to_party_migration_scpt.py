@@ -33,7 +33,7 @@ def copy_over_dirs():
     # add directors as party members
     select_string = 'select * from directors'
     directors = db.session.execute(select_string)
-
+    count = 0
     for row in directors:
         first_name = row[1]
         middle_initial = row[2]
@@ -45,27 +45,40 @@ def copy_over_dirs():
         address_id = row[8]
         mailing_address_id = row[9]
 
-        # initialize member
-        member = Party(
-            first_name=first_name,
-            middle_initial=middle_initial,
-            last_name=last_name,
-            title=title,
-            delivery_address_id=address_id,
-            mailing_address_id=mailing_address_id
-        )
-        db.session.add(member)
-        db.session.commit()
-        # initialize member role
-        member_role = PartyRole(
-            role=PartyRole.RoleTypes.DIRECTOR.value,
-            appointment_date=appointment_date,
-            cessation_date=cessation_date,
-            business_id=business_id,
-            party_id=member.id
-        )
-        db.session.add(member_role)
-        db.session.commit()
+        try:
+            member = Party.find_by_name(
+                first_name=first_name.upper(),
+                last_name=last_name.upper(),
+                organization_name=None
+            )
+            
+            if not member:
+                # initialize member
+                member = Party(
+                    first_name=first_name,
+                    middle_initial=middle_initial,
+                    last_name=last_name,
+                    title=title,
+                    delivery_address_id=address_id,
+                    mailing_address_id=mailing_address_id
+                )
+            # initialize member role
+            member_role = PartyRole(
+                role=PartyRole.RoleTypes.DIRECTOR.value,
+                appointment_date=appointment_date,
+                cessation_date=cessation_date,
+                business_id=business_id,
+                party=member
+            )
+            db.session.add(member_role)
+            db.session.commit()
+        except Exception as err:
+            print(f'Error: {err}')
+            print(f'director: {row}')
+            print(f'party: {member}')
+            count += 1
+            continue
+    print(f'failed to add {count}')
 
 with FLASK_APP.app_context():
     copy_over_dirs()
