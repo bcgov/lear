@@ -17,7 +17,7 @@ Currently this only provides API versioning information
 """
 from flask import current_app
 
-from colin_api.models.filing import Business, Director, Filing, Office
+from colin_api.models.filing import Business, Party, Filing, Office
 from colin_api.resources.db import DB
 from colin_api.utils import stringify_list
 
@@ -223,7 +223,7 @@ class Reset:
 
                 # reset data in oracle for events
                 new_corps = cls._get_incorporations_by_event(cursor, events)
-                Director.reset_dirs_by_events(cursor=cursor, event_ids=events)
+                Party.reset_dirs_by_events(cursor=cursor, event_ids=events)
                 Office.reset_offices_by_events(cursor=cursor, event_ids=events)
                 Business.reset_corp_states(cursor=cursor, event_ids=annual_report_events)
                 Business.reset_corporations(cursor=cursor, event_info=events_info, event_ids=events)
