@@ -188,28 +188,28 @@ def test_validate_incorporation_role(session, test_name, role_1, role_2, role_3,
         ('SUCCESS', '123 st', 'Vancouver', 'CA', 'h0h0h0', 'BC', None, None),
         ('FAIL_INVALID_STREET', None, 'Vancouver', 'CA', 'h0h0h0', 'BC',
             HTTPStatus.BAD_REQUEST, [[{
-                'error': 'Mailing address streetAddress None is invalid',
-                'path': '/filing/incorporationApplication/parties/mailingAddress/streetAddress/None/'
+                'error': 'Person 1: Mailing address streetAddress None is invalid',
+                'path': '/filing/incorporationApplication/parties/1/mailingAddress/streetAddress/None/'
             }]]),
         ('FAIL_INVALID_CITY', '123 St', None, 'CA', 'h0h0h0', 'BC',
             HTTPStatus.BAD_REQUEST, [[{
-                'error': 'Mailing address addressCity None is invalid',
-                'path': '/filing/incorporationApplication/parties/mailingAddress/addressCity/None/'
+                'error': 'Person 1: Mailing address addressCity None is invalid',
+                'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressCity/None/'
             }]]),
         ('FAIL_INVALID_COUNTRY', '123 St', 'Vancouver', None, 'h0h0h0', 'BC',
             HTTPStatus.BAD_REQUEST, [[{
-                'error': 'Mailing address addressCountry None is invalid',
-                'path': '/filing/incorporationApplication/parties/mailingAddress/addressCountry/None/'
+                'error': 'Person 1: Mailing address addressCountry None is invalid',
+                'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressCountry/None/'
             }]]),
         ('FAIL_INVALID_POSTAL_CODE', '123 St', 'Vancouver', 'CA', None, 'BC',
             HTTPStatus.BAD_REQUEST, [[{
-                'error': 'Mailing address postalCode None is invalid',
-                'path': '/filing/incorporationApplication/parties/mailingAddress/postalCode/None/'
+                'error': 'Person 1: Mailing address postalCode None is invalid',
+                'path': '/filing/incorporationApplication/parties/1/mailingAddress/postalCode/None/'
             }]]),
         ('FAIL_INVALID_REGION', '123 st', 'Vancouver', 'CA', 'h0h0h0', None,
             HTTPStatus.BAD_REQUEST, [[{
-                'error': 'Mailing address addressRegion None is invalid',
-                'path': '/filing/incorporationApplication/parties/mailingAddress/addressRegion/None/'
+                'error': 'Person 1: Mailing address addressRegion None is invalid',
+                'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressRegion/None/'
             }]])
     ])
 def test_validate_incorporation_parties_mailing_address(session, test_name, mock_street, mock_city, mock_country,

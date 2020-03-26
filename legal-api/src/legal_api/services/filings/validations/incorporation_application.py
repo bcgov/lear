@@ -130,11 +130,11 @@ def validate_parties_mailing_address(incorporation_json) -> Error:
     for item in parties_array:
         for k, v in item['mailingAddress'].items():
             if v is None:
-                err_path = '/filing/incorporationApplication/parties/mailingAddress/%s/%s/' % (
-                    k, v
+                err_path = '/filing/incorporationApplication/parties/%s/mailingAddress/%s/%s/' % (
+                    item['person']['id'], k, v
                 )
-                msg.append({'error': 'Mailing address %s %s is invalid' % (
-                    k, v
+                msg.append({'error': 'Person %s: Mailing address %s %s is invalid' % (
+                    item['person']['id'], k, v
                 ),
                             'path': err_path})
 
