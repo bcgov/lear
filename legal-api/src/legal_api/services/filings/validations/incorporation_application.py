@@ -32,6 +32,14 @@ def validate(incorporation_json: Dict):
     if err:
         msg.append(err)
 
+    err = validate_roles(incorporation_json)
+    if err:
+        msg.append(err)
+
+    err = validate_parties_mailing_address(incorporation_json)
+    if err:
+        msg.append(err)
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
@@ -65,6 +73,71 @@ def validate_offices(incorporation_json) -> Error:
                 )
                 msg.append({'error': "Address Country must be 'CA'.",
                             'path': err_path})
+    if msg:
+        return msg
+
+    return None
+
+
+def validate_roles(incorporation_json) -> Error:
+    """Validate the required completing party of the incorporation filing."""
+    parties_array = incorporation_json['filing']['incorporationApplication']['parties']
+    msg = []
+    completing_party_count = 0
+    incorporator_count = 0
+    director_count = 0
+
+    for item in parties_array:
+        role_array = item['roles']
+
+        if 'Completing Party' in role_array:
+            completing_party_count += 1
+
+        if 'Incorporator' in role_array:
+            incorporator_count += 1
+
+        if 'Director' in role_array:
+            director_count += 1
+
+    if completing_party_count == 0:
+        err_path = '/filing/incorporationApplication/parties/roles'
+        msg.append({'error': 'Must have a minimum of one completing party', 'path': err_path})
+
+    if completing_party_count > 1:
+        err_path = '/filing/incorporationApplication/parties/roles'
+        msg.append({'error': 'Must have a maximum of one completing party', 'path': err_path})
+
+    if incorporation_json['filing']['incorporationApplication']['nameRequest']['legalType'] == 'BC':
+        if incorporator_count < 1:
+            err_path = '/filing/incorporationApplication/parties/roles'
+            msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
+
+        if director_count < 1:
+            err_path = '/filing/incorporationApplication/parties/roles'
+            msg.append({'error': 'Must have a minimum of one Director', 'path': err_path})
+
+    if msg:
+        return msg
+
+    return None
+
+
+def validate_parties_mailing_address(incorporation_json) -> Error:
+    """Validate the person data of the incorporation filing."""
+    parties_array = incorporation_json['filing']['incorporationApplication']['parties']
+    msg = []
+
+    for item in parties_array:
+        for k, v in item['mailingAddress'].items():
+            if v is None:
+                err_path = '/filing/incorporationApplication/parties/%s/mailingAddress/%s/%s/' % (
+                    item['person']['id'], k, v
+                )
+                msg.append({'error': 'Person %s: Mailing address %s %s is invalid' % (
+                    item['person']['id'], k, v
+                ),
+                            'path': err_path})
+
     if msg:
         return msg
 
