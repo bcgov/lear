@@ -116,16 +116,6 @@ def validate_roles(incorporation_json) -> Error:
             err_path = '/filing/incorporationApplication/parties/roles'
             msg.append({'error': 'Must have a minimum of one Director', 'path': err_path})
 
-#     if incorporation_json['filing']['incorporationApplication']['nameRequest']['legalType'] == 'CP':
-#         if incorporator_count < 3:
-#             err_path = '/filing/incorporationApplication/parties/roles'
-#             msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
-#
-#         if director_count < 3:
-#             err_path = '/filing/incorporationApplication/parties/roles'
-#             msg.append({'error': 'Must have a minimum of one Director', 'path': err_path})
-
-
     if msg:
         return msg
 
