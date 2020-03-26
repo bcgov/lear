@@ -155,7 +155,7 @@ class ExcelWriter:  # pylint: disable=too-few-public-methods
 
         self.__business_sheet_row_index += 1
 
-        directors = business.directors.all()
+        directors = business.party_roles.all()
         for director in directors:
             self.__write_director_to_excel(business.identifier, director)
 
@@ -173,24 +173,24 @@ class ExcelWriter:  # pylint: disable=too-few-public-methods
         self.__director_sheet.write(
             self.__director_sheet_row_index, 0, format_non_date(business_identifier))
         self.__director_sheet.write(
-            self.__director_sheet_row_index, 1, format_non_date(director.first_name))
+            self.__director_sheet_row_index, 1, format_non_date(director.party.first_name))
         self.__director_sheet.write(
-            self.__director_sheet_row_index, 2, format_non_date(director.middle_initial))
+            self.__director_sheet_row_index, 2, format_non_date(director.party.middle_initial))
         self.__director_sheet.write(
-            self.__director_sheet_row_index, 3, format_non_date(director.last_name))
+            self.__director_sheet_row_index, 3, format_non_date(director.party.last_name))
         self.__director_sheet.write(
-            self.__director_sheet_row_index, 4, format_non_date(director.title))
+            self.__director_sheet_row_index, 4, format_non_date(director.party.title))
         self.__director_sheet.write(
             self.__director_sheet_row_index, 5, format_date(director.appointment_date))
         self.__director_sheet.write(
             self.__director_sheet_row_index, 6, format_date(director.cessation_date))
 
-        delivery_address = director.delivery_address
+        delivery_address = director.party.delivery_address
         if delivery_address:
             self.__write_director_address_to_excel(
                 business_identifier, director, delivery_address, self.__director_sheet_row_index)
 
-        mailing_address = director.mailing_address
+        mailing_address = director.party.mailing_address
         if mailing_address:
             self.__write_director_address_to_excel(
                 business_identifier, director, mailing_address, self.__director_sheet_row_index)
@@ -202,9 +202,9 @@ class ExcelWriter:  # pylint: disable=too-few-public-methods
         self.__director_address_sheet.write(
             self.__director_address_sheet_row_index, 0, format_non_date(business_identifier))
         self.__director_address_sheet.write(
-            self.__director_address_sheet_row_index, 1, format_non_date(director.first_name))
+            self.__director_address_sheet_row_index, 1, format_non_date(director.party.first_name))
         self.__director_address_sheet.write(
-            self.__director_address_sheet_row_index, 2, format_non_date(director.last_name))
+            self.__director_address_sheet_row_index, 2, format_non_date(director.party.last_name))
         self.__director_address_sheet.write(
             self.__director_address_sheet_row_index, 3, format_non_date(director_address.address_type))
         self.__director_address_sheet.write(

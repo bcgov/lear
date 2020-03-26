@@ -1,7 +1,7 @@
 # pylint: disable=invalid-name
 """Util class to convert to json."""
 from flask import jsonify
-from legal_api.models.business import Address
+from legal_api.models.business import Address, PartyRole
 from legal_api.models.office import OfficeType
 
 from data_reset_tool.converter.utils import format_boolean, format_date, format_non_date
@@ -42,7 +42,7 @@ class JsonConverter:  # pylint: disable=too-few-public-methods
             'lastLedgerTimestamp': format_date(business.last_ledger_timestamp),
             'submitterUserId': format_non_date(business.submitter_userid),
             'lastModified': format_date(business.last_modified),
-            'directors': self.__json_directors(business.directors),
+            'directors': self.__json_directors(PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value)),
             'registeredOffice': registered_office,
             OfficeType.REGISTERED: format_non_date(registered_office),
             OfficeType.RECORDS: format_non_date(records_office),
@@ -56,14 +56,14 @@ class JsonConverter:  # pylint: disable=too-few-public-methods
 
         for director in directors:
             d = {
-                'firstName': format_non_date(director.first_name),
-                'middleInitial': format_non_date(director.middle_initial),
-                'lastName': format_non_date(director.last_name),
-                'title': format_non_date(director.title),
+                'firstName': format_non_date(director.party.first_name),
+                'middleInitial': format_non_date(director.party.middle_initial),
+                'lastName': format_non_date(director.party.last_name),
+                'title': format_non_date(director.party.title),
                 'appointmentDate': format_date(director.appointment_date),
                 'cessationDate': format_date(director.cessation_date),
-                'deliveryAddress': self.__format_address(director.delivery_address),
-                'mailingAddress': self.__format_address(director.mailing_address)
+                'deliveryAddress': self.__format_address(director.party.delivery_address),
+                'mailingAddress': self.__format_address(director.party.mailing_address)
             }
             directors_json_list.append(d)
 

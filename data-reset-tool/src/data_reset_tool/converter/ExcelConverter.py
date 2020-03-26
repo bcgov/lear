@@ -3,9 +3,10 @@
 import xlrd
 from flask import json
 from legal_api import db
-from legal_api.models.business import Address, Business, Filing, Party, PartyRole
+from legal_api.models.business import Address, Business, Filing, PartyRole
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.office import Office, OfficeType
+from legal_api.models.party_role import Party
 from sqlalchemy_continuum import versioning_manager
 
 from data_reset_tool.converter.utils import SheetName
@@ -123,7 +124,7 @@ class ExcelConverter:
                     party=party
                 )
 
-                business.party_role.append(party_role)
+                business.party_roles.append(party_role)
 
         db.session.add(business)
         business.save()
