@@ -99,27 +99,27 @@ def validate_roles(incorporation_json) -> Error:
         if role_array.count('Director') == 1:
             director_count += 1
 
-
     if completing_party_count == 0:
         err_path = '/filing/incorporationApplication/parties/roles'
-        msg.append({'error': "Must have a minimum of one completing party", 'path': err_path})
+        msg.append({'error': 'Must have a minimum of one completing party', 'path': err_path})
 
     if completing_party_count >= 2:
         err_path = '/filing/incorporationApplication/parties/roles'
-        msg.append({'error': "Must have a maximum of one completing party", 'path': err_path})
+        msg.append({'error': 'Must have a maximum of one completing party', 'path': err_path})
 
     if incorporator_count < 1:
         err_path = '/filing/incorporationApplication/parties/roles'
-        msg.append({'error': "Must have a minimum of one Incorporator", 'path': err_path})
+        msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
 
     if director_count < 1:
         err_path = '/filing/incorporationApplication/parties/roles'
-        msg.append({'error': "Must have a minimum of one Director", 'path': err_path})
+        msg.append({'error': 'Must have a minimum of one Director', 'path': err_path})
 
     if msg:
         return msg
 
     return None
+
 
 def validate_parties_mailing_address(incorporation_json) -> Error:
     """Validate the person data of the incorporation filing."""

@@ -30,6 +30,7 @@ from . import lists_are_equal
 @pytest.mark.parametrize(
     'test_name, delivery_region, delivery_country, mailing_region, mailing_country, expected_code, expected_msg',
     [
+        ('SUCCESS', 'BC', 'CA', 'BC', 'CA', None, None),
         ('FAIL_NOT_BC_DELIVERY_REGION', 'AB', 'CA', 'BC', 'CA',
             HTTPStatus.BAD_REQUEST, [[
                {'error': "Address Region must be 'BC'.",
@@ -91,8 +92,7 @@ from . import lists_are_equal
                  'path': '/filing/incorporationApplication/offices/recordsOffice/mailingAddress/addressRegion'},
                 {'error': "Address Country must be 'CA'.",
                  'path': '/filing/incorporationApplication/offices/recordsOffice/mailingAddress/addressCountry'}
-            ]]),
-        ('SUCCESS', 'BC', 'CA', 'BC', 'CA', None, None)
+            ]])
     ])
 def test_validate_incorporation_addresses_basic(session, test_name, delivery_region, delivery_country, mailing_region,
                                                 mailing_country, expected_code, expected_msg):
@@ -107,7 +107,7 @@ def test_validate_incorporation_addresses_basic(session, test_name, delivery_reg
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
                              'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2019-04-15T00:00:00+00:00'}
 
-    f['filing']['incorporationApplication'] = INCORPORATION
+    f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
     f['filing']['incorporationApplication']['nameRequest']['legalType'] = 'BC'
     f['filing']['incorporationApplication']['contactPoint']['email'] = 'no_one@never.get'
@@ -140,19 +140,17 @@ def test_validate_incorporation_addresses_basic(session, test_name, delivery_reg
 @pytest.mark.parametrize(
     'test_name, role_1, role_2, role_3, role_4, expected_code, expected_msg',
     [
+        ('SUCCESS', 'Completing Party', 'Director', 'Incorporator', 'Director', None, None),
         ('FAIL_NO_COMPLETING_PARTY', 'Director', 'Incorporator', 'Incorporator', 'Director',
             HTTPStatus.BAD_REQUEST, [[{
-                'error': "Must have a minimum of one completing party",
+                'error': 'Must have a minimum of one completing party',
                 'path': '/filing/incorporationApplication/parties/roles'
-            }]]
-        ),
+            }]]),
         ('FAIL_EXCEEDING_ONE_COMPLETING_PARTY', 'Completing Party', 'Director', 'Incorporator', 'Completing Party',
             HTTPStatus.BAD_REQUEST, [[{
-                'error': "Must have a maximum of one completing party",
+                'error': 'Must have a maximum of one completing party',
                 'path': '/filing/incorporationApplication/parties/roles'
-            }]]
-        ),
-        ('SUCCESS', 'Completing Party', 'Director', 'Incorporator', 'Director', None, None),
+            }]])
     ])
 def test_validate_incorporation_role(session, test_name, role_1, role_2, role_3, role_4, expected_code, expected_msg):
     """Assert that incorporation parties roles can be validated."""
@@ -164,9 +162,9 @@ def test_validate_incorporation_role(session, test_name, role_1, role_2, role_3,
 
     f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
-                               'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2019-04-15T00:00:00+00:00'}
+                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2019-04-15T00:00:00+00:00'}
 
-    f['filing']['incorporationApplication'] = INCORPORATION
+    f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
     f['filing']['incorporationApplication']['nameRequest']['legalType'] = 'BC'
     f['filing']['incorporationApplication']['contactPoint']['email'] = 'no_one@never.get'
@@ -191,23 +189,36 @@ def test_validate_incorporation_role(session, test_name, role_1, role_2, role_3,
 
 @pytest.mark.parametrize(
     'test_name, mock_street, mock_city, mock_country, mock_postal_code, mock_region, expected_code, expected_msg',
-    [
+  [
+        ('SUCCESS', '123 st', 'Vancouver', 'CA', 'h0h0h0', 'BC', None, None),
         ('FAIL_INVALID_STREET', None, 'Vancouver', 'CA', 'h0h0h0', 'BC',
             HTTPStatus.BAD_REQUEST, [[{
-                'error': "Mailing address streetAddress None is invalid",
+                'error': 'Mailing address streetAddress None is invalid',
                 'path': '/filing/incorporationApplication/parties/mailingAddress/streetAddress/None/'
-            }]]
-        ),
+            }]]),
         ('FAIL_INVALID_CITY', '123 St', None, 'CA', 'h0h0h0', 'BC',
             HTTPStatus.BAD_REQUEST, [[{
-                'error': "Mailing address addressCity None is invalid",
+                'error': 'Mailing address addressCity None is invalid',
                 'path': '/filing/incorporationApplication/parties/mailingAddress/addressCity/None/'
-            }]]
-        ),
-        ('SUCCESS', '123 st', 'Vancouver', 'CA', 'h0h0h0', 'BC', None, None),
+            }]]),
+        ('FAIL_INVALID_COUNTRY', '123 St', 'Vancouver', None, 'h0h0h0', 'BC',
+            HTTPStatus.BAD_REQUEST, [[{
+                'error': 'Mailing address addressCountry None is invalid',
+                'path': '/filing/incorporationApplication/parties/mailingAddress/addressCountry/None/'
+            }]]),
+        ('FAIL_INVALID_POSTAL_CODE', '123 St', 'Vancouver', 'CA', None, 'BC',
+            HTTPStatus.BAD_REQUEST, [[{
+                'error': 'Mailing address postalCode None is invalid',
+                'path': '/filing/incorporationApplication/parties/mailingAddress/postalCode/None/'
+            }]]),
+        ('FAIL_INVALID_REGION', '123 st', 'Vancouver', 'CA', 'h0h0h0', None,
+            HTTPStatus.BAD_REQUEST, [[{
+                'error': 'Mailing address addressRegion None is invalid',
+                'path': '/filing/incorporationApplication/parties/mailingAddress/addressRegion/None/'
+            }]])
     ])
-def test_validate_incorporation_role(session, test_name, mock_street, mock_city, mock_country, mock_postal_code,
-                                     mock_region, expected_code, expected_msg):
+def test_validate_incorporation_parties_mailingAddress(session, test_name, mock_street, mock_city, mock_country,
+                                                       mock_postal_code, mock_region, expected_code, expected_msg):
     """Assert that incorporation parties mailing address is not empty"""
     # setup
     identifier = 'NR 1234567'
@@ -219,7 +230,7 @@ def test_validate_incorporation_role(session, test_name, mock_street, mock_city,
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
                                'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2019-04-15T00:00:00+00:00'}
 
-    f['filing']['incorporationApplication'] = INCORPORATION
+    f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
     f['filing']['incorporationApplication']['nameRequest']['legalType'] = 'BC'
     f['filing']['incorporationApplication']['contactPoint']['email'] = 'no_one@never.get'
@@ -228,7 +239,9 @@ def test_validate_incorporation_role(session, test_name, mock_street, mock_city,
     f['filing']['incorporationApplication']['parties'][0]['mailingAddress']['streetAddress'] = mock_street
     f['filing']['incorporationApplication']['parties'][0]['mailingAddress']['addressCity'] = mock_city
     f['filing']['incorporationApplication']['parties'][0]['mailingAddress']['addressCountry'] = mock_country
-
+    f['filing']['incorporationApplication']['parties'][0]['mailingAddress']['postalCode'] = mock_postal_code
+    f['filing']['incorporationApplication']['parties'][0]['mailingAddress']['addressRegion'] = mock_region
+    print(f)
     # perform test
     with freeze_time(now):
         err = validate(business, f)
