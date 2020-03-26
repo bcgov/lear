@@ -189,7 +189,7 @@ def test_validate_incorporation_role(session, test_name, role_1, role_2, role_3,
 
 @pytest.mark.parametrize(
     'test_name, mock_street, mock_city, mock_country, mock_postal_code, mock_region, expected_code, expected_msg',
-  [
+    [
         ('SUCCESS', '123 st', 'Vancouver', 'CA', 'h0h0h0', 'BC', None, None),
         ('FAIL_INVALID_STREET', None, 'Vancouver', 'CA', 'h0h0h0', 'BC',
             HTTPStatus.BAD_REQUEST, [[{
@@ -218,8 +218,8 @@ def test_validate_incorporation_role(session, test_name, role_1, role_2, role_3,
             }]])
     ])
 def test_validate_incorporation_parties_mailing_address(session, test_name, mock_street, mock_city, mock_country,
-                                                       mock_postal_code, mock_region, expected_code, expected_msg):
-    """Assert that incorporation parties mailing address is not empty"""
+                                                        mock_postal_code, mock_region, expected_code, expected_msg):
+    """Assert that incorporation parties mailing address is not empty."""
     # setup
     identifier = 'NR 1234567'
     now = date(2020, 9, 17)
