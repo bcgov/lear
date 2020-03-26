@@ -90,30 +90,41 @@ def validate_roles(incorporation_json) -> Error:
     for item in parties_array:
         role_array = item['roles']
 
-        if role_array.count('Completing Party') == 1:
+        if 'Completing Party' in role_array:
             completing_party_count += 1
 
-        if role_array.count('Incorporator') == 1:
+        if 'Incorporator' in role_array:
             incorporator_count += 1
 
-        if role_array.count('Director') == 1:
+        if 'Director' in role_array:
             director_count += 1
 
     if completing_party_count == 0:
         err_path = '/filing/incorporationApplication/parties/roles'
         msg.append({'error': 'Must have a minimum of one completing party', 'path': err_path})
 
-    if completing_party_count >= 2:
+    if completing_party_count > 1:
         err_path = '/filing/incorporationApplication/parties/roles'
         msg.append({'error': 'Must have a maximum of one completing party', 'path': err_path})
 
-    if incorporator_count < 1:
-        err_path = '/filing/incorporationApplication/parties/roles'
-        msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
+    if incorporation_json['filing']['incorporationApplication']['nameRequest']['legalType'] == 'BC':
+        if incorporator_count < 1:
+            err_path = '/filing/incorporationApplication/parties/roles'
+            msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
 
-    if director_count < 1:
-        err_path = '/filing/incorporationApplication/parties/roles'
-        msg.append({'error': 'Must have a minimum of one Director', 'path': err_path})
+        if director_count < 1:
+            err_path = '/filing/incorporationApplication/parties/roles'
+            msg.append({'error': 'Must have a minimum of one Director', 'path': err_path})
+
+    if incorporation_json['filing']['incorporationApplication']['nameRequest']['legalType'] == 'CP':
+        if incorporator_count < 3:
+            err_path = '/filing/incorporationApplication/parties/roles'
+            msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
+
+        if director_count < 3:
+            err_path = '/filing/incorporationApplication/parties/roles'
+            msg.append({'error': 'Must have a minimum of one Director', 'path': err_path})
+
 
     if msg:
         return msg
