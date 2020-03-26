@@ -21,8 +21,9 @@ from .comment import Comment
 from .filing import Filing
 from .office import Office, OfficeType
 from .party_role import Party, PartyRole
+from .share_structure import ShareStructure
 from .user import User, UserSchema
 
 
 __all__ = ('db', 'ma', 'Address', 'Business', 'BusinessSchema', 'ColinLastUpdate', 'Comment', 'Filing',
-           'UserSchema', 'Office', 'OfficeType', 'Party', 'PartyRole', 'User')
+           'UserSchema', 'Office', 'OfficeType', 'Party', 'PartyRole', 'User', 'ShareStructure')
