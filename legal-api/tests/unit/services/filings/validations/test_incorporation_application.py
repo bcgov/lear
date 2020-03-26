@@ -27,6 +27,13 @@ from legal_api.services.filings import validate
 from . import lists_are_equal
 
 
+# setup
+identifier = 'NR 1234567'
+now = date(2020, 9, 17)
+founding_date = now - datedelta.YEAR
+business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
+
+
 @pytest.mark.parametrize(
     'test_name, delivery_region, delivery_country, mailing_region, mailing_country, expected_code, expected_msg',
     [
@@ -97,12 +104,6 @@ from . import lists_are_equal
 def test_validate_incorporation_addresses_basic(session, test_name, delivery_region, delivery_country, mailing_region,
                                                 mailing_country, expected_code, expected_msg):
     """Assert that incorporation offices can be validated."""
-    # setup
-    identifier = 'NR 1234567'
-    now = date(2020, 9, 17)
-    founding_date = now - datedelta.YEAR
-    business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
-
     f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
                              'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2019-04-15T00:00:00+00:00'}
@@ -154,12 +155,6 @@ def test_validate_incorporation_addresses_basic(session, test_name, delivery_reg
     ])
 def test_validate_incorporation_role(session, test_name, role_1, role_2, role_3, role_4, expected_code, expected_msg):
     """Assert that incorporation parties roles can be validated."""
-    # setup
-    identifier = 'NR 1234567'
-    now = date(2020, 9, 17)
-    founding_date = now - datedelta.YEAR
-    business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
-
     f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
                              'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2019-04-15T00:00:00+00:00'}
@@ -220,12 +215,6 @@ def test_validate_incorporation_role(session, test_name, role_1, role_2, role_3,
 def test_validate_incorporation_parties_mailing_address(session, test_name, mock_street, mock_city, mock_country,
                                                         mock_postal_code, mock_region, expected_code, expected_msg):
     """Assert that incorporation parties mailing address is not empty."""
-    # setup
-    identifier = 'NR 1234567'
-    now = date(2020, 9, 17)
-    founding_date = now - datedelta.YEAR
-    business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
-
     f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
                              'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2019-04-15T00:00:00+00:00'}
