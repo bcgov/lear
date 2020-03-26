@@ -217,7 +217,7 @@ def test_validate_incorporation_role(session, test_name, role_1, role_2, role_3,
                 'path': '/filing/incorporationApplication/parties/mailingAddress/addressRegion/None/'
             }]])
     ])
-def test_validate_incorporation_parties_mailingAddress(session, test_name, mock_street, mock_city, mock_country,
+def test_validate_incorporation_parties_mailing_address(session, test_name, mock_street, mock_city, mock_country,
                                                        mock_postal_code, mock_region, expected_code, expected_msg):
     """Assert that incorporation parties mailing address is not empty"""
     # setup
@@ -228,7 +228,7 @@ def test_validate_incorporation_parties_mailingAddress(session, test_name, mock_
 
     f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
-                               'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2019-04-15T00:00:00+00:00'}
+                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2019-04-15T00:00:00+00:00'}
 
     f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
@@ -241,7 +241,7 @@ def test_validate_incorporation_parties_mailingAddress(session, test_name, mock_
     f['filing']['incorporationApplication']['parties'][0]['mailingAddress']['addressCountry'] = mock_country
     f['filing']['incorporationApplication']['parties'][0]['mailingAddress']['postalCode'] = mock_postal_code
     f['filing']['incorporationApplication']['parties'][0]['mailingAddress']['addressRegion'] = mock_region
-    print(f)
+
     # perform test
     with freeze_time(now):
         err = validate(business, f)
