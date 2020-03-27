@@ -25,6 +25,7 @@ from flask_restplus import Api
 
 from .business import API as BUSINESS_API
 from .meta import API as META_API
+from .namerequest import API as NAME_REQUEST_PROXY_API
 from .ops import API as OPS_API
 
 
@@ -62,3 +63,4 @@ API = Api(API_BLUEPRINT,
 
 API.add_namespace(META_API, path='/meta')
 API.add_namespace(BUSINESS_API, path='/businesses')
+API.add_namespace(NAME_REQUEST_PROXY_API, path='/nameRequests')
