@@ -43,6 +43,18 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
         if err:
             return err
 
+        # For now the correction validators will get called here, these might be the same rules
+        # so these 2 sections could get collapsed
+        for k in filing_json['filing'].keys():
+            # Check if the JSON key exists in the FILINGS reference Dictionary
+            if Filing.FILINGS.get(k, None):
+
+                if k == Filing.FILINGS['changeOfAddress'].get('name'):
+                    err = coa_validate(business, filing_json)
+
+        if err:
+            return err
+
     else:
         for k in filing_json['filing'].keys():
             # Check if the JSON key exists in the FILINGS reference Dictionary
