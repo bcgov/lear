@@ -17,6 +17,11 @@
 Test-Suite to ensure that the ShareStructure Model is working as expected.
 """
 
+from http import HTTPStatus
+
+import pytest
+
+from legal_api.exceptions import BusinessException
 from legal_api.models import ShareStructure
 from tests.unit.models import factory_business
 
@@ -64,7 +69,7 @@ def test_share_class_series_save_to_business(session):
     )
     share_series_2 = ShareStructure(
         name='Share Series 2',
-        share_type='class',
+        share_type='series',
         priority=2,
         max_shares=300,
         par_value=0.852,
@@ -112,7 +117,7 @@ def test_share_class_json(session):
     )
     share_series_2 = ShareStructure(
         name='Share Series 2',
-        share_type='class',
+        share_type='series',
         priority=2,
         max_shares=300,
         par_value=0.852,
@@ -151,7 +156,7 @@ def test_share_class_json(session):
             },
             {
                 'name': 'Share Series 2',
-                'shareStructureType': 'class',
+                'shareStructureType': 'series',
                 'priority': 2,
                 'maxNumberOfShares': 300,
                 'parValue': 0.852,
@@ -162,3 +167,27 @@ def test_share_class_json(session):
         ]
     }
     assert share_class_json == res
+
+
+def test_invalid_share(session):
+    """Assert the share structure model validates the type correctly."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    share_class = ShareStructure(
+        name='Share Class 1',
+        share_type='series',
+        priority=1,
+        max_shares=1000,
+        par_value=0.852,
+        currency='CAD',
+        special_rights=False,
+        business_id=business.id
+    )
+
+    with pytest.raises(BusinessException) as share_type_error:
+        share_class.save()
+    session.rollback()
+
+    assert share_type_error
+    assert share_type_error.value.status_code == HTTPStatus.BAD_REQUEST
+    assert share_type_error.value.error == 'The share structure Share Class 1 has invalid type.'

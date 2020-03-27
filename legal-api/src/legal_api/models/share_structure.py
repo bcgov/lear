@@ -14,8 +14,12 @@
 """This module holds data for share structure (class and series)."""
 
 from enum import Enum
+from http import HTTPStatus
 
+from sqlalchemy import event
 from sqlalchemy.orm import backref
+
+from legal_api.exceptions import BusinessException
 
 from .db import db
 
@@ -75,3 +79,27 @@ class ShareStructure(db.Model):  # pylint: disable=too-many-instance-attributes
         share_class['series'] = series
 
         return share_class
+
+
+@event.listens_for(ShareStructure, 'before_insert')
+@event.listens_for(ShareStructure, 'before_update')
+def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
+    """Run checks/updates before adding/changing the share structure."""
+    share_structure = target
+
+    if not share_structure.parent_share:
+        if share_structure.share_type is None:
+            share_structure.share_type = ShareStructure.ShareStructureTypes.CLASS.value
+        elif share_structure.share_type != ShareStructure.ShareStructureTypes.CLASS.value:
+            raise BusinessException(
+                error=f'The share structure {share_structure.name} has invalid type.',
+                status_code=HTTPStatus.BAD_REQUEST
+            )
+    else:
+        if share_structure.share_type is None:
+            share_structure.share_type = ShareStructure.ShareStructureTypes.SERIES.value
+        elif share_structure.share_type != ShareStructure.ShareStructureTypes.SERIES.value:
+            raise BusinessException(
+                error=f'The share structure {share_structure.name} has invalid type.',
+                status_code=HTTPStatus.BAD_REQUEST
+            )
