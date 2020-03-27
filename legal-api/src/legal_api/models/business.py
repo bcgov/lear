@@ -25,7 +25,7 @@ from sqlalchemy.orm import backref
 from legal_api.exceptions import BusinessException
 
 from .db import db, ma
-from .share_structure import ShareStructure  # noqa: F401 pylint: disable=unused-import
+from .share_class import ShareClass  # noqa: F401 pylint: disable=unused-import
 
 
 from .address import Address  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
@@ -68,7 +68,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     filings = db.relationship('Filing', lazy='dynamic')
     offices = db.relationship('Office', lazy='dynamic')
     party_roles = db.relationship('PartyRole', lazy='dynamic')
-    shares = db.relationship('ShareStructure', lazy='dynamic')
+    share_classes = db.relationship('ShareClass', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):

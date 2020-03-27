@@ -11,46 +11,39 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This module holds data for share structure (class and series)."""
+"""This module holds data for share classes."""
 
-from enum import Enum
 from http import HTTPStatus
 
 from sqlalchemy import event
-from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
 
 from .db import db
+from .share_series import ShareSeries  # noqa: F401 pylint: disable=unused-import
 
 
-class ShareStructure(db.Model):  # pylint: disable=too-many-instance-attributes
-    """This class manages the share structure (class and series)."""
-
-    class ShareStructureTypes(Enum):
-        """Render an Enum of the share structure types."""
-
-        CLASS = 'class'
-        SERIES = 'series'
+class ShareClass(db.Model):  # pylint: disable=too-many-instance-attributes
+    """This class manages the share classes."""
 
     __versioned__ = {}
-    __tablename__ = 'share_structure'
+    __tablename__ = 'share_classes'
 
     id = db.Column(db.Integer, primary_key=True)
-    share_type = db.Column('share_type', db.String(20))
     name = db.Column('name', db.String(1000), index=True)
-    priority = db.Column('priority', db.Integer)
+    priority = db.Column('priority', db.Integer, nullable=True)
+    max_share_flag = db.Column('max_share_flag', db.Boolean, unique=False, default=False)
     max_shares = db.Column('max_shares', db.Integer, nullable=True)
+    par_value_flag = db.Column('par_value_flag', db.Boolean, unique=False, default=False)
     par_value = db.Column('par_value', db.Float, nullable=True)
     currency = db.Column('currency', db.String(10), nullable=True)
-    special_rights = db.Column('special_rights', db.Boolean, unique=False, default=False)
+    special_rights_flag = db.Column('special_rights_flag', db.Boolean, unique=False, default=False)
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
-    parent_share_id = db.Column(db.Integer, db.ForeignKey('share_structure.id'))
 
     # Relationships
-    parent_share = db.relationship('ShareStructure', remote_side=[id], backref=backref('series'))
+    series = db.relationship('ShareSeries', backref='share_class')
 
     def save(self):
         """Save the object to the database immediately."""
@@ -63,12 +56,13 @@ class ShareStructure(db.Model):  # pylint: disable=too-many-instance-attributes
         share_class = {
             'id': self.id,
             'name': self.name,
-            'shareStructureType': self.share_type,
             'priority': self.priority,
+            'hasMaximumShares': self.max_share_flag,
             'maxNumberOfShares': self.max_shares,
+            'hasParValue': self.par_value_flag,
             'parValue': self.par_value,
             'currency': self.currency,
-            'hasRightsOrRestrictions': self.special_rights
+            'hasRightsOrRestrictions': self.special_rights_flag
         }
 
         series = []
@@ -81,25 +75,32 @@ class ShareStructure(db.Model):  # pylint: disable=too-many-instance-attributes
         return share_class
 
 
-@event.listens_for(ShareStructure, 'before_insert')
-@event.listens_for(ShareStructure, 'before_update')
+@event.listens_for(ShareClass, 'before_insert')
+@event.listens_for(ShareClass, 'before_update')
 def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
-    """Run checks/updates before adding/changing the share structure."""
-    share_structure = target
+    """Run checks/updates before adding/changing the share class."""
+    share_class = target
 
-    if not share_structure.parent_share:
-        if share_structure.share_type is None:
-            share_structure.share_type = ShareStructure.ShareStructureTypes.CLASS.value
-        elif share_structure.share_type != ShareStructure.ShareStructureTypes.CLASS.value:
+    if share_class.max_share_flag:
+        if not share_class.max_shares:
             raise BusinessException(
-                error=f'The share structure {share_structure.name} has invalid type.',
+                error=f'The share class {share_class.name} must specify maximum number of share.',
                 status_code=HTTPStatus.BAD_REQUEST
             )
     else:
-        if share_structure.share_type is None:
-            share_structure.share_type = ShareStructure.ShareStructureTypes.SERIES.value
-        elif share_structure.share_type != ShareStructure.ShareStructureTypes.SERIES.value:
+        share_class.max_shares = None
+
+    if share_class.par_value_flag:
+        if not share_class.par_value:
             raise BusinessException(
-                error=f'The share structure {share_structure.name} has invalid type.',
+                error=f'The share class {share_class.name} must specify par value.',
                 status_code=HTTPStatus.BAD_REQUEST
             )
+        if not share_class.currency:
+            raise BusinessException(
+                error=f'The share class {share_class.name} must specify currency.',
+                status_code=HTTPStatus.BAD_REQUEST
+            )
+    else:
+        share_class.par_value = None
+        share_class.currency = None
