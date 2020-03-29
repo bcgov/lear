@@ -26,8 +26,8 @@ from colin_api.utils.util import cors_preflight
 
 
 @cors_preflight('GET')
-@API.route('/<string:identifier>/directors')
-class DirectorsInfo(Resource):
+@API.route('/<string:identifier>/parties')
+class PartiesInfo(Resource):
     """Meta information about the overall service."""
 
     @staticmethod

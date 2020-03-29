@@ -320,6 +320,9 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         # delete parties created on these events
         delete_from_table_by_event_ids(cursor=cursor, event_ids=event_ids, table='corp_party')
 
+        # delete parties created on these events
+        delete_from_table_by_event_ids(cursor=cursor, event_ids=event_ids, table='completing_party', column='event_id')
+
         # delete addresses associated with parties that were deleted
         Address.delete(cursor=cursor, address_ids=addrs_to_delete)
 

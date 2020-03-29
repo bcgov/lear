@@ -737,8 +737,7 @@ class Filing:
         business = filing.business.as_dict()
         for party in parties:
             for role in party['roles']:
-                party['officer'] = party['person']
-                party['role_type'] = Party.roleTypes[role.lower()]
+                party['role_type'] = Party.roleTypes[(role['roleType']).lower()] #Party.roleTypes[role.lower()]
                 Party.create_new_corp_party(cursor, event_id, party, business)
 
     @classmethod
