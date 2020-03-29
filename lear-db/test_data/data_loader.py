@@ -201,7 +201,7 @@ with open('coops.csv', 'r') as csvfile:
                         # get business directors
                         r = requests.get(
                             COLIN_API + '/api/v1/businesses/' +
-                            row['CORP_NUM'] + '/directors',
+                            row['CORP_NUM'] + '/parties',
                             timeout=TIMEOUT)
                         if r.status_code != HTTPStatus.OK \
                                 or not r.json():

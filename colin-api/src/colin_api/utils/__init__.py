@@ -56,7 +56,7 @@ def stringify_list(list_orig: list):
     return list_str
 
 
-def delete_from_table_by_event_ids(cursor, event_ids: list, table: str, column: str='start_event_id'):
+def delete_from_table_by_event_ids(cursor, event_ids: list, table: str, column: str = 'start_event_id'):
     """Delete rows with given event ids from given table."""
     try:
         # table is a value set by the code: not possible to be sql injected from a request

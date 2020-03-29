@@ -39,7 +39,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
     role_type = None
     org_num = None
 
-    roleTypes = {
+    role_types = {
         'director': 'DIR',
         'incorporator': 'INC',
         'liquidator': 'LIQ',
@@ -82,9 +82,9 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             row = dict(zip([x[0].lower() for x in description], row))
             if row['appointment_dt']:
                 party.officer = {'firstName': row['first_nme'].strip() if row['first_nme'] else '',
-                                    'lastName': row['last_nme'].strip() if row['last_nme'] else '',
-                                    'middleInitial': row['middle_nme'] if row['middle_nme'] else '',
-                                    'organizationName': row['business_nme'] if row['business_nme'] else ''}
+                                 'lastName': row['last_nme'].strip() if row['last_nme'] else '',
+                                 'middleInitial': row['middle_nme'] if row['middle_nme'] else '',
+                                 'organizationName': row['business_nme'] if row['business_nme'] else ''}
 
                 party.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
                 party.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
@@ -116,7 +116,6 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         if role_type:
             query += f" and party_typ_cd='{role_type}'"
 
-        
         if not identifier:
             return None
 
@@ -159,10 +158,9 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         try:
             if not cursor:
                 cursor = DB.connection.cursor()
-            cursor.execute( query,
-                event_id=event_id,
-                identifier=identifier
-            )
+            cursor.execute(query,
+                           event_id=event_id,
+                           identifier=identifier)
 
             parties_list = cls._build_parties_list(cursor, event_id)
 
@@ -234,7 +232,6 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
     @classmethod
     def create_new_corp_party(cls, cursor, event_id: int = None, party: dict = None, business: dict = None):
         """Insert new party into the corp_party table."""
-
         query = """
                 insert into corp_party (corp_party_id, mailing_addr_id, delivery_addr_id, corp_num, party_typ_cd,
                 start_event_id, end_event_id, appointment_dt, cessation_dt, last_nme, middle_nme, first_nme,
@@ -265,20 +262,27 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             current_app.logger.error('Error in corp_party: Failed to get next corp_party_id.')
             raise err
         try:
-            role_type = party.get('role_type','DIR')
+            role_type = party.get('role_type', 'DIR')
 
             delivery_info = party['deliveryAddress'] if 'deliveryAddress' in party else party['mailingAddress']
-        
+
             # create new address
             delivery_addr_id = Address.create_new_address(cursor=cursor, address_info=delivery_info)
             mailing_addr_id = delivery_addr_id
-            
+
             if 'mailingAddress' in party:
                 mailing_addr_id = Address.create_new_address(cursor=cursor, address_info=party['mailingAddress'])
-            
-            
-            if role_type is not 'COMPLETING_PARTY':
 
+            if role_type == 'COMPLETING_PARTY':
+
+                cursor.execute(completing_party_query,
+                               event_id=event_id,
+                               mailing_addr_id=mailing_addr_id,
+                               last_nme=party['officer']['lastName'],
+                               middle_nme=party['officer'].get('middleInitial', ''),
+                               first_nme=party['officer']['firstName']
+                               )
+            else:
                 cursor.execute(query,
                                corp_party_id=corp_party_id,
                                mailing_addr_id=mailing_addr_id,
@@ -286,8 +290,9 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                                corp_num=business['business']['identifier'],
                                party_typ_cd=role_type,
                                start_event_id=event_id,
-                               end_event_id=event_id if party.get('cessationDate','') else None,
-                               appointment_dt=str(datetime.datetime.strptime(party['appointmentDate'], '%Y-%m-%d'))[:10],
+                               end_event_id=event_id if party.get('cessationDate', '') else None,
+                               appointment_dt=str(datetime.datetime.strptime(party['appointmentDate'],
+                                                                             '%Y-%m-%d'))[:10],
                                cessation_dt=str(datetime.datetime.strptime(party['cessationDate'], '%Y-%m-%d'))[:10]
                                if party.get('cessationDate', None) else None,
                                last_nme=party['officer']['lastName'],
@@ -295,14 +300,6 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                                first_nme=party['officer']['firstName'],
                                bus_company_num=business['business'].get('businessNumber', None),
                                business_name=party['officer'].get('organizationName', ''),
-                               )
-            else:
-                cursor.execute(completing_party_query,
-                               event_id=event_id,
-                               mailing_addr_id=mailing_addr_id,
-                               last_nme=party['officer']['lastName'],
-                               middle_nme=party['officer'].get('middleInitial', ''),
-                               first_nme=party['officer']['firstName']
                                )
 
         except Exception as err:

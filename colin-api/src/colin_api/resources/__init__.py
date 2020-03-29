@@ -24,12 +24,12 @@ from flask import Blueprint
 from flask_restplus import Api
 
 from .business import API as BUSINESS_API
-from .parties import API as DIRECTORS_API
 from .event import API as EVENT_API
 from .filing import API as FILING_API
 from .meta import API as META_API
 from .office import API as OFFICE_API
 from .ops import API as OPS_API
+from .parties import API as DIRECTORS_API
 from .reset import API as RESET_API
 
 

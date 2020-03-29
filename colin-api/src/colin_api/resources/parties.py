@@ -39,7 +39,7 @@ class PartiesInfo(Resource):
 
         try:
             party_type = request.args.get('partyType', 'DIR')
-            
+
             cursor = DB.connection.cursor()
             directors = Party.get_current(cursor=cursor, identifier=identifier, role_type=party_type)
             if not directors:

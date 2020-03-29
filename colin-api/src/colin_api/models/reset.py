@@ -17,7 +17,7 @@ Currently this only provides API versioning information
 """
 from flask import current_app
 
-from colin_api.models.filing import Business, Party, Filing, Office
+from colin_api.models.filing import Business, Filing, Office, Party
 from colin_api.resources.db import DB
 from colin_api.utils import stringify_list
 
