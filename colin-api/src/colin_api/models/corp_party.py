@@ -227,7 +227,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             if cursor.rowcount < 1:
                 current_app.logger.error(f'Director name: {first_name} {middle_initial} {last_name}'
                                          f' did not match any current parties in COLIN')
-                raise Exception
+                raise PartiesNotFoundException(identifier=corp_num)
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error(f'Error in director: Failed to end director: {director}')
