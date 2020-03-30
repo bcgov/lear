@@ -146,3 +146,26 @@ def test_share_class_currency(session):
     assert share_class_error
     assert share_class_error.value.status_code == HTTPStatus.BAD_REQUEST
     assert share_class_error.value.error == f'The share class {share_class.name} must specify currency.'
+
+
+def test_find_by_share_class_id(session):
+    """Assert that the method returns correct value."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    share_class = ShareClass(
+        name='Share Class 1',
+        priority=1,
+        max_share_flag=True,
+        max_shares=1000,
+        par_value_flag=True,
+        par_value=0.875,
+        currency='CAD',
+        special_rights_flag=False,
+        business_id=business.id
+    )
+    share_class.save()
+
+    res = ShareClass.find_by_share_class_id(share_class.id)
+
+    assert res
+    assert res.json == share_class.json

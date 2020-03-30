@@ -20,6 +20,7 @@ from .business import BusinessResource
 from .business_address import AddressResource
 from .business_directors import DirectorResource
 from .business_filings import ListFilingResource
+from .business_share_classes import ShareClassResource
 from .business_tasks import TaskListResource
 from .filing_comments import CommentResource
 

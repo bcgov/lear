@@ -74,6 +74,14 @@ class ShareClass(db.Model):  # pylint: disable=too-many-instance-attributes
 
         return share_class
 
+    @classmethod
+    def find_by_share_class_id(cls, share_class_id: int):
+        """Return the share class matching the id."""
+        share_class = None
+        if share_class_id:
+            share_class = cls.query.filter_by(id=share_class_id).one_or_none()
+        return share_class
+
 
 @event.listens_for(ShareClass, 'before_insert')
 @event.listens_for(ShareClass, 'before_update')
