@@ -60,7 +60,7 @@ class NameRequest(Resource):
             # Errors in general will just pass though,
             # 404 is overriden as it is giving namex-api specific messaging
             if nr_response.status_code == 404:
-                abort(make_response(jsonify(message='{} not found.'.format(identifier)), 404))
+                return make_response(jsonify(message='{} not found.'.format(identifier)), 404)
 
             return jsonify(nr_response.json())
         except Exception as err:
