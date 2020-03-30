@@ -81,20 +81,20 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             party.title = ''
             row = dict(zip([x[0].lower() for x in description], row))
             if row['appointment_dt']:
-                party.officer = {'firstName': row['first_nme'].strip() if row['first_nme'] else '',
-                                 'lastName': row['last_nme'].strip() if row['last_nme'] else '',
-                                 'middleInitial': row['middle_nme'] if row['middle_nme'] else '',
-                                 'organizationName': row['business_nme'] if row['business_nme'] else ''}
+                party.officer = {'firstName': (row.get('first_nme', '').strip()) or '',
+                                 'lastName': (row.get('last_nme', '').strip()) or '',
+                                 'middleInitial': (row.get('middle_nme', '')) or '',
+                                 'organizationName': (row.get('business_nme', '')) or ''}
 
                 party.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
                 party.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
                     if row['mailing_addr_id'] else party.delivery_address
                 party.appointment_date =\
-                    convert_to_json_date(row['appointment_dt']) if row['appointment_dt'] else None
-                party.cessation_date = convert_to_json_date(row['cessation_dt']) if row['cessation_dt'] else None
-                party.start_event_id = row['start_event_id'] if row['start_event_id'] else ''
-                party.end_event_id = row['end_event_id'] if row['end_event_id'] else ''
-                party.role_type = row['party_typ_cd'] if row['party_typ_cd'] else ''
+                    convert_to_json_date(row.get('appointment_dt', None))
+                party.cessation_date = convert_to_json_date(row.get('cessation_dt', None))
+                party.start_event_id = (row.get('start_event_id', '')) or ''
+                party.end_event_id = (row.get('end_event_id', '')) or ''
+                party.role_type = (row.get('party_typ_cd', '')) or ''
                 # this is in case the party was not ceased during this event
                 if event_id and party.end_event_id and party.end_event_id > event_id:
                     party.cessation_date = None
