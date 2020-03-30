@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from http import HTTPStatus
-
 """Tests to assure the name requests end-point.
 
 Test-Suite to ensure that the /nameRequests endpoint is working as expected.
 """
+from http import HTTPStatus
 
 
 def test_name_requests_success(client):
