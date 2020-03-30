@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Meta information about the service.
-
 Currently this only provides API versioning information
 """
 import datetime
@@ -88,14 +87,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             party.title = ''
             row = dict(zip([x[0].lower() for x in description], row))
             if row['appointment_dt']:
-<<<<<<< HEAD
                 party.officer = cls._get_officer(row)
-=======
-                party.officer = {'firstName': (row.get('first_nme', '').strip()) or '',
-                                 'lastName': (row.get('last_nme', '').strip()) or '',
-                                 'middleInitial': (row.get('middle_nme', '')) or '',
-                                 'organizationName': (row.get('business_nme', '')) or ''}
->>>>>>> reduce cognitive complexity
 
                 party.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
                 party.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
