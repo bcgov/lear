@@ -165,10 +165,10 @@ def test_validate_incorporation_role(session, test_name, role_1, role_2, role_3,
     f['filing']['incorporationApplication']['contactPoint']['email'] = 'no_one@never.get'
     f['filing']['incorporationApplication']['contactPoint']['phone'] = '123-456-7890'
 
-    f['filing']['incorporationApplication']['parties'][0]['roles'][0] = role_1
-    f['filing']['incorporationApplication']['parties'][0]['roles'][1] = role_2
-    f['filing']['incorporationApplication']['parties'][1]['roles'][0] = role_3
-    f['filing']['incorporationApplication']['parties'][1]['roles'].append(role_4)
+    f['filing']['incorporationApplication']['parties'][0]['roles'][0]['roleType'] = role_1
+    f['filing']['incorporationApplication']['parties'][0]['roles'][1]['roleType'] = role_2
+    f['filing']['incorporationApplication']['parties'][1]['roles'][0]['roleType'] = role_3
+    f['filing']['incorporationApplication']['parties'][1]['roles'].append({'roleType': role_4})
 
     # perform test
     with freeze_time(now):

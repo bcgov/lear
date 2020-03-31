@@ -88,16 +88,16 @@ def validate_roles(incorporation_json) -> Error:
     director_count = 0
 
     for item in parties_array:
-        role_array = item['roles']
+        for role in item['roles']:
 
-        if 'Completing Party' in role_array:
-            completing_party_count += 1
+            if role['roleType'] == 'Completing Party':
+                completing_party_count += 1
 
-        if 'Incorporator' in role_array:
-            incorporator_count += 1
+            if role['roleType'] == 'Incorporator':
+                incorporator_count += 1
 
-        if 'Director' in role_array:
-            director_count += 1
+            if role['roleType'] == 'Director':
+                director_count += 1
 
     if completing_party_count == 0:
         err_path = '/filing/incorporationApplication/parties/roles'
@@ -131,10 +131,10 @@ def validate_parties_mailing_address(incorporation_json) -> Error:
         for k, v in item['mailingAddress'].items():
             if v is None:
                 err_path = '/filing/incorporationApplication/parties/%s/mailingAddress/%s/%s/' % (
-                    item['person']['id'], k, v
+                    item['officer']['id'], k, v
                 )
                 msg.append({'error': 'Person %s: Mailing address %s %s is invalid' % (
-                    item['person']['id'], k, v
+                    item['officer']['id'], k, v
                 ),
                             'path': err_path})
 
