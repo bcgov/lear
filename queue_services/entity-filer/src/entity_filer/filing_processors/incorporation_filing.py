@@ -44,12 +44,12 @@ def update_business_info(corp_num: str, business: Business, business_info: Dict)
     return business
 
 
-def process(business: Business, filing: Dict, app: Flask = None):
+def process(business: Business, filing: Dict, app: Flask = None):  # pylint: disable=too-many-locals; 1 extra
     """Process the incoming incorporation filing."""
     # Extract the filing information for incorporation
     incorp_filing = filing['incorporationApplication']
 
-    if incorp_filing:
+    if incorp_filing:  # pylint: disable=too-many-nested-blocks; 1 extra and code is still very clear
         # Extract the office, business, addresses, directors etc.
         # these will have to be inserted into the db.
         offices = incorp_filing.get('offices', None)
@@ -68,7 +68,7 @@ def process(business: Business, filing: Dict, app: Flask = None):
                 for office_type, addresses in offices.items():
                     office = create_office(business, office_type, addresses)
                     business.offices.append(office)
-                
+
                 if parties:
                     for party_info in parties:
                         party = create_party(party_info=party_info)
