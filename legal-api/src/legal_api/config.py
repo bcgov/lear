@@ -108,6 +108,12 @@ class _Config():  # pylint: disable=too-few-public-methods
     NATS_FILER_SUBJECT = os.getenv('NATS_FILER_SUBJECT', 'entity.filing.filer')
     NATS_QUEUE = os.getenv('NATS_QUEUE', 'entity-filer-worker')
 
+    # NAMEX PROXY Settings
+    NAMEX_AUTH_SVC_URL = os.getenv('NAMEX_AUTH_SVC_URL', 'http://')
+    NAMEX_SERVICE_CLIENT_USERNAME = os.getenv('NAMEX_SERVICE_CLIENT_USERNAME')
+    NAMEX_SERVICE_CLIENT_SECRET = os.getenv('NAMEX_SERVICE_CLIENT_SECRET')
+    NAMEX_SVC_URL = os.getenv('NAMEX_SVC_URL', 'http://')
+
     TESTING = False
     DEBUG = False
 

@@ -382,6 +382,42 @@
                                         }
                                     },
                                     {
+                                        "name": "NAMEX_AUTH_SVC_URL",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NAMEX_AUTH_SVC_URL",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NAMEX_SVC_URL",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NAMEX_SVC_URL",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NAMEX_SERVICE_CLIENT_USERNAME",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NAMEX_SERVICE_CLIENT_USERNAME",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NAMEX_SERVICE_CLIENT_SECRET",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NAMEX_SERVICE_CLIENT_SECRET",
+                                                "name": "${NAME}-${TAG_NAME}-config"
+                                            }
+                                        }
+                                    },
+                                    {
                                         "name": "POD_NAMESPACE",
                                         "valueFrom": {
                                             "fieldRef": {
@@ -462,7 +498,11 @@
                 "NATS_CLIENT_NAME": "${NATS_CLIENT_NAME}",
                 "NATS_CLUSTER_ID": "${NATS_CLUSTER_ID}",
                 "NATS_SUBJECT": "${NATS_SUBJECT}",
-                "NATS_QUEUE": "${NATS_QUEUE}"
+                "NATS_QUEUE": "${NATS_QUEUE}",
+                "NAMEX_AUTH_SVC_URL": "${NAMEX_AUTH_SVC_URL}",
+                "NAMEX_SERVICE_CLIENT_USERNAME": "${NAMEX_SERVICE_CLIENT_USERNAME}",
+                "NAMEX_SERVICE_CLIENT_SECRET": "${NAMEX_SERVICE_CLIENT_SECRET}",
+                "NAMEX_SVC_URL": "${NAMEX_SVC_URL}"
             }
         },
         {
@@ -726,6 +766,34 @@
             "description": "The Queue being used.",
             "required": true,
             "value": "filing-worker"
+        },
+        {
+            "name": "NAMEX_AUTH_SVC_URL",
+            "displayName": "NameX API Authorization Services URL",
+            "description": "The URL used for retrieving a JWT when proxying to namex-api",
+            "required": true,
+            "value": "https://sso-dev.pathfinder.gov.bc.ca/auth/realms/sbc/protocol/openid-connect/token"
+        },
+        {
+            "name": "NAMEX_SVC_URL",
+            "displayName": "NameX API Services URL",
+            "description": "The URL used to access NameX Services.",
+            "required": true,
+            "value": "https://namex-dev.pathfinder.gov.bc.ca/api/v1/"
+        },
+        {
+            "name": "NAMEX_SERVICE_CLIENT_USERNAME",
+            "displayName": "NameX Service Account User",
+            "description": "Service account user for JWT.",
+            "required": true,
+            "value": "my_service_account"
+        },
+        {
+            "name": "NAMEX_SERVICE_CLIENT_SECRET",
+            "displayName": "NameX Service Account Secret",
+            "description": "Service account secret for JWT.",
+            "required": true,
+            "value": "my_service_account_secret"
         }
     ]
 }
