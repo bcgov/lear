@@ -45,6 +45,9 @@ integration_sentry = pytest.mark.skipif((os.getenv('SENTRY_DSN', False) is False
 integration_payment = pytest.mark.skipif((os.getenv('RUN_PAYMENT_TESTS', False) is False),
                                          reason='Test requiring payment service run when RUN_PAYMENT_TESTS is set.')
 
+integration_namerequests = pytest.mark.skipif((os.getenv('RUN_NAMEREQUESTS_TESTS', False) is False),
+                                              reason='Name request tests are only run when requested.')
+
 integration_authorization = pytest.mark.skipif(
     (os.getenv('RUN_AUTHORIZATION_TESTS', False) is False),
     reason='Test requiring authorization service run when RUN_AUTHORIZATION_TESTS is set.')
