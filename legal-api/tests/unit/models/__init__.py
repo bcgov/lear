@@ -20,7 +20,19 @@ from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 from sqlalchemy_continuum import versioning_manager
 
-from legal_api.models import Address, Business, Comment, Filing, Office, Party, PartyRole, User, db
+from legal_api.models import (
+    Address,
+    Business,
+    Comment,
+    Filing,
+    Office,
+    Party,
+    PartyRole,
+    ShareClass,
+    ShareSeries,
+    User,
+    db,
+)
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
@@ -243,3 +255,29 @@ def factory_party_role(delivery_address: Address, mailing_address: Address, offi
         party_id=party.id
     )
     return party_role
+
+
+def factory_share_class(business_identifier: str):
+    """Create a share class."""
+    business = factory_business(business_identifier)
+    share_class = ShareClass(
+        name='Share Class 1',
+        priority=1,
+        max_share_flag=True,
+        max_shares=1000,
+        par_value_flag=True,
+        par_value=0.852,
+        currency='CAD',
+        special_rights_flag=False,
+        business_id=business.id
+    )
+    share_series_1 = ShareSeries(
+        name='Share Series 1',
+        priority=1,
+        max_share_flag=True,
+        max_shares=500,
+        special_rights_flag=False
+    )
+    share_class.series.append(share_series_1)
+    share_class.save()
+    return share_class

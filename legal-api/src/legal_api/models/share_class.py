@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module holds data for share classes."""
+from __future__ import annotations
 
 from http import HTTPStatus
 
@@ -72,6 +73,14 @@ class ShareClass(db.Model):  # pylint: disable=too-many-instance-attributes
 
         share_class['series'] = series
 
+        return share_class
+
+    @classmethod
+    def find_by_share_class_id(cls, share_class_id: int) -> ShareClass:
+        """Return the share class matching the id."""
+        share_class = None
+        if share_class_id:
+            share_class = cls.query.filter_by(id=share_class_id).one_or_none()
         return share_class
 
 
