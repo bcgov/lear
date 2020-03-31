@@ -18,7 +18,10 @@ Test-Suite to ensure that the /nameRequests endpoint is working as expected.
 """
 from http import HTTPStatus
 
+from tests import integration_namerequests
 
+
+@integration_namerequests
 def test_name_requests_success(client):
     """Assert that a name request can be received."""
     rv = client.get('/api/v1/nameRequests/NR 3252362')
@@ -28,6 +31,7 @@ def test_name_requests_success(client):
     assert rv.json['nrNum'] == 'NR 3252362'
 
 
+@integration_namerequests
 def test_name_requests_not_found(client):
     """Assert that a name request can be received."""
     rv = client.get('/api/v1/nameRequests/NR 1234567')
