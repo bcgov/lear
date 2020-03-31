@@ -21,9 +21,9 @@ import pytz
 from freezegun import freeze_time
 from legal_api.models import Business, Filing, PartyRole, User
 from legal_api.resources.business import DirectorResource
-from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR
+from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, INCORPORATION
 
-from entity_filer.filing_processors import create_director
+from entity_filer.filing_processors import create_party, create_role
 from entity_filer.worker import process_filing
 from tests.pytest_marks import colin_api_integration
 from tests.unit import (
@@ -78,9 +78,6 @@ def check_directors(business, directors, director_ceased_id, ceased_directors, a
     # check added all active directors in filing
     assert active_directors == []
     # check cessation date set on ceased director
-    print(business)
-    print(director_ceased_id)
-    print(DirectorResource._get_director(business, director_ceased_id))
     assert DirectorResource._get_director(business, director_ceased_id)[0]['director']['cessationDate'] is not None
 
 
@@ -214,19 +211,44 @@ def test_process_cod_filing(app, session):
     end_date = datetime.datetime.utcnow().date()
     # prep director for no change
     filing_data = copy.deepcopy(COD_FILING)
-    director1 = create_director(filing_data['filing']['changeOfDirectors']['directors'][0])
+    directors = filing_data['filing']['changeOfDirectors']['directors']
+    director_party1 = create_party(directors[0])
+    role1 = {
+        'roleType': 'director',
+        'appointmentDate': directors[0].get('appointmentDate'),
+        'cessationDate': directors[0].get('cessationDate')
+    }
+    director1 = create_role(party=director_party1, role_info=role1)
     # prep director for name change
-    director2 = filing_data['filing']['changeOfDirectors']['directors'][1]
-    director2['officer']['firstName'] = director2['officer']['prevFirstName']
-    director2['officer']['middleInitial'] = director2['officer']['prevMiddleInitial']
-    director2['officer']['lastName'] = director2['officer']['prevLastName']
-    director2 = create_director(director2)
+    director_party2_dict = directors[1]
+    director_party2_dict['officer']['firstName'] = director_party2_dict['officer']['prevFirstName']
+    director_party2_dict['officer']['middleInitial'] = director_party2_dict['officer']['prevMiddleInitial']
+    director_party2_dict['officer']['lastName'] = director_party2_dict['officer']['prevLastName']
+    director_party2 = create_party(director_party2_dict)
+    role2 = {
+        'roleType': 'director',
+        'appointmentDate': director_party2_dict.get('appointmentDate'),
+        'cessationDate': director_party2_dict.get('cessationDate')
+    }
+    director2 = create_role(party=director_party2, role_info=role2)
     # prep director for cease
-    director3 = create_director(filing_data['filing']['changeOfDirectors']['directors'][2])
+    director_party3 = create_party(directors[2])
+    role3 = {
+        'roleType': 'director',
+        'appointmentDate': directors[3].get('appointmentDate'),
+        'cessationDate': directors[3].get('cessationDate')
+    }
+    director3 = create_role(party=director_party3, role_info=role3)
     # prep director for address change
-    director4 = filing_data['filing']['changeOfDirectors']['directors'][3]
-    director4['deliveryAddress']['streetAddress'] = 'should get changed'
-    director4 = create_director(director4)
+    director_party4_dict = directors[3]
+    director_party4_dict['deliveryAddress']['streetAddress'] = 'should get changed'
+    director_party4 = create_party(director_party4_dict)
+    role4 = {
+        'roleType': 'director',
+        'appointmentDate': director_party4_dict.get('appointmentDate'),
+        'cessationDate': director_party4_dict.get('cessationDate')
+    }
+    director4 = create_role(party=director_party4, role_info=role4)
 
     # list of active/ceased directors in test filing
     ceased_directors, active_directors = active_ceased_lists(COD_FILING)
@@ -349,19 +371,44 @@ def test_process_combined_filing(app, session):
     end_date = datetime.datetime.utcnow().date()
     # prep director for no change
     filing_data = copy.deepcopy(COMBINED_FILING)
-    director1 = create_director(filing_data['filing']['changeOfDirectors']['directors'][0])
+    directors = filing_data['filing']['changeOfDirectors']['directors']
+    director_party1 = create_party(directors[0])
+    role1 = {
+        'roleType': 'director',
+        'appointmentDate': directors[0].get('appointmentDate'),
+        'cessationDate': directors[0].get('cessationDate')
+    }
+    director1 = create_role(party=director_party1, role_info=role1)
     # prep director for name change
-    director2 = filing_data['filing']['changeOfDirectors']['directors'][1]
-    director2['officer']['firstName'] = director2['officer']['prevFirstName']
-    director2['officer']['middleInitial'] = director2['officer']['prevMiddleInitial']
-    director2['officer']['lastName'] = director2['officer']['prevLastName']
-    director2 = create_director(director2)
+    director_party2_dict = directors[1]
+    director_party2_dict['officer']['firstName'] = director_party2_dict['officer']['prevFirstName']
+    director_party2_dict['officer']['middleInitial'] = director_party2_dict['officer']['prevMiddleInitial']
+    director_party2_dict['officer']['lastName'] = director_party2_dict['officer']['prevLastName']
+    director_party2 = create_party(director_party2_dict)
+    role2 = {
+        'roleType': 'director',
+        'appointmentDate': director_party2_dict.get('appointmentDate'),
+        'cessationDate': director_party2_dict.get('cessationDate')
+    }
+    director2 = create_role(party=director_party2, role_info=role2)
     # prep director for cease
-    director3 = create_director(filing_data['filing']['changeOfDirectors']['directors'][2])
+    director_party3 = create_party(directors[2])
+    role3 = {
+        'roleType': 'director',
+        'appointmentDate': directors[3].get('appointmentDate'),
+        'cessationDate': directors[3].get('cessationDate')
+    }
+    director3 = create_role(party=director_party3, role_info=role3)
     # prep director for address change
-    director4 = filing_data['filing']['changeOfDirectors']['directors'][3]
-    director4['deliveryAddress']['streetAddress'] = 'should get changed'
-    director4 = create_director(director4)
+    director_party4_dict = directors[3]
+    director_party4_dict['deliveryAddress']['streetAddress'] = 'should get changed'
+    director_party4 = create_party(director_party4_dict)
+    role4 = {
+        'roleType': 'director',
+        'appointmentDate': director_party4_dict.get('appointmentDate'),
+        'cessationDate': director_party4_dict.get('cessationDate')
+    }
+    director4 = create_role(party=director_party4, role_info=role4)
 
     # list of active/ceased directors in test filing
     ceased_directors, active_directors = active_ceased_lists(COMBINED_FILING)
@@ -450,6 +497,28 @@ def test_incorporation_filing(app, session):
     filing = Filing.find_by_id(filing_id)
     business = Business.find_by_internal_id(filing.business_id)
     assert business.identifier != 'NR 1234567'
+
+
+@colin_api_integration
+def test_process_incorporation_parties(app, session):
+    """Assert we successfully add parties in incorporation filing."""
+    # vars
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing = copy.deepcopy(INCORP_FILING)
+    schema_incorp = copy.deepcopy(INCORPORATION)
+    filing['filing']['incorporationApplication']['parties'] = schema_incorp['parties']
+
+    identifier = filing['filing']['incorporationApplication']['nameRequest']['nrNumber']
+    business = create_business(identifier)
+    filing_id = (create_filing(payment_id, filing, business.id)).id
+    filing_msg = {'filing': {'id': filing_id}}
+
+    process_filing(filing_msg, app)
+    filing = Filing.find_by_id(filing_id)
+    business = Business.find_by_internal_id(filing.business_id)
+    assert len(PartyRole.get_parties_by_role(business.id, 'director')) == 1
+    assert len(PartyRole.get_parties_by_role(business.id, 'incorporator')) == 1
+    assert len(PartyRole.get_parties_by_role(business.id, 'completing_party')) == 1
 
 
 def test_correction_filing(app, session):
