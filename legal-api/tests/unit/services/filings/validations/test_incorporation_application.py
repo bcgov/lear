@@ -241,3 +241,68 @@ def test_validate_incorporation_parties_mailing_address(session, test_name, mock
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
+
+
+@pytest.mark.parametrize(
+    'test_name, class_has_max_shares, class_max_shares, has_par_value, par_value, currency, series_has_max_shares,'
+    'series_max_shares, expected_code, expected_msg',
+    [
+        ('SUCCESS', True, 5000, True, 0.875, 'CAD', True, 1000, None, None),
+        ('SUCCESS', False, None, True, 0.875, 'CAD', True, 1000, None, None),
+        ('SUCCESS', False, None, False, None, None, False, None, None, None),
+        ('FAIL_INVALID_CLASS_MAX_SHARES', True, None, True, 0.875, 'CAD', True, 1000,
+            HTTPStatus.BAD_REQUEST, [[{
+                'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+                'path': '/filing/incorporationApplication/shareClasses/0/maxNumberOfShares/'
+            }]]),
+        ('FAIL_INVALID_CURRENCY', True, 5000, True, 0.875, None, True, 1000,
+            HTTPStatus.BAD_REQUEST, [[{
+                'error': 'Share class Share Class 1 must specify currency',
+                'path': '/filing/incorporationApplication/shareClasses/0/currency/'
+            }]]),
+        ('FAIL_INVALID_PAR_VALUE', True, 5000, True, None, 'CAD', True, 1000,
+            HTTPStatus.BAD_REQUEST, [[{
+                'error': 'Share class Share Class 1 must specify par value',
+                'path': '/filing/incorporationApplication/shareClasses/0/parValue/'
+            }]]),
+        ('FAIL_INVALID_SERIES_MAX_SHARES', True, 5000, True, 0.875, 'CAD', True, None,
+            HTTPStatus.BAD_REQUEST, [[{
+                'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+                'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+            }]]),
+        ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', True, 5000, True, 0.875, 'CAD', True, 10000,
+            HTTPStatus.BAD_REQUEST, [[{
+                'error':
+                'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+                'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+            }]])
+    ])
+def test_validate_incorporation_share_classes(session, test_name, class_has_max_shares, class_max_shares,
+                                              has_par_value, par_value, currency, series_has_max_shares,
+                                              series_max_shares, expected_code, expected_msg):
+    """Assert that validator validates share class correctly."""
+    f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
+                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2019-04-15T00:00:00+00:00'}
+
+    f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+    f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+
+    f['filing']['incorporationApplication']['shareClasses'][0]['hasMaximumShares'] = class_has_max_shares
+    f['filing']['incorporationApplication']['shareClasses'][0]['maxNumberOfShares'] = class_max_shares
+    f['filing']['incorporationApplication']['shareClasses'][0]['hasParValue'] = has_par_value
+    f['filing']['incorporationApplication']['shareClasses'][0]['parValue'] = par_value
+    f['filing']['incorporationApplication']['shareClasses'][0]['currency'] = currency
+    f['filing']['incorporationApplication']['shareClasses'][0]['series'][0]['hasMaximumShares'] = series_has_max_shares
+    f['filing']['incorporationApplication']['shareClasses'][0]['series'][0]['maxNumberOfShares'] = series_max_shares
+
+    # perform test
+    with freeze_time(now):
+        err = validate(business, f)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None
