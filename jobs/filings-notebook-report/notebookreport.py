@@ -29,7 +29,6 @@ setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.
 
 snapshotDir = 'snapshots'
 
-
 def create_app(config=Config):
     app = Flask(__name__)
     app.config.from_object(config)
@@ -38,7 +37,7 @@ def create_app(config=Config):
     current_app.logger.debug('created the Flask App and pushed the App Context')
 
     return app
-
+    
 
 def findfiles(directory, pattern):
     # Lists all files in the specified directory that match the specified pattern
@@ -99,11 +98,10 @@ def processnotebooks(notebookdirectory):
     try:
         retry_times = int(os.getenv('RETRY_TIMES', '1'))
         retry_interval = int(os.getenv('RETRY_INTERVAL', '60'))
-
     except Exception:
         logging.exception("Error processing notebook for {}.".format(notebookdirectory))
         # we failed all the attempts
-        subject = "Filings Jupyter Notebook Error Notification for " + notebookdirectory + " on " + date + ext
+        subject = "Jupyter Notebook Error Notification from LEAR for processing '" + notebookdirectory + "' on " + date + ext
         filename = ''
         send_email(subject, filename, "ERROR", traceback.format_exc())
         return status
@@ -112,42 +110,27 @@ def processnotebooks(notebookdirectory):
 
     # Each time a notebook is processed a snapshot is saved to a snapshot sub-directory
     # This checks the sub-directory exists and creates it if not
-    if not os.path.isdir(os.path.join(notebookdirectory, snapshotDir)):
-        os.mkdir(os.path.join(notebookdirectory, snapshotDir))
+    snapshotdir = os.path.join(notebookdirectory, snapshotDir)
+    if not os.path.isdir(snapshotdir):
+        os.mkdir(snapshotdir)
 
-    for file in findfiles(notebookdirectory, '*.ipynb'):
+    for file in findfiles(notebookdirectory, '*.ipynb'):        
         for attempt in range(retry_times):
             try:
                 nb = os.path.basename(file)
-
-                # Within the snapshot directory, each notebook output is stored in its own sub-directory
-                notebooksnapshot = os.path.join(notebookdirectory, snapshotDir, nb.split('.ipynb')[0])
-
-                if not os.path.isdir(notebooksnapshot):
-                    os.mkdir(notebooksnapshot)
-
-                # The output will be saved in a timestamp directory (snapshots/notebook/timestamp)
-                rundir = os.path.join(notebooksnapshot, now.strftime("%Y-%m-%d %H.%M.%S.%f"))
-                if not os.path.isdir(rundir):
-                    os.mkdir(rundir)
-
-                # The snapshot file includes a timestamp
-                output_file = os.path.join(rundir, nb)
-
-                # Execute the notebook and save the snapshot
                 pm.execute_notebook(
                     file,
-                    output_file,
-                    parameters=dict(snapshotDir=rundir + os.sep)
+                    os.path.join(snapshotdir, nb),
+                    parameters=None
                 )
+                                    
+                subject = nb.split('.ipynb')[0].capitalize() + " Monthly Stats till " + date + ext
+                filename = nb.split('.ipynb')[0] + '_monthly_stats_till_' + date + '.csv'
 
-                if notebookdirectory == 'monthly' or notebookdirectory == '../monthly':
-                    subject = "Filings Monthly Stats till " + date + ext
-                    filename = 'monthly_total_till_' + date + '.csv'
                 # send email to receivers and remove files/directories which we don't want to keep
                 send_email(subject, filename, "", "")
                 os.remove(filename)
-                shutil.rmtree(os.path.join(notebookdirectory, snapshotDir), ignore_errors=True)
+                
                 status = True
                 break
             except Exception:
@@ -156,9 +139,9 @@ def processnotebooks(notebookdirectory):
                     logging.exception(
                         "Error processing notebook {0} at {1}/{2} try.".format(notebookdirectory, attempt + 1,
                                                                                retry_times))
-                    # we failed all the attempts
-                    subject = "Filings Jupyter Notebook Error Notification for " + notebookdirectory + " on " \
-                              + date + ext
+                    # we failed all the attempts                    
+                    subject = "Jupyter Notebook Error Notification from LEAR for processing '" \
+                              + notebookdirectory + "' on " + date + ext
                     filename = ''
                     send_email(subject, filename, "ERROR", traceback.format_exc())
                 else:
@@ -170,18 +153,14 @@ def processnotebooks(notebookdirectory):
                     continue
         if not status:
             break
+
+    shutil.rmtree(snapshotdir, ignore_errors=True)    
     return status
 
 
 if __name__ == '__main__':
     start_time = datetime.utcnow()
-
-    # Check if the subfolders for notebooks exist, and create them if they don't
-    if not os.path.isdir('monthly'):
-        os.mkdir('monthly')
-
-    processnotebooks('monthly')
-
+    processnotebooks('monthly')        
     end_time = datetime.utcnow()
     logging.info("job - jupyter notebook report completed in: {}".format(end_time - start_time))
     exit(0)

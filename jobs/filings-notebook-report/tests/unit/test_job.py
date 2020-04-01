@@ -39,15 +39,13 @@ def test_connection_succeed():
 
 
 test_filings_monthly_data = [
-    ("monthly",
-    "[1, 14]"),
+    ("monthly"),
 ]
 
 
-@pytest.mark.parametrize("report_type, report_days_list", test_filings_monthly_data)
-def test_filings_monthly_notebook_report(report_type, report_days_list):
-    test_days = ast.literal_eval(report_days_list)
-    status = processnotebooks(report_type, days=test_days)
+@pytest.mark.parametrize("report_type", test_filings_monthly_data)
+def test_filings_monthly_notebook_report(report_type):
+    status = processnotebooks(report_type)
 
     assert status == True
 
