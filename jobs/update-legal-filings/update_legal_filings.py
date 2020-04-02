@@ -99,6 +99,7 @@ def check_for_manual_filings(application: Flask = None):
                 colin_events = dict(r.json())
 
                 # for bringing in a specific filing
+                # global SET_EVENTS_MANUALLY
                 # SET_EVENTS_MANUALLY = True
                 # colin_events = {
                 #     'events': [{'corp_num': 'CP0001489', 'event_id': 102127109, 'filing_typ_cd': 'OTCGM'}]
