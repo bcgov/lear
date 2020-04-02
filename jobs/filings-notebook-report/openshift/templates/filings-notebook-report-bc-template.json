@@ -36,8 +36,8 @@
                     "sourceStrategy": {
                         "from": {
                             "kind": "ImageStreamTag",
-                            "namespace": "openshift",
-                            "name": "python:3.6"
+                            "namespace": "gl2uos-tools",
+                            "name": "python:3.7"
                         }
                     }
                 },
