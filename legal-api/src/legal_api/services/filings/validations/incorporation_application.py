@@ -14,12 +14,11 @@
 """Validation for the Incorporation filing."""
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Dict
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 import pycountry
 
+from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 from legal_api.errors import Error
-# noqa: I003; needed as the linter gets confused from the babel override above.
 
 
 def validate(incorporation_json: Dict):
@@ -37,6 +36,10 @@ def validate(incorporation_json: Dict):
         msg.append(err)
 
     err = validate_parties_mailing_address(incorporation_json)
+    if err:
+        msg.append(err)
+
+    err = validate_share_structure(incorporation_json)
     if err:
         msg.append(err)
 
@@ -137,6 +140,47 @@ def validate_parties_mailing_address(incorporation_json) -> Error:
                     item['officer']['id'], k, v
                 ),
                             'path': err_path})
+
+    if msg:
+        return msg
+
+    return None
+
+
+def validate_share_structure(incorporation_json) -> Error:
+    """Validate the share structure data of the incorporation filing."""
+    share_classes = incorporation_json['filing']['incorporationApplication']['shareClasses']
+    msg = []
+
+    for index, item in enumerate(share_classes):
+        if item['hasMaximumShares']:
+            if not item.get('maxNumberOfShares', None):
+                err_path = '/filing/incorporationApplication/shareClasses/%s/maxNumberOfShares/' % index
+                msg.append({'error': 'Share class %s must provide value for maximum number of shares' % item['name'],
+                            'path': err_path})
+        if item['hasParValue']:
+            if not item.get('parValue', None):
+                err_path = '/filing/incorporationApplication/shareClasses/%s/parValue/' % index
+                msg.append({'error': 'Share class %s must specify par value' % item['name'], 'path': err_path})
+            if not item.get('currency', None):
+                err_path = '/filing/incorporationApplication/shareClasses/%s/currency/' % index
+                msg.append({'error': 'Share class %s must specify currency' % item['name'], 'path': err_path})
+        for series_index, series in enumerate(item.get('series', [])):
+            err_path = '/filing/incorporationApplication/shareClasses/%s/series/%s' % (index, series_index)
+            if series['hasMaximumShares']:
+                if not series.get('maxNumberOfShares', None):
+                    msg.append({
+                        'error': 'Share series %s must provide value for maximum number of shares' % series['name'],
+                        'path': '%s/maxNumberOfShares' % err_path
+                    })
+                else:
+                    if item['hasMaximumShares'] and item.get('maxNumberOfShares', None) and \
+                            series['maxNumberOfShares'] > item['maxNumberOfShares']:
+                        msg.append({
+                            'error': 'Series %s share quantity must be less than or equal to that of its class %s'
+                                     % (series['name'], item['name']),
+                            'path': '%s/maxNumberOfShares' % err_path
+                        })
 
     if msg:
         return msg
