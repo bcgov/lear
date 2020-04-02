@@ -59,7 +59,7 @@ def process(business: Business, filing: Dict):  # pylint: disable=too-many-branc
             # add new diretor party role to the business
             party = create_party(party_info=new_director)
             role = {
-                'roleType': 'director',
+                'roleType': 'Director',
                 'appointmentDate': new_director.get('appointmentDate'),
                 'cessationDate': new_director.get('cessationDate')
             }
