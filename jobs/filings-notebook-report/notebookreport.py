@@ -160,7 +160,7 @@ def processnotebooks(notebookdirectory):
 
 if __name__ == '__main__':
     start_time = datetime.utcnow()
-    processnotebooks('monthly')        
+    processnotebooks('monthly')     
     end_time = datetime.utcnow()
     logging.info("job - jupyter notebook report completed in: {}".format(end_time - start_time))
     exit(0)
