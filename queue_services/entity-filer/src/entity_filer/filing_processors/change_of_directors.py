@@ -18,7 +18,7 @@ from typing import Dict
 from entity_queue_common.service_utils import QueueException, logger
 from legal_api.models import Business, PartyRole
 
-from entity_filer.filing_processors import create_director, update_director
+from entity_filer.filing_processors import create_party, create_role, update_director
 
 
 def process(business: Business, filing: Dict):  # pylint: disable=too-many-branches;
@@ -57,7 +57,13 @@ def process(business: Business, filing: Dict):  # pylint: disable=too-many-branc
         if 'appointed' in new_director['actions']:
 
             # add new diretor party role to the business
-            new_director_role = create_director(director_info=new_director)
+            party = create_party(party_info=new_director)
+            role = {
+                'roleType': 'Director',
+                'appointmentDate': new_director.get('appointmentDate'),
+                'cessationDate': new_director.get('cessationDate')
+            }
+            new_director_role = create_role(party=party, role_info=role)
             business.party_roles.append(new_director_role)
 
         if any([action != 'appointed' for action in new_director['actions']]):

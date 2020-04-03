@@ -17,17 +17,17 @@ from typing import Dict
 import requests
 from entity_queue_common.service_utils import logger
 from flask import Flask
-from legal_api.models import Business, db
+from legal_api.models import Business
 
-from entity_filer.filing_processors import create_office
+from entity_filer.filing_processors import create_office, create_party, create_role
 
 
-def get_next_corp_num(business_type, application: Flask):
+def get_next_corp_num(business_type: str, application: Flask):
     """Retrieve the next available sequential corp-num from COLIN."""
-    resp = requests.get(f'{application.config["COLIN_API"]}/api/v1/businesses')
+    resp = requests.get(f'{application.config["COLIN_API"]}?legal_type={business_type}')
 
     if resp.status_code == 200:
-        new_corpnum = resp.json()['corpNum']
+        new_corpnum = resp.json()['corpNum'][0]
         if new_corpnum:
             # TODO: Fix endpoint
             return business_type + str(new_corpnum)
@@ -44,15 +44,16 @@ def update_business_info(corp_num: str, business: Business, business_info: Dict)
     return business
 
 
-def process(business: Business, filing: Dict, app: Flask = None):
+def process(business: Business, filing: Dict, app: Flask = None):  # pylint: disable=too-many-locals; 1 extra
     """Process the incoming incorporation filing."""
     # Extract the filing information for incorporation
     incorp_filing = filing['incorporationApplication']
 
-    if incorp_filing:
+    if incorp_filing:  # pylint: disable=too-many-nested-blocks; 1 extra and code is still very clear
         # Extract the office, business, addresses, directors etc.
         # these will have to be inserted into the db.
-        offices = incorp_filing['offices']
+        offices = incorp_filing.get('offices', None)
+        parties = incorp_filing.get('parties', None)
         business_info = incorp_filing['nameRequest']
 
         # Sanity check
@@ -66,6 +67,18 @@ def process(business: Business, filing: Dict, app: Flask = None):
             if business:
                 for office_type, addresses in offices.items():
                     office = create_office(business, office_type, addresses)
-                    db.session.add(office)
+                    business.offices.append(office)
+
+                if parties:
+                    for party_info in parties:
+                        party = create_party(party_info=party_info)
+                        for role_type in party_info.get('roles'):
+                            role = {
+                                'roleType': role_type,
+                                'appointmentDate': party_info.get('appointmentDate', None),
+                                'cessationDate': party_info.get('cessationDate', None)
+                            }
+                            party_role = create_role(party=party, role_info=role)
+                            business.party_roles.append(party_role)
         else:
             logger.error('No business exists for NR number: %s', business_info['nrNUmber'])

@@ -31,6 +31,7 @@ class PartyRole(db.Model):
     class RoleTypes(Enum):
         """Render an Enum of the role types."""
 
+        COMPLETING_PARTY = 'completing_party'
         DIRECTOR = 'director'
         INCORPORATOR = 'incorporator'
 

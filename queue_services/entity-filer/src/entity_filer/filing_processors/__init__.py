@@ -23,8 +23,17 @@ import pycountry
 from legal_api.models import Address, Business, Office, Party, PartyRole
 
 
+JSON_ROLE_CONVERTER = {
+    'Director': PartyRole.RoleTypes.DIRECTOR.value,
+    'Incorporator': PartyRole.RoleTypes.INCORPORATOR.value,
+    'Completing Party': PartyRole.RoleTypes.COMPLETING_PARTY.value
+}
+
+
 def create_address(address_info: Dict, address_type: str) -> Address:
     """Create an address."""
+    if not address_info:
+        return Address()
     address = Address(street=address_info.get('streetAddress'),
                       street_additional=address_info.get('streetAddressAdditional'),
                       city=address_info.get('addressCity'),
@@ -53,7 +62,6 @@ def update_address(address: Address, new_info: dict) -> Address:
 def create_office(business, office_type, addresses) -> Office:
     """Create a new office for incorporation."""
     office = Office()
-    office.business_id = business.id
     office.office_type = office_type
     office.addresses = []
     # Iterate addresses and add to this office
@@ -65,35 +73,37 @@ def create_office(business, office_type, addresses) -> Office:
     return office
 
 
-def create_director(director_info: dict) -> PartyRole:
-    """Create a new party director role and create/link party."""
-    # create person/organization get them if they already exist
+def create_party(party_info: dict) -> Party:
+    """Create a new party or get them if they already exist."""
     party = Party.find_by_name(
-        first_name=director_info['officer'].get('firstName', '').upper(),
-        last_name=director_info['officer'].get('lastName', '').upper(),
-        organization_name=director_info.get('organization_name', '').upper()
+        first_name=party_info['officer'].get('firstName', '').upper(),
+        last_name=party_info['officer'].get('lastName', '').upper(),
+        organization_name=party_info.get('orgName', '').upper()
     )
     if not party:
         party = Party(
-            first_name=director_info['officer'].get('firstName', '').upper(),
-            last_name=director_info['officer'].get('lastName', '').upper(),
-            middle_initial=director_info['officer'].get('middleInitial', '').upper(),
-            title=director_info.get('title', '').upper(),
-            organization_name=director_info.get('organization_name', '').upper()
+            first_name=party_info['officer'].get('firstName', '').upper(),
+            last_name=party_info['officer'].get('lastName', '').upper(),
+            middle_initial=party_info['officer'].get('middleInitial', '').upper(),
+            title=party_info.get('title', '').upper(),
+            organization_name=party_info.get('organization_name', '').upper()
         )
 
     # add addresses to party
-    address = create_address(director_info['deliveryAddress'], Address.DELIVERY)
+    address = create_address(party_info.get('deliveryAddress', None), Address.DELIVERY)
     party.delivery_address = address
-    if director_info.get('mailingAddress', None):
-        mailing_address = create_address(director_info['mailingAddress'], Address.MAILING)
+    if party_info.get('mailingAddress', None):
+        mailing_address = create_address(party_info['mailingAddress'], Address.MAILING)
         party.mailing_address = mailing_address
+    return party
 
-    # create party role and link party to it
+
+def create_role(party: Party, role_info: dict) -> PartyRole:
+    """Create a new party role and link to party."""
     party_role = PartyRole(
-        role=PartyRole.RoleTypes.DIRECTOR.value,
-        appointment_date=director_info.get('appointmentDate'),
-        cessation_date=director_info.get('cessationDate'),
+        role=JSON_ROLE_CONVERTER.get(role_info['roleType'], None),
+        appointment_date=role_info['appointmentDate'],
+        cessation_date=role_info['cessationDate'],
         party=party
     )
     return party_role

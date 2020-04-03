@@ -20,6 +20,7 @@ NATS_SUBJECT="entity.filing.filer"
 NATS_FILER_SUBJECT=entity.filing.filer
 NATS_ENTITY_EVENT_SUBJECT="entity.events"
 NATS_QUEUE="filing-worker"
+COLIN_API=<colin_api_service_url>
 IMAGE_NAMESPACE="<namespace>"
 TAG_NAME="dev"
 CPU_REQUEST="100m"
