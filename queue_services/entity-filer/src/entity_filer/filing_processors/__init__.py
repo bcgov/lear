@@ -20,7 +20,7 @@ from __future__ import annotations
 from typing import Dict
 
 import pycountry
-from legal_api.models import Address, Business, Office, Party, PartyRole
+from legal_api.models import Address, Business, Office, Party, PartyRole, ShareClass, ShareSeries
 
 
 JSON_ROLE_CONVERTER = {
@@ -127,3 +127,28 @@ def update_director(director: PartyRole, new_info: dict) -> PartyRole:
     director.cessation_date = new_info.get('cessationDate')
 
     return director
+
+
+def create_share_class(share_class_info: dict) -> ShareClass:
+    """Create a new share class and associated series."""
+    share_class = ShareClass(
+        name=share_class_info['name'],
+        priority=share_class_info['priority'],
+        max_share_flag=share_class_info['hasMaximumShares'],
+        max_shares=share_class_info.get('maxNumberOfShares', None),
+        par_value_flag=share_class_info['hasParValue'],
+        par_value=share_class_info.get('parValue', None),
+        currency=share_class_info.get('currency', None),
+        special_rights_flag=share_class_info['hasRightsOrRestrictions']
+    )
+    for series in share_class.series:
+        share_series = ShareSeries(
+            name=series['name'],
+            priority=series['priority'],
+            max_share_flag=series['hasMaximumShares'],
+            max_shares=series.get('maxNumberOfShares', None),
+            special_rights_flag=series['hasRightsOrRestrictions']
+        )
+        share_class.series.append(share_series)
+
+    return share_class
