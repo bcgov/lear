@@ -20,7 +20,7 @@ import datetime
 from flask import current_app
 
 from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
-from colin_api.models import Address, Business, Director, EntityName, Office
+from colin_api.models import Address, Business, EntityName, Office, Party
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
@@ -339,13 +339,13 @@ class Filing:
         recreated_dirs_and_office = True
         if director_event_id:
             try:
-                directors = Director.get_by_event(identifier=identifier, event_id=director_event_id, cursor=cursor)
+                directors = Party.get_by_event(identifier=identifier, event_id=director_event_id, cursor=cursor)
             except:  # noqa B901; pylint: disable=bare-except;
                 # should only get here if agm was before the bob date
                 recreated_dirs_and_office = False
-                directors = Director.get_current(identifier=identifier, cursor=cursor)
+                directors = Party.get_current(identifier=identifier, cursor=cursor)
         else:
-            directors = Director.get_current(identifier=identifier, cursor=cursor)
+            directors = Party.get_current(identifier=identifier, cursor=cursor)
         directors = [x.as_dict() for x in directors]
         if office_event_id:
             try:
@@ -407,7 +407,7 @@ class Filing:
     @classmethod
     def _get_cod(cls, cursor, identifier: str = None, filing_event_info: dict = None):
         """Get change of directors filing."""
-        director_objs = Director.get_by_event(cursor, identifier, filing_event_info['event_id'])
+        director_objs = Party.get_by_event(cursor, identifier, filing_event_info['event_id'])
         if len(director_objs) < 3:
             current_app.logger.error('Less than 3 directors for {}'.format(identifier))
 
@@ -731,6 +731,16 @@ class Filing:
             raise err
 
     @classmethod
+    def _add_parties_from_filing(cls, cursor,  # pylint: disable=too-many-arguments
+                                 event_id, filing):
+        parties = filing.body['parties']
+        business = filing.business.as_dict()
+        for party in parties:
+            for role in party['roles']:
+                party['role_type'] = Party.role_types[(role['roleType']).lower()]
+                Party.create_new_corp_party(cursor, event_id, party, business)
+
+    @classmethod
     def add_filing(cls, con, filing):  # pylint: disable=too-many-locals,too-many-statements,too-many-branches;
         """Add new filing to COLIN tables.
 
@@ -815,12 +825,13 @@ class Filing:
                 changed_dirs = []
                 for director in filing.body['directors']:
                     if 'appointed' in director['actions']:
-                        Director.create_new_director(cursor=cursor, event_id=event_id, director=director,
-                                                     business=filing.business.as_dict())
+                        Party.create_new_corp_party(cursor=cursor, event_id=event_id, party=director,
+                                                    business=filing.business.as_dict())
 
                     if 'ceased' in director['actions'] and not any(elem in ['nameChanged', 'addressChanged']
                                                                    for elem in director['actions']):
-                        Director.end_by_name(cursor=cursor, director=director, event_id=event_id, corp_num=corp_num)
+                        Party.end_director_by_name(cursor=cursor, director=director, event_id=event_id,
+                                                   corp_num=corp_num)
 
                     elif 'nameChanged' in director['actions'] or 'addressChanged' in director['actions']:
                         if 'appointed' in director['actions']:
@@ -830,13 +841,13 @@ class Filing:
                         # date - otherwise end up with two copies of ended director)
                         tmp = director.copy()
                         tmp['cessationDate'] = ''
-                        Director.end_by_name(cursor=cursor, director=tmp, event_id=event_id, corp_num=corp_num)
+                        Party.end_director_by_name(cursor=cursor, director=tmp, event_id=event_id, corp_num=corp_num)
 
                 # add back changed directors as new row - if ceased director with changes this will add them with
                 # cessation date + end event id filled
                 for director in changed_dirs:
-                    Director.create_new_director(cursor=cursor, event_id=event_id, director=director,
-                                                 business=filing.business.as_dict())
+                    Party.create_new_corp_party(cursor=cursor, event_id=event_id, party=director,
+                                                business=filing.business.as_dict())
 
                 # create new ledger text for address change
                 cls._add_ledger_text(cursor=cursor, event_id=event_id, text=f'Director change.', user_id=user_id)
@@ -853,6 +864,7 @@ class Filing:
                 Business.create_corp_state(cursor, corp_num, event_id)
 
                 cls._add_office_from_filing(cursor, event_id, corp_num, user_id, filing)
+                cls._add_parties_from_filing(cursor, event_id, filing)
 
             else:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)

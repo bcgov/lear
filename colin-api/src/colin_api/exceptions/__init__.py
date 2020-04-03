@@ -88,20 +88,20 @@ class AddressNotFoundException(GenericException):
         self.status_code = 404
 
 
-class DirectorsNotFoundException(GenericException):
+class PartiesNotFoundException(GenericException):
     """Exception with defined error code and messaging."""
 
     def __init__(self, *args, identifier=None, event_id=None, **kwargs):
-        """Return a valid DirectorsNotFoundException."""
-        super(DirectorsNotFoundException, self).__init__(None, None, *args, **kwargs)
+        """Return a valid PartiesNotFoundException."""
+        super(PartiesNotFoundException, self).__init__(None, None, *args, **kwargs)
         if identifier and event_id:
-            self.error = f'Directors not found for {identifier} at event {event_id}'
+            self.error = f'Parties not found for {identifier} at event {event_id}'
         elif identifier:
-            self.error = f'Directors not found for {identifier}'
+            self.error = f'Parties not found for {identifier}'
         elif event_id:
-            self.error = f'Directors not found for event {event_id}'
+            self.error = f'Parties not found for event {event_id}'
         else:
-            self.error = 'Directors not found'
+            self.error = 'Parties not found'
         self.status_code = 404
 
 

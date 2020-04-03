@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "c10b6070-17ed-41f2-902e-1e5ee36683b8",
+		"_postman_id": "c7c914ca-9614-4c44-8310-1b90352599bd",
 		"name": "colin-api",
 		"description": "version=0.108 - This is a Colin API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -2902,7 +2902,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{url}}/api/v1/businesses/CP0002098/directors",
+							"raw": "{{url}}/api/v1/businesses/CP0002098/parties",
 							"host": [
 								"{{url}}"
 							],
@@ -2911,7 +2911,7 @@
 								"v1",
 								"businesses",
 								"CP0002098",
-								"directors"
+								"parties"
 							]
 						}
 					},
@@ -4367,6 +4367,427 @@
 			"protocolProfileBehavior": {}
 		},
 		{
+			"name": "Incorporation",
+			"item": [
+				{
+					"name": "GET New Corp Number, BCOMP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "705f0c36-001d-4011-8ee8-8b04e41bbd16",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Set the next available Corp Num\", () => {",
+									"    pm.expect(jsonData.corpNum).to.exist;",
+									"    pm.environment.set(\"newCorpNum\", 'BC'+(jsonData.corpNum[0]));",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses?legal_type=BC",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses"
+							],
+							"query": [
+								{
+									"key": "legal_type",
+									"value": "BC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST BCOMP Incorporation Filing",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8b904c00-a9ee-4006-a6c2-2c8adb0b7bd1",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Assert new Business record has been created.\", () => {",
+									"    pm.expect(jsonData.filing.incorporationApplication).to.exist",
+									"    var result = jsonData.filing.incorporationApplication",
+									"    pm.expect(jsonData.filing.business.identifier).to.eql(pm.environment.get('newCorpNum'))",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for registered office addresses\", () => {",
+									"    var result = jsonData.filing.incorporationApplication",
+									"    var registeredOffice = result.offices.registeredOffice",
+									"    pm.expect(registeredOffice.deliveryAddress.addressCity).to.eql(\"DELIVERY_ADDRESS CITY\")",
+									"    pm.expect(registeredOffice.deliveryAddress.addressCountry).to.eql(\"CANADA\")",
+									"    pm.expect(registeredOffice.deliveryAddress.addressId).to.exist",
+									"    pm.expect(registeredOffice.deliveryAddress.addressRegion).to.eql(\"BC\")",
+									"    pm.expect(registeredOffice.deliveryAddress.deliveryInstructions).to.exist",
+									"    pm.expect(registeredOffice.deliveryAddress.postalCode).to.eql(\"H0H0H0\")",
+									"    pm.expect(registeredOffice.deliveryAddress.streetAddress).to.eql(\"DELIVERY_ADDRESS - ADDRESS LINE ONE\")",
+									"    pm.expect(registeredOffice.deliveryAddress.streetAddressAdditional).to.exist",
+									"    pm.expect(registeredOffice.mailingAddress.addressCity).to.eql(\"MAILING_ADDRESS CITY\")",
+									"    pm.expect(registeredOffice.mailingAddress.addressCountry).to.eql(\"CANADA\")",
+									"    pm.expect(registeredOffice.mailingAddress.addressId).to.exist",
+									"    pm.expect(registeredOffice.mailingAddress.addressRegion).to.eql(\"BC\")",
+									"    pm.expect(registeredOffice.mailingAddress.deliveryInstructions).to.exist",
+									"    pm.expect(registeredOffice.mailingAddress.postalCode).to.eql(\"H0H0H0\")",
+									"    pm.expect(registeredOffice.mailingAddress.streetAddress).to.eql(\"MAILING_ADDRESS - ADDRESS LINE ONE\")",
+									"    pm.expect(registeredOffice.mailingAddress.streetAddressAdditional).to.exist",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for records office addresses\", () => {",
+									"    var result = jsonData.filing.incorporationApplication",
+									"    var recordsOffice = result.offices.recordsOffice",
+									"    pm.expect(recordsOffice.deliveryAddress.addressCity).to.eql(\"DELIVERY_ADDRESS CITY\")",
+									"    pm.expect(recordsOffice.deliveryAddress.addressCountry).to.eql(\"CANADA\")",
+									"    pm.expect(recordsOffice.deliveryAddress.addressId).to.exist",
+									"    pm.expect(recordsOffice.deliveryAddress.addressRegion).to.eql(\"BC\")",
+									"    pm.expect(recordsOffice.deliveryAddress.deliveryInstructions).to.exist",
+									"    pm.expect(recordsOffice.deliveryAddress.postalCode).to.eql(\"H0H0H0\")",
+									"    pm.expect(recordsOffice.deliveryAddress.streetAddress).to.eql(\"DELIVERY_ADDRESS - ADDRESS LINE ONE\")",
+									"    pm.expect(recordsOffice.deliveryAddress.streetAddressAdditional).to.exist",
+									"    pm.expect(recordsOffice.mailingAddress.addressCity).to.eql(\"MAILING_ADDRESS CITY\")",
+									"    pm.expect(recordsOffice.mailingAddress.addressCountry).to.eql(\"CANADA\")",
+									"    pm.expect(recordsOffice.mailingAddress.addressId).to.exist",
+									"    pm.expect(recordsOffice.mailingAddress.addressRegion).to.eql(\"BC\")",
+									"    pm.expect(recordsOffice.mailingAddress.deliveryInstructions).to.exist",
+									"    pm.expect(recordsOffice.mailingAddress.postalCode).to.eql(\"H0H0H0\")",
+									"    pm.expect(recordsOffice.mailingAddress.streetAddress).to.eql(\"MAILING_ADDRESS - ADDRESS LINE ONE\")",
+									"    pm.expect(recordsOffice.mailingAddress.streetAddressAdditional).to.exist",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n\t\t},\n\t\t \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08T00:00:00+00:00\",\n            \"identifier\": \"{{newCorpNum}}\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\",\n            \"legalType\": \"CP\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"nrNumber\": \"{{newCorpNum}}\",\n\t\t\t\t\"legalType\": \"BC\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t},\n\t\t\t\t\"recordsOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"parties\": [\n        {\n            \"officer\": {\n                \"id\": 1,\n                \"firstName\": \"Joe\",\n                \"lastName\": \"Swanson\",\n                \"middleName\": \"P\",\n                \"orgName\": \"\",\n                \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n                \"streetAddress\": \"mailing_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"mailing_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n                \"streetAddress\": \"delivery_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"delivery_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"appointmentDate\": \"2018-01-01\",\n            \"roles\": [\n                {\n                    \"roleType\": \"Completing Party\",\n                    \"appointmentDate\": \"2018-01-01\"\n\n                },\n                {\n                    \"roleType\": \"Director\",\n                    \"appointmentDate\": \"2018-01-01\"\n\n                }\n            ]\n        },\n        {\n            \"officer\": {\n                \"id\": 2,\n                \"firstName\": \"\",\n                \"lastName\": \"\",\n                \"middleName\": \"\",\n                \"orgName\": \"Xyz Inc.\",\n                \"partyType\": \"org\"\n            },\n            \"mailingAddress\": {\n                \"streetAddress\": \"mailing_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"mailing_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"appointmentDate\": \"2018-01-01\",\n           \"roles\": [\n                {\n                    \"roleType\": \"Incorporator\",\n                    \"appointmentDate\": \"2018-01-01\"\n                }\n            ]\n        }\n    ],\n\t\t\t\"businessContact\": {\n\t\t\t\t\"email\": \"no_one@never.get\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/{{newCorpNum}}/filings/incorporationApplication",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"{{newCorpNum}}",
+								"filings",
+								"incorporationApplication"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET New Corp Number, COOP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "96545e54-5e0c-4aeb-ac6e-4461eab2185e",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Set the next available Corp Num\", () => {",
+									"    pm.expect(jsonData.corpNum).to.exist;",
+									"    pm.environment.set(\"newCorpNum\", 'CP'+(jsonData.corpNum[0]));",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses?legal_type=CP",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses"
+							],
+							"query": [
+								{
+									"key": "legal_type",
+									"value": "CP"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST COOP Incorporation Filing",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "579a47ba-40a7-417c-ac61-932acd8332b0",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Assert new Business record has been created.\", () => {",
+									"    pm.expect(jsonData.filing.incorporationApplication).to.exist",
+									"    var result = jsonData.filing.incorporationApplication",
+									"    pm.expect(jsonData.filing.business.identifier).to.eql(pm.environment.get('newCorpNum'))",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for each address\", () => {",
+									"    var result = jsonData.filing.incorporationApplication",
+									"    var registeredOffice = result.offices.registeredOffice",
+									"    pm.expect(registeredOffice.deliveryAddress.addressCity).to.eql(\"DELIVERY_ADDRESS CITY\")",
+									"    pm.expect(registeredOffice.deliveryAddress.addressCountry).to.eql(\"CANADA\")",
+									"    pm.expect(registeredOffice.deliveryAddress.addressId).to.exist",
+									"    pm.expect(registeredOffice.deliveryAddress.addressRegion).to.eql(\"BC\")",
+									"    pm.expect(registeredOffice.deliveryAddress.deliveryInstructions).to.exist",
+									"    pm.expect(registeredOffice.deliveryAddress.postalCode).to.eql(\"H0H0H0\")",
+									"    pm.expect(registeredOffice.deliveryAddress.streetAddress).to.eql(\"DELIVERY_ADDRESS - ADDRESS LINE ONE\")",
+									"    pm.expect(registeredOffice.deliveryAddress.streetAddressAdditional).to.exist",
+									"    pm.expect(registeredOffice.mailingAddress.addressCity).to.eql(\"MAILING_ADDRESS CITY\")",
+									"    pm.expect(registeredOffice.mailingAddress.addressCountry).to.eql(\"CANADA\")",
+									"    pm.expect(registeredOffice.mailingAddress.addressId).to.exist",
+									"    pm.expect(registeredOffice.mailingAddress.addressRegion).to.eql(\"BC\")",
+									"    pm.expect(registeredOffice.mailingAddress.deliveryInstructions).to.exist",
+									"    pm.expect(registeredOffice.mailingAddress.postalCode).to.eql(\"H0H0H0\")",
+									"    pm.expect(registeredOffice.mailingAddress.streetAddress).to.eql(\"MAILING_ADDRESS - ADDRESS LINE ONE\")",
+									"    pm.expect(registeredOffice.mailingAddress.streetAddressAdditional).to.exist",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n\t\t},\n\t\t \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08T00:00:00+00:00\",\n            \"identifier\": \"{{newCorpNum}}\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\",\n            \"legalType\": \"CP\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"nrNumber\": \"{{newCorpNum}}\",\n\t\t\t\t\"legalType\": \"CP\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"parties\": [\n        {\n            \"officer\": {\n                \"id\": 1,\n                \"firstName\": \"Joe\",\n                \"lastName\": \"Swanson\",\n                \"middleName\": \"P\",\n                \"orgName\": \"\",\n                \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n                \"streetAddress\": \"mailing_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"mailing_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n                \"streetAddress\": \"delivery_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"delivery_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"appointmentDate\": \"2018-01-01\",\n            \"roles\": [\n                {\n                    \"roleType\": \"Completing Party\",\n                    \"appointmentDate\": \"2018-01-01\"\n\n                },\n                {\n                    \"roleType\": \"Director\",\n                    \"appointmentDate\": \"2018-01-01\"\n\n                }\n            ]\n        },\n        {\n            \"officer\": {\n                \"id\": 2,\n                \"firstName\": \"\",\n                \"lastName\": \"\",\n                \"middleName\": \"\",\n                \"orgName\": \"Xyz Inc.\",\n                \"partyType\": \"org\"\n            },\n            \"mailingAddress\": {\n                \"streetAddress\": \"mailing_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"mailing_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"appointmentDate\": \"2018-01-01\",\n           \"roles\": [\n                {\n                    \"roleType\": \"Incorporator\",\n                    \"appointmentDate\": \"2018-01-01\"\n                }\n            ]\n        }\n    ],\n\t\t\t\"businessContact\": {\n\t\t\t\t\"email\": \"no_one@never.get\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/{{newCorpNum}}/filings/incorporationApplication",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"{{newCorpNum}}",
+								"filings",
+								"incorporationApplication"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET New Corp Number, COOP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "96545e54-5e0c-4aeb-ac6e-4461eab2185e",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Set the next available Corp Num\", () => {",
+									"    pm.expect(jsonData.corpNum).to.exist;",
+									"    pm.environment.set(\"newCorpNum\", 'CP'+(jsonData.corpNum[0]));",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/api/v1/businesses?legal_type=CP",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses"
+							],
+							"query": [
+								{
+									"key": "legal_type",
+									"value": "CP"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST COOP Incorporation Filing",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "579a47ba-40a7-417c-ac61-932acd8332b0",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"pm.test(\"Assert new Business record has been created.\", () => {",
+									"    pm.expect(jsonData.filing.incorporationApplication).to.exist",
+									"    var result = jsonData.filing.incorporationApplication",
+									"    pm.expect(jsonData.filing.business.identifier).to.eql(pm.environment.get('newCorpNum'))",
+									"});",
+									"",
+									"pm.test(\"Returns the required fields for each address\", () => {",
+									"    var result = jsonData.filing.incorporationApplication",
+									"    var registeredOffice = result.offices.registeredOffice",
+									"    pm.expect(registeredOffice.deliveryAddress.addressCity).to.eql(\"DELIVERY_ADDRESS CITY\")",
+									"    pm.expect(registeredOffice.deliveryAddress.addressCountry).to.eql(\"CANADA\")",
+									"    pm.expect(registeredOffice.deliveryAddress.addressId).to.exist",
+									"    pm.expect(registeredOffice.deliveryAddress.addressRegion).to.eql(\"BC\")",
+									"    pm.expect(registeredOffice.deliveryAddress.deliveryInstructions).to.exist",
+									"    pm.expect(registeredOffice.deliveryAddress.postalCode).to.eql(\"H0H0H0\")",
+									"    pm.expect(registeredOffice.deliveryAddress.streetAddress).to.eql(\"DELIVERY_ADDRESS - ADDRESS LINE ONE\")",
+									"    pm.expect(registeredOffice.deliveryAddress.streetAddressAdditional).to.exist",
+									"    pm.expect(registeredOffice.mailingAddress.addressCity).to.eql(\"MAILING_ADDRESS CITY\")",
+									"    pm.expect(registeredOffice.mailingAddress.addressCountry).to.eql(\"CANADA\")",
+									"    pm.expect(registeredOffice.mailingAddress.addressId).to.exist",
+									"    pm.expect(registeredOffice.mailingAddress.addressRegion).to.eql(\"BC\")",
+									"    pm.expect(registeredOffice.mailingAddress.deliveryInstructions).to.exist",
+									"    pm.expect(registeredOffice.mailingAddress.postalCode).to.eql(\"H0H0H0\")",
+									"    pm.expect(registeredOffice.mailingAddress.streetAddress).to.eql(\"MAILING_ADDRESS - ADDRESS LINE ONE\")",
+									"    pm.expect(registeredOffice.mailingAddress.streetAddressAdditional).to.exist",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n\t\t},\n\t\t \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08T00:00:00+00:00\",\n            \"identifier\": \"{{newCorpNum}}\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\",\n            \"legalType\": \"CP\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"nrNumber\": \"{{newCorpNum}}\",\n\t\t\t\t\"legalType\": \"CP\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"parties\": [\n        {\n            \"officer\": {\n                \"id\": 1,\n                \"firstName\": \"Joe\",\n                \"lastName\": \"Swanson\",\n                \"middleName\": \"P\",\n                \"orgName\": \"\",\n                \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n                \"streetAddress\": \"mailing_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"mailing_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n                \"streetAddress\": \"delivery_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"delivery_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"appointmentDate\": \"2018-01-01\",\n            \"roles\": [\n                {\n                    \"roleType\": \"Completing Party\",\n                    \"appointmentDate\": \"2018-01-01\"\n\n                },\n                {\n                    \"roleType\": \"Director\",\n                    \"appointmentDate\": \"2018-01-01\"\n\n                }\n            ]\n        },\n        {\n            \"officer\": {\n                \"id\": 2,\n                \"firstName\": \"\",\n                \"lastName\": \"\",\n                \"middleName\": \"\",\n                \"orgName\": \"Xyz Inc.\",\n                \"partyType\": \"org\"\n            },\n            \"mailingAddress\": {\n                \"streetAddress\": \"mailing_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"mailing_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"appointmentDate\": \"2018-01-01\",\n           \"roles\": [\n                {\n                    \"roleType\": \"Incorporator\",\n                    \"appointmentDate\": \"2018-01-01\"\n                }\n            ]\n        }\n    ],\n\t\t\t\"businessContact\": {\n\t\t\t\t\"email\": \"no_one@never.get\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/{{newCorpNum}}/filings/incorporationApplication",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								"{{newCorpNum}}",
+								"filings",
+								"incorporationApplication"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
 			"name": "Reset Oracle",
 			"item": [
 				{
@@ -4943,427 +5364,6 @@
 				}
 			],
 			"description": "reset calls",
-			"protocolProfileBehavior": {}
-		},
-		{
-			"name": "Incorporation",
-			"item": [
-				{
-					"name": "GET New Corp Number, BCOMP",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "705f0c36-001d-4011-8ee8-8b04e41bbd16",
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"Set the next available Corp Num\", () => {",
-									"    pm.expect(jsonData.corpNum).to.exist;",
-									"    pm.environment.set(\"newCorpNum\", 'BC'+(jsonData.corpNum[0]));",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{url}}/api/v1/businesses?legal_type=BC",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses"
-							],
-							"query": [
-								{
-									"key": "legal_type",
-									"value": "BC"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "POST BCOMP Incorporation Filing",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "8b904c00-a9ee-4006-a6c2-2c8adb0b7bd1",
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"Status code is 201\", function () {",
-									"    pm.response.to.have.status(201);",
-									"});",
-									"",
-									"pm.test('should return JSON', function () {",
-									"    pm.response.to.have.header('Content-Type', 'application/json');",
-									"});",
-									"",
-									"pm.test(\"Assert new Business record has been created.\", () => {",
-									"    pm.expect(jsonData.filing.incorporationApplication).to.exist",
-									"    var result = jsonData.filing.incorporationApplication",
-									"    pm.expect(jsonData.filing.business.identifier).to.eql(pm.environment.get('newCorpNum'))",
-									"});",
-									"",
-									"pm.test(\"Returns the required fields for registered office addresses\", () => {",
-									"    var result = jsonData.filing.incorporationApplication",
-									"    var registeredOffice = result.offices.registeredOffice",
-									"    pm.expect(registeredOffice.deliveryAddress.addressCity).to.eql(\"DELIVERY_ADDRESS CITY\")",
-									"    pm.expect(registeredOffice.deliveryAddress.addressCountry).to.eql(\"CANADA\")",
-									"    pm.expect(registeredOffice.deliveryAddress.addressId).to.exist",
-									"    pm.expect(registeredOffice.deliveryAddress.addressRegion).to.eql(\"BC\")",
-									"    pm.expect(registeredOffice.deliveryAddress.deliveryInstructions).to.exist",
-									"    pm.expect(registeredOffice.deliveryAddress.postalCode).to.eql(\"H0H0H0\")",
-									"    pm.expect(registeredOffice.deliveryAddress.streetAddress).to.eql(\"DELIVERY_ADDRESS - ADDRESS LINE ONE\")",
-									"    pm.expect(registeredOffice.deliveryAddress.streetAddressAdditional).to.exist",
-									"    pm.expect(registeredOffice.mailingAddress.addressCity).to.eql(\"MAILING_ADDRESS CITY\")",
-									"    pm.expect(registeredOffice.mailingAddress.addressCountry).to.eql(\"CANADA\")",
-									"    pm.expect(registeredOffice.mailingAddress.addressId).to.exist",
-									"    pm.expect(registeredOffice.mailingAddress.addressRegion).to.eql(\"BC\")",
-									"    pm.expect(registeredOffice.mailingAddress.deliveryInstructions).to.exist",
-									"    pm.expect(registeredOffice.mailingAddress.postalCode).to.eql(\"H0H0H0\")",
-									"    pm.expect(registeredOffice.mailingAddress.streetAddress).to.eql(\"MAILING_ADDRESS - ADDRESS LINE ONE\")",
-									"    pm.expect(registeredOffice.mailingAddress.streetAddressAdditional).to.exist",
-									"});",
-									"",
-									"pm.test(\"Returns the required fields for records office addresses\", () => {",
-									"    var result = jsonData.filing.incorporationApplication",
-									"    var recordsOffice = result.offices.recordsOffice",
-									"    pm.expect(recordsOffice.deliveryAddress.addressCity).to.eql(\"DELIVERY_ADDRESS CITY\")",
-									"    pm.expect(recordsOffice.deliveryAddress.addressCountry).to.eql(\"CANADA\")",
-									"    pm.expect(recordsOffice.deliveryAddress.addressId).to.exist",
-									"    pm.expect(recordsOffice.deliveryAddress.addressRegion).to.eql(\"BC\")",
-									"    pm.expect(recordsOffice.deliveryAddress.deliveryInstructions).to.exist",
-									"    pm.expect(recordsOffice.deliveryAddress.postalCode).to.eql(\"H0H0H0\")",
-									"    pm.expect(recordsOffice.deliveryAddress.streetAddress).to.eql(\"DELIVERY_ADDRESS - ADDRESS LINE ONE\")",
-									"    pm.expect(recordsOffice.deliveryAddress.streetAddressAdditional).to.exist",
-									"    pm.expect(recordsOffice.mailingAddress.addressCity).to.eql(\"MAILING_ADDRESS CITY\")",
-									"    pm.expect(recordsOffice.mailingAddress.addressCountry).to.eql(\"CANADA\")",
-									"    pm.expect(recordsOffice.mailingAddress.addressId).to.exist",
-									"    pm.expect(recordsOffice.mailingAddress.addressRegion).to.eql(\"BC\")",
-									"    pm.expect(recordsOffice.mailingAddress.deliveryInstructions).to.exist",
-									"    pm.expect(recordsOffice.mailingAddress.postalCode).to.eql(\"H0H0H0\")",
-									"    pm.expect(recordsOffice.mailingAddress.streetAddress).to.eql(\"MAILING_ADDRESS - ADDRESS LINE ONE\")",
-									"    pm.expect(recordsOffice.mailingAddress.streetAddressAdditional).to.exist",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n\t\t},\n\t\t \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08T00:00:00+00:00\",\n            \"identifier\": \"{{newCorpNum}}\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\",\n            \"legalType\": \"CP\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"nrNumber\": \"{{newCorpNum}}\",\n\t\t\t\t\"legalType\": \"BC\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t},\n\t\t\t\t\"recordsOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"businessContact\": {\n\t\t\t\t\"email\": \"no_one@never.get\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/{{newCorpNum}}/filings/incorporationApplication",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								"{{newCorpNum}}",
-								"filings",
-								"incorporationApplication"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GET New Corp Number, COOP",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "96545e54-5e0c-4aeb-ac6e-4461eab2185e",
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"Set the next available Corp Num\", () => {",
-									"    pm.expect(jsonData.corpNum).to.exist;",
-									"    pm.environment.set(\"newCorpNum\", 'CP'+(jsonData.corpNum[0]));",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{url}}/api/v1/businesses?legal_type=CP",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses"
-							],
-							"query": [
-								{
-									"key": "legal_type",
-									"value": "CP"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "POST COOP Incorporation Filing",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "579a47ba-40a7-417c-ac61-932acd8332b0",
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Response time is less than 10000ms\", function () {",
-									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
-									"});",
-									"",
-									"pm.test(\"Status code is 201\", function () {",
-									"    pm.response.to.have.status(201);",
-									"});",
-									"",
-									"pm.test('should return JSON', function () {",
-									"    pm.response.to.have.header('Content-Type', 'application/json');",
-									"});",
-									"",
-									"pm.test(\"Assert new Business record has been created.\", () => {",
-									"    pm.expect(jsonData.filing.incorporationApplication).to.exist",
-									"    var result = jsonData.filing.incorporationApplication",
-									"    pm.expect(jsonData.filing.business.identifier).to.eql(pm.environment.get('newCorpNum'))",
-									"});",
-									"",
-									"pm.test(\"Returns the required fields for each address\", () => {",
-									"    var result = jsonData.filing.incorporationApplication",
-									"    var registeredOffice = result.offices.registeredOffice",
-									"    pm.expect(registeredOffice.deliveryAddress.addressCity).to.eql(\"DELIVERY_ADDRESS CITY\")",
-									"    pm.expect(registeredOffice.deliveryAddress.addressCountry).to.eql(\"CANADA\")",
-									"    pm.expect(registeredOffice.deliveryAddress.addressId).to.exist",
-									"    pm.expect(registeredOffice.deliveryAddress.addressRegion).to.eql(\"BC\")",
-									"    pm.expect(registeredOffice.deliveryAddress.deliveryInstructions).to.exist",
-									"    pm.expect(registeredOffice.deliveryAddress.postalCode).to.eql(\"H0H0H0\")",
-									"    pm.expect(registeredOffice.deliveryAddress.streetAddress).to.eql(\"DELIVERY_ADDRESS - ADDRESS LINE ONE\")",
-									"    pm.expect(registeredOffice.deliveryAddress.streetAddressAdditional).to.exist",
-									"    pm.expect(registeredOffice.mailingAddress.addressCity).to.eql(\"MAILING_ADDRESS CITY\")",
-									"    pm.expect(registeredOffice.mailingAddress.addressCountry).to.eql(\"CANADA\")",
-									"    pm.expect(registeredOffice.mailingAddress.addressId).to.exist",
-									"    pm.expect(registeredOffice.mailingAddress.addressRegion).to.eql(\"BC\")",
-									"    pm.expect(registeredOffice.mailingAddress.deliveryInstructions).to.exist",
-									"    pm.expect(registeredOffice.mailingAddress.postalCode).to.eql(\"H0H0H0\")",
-									"    pm.expect(registeredOffice.mailingAddress.streetAddress).to.eql(\"MAILING_ADDRESS - ADDRESS LINE ONE\")",
-									"    pm.expect(registeredOffice.mailingAddress.streetAddressAdditional).to.exist",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n\t\t},\n\t\t \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08T00:00:00+00:00\",\n            \"identifier\": \"{{newCorpNum}}\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\",\n            \"legalType\": \"CP\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"nrNumber\": \"{{newCorpNum}}\",\n\t\t\t\t\"legalType\": \"CP\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"businessContact\": {\n\t\t\t\t\"email\": \"no_one@never.get\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/{{newCorpNum}}/filings/incorporationApplication",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								"{{newCorpNum}}",
-								"filings",
-								"incorporationApplication"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GET New Corp Number, COOP",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "96545e54-5e0c-4aeb-ac6e-4461eab2185e",
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"Set the next available Corp Num\", () => {",
-									"    pm.expect(jsonData.corpNum).to.exist;",
-									"    pm.environment.set(\"newCorpNum\", 'CP'+(jsonData.corpNum[0]));",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{url}}/api/v1/businesses?legal_type=CP",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses"
-							],
-							"query": [
-								{
-									"key": "legal_type",
-									"value": "CP"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "POST COOP Incorporation Filing",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "579a47ba-40a7-417c-ac61-932acd8332b0",
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Response time is less than 10000ms\", function () {",
-									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
-									"});",
-									"",
-									"pm.test(\"Status code is 201\", function () {",
-									"    pm.response.to.have.status(201);",
-									"});",
-									"",
-									"pm.test('should return JSON', function () {",
-									"    pm.response.to.have.header('Content-Type', 'application/json');",
-									"});",
-									"",
-									"pm.test(\"Assert new Business record has been created.\", () => {",
-									"    pm.expect(jsonData.filing.incorporationApplication).to.exist",
-									"    var result = jsonData.filing.incorporationApplication",
-									"    pm.expect(jsonData.filing.business.identifier).to.eql(pm.environment.get('newCorpNum'))",
-									"});",
-									"",
-									"pm.test(\"Returns the required fields for each address\", () => {",
-									"    var result = jsonData.filing.incorporationApplication",
-									"    var registeredOffice = result.offices.registeredOffice",
-									"    pm.expect(registeredOffice.deliveryAddress.addressCity).to.eql(\"DELIVERY_ADDRESS CITY\")",
-									"    pm.expect(registeredOffice.deliveryAddress.addressCountry).to.eql(\"CANADA\")",
-									"    pm.expect(registeredOffice.deliveryAddress.addressId).to.exist",
-									"    pm.expect(registeredOffice.deliveryAddress.addressRegion).to.eql(\"BC\")",
-									"    pm.expect(registeredOffice.deliveryAddress.deliveryInstructions).to.exist",
-									"    pm.expect(registeredOffice.deliveryAddress.postalCode).to.eql(\"H0H0H0\")",
-									"    pm.expect(registeredOffice.deliveryAddress.streetAddress).to.eql(\"DELIVERY_ADDRESS - ADDRESS LINE ONE\")",
-									"    pm.expect(registeredOffice.deliveryAddress.streetAddressAdditional).to.exist",
-									"    pm.expect(registeredOffice.mailingAddress.addressCity).to.eql(\"MAILING_ADDRESS CITY\")",
-									"    pm.expect(registeredOffice.mailingAddress.addressCountry).to.eql(\"CANADA\")",
-									"    pm.expect(registeredOffice.mailingAddress.addressId).to.exist",
-									"    pm.expect(registeredOffice.mailingAddress.addressRegion).to.eql(\"BC\")",
-									"    pm.expect(registeredOffice.mailingAddress.deliveryInstructions).to.exist",
-									"    pm.expect(registeredOffice.mailingAddress.postalCode).to.eql(\"H0H0H0\")",
-									"    pm.expect(registeredOffice.mailingAddress.streetAddress).to.eql(\"MAILING_ADDRESS - ADDRESS LINE ONE\")",
-									"    pm.expect(registeredOffice.mailingAddress.streetAddressAdditional).to.exist",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n\t\t},\n\t\t \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08T00:00:00+00:00\",\n            \"identifier\": \"{{newCorpNum}}\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\",\n            \"legalType\": \"CP\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"nrNumber\": \"{{newCorpNum}}\",\n\t\t\t\t\"legalType\": \"CP\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"businessContact\": {\n\t\t\t\t\"email\": \"no_one@never.get\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/{{newCorpNum}}/filings/incorporationApplication",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								"{{newCorpNum}}",
-								"filings",
-								"incorporationApplication"
-							]
-						}
-					},
-					"response": []
-				}
-			],
 			"protocolProfileBehavior": {}
 		}
 	],

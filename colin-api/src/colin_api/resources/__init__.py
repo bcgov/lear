@@ -24,12 +24,12 @@ from flask import Blueprint
 from flask_restplus import Api
 
 from .business import API as BUSINESS_API
-from .directors import API as DIRECTORS_API
 from .event import API as EVENT_API
 from .filing import API as FILING_API
 from .meta import API as META_API
 from .office import API as OFFICE_API
 from .ops import API as OPS_API
+from .parties import API as DIRECTORS_API
 from .reset import API as RESET_API
 
 
@@ -66,8 +66,8 @@ API = Api(API_BLUEPRINT,
 
 API.add_namespace(META_API, path='/meta')
 API.add_namespace(BUSINESS_API, path='/businesses')
-API.add_namespace(DIRECTORS_API, path='/businesses/directors')
+API.add_namespace(DIRECTORS_API, path='/businesses/parties')
 API.add_namespace(EVENT_API, path='/businesses/event')
-API.add_namespace(DIRECTORS_API, path='/businesses/office')
+API.add_namespace(OFFICE_API, path='/businesses/office')
 API.add_namespace(FILING_API, path='/businesses/filings')
 API.add_namespace(RESET_API, path='/reset')

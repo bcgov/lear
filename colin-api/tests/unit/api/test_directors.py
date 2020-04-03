@@ -29,7 +29,7 @@ ids = cod_ids
 @oracle_integration
 def test_get_current(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0001965/directors')
+    rv = client.get('/api/v1/businesses/CP0001965/parties')
 
     assert 200 == rv.status_code
     is_valid, errors = validate(rv.json, 'directors', validate_schema=True)
