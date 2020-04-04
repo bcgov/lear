@@ -75,7 +75,7 @@ def process(business: Business, filing: Dict, app: Flask = None):  # pylint: dis
                         party = create_party(party_info=party_info)
                         for role_type in party_info.get('roles'):
                             role = {
-                                'roleType': role_type,
+                                'roleType': role_type.get('roleType'),
                                 'appointmentDate': party_info.get('appointmentDate', None),
                                 'cessationDate': party_info.get('cessationDate', None)
                             }

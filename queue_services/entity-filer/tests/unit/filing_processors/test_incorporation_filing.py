@@ -16,8 +16,10 @@
 import copy
 from unittest.mock import patch
 
+from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
+
 from entity_filer.filing_processors import incorporation_filing
-from tests.unit import INCORP_FILING, create_business, create_filing
+from tests.unit import create_business, create_filing
 
 
 def test_incorporation_filing_process(app, session):
@@ -25,8 +27,9 @@ def test_incorporation_filing_process(app, session):
     # setup
     next_corp_num = 'BC0001095'
     with patch.object(incorporation_filing, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
-        filing = copy.deepcopy(INCORP_FILING)
-        identifier = filing['filing']['incorporationApplication']['nameRequest']['nrNumber']
+        filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+        identifier = 'NR 1234567'
+        filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
         business = create_business(identifier)
         create_filing('123', filing, business.id)
 
@@ -34,7 +37,7 @@ def test_incorporation_filing_process(app, session):
         incorporation_filing.process(business, filing['filing'])
 
         # Assertions
-        assert business.identifier == 'BC0001095'
+        assert business.identifier == next_corp_num
         assert len(business.share_classes.all()) == 2
         assert len(business.offices.all()) == 3  # One office is created in create_business method.
 
