@@ -32,16 +32,39 @@ class Share:
     share_name = None
 
     def to_dict(self):
-        return None
+        return {
+                'id': self.share_id,
+                'name': self.share_name,
+                'shareStructureType': 'Series',
+                'displayOrder': self.share_id,
+                'maxNumberOfShares': self.max_number_shares,
+                'hasMaximumShares': self.has_max_shares == 'Y' or False,
+                'hasRightsOrRestrictions': self.has_special_rights == 'Y' or False,
+            }
 
 class ShareClass(Share):
     currency_type = None
     has_par_value = None
     par_value_amt = None
     series = None
-
+ 
     def to_dict(self):
-        return None
+        return {
+                'id': self.share_id,
+                'name': self.share_name,
+                'shareStructureType': 'Class',
+                'displayOrder': self.share_id,
+                'maxNumberOfShares': self.max_number_shares,
+                'parValue': self.par_value_amt,
+                'currency': self.currency_type,
+                'hasMaximumShares': self.has_max_shares == 'Y' or False,
+                'hasParValue': self.has_par_value == 'Y' or False,
+                'hasRightsOrRestrictions': self.has_special_rights == 'Y' or False,
+                'series': [
+                    x.to_dict() for x in self.series
+                ]
+        }
+        
 
 class ShareObject:
 
@@ -54,15 +77,19 @@ class ShareObject:
         share_struct = cursor.fetchall()
 
         for row in share_struct:
-            share_classes.append(cls._get_share_classes(cursor, row.get('event_id'), corp_num))
+            share_classes.append(cls._get_share_classes(cursor, row[0], corp_num))
 
         return share_classes
 
     @classmethod
     def _get_share_classes(cls, cursor, event_id, corp_num):
-        query = ""
+        query = """select share_class_id, currency_typ_cd, max_share_ind, share_quantity, spec_rights_ind,
+                   par_value_ind, par_value_amt, class_nme, other_currency from share_struct_cls
+                   where start_event_id=:event_id and corp_num=:corp_num"""
+
         share_classes = []
-        cursor.execute(query)
+        cursor.execute(query,
+                       corp_num=corp_num, event_id=event_id)
         class_arr = cursor.fetchall()
         
         description = cursor.description
@@ -70,14 +97,14 @@ class ShareObject:
         for row in class_arr:
              row = dict(zip([x[0].lower() for x in description], row))
              share_class = ShareClass()
-             share_class.currency_type = row['']
-             share_class.has_max_shares = row['']
-             share_class.has_special_rights = row['']
-             share_class.has_par_value = row['']
-             share_class.share_id = row['']
-             share_class.share_name = row['']
-             share_class.par_value_amt = row['']
-             share_class.max_number_shares = row['']
+             share_class.currency_type = row['currency_typ_cd']
+             share_class.has_max_shares = row['max_share_ind']
+             share_class.has_special_rights = row['spec_rights_ind']
+             share_class.has_par_value = row['par_value_ind']
+             share_class.share_id = row['share_class_id']
+             share_class.share_name = row['class_nme']
+             share_class.par_value_amt = row['par_value_amt']
+             share_class.max_number_shares = row['share_quantity']
              share_class.series = cls._get_share_series(cursor, share_class, corp_num)
              share_classes.append(share_class)
 
@@ -85,9 +112,16 @@ class ShareObject:
 
     @classmethod
     def _get_share_series(cls, cursor, share_class, identifier):
-        query = ""
+        query = """select series_id, max_share_ind, share_quantity, spec_right_ind,
+                    series_nme from share_series where share_class_id=:class_id and 
+                    corp_num=:identifier"""
+
         share_series = []
-        cursor.execute(query)
+        cursor.execute(query,
+                       class_id=share_class.share_id,
+                       identifier=identifier
+                       )
+
         series_arr = cursor.fetchall()
         
         description = cursor.description
@@ -95,11 +129,11 @@ class ShareObject:
         for row in series_arr:
             row = dict(zip([x[0].lower() for x in description], row))
             series = Share()
-            series.has_max_shares = row['']
-            series.has_special_rights = row['']
-            series.max_number_shares = row['']
-            series.share_id = row['']
-            series.share_name = row['']
+            series.has_max_shares = row['max_share_ind']
+            series.has_special_rights = row['spec_right_ind']
+            series.max_number_shares = row['share_quantity']
+            series.share_id = row['series_id']
+            series.share_name = row['series_nme']
             share_series.append(series)
 
         return share_series
@@ -134,5 +168,48 @@ class ShareObject:
         return None
 
     @classmethod
-    def create_share_structure(cls, business):
+    def create_share_structure(cls, cursor, business, event_id, share_dict):
+        query = """insert into share_struct (corp_num, start_event_id, dd_corp_num)
+                   values (:corp_num, :event_id, :corp_num)
+                """
+
+        cursor.execute(
+                query,
+                corp_num=business.identifier, event_id=event_id
+            )
+
+        for share_class in share_dict:
+            cls.create_share_class(cursor, event_id, business, share_class)
+ 
+        return None
+    # Todo Add exceptions/error handling
+    @classmethod
+    def create_share_class(cls, cursor, event_id, business, class_dict):
+        query = """insert into share_struct_cls (corp_num, share_class_id, start_event_id,
+                    currency_typ_cd, max_share_ind, share_quantity, spec_rights_ind,
+                    par_value_ind, par_value_amt, class_nme values (
+                    :corp_num, :class_id, :event_id, :currency, :has_max_share,
+                    :qty, :has_spec_rights, :has_par_value, :par_value, :name
+                    )"""
+        
+        cursor.execute(
+                query,
+                corp_num=business.identifier, 
+                class_id=class_dict['id'],
+                event_id=event_id,
+                currency=class_dict['currency'],
+                has_max_share=class_dict['hasMaximumShares'],
+                qty=class_dict['maxNUmberOfShares'],
+                has_spec_rights=class_dict['hasRightsOrRestrictions'],
+                has_par_value=class_dict['hasParValue'],
+                par_value=class_dict['parValue']
+            )
+
+        for share_series in class_dict['series']:
+            cls.create_share_series(cursor, event_id, business, class_dict['id'], share_series)
+
+        return None
+    
+    @classmethod
+    def create_share_series(cls, cursor, event_id, business, class_id, series_arr):
         return None
