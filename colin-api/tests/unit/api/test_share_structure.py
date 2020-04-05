@@ -18,14 +18,14 @@ import copy
 import json
 
 from registry_schemas import validate
-from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE, FILING_HEADER
+from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from tests import oracle_integration
+
 
 @oracle_integration
 def test_get_shares(client):
     """Assert the shares for a company can be retrieved."""
-
     headers = {'content-type': 'application/json'}
     rv = client.get('/api/v1/businesses?legal_type=BC')
     test_bcomp = f"BC{rv.json['corpNum'][0]}"
@@ -53,4 +53,9 @@ def test_get_shares(client):
 
     assert 200 == rv2.status_code
     assert rv2.json
-    assert len(rv2.json['shareClasses'][1]['series']) == 2
+    is_valid, errors = validate(rv2.json, 'share_class')
+
+    print(errors)
+
+    assert is_valid
+    assert len(rv2.json['shareClasses'][0]['series']) == 2

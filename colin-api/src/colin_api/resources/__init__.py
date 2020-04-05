@@ -33,6 +33,7 @@ from .parties import API as DIRECTORS_API
 from .reset import API as RESET_API
 from .share_struct import API as SHARES_API
 
+
 __all__ = ('API_BLUEPRINT', 'OPS_BLUEPRINT')
 
 # This will add the Authorize button to the swagger docs

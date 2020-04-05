@@ -15,7 +15,7 @@
 
 Currently this only provides API versioning information
 """
-from flask import current_app, jsonify, request
+from flask import current_app, jsonify
 from flask_restplus import Resource, cors
 
 from colin_api.exceptions import GenericException
