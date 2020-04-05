@@ -20,7 +20,7 @@ import datetime
 from flask import current_app
 
 from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
-from colin_api.models import Address, Business, EntityName, Office, Party
+from colin_api.models import Address, Business, EntityName, Office, Party, ShareObject
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
@@ -598,6 +598,12 @@ class Filing:
         cls._add_ledger_text(cursor, event_id, text % (office_desc), user_id)
 
     @classmethod
+    def _add_shares_from_filing(cls, cursor,
+                                event_id, corp_num, filing):
+        share_dict = filing.body['shareClasses']
+        ShareObject.create_share_structure(cursor, corp_num, event_id, share_dict)
+
+    @classmethod
     def get_filing(cls, con=None,  # pylint: disable=too-many-arguments, too-many-branches;
                    business: Business = None, event_id: str = None, filing_type: str = None, year: int = None):
         """Get a Filing."""
@@ -865,6 +871,7 @@ class Filing:
 
                 cls._add_office_from_filing(cursor, event_id, corp_num, user_id, filing)
                 cls._add_parties_from_filing(cursor, event_id, filing)
+                cls._add_shares_from_filing(cursor, event_id, corp_num, filing)
 
             else:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)

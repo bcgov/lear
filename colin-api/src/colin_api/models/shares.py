@@ -70,16 +70,26 @@ class ShareObject:
 
     share_classes = None
 
+    def to_dict(self):
+        return {
+            'shareClasses' : [ 
+                x.to_dict() for x in self.share_classes
+            ]
+        }
+    
     @classmethod
     def _build_shares_list(cls, cursor, corp_num):
-        share_classes = []
+        to_return = ShareObject()
+        to_return.share_classes = []
 
         share_struct = cursor.fetchall()
 
         for row in share_struct:
-            share_classes.append(cls._get_share_classes(cursor, row[0], corp_num))
+            classes = cls._get_share_classes(cursor, row[0], corp_num)
+            for item in classes:
+                to_return.share_classes.append(item)
 
-        return share_classes
+        return to_return
 
     @classmethod
     def _get_share_classes(cls, cursor, event_id, corp_num):
@@ -168,48 +178,75 @@ class ShareObject:
         return None
 
     @classmethod
-    def create_share_structure(cls, cursor, business, event_id, share_dict):
+    def create_share_structure(cls, cursor, corp_num, event_id, share_dict):
         query = """insert into share_struct (corp_num, start_event_id, dd_corp_num)
                    values (:corp_num, :event_id, :corp_num)
                 """
 
         cursor.execute(
                 query,
-                corp_num=business.identifier, event_id=event_id
+                corp_num=corp_num, event_id=event_id
             )
 
         for share_class in share_dict:
-            cls.create_share_class(cursor, event_id, business, share_class)
+            cls.create_share_class(cursor, event_id, corp_num, share_class)
  
         return None
     # Todo Add exceptions/error handling
     @classmethod
-    def create_share_class(cls, cursor, event_id, business, class_dict):
+    def create_share_class(cls, cursor, event_id, corp_num, class_dict):
         query = """insert into share_struct_cls (corp_num, share_class_id, start_event_id,
                     currency_typ_cd, max_share_ind, share_quantity, spec_rights_ind,
-                    par_value_ind, par_value_amt, class_nme values (
+                    par_value_ind, par_value_amt, class_nme) values (
                     :corp_num, :class_id, :event_id, :currency, :has_max_share,
                     :qty, :has_spec_rights, :has_par_value, :par_value, :name
                     )"""
         
         cursor.execute(
                 query,
-                corp_num=business.identifier, 
+                corp_num=corp_num, 
                 class_id=class_dict['id'],
                 event_id=event_id,
                 currency=class_dict['currency'],
                 has_max_share=class_dict['hasMaximumShares'],
-                qty=class_dict['maxNUmberOfShares'],
+                qty=class_dict['maxNumberOfShares'],
                 has_spec_rights=class_dict['hasRightsOrRestrictions'],
                 has_par_value=class_dict['hasParValue'],
-                par_value=class_dict['parValue']
+                par_value=class_dict['parValue'],
+                name=class_dict['name']
             )
 
         for share_series in class_dict['series']:
-            cls.create_share_series(cursor, event_id, business, class_dict['id'], share_series)
+            cls.create_share_series(cursor, event_id, corp_num, class_dict['id'], share_series)
 
         return None
     
     @classmethod
-    def create_share_series(cls, cursor, event_id, business, class_id, series_arr):
-        return None
+    def create_share_series(cls, cursor, event_id, corp_num, class_id, series_arr):
+        query = """insert into share_series (corp_num, share_class_id, series_id, start_event_id,
+                   max_share_ind, share_quantity, spec_right_ind, series_nme) values (:corp_num, :class_id,
+                   :series_id, :event_id, :has_max_share, :qty, :has_spec_rights, :name)"""
+
+        cursor.execute(
+                query,
+                corp_num=corp_num,
+                class_id=class_id,
+                series_id=series_arr['id'],
+                event_id=event_id,
+                has_max_share=series_arr['hasMaximumShares'],
+                qty=series_arr['maxNumberOfShares'],
+                has_spec_rights=series_arr['hasRightsOrRestrictions'],
+                name=series_arr['name']
+            )
+
+    @classmethod
+    def delete_shares (cls, cursor, event_ids):
+
+        # Remove share series
+        delete_from_table_by_event_ids(cursor=cursor, event_ids=event_ids, table='share_series', column='start_event_id')
+        
+        # Remove share classes
+        delete_from_table_by_event_ids(cursor=cursor, event_ids=event_ids, table='share_struct_cls', column='start_event_id')
+        
+        # Remove share structure
+        delete_from_table_by_event_ids(cursor=cursor, event_ids=event_ids, table='share_struct', column='start_event_id')
