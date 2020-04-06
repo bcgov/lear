@@ -19,6 +19,6 @@ sentry-sdk==0.14.3
 six==1.14.0
 urllib3==1.25.8
 zipp==3.1.0
-git+https://github.com/bcgov/business-schemas.git@2.5.9#egg=registry_schemas
+git+https://github.com/bcgov/business-schemas.git@2.5.10#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
 git+https://github.com/bcgov/lear.git#egg=entity_queue_common&subdirectory=queue_services/common

@@ -408,6 +408,49 @@ INCORP_FILING = {
                         }
                     }
                 },
+                'shareClasses': [
+                    {
+                        'id': 1,
+                        'name': 'Share Class 1',
+                        'priority': 1,
+                        'hasMaximumShares': True,
+                        'maxNumberOfShares': 100,
+                        'hasParValue': True,
+                        'parValue': 10,
+                        'currency': 'CAD',
+                        'hasRightsOrRestrictions': False,
+                        'series': [
+                            {
+                                'id': 1,
+                                'name': 'Share Series 1',
+                                'priority': 1,
+                                'hasMaximumShares': True,
+                                'maxNumberOfShares': 50,
+                                'hasRightsOrRestrictions': False,
+                            },
+                            {
+                                'id': 2,
+                                'name': 'Share Series 2',
+                                'priority': 2,
+                                'hasMaximumShares': True,
+                                'maxNumberOfShares': 100,
+                                'hasRightsOrRestrictions': False,
+                            }
+                        ]
+                    },
+                    {
+                        'id': 2,
+                        'name': 'Share Class 2',
+                        'priority': 1,
+                        'hasMaximumShares': False,
+                        'maxNumberOfShares': None,
+                        'hasParValue': False,
+                        'parValue': None,
+                        'currency': None,
+                        'hasRightsOrRestrictions': True,
+                        'series': []
+                    },
+                ],
                 'contactPoint': {
                     'email': 'no_one@never.get',
                     'phone': '123-456-7890'

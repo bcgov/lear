@@ -19,7 +19,7 @@ from entity_queue_common.service_utils import logger
 from flask import Flask
 from legal_api.models import Business
 
-from entity_filer.filing_processors import create_office, create_party, create_role
+from entity_filer.filing_processors import create_office, create_party, create_role, create_share_class
 
 
 def get_next_corp_num(business_type: str, application: Flask):
@@ -55,6 +55,7 @@ def process(business: Business, filing: Dict, app: Flask = None):  # pylint: dis
         offices = incorp_filing.get('offices', None)
         parties = incorp_filing.get('parties', None)
         business_info = incorp_filing['nameRequest']
+        share_classes = incorp_filing['shareClasses']
 
         # Sanity check
         if business and business.identifier == business_info['nrNumber']:
@@ -74,11 +75,16 @@ def process(business: Business, filing: Dict, app: Flask = None):  # pylint: dis
                         party = create_party(party_info=party_info)
                         for role_type in party_info.get('roles'):
                             role = {
-                                'roleType': role_type,
+                                'roleType': role_type.get('roleType'),
                                 'appointmentDate': party_info.get('appointmentDate', None),
                                 'cessationDate': party_info.get('cessationDate', None)
                             }
                             party_role = create_role(party=party, role_info=role)
                             business.party_roles.append(party_role)
+
+                if share_classes:
+                    for share_class_info in share_classes:
+                        share_class = create_share_class(share_class_info)
+                        business.share_classes.append(share_class)
         else:
             logger.error('No business exists for NR number: %s', business_info['nrNUmber'])
