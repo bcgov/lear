@@ -45,7 +45,6 @@ def test_get_shares(client):
     rv = client.post(f'/api/v1/businesses/{test_bcomp}/filings/incorporationApplication',
                      data=json.dumps(filing), headers=headers)
 
-    # assert rv.json
     assert 201 == rv.status_code
     assert rv.json
 
