@@ -436,6 +436,8 @@ class Filing:
         # business_obj
         office_obj_list = Office.get_by_event(cursor, filing_event_info['event_id'])
         share_structure = ShareObject.get_all(cursor, identifier, filing_event_info['event_id'])
+        parties = Party.get_by_event(cursor, identifier, filing_event_info['event_id'], None)
+
         if not office_obj_list:
             raise FilingNotFoundException(identifier=identifier, filing_type='change_of_address',
                                           event_id=filing_event_info['event_id'])
@@ -446,7 +448,8 @@ class Filing:
         filing_obj.body = {
             'offices': offices,
             'eventId': filing_event_info['event_id'],
-            'shareClasses': share_structure.to_dict()['shareClasses']
+            'shareClasses': share_structure.to_dict()['shareClasses'],
+            'parties': [x.as_dict() for x in parties]
         }
         filing_obj.filing_type = 'incorporationApplication'
         filing_obj.paper_only = False
