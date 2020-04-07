@@ -602,8 +602,9 @@ class Filing:
     @classmethod
     def _add_shares_from_filing(cls, cursor,
                                 event_id, corp_num, filing):
-        share_dict = filing.body['shareClasses']
-        ShareObject.create_share_structure(cursor, corp_num, event_id, share_dict)
+        if corp_num[:2] != 'CP':
+            share_dict = filing.body['shareClasses']
+            ShareObject.create_share_structure(cursor, corp_num, event_id, share_dict)
 
     @classmethod
     def get_filing(cls, con=None,  # pylint: disable=too-many-arguments, too-many-branches;
