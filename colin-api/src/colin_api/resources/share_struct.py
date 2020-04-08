@@ -1,4 +1,4 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2020 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,19 +15,19 @@
 
 Currently this only provides API versioning information
 """
-from flask import current_app, jsonify, request
+from flask import current_app, jsonify
 from flask_restplus import Resource, cors
 
 from colin_api.exceptions import GenericException
-from colin_api.models import Party
+from colin_api.models import ShareObject
 from colin_api.models.filing import DB
 from colin_api.resources.business import API
 from colin_api.utils.util import cors_preflight
 
 
 @cors_preflight('GET')
-@API.route('/<string:identifier>/parties')
-class PartiesInfo(Resource):
+@API.route('/<string:identifier>/sharestructure')
+class ShareStruct(Resource):
     """Meta information about the overall service."""
 
     @staticmethod
@@ -38,14 +38,13 @@ class PartiesInfo(Resource):
             return jsonify({'message': 'Identifier required'}), 404
 
         try:
-            party_type = request.args.get('partyType', 'DIR')
+
             cursor = DB.connection.cursor()
-            directors = Party.get_current(cursor=cursor, identifier=identifier, role_type=party_type)
-            if not directors:
-                return jsonify({'message': f'directors for {identifier} not found'}), 404
-            if len(directors) < 3:
-                current_app.logger.error('Less than 3 directors for {}'.format(identifier))
-            return jsonify({'directors': [x.as_dict() for x in directors]})
+            shares = ShareObject.get_all(cursor, identifier)
+            if not shares:
+                return jsonify({'message': f'share sgructure for {identifier} not found'}), 404
+
+            return jsonify(shares.to_dict())
 
         except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify(
@@ -55,4 +54,4 @@ class PartiesInfo(Resource):
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
-                {'message': 'Error when trying to retrieve directors from COLIN'}), 500
+                {'message': 'Error when trying to retrieve share structure from COLIN'}), 500

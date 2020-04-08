@@ -17,7 +17,7 @@ Currently this only provides API versioning information
 """
 from flask import current_app
 
-from colin_api.models.filing import Business, Filing, Office, Party
+from colin_api.models.filing import Business, Filing, Office, Party, ShareObject
 from colin_api.resources.db import DB
 from colin_api.utils import stringify_list
 
@@ -227,6 +227,7 @@ class Reset:
                 Office.reset_offices_by_events(cursor=cursor, event_ids=events)
                 Business.reset_corp_states(cursor=cursor, event_ids=annual_report_events)
                 Business.reset_corporations(cursor=cursor, event_info=events_info, event_ids=events)
+                ShareObject.delete_shares(cursor, events)
                 cls._delete_filing_user(cursor=cursor, event_ids=events)
                 cls._delete_ledger_text(cursor=cursor, event_ids=events)
                 cls._delete_corp_name(cursor=cursor, event_ids=list(new_corps.values()))

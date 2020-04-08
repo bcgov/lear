@@ -20,7 +20,7 @@ import datetime
 from flask import current_app
 
 from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
-from colin_api.models import Address, Business, EntityName, Office, Party
+from colin_api.models import Address, Business, EntityName, Office, Party, ShareObject
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
@@ -435,6 +435,9 @@ class Filing:
         """Get incorporation filing."""
         # business_obj
         office_obj_list = Office.get_by_event(cursor, filing_event_info['event_id'])
+        share_structure = ShareObject.get_all(cursor, identifier, filing_event_info['event_id'])
+        parties = Party.get_by_event(cursor, identifier, filing_event_info['event_id'], None)
+
         if not office_obj_list:
             raise FilingNotFoundException(identifier=identifier, filing_type='change_of_address',
                                           event_id=filing_event_info['event_id'])
@@ -444,7 +447,9 @@ class Filing:
         filing_obj = Filing()
         filing_obj.body = {
             'offices': offices,
-            'eventId': filing_event_info['event_id']
+            'eventId': filing_event_info['event_id'],
+            'shareClasses': share_structure.to_dict()['shareClasses'],
+            'parties': [x.as_dict() for x in parties]
         }
         filing_obj.filing_type = 'incorporationApplication'
         filing_obj.paper_only = False
@@ -596,6 +601,13 @@ class Filing:
                                  mailing_addr_id, office_code)
         # create new ledger text for address change
         cls._add_ledger_text(cursor, event_id, text % (office_desc), user_id)
+
+    @classmethod
+    def _add_shares_from_filing(cls, cursor,
+                                event_id, corp_num, filing):
+        if corp_num[:2] != 'CP':
+            share_dict = filing.body['shareClasses']
+            ShareObject.create_share_structure(cursor, corp_num, event_id, share_dict)
 
     @classmethod
     def get_filing(cls, con=None,  # pylint: disable=too-many-arguments, too-many-branches;
@@ -865,6 +877,7 @@ class Filing:
 
                 cls._add_office_from_filing(cursor, event_id, corp_num, user_id, filing)
                 cls._add_parties_from_filing(cursor, event_id, filing)
+                cls._add_shares_from_filing(cursor, event_id, corp_num, filing)
 
             else:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)

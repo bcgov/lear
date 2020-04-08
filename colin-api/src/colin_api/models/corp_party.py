@@ -69,10 +69,10 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
 
     @classmethod
     def _get_officer(cls, row):
-        officer_obj = {'firstName': (row.get('first_nme', '').strip()) or '',
-                       'lastName': (row.get('last_nme', '').strip()) or '',
-                       'middleInitial': (row.get('middle_nme', '')) or '',
-                       'organizationName': (row.get('business_nme', '')) or ''}
+        officer_obj = {'firstName': (row.get('first_nme', '') or '').strip(),
+                       'lastName': (row.get('last_nme', '') or '').strip(),
+                       'middleInitial': (row.get('middle_nme', '') or '').strip(),
+                       'organizationName': (row.get('business_nme', '') or '').strip()}
         return officer_obj
 
     @classmethod
