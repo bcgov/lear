@@ -89,7 +89,7 @@ def test_get_tasks_no_filings(session, client):
 
 
 def test_get_tasks_next_year(session, client):
-    """Assert that one todo item is returned in the calendar year following incorporation"""
+    """Assert that one todo item is returned in the calendar year following incorporation."""
     identifier = 'CP7654321'
     founding_date = datetime.today() + datedelta.datedelta(days=1) - datedelta.datedelta(years=1)
     factory_business(identifier, founding_date=founding_date)  # incorporation 1 year - 1 day ago
