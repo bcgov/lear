@@ -88,6 +88,19 @@ def test_get_tasks_no_filings(session, client):
     assert num_filings_owed == len(rv.json.get('tasks'))
 
 
+def test_get_tasks_next_year(session, client):
+    """Assert that one todo item is returned in the calendar year following incorporation"""
+    identifier = 'CP7654321'
+    founding_date = datetime.today() + datedelta.datedelta(days=1) - datedelta.datedelta(years=1)
+    factory_business(identifier, founding_date=founding_date)  # incorporation 1 year - 1 day ago
+
+    # To-do are all years from the year after incorporation until this year
+
+    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+    assert rv.status_code == HTTPStatus.OK
+    assert 1 == len(rv.json.get('tasks'))
+
+
 def test_bcorps_get_tasks_no_filings(session, client):
     """Assert that to-do for the current year is returned when there are no filings."""
     identifier = 'CP7654321'
