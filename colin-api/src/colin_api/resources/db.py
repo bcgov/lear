@@ -70,7 +70,9 @@ class OracleDB:
                                      getmode=cx_Oracle.SPOOL_ATTRVAL_NOWAIT,  # pylint:disable=c-extension-no-member
                                      waitTimeout=1500,
                                      timeout=3600,
-                                     sessionCallback=init_session)
+                                     sessionCallback=init_session,
+                                     encoding='UTF-8',
+                                     nencoding='UTF-8')
 
     @property
     def connection(self):  # pylint: disable=inconsistent-return-statements
