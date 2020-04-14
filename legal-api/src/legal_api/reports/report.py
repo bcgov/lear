@@ -87,7 +87,8 @@ class Report:  # pylint: disable=too-few-public-methods
 
     def _get_template(self):
         try:
-            template_code = Path(current_app.config.get('REPORT_TEMPLATE_PATH') + '/{}'.format(self._get_template_filename())).read_text()
+            template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
+            template_code = Path(f'{template_path}/{self._get_template_filename()}').read_text()
 
             # substitute template parts
             template_code = self._substitute_template_parts(template_code)
@@ -111,6 +112,7 @@ class Report:  # pylint: disable=too-few-public-methods
         :param template_code: string
         :return: template_code string, modified.
         """
+        template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
             'directors',
             'addresses',
@@ -126,7 +128,7 @@ class Report:  # pylint: disable=too-few-public-methods
 
         # substitute template parts - marked up by [[filename]]
         for template_part in template_parts:
-            template_part_code = Path(current_app.config.get('REPORT_TEMPLATE_PATH') + '/template-parts/{}.html'.format(template_part)).read_text()
+            template_part_code = Path(f'{template_path}/template-parts/{template_part}.html').read_text()
             template_code = template_code.replace('[[{}.html]]'.format(template_part), template_part_code)
 
         return template_code
