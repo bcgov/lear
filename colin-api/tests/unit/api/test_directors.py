@@ -14,6 +14,7 @@
 
 """Tests to assure the change of directors filing end-point."""
 
+import copy
 import json
 
 from registry_schemas import validate
@@ -171,3 +172,67 @@ def test_get_cod_no_results(client):
     rv = client.get('/api/v1/businesses/CP0000000/filings/changeOfDirectors')
 
     assert 404 == rv.status_code
+
+
+@oracle_integration
+def test_special_characters(client):
+    """Assert unicode characters are inserted correctly."""
+    headers = {'content-type': 'application/json'}
+
+    # Create a director entry with special characters in the name
+    new_director = {
+            'actions': ['appointed'],
+            'appointmentDate': '2009-09-21',
+            'cessationDate': None,
+            'deliveryAddress': {
+                'actions': [],
+                'addressCity': 'TEST CHANGE 2',
+                'addressCountry': 'CANADA',
+                'addressId': 102554860,
+                'addressRegion': 'BC',
+                'deliveryInstructions': '',
+                'postalCode': '',
+                'streetAddress': '1038 DAIRY RD',
+                'streetAddressAdditional': ''
+            },
+            'mailingAddress': {
+                'actions': [],
+                'addressCity': 'WILLIAMS LAKE',
+                'addressCountry': 'CANADA',
+                'addressId': 102554860,
+                'addressRegion': 'BC',
+                'deliveryInstructions': '',
+                'postalCode': '',
+                'streetAddress': '1038 DAIRY RD',
+                'streetAddressAdditional': ''
+            },
+            'officer': {
+                'firstName': 'Tést',
+                'lastName': 'Nãme',
+                'middleInitial': ''
+            },
+            'title': ''
+        }
+
+    fake_filing = copy.deepcopy(FILING_HEADER)
+    fake_filing['filing']['header']['name'] = 'changeOfDirectors'
+    # Use special characters in the certified by field
+    fake_filing['filing']['header']['certifiedBy'] = 'Cërtifîer'
+    fake_filing['filing']['business']['identifier'] = 'CP0001965'
+
+    fake_filing['filing']['changeOfDirectors']['directors'] = [new_director]
+
+    rv = client.post('/api/v1/businesses/CP0001965/filings/changeOfDirectors',
+                     data=json.dumps(fake_filing), headers=headers)
+
+    assert rv.json
+    assert 201 == rv.status_code
+
+    event_id = rv.json['filing']['header']['colinIds'][0]
+    dirs = rv.json['filing']['changeOfDirectors']['directors']
+    new_director = list(filter(lambda x: x['startEventId'] == (event_id), dirs))
+
+    assert new_director
+    assert rv.json['filing']['header']['certifiedBy'] == 'Cërtifîer'
+    assert new_director[0]['officer']['firstName'] == 'Tést'
+    assert new_director[0]['officer']['lastName'] == 'Nãme'
