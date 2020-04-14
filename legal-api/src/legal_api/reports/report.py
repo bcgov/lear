@@ -71,12 +71,6 @@ class Report:  # pylint: disable=too-few-public-methods
                 pass
         return directors
 
-    def _format_address(self, address):
-        country = address['addressCountry']
-        country = pycountry.countries.search_fuzzy(country)[0].name
-        address['addressCountry'] = country
-        return address
-
     def _get_primary_filing(self):
         filings = self._filing.FILINGS
 
@@ -97,6 +91,13 @@ class Report:  # pylint: disable=too-few-public-methods
             raise err
 
         return template_code
+
+    @staticmethod
+    def _format_address(address):
+        country = address['addressCountry']
+        country = pycountry.countries.search_fuzzy(country)[0].name
+        address['addressCountry'] = country
+        return address
 
     @staticmethod
     def _substitute_template_parts(template_code):
