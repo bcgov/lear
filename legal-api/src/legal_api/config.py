@@ -63,6 +63,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', 'http://')
     AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'http://')
     REPORT_SVC_URL = os.getenv('REPORT_SVC_URL', 'http://')
+    REPORT_TEMPLATE_PATH = os.getenv('REPORT_PATH', 'report-templates')
 
     GO_LIVE_DATE = os.getenv('GO_LIVE_DATE')
 
