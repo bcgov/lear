@@ -17,6 +17,7 @@ from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 
+import pycountry
 import pytz
 import requests
 from flask import current_app, jsonify
@@ -61,6 +62,15 @@ class Report:  # pylint: disable=too-few-public-methods
     def _get_filing_description(self):
         return self._get_primary_filing()['title']
 
+    def _format_directors(self, directors):
+        for director in directors:
+            try:
+                self._format_address(director['deliveryAddress'])
+                self._format_address(director['mailingAddress'])
+            except KeyError:
+                pass
+        return directors
+
     def _get_primary_filing(self):
         filings = self._filing.FILINGS
 
@@ -71,7 +81,8 @@ class Report:  # pylint: disable=too-few-public-methods
 
     def _get_template(self):
         try:
-            template_code = Path('report-templates/{}'.format(self._get_template_filename())).read_text()
+            template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
+            template_code = Path(f'{template_path}/{self._get_template_filename()}').read_text()
 
             # substitute template parts
             template_code = self._substitute_template_parts(template_code)
@@ -80,6 +91,13 @@ class Report:  # pylint: disable=too-few-public-methods
             raise err
 
         return template_code
+
+    @staticmethod
+    def _format_address(address):
+        country = address['addressCountry']
+        country = pycountry.countries.search_fuzzy(country)[0].name
+        address['addressCountry'] = country
+        return address
 
     @staticmethod
     def _substitute_template_parts(template_code):
@@ -95,6 +113,7 @@ class Report:  # pylint: disable=too-few-public-methods
         :param template_code: string
         :return: template_code string, modified.
         """
+        template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
             'directors',
             'addresses',
@@ -110,7 +129,7 @@ class Report:  # pylint: disable=too-few-public-methods
 
         # substitute template parts - marked up by [[filename]]
         for template_part in template_parts:
-            template_part_code = Path('report-templates/template-parts/{}.html'.format(template_part)).read_text()
+            template_part_code = Path(f'{template_path}/template-parts/{template_part}.html').read_text()
             template_code = template_code.replace('[[{}.html]]'.format(template_part), template_part_code)
 
         return template_code
@@ -151,6 +170,11 @@ class Report:  # pylint: disable=too-few-public-methods
                         'deliveryAddress': filing['annualReport']['offices']['registeredOffice']['deliveryAddress'],
                         'mailingAddress': filing['annualReport']['offices']['registeredOffice']['mailingAddress']
                     }
+            delivery_address = filing['registeredOfficeAddress']['deliveryAddress']
+            mailing_address = filing['registeredOfficeAddress']['mailingAddress']
+
+            filing['registeredOfficeAddress']['deliveryAddress'] = self._format_address(delivery_address)
+            filing['registeredOfficeAddress']['mailingAddress'] = self._format_address(mailing_address)
 
         except KeyError:
             pass
@@ -165,7 +189,8 @@ class Report:  # pylint: disable=too-few-public-methods
                 }
 
             # create helper lists of appointed and ceased directors
-            directors = filing['listOfDirectors']['directors']
+            directors = self._format_directors(filing['listOfDirectors']['directors'])
+
             filing['listOfDirectors']['directorsAppointed'] = [el for el in directors if 'appointed' in el['actions']]
             filing['listOfDirectors']['directorsCeased'] = [el for el in directors if 'ceased' in el['actions']]
         except KeyError:
