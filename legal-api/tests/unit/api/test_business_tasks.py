@@ -186,7 +186,7 @@ def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client):
     # assert len(rv.json.get('tasks')) == 2  # Previous year filing and a disabled to-do for current year.
 
 
-def test_get_empty_filings_with_invalid_business(session, client):
+def test_get_empty_tasks_with_invalid_business(session, client):
     """Assert that an empty filings array is returned when business does not exist."""
     identifier = 'CP7654321'
 
