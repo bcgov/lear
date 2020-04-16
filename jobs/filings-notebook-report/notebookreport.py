@@ -54,8 +54,11 @@ def send_email(subject, filename, emailtype, errormessage):
     if emailtype == "ERROR":
         recipients = os.getenv('ERROR_EMAIL_RECIPIENTS', '')
         message.attach(MIMEText("ERROR!!! \n" + errormessage, "plain"))
-    else:
-        recipients = os.getenv('REPORT_RECIPIENTS', '')
+    else:        
+        if (subject.split()[0] == 'Filings'): 
+            recipients = os.getenv('FILINGS_REPORT_RECIPIENTS', '')
+        if (subject.split()[0] == 'Cooperative'): 
+            recipients = os.getenv('COOPERATIVE_REPORT_RECIPIENTS', '')
         # Add body to email
         message.attach(MIMEText("Please see attached.", "plain"))
 
@@ -107,6 +110,9 @@ def processnotebooks(notebookdirectory):
         return status
 
     logging.info('Processing: ' + notebookdirectory)
+    
+    num_files = len(os.listdir(notebookdirectory))
+    file_processed = 0
 
     # Each time a notebook is processed a snapshot is saved to a snapshot sub-directory
     # This checks the sub-directory exists and creates it if not
@@ -114,7 +120,10 @@ def processnotebooks(notebookdirectory):
     if not os.path.isdir(snapshotdir):
         os.mkdir(snapshotdir)
 
-    for file in findfiles(notebookdirectory, '*.ipynb'):        
+    
+
+    for file in findfiles(notebookdirectory, '*.ipynb'): 
+        file_processed += 1               
         for attempt in range(retry_times):
             try:
                 nb = os.path.basename(file)
@@ -131,7 +140,7 @@ def processnotebooks(notebookdirectory):
                 send_email(subject, filename, "", "")
                 os.remove(filename)
                 
-                status = True
+                status = True                
                 break
             except Exception:
                 if attempt + 1 == retry_times:
@@ -151,7 +160,7 @@ def processnotebooks(notebookdirectory):
                                                                                      retry_times, retry_interval))
                     time.sleep(retry_interval)
                     continue
-        if not status:
+        if not status and num_files==file_processed:
             break
 
     shutil.rmtree(snapshotdir, ignore_errors=True)    
