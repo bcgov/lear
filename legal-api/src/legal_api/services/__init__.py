@@ -14,9 +14,12 @@
 """This module wraps the calls to external services used by the API."""
 from .authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE, authorized
 from .flags import Flags
+from .namex import NameXService
 from .queue import QueueService
 
 
 flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 
 queue = QueueService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
+
+namex = NameXService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
