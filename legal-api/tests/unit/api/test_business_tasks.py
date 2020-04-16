@@ -186,14 +186,15 @@ def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client):
     # assert len(rv.json.get('tasks')) == 2  # Previous year filing and a disabled to-do for current year.
 
 
-def test_get_404_filing_with_invalid_business(session, client):
-    """Assert that error is returned when business does not exist."""
+def test_get_empty_filings_with_invalid_business(session, client):
+    """Assert that an empty filings array is returned when business does not exist."""
     identifier = 'CP7654321'
 
     rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
 
-    assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json == {'message': f'{identifier} not found'}
+    assert rv.status_code == HTTPStatus.OK
+    print('rv json', rv.json)
+    assert rv.json == {'tasks': []}
 
 
 def test_get_tasks_error_filings(session, client, jwt):
