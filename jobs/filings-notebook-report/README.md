@@ -1,144 +1,88 @@
-# Following README.md is similar to what we have for notebookreport but not exact the same. 
+# Notebook Report
 
-#NotebookScheduler
-A simple script to help schedule Jupyter Notebook execution and storing of the results using Papermill
+Generate notebook report
 
-Check out [this blog post](https://productmetrics.net/blog/schedule-jupyter-notebooks/) for more details.
+## Development Environment
 
-## Introducing NotebookScheduler
+Follow the instructions of the [Development Readme](https://github.com/bcgov/entity/blob/master/docs/development.md)
+to setup your local development environment.
 
-[NotebookScheduler](https://github.com/Joshuaek/NotebookScheduler) is a simple Python script which uses [Papermill](https://github.com/nteract/papermill) to execute a directory of Jupyter Notebooks. Notebooks are arranged into subfolders for hourly, daily, weekly or monthly execution. Each time a notebook is run, a snapshot is saved to a timestamped folder (along with any other outputs your notebook saves) giving you the ability to look back at past executions and to have a full audit of the analysis that has been done.
+## Development Setup
 
-Once I've set up the notebook to provide whatever stats I want, scheduling its execution on a weekly basis is now as simple as a drag-and-drop  into the weekly subfolder.
+1. Follow the [instructions](https://github.com/bcgov/entity/blob/master/docs/setup-forking-workflow.md) to checkout the project from GitHub.
+2. Open the notebook-report directory in VS Code to treat it as a project (or WSL projec). To prevent version clashes, set up a virtual environment to install the Python packages used by this project.
+3. Run `make setup` to set up the virtual environment and install libraries.
 
-## Getting started
+## Running Notebook Report
 
-The code is available in this [GitHub repository](https://github.com/Joshuaek/NotebookScheduler) -clone or download it to a folder on your PC. The first time you run the script, it will create a skeleton directory structure, with subdirectories for hourly, daily and weekly notebooks.
+1. Run `. venv/bin/activate` to change to `venv` environment.
+2. Run notebook with `(python notebookreport.py)`
 
-Simply move your notebook (*.ipynb) files into the relevant subdirectory and when the script is run they will be executed.
+## Running Unit Tests
 
-The directory structure is shown below:
+1. Run `python -m pytest` or `pytest` command.
 
-```
- <script_folder>/
- ├── NotebookScheduler.py 
- ├── hourly/
- │   ├── notebook1.ipynb
- │   ├── notebook2.ipynb
- │   └── snapshots/
- │       ├── notebook1/
- |       │   └──<timestamp>
- │       │      └── notebook1.ipynb
- │       └── notebook2/    
- |           └──<timestamp>
- │              └── notebook2.ipynb 
- ├── daily/
- │   ├── notebook3.ipynb
- │   ├── notebook4.ipynb
- │   └── snapshots/
- │       ├── notebook3/
- |       │   └──<timestamp>
- │       │      └── notebook1.ipynb
- │       └── notebook4/    
- |           └──<timestamp>
- │              └── notebook2.ipynb 
- └── weekly/
-     ├── notebook5.ipynb
-     ├── notebook6.ipynb
-     └── snapshots/
-         ├── notebook5/
-         │   └──<timestamp>
-         │      └── notebook1.ipynb
-         └── notebook6/    
-             └──<timestamp>
-                └── notebook2.ipynb 
-```
+### Build API - can be done in VS Code
 
-## Install the dependencies
+1. Login to openshift
 
-The script has a few dependencies.
+   ```sh
+   oc login xxxxxxx
+   ```
 
-### Papermill
+2. switch to tools namespace
 
-[Papermill](https://github.com/nteract/papermill) is the module that runs the jupyter notebooks. You'll need to install Papermill and its dependencies first.
+   ```sh
+   oc project gl2uos-tools
+   ```
 
-``` 
-pip install papermill 
-```
+3. Create build image
 
-### Schedule
+   ```sh
+   cd */lear/jobs/filings-notebook-report/openshift/templates
+   oc create imagestream filings-notebook-report
+   oc process -f filings-notebook-report-bc-template.json \
+        -p GIT_REPO_URL=https://github.com/bcgov/lear.git \
+    | oc apply -f -
+   ```
 
-If you want to use the built in scheduler, then you'll need to install [Schedule](https://pypi.org/project/schedule/).
+4. Create runtime image
 
-``` 
-pip install schedule 
-```
+   ```sh
+   oc create imagestream filings-notebook-report-runtime
+   oc process -f filings-notebook-report-runtime-bc-template.json \
+    | oc apply -f -
+   ```
+  
+5. Create pipeline and need to start pipeline manually
 
-If you're going to use Windows Task Scheduler or Cron jobs to schedule the execution, then you don't need this. 
+   ```sh
+   oc process -f filings-notebook-report-pipeline.json \
+        -p TAG_NAME=dev \
+        -p GIT_REPO_URL=https://github.com/bcgov/lear.git \
+        -p WEBHOOK=github-filings-notebook-report-dev \
+        -p JENKINS_FILE=./jenkins/dev.groovy \
+    | oc apply -f -
+   ```
 
-## Running the script without an external scheduler
+### Create cron
 
-The simplest way to get started is to use the built in scheduler. In this mode, you'll run the Python script in a terminal and leave it running. The script itself will loop and run the notebooks as per the schedule determined by which of the subdirectories the notebook is in (e.g. daily, weekly, monthly).
+1. Login to openshift
 
-To do this, once you have some notebooks in your folders, simply run the script from its root folder:
+   ```sh
+   oc login xxxxxxx
+   ```
 
-``` 
-python NotebookScheduler.py 
-```
+2. switch to dev namespace
 
-## Running the script with an external scheduler
+   ```sh
+   oc project gl2uos-dev
+   ```
 
-An alternative way of running is to use an external scheduler, like the built in Windows Task Scheduler or a Cron job to execute the script. In this mode, the external scheduler will determine the frequency of execution. You just need to set the ```-d``` command line option to tell the script which directory to execute. So, if you wanted to run your hourly and daily scripts, you'd set up two tasks:
+3. Create cron
 
-One job set to run hourly, with the script executed as follows:
-
-```
-python NotebookScheduler.py -d hourly
-```
-
-And another one set to run daily, with the script executed as follows:
-
-```
-python NotebookScheduler.py -d daily
-```
-
-When the directory is specified using the ```-d``` option, the notebooks in the specified directory are executed immediately.
-
-## About monthly tasks
-Monthly tasks are run on the first day of the month. 
-
-If you want to run on a different day, then change this line:
-
-```
-schedule.every().day.at('14:15').do(processNotebooks, notebookDirectory='monthly', days=[1])
-```
-
-## About the snapshots
-
-Within each of the daily/hourly/weekly directories a "snapshot" directory will be created. This will have sub-folders for each notebook that is executed, and each execution will be stored in time stamped folder. Whilst this is a lot of nesting, it makes it quick and easy to view the output of a particular notebook on a particular day. Once the notebook is executed, Papermill will save the output notebook to the snapshot directory.
-
-## Saving other artifacts
-
-Papermill can [pass parameters](https://papermill.readthedocs.io/en/latest/usage-parameterize.html)  to the notebooks it is executing. NotebookScheduler will set a ```snapshotDir``` parameter so that you can use this within your notebooks for saving files within the snapshot directory. For example, the following code generates a random dataframe and then saves a .csv file into the snapshot directory. This means that each execution of the notebook has it's .csv output right next to the output notebook in the timestamped folder.
-
-```python
-import pandas as pd
-import numpy as np
-import random
-
-snapshotDir = ""
-
-df = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
-
-df.to_csv(snapshotDir + 'output.csv')
-```
-
-Hopefully that helps keep everything neat and tidy!
-
-## Logging
-
-Logging is setup - once the script is run you'll see ```notebook.log``` appear in the folder. All executions are logged here. If anything goes wrong with the execution (e.g. somethings broken in your notebook) then a stacktrace will be included in the log. All actions are logged to a single log file so you only have one place to check to see if scripts have run or find out why they broke.
-
-## Testing and feedback
-
-I've only tested the script using Python 3.6 so far. If you encounter any bugs or strange behaviour then please raise an issue via the [repository](https://github.com/Joshuaek/NotebookScheduler).
+   ```sh      
+   oc process -f cron-notebook-report.yml \
+        -p ENV_TAG=dev \
+    | oc apply -f -
+   ```
