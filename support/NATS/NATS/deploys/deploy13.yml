@@ -1,0 +1,116 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  annotations:
+    openshift.io/generated-by: OpenShiftWebConsole
+  creationTimestamp: '2019-06-18T18:20:41Z'
+  generation: 37
+  labels:
+    app: nats-streaming
+  name: nats-streaming
+  namespace: hak2zo-prod  
+spec:
+  replicas: 1
+  selector:
+    app: nats-streaming
+    deploymentconfig: nats-streaming
+  strategy:
+    activeDeadlineSeconds: 21600
+    resources: {}
+    rollingParams:
+      intervalSeconds: 1
+      maxSurge: 25%
+      maxUnavailable: 25%
+      timeoutSeconds: 600
+      updatePeriodSeconds: 1
+    type: Rolling
+  template:
+    metadata:
+      annotations:
+        openshift.io/generated-by: OpenShiftWebConsole
+      creationTimestamp: null
+      labels:
+        app: nats-streaming
+        deploymentconfig: nats-streaming
+    spec:
+      containers:
+        - env:
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: nats-db
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: nats-db
+            - name: PG_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  key: database_name
+                  name: nats-db
+          args:
+            - '-m'
+            - '8222'
+            - '--store'
+            - SQL
+            - '--sql_driver'
+            - postgres
+            - '--sql_source'
+            - 'postgresql://@nats-db:5432/nats-db?sslmode=disable'                
+          image: >-
+            docker-registry.default.svc:5000/hak2zo-tools/nats-streaming@sha256:1aa0aaee4333071b448ea9e73ed96814a0fbe674fa6992c409fe1c96707b06eb
+          imagePullPolicy: Always
+          name: nats-streaming
+          ports:
+            - containerPort: 4222
+              protocol: TCP
+            - containerPort: 8222
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /test/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+  test: false
+  triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+          - nats-streaming
+        from:
+          kind: ImageStreamTag
+          name: 'nats-streaming:latest'
+          namespace: hak2zo-tools
+        lastTriggeredImage: >-
+          docker-registry.default.svc:5000/hak2zo-tools/nats-streaming@sha256:1aa0aaee4333071b448ea9e73ed96814a0fbe674fa6992c409fe1c96707b06eb
+      type: ImageChange
+status:
+  availableReplicas: 1
+  conditions:
+    - lastTransitionTime: '2019-07-23T21:01:54Z'
+      lastUpdateTime: '2019-07-23T21:01:54Z'
+      message: Deployment config has minimum availability.
+      status: 'True'
+      type: Available
+    - lastTransitionTime: '2019-07-23T21:01:54Z'
+      lastUpdateTime: '2019-07-23T21:01:57Z'
+      message: replication controller "nats-streaming-33" successfully rolled out
+      reason: NewReplicationControllerAvailable
+      status: 'True'
+      type: Progressing
+  details:
+    causes:
+      - type: ConfigChange
+    message: config change
+  latestVersion: 33
+  observedGeneration: 37
+  readyReplicas: 1
+  replicas: 1
+  unavailableReplicas: 0
+  updatedReplicas: 1

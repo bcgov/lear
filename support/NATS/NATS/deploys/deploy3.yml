@@ -1,0 +1,124 @@
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  annotations:
+    openshift.io/generated-by: OpenShiftWebConsole
+  creationTimestamp: '2019-06-18T18:19:13Z'
+  generation: 2
+  labels:
+    app: nats-streaming
+  name: nats-streaming
+  namespace: hak2zo-dev
+  resourceVersion: '850097707'
+  selfLink: >-
+    /apis/apps.openshift.io/v1/namespaces/hak2zo-dev/deploymentconfigs/nats-streaming
+  uid: 9323b9da-91f5-11e9-bf26-0050568379a2
+spec:
+  replicas: 1
+  # Explicitly set that the managed NATS Streaming instance
+  # will be using an SQL storage, to ensure that only a single
+  # instance is available.
+  store: SQL
+  
+  # In order to use DB store support, it is needed to include
+  # the credentials as a secret on a mounted file.
+  configFile: "/etc/stan/config/secret.conf"
+
+  selector:
+    app: nats-streaming
+    deploymentconfig: nats-streaming
+  strategy:
+    activeDeadlineSeconds: 21600
+    resources: {}
+    rollingParams:
+      intervalSeconds: 1
+      maxSurge: 25%
+      maxUnavailable: 25%
+      timeoutSeconds: 600
+      updatePeriodSeconds: 1
+    type: Rolling
+  template:
+    metadata:
+      annotations:
+        openshift.io/generated-by: OpenShiftWebConsole
+      creationTimestamp: null
+      labels:
+        app: nats-streaming
+        deploymentconfig: nats-streaming
+    spec:
+      containers:
+        - image: >-
+            docker-registry.default.svc:5000/gl2uos-tools/nats-streaming@sha256:1aa0aaee4333071b448ea9e73ed96814a0fbe674fa6992c409fe1c96707b06eb
+          imagePullPolicy: Always
+          name: nats-streaming
+          ports:
+            - containerPort: 4222
+              protocol: TCP
+            - containerPort: 8222
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: stan-secret
+          secret:
+          secretName: stan-secret
+        containers:
+          - name: nats-streaming
+            volumeMounts:
+            - mountPath: /etc/stan/config
+              name: stan-secret
+	      readOnly: true
+	      
+        - name: stan-store-dir
+          persistentVolumeClaim:
+            claimName: streaming-pvc
+          containers:            
+            - name: nats-db         
+              volumeMounts:
+              - mountPath: /pv
+                name: stan-store-dir
+  test: false
+  triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+          - nats-streaming
+        from:
+          kind: ImageStreamTag
+          name: 'nats-streaming:latest'
+          namespace: gl2uos-tools
+        lastTriggeredImage: >-
+          docker-registry.default.svc:5000/gl2uos-tools/nats-streaming@sha256:1aa0aaee4333071b448ea9e73ed96814a0fbe674fa6992c409fe1c96707b06eb
+      type: ImageChange
+status:
+  availableReplicas: 1
+  conditions:
+    - lastTransitionTime: '2019-06-18T18:19:58Z'
+      lastUpdateTime: '2019-06-18T18:19:58Z'
+      message: replication controller "nats-streaming-1" successfully rolled out
+      reason: NewReplicationControllerAvailable
+      status: 'True'
+      type: Progressing
+    - lastTransitionTime: '2019-07-04T17:54:50Z'
+      lastUpdateTime: '2019-07-04T17:54:50Z'
+      message: Deployment config has minimum availability.
+      status: 'True'
+      type: Available
+  details:
+    causes:
+      - type: ConfigChange
+    message: config change
+  latestVersion: 1
+  observedGeneration: 2
+  readyReplicas: 1
+  replicas: 1
+  unavailableReplicas: 0
+  updatedReplicas: 1

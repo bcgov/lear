@@ -1,0 +1,147 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: nats-streaming
+message:  |-
+  Deploy nats streaming with a database
+
+objects:
+#image streams needed
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: nats-streaming
+  spec:
+    tags:
+      - name: latest
+        namespace: gl2uos-tools
+        from:
+          kind: DockerImage
+          name: docker-registry.default.svc:5000/gl2uos-tools/nats-streaming:latest
+        importPolicy:
+          scheduled: true          
+# NATS-Streaming Deployment Configuration
+# #####################################
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftWebConsole
+    creationTimestamp: '2019-06-18T18:20:41Z'
+    generation: 1
+    labels:
+      app: nats-streaming
+    name: nats-streaming
+    namespace: gl2uos-tools
+  spec:
+    replicas: 1
+    selector:
+      app: nats-streaming
+      deploymentconfig: nats-streaming
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftWebConsole
+        creationTimestamp: null
+        labels:
+          app: nats-streaming
+          deploymentconfig: nats-streaming
+      spec:
+        containers:
+          - args:
+              - '-m'
+              - '8222'
+              - '--store'
+              - SQL
+              - '--sql_driver'
+              - postgres
+              - '--sql_source'
+              - 'postgresql://${POSTGRESQL_USER}:${POSTGRESQL_PASSWORD}@${POSTGRESQL_DATABASE_NAME}:5432/nats-db?sslmode=disable'
+#- 'postgresql://userORX:test1234@nats-db:5432/nats-db?sslmode=disable'            
+            env:
+              - name: POSTGRESQL_USER
+                valueFrom:
+                  secretKeyRef:
+                    key: POSTGRESQL_USER
+                    name: nats-db
+              - name: POSTGRESQL_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    key: POSTGRESQL_PASSWORD
+                    name: nats-db
+              - name: POSTGRESQL_DATABASE_NAME
+                valueFrom:
+                  secretKeyRef:
+                    key: POSTGRESQL_DATABASE_NAME
+                    name: nats-db
+            image: >-
+              docker-registry.default.svc:5000/gl2uos-tools/nats-streaming@sha256:1aa0aaee4333071b448ea9e73ed96814a0fbe674fa6992c409fe1c96707b06eb
+            imagePullPolicy: Always
+            name: nats-streaming
+            ports:
+              - containerPort: 4222
+                protocol: TCP
+              - containerPort: 8222
+                protocol: TCP
+            resources: {}
+            terminationMessagePath: /test/termination-log
+            terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+      - type: ConfigChange
+      - imageChangeParams:
+          automatic: true
+          containerNames:
+            - nats-streaming
+          from:
+            kind: ImageStreamTag
+            name: 'nats-streaming:${TAG_NAME}'
+            namespace: gl2uos-tools
+          lastTriggeredImage: >-
+            docker-registry.default.svc:5000/gl2uos-tools/nats-streaming@sha256:1aa0aaee4333071b448ea9e73ed96814a0fbe674fa6992c409fe1c96707b06eb
+        type: ImageChange
+  status:
+    availableReplicas: 1
+    conditions:
+      - lastTransitionTime: '2019-07-23T21:01:54Z'
+        lastUpdateTime: '2019-07-23T21:01:54Z'
+        message: Deployment config has minimum availability.
+        status: 'True'
+        type: Available
+      - lastTransitionTime: '2019-07-23T21:01:54Z'
+        lastUpdateTime: '2019-07-23T21:01:57Z'
+        message: replication controller "nats-streaming-1" successfully rolled out
+        reason: NewReplicationControllerAvailable
+        status: 'True'
+        type: Progressing
+    details:
+      causes:
+        - type: ConfigChange
+      message: config change
+    latestVersion: 1
+    observedGeneration: 37
+    readyReplicas: 1
+    replicas: 1
+    unavailableReplicas: 0
+    updatedReplicas: 1
+# Template Parameters
+parameters:
+- name: TAG_NAME
+  displayName: Tag Name
+  description: The environment to deploy the image.
+  required: true

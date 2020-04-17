@@ -1,0 +1,95 @@
+postgresql-nats-dev://user7R7:dXNlcjdSNw==@nats-db:5432/?sslmode=disable
+
+postgres://postgres@db?sslmode=disable
+postgresql://user:pass@localhost:5432/?sslmode=disable
+
+postgres://fider:s0m3g00dp4ssw0rd@db:5432/fider?sslmode=disable
+  postgres://postgresql-nats-dev?username=usr7R7&password=dXNlcjdSNw==&sslmode=disable
+
+
+    spec:
+      containers:
+        - env:
+            - name: ORACLE_USER
+              valueFrom:
+                secretKeyRef:
+                  key: ORACLE_USER
+                  name: oracle-dev
+            - name: ORACLE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: ORACLE_PASSWORD
+                  name: oracle-dev
+            - name: ORACLE_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: ORACLE_DB_NAME
+                  name: colin-api-dev-config
+            - name: ORACLE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: ORACLE_HOST
+                  name: colin-api-dev-config
+            - name: ORACLE_PORT  
+  
+  
+	
+--sql_source="user=postgres password=postgres host=$DOCKER_BRIDGE_IP port=5432 sslmode=disable"
+
+postgresql://userORX:test1234@nats-db:5432/nats-db?sslmode=disable
+
+--sql_source="user=postgres password= host=nats-db port=5432 sslmode=disable"
+
+    spec:
+      containers:
+        - env:
+          - name: POSTGRESQL_USER
+            valueFrom:
+              configMapKeyRef:
+                key: POSTGRESQL_USER
+          	name: nats-db
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              configMapKeyRef:
+                key: POSTGRESQL_PASSWORD
+                name: nats-db            
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              configMapKeyRef:
+                key: POSTGRESQL_DATABASE_NAME
+                name: nats-db
+        - args:
+            - '-m'
+            - '8222'
+            - '--store'
+            - SQL
+            - '--sql_driver'
+            - postgres
+            - '--sql_source'
+            - >-
+              postgresql://user6R6:dXNlcjdSNw==@postgresql-nats-dev:5432/?sslmode=disable
+          image: >-
+            docker-registry.default.svc:5000/hak2zo-tools/nats-streaming@sha256:1aa0aaee4333071b448ea9e73ed96814a0fbe674fa6992c409fe1c96707b06eb
+          imagePullPolicy: Always
+          name: nats-streaming
+          ports:
+            - containerPort: 4222
+              protocol: TCP
+            - containerPort: 8222
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: stan-store-dir
+          persistentVolumeClaim:
+            claimName: postgresql-nats-dev
+        - configMap:
+            defaultMode: 420
+            name: nats-db
+          name: volume-2t2vp                  

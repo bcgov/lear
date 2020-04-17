@@ -1,0 +1,65 @@
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: "example-stan-pv"
+spec:
+  natsSvc: "example-nats"
+
+  config:
+    storeDir: "/pv/stan"
+
+  # Define mounts in the Pod Spec
+  template:
+    spec:
+      containers:
+        - image: >-
+            docker-registry.default.svc:5000/gl2uos-tools/nats-streaming@sha256:1aa0aaee4333071b448ea9e73ed96814a0fbe674fa6992c409fe1c96707b06eb
+          imagePullPolicy: Always
+          name: nats-streaming
+          ports:
+            - containerPort: 4222
+              protocol: TCP
+            - containerPort: 8222
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File          
+      volumes:
+      - name: stan-store-dir
+        persistentVolumeClaim:
+          claimName: streaming-pvc
+      containers:
+        - name: nats-db         
+          volumeMounts:
+          - mountPath: /pv
+            name: stan-store-dir
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: streaming-pv
+  labels:
+    name: streaming-pv
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 128Mi
+  hostPath:
+    path: /data/pv0000/
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: streaming-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 128Mi
+  selector:
+    matchLabels:
+name: "streaming-pv"

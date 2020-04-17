@@ -1,0 +1,132 @@
+namespace: gl2uos-test
+  resourceVersion: '817665253'
+  selfLink: >-
+    /apis/apps.openshift.io/v1/namespaces/gl2uos-test/deploymentconfigs/postgresql-test
+  uid: f3e94642-5246-11e9-9c9b-0050568348cc
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    name: postgresql-test
+  strategy:
+    activeDeadlineSeconds: 21600
+    recreateParams:
+      timeoutSeconds: 600
+    resources: {}
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        name: postgresql-test
+    spec:
+      containers:
+        - env:
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef:
+                  key: database-user
+                  name: postgresql-test
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: database-password
+                  name: postgresql-test
+            - name: POSTGRESQL_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: admin-password
+                  name: postgresql-test
+            - name: POSTGRESQL_DATABASE
+              value: lear
+          image: >-
+            docker-registry.default.svc:5000/gl2uos-tools/postgresql@sha256:b70df29d981032583c2eb1d6836e1812530855067705ab9fd477ede8ec555c8c
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 5432
+            timeoutSeconds: 1
+          name: postgresql-test
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - '-i'
+                - '-c'
+                - >-
+                  psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d
+                  $POSTGRESQL_DATABASE -c 'SELECT 1'
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 1500m
+              memory: 4000Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          securityContext:
+            capabilities: {}
+            privileged: false
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /var/lib/pgsql/data
+              name: postgresql-test-data
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: postgresql-test-data
+          persistentVolumeClaim:
+            claimName: postgresql-test
+  test: false
+  triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+          - postgresql-test
+        from:
+          kind: ImageStreamTag
+          name: 'postgresql:test'
+          namespace: gl2uos-tools
+        lastTriggeredImage: >-
+          docker-registry.default.svc:5000/gl2uos-tools/postgresql@sha256:b70df29d981032583c2eb1d6836e1812530855067705ab9fd477ede8ec555c8c
+      type: ImageChange
+    - type: ConfigChange
+status:
+  availableReplicas: 1
+  conditions:
+    - lastTransitionTime: '2019-03-29T17:20:49Z'
+      lastUpdateTime: '2019-03-29T17:21:57Z'
+      message: replication controller "postgresql-test-1" successfully rolled out
+      reason: NewReplicationControllerAvailable
+      status: 'True'
+      type: Progressing
+    - lastTransitionTime: '2019-06-12T05:06:18Z'
+      lastUpdateTime: '2019-06-12T05:06:18Z'
+      message: Deployment config has minimum availability.
+      status: 'True'
+      type: Available
+  details:
+    causes:
+      - type: ConfigChange
+    message: config change
+  latestVersion: 1
+  observedGeneration: 2
+  readyReplicas: 1
+  replicas: 1
+  unavailableReplicas: 0
+  updatedReplicas: 1

@@ -1,0 +1,39 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  creationTimestamp: '2019-05-09T17:04:59Z'
+  labels:
+    app: nats-deploy-pipeline
+    name: nats-deploy-pipeline
+    template: nats-deploy-pipeline
+  name: nats-deploy-pipeline
+  namespace: hak2zo-tools
+  resourceVersion: '825821657'
+  selfLink: >-
+    /apis/build.openshift.io/v1/namespaces/hak2zo-tools/buildconfigs/nats-deploy-pipeline
+  uid: 9402d26d-727c-11e9-9558-0050568379a2
+spec:
+  failedBuildsHistoryLimit: 5
+  nodeSelector: {}
+  output: {}
+  postCommit: {}
+  resources: {}
+  runPolicy: Serial
+  source:
+    contextDir: lear/support/nats
+    git:
+      ref: master
+      uri: 'https://github.com/rarmitag.git'
+    type: Git
+  strategy:
+    jenkinsPipelineStrategy:
+      jenkinsfilePath: Jenkinsfile
+    type: JenkinsPipeline
+  successfulBuildsHistoryLimit: 5
+  triggers:
+    - github:
+        secretReference:
+          name: github-rarmitag-master
+      type: GitHub
+status:
+  lastVersion: 447

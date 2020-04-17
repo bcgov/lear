@@ -1,0 +1,117 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  creationTimestamp: '2019-07-19T18:07:38Z'
+  generation: 1
+  labels:
+    app: nats-db
+    template: NATS-Streaming
+  name: nats-db
+  namespace: hak2zo-prod  
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    name: nats-db
+  strategy:
+    activeDeadlineSeconds: 21600
+    recreateParams:
+      timeoutSeconds: 600
+    resources: {}
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        name: nats-db
+    spec:
+      containers:
+        - env:
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: nats-db
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: nats-db
+            - name: POSTGRESQL_DATABASE
+              value: nats-db
+          image: >-
+            docker-registry.default.svc:5000/gl2uos-tools/postgresql@sha256:b70df29d981032583c2eb1d6836e1812530855067705ab9fd477ede8ec555c8c
+          imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 5432
+            timeoutSeconds: 1
+          name: nats-db
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - '-i'
+                - '-c'
+                - >-
+                  psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d
+                  $POSTGRESQL_DATABASE -c 'SELECT 1'
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 512Mi
+          securityContext:
+            capabilities: {}
+            privileged: false
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /var/lib/pgsql/data
+              name: postgres-nats-prod
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: postgres-nats-prod
+          persistentVolumeClaim:
+            claimName: postgres-nats-prod
+  test: false
+  triggers:
+    - type: ConfigChange
+status:
+  availableReplicas: 1
+  conditions:
+    - lastTransitionTime: '2019-07-19T18:08:43Z'
+      lastUpdateTime: '2019-07-19T18:08:43Z'
+      message: Deployment config has minimum availability.
+      status: 'True'
+      type: Available
+    - lastTransitionTime: '2019-07-19T18:07:49Z'
+      lastUpdateTime: '2019-07-19T18:08:46Z'
+      message: replication controller "nats-db-1" successfully rolled out
+      reason: NewReplicationControllerAvailable
+      status: 'True'
+      type: Progressing
+  details:
+    causes:
+      - type: ConfigChange
+    message: config change
+  latestVersion: 1
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  unavailableReplicas: 0
+  updatedReplicas: 1
