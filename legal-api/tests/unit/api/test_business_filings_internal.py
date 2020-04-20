@@ -305,3 +305,11 @@ def test_future_filing_coa(session, client, jwt):
     filing.save()
 
     assert filing.status == Filing.Status.PAID.value
+
+    rv = client.get(f'/api/v1/businesses/internal/filings/PAID', headers=create_header(jwt, [COLIN_SVC_ROLE]))
+    paid_filings = rv.json
+    assert paid_filings[0]
+    # check values that future effective filings job depends on are there
+    assert paid_filings[0]['filing']['header']['filingId'] == filing.id
+    assert paid_filings[0]['filing']['header']['paymentToken']
+    assert paid_filings[0]['filing']['header']['effectiveDate']

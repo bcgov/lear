@@ -10,4 +10,4 @@ sentry-sdk[flask]
 python-dateutil
 asyncio-nats-client
 asyncio-nats-streaming
-git+https://github.com/bcgov/lear.git#egg=entity_queue_common&subdirectory=queue_services/common
+Werkzeug<1
