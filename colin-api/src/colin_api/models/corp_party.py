@@ -16,6 +16,7 @@
 Currently this only provides API versioning information
 """
 import datetime
+import itertools
 
 from flask import current_app
 
@@ -38,6 +39,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
     end_event_id = None
     role_type = None
     org_num = None
+    roles = None
 
     role_types = {
         'director': 'DIR',
@@ -63,7 +65,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             'startEventId': self.start_event_id,
             'endEventId': self.end_event_id,
             'actions': [],
-            'roleType': self.role_type,
+            'roles': self.roles,
             'orgNum': self.org_num
         }
 
@@ -72,7 +74,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         officer_obj = {'firstName': (row.get('first_nme', '') or '').strip(),
                        'lastName': (row.get('last_nme', '') or '').strip(),
                        'middleInitial': (row.get('middle_nme', '') or '').strip(),
-                       'organizationName': (row.get('business_nme', '') or '').strip()}
+                       'orgName': (row.get('business_nme', '') or '').strip()}
         return officer_obj
 
     @classmethod
@@ -104,8 +106,27 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                     party.cessation_date = None
 
                 party_list.append(party)
+        return cls.group_parties(party_list)
 
-        return party_list
+    @classmethod
+    def group_parties(cls, parties):
+        """Group parties based on roles."""
+        grouped_list = []
+        role_func = (lambda x: x.officer['firstName'] + ' ' + x.officer['middleInitial'] + ' ' + x.officer['lastName']
+                     + ' ' + x.officer['orgName'])  # noqa: E731;
+
+        parties_dict = {k: list(v) for k, v in itertools.groupby(parties, key=role_func)}
+        role_dict = {v: k for k, v in cls.role_types.items()}
+
+        for k, v in parties_dict.items():  # pylint: disable=unused-variable;
+            party = v[0]
+            roles = []
+            for i in v:
+                role = i.role_type
+                roles.append({'roleType': role_dict[role]})
+            party.roles = roles
+            grouped_list.append(party)
+        return grouped_list
 
     @classmethod
     def get_current(cls, cursor, identifier: str = None, role_type: str = 'DIR'):
@@ -303,7 +324,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                                middle_nme=party['officer'].get('middleInitial', ''),
                                first_nme=party['officer']['firstName'],
                                bus_company_num=business['business'].get('businessNumber', None),
-                               business_name=party['officer'].get('organizationName', ''),
+                               business_name=party['officer'].get('orgName', ''),
                                )
 
         except Exception as err:
