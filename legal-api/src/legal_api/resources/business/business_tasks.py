@@ -15,6 +15,7 @@
 
 Provides all the search and retrieval from the business filings datastore.
 """
+
 from datetime import datetime
 from http import HTTPStatus
 
@@ -23,6 +24,7 @@ from flask import jsonify
 from flask_restplus import Resource, cors
 
 from legal_api.models import Business, Filing
+from legal_api.services import namex
 from legal_api.services.filings import validations
 from legal_api.utils.util import cors_preflight
 
@@ -39,11 +41,31 @@ class TaskListResource(Resource):
     def get(identifier):
         """Return a JSON object with meta information about the Service."""
         business = Business.find_by_identifier(identifier)
+        is_nr = identifier.startswith('NR')
+
+        # Check if this is a NR
+        if is_nr:
+            # Fetch NR Data
+            nr_response = namex.query_nr_number(identifier)
+            # Validate NR data
+            validation_result = namex.validate_nr(nr_response.json())
+
+            # Return error if the NR is not consumable (invalid)
+            if not validation_result['is_consumable']:
+                return jsonify({
+                    'message': f'{identifier} is invalid', 'validation': validation_result
+                    }), HTTPStatus.FORBIDDEN
 
         if not business:
-            return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
-
-        rv = TaskListResource.construct_task_list(business)
+            # Create Incorporate using NR to-do item
+            if is_nr:
+                rv = []
+                rv.append(TaskListResource.create_incorporate_nr_todo(nr_response.json(), 1, True))
+            # business does not exist and not an nr so return empty task list
+            else:
+                rv = []
+        else:
+            rv = TaskListResource.construct_task_list(business)
         return jsonify(tasks=rv)
 
     @staticmethod
@@ -129,6 +151,24 @@ class TaskListResource(Resource):
                     'header': {
                         'name': 'annualReport',
                         'ARFilingYear': todo_year,
+                        'status': 'NEW'
+                    }
+                }
+            },
+            'order': order,
+            'enabled': enabled
+        }
+        return todo
+
+    @staticmethod
+    def create_incorporate_nr_todo(name_request, order, enabled):
+        """Return a to-do JSON object."""
+        todo = {
+            'task': {
+                'todo': {
+                    'nameRequest': name_request,
+                    'header': {
+                        'name': 'nameRequest',
                         'status': 'NEW'
                     }
                 }

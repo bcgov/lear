@@ -57,7 +57,7 @@ class ListFilingResource(Resource):
         business = Business.find_by_identifier(identifier)
 
         if not business:
-            return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+            return jsonify(filings=[]), HTTPStatus.OK
 
         if filing_id:
             rv = db.session.query(Business, Filing). \

@@ -18,7 +18,138 @@ Test-Suite to ensure that the /nameRequests endpoint is working as expected.
 """
 from http import HTTPStatus
 
+from legal_api.services import namex
 from tests import integration_namerequests
+
+
+# Mock NR Data
+
+expiration_date = 'Thu, 31 Dec 2099 23:59:59 GMT'
+nr_consumable_approved = {
+  'consentFlag': None,
+  'expirationDate': expiration_date,
+  'names': [
+    {
+      'choice': 1,
+      'consumptionDate': None,
+      'name': 'ABC 1234',
+      'state': 'APPROVED'
+    },
+    {
+      'choice': 2,
+      'consumptionDate': None,
+      'name': 'CDE 1234',
+      'state': 'NE'
+    }
+  ],
+  'nrNum': 'NR 1234567',
+  'state': 'APPROVED'
+}
+
+nr_not_consumable_rejected = {
+  'consentFlag': None,
+  'expirationDate': expiration_date,
+  'names': [
+    {
+      'choice': 1,
+      'consumptionDate': None,
+      'name': 'ABC 1234',
+      'state': 'REJECTED'
+    },
+    {
+      'choice': 2,
+      'consumptionDate': None,
+      'name': 'CDE 1234',
+      'state': 'NE'
+    }
+  ],
+  'nrNum': 'NR 1234567',
+  'state': 'REJECTED'
+}
+
+nr_not_consumable_expired = {
+  'consentFlag': None,
+  'expirationDate': 'Thu, 31 Dec 2019 23:59:59 GMT',
+  'names': [
+    {
+      'choice': 1,
+      'consumptionDate': None,
+      'name': 'ABC 1234',
+      'state': 'REJECTED'
+    },
+    {
+      'choice': 2,
+      'consumptionDate': None,
+      'name': 'CDE 1234',
+      'state': 'NE'
+    }
+  ],
+  'nrNum': 'NR 1234567',
+  'state': 'REJECTED'
+}
+
+nr_already_consumed = {
+  'consentFlag': None,
+  'expirationDate': expiration_date,
+  'names': [
+    {
+      'choice': 1,
+      'consumptionDate': 'Thu, 31 Dec 2019 23:59:59 GMT',
+      'name': 'ABC 1234',
+      'state': 'APPROVED'
+    },
+    {
+      'choice': 2,
+      'consumptionDate': None,
+      'name': 'CDE 1234',
+      'state': 'NE'
+    }
+  ],
+  'nrNum': 'NR 1234567',
+  'state': 'APPROVED'
+}
+
+nr_consent_required_not_received = {
+  'consentFlag': None,
+  'expirationDate': expiration_date,
+  'names': [
+    {
+      'choice': 1,
+      'consumptionDate': None,
+      'name': 'ABC 1234',
+      'state': 'NE'
+    },
+    {
+      'choice': 2,
+      'consumptionDate': None,
+      'name': 'CDE 1234',
+      'state': 'CONDITIONAL'
+    }
+  ],
+  'nrNum': 'NR 1234567',
+  'state': 'CONDITIONAL'
+}
+
+nr_consent_required_received = {
+  'consentFlag': 'R',
+  'expirationDate': expiration_date,
+  'names': [
+    {
+      'choice': 1,
+      'consumptionDate': None,
+      'name': 'ABC 1234',
+      'state': 'NE'
+    },
+    {
+      'choice': 2,
+      'consumptionDate': None,
+      'name': 'CDE 1234',
+      'state': 'CONDITIONAL'
+    }
+  ],
+  'nrNum': 'NR 1234567',
+  'state': 'CONDITIONAL'
+}
 
 
 @integration_namerequests
@@ -38,3 +169,67 @@ def test_name_requests_not_found(client):
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': 'NR 1234567 not found.'}
+
+
+def test_validate_nr_consumable_approved():
+    """Assert that nr mock data is consumable."""
+    validation_result = namex.validate_nr(nr_consumable_approved)
+
+    assert validation_result['is_consumable']
+    assert validation_result['is_approved']
+    assert not validation_result['is_expired']
+    assert not validation_result['consent_required']
+    assert not validation_result['consent_received']
+
+
+def test_validate_nr_not_consumable_rejected():
+    """Assert that nr mock data is not consumable as it has been rejected."""
+    validation_result = namex.validate_nr(nr_not_consumable_rejected)
+
+    assert not validation_result['is_consumable']
+    assert not validation_result['is_approved']
+    assert not validation_result['is_expired']
+    assert not validation_result['consent_required']
+    assert not validation_result['consent_received']
+
+
+def test_validate_nr_not_consumable_expired():
+    """Assert that nr mock data is not consumable as it has expired."""
+    validation_result = namex.validate_nr(nr_not_consumable_expired)
+
+    assert not validation_result['is_consumable']
+    assert not validation_result['is_approved']
+    assert validation_result['is_expired']
+    assert not validation_result['consent_required']
+    assert not validation_result['consent_received']
+
+
+def test_validate_nr_already_consumed():
+    """Assert that nr mock data has already been consumed."""
+    validation_result = namex.validate_nr(nr_already_consumed)
+
+    assert not validation_result['is_consumable']
+    assert validation_result['is_approved']
+    assert not validation_result['is_expired']
+    assert not validation_result['consent_required']
+    assert not validation_result['consent_received']
+
+
+def test_validate_nr_consent_required_not_received():
+    """Assert that nr mock data is conditionally approved, but consent not received."""
+    validation_result = namex.validate_nr(nr_consent_required_not_received)
+    assert not validation_result['is_consumable']
+    assert validation_result['is_approved']
+    assert not validation_result['is_expired']
+    assert validation_result['consent_required']
+    assert not validation_result['consent_received']
+
+
+def test_validate_nr_consent_required_received():
+    """Assert that nr mock data is conditionally approved and consent was received."""
+    validation_result = namex.validate_nr(nr_consent_required_received)
+    assert validation_result['is_consumable']
+    assert validation_result['is_approved']
+    assert not validation_result['is_expired']
+    assert validation_result['consent_required']
+    assert validation_result['consent_received']

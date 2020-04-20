@@ -111,7 +111,7 @@ def test_get_404_when_business_invalid_filing_id(session, client, jwt):
     assert rv.json == {'message': f'{identifier} no filings found'}
 
 
-def test_get_404_filing_with_invalid_business(session, client, jwt):
+def test_get_empty_filings_with_invalid_business(session, client, jwt):
     """Assert that a filing cannot be created against non-existent business."""
     identifier = 'CP7654321'
     filings_id = 1
@@ -119,8 +119,8 @@ def test_get_404_filing_with_invalid_business(session, client, jwt):
     rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings_id}',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json == {'message': f'{identifier} not found'}
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json == {'filings': []}
 
 
 def test_post_fail_if_given_filing_id(session, client, jwt):
