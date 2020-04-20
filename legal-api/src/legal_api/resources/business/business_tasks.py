@@ -66,6 +66,9 @@ class TaskListResource(Resource):
                 rv = []
         else:
             rv = TaskListResource.construct_task_list(business)
+            if not rv and is_nr:
+                rv.append(TaskListResource.create_incorporate_nr_todo(nr_response.json(), 1, True))
+
         return jsonify(tasks=rv)
 
     @staticmethod
