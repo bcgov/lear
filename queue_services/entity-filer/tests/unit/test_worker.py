@@ -521,6 +521,12 @@ def test_process_incorporation_parties(app, session):
     assert len(PartyRole.get_parties_by_role(business.id, 'director')) == 1
     assert len(PartyRole.get_parties_by_role(business.id, 'incorporator')) == 1
     assert len(PartyRole.get_parties_by_role(business.id, 'completing_party')) == 1
+    director = (PartyRole.get_parties_by_role(business.id, 'director'))[0]
+    incorporator = (PartyRole.get_parties_by_role(business.id, 'incorporator'))[0]
+    completing_party = (PartyRole.get_parties_by_role(business.id, 'completing_party'))[0]
+    assert director.appointment_date
+    assert incorporator.appointment_date
+    assert completing_party.appointment_date
 
 
 def test_correction_filing(app, session):

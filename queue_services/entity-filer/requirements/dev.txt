@@ -3,7 +3,7 @@
 
 # Testing
 freezegun
-pytest<=5.0.1
+pytest
 pytest-aiohttp
 pytest-asyncio
 pytest-mock
