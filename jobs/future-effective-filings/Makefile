@@ -5,7 +5,7 @@
 isort isort-save stop docker-clean logs
 .PHONY: mac-cov pylint flake8
 
-project_name := legal_api
+# project_name := future_effective_filings
 
 SHELL:=/bin/bash
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
@@ -91,18 +91,18 @@ mac-cov:	install-dev coverage-report
 	open -a "Google Chrome" htmlcov/index.html
 
 ## run pylint on the package and tests
-pylint:
-	pylint --rcfile=setup.cfg \
-	 --load-plugins=pylint_flask \
-	 src/$(project_name)
+# pylint:
+# 	pylint --rcfile=setup.cfg \
+# 	 --load-plugins=pylint_flask \
+# 	 src/$(project_name)
 
 ## run flake8 on the package and tests
-flake8:
-	flake8 src/$(project_name) tests
+# flake8:
+# 	flake8 src/$(project_name) tests
 
 ## Verify source code license headers.
-license:
-	./scripts/verify_license_headers.sh src/$(project_name) tests
+# license:
+# 	./scripts/verify_license_headers.sh src/$(project_name) tests
 
 .PHONY: test-ratio
 test-ratio:

@@ -510,20 +510,22 @@ class InternalFilings(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     def get(status=None):
-        """Get filings to send to colin."""
+        """Get filings by status formatted in json."""
         pending_filings = []
+        filings = []
 
         if status is None:
             pending_filings = Filing.get_completed_filings_for_colin()
-        elif status == Filing.Status.PAID.value:
-            pending_filings = Filing.get_all_filings_by_status(status)
+            for filing in pending_filings:
+                filing_json = filing.filing_json
+                if filing_json and filing.filing_type != 'lear_epoch':
+                    filing_json['filingId'] = filing.id
+                    filings.append(filing_json)
+            return jsonify(filings), HTTPStatus.OK
 
-        filings = []
+        pending_filings = Filing.get_all_filings_by_status(status)
         for filing in pending_filings:
-            filing_json = filing.filing_json
-            if filing_json and filing.filing_type != 'lear_epoch':
-                filing_json['filingId'] = filing.id
-                filings.append(filing_json)
+            filings.append(filing.json)
         return jsonify(filings), HTTPStatus.OK
 
     @staticmethod
