@@ -67,7 +67,11 @@ class TaskListResource(Resource):
         else:
             rv = TaskListResource.construct_task_list(business)
             if not rv and is_nr:
-                rv.append(TaskListResource.create_incorporate_nr_todo(nr_response.json(), 1, True))
+                paid_completed_filings = Filing.get_filings_by_status(business.id, [Filing.Status.PAID.value,
+                                                                                    Filing.Status.COMPLETED.value])
+                # Append NR todo if there are no tasks and PAID or COMPLETED filings
+                if not paid_completed_filings:
+                    rv.append(TaskListResource.create_incorporate_nr_todo(nr_response.json(), 1, True))
 
         return jsonify(tasks=rv)
 
