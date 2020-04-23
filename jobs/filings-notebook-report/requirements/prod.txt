@@ -20,10 +20,15 @@ six==1.12.0
 pyrsistent==0.15.5
 zipp==0.6.0
 
-Flask
+Flask==1.1.1
 pytest
-python-dotenv
+Click==7.0
+python-dotenv==0.10.3
+requests==2.22.0
 marshmallow==2.20.5
+Werkzeug==0.16.0
+certifi==2019.9.11
+urllib3==1.25.6
 git+https://github.com/bcgov/business-schemas.git@2.5.0#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
 

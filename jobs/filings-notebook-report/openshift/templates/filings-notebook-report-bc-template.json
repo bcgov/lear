@@ -25,8 +25,8 @@
                 "runPolicy": "Serial",
                 "source": {
                     "type": "Git",
-                    "git": {
-                        "uri": "https://github.com/bcgov/lear",
+                    "git": {                        
+						"uri": "${GIT_REPO_URL}",
                         "ref": "master"
                     },
                     "contextDir": "jobs/filings-notebook-report"
@@ -36,8 +36,8 @@
                     "sourceStrategy": {
                         "from": {
                             "kind": "ImageStreamTag",
-                            "namespace": "openshift",
-                            "name": "python:3.6"
+                            "namespace": "gl2uos-tools",
+                            "name": "python:3.7"
                         }
                     }
                 },
@@ -55,5 +55,14 @@
                 "lastVersion": 0
             }
         }
-    ]
+    ],
+	"parameters": [    
+    {
+      "name": "GIT_REPO_URL",
+      "displayName": "Git Repo URL",
+      "description": "The URL to your GIT repo.",
+      "required": true,
+      "value": "https://github.com/bcgov/lear"
+    }
+  ]
 }
