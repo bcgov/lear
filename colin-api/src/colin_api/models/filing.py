@@ -750,6 +750,7 @@ class Filing:
         for party in parties:
             for role in party['roles']:
                 party['role_type'] = Party.role_types[(role['roleType']).lower()]
+                party['appointmentDate'] = role['appointmentDate']
                 Party.create_new_corp_party(cursor, event_id, party, business)
 
     @classmethod
