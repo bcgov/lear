@@ -15,8 +15,11 @@
 
 Currently this only provides API versioning information
 """
+from __future__ import annotations
+
 import datetime
 import itertools
+from typing import List
 
 from flask import current_app
 
@@ -109,21 +112,30 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return cls.group_parties(party_list)
 
     @classmethod
-    def group_parties(cls, parties):
-        """Group parties based on roles."""
+    def group_parties(cls, parties: List[Party]):
+        """Group parties based on roles for LEAR formatting."""
+        role_dict = {v: k for k, v in cls.role_types.items()}  # Used as a lookup for role names
+
         grouped_list = []
         role_func = (lambda x: x.officer['firstName'] + ' ' + x.officer['middleInitial'] + ' ' + x.officer['lastName']
                      + ' ' + x.officer['orgName'])  # noqa: E731;
 
+        # CORP_PARTIES are stored as a separate row per Role, and need to be grouped to return a list of
+        # Role(s) within each Party object. First the rows are grouped in-memory by party/organization name
+        # (dictionary of parties)
         parties_dict = {k: list(v) for k, v in itertools.groupby(parties, key=role_func)}
-        role_dict = {v: k for k, v in cls.role_types.items()}
 
-        for k, v in parties_dict.items():  # pylint: disable=unused-variable;
-            party = v[0]
+        # Iterate over each grouping, the first value represents the Party. All rows
+        # are then iterated to construct the Roles array
+        for party_name, party_roles in parties_dict.items():  # pylint: disable=unused-variable;
+            party = party_roles[0]  # The party
             roles = []
-            for i in v:
+            # Fetch the role from each element in the Party array
+            for i in party_roles:
                 role = i.role_type
-                roles.append({'roleType': role_dict[role]})
+                roles.append({'roleType': role_dict[role],
+                              'appointmentDate': i.appointment_date,
+                              'cessationDate': i.cessation_date})
             party.roles = roles
             grouped_list.append(party)
         return grouped_list
