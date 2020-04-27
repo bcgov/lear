@@ -349,9 +349,9 @@ class ListFilingResource(Resource):
                 filing.filing_date = datetime.datetime.utcnow()
 
             # for any legal type, set effective date as set in json; otherwise leave as default
-            if filing.filing_json['filing']['header'].get('effectiveDate', None):
-                filing.effective_date = \
-                    datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['effectiveDate'])
+            filing.effective_date = \
+                datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['effectiveDate']) \
+                if filing.filing_json['filing']['header'].get('effectiveDate', None) else None
 
             filing.save()
         except BusinessException as err:
