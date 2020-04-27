@@ -22,7 +22,7 @@ from flask import current_app
 
 from legal_api.exceptions import BusinessException
 
-from .db import db, ma
+from .db import db
 
 
 class User(db.Model):
@@ -133,12 +133,3 @@ class User(db.Model):
         """Cannot delete User records."""
         return self
         # need to intercept the ORM and stop Users from being deleted
-
-
-class UserSchema(ma.ModelSchema):
-    """Used to manage the default mapping between JSON and Domain model."""
-
-    class Meta:  # pylint: disable=too-few-public-methods
-        """Maps all of the Domain fields to a default schema."""
-
-        model = User

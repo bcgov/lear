@@ -28,7 +28,7 @@ from registry_schemas import __version__ as registry_schemas_version
 from registry_schemas.flask import SchemaServices  # noqa: I001
 
 from legal_api import config, errorhandlers, models
-from legal_api.models import db, ma
+from legal_api.models import db
 from legal_api.resources import API_BLUEPRINT, OPS_BLUEPRINT
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import flags, queue
@@ -55,7 +55,6 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
 
     errorhandlers.init_app(app)
     db.init_app(app)
-    ma.init_app(app)
     rsbc_schemas.init_app(app)
     flags.init_app(app)
     queue.init_app(app)
