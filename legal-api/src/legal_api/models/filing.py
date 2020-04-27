@@ -458,7 +458,7 @@ def set_source(mapper, connection, target):  # pylint: disable=unused-argument; 
     filing = target
     user = User.find_by_id(filing.submitter_id)
     # if it is an epoch filing and there is no user then it was applied by the data-loader
-    if (Filing.filing_type == 'lear_epoch' and not user) or (user and user.username == 'coops-updater-job'):
+    if (filing.filing_type == 'lear_epoch' and not user) or (user and user.username == 'coops-updater-job'):
         filing._source = Filing.Source.COLIN.value  # pylint: disable=protected-access
     else:
         filing._source = Filing.Source.LEAR.value   # pylint: disable=protected-access
