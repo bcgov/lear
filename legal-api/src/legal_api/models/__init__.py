@@ -13,9 +13,9 @@
 # limitations under the License.
 
 """This exports all of the models and schemas used by the application."""
-from .db import db, ma  # noqa: I001
+from .db import db  # noqa: I001
 from .address import Address
-from .business import Business, BusinessSchema  # noqa: I001
+from .business import Business  # noqa: I001
 from .colin_update import ColinLastUpdate
 from .comment import Comment
 from .filing import Filing
@@ -23,8 +23,8 @@ from .office import Office, OfficeType
 from .party_role import Party, PartyRole
 from .share_class import ShareClass
 from .share_series import ShareSeries
-from .user import User, UserSchema
+from .user import User
 
 
-__all__ = ('db', 'ma', 'Address', 'Business', 'BusinessSchema', 'ColinLastUpdate', 'Comment', 'Filing',
-           'UserSchema', 'Office', 'OfficeType', 'Party', 'PartyRole', 'User', 'ShareClass', 'ShareSeries')
+__all__ = ('db', 'Address', 'Business', 'ColinLastUpdate', 'Comment', 'Filing',
+           'Office', 'OfficeType', 'Party', 'PartyRole', 'User', 'ShareClass', 'ShareSeries')

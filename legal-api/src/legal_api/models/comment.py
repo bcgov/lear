@@ -23,8 +23,8 @@ from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
 
-from .db import db, ma
-from .user import User, UserSchema
+from .db import db
+from .user import User
 
 
 class Comment(db.Model):
@@ -89,14 +89,3 @@ def block_comment_delete_listener_function(*arg):  # pylint: disable=unused-argu
         error='Deletion not allowed.',
         status_code=HTTPStatus.FORBIDDEN
     )
-
-
-class CommentSchema(ma.ModelSchema):
-    """Marshmallow base schema for Comments."""
-
-    class Meta:  # pylint: disable=too-few-public-methods
-        """Meta class for the marshmallow schema."""
-
-        model = Comment
-        fields = ('comment', 'timestamp', 'staff', 'id')
-    staff = ma.Nested(UserSchema, many=False, only='username')  # pylint: disable=no-member

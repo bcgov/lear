@@ -24,7 +24,7 @@ from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
 
-from .db import db, ma
+from .db import db
 from .share_class import ShareClass  # noqa: F401 pylint: disable=unused-import
 
 
@@ -229,12 +229,3 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             return False
 
         return True
-
-
-class BusinessSchema(ma.ModelSchema):
-    """Main schema used to serialize the Business."""
-
-    class Meta:  # pylint: disable=too-few-public-methods
-        """Returns all the fields from the SQLAlchemy class."""
-
-        model = Business
