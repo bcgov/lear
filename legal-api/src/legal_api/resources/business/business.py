@@ -44,7 +44,7 @@ class BusinessResource(Resource):
         # check authorization
         if not authorized(identifier, jwt, action=['view']):
             return jsonify({'message':
-                            f'You are not authorized to submit a filing for {identifier}.'}), \
+                            f'You are not authorized to view business {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED
 
         business = Business.find_by_identifier(identifier)
