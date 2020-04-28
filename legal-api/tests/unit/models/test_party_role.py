@@ -69,3 +69,89 @@ def test_party_role_json(session):
     }
 
     assert party_role.json == party_role_json
+
+
+def test_find_party_by_name(session):
+    """Assert the find_party_by_name method works as expected."""
+    # setup
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    person = Party(
+        first_name='Michael',
+        last_name='Crane',
+        middle_initial='Joe',
+        title='VP',
+    )
+    person.save()
+    no_middle_initial = Party(
+        first_name='Testing',
+        last_name='NoMiddleInitial',
+        middle_initial='',
+    )
+    no_middle_initial.save()
+    org = Party(
+        organization_name='testOrg',
+        party_type=Party.PartyTypes.ORGANIZATION.value
+    )
+    org.save()
+    # sanity check
+    assert person.id
+    assert org.id
+    director1 = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=person.id,
+        business_id=business.id
+    )
+    director1.save()
+    director2 = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=no_middle_initial.id,
+        business_id=business.id
+    )
+    director2.save()
+    completing_party = PartyRole(
+        role=PartyRole.RoleTypes.COMPLETING_PARTY.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=org.id,
+        business_id=business.id
+    )
+    completing_party.save()
+    # call method
+    should_be_none = PartyRole.find_party_by_name(
+        business_id=business.id,
+        first_name='Test',
+        last_name='Test',
+        middle_initial='',
+        org_name=''
+    )
+    should_find_michael = PartyRole.find_party_by_name(
+        business_id=business.id,
+        first_name='Michael',
+        last_name='Crane',
+        middle_initial='Joe',
+        org_name=''
+    )
+    should_find_testing = PartyRole.find_party_by_name(
+        business_id=business.id,
+        first_name='Testing',
+        last_name='NoMiddleInitial',
+        middle_initial='',
+        org_name=''
+    )
+    should_find_testorg = PartyRole.find_party_by_name(
+        business_id=business.id,
+        first_name='',
+        last_name='',
+        middle_initial='',
+        org_name='testorg'
+    )
+    # check values
+    assert not should_be_none
+    assert should_find_michael.id == person.id
+    assert should_find_testing.id == no_middle_initial.id
+    assert should_find_testorg.id == org.id

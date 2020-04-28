@@ -74,6 +74,30 @@ class PartyRole(db.Model):
             party_role = cls.query.filter_by(id=internal_id).one_or_none()
         return party_role
 
+    @classmethod
+    def find_party_by_name(cls, business_id: int, first_name: str,  # pylint: disable=too-many-arguments; one too many
+                           last_name: str, middle_initial: str, org_name: str) -> Party:
+        """Return a Party connected to the given business_id by the given name."""
+        party_roles = cls.query.filter_by(business_id=business_id).all()
+        party = None
+        # the given name to find
+        search_name = ''
+        if org_name:
+            search_name = org_name
+        elif middle_initial:
+            search_name = ' '.join((first_name.strip(), middle_initial.strip(), last_name.strip()))
+        else:
+            search_name = ' '.join((first_name.strip(), last_name.strip()))
+
+        for role in party_roles:
+            # the name of the party for each role
+            name = role.party.name
+            if name and name.strip().upper() == search_name.strip().upper():
+                party = role.party
+                break
+
+        return party
+
     @staticmethod
     def get_parties_by_role(business_id: int, role: str) -> list:
         """Return all people/oraganizations with the given role for this business (ceased + current)."""

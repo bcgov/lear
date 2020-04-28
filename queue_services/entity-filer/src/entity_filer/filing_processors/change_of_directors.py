@@ -57,7 +57,7 @@ def process(business: Business, filing: Dict):  # pylint: disable=too-many-branc
         if 'appointed' in new_director['actions']:
 
             # add new diretor party role to the business
-            party = create_party(party_info=new_director)
+            party = create_party(business_id=business.id, party_info=new_director)
             role = {
                 'roleType': 'Director',
                 'appointmentDate': new_director.get('appointmentDate'),
