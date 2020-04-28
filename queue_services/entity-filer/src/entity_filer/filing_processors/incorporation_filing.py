@@ -72,7 +72,7 @@ def process(business: Business, filing: Dict, app: Flask = None):  # pylint: dis
 
                 if parties:
                     for party_info in parties:
-                        party = create_party(party_info=party_info)
+                        party = create_party(business_id=business.id, party_info=party_info)
                         for role_type in party_info.get('roles'):
                             role = {
                                 'roleType': role_type.get('roleType'),

@@ -98,6 +98,20 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
         return member
 
     @property
+    def name(self) -> str:
+        """Return the full name of the party for comparison."""
+        print(self.first_name)
+        print(self.middle_initial)
+        print(self.last_name)
+        print(self.organization_name)
+        print(self.party_type)
+        if self.party_type == Party.PartyTypes.PERSON.value:
+            if self.middle_initial:
+                return ' '.join((self.first_name, self.middle_initial, self.last_name)).strip().upper()
+            return ' '.join((self.first_name, self.last_name)).strip().upper()
+        return self.organization_name.strip().upper()
+
+    @property
     def valid_party_type_data(self) -> bool:
         """Validate the model based on the party type (person/organization)."""
         if self.party_type == Party.PartyTypes.ORGANIZATION.value:
@@ -108,16 +122,6 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
             if self.organization_name or not (self.first_name or self.middle_initial or self.last_name):
                 return False
         return True
-
-    @classmethod
-    def find_by_name(cls, first_name: str, last_name: str, organization_name: str) -> Party:
-        """Return a Party by the name given."""
-        party = None
-        if organization_name:
-            party = cls.query.filter_by(organization_name=organization_name).one_or_none()
-        else:
-            party = cls.query.filter_by(first_name=first_name, last_name=last_name).one_or_none()
-        return party
 
 
 @event.listens_for(Party, 'before_insert')

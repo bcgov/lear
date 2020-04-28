@@ -134,7 +134,7 @@ def test_process_ar_filing(app, session):
 
 
 def test_process_ar_filing_no_agm(app, session):
-    """Assert that an AR filling can be applied to the model correctly."""
+    """Assert that a no agm AR filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
@@ -170,7 +170,7 @@ def test_process_ar_filing_no_agm(app, session):
 
 
 def test_process_coa_filing(app, session):
-    """Assert that an AR filling can be applied to the model correctly."""
+    """Assert that a COD filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
@@ -208,11 +208,12 @@ def test_process_cod_filing(app, session):
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
+    business = create_business(identifier)
     end_date = datetime.datetime.utcnow().date()
     # prep director for no change
     filing_data = copy.deepcopy(COD_FILING)
     directors = filing_data['filing']['changeOfDirectors']['directors']
-    director_party1 = create_party(directors[0])
+    director_party1 = create_party(business.id, directors[0])
     role1 = {
         'roleType': 'Director',
         'appointmentDate': directors[0].get('appointmentDate'),
@@ -224,7 +225,7 @@ def test_process_cod_filing(app, session):
     director_party2_dict['officer']['firstName'] = director_party2_dict['officer']['prevFirstName']
     director_party2_dict['officer']['middleInitial'] = director_party2_dict['officer']['prevMiddleInitial']
     director_party2_dict['officer']['lastName'] = director_party2_dict['officer']['prevLastName']
-    director_party2 = create_party(director_party2_dict)
+    director_party2 = create_party(business.id, director_party2_dict)
     role2 = {
         'roleType': 'Director',
         'appointmentDate': director_party2_dict.get('appointmentDate'),
@@ -232,7 +233,7 @@ def test_process_cod_filing(app, session):
     }
     director2 = create_role(party=director_party2, role_info=role2)
     # prep director for cease
-    director_party3 = create_party(directors[2])
+    director_party3 = create_party(business.id, directors[2])
     role3 = {
         'roleType': 'Director',
         'appointmentDate': directors[3].get('appointmentDate'),
@@ -242,7 +243,7 @@ def test_process_cod_filing(app, session):
     # prep director for address change
     director_party4_dict = directors[3]
     director_party4_dict['deliveryAddress']['streetAddress'] = 'should get changed'
-    director_party4 = create_party(director_party4_dict)
+    director_party4 = create_party(business.id, director_party4_dict)
     role4 = {
         'roleType': 'Director',
         'appointmentDate': director_party4_dict.get('appointmentDate'),
@@ -254,7 +255,6 @@ def test_process_cod_filing(app, session):
     ceased_directors, active_directors = active_ceased_lists(COD_FILING)
 
     # setup
-    business = create_business(identifier)
     business.party_roles.append(director1)
     business.party_roles.append(director2)
     business.party_roles.append(director3)
@@ -286,7 +286,7 @@ def test_process_cod_filing(app, session):
 
 
 def test_process_cod_mailing_address(app, session):
-    """Assert that an AR filling can be applied to the model correctly."""
+    """Assert that a COD address change filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
@@ -364,6 +364,7 @@ def test_process_combined_filing(app, session):
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
+    business = create_business(identifier)
     agm_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualGeneralMeetingDate'))
     ar_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualReportDate'))
     new_delivery_address = COMBINED_FILING['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']  # noqa: E501; line too long by 1 char
@@ -372,7 +373,7 @@ def test_process_combined_filing(app, session):
     # prep director for no change
     filing_data = copy.deepcopy(COMBINED_FILING)
     directors = filing_data['filing']['changeOfDirectors']['directors']
-    director_party1 = create_party(directors[0])
+    director_party1 = create_party(business.id, directors[0])
     role1 = {
         'roleType': 'Director',
         'appointmentDate': directors[0].get('appointmentDate'),
@@ -384,7 +385,7 @@ def test_process_combined_filing(app, session):
     director_party2_dict['officer']['firstName'] = director_party2_dict['officer']['prevFirstName']
     director_party2_dict['officer']['middleInitial'] = director_party2_dict['officer']['prevMiddleInitial']
     director_party2_dict['officer']['lastName'] = director_party2_dict['officer']['prevLastName']
-    director_party2 = create_party(director_party2_dict)
+    director_party2 = create_party(business.id, director_party2_dict)
     role2 = {
         'roleType': 'Director',
         'appointmentDate': director_party2_dict.get('appointmentDate'),
@@ -392,7 +393,7 @@ def test_process_combined_filing(app, session):
     }
     director2 = create_role(party=director_party2, role_info=role2)
     # prep director for cease
-    director_party3 = create_party(directors[2])
+    director_party3 = create_party(business.id, directors[2])
     role3 = {
         'roleType': 'Director',
         'appointmentDate': directors[3].get('appointmentDate'),
@@ -402,7 +403,7 @@ def test_process_combined_filing(app, session):
     # prep director for address change
     director_party4_dict = directors[3]
     director_party4_dict['deliveryAddress']['streetAddress'] = 'should get changed'
-    director_party4 = create_party(director_party4_dict)
+    director_party4 = create_party(business.id, director_party4_dict)
     role4 = {
         'roleType': 'Director',
         'appointmentDate': director_party4_dict.get('appointmentDate'),
@@ -414,7 +415,6 @@ def test_process_combined_filing(app, session):
     ceased_directors, active_directors = active_ceased_lists(COMBINED_FILING)
 
     # setup
-    business = create_business(identifier)
     business.party_roles.append(director1)
     business.party_roles.append(director2)
     business.party_roles.append(director3)
