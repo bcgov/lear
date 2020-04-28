@@ -21,6 +21,9 @@ from http import HTTPStatus
 
 import registry_schemas
 
+from legal_api.services.authz import STAFF_ROLE
+from tests.unit.services.utils import create_header
+
 
 def factory_business_model(legal_name,
                            identifier,
@@ -45,31 +48,36 @@ def factory_business_model(legal_name,
     return b
 
 
-def test_get_business_info(session, client):
+def test_get_business_info(session, client, jwt):
     """Assert that the business info can be received in a valid JSONSchema format."""
-    factory_business_model(legal_name='legal_name',
-                           identifier='CP7654321',
+    identifier = 'CP7654321'
+    legal_name = identifier + ' legal name'
+    factory_business_model(legal_name=legal_name,
+                           identifier=identifier,
                            founding_date=datetime.utcfromtimestamp(0),
                            last_ledger_timestamp=datetime.utcfromtimestamp(0),
                            last_modified=datetime.utcfromtimestamp(0),
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None)
-    rv = client.get('/api/v1/businesses/CP7654321')
+
+    rv = client.get('/api/v1/businesses/' + identifier,
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     print('business json', rv.json)
 
-    assert rv.json['business']['identifier'] == 'CP7654321'
+    assert rv.json['business']['identifier'] == identifier
 
     print('valid schema?', registry_schemas.validate(rv.json, 'business'))
 
     assert registry_schemas.validate(rv.json, 'business')
 
 
-def test_get_business_info_dissolution(session, client):
+def test_get_business_info_dissolution(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     identifier = 'CP1234567'
-    factory_business_model(legal_name='legal_name',
+    legal_name = identifier + ' legal name'
+    factory_business_model(legal_name=legal_name,
                            identifier=identifier,
                            founding_date=datetime.utcfromtimestamp(0),
                            last_ledger_timestamp=datetime.utcfromtimestamp(0),
@@ -77,7 +85,8 @@ def test_get_business_info_dissolution(session, client):
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=datetime.utcfromtimestamp(0))
-    rv = client.get(f'/api/v1/businesses/{identifier}')
+    rv = client.get(f'/api/v1/businesses/{identifier}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     # dissolved company cannot be found.
     assert rv.status_code == 200
@@ -85,7 +94,7 @@ def test_get_business_info_dissolution(session, client):
     assert rv.json.get('business').get('identifier') == identifier
 
 
-def test_get_business_info_missing_business(session, client):
+def test_get_business_info_missing_business(session, client, jwt):
     """Assert that the business info can be received in a valid JSONSchema format."""
     factory_business_model(legal_name='legal_name',
                            identifier='CP7654321',
@@ -96,7 +105,8 @@ def test_get_business_info_missing_business(session, client):
                            tax_id=None,
                            dissolution_date=None)
     identifier = 'CP0000001'
-    rv = client.get(f'/api/v1/businesses/{identifier}')
+    rv = client.get(f'/api/v1/businesses/{identifier}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': f'{identifier} not found'}

@@ -38,8 +38,15 @@ class BusinessResource(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @jwt.requires_auth
     def get(identifier):
         """Return a JSON object with meta information about the Service."""
+        # check authorization
+        if not authorized(identifier, jwt, action=['view']):
+            return jsonify({'message':
+                            f'You are not authorized to view business {identifier}.'}), \
+                HTTPStatus.UNAUTHORIZED
+
         business = Business.find_by_identifier(identifier)
 
         if not business:
@@ -102,7 +109,7 @@ class BusinessResource(Resource):
         # check authorization
         if not authorized(temp_corp_num, jwt, action=['edit']):
             return None, {'message': f'You are not authorized to incorporate for {temp_corp_num}.'}, \
-                   HTTPStatus.UNAUTHORIZED
+                HTTPStatus.UNAUTHORIZED
 
         # Ensure there are no current businesses with the NR/random identifier
         business = Business.find_by_identifier(temp_corp_num)
