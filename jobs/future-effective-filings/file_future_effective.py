@@ -62,20 +62,6 @@ SENTRY_LOGGING = LoggingIntegration(
 )
 
 
-def format_message(filing_id, payment_id, status):
-    """Return a dict version of params."""
-    return {
-        'statusChanged': {
-            'id': filing_id,
-            'newStatus': status
-        },
-        'paymentToken': {
-            'id': payment_id,
-            'statusCode': status
-        }
-    }
-
-
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
@@ -136,15 +122,14 @@ async def run(loop, application: Flask = None):
                 application.logger.debug(f'No PAID filings found to apply.')
             for filing in filings:
                 filing_id = filing['filing']['header']['filingId']
-                payment_id = filing['filing']['header']['paymentToken']
                 effective_date = filing['filing']['header']['effectiveDate']
                 # TODO Use UTC time?
                 now = datetime.utcnow().replace(tzinfo=timezone.utc)
                 valid = effective_date and parse(effective_date) <= now
                 if valid:
-                    msg = format_message(filing_id, payment_id, 'COMPLETE')
+                    msg = {'filing': {'id': filing_id}}
                     await queue_service.publish(subject, msg)
-                    application.logger.error(f'Successfully updated filing {filing_id}')
+                    application.logger.debug(f'Successfully put filing {filing_id} on the queue.')
         except Exception as err:
             application.logger.error(err)
 
