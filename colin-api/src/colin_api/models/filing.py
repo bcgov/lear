@@ -349,7 +349,8 @@ class Filing:
         directors = [x.as_dict() for x in directors]
         if office_event_id:
             try:
-                office_obj_list = (Office.get_by_event(event_id=office_event_id, cursor=cursor)).as_dict()
+                office_obj_list = (Office.get_by_event(event_id=office_event_id,  # pylint: disable=no-member;
+                                                       cursor=cursor)).as_dict()
                 offices = Office.convert_obj_list(office_obj_list)
             except:  # noqa B901; pylint: disable=bare-except;
                 # should only get here if agm was before the bob date
@@ -863,7 +864,7 @@ class Filing:
                                                 business=filing.business.as_dict())
 
                 # create new ledger text for address change
-                cls._add_ledger_text(cursor=cursor, event_id=event_id, text=f'Director change.', user_id=user_id)
+                cls._add_ledger_text(cursor=cursor, event_id=event_id, text='Director change.', user_id=user_id)
                 # update corporation record
                 Business.update_corporation(cursor=cursor, corp_num=corp_num)
             elif filing.filing_type == 'incorporationApplication':

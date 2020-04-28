@@ -190,7 +190,7 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
             """)
 
             if cursor.rowcount < 1:
-                current_app.logger.error(f'Database not updated.')
+                current_app.logger.error('Database not updated.')
                 raise Exception
             return
         except Exception as err:
