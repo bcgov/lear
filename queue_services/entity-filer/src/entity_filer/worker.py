@@ -138,7 +138,7 @@ def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-m
                     voluntary_dissolution.process(business, filing)
 
                 elif filing.get('incorporationApplication'):
-                    incorporation_filing.process(business, filing, flask_app)
+                    incorporation_filing.process(business, filing, filing_submission, flask_app)
 
                 elif filing.get('correction'):
                     correction.process(filing_submission, filing)

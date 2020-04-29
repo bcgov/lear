@@ -17,7 +17,7 @@ from typing import Dict
 import requests
 from entity_queue_common.service_utils import logger
 from flask import Flask
-from legal_api.models import Business
+from legal_api.models import Business, Filing
 
 from entity_filer.filing_processors import create_office, create_party, create_role, create_share_class
 
@@ -34,17 +34,20 @@ def get_next_corp_num(business_type: str, application: Flask):
     return None
 
 
-def update_business_info(corp_num: str, business: Business, business_info: Dict):
+def update_business_info(corp_num: str, business: Business, business_info: Dict, filing: Dict, filing_rec: Filing):
     """Format and update the business entity from incorporation filing."""
     if corp_num and business and business_info:
         business.identifier = corp_num
-        # TODO: Other properties contained in the NR
+        business.legal_name = filing.get('nameRequest', {}).get('legalName', None)
+        business.legal_type = filing.get('nameRequest', {}). get('legalType', None)
+        business.founding_date = filing_rec.effective_date
     else:
         return None
     return business
 
 
-def process(business: Business, filing: Dict, app: Flask = None):  # pylint: disable=too-many-locals; 1 extra
+def process(business: Business, filing: Dict, filing_rec: Filing, app: Flask = None):
+    # pylint: disable=too-many-locals; 1 extra
     """Process the incoming incorporation filing."""
     # Extract the filing information for incorporation
     incorp_filing = filing['incorporationApplication']
@@ -63,7 +66,7 @@ def process(business: Business, filing: Dict, app: Flask = None):  # pylint: dis
             corp_num = get_next_corp_num(business_info['legalType'], app)
 
             # Initial insert of the business record
-            business = update_business_info(corp_num, business, business_info)
+            business = update_business_info(corp_num, business, business_info, incorp_filing, filing_rec)
 
             if business:
                 for office_type, addresses in offices.items():
