@@ -58,10 +58,10 @@ class Reset:
             AND event.event_timestmp<=TO_DATE(:end_date, 'yyyy-mm-dd')
         """)
 
-        if len(self.identifiers) > 0:
+        if self.identifiers:
             query_string += f' AND event.corp_num in ({stringify_list(self.identifiers)})'
 
-        if len(self.filing_types) > 0:
+        if self.filing_types:
             query_string += f' AND filing.filing_typ_cd in ({stringify_list(self.filing_types)})'
 
         # order by most most recent

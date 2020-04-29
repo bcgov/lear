@@ -297,7 +297,7 @@ class Business:
     @classmethod
     def reset_corporations(cls, cursor, event_info: list, event_ids: list):
         """Reset the corporations to what they were before the given events."""
-        if len(event_info) < 1:
+        if not event_info:
             return
 
         dates_by_corp_num = cls._get_last_ar_dates_for_reset(cursor=cursor, event_info=event_info, event_ids=event_ids)
@@ -325,7 +325,7 @@ class Business:
     @classmethod
     def reset_corp_states(cls, cursor, event_ids: list):
         """Reset the corp states to what they were before the given events."""
-        if len(event_ids) < 1:
+        if not event_ids:
             return
 
         # delete corp_state rows created on these events

@@ -626,7 +626,7 @@ class Filing:
 
             # get the filing types corresponding filing code
             code = [key for key in cls.FILING_TYPES if cls.FILING_TYPES[key] == filing_type]
-            if len(code) < 1:
+            if not code:
                 raise InvalidFilingTypeException(filing_type=filing_type)
 
             # get the filing event info

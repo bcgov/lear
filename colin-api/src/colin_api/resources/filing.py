@@ -123,11 +123,11 @@ class FilingInfo(Resource):
                 con.commit()
                 return jsonify(completed_filing.as_dict()), 201
 
-            except Exception as err:
-                current_app.logger.error(err.with_traceback(None))
+            except Exception as db_err:
+                current_app.logger.error(db_err.with_traceback(None))
                 if con:
                     con.rollback()
-                raise err
+                raise db_err
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             # general catch-all exception

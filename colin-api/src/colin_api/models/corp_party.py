@@ -87,6 +87,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         if not parties:
             return None
 
+        completing_parties = {}
         party_list = []
         description = cursor.description
         for row in parties:
@@ -163,7 +164,10 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
 
         for row in parties:
             row = dict(zip([x[0].lower() for x in description], row))
-            party_name = row['first_nme'] + row['middle_nme'] + row['last_nme']
+            party_name = (row.get('first_nme', '') or '' +
+                          row.get('middle_nme', '') or '' +
+                          row.get('last_nme', '') or '')
+
             appointed = row['recognition_dts']
             completing_parties[party_name] = {'roleType': 'completing party',
                                               'appointmentDate': appointed}
