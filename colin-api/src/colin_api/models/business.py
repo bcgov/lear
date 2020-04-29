@@ -297,7 +297,7 @@ class Business:
     @classmethod
     def reset_corporations(cls, cursor, event_info: list, event_ids: list):
         """Reset the corporations to what they were before the given events."""
-        if len(event_info) < 1:
+        if not event_info:
             return
 
         dates_by_corp_num = cls._get_last_ar_dates_for_reset(cursor=cursor, event_info=event_info, event_ids=event_ids)
@@ -325,7 +325,7 @@ class Business:
     @classmethod
     def reset_corp_states(cls, cursor, event_ids: list):
         """Reset the corp states to what they were before the given events."""
-        if len(event_ids) < 1:
+        if not event_ids:
             return
 
         # delete corp_state rows created on these events
@@ -354,7 +354,7 @@ class Business:
         """Retrieve the next available corporation number and advance by one."""
         try:
             cursor = con.cursor()
-            cursor.execute(f"""
+            cursor.execute("""
                 SELECT id_num
                 FROM system_id
                 WHERE id_typ_cd = :corp_type
@@ -363,7 +363,7 @@ class Business:
             corp_num = cursor.fetchone()
 
             if corp_num:
-                cursor.execute(f"""
+                cursor.execute("""
                 UPDATE system_id
                 SET id_num = :new_num
                 WHERE id_typ_cd = :corp_type
@@ -371,7 +371,7 @@ class Business:
 
             return corp_num
         except Exception as err:
-            current_app.logger.error(f'Error looking up corp_num')
+            current_app.logger.error('Error looking up corp_num')
             raise err
 
     @classmethod
@@ -383,7 +383,7 @@ class Business:
             creation_date = datetime.now()
             legal_type = incorporation['nameRequest']['legalType']
             # Expand query as NR data/ business info becomes more aparent
-            cursor.execute(f"""insert into CORPORATION
+            cursor.execute("""insert into CORPORATION
             (CORP_NUM, CORP_TYP_CD, RECOGNITION_DTS)
             values (:corp_num, :legal_type, :creation_date)
             """, corp_num=corp_num, legal_type=legal_type, creation_date=creation_date)
@@ -396,7 +396,7 @@ class Business:
             return business_obj
 
         except Exception as err:
-            current_app.logger.error(f'Error inserting business.')
+            current_app.logger.error('Error inserting business.')
             raise err
 
     @classmethod
@@ -410,7 +410,7 @@ class Business:
             values ('CO', 0, NULL, NULL, '{corp_name}', '{corp_num}', {event_id}, '{search_name}')""")
 
         except Exception as err:
-            current_app.logger.error(f'Error inserting corp name.')
+            current_app.logger.error('Error inserting corp name.')
             raise err
 
     @classmethod
@@ -422,7 +422,7 @@ class Business:
             values ('{corp_num}', {event_id}, 'ACT')""")
 
         except Exception as err:
-            current_app.logger.error(f'Error inserting corp state.')
+            current_app.logger.error('Error inserting corp state.')
             raise err
 
     @classmethod
@@ -434,5 +434,5 @@ class Business:
             values ('{corp_num}', {event_id}, 'ACT')""")
 
         except Exception as err:
-            current_app.logger.error(f'Error inserting jurisdiction.')
+            current_app.logger.error('Error inserting jurisdiction.')
             raise err

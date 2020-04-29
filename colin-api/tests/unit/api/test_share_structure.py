@@ -57,4 +57,4 @@ def test_get_shares(client):
     print(errors)
 
     assert is_valid
-    assert len(rv2.json['shareClasses'][0]['series']) == 2
+    assert list(filter(lambda x: len(x['series']) == 2, rv2.json['shareClasses']))

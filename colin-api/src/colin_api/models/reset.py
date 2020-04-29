@@ -58,10 +58,10 @@ class Reset:
             AND event.event_timestmp<=TO_DATE(:end_date, 'yyyy-mm-dd')
         """)
 
-        if len(self.identifiers) > 0:
+        if self.identifiers:
             query_string += f' AND event.corp_num in ({stringify_list(self.identifiers)})'
 
-        if len(self.filing_types) > 0:
+        if self.filing_types:
             query_string += f' AND filing.filing_typ_cd in ({stringify_list(self.filing_types)})'
 
         # order by most most recent
@@ -95,7 +95,7 @@ class Reset:
                 WHERE event_id in ({stringify_list(event_ids)})
             """)
         except Exception as err:
-            current_app.logger.error(f'Error in Reset: failed to delete from filing table.')
+            current_app.logger.error('Error in Reset: failed to delete from filing table.')
             raise err
 
         try:
@@ -104,7 +104,7 @@ class Reset:
                 WHERE event_id in ({stringify_list(event_ids)})
             """)
         except Exception as err:
-            current_app.logger.error(f'Error in Reset: failed to delete from event table.')
+            current_app.logger.error('Error in Reset: failed to delete from event table.')
             raise err
 
     @classmethod
@@ -116,7 +116,7 @@ class Reset:
                     WHERE event_id in ({stringify_list(event_ids)})
                 """)
         except Exception as err:
-            current_app.logger.error(f'Error in Reset: failed to delete from ledger_text table.')
+            current_app.logger.error('Error in Reset: failed to delete from ledger_text table.')
             raise err
 
     @classmethod
@@ -128,7 +128,7 @@ class Reset:
                     WHERE event_id in ({stringify_list(event_ids)})
                 """)
         except Exception as err:
-            current_app.logger.error(f'Error in Reset: failed to delete from filing_user table.')
+            current_app.logger.error('Error in Reset: failed to delete from filing_user table.')
             raise err
 
     @classmethod
@@ -141,7 +141,7 @@ class Reset:
                         WHERE start_event_id in ({events_str})
                     """)
             except Exception as err:
-                current_app.logger.error(f'Error in Reset: failed to delete from corp_name table.')
+                current_app.logger.error('Error in Reset: failed to delete from corp_name table.')
                 raise err
 
     @classmethod
@@ -153,7 +153,7 @@ class Reset:
                         WHERE corp_num in ({stringify_list(corp_nums)})
                     """)
             except Exception as err:
-                current_app.logger.error(f'Error in Reset: failed to delete from corp_name table.')
+                current_app.logger.error('Error in Reset: failed to delete from corp_name table.')
                 raise err
 
     @classmethod
@@ -165,7 +165,7 @@ class Reset:
                         WHERE corp_num in ({stringify_list(corp_nums)})
                     """)
             except Exception as err:
-                current_app.logger.error(f'Error in Reset: failed to delete from corp_name table.')
+                current_app.logger.error('Error in Reset: failed to delete from corp_name table.')
                 raise err
 
     @classmethod
@@ -182,7 +182,7 @@ class Reset:
                 new_corps[row[0]] = row[1]
             return new_corps
         except Exception as err:
-            current_app.logger.error(f'Error in Reset: failed to retrieve incorporation filing.')
+            current_app.logger.error('Error in Reset: failed to retrieve incorporation filing.')
             raise err
 
     @classmethod
@@ -237,8 +237,8 @@ class Reset:
                 con.commit()
                 return
         except Exception as err:
-            current_app.logger.error(f'Error in reset_filings: failed to reset filings.'
-                                     f' Rolling back any partial changes.')
+            current_app.logger.error('Error in reset_filings: failed to reset filings.'
+                                     ' Rolling back any partial changes.')
             if con:
                 con.rollback()
             raise err

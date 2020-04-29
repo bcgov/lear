@@ -15,7 +15,11 @@
 
 Currently this only provides API versioning information
 """
+from __future__ import annotations
+
 import datetime
+import itertools
+from typing import List
 
 from flask import current_app
 
@@ -38,6 +42,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
     end_event_id = None
     role_type = None
     org_num = None
+    roles = None
 
     role_types = {
         'director': 'DIR',
@@ -63,7 +68,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             'startEventId': self.start_event_id,
             'endEventId': self.end_event_id,
             'actions': [],
-            'roleType': self.role_type,
+            'roles': self.roles,
             'orgNum': self.org_num
         }
 
@@ -72,15 +77,17 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         officer_obj = {'firstName': (row.get('first_nme', '') or '').strip(),
                        'lastName': (row.get('last_nme', '') or '').strip(),
                        'middleInitial': (row.get('middle_nme', '') or '').strip(),
-                       'organizationName': (row.get('business_nme', '') or '').strip()}
+                       'orgName': (row.get('business_nme', '') or '').strip()}
         return officer_obj
 
     @classmethod
     def _build_parties_list(cls, cursor, event_id: int = None):
         parties = cursor.fetchall()
+
         if not parties:
             return None
 
+        completing_parties = {}
         party_list = []
         description = cursor.description
         for row in parties:
@@ -104,8 +111,68 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                     party.cessation_date = None
 
                 party_list.append(party)
+        if event_id:
+            completing_parties = cls.get_completing_parties(cursor, event_id)
+        return cls.group_parties(party_list, completing_parties)
 
-        return party_list
+    @classmethod
+    def group_parties(cls, parties: List[Party], completing_parties: dict):
+        """Group parties based on roles for LEAR formatting."""
+        role_dict = {v: k for k, v in cls.role_types.items()}  # Used as a lookup for role names
+
+        grouped_list = []
+        role_func = (lambda x: x.officer['firstName'] + x.officer['middleInitial'] + x.officer['lastName']
+                     + x.officer['orgName'])  # noqa: E731;
+
+        # CORP_PARTIES are stored as a separate row per Role, and need to be grouped to return a list of
+        # Role(s) within each Party object. First the rows are grouped in-memory by party/organization name
+        # (dictionary of parties)
+        parties_dict = {k: list(v) for k, v in itertools.groupby(parties, key=role_func)}
+
+        # Iterate over each grouping, the first value represents the Party. All rows
+        # are then iterated to construct the Roles array
+        for party_name, party_roles in parties_dict.items():  # pylint: disable=unused-variable;
+            party = party_roles[0]  # The party
+            roles = []
+            # Fetch the role from each element in the Party array
+            if party_name in completing_parties.keys():
+                roles.append(completing_parties[party_name])
+
+            for i in party_roles:
+                role = i.role_type
+                roles.append({'roleType': role_dict[role],
+                              'appointmentDate': i.appointment_date,
+                              'cessationDate': i.cessation_date})
+            party.roles = roles
+            grouped_list.append(party)
+        return grouped_list
+
+    @classmethod
+    def get_completing_parties(cls, cursor, event_id):
+        """Retrieve the completing parties for an event."""
+        query = f"""
+                select first_nme, middle_nme, last_nme, corp.recognition_dts from
+                completing_party cp join event e on cp.event_id = e.event_id
+                join corporation corp on e.corp_num = corp.corp_num
+                where cp.event_id = {event_id}
+                """
+
+        cursor.execute(query)
+        parties = cursor.fetchall()
+        completing_parties = {}
+        description = cursor.description
+
+        for row in parties:
+            row = dict(zip([x[0].lower() for x in description], row))
+            party_name = (row.get('first_nme', '') or '' +
+                          row.get('middle_nme', '') or '' +
+                          row.get('last_nme', '') or '')
+
+            appointed = row['recognition_dts']
+            completing_parties[party_name] = {'roleType': 'completing party',
+                                              'appointmentDate': appointed}
+
+        return completing_parties
 
     @classmethod
     def get_current(cls, cursor, identifier: str = None, role_type: str = 'DIR'):
@@ -303,7 +370,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                                middle_nme=party['officer'].get('middleInitial', ''),
                                first_nme=party['officer']['firstName'],
                                bus_company_num=business['business'].get('businessNumber', None),
-                               business_name=party['officer'].get('organizationName', ''),
+                               business_name=party['officer'].get('orgName', ''),
                                )
 
         except Exception as err:
