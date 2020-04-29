@@ -79,7 +79,7 @@ def create_party(business_id: int, party_info: dict) -> Party:
         business_id=business_id,
         first_name=party_info['officer'].get('firstName', '').upper(),
         last_name=party_info['officer'].get('lastName', '').upper(),
-        middle_initial=party_info['officer'].get('middle_initial', '').upper(),
+        middle_initial=party_info['officer'].get('middleInitial', '').upper(),
         org_name=party_info.get('orgName', '').upper()
     )
     if not party:
@@ -88,7 +88,7 @@ def create_party(business_id: int, party_info: dict) -> Party:
             last_name=party_info['officer'].get('lastName', '').upper(),
             middle_initial=party_info['officer'].get('middleInitial', '').upper(),
             title=party_info.get('title', '').upper(),
-            organization_name=party_info.get('organization_name', '').upper()
+            organization_name=party_info.get('orgName', '').upper()
         )
 
     # add addresses to party
