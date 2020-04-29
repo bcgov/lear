@@ -129,11 +129,25 @@ def test_find_party_by_name(session):
         middle_initial='',
         org_name=''
     )
+    should_not_find_michael = PartyRole.find_party_by_name(
+        business_id=business.id,
+        first_name='Michael',
+        last_name='Crane',
+        middle_initial='',
+        org_name=''
+    )
     should_find_michael = PartyRole.find_party_by_name(
         business_id=business.id,
         first_name='Michael',
         last_name='Crane',
         middle_initial='Joe',
+        org_name=''
+    )
+    should_not_find_testing = PartyRole.find_party_by_name(
+        business_id=business.id,
+        first_name='Testing',
+        last_name='NoMiddleInitial',
+        middle_initial='T',
         org_name=''
     )
     should_find_testing = PartyRole.find_party_by_name(
@@ -152,6 +166,8 @@ def test_find_party_by_name(session):
     )
     # check values
     assert not should_be_none
+    assert not should_not_find_michael
+    assert not should_not_find_testing
     assert should_find_michael.id == person.id
     assert should_find_testing.id == no_middle_initial.id
     assert should_find_testorg.id == org.id
