@@ -15,8 +15,6 @@
 
 Currently this only provides API versioning information
 """
-from __future__ import annotations
-
 import datetime
 import itertools
 from typing import List
@@ -116,7 +114,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return cls.group_parties(party_list, completing_parties)
 
     @classmethod
-    def group_parties(cls, parties: List[Party], completing_parties: dict):
+    def group_parties(cls, parties: List['Party'], completing_parties: dict):
         """Group parties based on roles for LEAR formatting."""
         role_dict = {v: k for k, v in cls.role_types.items()}  # Used as a lookup for role names
 
