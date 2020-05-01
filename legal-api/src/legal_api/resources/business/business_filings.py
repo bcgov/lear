@@ -351,7 +351,7 @@ class ListFilingResource(Resource):
             # for any legal type, set effective date as set in json; otherwise leave as default
             filing.effective_date = \
                 datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['effectiveDate']) \
-                if filing.filing_json['filing']['header'].get('effectiveDate', None) else None
+                if filing.filing_json['filing']['header'].get('effectiveDate', None) else datetime.datetime.utcnow()
 
             filing.save()
         except BusinessException as err:
@@ -411,6 +411,11 @@ class ListFilingResource(Resource):
                     'priority': False if filing_type == 'annualReport' else priority_flag,
                     'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
                 })
+            elif k == 'incorporationApplication':
+                filing_types.append({
+                    'filingTypeCode': Filing.FILINGS[k].get('code'),
+                    'futureEffective': ListFilingResource._is_future_effective_filing(filing_json)
+                })
             elif Filing.FILINGS.get(k, None):
                 filing_types.append({
                     'filingTypeCode': Filing.FILINGS[k].get('code'),
@@ -444,7 +449,6 @@ class ListFilingResource(Resource):
             corp_type = business.identifier[:-7]
 
         payload = {
-            'paymentInfo': {'methodOfPayment': 'CC'},
             'businessInfo': {
                 'businessIdentifier': f'{business.identifier}',
                 'corpType': f'{corp_type}',
@@ -498,6 +502,15 @@ class ListFilingResource(Resource):
                 filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date
                 filing.effective_date = effective_date
                 filing.save()
+
+    @staticmethod
+    def _is_future_effective_filing(filing_json: dict) -> bool:
+        is_future_effective = False
+        effective_date = datetime.datetime.fromisoformat(filing_json['filing']['header']['effectiveDate']) \
+            if filing_json['filing']['header'].get('effectiveDate', None) else None
+        if effective_date:
+            is_future_effective = effective_date > datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+        return is_future_effective
 
 
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')
