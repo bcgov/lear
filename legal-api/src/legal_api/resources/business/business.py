@@ -42,10 +42,10 @@ class BusinessResource(Resource):
     def get(identifier):
         """Return a JSON object with meta information about the Service."""
         # check authorization
-        if not authorized(identifier, jwt, action=['view']):
-            return jsonify({'message':
-                            f'You are not authorized to view business {identifier}.'}), \
-                HTTPStatus.UNAUTHORIZED
+        # if not authorized(identifier, jwt, action=['view']):
+        #     return jsonify({'message':
+        #                     f'You are not authorized to view business {identifier}.'}), \
+        #         HTTPStatus.UNAUTHORIZED
 
         business = Business.find_by_identifier(identifier)
 
