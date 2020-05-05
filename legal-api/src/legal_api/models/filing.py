@@ -78,6 +78,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _filing_type = db.Column('filing_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
     effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    _payment_error_type = db.Column('payment_error_type', db.String(50))
     _payment_token = db.Column('payment_id', db.String(4096))
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
     _status = db.Column('status', db.String(20), default=Status.DRAFT)
@@ -124,6 +125,17 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def filing_type(self):
         """Property containing the filing type."""
         return self._filing_type
+
+    @hybrid_property
+    def payment_error_type(self):
+        """Property containing the payment error type."""
+        return self._payment_error_type
+
+    @payment_error_type.setter
+    def payment_error_type(self, error_type: str):
+        if self.locked:
+            self._raise_default_lock_exception()
+        self._payment_error_type = error_type
 
     @hybrid_property
     def payment_token(self):
@@ -269,6 +281,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
             if self.effective_date:
                 json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()
+            if self._payment_error_type:
+                json_submission['filing']['header']['paymentErrorType'] = self.payment_error_type
             if self._payment_token:
                 json_submission['filing']['header']['paymentToken'] = self.payment_token
             if self.submitter_id:
