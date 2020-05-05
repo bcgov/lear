@@ -31,7 +31,7 @@ from . import lists_are_equal
 identifier = 'NR 1234567'
 now = date(2020, 9, 17)
 founding_date = now - datedelta.YEAR
-business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
+business = Business(identifier=identifier)
 
 
 @pytest.mark.parametrize(
@@ -106,7 +106,7 @@ def test_validate_incorporation_addresses_basic(session, test_name, delivery_reg
     """Assert that incorporation offices can be validated."""
     f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
-                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2019-04-15T00:00:00+00:00'}
+                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2020-09-18T00:00:00+00:00'}
 
     f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
@@ -157,7 +157,7 @@ def test_validate_incorporation_role(session, test_name, role_1, role_2, role_3,
     """Assert that incorporation parties roles can be validated."""
     f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
-                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2019-04-15T00:00:00+00:00'}
+                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2020-09-18T00:00:00+00:00'}
 
     f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
@@ -217,7 +217,7 @@ def test_validate_incorporation_parties_mailing_address(session, test_name, mock
     """Assert that incorporation parties mailing address is not empty."""
     f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
-                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2019-04-15T00:00:00+00:00'}
+                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2020-09-18T00:00:00+00:00'}
 
     f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
@@ -283,7 +283,7 @@ def test_validate_incorporation_share_classes(session, test_name, class_has_max_
     """Assert that validator validates share class correctly."""
     f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
-                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2019-04-15T00:00:00+00:00'}
+                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': '2020-09-18T00:00:00+00:00'}
 
     f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
@@ -295,6 +295,49 @@ def test_validate_incorporation_share_classes(session, test_name, class_has_max_
     f['filing']['incorporationApplication']['shareClasses'][0]['currency'] = currency
     f['filing']['incorporationApplication']['shareClasses'][0]['series'][0]['hasMaximumShares'] = series_has_max_shares
     f['filing']['incorporationApplication']['shareClasses'][0]['series'][0]['maxNumberOfShares'] = series_max_shares
+
+    # perform test
+    with freeze_time(now):
+        err = validate(business, f)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None
+
+
+@pytest.mark.parametrize(
+    'test_name, effective_date, expected_code, expected_msg',
+    [
+        ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
+        ('SUCCESS', None, None, None),
+        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
+            HTTPStatus.BAD_REQUEST, [[{
+                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effective_date.'
+            }]]),
+        ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
+            HTTPStatus.BAD_REQUEST, [[{
+                'error': 'Invalid Datetime: 2020-09-17T00:01:00+00:00, effective date must be a minimum of 2 ' +
+                         'minutes ahead.'
+            }]]),
+        ('FAIL_INVALID_DATE_TIME_MAXIMUM', '2020-09-27T00:01:00+00:00',
+            HTTPStatus.BAD_REQUEST, [[{
+                'error': 'Invalid Datetime: 2020-09-27T00:01:00+00:00, effective date must be a maximum of 10 days ' +
+                         'ahead.'
+            }]])
+    ])
+def test_validate_incorporation_effective_date(session, test_name, effective_date, expected_code, expected_msg):
+    """Assert that validator validates share class correctly."""
+    f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
+                             'email': 'no_one@never.get', 'filingId': 1}
+
+    if effective_date != None:
+        f['filing']['header']['effectiveDate'] = effective_date
+
+    f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
 
     # perform test
     with freeze_time(now):
