@@ -27,6 +27,7 @@ from legal_api.services.filings import validate
 from . import lists_are_equal
 
 
+
 # setup
 identifier = 'NR 1234567'
 now = date(2020, 9, 17)
@@ -334,7 +335,7 @@ def test_validate_incorporation_effective_date(session, test_name, effective_dat
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
                              'email': 'no_one@never.get', 'filingId': 1}
 
-    if effective_date != None:
+    if effective_date is not None:
         f['filing']['header']['effectiveDate'] = effective_date
 
     f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)

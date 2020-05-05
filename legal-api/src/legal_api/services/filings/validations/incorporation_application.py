@@ -22,6 +22,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 from legal_api.errors import Error
 from legal_api.utils.datetime import datetime as dt
 
+
 def validate(incorporation_json: Dict):
     """Validate the Incorporation filing."""
     if not incorporation_json:
@@ -220,11 +221,11 @@ def validate_incorporation_effective_date(incorporation_json) -> Error:
 
     if effective_date < now_plus_2_minutes:
         msg.append({'error': babel('Invalid Datetime: %s, effective date must be a minimum of 2 minutes ahead.')
-                             % filing_effective_date})
+                    % filing_effective_date})
 
     if effective_date > now_plus_10_days:
         msg.append({'error': babel('Invalid Datetime: %s, effective date must be a maximum of 10 days ahead.')
-                             % filing_effective_date})
+                    % filing_effective_date})
 
     if msg:
         return msg
