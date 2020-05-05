@@ -444,7 +444,6 @@ class ListFilingResource(Resource):
             corp_type = business.identifier[:-7]
 
         payload = {
-            'paymentInfo': {'methodOfPayment': 'CC'},
             'businessInfo': {
                 'businessIdentifier': f'{business.identifier}',
                 'corpType': f'{corp_type}',
@@ -479,12 +478,18 @@ class ListFilingResource(Resource):
         if rv.status_code == HTTPStatus.OK or rv.status_code == HTTPStatus.CREATED:
             pid = rv.json().get('id')
             filing.payment_token = pid
+            filing.payment_error_type = None  # Clear any payment errors on successful payment
             filing.save()
             return None, None
 
         if rv.status_code == HTTPStatus.BAD_REQUEST:
-            return {'code': rv.json().get('code'),
-                    'message': rv.json().get('message')}, HTTPStatus.PAYMENT_REQUIRED
+            # Set payment error type used to retrieve error messages from pay-api
+            error_type = rv.json().get('type')
+            filing.payment_error_type = error_type
+            filing.save()
+
+            return {'payment_error_type': error_type,
+                    'message': rv.json().get('detail')}, HTTPStatus.PAYMENT_REQUIRED
 
         return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
