@@ -28,15 +28,18 @@ from legal_api.services.authz import STAFF_ROLE
 from tests import integration_payment
 from tests.unit.services.utils import create_header
 
-#Setup
+
+# Setup
 now = date(2020, 9, 17)
+nr_number = 'NR 1234567'
+effective_date = '2020-09-18T00:00:00+00:00'
+
 
 def test_post_new_draft_incorporation(session, client, jwt):
     """Assert that an incorporation filing can be posted to businesses."""
-    nr_number = 'NR 1234567'
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
-    filing['filing']['header']['effectiveDate'] = '2020-09-18T00:00:00+00:00'
+    filing['filing']['header']['effectiveDate'] = effective_date
 
     # perform test
     with freeze_time(now):
@@ -56,7 +59,6 @@ def test_post_new_draft_incorporation(session, client, jwt):
 @integration_payment
 def test_post_new_incorporation(session, client, jwt):
     """Assert that an incorporation filing can be posted to businesses and completed."""
-    nr_number = 'NR 1234567'
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing['filing']['header']['routingSlipNumber'] = '111111111'
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
@@ -73,10 +75,9 @@ def test_post_new_incorporation(session, client, jwt):
 
 def test_post_duplicate_incorporation(session, client, jwt):
     """Assert that only one incorporation filing can be created per NR number."""
-    nr_number = 'NR 1234567'
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
-    filing['filing']['header']['effectiveDate'] = '2020-09-18T00:00:00+00:00'
+    filing['filing']['header']['effectiveDate'] = effective_date
 
     # perform test
     with freeze_time(now):
@@ -96,10 +97,9 @@ def test_post_duplicate_incorporation(session, client, jwt):
 
 def test_get_incorporation_filing(session, client, jwt):
     """Assert that an incorporation filing can be retrieved for resuming."""
-    nr_number = 'NR 1234567'
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
-    filing['filing']['header']['effectiveDate'] = '2020-09-18T00:00:00+00:00'
+    filing['filing']['header']['effectiveDate'] = effective_date
 
     # perform test
     with freeze_time(now):
@@ -123,7 +123,6 @@ def test_get_incorporation_filing(session, client, jwt):
 
 def test_put_draft_incorporation_filing(session, client, jwt):
     """Assert that an incorporation filing can be put (updated) to filings endpoint."""
-    nr_number = 'NR 1234567'
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
 
@@ -146,7 +145,6 @@ def test_put_draft_incorporation_filing(session, client, jwt):
 
 def test_put_incorporation_to_business_fails(session, client, jwt):
     """Assert that an incorporation cannot be PUT to the business endpoint."""
-    nr_number = 'NR 1234567'
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
 
@@ -169,7 +167,6 @@ def test_put_incorporation_to_business_fails(session, client, jwt):
 
 def test_post_incorporation_to_filing_fails(session, client, jwt):
     """Assert that an incorporation cannot be POSTed to the filings endpoint."""
-    nr_number = 'NR 1234567'
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
 

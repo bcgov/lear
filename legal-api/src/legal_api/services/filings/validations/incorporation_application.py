@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Incorporation filing."""
+from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Dict
-from datetime import timedelta
 
 import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
@@ -220,12 +220,10 @@ def validate_incorporation_effective_date(incorporation_json) -> Error:
         return msg
 
     if effective_date < now_plus_2_minutes:
-        msg.append({'error': babel('Invalid Datetime: %s, effective date must be a minimum of 2 minutes ahead.')
-                             % filing_effective_date})
+        msg.append({'error': babel('Invalid Datetime, effective date must be a minimum of 2 minutes ahead.')})
 
     if effective_date > now_plus_10_days:
-        msg.append({'error': babel('Invalid Datetime: %s, effective date must be a maximum of 10 days ahead.')
-                             % filing_effective_date})
+        msg.append({'error': babel('Invalid Datetime, effective date must be a maximum of 10 days ahead.')})
 
     if msg:
         return msg
