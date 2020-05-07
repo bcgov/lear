@@ -14,7 +14,7 @@
       <div>
         <table class="header-table">
           <tr>
-            <td class="business-number">Number: {{identifier}}</td>
+            <td class="business-number">Number: {{ business.identifier }}</td>
             <td class="duplicate-lbl">DUPLICATE</td>
           </tr>
         </table>
@@ -32,16 +32,16 @@
 
         <div class="certify-clause-container">
           <div class="cert-statement">I hereby certify that</div>
-          <div class="company-name-header">{{ legalName }}</div>
+          <div class="company-name-header">{{ business.legalName }}</div>
           <div class="cert-statement">was incorporated under the Business Corporations Act</div>
-          <div class="cert-statement">on {{ formatted_founding_date_time }}</div>
+          <div class="cert-statement">on {{ business.formatted_founding_date_time }}</div>
         </div>
 
         <p>______</p>
 
         <div class="issue-details">
           <div class="cert-statement">Issued under my hand at Victoria, British Columbia</div>
-          <div class="cert-statement">on {{ formatted_founding_date }}</p>
+          <div class="cert-statement">on {{ business.formatted_founding_date }}</p>
         </div>
       </div>
       <br/>
