@@ -5,8 +5,6 @@ Get, post, and delete business, including all sub-objects - filings, addresses, 
 import os
 
 from flask import Flask
-from legal_api.models import db
-from legal_api.schemas import rsbc_schemas
 from legal_api.utils.logging import setup_logging
 
 from data_reset_tool import config
@@ -21,15 +19,12 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     app = Flask(__name__)
     app.config.from_object(config.CONFIGURATION[run_mode])
 
-    db.init_app(app)
-    rsbc_schemas.init_app(app)
-
     # Register blueprints
     app.register_blueprint(FIXTURE_BLUEPRINT)
 
     # Shell context for flask cli
     @app.shell_context_processor
     def ctx():  # pylint: disable=unused-variable
-        return {'app': app, 'db': db}
+        return {'app': app}
 
     return app
