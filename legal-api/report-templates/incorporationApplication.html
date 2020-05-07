@@ -1,0 +1,72 @@
+[[macros.html]]
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Certificate of Incorporation</title>
+    <meta charset="UTF-8">
+    <meta name="author" content="BC Registries and Online Services">
+    [[incorporationCertificateStyle.html]]
+  </head>
+
+  <body>
+    <div class="outer-container">
+      <div>
+        <table class="header-table">
+          <tr>
+            <td class="business-number">Number: {{identifier}}</td>
+            <td class="duplicate-lbl">DUPLICATE</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="certificate-statements">
+        [[incorporationCertificateLogo.html]]
+
+        <br/>
+        <div class="cert-title-container">
+          <div class="sub-header-1">Certificate  of</div>
+          <div class="incorporation-header">INCORPORATION</div>
+          <div class="sub-header-2">Business Corporations Act</div>
+        </div>
+
+        <div class="certify-clause-container">
+          <div class="cert-statement">I hereby certify that</div>
+          <div class="company-name-header">{{ legalName }}</div>
+          <div class="cert-statement">was incorporated under the Business Corporations Act</div>
+          <div class="cert-statement">on {{ formatted_founding_date_time }}</div>
+        </div>
+
+        <p>______</p>
+
+        <div class="issue-details">
+          <div class="cert-statement">Issued under my hand at Victoria, British Columbia</div>
+          <div class="cert-statement">on {{ formatted_founding_date }}</p>
+        </div>
+      </div>
+      <br/>
+      <div>
+        <table class="footer-table">
+          <tr>
+            <td class="seal-container">[[incorporationCertificateSeal.html]]</td>
+            <td class="registrar-info-container">
+              <div class="registrar-info">
+                <div>
+                  <div class="registrar-name">CAROL PREST</div>
+                  <div class="registrar-title">Registrar of Companies</div>
+                </div>
+                <div>[[registrarSignature.html]]</div>
+                <div class="province-country-info">
+                  <div>Province of British Columbia</div>
+                  <div class="country">Canada</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
+        <br/>
+      </div>
+    </div>
+  </body>
+  <footer class="footer-style">ELECTRONIC CERTIFICATE</footer>
+</html>
