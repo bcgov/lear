@@ -147,6 +147,7 @@ class FilingInfo(Resource):
             filing.header = json_data['header']
             filing.filing_type = filing_type
             filing.body = filing_list[filing_type]
+            filing.business.business['legalName'] = json_data['business']['legalName']
             # add the new filing
             event_id = Filing.add_filing(con, filing)
             filings_added.append({'event_id': event_id, 'filing_type': filing_type})

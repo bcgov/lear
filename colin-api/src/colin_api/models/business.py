@@ -407,7 +407,8 @@ class Business:
             cursor.execute(f"""insert into CORP_NAME
             (CORP_NAME_TYP_CD, CORP_NAME_SEQ_NUM, DD_CORP_NUM, END_EVENT_ID,
             CORP_NME, CORP_NUM, START_EVENT_ID, SRCH_NME)
-            values ('CO', 0, NULL, NULL, '{corp_name}', '{corp_num}', {event_id}, '{search_name}')""")
+            values ('CO', 0, NULL, NULL, :corp_name, :corp_num, :event_id, :search_name)
+            """, corp_name=corp_name, corp_num=corp_num, event_id=event_id, search_name=search_name)
 
         except Exception as err:
             current_app.logger.error('Error inserting corp name.')
@@ -419,7 +420,8 @@ class Business:
         try:
             cursor.execute(f"""insert into CORP_STATE
             (CORP_NUM, START_EVENT_ID, STATE_TYP_CD)
-            values ('{corp_num}', {event_id}, 'ACT')""")
+            values (:corp_num, :event_id, 'ACT')
+            """, corp_num=corp_num, event_id=event_id)
 
         except Exception as err:
             current_app.logger.error('Error inserting corp state.')
@@ -431,7 +433,8 @@ class Business:
         try:
             cursor.execute(f"""insert into JURISDICTION
             (CORP_NUM, START_EVENT_ID, STATE_TYP_CD)
-            values ('{corp_num}', {event_id}, 'ACT')""")
+            values (:corp_num, :event_id, 'ACT')
+            """, corp_num=corp_num, event_id=event_id)
 
         except Exception as err:
             current_app.logger.error('Error inserting jurisdiction.')
