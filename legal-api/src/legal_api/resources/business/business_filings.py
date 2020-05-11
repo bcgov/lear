@@ -15,9 +15,9 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
-import datetime
+# import datetime
 from http import HTTPStatus
-from typing import Tuple
+from typing import Tuple, Union
 
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
@@ -30,12 +30,13 @@ from werkzeug.local import LocalProxy
 
 import legal_api.reports
 from legal_api.exceptions import BusinessException
-from legal_api.models import Address, Business, Filing, User, db
+from legal_api.models import Address, Business, Filing, RegistrationBootstrap, User, db
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import COLIN_SVC_ROLE, STAFF_ROLE, authorized, queue
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
+from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
@@ -108,29 +109,39 @@ class ListFilingResource(Resource):
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED
+
+        # get query params
         draft = (request.args.get('draft', None).lower() == 'true') \
             if request.args.get('draft', None) else False
         only_validate = (request.args.get('only_validate', None).lower() == 'true') \
             if request.args.get('only_validate', None) else False
+
         # validate filing
         if not draft and not ListFilingResource._is_before_epoch_filing(json_input,
                                                                         Business.find_by_identifier(identifier)):
-            business = Business.find_by_identifier(identifier)
-            err = validate(business, json_input)
+            if identifier.startswith('T'):
+                business_validate = RegistrationBootstrap.find_by_identifier(identifier)
+            else:
+                business_validate = Business.find_by_identifier(identifier)
+            err = validate(business_validate, json_input)
             # err_msg, err_code = ListFilingResource._validate_filing_json(request)
             if err or only_validate:
                 if err:
                     json_input['errors'] = err.msg
                     return jsonify(json_input), err.code
                 return jsonify(json_input), HTTPStatus.OK
+
         # save filing, if it's draft only then bail
         user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
-        business, filing, err_msg, err_code = ListFilingResource._save_filing(request, identifier, user, filing_id)
-        if err_msg or draft:
-            reply = filing.json if filing else json_input
-            reply['errors'] = [err_msg, ]
-            return jsonify(reply), err_code or \
-                (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
+        try:
+            business, filing, err_msg, err_code = ListFilingResource._save_filing(request, identifier, user, filing_id)
+            if err_msg or draft:
+                reply = filing.json if filing else json_input
+                reply['errors'] = [err_msg, ]
+                return jsonify(reply), err_code or \
+                    (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
+        except Exception as err:
+            print(err)
 
         # complete filing
         response, response_code = ListFilingResource.complete_filing(business, filing, draft)
@@ -291,10 +302,10 @@ class ListFilingResource(Resource):
             return {'errors': {'message': 'unable to publish for post processing'}}, HTTPStatus.BAD_REQUEST
 
     @staticmethod
-    def _save_filing(client_request: LocalProxy,
+    def _save_filing(client_request: LocalProxy,  # pylint: disable=too-many-return-statements,too-many-branches
                      business_identifier: str,
                      user: User,
-                     filing_id: int) -> Tuple[Business, Filing, dict, int]:
+                     filing_id: int) -> Tuple[Union[Business, RegistrationBootstrap], Filing, dict, int]:
         """Save the filing to the ledger.
 
         If not successful, a dict of errors is returned.
@@ -304,6 +315,8 @@ class ListFilingResource(Resource):
             Filing: filing model object for the submitted filing
             dict: a dict of errors
             int: the HTTPStatus error code
+
+        @TODO refactor to a set of single putpose routines
         }
         """
         json_input = client_request.get_json()
@@ -312,24 +325,49 @@ class ListFilingResource(Resource):
                                 f'No filing json data in body of post for {business_identifier}.'}, \
                 HTTPStatus.BAD_REQUEST
 
-        business = Business.find_by_identifier(business_identifier)
-        if not business:
-            return None, None, {'message':
-                                f'{business_identifier} not found'}, HTTPStatus.NOT_FOUND
-
-        if client_request.method == 'PUT':
-            rv = db.session.query(Business, Filing). \
-                filter(Business.id == Filing.business_id). \
-                filter(Business.identifier == business_identifier). \
-                filter(Filing.id == filing_id). \
-                one_or_none()
-            if not rv:
+        if business_identifier.startswith('T'):
+            # bootstrap filing
+            bootstrap = RegistrationBootstrap.find_by_identifier(business_identifier)
+            business = None
+            if not bootstrap:
                 return None, None, {'message':
-                                    f'{business_identifier} no filings found'}, HTTPStatus.NOT_FOUND
-            filing = rv[1]
+                                    f'{business_identifier} not found'}, HTTPStatus.NOT_FOUND
+            if client_request.method == 'PUT':
+                rv = db.session.query(Filing). \
+                    filter(Filing.temp_reg == business_identifier). \
+                    filter(Filing.id == filing_id). \
+                    one_or_none()
+                if not rv:
+                    return None, None, {'message':
+                                        f'{business_identifier} no filings found'}, HTTPStatus.NOT_FOUND
+                filing = rv[1]
+            else:
+                filing = Filing()
+                filing.temp_reg = bootstrap.identifier
+                if not json_input['filing'].get('business'):
+                    json_input['filing']['business'] = {}
+                json_input['filing']['business']['identifier'] = bootstrap.identifier
+
         else:
-            filing = Filing()
-            filing.business_id = business.id
+            # regular filing for a business
+            business = Business.find_by_identifier(business_identifier)
+            if not business:
+                return None, None, {'message':
+                                    f'{business_identifier} not found'}, HTTPStatus.NOT_FOUND
+
+            if client_request.method == 'PUT':
+                rv = db.session.query(Business, Filing). \
+                    filter(Business.id == Filing.business_id). \
+                    filter(Business.identifier == business_identifier). \
+                    filter(Filing.id == filing_id). \
+                    one_or_none()
+                if not rv:
+                    return None, None, {'message':
+                                        f'{business_identifier} no filings found'}, HTTPStatus.NOT_FOUND
+                filing = rv[1]
+            else:
+                filing = Filing()
+                filing.business_id = business.id
 
         try:
             filing.submitter_id = user.id
@@ -357,7 +395,7 @@ class ListFilingResource(Resource):
         except BusinessException as err:
             return None, None, {'error': err.error}, err.status_code
 
-        return business, filing, None, None
+        return business or bootstrap, filing, None, None
 
     @staticmethod
     def _validate_filing_json(client_request: LocalProxy) -> Tuple[dict, int]:
@@ -439,6 +477,9 @@ class ListFilingResource(Resource):
             mailing_address = Address.create_address(
                 filing.json['filing']['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
             corp_type = filing.json['filing']['incorporationApplication']['nameRequest']['legalType']
+            business.legal_name = filing.json['filing']['incorporationApplication']['nameRequest'].get('legalName') \
+                or business.identifier
+
         else:
             mailing_address = business.mailing_address.one_or_none()
             corp_type = business.identifier[:-7]
@@ -491,7 +532,13 @@ class ListFilingResource(Resource):
     @staticmethod
     def _set_effective_date(business: Business, filing: Filing):
         filing_type = filing.filing_json['filing']['header']['name']
-        if business.legal_type != 'CP':
+        if filing_type == Filing.FILINGS['incorporationApplication'].get('name'):
+            fe_date = filing.filing_json['filing']['header'].get('futureEffectiveDate')
+            if fe_date:
+                filing.effective_date = datetime.datetime.fromisoformat(fe_date)
+                filing.save()
+
+        elif business.legal_type != 'CP':
             if filing_type == 'changeOfAddress':
                 effective_date = datetime.datetime.combine(datetime.date.today() + datedelta.datedelta(days=1),
                                                            datetime.datetime.min.time())

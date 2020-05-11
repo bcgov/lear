@@ -29,7 +29,7 @@ from .voluntary_dissolution import validate as voluntary_dissolution_validate
 
 
 def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable=too-many-branches
-    """Validate the annual report JSON."""
+    """Validate the filing JSON."""
     err = validate_against_schema(filing_json)
     if err:
         return err

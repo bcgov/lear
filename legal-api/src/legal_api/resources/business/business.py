@@ -17,13 +17,13 @@ Provides all the search and retrieval from the business entity datastore.
 """
 from http import HTTPStatus
 
-from flask import g, jsonify, request
+from flask import jsonify, request
+from flask_babel import _ as babel  # noqa: N813
 from flask_restplus import Resource, cors
 
-from legal_api.models import Business, User
+from legal_api.models import Business, Filing
 from legal_api.resources.business.business_filings import ListFilingResource
-from legal_api.services import authorized
-from legal_api.services.filings import validate
+from legal_api.services import RegistrationBootstrapService
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
@@ -39,13 +39,16 @@ class BusinessResource(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def get(identifier):
+    def get(identifier: str):
         """Return a JSON object with meta information about the Service."""
         # check authorization
         # if not authorized(identifier, jwt, action=['view']):
         #     return jsonify({'message':
         #                     f'You are not authorized to view business {identifier}.'}), \
         #         HTTPStatus.UNAUTHORIZED
+
+        if identifier.startswith('T'):
+            return {'message': babel('No information on temp registrations.')}, 200
 
         business = Business.find_by_identifier(identifier)
 
@@ -58,69 +61,19 @@ class BusinessResource(Resource):
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
     def post():
-        """Create a business from an incorporation filing, return the filing."""
-        draft = (request.args.get('draft', None).lower() == 'true') \
-            if request.args.get('draft', None) else False
-
+        """Create an Incorporation Filing, else error out."""
         json_input = request.get_json()
 
-        # validate filing
-        err = validate(None, json_input)
-        if err:
-            json_input['errors'] = err.msg
-            return jsonify(json_input), err.code
+        try:
+            filing_account_id = json_input['filing']['header']['accountId']
+            filing_type = json_input['filing']['header']['name']
+            if filing_type != Filing.FILINGS['incorporationApplication']['name']:
+                raise TypeError
+        except (TypeError, KeyError):
+            return {'error': babel('Requires a minimal Incorporation Filing.')}, HTTPStatus.BAD_REQUEST
 
-        # create business
-        business, err_msg, err_code = BusinessResource._create_business(json_input, request)
-        if err_msg:
-            if isinstance(err_msg, list):
-                json_input['errors'] = [err for err in err_msg]
-            elif err_msg:
-                json_input['errors'] = [err_msg, ]
-            return jsonify(json_input), err_code
+        # @TODO rollback bootstrap if there is A failure, awaiting changes in the affiliation service
+        bootstrap = RegistrationBootstrapService.create_bootstrap(filing_account_id)
+        RegistrationBootstrapService.register_bootstrap(filing_account_id, bootstrap)
 
-        # create filing
-        user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
-        business, filing, err_msg, err_code = ListFilingResource._save_filing(  # pylint: disable=protected-access
-            request, business.identifier, user, None)
-        if err_msg or draft:
-            reply = filing.json if filing else json_input
-            reply['errors'] = [err_msg, ]
-            return jsonify(reply), err_code or HTTPStatus.CREATED
-
-        # complete filing
-        response, response_code = ListFilingResource.complete_filing(business, filing, draft)
-        if response:
-            return response, response_code
-
-        # all done
-        return jsonify(filing.json), HTTPStatus.CREATED
-
-    @staticmethod
-    def _create_business(incorporation_body, client_request):
-        """Create a business from an incorporation filing."""
-        # Check that there is a JSON filing
-        if not incorporation_body:
-            return None, {'message': f'No filing json data in body of post for incorporation'}, \
-                HTTPStatus.BAD_REQUEST
-
-        temp_corp_num = incorporation_body['filing']['incorporationApplication']['nameRequest']['nrNumber']
-
-        # check authorization
-        if not authorized(temp_corp_num, jwt, action=['edit']):
-            return None, {'message': f'You are not authorized to incorporate for {temp_corp_num}.'}, \
-                HTTPStatus.UNAUTHORIZED
-
-        # Ensure there are no current businesses with the NR/random identifier
-        business = Business.find_by_identifier(temp_corp_num)
-
-        if business:
-            return None, {'message': f'Incorporation filing for {temp_corp_num} already exists'}, \
-                HTTPStatus.BAD_REQUEST
-
-        # Create an empty business record, to be updated by the filer
-        business = Business()
-        business.identifier = temp_corp_num
-        business.save()
-
-        return business, None, (HTTPStatus.CREATED if (client_request.method == 'POST') else HTTPStatus.ACCEPTED)
+        return ListFilingResource.put(bootstrap.identifier, None)
