@@ -603,64 +603,6 @@
 					"response": []
 				},
 				{
-					"name": "post parties",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "a05c307c-516e-48b3-9ef1-2e79a7f27ac1",
-								"exec": [
-									"pm.test(\"Status code is 201\", function () {",
-									"    pm.response.to.have.status(201);",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "multipart/form-data"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "parties",
-									"type": "file",
-									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/parties.csv"
-								}
-							],
-							"options": {
-								"raw": {
-									"language": "text"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:5000/api/fixture/import/parties",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"fixture",
-								"import",
-								"parties"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "post parties-addresses",
 					"event": [
 						{
@@ -713,6 +655,64 @@
 								"fixture",
 								"import",
 								"addresses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post parties",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a05c307c-516e-48b3-9ef1-2e79a7f27ac1",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "parties",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/parties.csv"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/import/parties",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"import",
+								"parties"
 							]
 						}
 					},
