@@ -22,6 +22,7 @@ or by accessing this configuration directly.
 import os
 import sys
 
+import psycopg2
 from dotenv import find_dotenv, load_dotenv
 
 
@@ -68,12 +69,12 @@ class _Config():  # pylint: disable=too-few-public-methods
     DB_NAME = os.getenv('DATABASE_NAME', '')
     DB_HOST = os.getenv('DATABASE_HOST', '')
     DB_PORT = os.getenv('DATABASE_PORT', '5432')
-    SQLALCHEMY_DATABASE_URI = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
+    DB_CONNECTION = psycopg2.connect(
+        database=DB_NAME,
         user=DB_USER,
         password=DB_PASSWORD,
         host=DB_HOST,
-        port=int(DB_PORT),
-        name=DB_NAME,
+        port=DB_PORT
     )
 
     TESTING = False
@@ -101,12 +102,12 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     DB_NAME = os.getenv('DATABASE_TEST_NAME', '')
     DB_HOST = os.getenv('DATABASE_TEST_HOST', '')
     DB_PORT = os.getenv('DATABASE_TEST_PORT', '5432')
-    SQLALCHEMY_DATABASE_URI = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
+    DB_CONNECTION = psycopg2.connect(
+        database=DB_NAME,
         user=DB_USER,
         password=DB_PASSWORD,
         host=DB_HOST,
-        port=int(DB_PORT),
-        name=DB_NAME,
+        port=DB_PORT
     )
 
 

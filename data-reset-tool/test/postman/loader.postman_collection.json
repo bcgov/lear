@@ -1,123 +1,783 @@
 {
 	"info": {
-		"_postman_id": "4bc13825-5c1a-4f93-a193-959b50645627",
+		"_postman_id": "b13e8d1c-4258-4717-87e4-ff6a769f9de0",
 		"name": "loader",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "get",
-			"event": [
+			"name": "export",
+			"item": [
 				{
-					"listen": "test",
-					"script": {
-						"id": "6a68e659-28b7-439c-abce-a4a5e084df93",
-						"exec": [
-							"pm.environment.set(\"binary_response\", pm.response.stream);"
-						],
-						"type": "text/javascript"
-					}
+					"name": "get CP1000001",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "9a1614db-e732-4b78-9ef5-3f74e8fffea8",
+								"exec": [
+									"pm.environment.set(\"binary_response\", pm.response.stream);",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "file",
+							"file": {}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/export/CP1000001",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"export",
+								"CP1000001"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get CP1000001 businesses",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "de1f0897-2f83-4a1b-87f2-c92742d36427",
+								"exec": [
+									"pm.environment.set(\"binary_response\", pm.response.stream);",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "file",
+							"file": {}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/export/CP1000001/businesses",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"export",
+								"CP1000001",
+								"businesses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get CP1000001 filings",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3e730448-1030-40df-ae13-33cdd0e7ff2c",
+								"exec": [
+									"pm.environment.set(\"binary_response\", pm.response.stream);",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "file",
+							"file": {}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/export/CP1000001/filings",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"export",
+								"CP1000001",
+								"filings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get CP1000001 offices",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "124c9f93-566b-42b3-bb4b-9f7f64e02985",
+								"exec": [
+									"pm.environment.set(\"binary_response\", pm.response.stream);",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "file",
+							"file": {}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/export/CP1000001/offices",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"export",
+								"CP1000001",
+								"offices"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get CP1000001 addresses",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6540eb40-d2a2-4854-b370-fa82792bc3b9",
+								"exec": [
+									"pm.environment.set(\"binary_response\", pm.response.stream);",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "file",
+							"file": {}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/export/CP1000001/addresses",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"export",
+								"CP1000001",
+								"addresses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get CP1000001 party roles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "41436f66-43f0-4c66-a156-18189c43d117",
+								"exec": [
+									"pm.environment.set(\"binary_response\", pm.response.stream);",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "file",
+							"file": {}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/export/CP1000001/party_roles",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"export",
+								"CP1000001",
+								"party_roles"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get CP1000001 parties",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "baf6721c-e95f-4465-996d-4c6253720607",
+								"exec": [
+									"pm.environment.set(\"binary_response\", pm.response.stream);",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "file",
+							"file": {}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/export/CP1000001/parties",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"export",
+								"CP1000001",
+								"parties"
+							]
+						}
+					},
+					"response": []
 				}
 			],
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"method": "GET",
-				"header": [],
-				"body": {
-					"mode": "file",
-					"file": {}
-				},
-				"url": {
-					"raw": "http://localhost:5000/api/fixture/export/CP1000001/excel",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "5000",
-					"path": [
-						"api",
-						"fixture",
-						"export",
-						"CP1000001",
-						"excel"
-					]
-				}
-			},
-			"response": []
+			"protocolProfileBehavior": {}
 		},
 		{
-			"name": "post",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"value": "multipart/form-data",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "formdata",
-					"formdata": [
+			"name": "delete all",
+			"item": [
+				{
+					"name": "delete CP1000001",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/delete/CP1000001",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"delete",
+								"CP1000001"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "import",
+			"item": [
+				{
+					"name": "post business",
+					"event": [
 						{
-							"key": "file",
-							"type": "file",
-							"src": "test_data/dev/CP1000001.xls"
+							"listen": "test",
+							"script": {
+								"id": "ca984095-2304-4424-8ea3-a602224854c9",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
-					"options": {
-						"raw": {
-							"language": "text"
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "businesses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/businesses.csv"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/import/businesses",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"import",
+								"businesses"
+							]
 						}
-					}
+					},
+					"response": []
 				},
-				"url": {
-					"raw": "http://localhost:5000/api/fixture/import",
-					"protocol": "http",
-					"host": [
-						"localhost"
+				{
+					"name": "post filings",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1b252e13-25ea-4cf9-b0bc-f06520bb574c",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
 					],
-					"port": "5000",
-					"path": [
-						"api",
-						"fixture",
-						"import"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "delete",
-			"request": {
-				"method": "DELETE",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"type": "text",
-						"value": "multipart/form-data"
-					}
-				],
-				"url": {
-					"raw": "http://localhost:5000/api/fixture/delete/CP1000001",
-					"protocol": "http",
-					"host": [
-						"localhost"
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "filings",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/filings.csv"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/import/filings",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"import",
+								"filings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post offices",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "9bfcd177-c85d-4689-b2af-360c49bf1add",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
 					],
-					"port": "5000",
-					"path": [
-						"api",
-						"fixture",
-						"delete",
-						"CP1000001"
-					]
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "offices",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/offices.csv"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/import/offices",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"import",
+								"offices"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post addresses",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "603cac71-8da7-4da9-9915-f49f76e073a3",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "addresses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/addresses.csv"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/import/addresses",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"import",
+								"addresses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post parties-addresses",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8cc2f4bc-6c0c-4c33-99c5-5ed219032728",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "addresses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/parties-addresses.csv"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/import/addresses",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"import",
+								"addresses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post parties",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a05c307c-516e-48b3-9ef1-2e79a7f27ac1",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "parties",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/parties.csv"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/import/parties",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"import",
+								"parties"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post party roles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "85e9ca9f-ec7d-42a8-b7e5-459f444201f5",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "party_roles",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/party_roles.csv"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/import/party_roles",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"import",
+								"party_roles"
+							]
+						}
+					},
+					"response": []
 				}
-			},
-			"response": []
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"protocolProfileBehavior": {}
