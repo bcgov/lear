@@ -21,10 +21,13 @@ from .comment import Comment
 from .filing import Filing
 from .office import Office, OfficeType
 from .party_role import Party, PartyRole
+from .registration_bootstrap import RegistrationBootstrap
 from .share_class import ShareClass
 from .share_series import ShareSeries
 from .user import User
 
 
-__all__ = ('db', 'Address', 'Business', 'ColinLastUpdate', 'Comment', 'Filing',
-           'Office', 'OfficeType', 'Party', 'PartyRole', 'User', 'ShareClass', 'ShareSeries')
+__all__ = ('db',
+           'Address', 'Business', 'ColinLastUpdate', 'Comment', 'Filing',
+           'Office', 'OfficeType', 'Party', 'RegistrationBootstrap',
+           'PartyRole', 'ShareClass', 'ShareSeries', 'User')

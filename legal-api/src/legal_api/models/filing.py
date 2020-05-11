@@ -85,11 +85,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
     _source = db.Column('source', db.String(15), default=Source.LEAR)
 
-    # relationships
+    # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
                                db.ForeignKey('transaction.id'))
     business_id = db.Column('business_id', db.Integer,
                             db.ForeignKey('businesses.id'))
+    temp_reg = db.Column('temp_reg', db.String(10),
+                         db.ForeignKey('registration_bootstrap.identifier'))
     submitter_id = db.Column('submitter_id', db.Integer,
                              db.ForeignKey('users.id'))
 
@@ -316,9 +318,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_filing_by_payment_token(token: str):
         """Return a Filing by it's payment token."""
-        filing = db.session.query(Filing). \
-            filter(Filing.payment_token == token). \
-            one_or_none()
+        try:
+            filing = db.session.query(Filing). \
+                filter(Filing.payment_token == token). \
+                one_or_none()
+
+        except Exception as err:
+            print(err)
         return filing
 
     @staticmethod

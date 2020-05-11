@@ -15,6 +15,7 @@
 import datetime
 
 from .pytest_marks import (
+    integration_affiliation,
     integration_authorization,
     integration_colin,
     integration_namerequests,
