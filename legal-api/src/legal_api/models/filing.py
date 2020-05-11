@@ -318,13 +318,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_filing_by_payment_token(token: str):
         """Return a Filing by it's payment token."""
-        try:
-            filing = db.session.query(Filing). \
-                filter(Filing.payment_token == token). \
-                one_or_none()
-
-        except Exception as err:
-            print(err)
+        filing = db.session.query(Filing). \
+            filter(Filing.payment_token == token). \
+            one_or_none()
         return filing
 
     @staticmethod
