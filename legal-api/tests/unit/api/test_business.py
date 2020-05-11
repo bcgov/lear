@@ -93,6 +93,9 @@ def test_create_bootstrap_validate_success_filing(client, jwt):
     filing['filing']['header']['name'] = 'incorporationApplication'
     filing['filing']['header']['accountId'] = 28
 
+    # remove fed
+    filing['filing']['header'].pop('effectiveDate')
+
     rv = client.post(f'/api/v1/businesses?only_validate=true',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], None))
@@ -111,6 +114,9 @@ def test_create_incorporation_success_filing(client, jwt, session):
     filing['filing']['header']['name'] = 'incorporationApplication'
     filing['filing']['header']['accountId'] = 28
     filing['filing']['header']['routingSlipNumber'] = '111111111'
+
+    # remove fed
+    filing['filing']['header'].pop('effectiveDate')
 
     rv = client.post(f'/api/v1/businesses',
                      json=filing,
