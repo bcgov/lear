@@ -36,7 +36,7 @@ def test_create_account_affiliation(app_ctx):
     _id = random.SystemRandom().getrandbits(0x58)
     r = AccountService.create_affiliation(account=28,
                                           business_registration=(f'XA{_id}')[:10],
-                                          business_name=None)
+                                          business_name='')
 
     assert not r
 

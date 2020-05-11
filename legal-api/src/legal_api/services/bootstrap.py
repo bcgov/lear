@@ -42,7 +42,7 @@ class RegistrationBootstrapService:
 
         # try to create a bootstrap registration with a unique ID
         for _ in range(5):
-            bootstrap.identifier = 'T' + ''.join(secrets.choice(allowed_encoded) for i in range(9))
+            bootstrap.identifier = 'T' + ''.join(secrets.choice(allowed_encoded) for _ in range(9))
             try:
                 bootstrap.save()
                 return bootstrap
@@ -56,22 +56,15 @@ class RegistrationBootstrapService:
     @staticmethod
     def register_bootstrap(account: int, bootstrap: RegistrationBootstrap) -> Dict:
         """Return either a new bootstrap registration or an error struct."""
-        if not account:
+        if not account or not bootstrap:
             return {'error': babel('An account number must be provided.')}
 
-        bootstrap = RegistrationBootstrap(account=account)
-        allowed_encoded = string.ascii_letters + string.digits
+        r = AccountService.create_affiliation(account=account,
+                                              business_registration=bootstrap.identifier,
+                                              business_name=bootstrap.identifier)
 
-        # try to create a bootstrap registration with a unique ID
-        for _ in range(5):
-            bootstrap.identifier = 'T' + ''.join(secrets.choice(allowed_encoded) for i in range(9))
-            try:
-                bootstrap.save()
-                return bootstrap
-            except FlushError:
-                pass  # we try again
-            except Exception:
-                break
+        if r == HTTPStatus.OK:
+            return HTTPStatus.OK
 
         return {'error': babel('Unable to create bootstrap registration.')}
 
@@ -81,6 +74,8 @@ class AccountService:
 
     @TODO Cache and refresh / retry token as needed to reduce calls.
     """
+
+    BEARER = 'Bearer '
 
     try:
         timeout = int(current_app.config.get('ACCOUNT_SVC_TIMEOUT', 20))
@@ -128,7 +123,7 @@ class AccountService:
         entity_record = requests.post(
             url=account_svc_entity_url,
             headers={'Content-Type': 'application/json',
-                     'Authorization': 'Bearer ' + token},
+                     'Authorization': cls.BEARER + token},
             data=entity_data,
             timeout=cls.timeout
         )
@@ -141,7 +136,7 @@ class AccountService:
         affiliate = requests.post(
             url=account_svc_affiliate_url,
             headers={'Content-Type': 'application/json',
-                     'Authorization': 'Bearer ' + token},
+                     'Authorization': cls.BEARER + token},
             data=affiliate_data,
             timeout=cls.timeout
         )
@@ -167,14 +162,14 @@ class AccountService:
         affiliate = requests.delete(
             url=account_svc_affiliate_url + '/' + str(374),
             headers={'Content-Type': 'application/json',
-                     'Authorization': 'Bearer ' + token},
+                     'Authorization': cls.BEARER + token},
             timeout=cls.timeout
         )
         # Create an entity record
         entity_record = requests.delete(
             url=account_svc_entity_url + '/' + business_registration,
             headers={'Content-Type': 'application/json',
-                     'Authorization': 'Bearer ' + token},
+                     'Authorization': cls.BEARER + token},
             timeout=cls.timeout
         )
 

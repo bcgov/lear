@@ -130,28 +130,6 @@ def test_create_incorporation_success_filing(client, jwt, session):
     assert filing
     assert filing.status == Filing.Status.PENDING.value
 
-# def test_create_bootstrap_name_request_filing(client):
-#     filing = {'filing':
-#               {
-#                   'header':
-#                   {
-#                       'name': 'incorporationApplication',
-#                       'accountId': 28
-#                   },
-#                   'incorporationApplication':
-#                   {
-#                       'nameRequest':
-#                       {
-#                           'nrNumber': 'NR 123456789'
-#                       }
-#                   }
-#               }
-#               }
-#     rv = client.get(f'/api/v1/businesses/{identifier}/filings',
-#                     headers=create_header(jwt, [STAFF_ROLE], identifier))
-
-#     assert rv.status_code == HTTPStatus.OK
-
 
 def test_get_temp_business_info(session, client, jwt):
     """Assert that temp registration returns 200."""

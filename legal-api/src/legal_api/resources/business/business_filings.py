@@ -15,7 +15,6 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
-# import datetime
 from http import HTTPStatus
 from typing import Tuple, Union
 
