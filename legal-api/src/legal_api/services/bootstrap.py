@@ -75,7 +75,8 @@ class AccountService:
     @TODO Cache and refresh / retry token as needed to reduce calls.
     """
 
-    BEARER = 'Bearer '
+    BEARER: str = 'Bearer '
+    CONTENT_TYPE_JSON = {'Content-Type': 'application/json'}
 
     try:
         timeout = int(current_app.config.get('ACCOUNT_SVC_TIMEOUT', 20))
@@ -122,7 +123,7 @@ class AccountService:
                                   })
         entity_record = requests.post(
             url=account_svc_entity_url,
-            headers={'Content-Type': 'application/json',
+            headers={**cls.CONTENT_TYPE_JSON,
                      'Authorization': cls.BEARER + token},
             data=entity_data,
             timeout=cls.timeout
@@ -135,7 +136,7 @@ class AccountService:
         })
         affiliate = requests.post(
             url=account_svc_affiliate_url,
-            headers={'Content-Type': 'application/json',
+            headers={**cls.CONTENT_TYPE_JSON,
                      'Authorization': cls.BEARER + token},
             data=affiliate_data,
             timeout=cls.timeout
@@ -161,14 +162,14 @@ class AccountService:
         # Create an account:business affiliation
         affiliate = requests.delete(
             url=account_svc_affiliate_url + '/' + str(374),
-            headers={'Content-Type': 'application/json',
+            headers={**cls.CONTENT_TYPE_JSON,
                      'Authorization': cls.BEARER + token},
             timeout=cls.timeout
         )
         # Create an entity record
         entity_record = requests.delete(
             url=account_svc_entity_url + '/' + business_registration,
-            headers={'Content-Type': 'application/json',
+            headers={**cls.CONTENT_TYPE_JSON,
                      'Authorization': cls.BEARER + token},
             timeout=cls.timeout
         )
