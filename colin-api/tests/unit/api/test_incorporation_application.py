@@ -28,7 +28,7 @@ def test_incorporate_bcomp(client):
     headers = {'content-type': 'application/json'}
     rv = client.get('/api/v1/businesses?legal_type=BC')
     test_bcomp = f"BC{rv.json['corpNum'][0]}"
-
+    legal_name = f'legal name - {test_bcomp}'
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = test_bcomp
     filing['filing']['business'] = {
@@ -37,7 +37,7 @@ def test_incorporate_bcomp(client):
             'identifier': f'{test_bcomp}',
             'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
             'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',
-            'legalName': 'legal name - CP1234567',
+            'legalName': legal_name,
             'legalType': 'BC'
         }
 
@@ -46,6 +46,14 @@ def test_incorporate_bcomp(client):
     # assert rv.json
     assert 201 == rv.status_code
     assert rv.json
+    assert 'filing' in rv.json
+
+    filing = rv.json['filing']
+    assert 'business' in filing
+
+    business = filing['business']
+    assert business['legalName'] == legal_name
+    assert business['corpState'] == 'ACT'
 
     rv = client.get(f'/api/v1/businesses/{test_bcomp}/office')
     assert rv.status_code == 200
@@ -62,6 +70,7 @@ def test_incorporate_coop(client):
     headers = {'content-type': 'application/json'}
     rv = client.get('/api/v1/businesses?legal_type=CP')
     test_coop = f"CP{rv.json['corpNum'][0]}"
+    legal_name = f'legal name - {test_coop}'
 
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing['filing']['incorporationApplication']['nameRequest']['legalType'] = 'CP'
@@ -73,7 +82,7 @@ def test_incorporate_coop(client):
             'identifier': f'{test_coop}',
             'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
             'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',
-            'legalName': 'legal name - CP1234567',
+            'legalName': legal_name,
             'legalType': 'CP'
         }
 
@@ -82,6 +91,14 @@ def test_incorporate_coop(client):
     # assert rv.json
     assert 201 == rv.status_code
     assert rv.json
+    assert 'filing' in rv.json
+
+    filing = rv.json['filing']
+    assert 'business' in filing
+
+    business = filing['business']
+    assert business['legalName'] == legal_name
+    assert business['corpState'] == 'ACT'
 
     rv = client.get(f'/api/v1/businesses/{test_coop}/office')
     assert rv.status_code == 200

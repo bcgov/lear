@@ -62,6 +62,10 @@ class Filing:
     def __init__(self):
         """Initialize with all values None."""
 
+    def get_corp_name(self):
+        """Get corporation name, aka legal name."""
+        return self.business.business['legalName']
+
     def get_corp_num(self):
         """Get corporation num, aka identifier."""
         return self.business.business['identifier']
@@ -874,7 +878,8 @@ class Filing:
                 filing_type_cd = 'OTINC'
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
                 # Do incorporation here
-                Business.create_corp_name(cursor, corp_num, 'test name', event_id)
+                corp_name = filing.get_corp_name()
+                Business.create_corp_name(cursor, corp_num, corp_name, event_id)
                 Business.create_corp_state(cursor, corp_num, event_id)
 
                 cls._add_office_from_filing(cursor, event_id, corp_num, user_id, filing)
