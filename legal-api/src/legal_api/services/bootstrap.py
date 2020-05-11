@@ -59,11 +59,11 @@ class RegistrationBootstrapService:
         if not account or not bootstrap:
             return {'error': babel('An account number must be provided.')}
 
-        r = AccountService.create_affiliation(account=account,
-                                              business_registration=bootstrap.identifier,
-                                              business_name=bootstrap.identifier)
+        rv = AccountService.create_affiliation(account=account,
+                                               business_registration=bootstrap.identifier,
+                                               business_name=bootstrap.identifier)
 
-        if r == HTTPStatus.OK:
+        if rv == HTTPStatus.OK:
             return HTTPStatus.OK
 
         return {'error': babel('Unable to create bootstrap registration.')}
