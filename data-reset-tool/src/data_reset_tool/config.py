@@ -42,7 +42,7 @@ def get_named_config(config_name: str = 'production'):
 
     :raise: KeyError: if an unknown configuration is requested
     """
-    if config_name in['production', 'staging', 'default']:
+    if config_name in ['production', 'staging', 'default']:
         config = ProdConfig()
     elif config_name == 'testing':
         config = TestConfig()
@@ -102,13 +102,13 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     DB_NAME = os.getenv('DATABASE_TEST_NAME', '')
     DB_HOST = os.getenv('DATABASE_TEST_HOST', '')
     DB_PORT = os.getenv('DATABASE_TEST_PORT', '5432')
-    DB_CONNECTION = psycopg2.connect(
-        database=DB_NAME,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        host=DB_HOST,
-        port=DB_PORT
-    )
+    # DB_CONNECTION = psycopg2.connect(
+    #     database=DB_NAME,
+    #     user=DB_USER,
+    #     password=DB_PASSWORD,
+    #     host=DB_HOST,
+    #     port=DB_PORT
+    # )
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
