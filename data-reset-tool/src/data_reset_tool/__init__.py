@@ -5,13 +5,9 @@ Get, post, and delete business, including all sub-objects - filings, addresses, 
 import os
 
 from flask import Flask
-from legal_api.utils.logging import setup_logging
 
 from data_reset_tool import config
 from data_reset_tool.blueprints.fixture import FIXTURE_BLUEPRINT
-
-
-setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
 
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):

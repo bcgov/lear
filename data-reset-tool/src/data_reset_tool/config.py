@@ -42,7 +42,7 @@ def get_named_config(config_name: str = 'production'):
 
     :raise: KeyError: if an unknown configuration is requested
     """
-    if config_name in['production', 'staging', 'default']:
+    if config_name in ['production', 'staging', 'default']:
         config = ProdConfig()
     elif config_name == 'testing':
         config = TestConfig()

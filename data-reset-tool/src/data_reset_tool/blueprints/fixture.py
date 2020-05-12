@@ -36,11 +36,11 @@ def post(table):
             ids = ids.replace('[', '(').replace(']', ')')
 
             if table == 'addresses':
-                cur.execute(f"update parties set delivery_address_id=null where delivery_address_id in {ids}")
+                cur.execute(f'update parties set delivery_address_id=null where delivery_address_id in {ids}')
 
-            cur.execute(f"delete from {table} where id in {ids}")
+            cur.execute(f'delete from {table} where id in {ids}')
             if 'DELETE' not in cur.statusmessage:
-                current_app.logger.error(f'Delete command did not run.')
+                current_app.logger.error('Delete command did not run.')
                 raise Exception
 
         except Exception as err:
@@ -56,7 +56,6 @@ def post(table):
         current_app.logger.error(f'Failed to import: {err}')
         con.rollback()
         return jsonify({'message': 'Failed to import data.'}), HTTPStatus.INTERNAL_SERVER_ERROR
-
 
 
 @FIXTURE_BLUEPRINT.route('/api/fixture/export/<business_identifier>', methods=['GET'], strict_slashes=False)
@@ -166,7 +165,7 @@ def _get_business_id(cur: psycopg2.extensions.cursor, business_identifier: str):
 def _get_id_list(cur: psycopg2.extensions.cursor, column: str, table: str, table_val: str, val: str):
     """Return a stringified list of ids for the given table linked to the business_id."""
     val = val.replace('(', '').replace(')', '')
-    cur.execute(f"select {column} from {table} where {table_val} in ({val})")
+    cur.execute(f'select {column} from {table} where {table_val} in ({val})')
     id_list = []
     for _id in cur.fetchall():
         id_list.append(_id[0])
@@ -176,7 +175,7 @@ def _get_id_list(cur: psycopg2.extensions.cursor, column: str, table: str, table
 def _create_csv(cur: psycopg2.extensions.cursor, filename: str, select_stmnt: str):
     """Create or update given csv file with db data for given select statement."""
     with open(f'exports/{filename}.csv', 'wb') as csvfile:
-        cur.copy_expert(f"COPY ({select_stmnt}) to stdout with csv header", csvfile)
+        cur.copy_expert(f'COPY ({select_stmnt}) to stdout with csv header', csvfile)
     return f'{filename}.csv'
 
 
