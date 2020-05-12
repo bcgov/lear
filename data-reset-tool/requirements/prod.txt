@@ -2,3 +2,4 @@ Flask
 pandas
 psycopg2-binary
 python-dotenv
+Werkzeug<1.0

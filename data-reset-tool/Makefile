@@ -48,8 +48,8 @@ venv/bin/activate: requirements/prod.txt requirements/dev.txt
 	pip install --upgrade pip ;\
 	pip install -Ur requirements/prod.txt ;\
 	pip freeze | sort > requirements.txt ;\
-	cat requirements/repo-libraries.txt >> requirements.txt ;\
-	pip install -Ur requirements/repo-libraries.txt ;\
+	cat requirements/bcregistry-libraries.txt >> requirements.txt ;\
+	pip install -Ur requirements/bcregistry-libraries.txt ;\
 	pip install -Ur requirements/dev.txt
 	touch venv/bin/activate  # update so it's as new as requirements/prod.txt
 
