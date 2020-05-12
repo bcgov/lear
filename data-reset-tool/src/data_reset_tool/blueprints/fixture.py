@@ -11,44 +11,49 @@ from flask import Blueprint, current_app, jsonify, request, send_file
 FIXTURE_BLUEPRINT = Blueprint('fixture', __name__)
 
 
+@FIXTURE_BLUEPRINT.route('/api/fixture/import', methods=['POST'], strict_slashes=False)
 @FIXTURE_BLUEPRINT.route('/api/fixture/import/<table>', methods=['POST'], strict_slashes=False)
-def post(table):
+def post(table=None):
     """Import csv data into given table."""
+    if not request.files.keys():
+        return jsonify({'message': f'No csv files given for import.'}), HTTPStatus.BAD_REQUEST
     # data to import
-    input_file = request.files[f'{table}']
-    if not input_file:
-        return jsonify({'message': f'No csv file given under key: {table} for import.'}), HTTPStatus.BAD_REQUEST
-
-    # connection to db
-    con = current_app.config.get('DB_CONNECTION', None)
-    if not con:
-        current_app.logger.error('Database connection failure.')
-        return jsonify(
-            {'message': 'Database connection error, this service is down :('}
-        ), HTTPStatus.INTERNAL_SERVER_ERROR
-    cur = con.cursor()
-
     try:
-        try:
-            # delete existing entries
-            csv_data = pandas.read_csv(input_file)
-            ids = str(csv_data.id.to_list())
-            ids = ids.replace('[', '(').replace(']', ')')
+        # connection to db
+        con = current_app.config.get('DB_CONNECTION', None)
+        if not con:
+            current_app.logger.error('Database connection failure.')
+            return jsonify(
+                {'message': 'Database connection error, this service is down :('}
+            ), HTTPStatus.INTERNAL_SERVER_ERROR
+        cur = con.cursor()
 
-            if table == 'addresses':
-                cur.execute(f'update parties set delivery_address_id=null where delivery_address_id in {ids}')
+        csv_list = [f'{table}'] if table \
+            else ['businesses', 'filings', 'offices', 'addresses', 'parties-addresses', 'parties', 'party_roles']
 
-            cur.execute(f'delete from {table} where id in {ids}')
-            if 'DELETE' not in cur.statusmessage:
-                current_app.logger.error('Delete command did not run.')
-                raise Exception
+        for filename in csv_list:
+            table = 'addresses' if filename == 'parties-addresses' else filename
+            input_file = request.files[f'{filename}']
+            try:
+                # delete existing entries
+                csv_data = pandas.read_csv(input_file)
+                ids = str(csv_data.id.to_list())
+                ids = ids.replace('[', '(').replace(']', ')')
+                if table == 'addresses':
+                    cur.execute(f'update parties set delivery_address_id=null where delivery_address_id in {ids}')
 
-        except Exception as err:
-            current_app.logger.error(f'Failed to delete existing entries: {err}')
+                cur.execute(f'delete from {table} where id in {ids}')
+                if 'DELETE' not in cur.statusmessage:
+                    current_app.logger.error('Delete command did not run.')
+                    raise Exception
 
-        # set reader back to beginning of file and import csv into table
-        input_file.seek(0)
-        cur.copy_expert(f"COPY {table} from stdin delimiter ',' csv header", input_file)
+            except Exception as err:
+                current_app.logger.error(f'Failed to delete existing entries: {err}')
+
+            # set reader back to beginning of file and import csv into table
+            input_file.seek(0)
+            cur.copy_expert(f"COPY {table} from stdin delimiter ',' csv header", input_file)
+
         con.commit()
         return jsonify({'message': 'Success!'}), HTTPStatus.CREATED
 
