@@ -1,18 +1,19 @@
 # Base image
 FROM python:3.7
+USER root
 
-# Update installation utilites and packages
-RUN apt-get update
 
-# Set working directory
-RUN mkdir /opt/server
-WORKDIR /opt/server
+# Create working directory
+RUN mkdir /opt/app && chmod 755 /opt/app
+WORKDIR /opt/app
 
 # Install the requirements
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Add rest of files
 COPY . .
+
+USER 1001
 
 # Run server
 EXPOSE 5000
