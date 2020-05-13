@@ -16,12 +16,16 @@
 
 Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
-from datetime import datetime
+import copy
 from http import HTTPStatus
 
 import registry_schemas
+from registry_schemas.example_data import FILING_TEMPLATE, INCORPORATION
 
+from legal_api.models import Filing
 from legal_api.services.authz import STAFF_ROLE
+from legal_api.utils.datetime import datetime
+from tests import integration_affiliation
 from tests.unit.services.utils import create_header
 
 
@@ -46,6 +50,95 @@ def factory_business_model(legal_name,
                       )
     b.save()
     return b
+
+
+def test_create_bootstrap_failure_filing(client, jwt):
+    """Assert the an empty filing cannot be used to bootstrap a filing."""
+    filing = None
+    rv = client.post(f'/api/v1/businesses?draft=true',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+
+
+@integration_affiliation
+def test_create_bootstrap_minimal_draft_filing(client, jwt):
+    """Assert that a minimal filing can be used to create a draft filing."""
+    filing = {'filing':
+              {
+                  'header':
+                  {
+                      'name': 'incorporationApplication',
+                      'accountId': 28
+                  }
+              }
+              }
+    rv = client.post(f'/api/v1/businesses?draft=true',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.CREATED
+    assert rv.json['filing']['business']['identifier']
+    assert rv.json['filing']['header']['accountId'] == 28
+    assert rv.json['filing']['header']['name'] == 'incorporationApplication'
+
+
+@integration_affiliation
+def test_create_bootstrap_validate_success_filing(client, jwt):
+    """Assert that a valid IA can be validated."""
+    filing = copy.deepcopy(FILING_TEMPLATE)
+    filing['filing'].pop('business')
+    filing['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+    filing['filing']['header']['name'] = 'incorporationApplication'
+    filing['filing']['header']['accountId'] = 28
+
+    # remove fed
+    filing['filing']['header'].pop('effectiveDate')
+
+    rv = client.post(f'/api/v1/businesses?only_validate=true',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['filing']['header']['accountId'] == 28
+    assert rv.json['filing']['header']['name'] == 'incorporationApplication'
+
+
+@integration_affiliation
+def test_create_incorporation_success_filing(client, jwt, session):
+    """Assert that a valid IA can be posted."""
+    filing = copy.deepcopy(FILING_TEMPLATE)
+    filing['filing'].pop('business')
+    filing['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+    filing['filing']['header']['name'] = 'incorporationApplication'
+    filing['filing']['header']['accountId'] = 28
+    filing['filing']['header']['routingSlipNumber'] = '111111111'
+
+    # remove fed
+    filing['filing']['header'].pop('effectiveDate')
+
+    rv = client.post(f'/api/v1/businesses',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.CREATED
+    assert rv.json['filing']['header']['accountId'] == 28
+    assert rv.json['filing']['header']['name'] == 'incorporationApplication'
+
+    filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
+    assert filing
+    assert filing.status == Filing.Status.PENDING.value
+
+
+def test_get_temp_business_info(session, client, jwt):
+    """Assert that temp registration returns 200."""
+    identifier = 'T7654321'
+
+    rv = client.get('/api/v1/businesses/' + identifier,
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
 
 
 def test_get_business_info(session, client, jwt):

@@ -85,11 +85,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
     _source = db.Column('source', db.String(15), default=Source.LEAR)
 
-    # relationships
+    # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
                                db.ForeignKey('transaction.id'))
     business_id = db.Column('business_id', db.Integer,
                             db.ForeignKey('businesses.id'))
+    temp_reg = db.Column('temp_reg', db.String(10),
+                         db.ForeignKey('registration_bootstrap.identifier'))
     submitter_id = db.Column('submitter_id', db.Integer,
                              db.ForeignKey('users.id'))
 
