@@ -133,10 +133,10 @@ class Report:  # pylint: disable=too-few-public-methods
             'dissolution',
             'legalNameChange',
             'resolution',
-            'incorporationCertificateStyle',
-            'incorporationCertificateSeal',
-            'registrarSignature',
-            'incorporationCertificateLogo'
+            'certificate-of-incorporation/style',
+            'certificate-of-incorporation/seal',
+            'certificate-of-incorporation/registrarSignature',
+            'certificate-of-incorporation/logo'
         ]
 
         # substitute template parts - marked up by [[filename]]
