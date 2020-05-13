@@ -363,6 +363,35 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "delete CP1000002",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/delete/CP1000002",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"delete",
+								"CP1000002"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -371,7 +400,94 @@
 			"name": "import",
 			"item": [
 				{
-					"name": "post business",
+					"name": "post all tables CP1000002",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d25cbbc7-31c0-42b0-ab38-86283627711c",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "businesses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP1000002/businesses.csv"
+								},
+								{
+									"key": "filings",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP1000002/filings.csv"
+								},
+								{
+									"key": "offices",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP1000002/offices.csv"
+								},
+								{
+									"key": "addresses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP1000002/addresses.csv"
+								},
+								{
+									"key": "parties-addresses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP1000002/parties-addresses.csv"
+								},
+								{
+									"key": "parties",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP1000002/parties.csv"
+								},
+								{
+									"key": "party_roles",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP1000002/party_roles.csv"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/import",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"import"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post business CP1000001",
 					"event": [
 						{
 							"listen": "test",
@@ -402,7 +518,7 @@
 								{
 									"key": "businesses",
 									"type": "file",
-									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/businesses.csv"
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP1000001/businesses.csv"
 								}
 							],
 							"options": {
@@ -429,7 +545,7 @@
 					"response": []
 				},
 				{
-					"name": "post filings",
+					"name": "post filings CP1000001",
 					"event": [
 						{
 							"listen": "test",
@@ -460,7 +576,7 @@
 								{
 									"key": "filings",
 									"type": "file",
-									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/filings.csv"
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP1000001/filings.csv"
 								}
 							],
 							"options": {
@@ -487,7 +603,7 @@
 					"response": []
 				},
 				{
-					"name": "post offices",
+					"name": "post offices CP1000001",
 					"event": [
 						{
 							"listen": "test",
@@ -518,7 +634,7 @@
 								{
 									"key": "offices",
 									"type": "file",
-									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/offices.csv"
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP1000001/offices.csv"
 								}
 							],
 							"options": {
@@ -545,7 +661,7 @@
 					"response": []
 				},
 				{
-					"name": "post addresses",
+					"name": "post addresses CP1000001",
 					"event": [
 						{
 							"listen": "test",
@@ -576,7 +692,7 @@
 								{
 									"key": "addresses",
 									"type": "file",
-									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/addresses.csv"
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP1000001/addresses.csv"
 								}
 							],
 							"options": {
@@ -603,7 +719,7 @@
 					"response": []
 				},
 				{
-					"name": "post parties-addresses",
+					"name": "post parties-addresses CP1000001",
 					"event": [
 						{
 							"listen": "test",
@@ -634,7 +750,7 @@
 								{
 									"key": "addresses",
 									"type": "file",
-									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/parties-addresses.csv"
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP1000001/parties-addresses.csv"
 								}
 							],
 							"options": {
@@ -661,7 +777,7 @@
 					"response": []
 				},
 				{
-					"name": "post parties",
+					"name": "post parties CP1000001",
 					"event": [
 						{
 							"listen": "test",
@@ -692,7 +808,7 @@
 								{
 									"key": "parties",
 									"type": "file",
-									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/parties.csv"
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP1000001/parties.csv"
 								}
 							],
 							"options": {
@@ -719,7 +835,7 @@
 					"response": []
 				},
 				{
-					"name": "post party roles",
+					"name": "post party roles CP1000001",
 					"event": [
 						{
 							"listen": "test",
@@ -750,7 +866,7 @@
 								{
 									"key": "party_roles",
 									"type": "file",
-									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/party_roles.csv"
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP1000001/party_roles.csv"
 								}
 							],
 							"options": {
