@@ -1,0 +1,146 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "cronjob-template"
+    },
+    "objects": [
+        {
+            "apiVersion": "batch/v1beta1",
+            "kind": "CronJob",
+            "metadata": {
+                "creationTimestamp": null,
+                "name": "${NAME}",
+                "selfLink": "/apis/batch/v1beta1/namespaces/${NAMESPACE}-${ENV}/cronjobs/${NAME}"
+            },
+            "spec": {
+                "concurrencyPolicy": "Forbid",
+                "failedJobsHistoryLimit": 1,
+                "jobTemplate": {
+                    "metadata": {
+                        "creationTimestamp": null
+                    },
+                    "spec": {
+                        "template": {
+                            "metadata": {
+                                "creationTimestamp": null
+                            },
+                            "spec": {
+                                "containers": [
+                                    {
+                                        "args": [
+                                            "/bin/sh",
+                                            "-c",
+                                            "cd /opt/app-root/src; ./run.sh"
+                                        ],
+                                        "env": [
+                                            {
+                                                "name": "COLIN_URL",
+                                                "valueFrom": {
+                                                    "configMapKeyRef": {
+                                                        "key": "ROUTE",
+                                                        "name": "colin-api-${ENV}-config"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "name": "SENTRY_DSN",
+                                                "valueFrom": {
+                                                    "configMapKeyRef": {
+                                                        "key": "SENTRY_DSN",
+                                                        "name": "updater-jobs-${ENV}-config"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "name": "LEGAL_URL",
+                                                "valueFrom": {
+                                                    "configMapKeyRef": {
+                                                        "key": "ROUTE",
+                                                        "name": "legal-api-${ENV}-config"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "name": "AUTH_URL",
+                                                "valueFrom": {
+                                                    "configMapKeyRef": {
+                                                        "key": "AUTH_URL",
+                                                        "name": "updater-jobs-${ENV}-config"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "name": "AUTH_USERNAME",
+                                                "valueFrom": {
+                                                    "secretKeyRef": {
+                                                        "key": "AUTH_USERNAME",
+                                                        "name": "updater-job"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "name": "AUTH_PASSWORD",
+                                                "valueFrom": {
+                                                    "secretKeyRef": {
+                                                        "key": "AUTH_PASSWORD",
+                                                        "name": "updater-job"
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        "image": "docker-registry.default.svc:5000/gl2uos-tools/${NAME}:${ENV}",
+                                        "imagePullPolicy": "Always",
+                                        "name": "${NAME}",
+                                        "resources": {},
+                                        "terminationMessagePath": "/{ENV}/termination-log",
+                                        "terminationMessagePolicy": "File"
+                                    }
+                                ],
+                                "dnsPolicy": "ClusterFirst",
+                                "restartPolicy": "Never",
+                                "schedulerName": "default-scheduler",
+                                "securityContext": {},
+                                "terminationGracePeriodSeconds": 30
+                            }
+                        }
+                    }
+                },
+                "schedule": "${SCHEDULE}",
+                "successfulJobsHistoryLimit": 3,
+                "suspend": false
+            },
+            "status": {}
+        }
+    ],
+    "parameters": [
+        {
+            "name": "NAME",
+            "displayName": "Name",
+            "description": "Name of the cronjob.",
+            "required": true,
+            "value": "update-colin-filings"
+        },
+        {
+            "name": "NAMESPACE",
+            "displayName": "Namespace",
+            "description": "Namespace of the cronjob.",
+            "required": true,
+            "value": "gl2uos"
+        },
+        {
+            "name": "ENV",
+            "displayName": "Environment",
+            "description": "Environment the cronjob is being created/updated in.",
+            "required": true,
+            "value": "dev"
+        },
+        {
+            "name": "SCHEDULE",
+            "displayName": "Schedule",
+            "description": "Value that determines how often the cronjob runs.",
+            "required": true,
+            "value": "0 0 * * *"
+        }
+    ]
+}

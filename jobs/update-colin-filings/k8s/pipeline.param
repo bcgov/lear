@@ -1,0 +1,14 @@
+#=========================================================
+# Template parameters for:
+# Project: colin-updater
+# Component: pipeline
+# Action: build
+# Template File: templates/pipeline.json
+#=========================================================
+NAME="update-colin-filings"
+PIPELINE_PURPOSE="run"
+GIT_REPO_URL="https://github.com/bcgov/lear.git"
+GIT_REF="master"
+SOURCE_CONTEXT_DIR="jobs/update-colin-filings"
+JENKINS_FILE="Jenkinsfiles/run-cu-dev.groovy"
+WEBHOOK="unknown"
