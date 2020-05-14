@@ -1,0 +1,45 @@
+<div class="no-page-break">
+    <div class="section-title">
+     Director Information
+    </div>
+    {% for party in incorporationApplication.parties %}
+    {% for party_role in party.roles %}
+    {% if party_role.roleType == 'Director' %}
+            <div class="section-data">
+              <table class="section-data-table">
+                <tr class="solid-row-separator">
+                      <td class="director-name">
+                          <div class="section-sub-title">
+                            {{ party.officer.lastName }},
+                            {{ party.officer.firstName }}
+                            {% if party.officer.middleInitial is defined %}{{ party.officer.middleInitial }}{% endif %}
+                          </div>
+                      </td>
+                      <td>
+                          <div class="section-sub-title">Mailing Address</div>
+                          <div>{{ party.deliveryAddress.streetAddress }}</div>
+                          <div>{{ party.deliveryAddress.streetAddressAdditional }}</div>
+                          <div>{{ party.deliveryAddress.addressCity }}
+                            {{ party.deliveryAddress.addressRegion }}
+                            &nbsp;{{ party.deliveryAddress.postalCode }}</div>
+                          <div>{{ party.deliveryAddress.addressCountry }}</div>
+                          <div>{{ party.deliveryAddress.deliveryInstructions }}</div>
+                      </td>
+                      <td>
+                          <div class="section-sub-title">Delivery Address</div>
+                          <div>{{ party.deliveryAddress.streetAddress }}</div>
+                          <div>{{ party.deliveryAddress.streetAddressAdditional }}</div>
+                          <div>{{ party.deliveryAddress.addressCity }}
+                            {{ party.deliveryAddress.addressRegion }}
+                            &nbsp;{{ party.deliveryAddress.postalCode }}</div>
+                          <div>{{ party.deliveryAddress.addressCountry }}</div>
+                          <div>{{ party.deliveryAddress.deliveryInstructions }}</div>
+                      </td>
+                  </tr>
+              </table>
+            </div>
+    {% endif %}
+    {% endfor %}
+    {% endfor %}
+</div>
+

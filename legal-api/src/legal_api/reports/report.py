@@ -136,7 +136,14 @@ class Report:  # pylint: disable=too-few-public-methods
             'certificate-of-incorporation/style',
             'certificate-of-incorporation/seal',
             'certificate-of-incorporation/registrarSignature',
-            'certificate-of-incorporation/logo'
+            'certificate-of-incorporation/logo',
+            'incorporation-application/addresses',
+            'incorporation-application/directors',
+            'incorporation-application/style',
+            'incorporation-application/incorporator',
+            'incorporation-application/completingParty',
+            'incorporation-application/incorporationDetails',
+            'incorporation-application/shareStructure'
         ]
 
         # substitute template parts - marked up by [[filename]]

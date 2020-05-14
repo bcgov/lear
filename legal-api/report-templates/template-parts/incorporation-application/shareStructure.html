@@ -1,0 +1,77 @@
+<div class="section-title">
+   Authorized Share Structure
+</div>
+<div class="section-data">
+   <table class="share-structure-table" width="100%">
+      <tr  class="solid-row-separator share-structure-table-header">
+         <td> Name of Share Class or Series</td>
+         <td>Max. Number of Shares</td>
+         <td>Par Value</td>
+         <td>Currency</td>
+         <td>Special Rights or Restrictions</td>
+      </tr>
+      {% for share_class in incorporationApplication.shareClasses %}
+      <tr>
+         <td>{{share_class.name}}</td>
+         <td>
+            {% if share_class.hasMaximumShares %}
+            {{ share_class.maxNumberOfShares }}
+            {% else %}
+            {% endif %}
+         </td>
+         <td>
+            {% if share_class.hasParValue %}
+            {{ share_class.parValue }}
+            {% else %}
+            {% endif %}
+         </td>
+         <td>
+            {% if share_class.hasParValue %}
+            {{ share_class.currency }}
+            {% else %}
+            {% endif %}
+         </td>
+         <td>
+            {% if share_class.hasRightsOrRestrictions %}
+            Yes
+            {% else %}
+            No
+            {% endif %}
+         </td>
+      </tr>
+      {% for series in share_class.series %}
+      <tr class="dashed-row-separator">
+         <td class="series-name">&#8226;&nbsp;{{ series.name }}</td>
+         <td>
+            {% if series.hasMaximumShares %}
+            {{ series.maxNumberOfShares }}
+            {% else %}
+            {% endif %}
+         </td>
+         <td>
+            {% if series.hasParValue %}
+            {{ series.parValue }}
+            {% else %}
+            {% endif %}
+         </td>
+         <td>
+            {% if series.hasParValue %}
+            {{ series.currency }}
+            {% else %}
+            {% endif %}
+         </td>
+         <td>
+            {% if series.hasRightsOrRestrictions %}
+            Yes
+            {% else %}
+            No
+            {% endif %}
+         </td>
+      </tr>
+      {% endfor %}
+      <tr class="solid-row-separator">
+         <td colspan="5" style="height:1px"/>
+      </tr>
+      {% endfor %}
+   </table>
+</div>
