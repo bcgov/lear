@@ -21,6 +21,7 @@ from typing import Tuple, Union
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
 import datedelta
+from dateutil import tz
 from flask import current_app, g, jsonify, request
 from flask_babel import _
 from flask_jwt_oidc import JwtManager
@@ -550,7 +551,7 @@ class ListFilingResource(Resource):
         elif business.legal_type != 'CP':
             if filing_type == 'changeOfAddress':
                 effective_date = datetime.datetime.combine(datetime.date.today() + datedelta.datedelta(days=1),
-                                                           datetime.datetime.min.time())
+                                                           datetime.datetime.min.time(), tz.tzlocal())
                 filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date
                 filing.effective_date = effective_date
                 filing.save()
