@@ -39,5 +39,7 @@ stage("details in tools run-job-pipeline") {
                     "-e=JOB=${JOB}",
                     "-e=K8S_PATH=${K8S_PATH}"
                 ).logs('-f')
+            }
+        }
     }
 }

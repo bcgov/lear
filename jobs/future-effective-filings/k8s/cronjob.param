@@ -1,0 +1,11 @@
+#=========================================================
+# Template parameters for:
+# Project: future-effective-filings
+# Component: cronjob
+# Action: build
+# Template File: templates/cronjob.json
+#=========================================================
+NAME="future-effective-filings"
+NAMESPACE="gl2uos"
+ENV="test"
+SCHEDULE="0 * * * *"
