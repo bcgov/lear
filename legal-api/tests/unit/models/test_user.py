@@ -151,6 +151,8 @@ TEST_USER_DISPLAY_NAME = [
     ('name - first name only', 'anything', 'First', '', 'First'),
     ('name - last name only', 'anything', '', 'Last', 'Last'),
 ]
+
+
 @pytest.mark.parametrize('test_description, username, firstname, lastname, display_name', TEST_USER_DISPLAY_NAME)
 def test_user_display_name(session, test_description, username, firstname, lastname, display_name):
     """Assert the User record is deleted."""

@@ -642,7 +642,7 @@ class ColinLastUpdate(Resource):
             if colin_id:
                 colin_id_obj = ColinEventId.get_by_colin_id(colin_id)
                 if not colin_id_obj:
-                    return {'message': f'No colin ids found'}, HTTPStatus.NOT_FOUND
+                    return {'message': 'No colin ids found'}, HTTPStatus.NOT_FOUND
                 return {'colinId': colin_id_obj.colin_event_id}, HTTPStatus.OK
         except Exception as err:
             current_app.logger.Error(f'Failed to get last updated colin event id: {err}')
@@ -656,7 +656,7 @@ class ColinLastUpdate(Resource):
         )
         last_event_id = query.fetchone()
         if not last_event_id or not last_event_id[0]:
-            return {'message': f'No colin ids found'}, HTTPStatus.NOT_FOUND
+            return {'message': 'No colin ids found'}, HTTPStatus.NOT_FOUND
 
         return {'maxId': last_event_id[0]}, HTTPStatus.OK if request.method == 'GET' else HTTPStatus.CREATED
 
@@ -680,4 +680,4 @@ class ColinLastUpdate(Resource):
 
         except Exception as err:  # pylint: disable=broad-except
             current_app.logger.error(f'Error updating colin_last_update table in legal db: {err}')
-            return {f'message: failed to update colin_last_update.', 500}
+            return {'message: failed to update colin_last_update.', 500}

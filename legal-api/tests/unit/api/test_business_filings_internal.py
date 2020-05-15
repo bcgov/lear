@@ -201,7 +201,7 @@ def test_get_internal_filings(session, client, jwt):
     assert filing6.status == Filing.Status.COMPLETED.value
 
     # test endpoint returned filing1 only (completed, no corrections, with no colin id set)
-    rv = client.get(f'/api/v1/businesses/internal/filings')
+    rv = client.get('/api/v1/businesses/internal/filings')
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json) == 1
     assert rv.json[0]['filingId'] == filing1.id
@@ -265,7 +265,7 @@ def test_get_colin_last_update(session, client, jwt):
         """
     )
 
-    rv = client.get(f'/api/v1/businesses/internal/filings/colin_id')
+    rv = client.get('/api/v1/businesses/internal/filings/colin_id')
     assert rv.status_code == HTTPStatus.OK
     assert rv.json == {'maxId': colin_id}
 
@@ -306,7 +306,7 @@ def test_future_filing_coa(session, client, jwt):
 
     assert filing.status == Filing.Status.PAID.value
 
-    rv = client.get(f'/api/v1/businesses/internal/filings/PAID', headers=create_header(jwt, [COLIN_SVC_ROLE]))
+    rv = client.get('/api/v1/businesses/internal/filings/PAID', headers=create_header(jwt, [COLIN_SVC_ROLE]))
     paid_filings = rv.json
     assert paid_filings[0]
     # check values that future effective filings job depends on are there
