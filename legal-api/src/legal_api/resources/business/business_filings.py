@@ -533,7 +533,7 @@ class ListFilingResource(Resource):
             filing.payment_status_code = error_type
             filing.save()
 
-            return {'payment_status_code': error_type,
+            return {'payment_error_type': error_type,
                     'message': rv.json().get('detail')}, HTTPStatus.PAYMENT_REQUIRED
 
         return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
