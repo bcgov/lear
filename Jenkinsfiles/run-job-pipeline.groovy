@@ -29,9 +29,17 @@ K8S_PATH = 'jobs/update-colin-filings/k8s/'
 stage("NI: Run ${JOB}") {
     // call/wait for job pipeline with colin-updater vals
     script {
+        echo """
+        Pipeline called with constants:
+            - NAMESPACE: ${NAMESPACE}
+            - TAG_NAME: ${TAG_NAME}
+            - JOB: ${JOB}
+            - K8S_PATH: ${K8S_PATH}
+        """
         openshift.withCluster() {
             openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
                 checkout scm
+                // use json + param files in k8s folder to build/replace job
                 dir("${K8S_PATH}") {
                     replace_job = sh (
                         script: """ls""",
