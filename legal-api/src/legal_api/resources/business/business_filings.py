@@ -523,17 +523,17 @@ class ListFilingResource(Resource):
         if rv.status_code == HTTPStatus.OK or rv.status_code == HTTPStatus.CREATED:
             pid = rv.json().get('id')
             filing.payment_token = pid
-            filing.payment_error_type = None  # Clear any payment errors on successful payment
+            filing.payment_status_code = rv.json().get('statusCode', '')
             filing.save()
             return None, None
 
         if rv.status_code == HTTPStatus.BAD_REQUEST:
             # Set payment error type used to retrieve error messages from pay-api
             error_type = rv.json().get('type')
-            filing.payment_error_type = error_type
+            filing.payment_status_code = error_type
             filing.save()
 
-            return {'payment_error_type': error_type,
+            return {'payment_status_code': error_type,
                     'message': rv.json().get('detail')}, HTTPStatus.PAYMENT_REQUIRED
 
         return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
