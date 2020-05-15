@@ -55,7 +55,7 @@ def factory_business_model(legal_name,
 def test_create_bootstrap_failure_filing(client, jwt):
     """Assert the an empty filing cannot be used to bootstrap a filing."""
     filing = None
-    rv = client.post(f'/api/v1/businesses?draft=true',
+    rv = client.post('/api/v1/businesses?draft=true',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], None))
 
@@ -74,7 +74,7 @@ def test_create_bootstrap_minimal_draft_filing(client, jwt):
                   }
               }
               }
-    rv = client.post(f'/api/v1/businesses?draft=true',
+    rv = client.post('/api/v1/businesses?draft=true',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], None))
 
@@ -96,7 +96,7 @@ def test_create_bootstrap_validate_success_filing(client, jwt):
     # remove fed
     filing['filing']['header'].pop('effectiveDate')
 
-    rv = client.post(f'/api/v1/businesses?only_validate=true',
+    rv = client.post('/api/v1/businesses?only_validate=true',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], None))
 
@@ -118,7 +118,7 @@ def test_create_incorporation_success_filing(client, jwt, session):
     # remove fed
     filing['filing']['header'].pop('effectiveDate')
 
-    rv = client.post(f'/api/v1/businesses',
+    rv = client.post('/api/v1/businesses',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], None))
 

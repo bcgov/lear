@@ -57,6 +57,8 @@ TEST_IDENTIFIER_DATA = [
     ('CP000000A', False),
     ('AB0000001', False),
 ]
+
+
 @pytest.mark.parametrize('identifier,expected', TEST_IDENTIFIER_DATA)
 def test_business_validate_identifier(identifier, expected):
     """Assert that the identifier is validated correctly."""
@@ -159,7 +161,7 @@ def test_delete_business_active(session):
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier='CP1234567',
-                        tax_id=f'XX',
+                        tax_id='XX',
                         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
     business.save()
 

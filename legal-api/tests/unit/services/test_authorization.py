@@ -75,6 +75,8 @@ TEST_AUTHZ_DATA = [
     ('invalid_action', 'CP1234567', 'Not-Match-Identifier', [BASIC_USER], None, ['scrum'],
      HTTPStatus.METHOD_NOT_ALLOWED),
 ]
+
+
 @not_github_ci
 @pytest.mark.parametrize('test_name,identifier,username,roles,allowed_actions,requested_actions,expected',
                          TEST_AUTHZ_DATA)
@@ -131,6 +133,8 @@ TEST_INTEG_AUTHZ_DATA = [
     ('invalid_action', 'CP1234567', 'Not-Match-Identifier', [BASIC_USER], None, ['scrum'],
      HTTPStatus.METHOD_NOT_ALLOWED),
 ]
+
+
 @integration_authorization
 @pytest.mark.parametrize('test_name,identifier,username,roles,allowed_actions,requested_actions,expected',
                          TEST_INTEG_AUTHZ_DATA)
