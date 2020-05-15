@@ -143,7 +143,8 @@ class Report:  # pylint: disable=too-few-public-methods
             'incorporation-application/incorporator',
             'incorporation-application/completingParty',
             'incorporation-application/incorporationDetails',
-            'incorporation-application/shareStructure'
+            'incorporation-application/shareStructure',
+            'incorporation-application/nameRequest'
         ]
 
         # substitute template parts - marked up by [[filename]]

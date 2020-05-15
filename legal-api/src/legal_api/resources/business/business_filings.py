@@ -579,6 +579,7 @@ class ListFilingResource(Resource):
             founding_datetime.strftime(f'%B %-d, %Y at {hour}:%M %p Pacific Time')
         business_json['formatted_founding_date'] = founding_datetime.strftime(f'%B %-d, %Y')
         filing.filing_json['filing']['business'] = business_json
+        filing.filing_json['filing']['header']['filingId'] = filing.id
 
 
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')

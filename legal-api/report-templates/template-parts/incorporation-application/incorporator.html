@@ -1,17 +1,24 @@
 <div class="section-title">
  Incorporator Information
 </div>
-{% for party in incorporationApplication.parties %}
+{% set ns = namespace(incorporator=0) %}
+{% for party in incorporationApplication.parties|sort(attribute='officer.lastName') %}
 {% for party_role in party.roles %}
 {% if party_role.roleType == 'Incorporator' %}
         <div class="section-data">
           <table class="section-data-table">
-            <tr class="solid-row-separator">
+            {% if ns.incorporator > 0 %}
+                <tr class="upper-solid-row-separator">
+              {% else %}
+                <tr>
+              {% endif %}
                   <td class="director-name">
                       <div class="section-sub-title">
-                        {{ party.officer.lastName }},
-                        {{ party.officer.firstName }}
-                        {% if party.officer.middleInitial is defined %}{{ party.officer.middleInitial }}{% endif %}
+                          <span class="capitalize-text">{{ party.officer.lastName }}</span>,
+                          <span class="capitalize-text">{{ party.officer.firstName }}</span>
+                        {% if party.officer.middleInitial is defined %}
+                        <span class="capitalize-text">{{ party.officer.middleInitial }}</span>
+                        {% endif %}
                       </div>
                   </td>
                   <td>
@@ -27,6 +34,7 @@
               </tr>
           </table>
         </div>
+{% set ns.incorporator = ns.incorporator + 1 %}
 {% endif %}
 {% endfor %}
 {% endfor %}

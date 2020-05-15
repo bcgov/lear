@@ -2,6 +2,7 @@
    <div class="section-title">
       Completing Party
    </div>
+   {% set ns = namespace(cp=0) %}
    {% for party in incorporationApplication.parties %}
    {% for party_role in party.roles %}
    {% if party_role.roleType == 'Completing Party' %}
@@ -10,9 +11,11 @@
          <tr>
             <td class="director-name">
                <div class="section-sub-title">
-                  {{ party.officer.lastName }},
-                  {{ party.officer.firstName }}
-                  {% if party.officer.middleInitial is defined %}{{ party.officer.middleInitial }}{% endif %}
+                  <span class="capitalize-text">{{ party.officer.lastName }}</span>,
+                  <span class="capitalize-text">{{ party.officer.firstName }}</span>
+                  {% if party.officer.middleInitial is defined %}
+                  <span class="capitalize-text">{{ party.officer.middleInitial }}</span>
+                  {% endif %}
                </div>
             </td>
             <td>
@@ -29,18 +32,25 @@
          </tr>
       </table>
    </div>
+   {% set ns.cp = party %}
    {% endif %}
    {% endfor %}
    {% endfor %}
 </div>
 <div class="separator"></div>
-<div class="no-page-break">
+<div class="cp-statement no-page-break">
    <div class="section-title">
       Completing Party Statement
    </div>
    <div class="section-data">
-      I, {{ header.certifiedBy}}, the completing party, have examined the articles and the incorporation agreement applicable to the
-      company that is to be incorporated by the filing of the Incorporation Application and confirm that:
+      I,
+      <span class="capitalize-text">{{ ns.cp.officer.firstName}}</span>
+      {% if ns.cp.officer.middleInitial is defined %}
+      <span class="capitalize-text">{{ ns.cp.officer.middleInitial}}</span>
+      {% endif %}
+      <span class="capitalize-text">{{ ns.cp.officer.lastName}}</span>, the completing party, have examined the articles
+      and the incorporation agreement applicable to the company that is to be incorporated by the filing of the
+      Incorporation Application and confirm that:
       <div class="certify-statements">
          <table class="certify-statement-table">
             <tr>
