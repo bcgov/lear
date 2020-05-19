@@ -576,7 +576,7 @@ class ListFilingResource(Resource):
         business_json = business.json()
         business_json['formatted_founding_date_time'] = \
             founding_datetime.strftime(f'%B %-d, %Y at {hour}:%M %p Pacific Time')
-        business_json['formatted_founding_date'] = founding_datetime.strftime(f'%B %-d, %Y')
+        business_json['formatted_founding_date'] = founding_datetime.strftime('%B %-d, %Y')
         filing.filing_json['filing']['business'] = business_json
         filing.filing_json['filing']['header']['filingId'] = filing.id
 
