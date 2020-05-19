@@ -21,10 +21,10 @@
 
 // define constants placeholder values
 // set from call
-NAMESPACE = 'gl2uos'
-TAG_NAME = 'dev'
-JOB = 'colin-updater'
-K8S_PATH = 'jobs/update-colin-filings/k8s/'
+NAMESPACE
+TAG_NAME
+JOB
+K8S_PATH
 
 stage("NI: Run ${JOB}") {
     // call/wait for job pipeline with colin-updater vals
