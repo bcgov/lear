@@ -18,12 +18,11 @@ Provides all the search and retrieval from the business entity datastore.
 from http import HTTPStatus
 from typing import Tuple, Union
 
+import datedelta
+import pytz
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
-import datedelta
 from dateutil import tz
-import pytz
-
 from flask import current_app, g, jsonify, request
 from flask_babel import _
 from flask_jwt_oidc import JwtManager
@@ -74,7 +73,7 @@ class ListFilingResource(Resource):
             if str(request.accept_mimetypes) == 'application/pdf':
                 report_type = request.args.get('type', None)
                 if rv[1].filing_type == 'incorporationApplication':
-                    ListFilingResource.populate_business_info_to_filing(rv[1], business)
+                    ListFilingResource._populate_business_info_to_filing(rv[1], business)
                 return legal_api.reports.get_pdf(rv[1], report_type)
 
             return jsonify(rv[1].json)
@@ -571,7 +570,7 @@ class ListFilingResource(Resource):
         return is_future_effective
 
     @staticmethod
-    def populate_business_info_to_filing(filing: Filing, business: Business):
+    def _populate_business_info_to_filing(filing: Filing, business: Business):
         founding_datetime = business.founding_date.astimezone(pytz.timezone('America/Vancouver'))
         hour = founding_datetime.strftime('%I')
         business_json = business.json()
