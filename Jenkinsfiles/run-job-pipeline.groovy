@@ -52,7 +52,7 @@ stage("Run ${JOB}") {
                     }
                     create_job = sh (
                         script: """
-                        oc project ${NAMESPACE}-${TAG_NAME} \
+                        oc project ${NAMESPACE}-${TAG_NAME}; \
                         oc process -f templates/job.json -p NAME=${JOB} -p NAMESPACE=${NAMESPACE} -p ENV=${TAG_NAME} | oc create -f - \
                         """, returnStdout: true).trim()
                     echo create_job
