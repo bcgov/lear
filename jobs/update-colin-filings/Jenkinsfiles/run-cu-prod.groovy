@@ -21,7 +21,7 @@
 // define constants
 NAMESPACE = 'gl2uos'
 TAG_NAME = 'prod'
-JOB = 'colin-updater'
+JOB = 'update-colin-filings'
 K8S_PATH = 'jobs/update-colin-filings/k8s/'
 RUN_JOB_LOC = 'gl2uos-tools'
 RUN_JOB_NAME = 'job-runner-pipeline'
