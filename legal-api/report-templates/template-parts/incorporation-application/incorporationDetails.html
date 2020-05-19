@@ -1,5 +1,4 @@
-<div class="business-container">
-   <div class="business-details-container">
+ <div class="business-details-container">
       <div class="business-details">
          <table class="business-details-table">
             <tr>
@@ -14,12 +13,11 @@
                         <td>{{business.formatted_founding_date_time}}</td>
                      </tr>
                   </table>
-                  <div class="filing-identifier">Filing #{{header.filingId}}</div>
-                  <div class="business-number">
+                  <div class="filing-identifier">Filing #{{header.filingId}}
                      {% if incorporationApplication.nameRequest%}
-                     <span>Incorporation #</span>
+                        <span> | Incorporation #{{business.identifier}}</span>
                      {% endif %}
-                     {{business.identifier}}</div>
+                  </div>
                </td>
                <td class="registar-certify-section">
                   <div class="certified-copy-text">CERTIFIED COPY</div>
@@ -34,5 +32,4 @@
             </tr>
          </table>
       </div>
-   </div>
 </div>
