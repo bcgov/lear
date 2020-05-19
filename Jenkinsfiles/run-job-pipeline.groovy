@@ -49,9 +49,10 @@ stage("Run ${JOB}") {
                     } catch (Exception e) {
                         // err'd because job doesn't exist yet (hopefully)
                         echo "${e.getMessage()}"
-                        data_load_output = sh (
-                        script: """oc process -f templates/job.json -p NAME=${JOB} -p NAMESPACE=${NAMESPACE} -p ENV=${TAG_NAME} | oc create -f -""",
-                            returnStdout: true).trim()
+                        replace_job = sh (
+                            script: """oc process -f templates/job.json -p NAME=${JOB} -p NAMESPACE=${NAMESPACE} -p ENV=${TAG_NAME} | oc create -f -""",
+                                returnStdout: true).trim()
+                        echo replace_job
                     }
                 }
                 sleep 10
