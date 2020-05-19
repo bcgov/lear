@@ -26,7 +26,7 @@ TAG_NAME
 JOB
 K8S_PATH
 
-stage("NI: Run ${JOB}") {
+stage("Run ${JOB}") {
     // call/wait for job pipeline with colin-updater vals
     script {
         echo """
@@ -41,31 +41,25 @@ stage("NI: Run ${JOB}") {
                 checkout scm
                 // use json + param files in k8s folder to build/replace job
                 dir("${K8S_PATH}") {
-                    replace_job = sh (
-                        script: """ls""",
-                            returnStdout: true
-                    ).trim()
-                    echo replace_job
-                    // below is commented out code for data loader: use this and newer docs in business-create k8s folder for building the job
-                    // try {
-                    //     replace_job = sh (
-                    //         script: """oc replace jobs/data-loader""",
-                    //             returnStdout: true).trim()
-                    //     echo replace_job
-                    // } catch (Exception e) {
-                           // job doesn't exist yet (hopefully)
-                    //     echo "${e.getMessage()}"
-                    //     data_load_output = sh (
-                    //     script: """oc process -f data-loader.yml -p ENV_TAG=test | oc create -f -""",
-                    //         returnStdout: true).trim()
-                    // }
+                    try {
+                        replace_job = sh (
+                            script: """oc process -f templates/job.json -p NAME=${JOB} -p NAMESPACE=${NAMESPACE} -p ENV=${TAG_NAME} | oc replace -f -""",
+                                returnStdout: true).trim()
+                        echo replace_job
+                    } catch (Exception e) {
+                        // err'd because job doesn't exist yet (hopefully)
+                        echo "${e.getMessage()}"
+                        data_load_output = sh (
+                        script: """oc process -f templates/job.json -p NAME=${JOB} -p NAMESPACE=${NAMESPACE} -p ENV=${TAG_NAME} | oc create -f -""",
+                            returnStdout: true).trim()
+                    }
                 }
                 sleep 10
             }
         }
     }
 }
-stage("NI: Run ${JOB}") {
+stage("Verify ${JOB} success") {
     // Verify job ran and succeeded
     script {
         openshift.withCluster() {
