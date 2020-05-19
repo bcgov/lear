@@ -24,7 +24,7 @@ TAG_NAME = 'dev'
 JOB = 'colin-updater'
 K8S_PATH = 'jobs/update-colin-filings/k8s/'
 RUN_JOB_LOC = 'gl2uos-tools'
-RUN_JOB_NAME = 'run-job-pipeline'
+RUN_JOB_NAME = 'job-runner-pipeline'
 
 stage("details in tools run-job-pipeline") {
     script {
