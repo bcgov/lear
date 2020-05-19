@@ -7,7 +7,7 @@
     {% for party_role in party.roles %}
     {% if party_role.roleType == 'Director' %}
             <div class="section-data">
-              <table class="section-data-table">
+              <table class="section-data-table" role="presentation">
               {% if ns.director > 0 %}
                 <tr class="upper-solid-row-separator">
               {% else %}
