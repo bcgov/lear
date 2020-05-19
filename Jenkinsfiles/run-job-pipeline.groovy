@@ -42,18 +42,18 @@ stage("Run ${JOB}") {
                 // use json + param files in k8s folder to build/replace job
                 dir("${K8S_PATH}") {
                     try {
-                        replace_job = sh (
-                            script: """oc process -f templates/job.json -p NAME=${JOB} -p NAMESPACE=${NAMESPACE} -p ENV=${TAG_NAME} | oc replace -f -""",
+                        delete_job = sh (
+                            script: """oc delete job ${JOB}""",
                                 returnStdout: true).trim()
-                        echo replace_job
+                        echo delete_job
                     } catch (Exception e) {
                         // err'd because job doesn't exist yet (hopefully)
                         echo "${e.getMessage()}"
-                        replace_job = sh (
-                            script: """oc process -f templates/job.json -p NAME=${JOB} -p NAMESPACE=${NAMESPACE} -p ENV=${TAG_NAME} | oc create -f -""",
-                                returnStdout: true).trim()
-                        echo replace_job
                     }
+                    create_job = sh (
+                        script: """oc process -f templates/job.json -p NAME=${JOB} -p NAMESPACE=${NAMESPACE} -p ENV=${TAG_NAME} | oc create -f -""",
+                            returnStdout: true).trim()
+                    echo create_job
                 }
                 sleep 10
             }

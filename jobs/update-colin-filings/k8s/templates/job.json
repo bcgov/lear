@@ -10,18 +10,10 @@
             "kind": "Job",
             "metadata": {
                 "creationTimestamp": null,
-                "labels": {
-                    "job-name": "${NAME}"
-                },
                 "name": "${NAME}",
                 "selfLink": "/apis/batch/v1/namespaces/${NAMESPACE}-${ENV}/jobs/${NAME}"
             },
             "spec": {
-                "selector": {
-                    "matchLabels": {
-                        "controller-uid": null
-                    }
-                },
                 "template": {
                     "metadata": {
                         "creationTimestamp": null
