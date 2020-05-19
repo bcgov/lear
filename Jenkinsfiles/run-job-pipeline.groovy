@@ -51,8 +51,10 @@ stage("Run ${JOB}") {
                         echo "${e.getMessage()}"
                     }
                     create_job = sh (
-                        script: """oc process -f templates/job.json -p NAME=${JOB} -p NAMESPACE=${NAMESPACE} -p ENV=${TAG_NAME} | oc create -f -""",
-                            returnStdout: true).trim()
+                        script: """
+                        oc project ${NAMESPACE}-${TAG_NAME} \
+                        oc process -f templates/job.json -p NAME=${JOB} -p NAMESPACE=${NAMESPACE} -p ENV=${TAG_NAME} | oc create -f - \
+                        """, returnStdout: true).trim()
                     echo create_job
                 }
                 sleep 10
