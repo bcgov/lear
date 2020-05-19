@@ -1,0 +1,11 @@
+#=========================================================
+# Template parameters for:
+# Project: legal-updater
+# Component: cronjob
+# Action: build
+# Template File: templates/cronjob.json
+#=========================================================
+NAME="update-legal-filings"
+NAMESPACE="gl2uos"
+ENV="dev"
+SCHEDULE="0 0 * * *"

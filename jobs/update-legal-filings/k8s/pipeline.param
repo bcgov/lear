@@ -1,0 +1,14 @@
+#=========================================================
+# Template parameters for:
+# Project: legal-updater
+# Component: pipeline
+# Action: build
+# Template File: templates/pipeline.json
+#=========================================================
+NAME="update-legal-filings"
+PIPELINE_PURPOSE="run"
+GIT_REPO_URL="https://github.com/bcgov/lear.git"
+GIT_REF="master"
+SOURCE_CONTEXT_DIR="jobs/update-legal-filings"
+JENKINS_FILE="Jenkinsfiles/run-lu-prod.groovy"
+WEBHOOK="unknown"

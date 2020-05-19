@@ -1,0 +1,11 @@
+#=========================================================
+# Template parameters for:
+# Project: colin-updater
+# Component: cronjob
+# Action: build
+# Template File: templates/cronjob.json
+#=========================================================
+NAME="update-colin-filings"
+NAMESPACE="gl2uos"
+ENV="dev"
+SCHEDULE="0 * * * *"

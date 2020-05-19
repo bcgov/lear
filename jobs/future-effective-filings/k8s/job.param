@@ -1,0 +1,10 @@
+#=========================================================
+# Template parameters for:
+# Project: future-effective-filings
+# Component: job
+# Action: build
+# Template File: templates/job.json
+#=========================================================
+NAME="future-effective-filings"
+NAMESPACE="gl2uos"
+ENV="dev"

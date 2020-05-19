@@ -1,0 +1,14 @@
+#=========================================================
+# Template parameters for:
+# Project: future-effective-filings
+# Component: pipeline
+# Action: build
+# Template File: templates/pipeline.json
+#=========================================================
+NAME="future-effective-filings"
+PIPELINE_PURPOSE="deploy-prod"
+GIT_REPO_URL="https://github.com/bcgov/lear.git"
+GIT_REF="master"
+SOURCE_CONTEXT_DIR="jobs/future-effective-filings"
+JENKINS_FILE="Jenkinsfiles/tag-prod.groovy"
+WEBHOOK="unknown"

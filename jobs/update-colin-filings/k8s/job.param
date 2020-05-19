@@ -1,0 +1,10 @@
+#=========================================================
+# Template parameters for:
+# Project: colin-updater
+# Component: job
+# Action: build
+# Template File: templates/job.json
+#=========================================================
+NAME="update-colin-filings"
+NAMESPACE="gl2uos"
+ENV="dev"
