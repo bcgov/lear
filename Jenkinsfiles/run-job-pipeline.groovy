@@ -70,7 +70,7 @@ stage("Verify ${JOB} success") {
         openshift.withCluster() {
             openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
                 def job = openshift.selector('pod', [ "job-name":"${JOB}" ])
-                data_loader.untilEach {
+                job.untilEach {
                     def pod = it.objects()[0].metadata.name
                     echo "pod: ${pod}"
                     if (it.objects()[0].status.phase == 'Succeeded') {
