@@ -43,8 +43,10 @@ stage("Run ${JOB}") {
                 dir("${K8S_PATH}") {
                     try {
                         delete_job = sh (
-                            script: """oc delete job ${JOB}""",
-                                returnStdout: true).trim()
+                            script: """
+                            oc project ${NAMESPACE}-${TAG_NAME}; \
+                            oc delete job ${JOB}
+                            """, returnStdout: true).trim()
                         echo delete_job
                     } catch (Exception e) {
                         // err'd because job doesn't exist yet (hopefully)
