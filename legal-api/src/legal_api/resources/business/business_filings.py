@@ -18,9 +18,10 @@ Provides all the search and retrieval from the business entity datastore.
 from http import HTTPStatus
 from typing import Tuple, Union
 
+import datedelta
+import pytz
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
-import datedelta
 from dateutil import tz
 from flask import current_app, g, jsonify, request
 from flask_babel import _
@@ -70,7 +71,10 @@ class ListFilingResource(Resource):
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
 
             if str(request.accept_mimetypes) == 'application/pdf':
-                return legal_api.reports.get_pdf(rv[1])
+                report_type = request.args.get('type', None)
+                if rv[1].filing_type == 'incorporationApplication':
+                    ListFilingResource._populate_business_info_to_filing(rv[1], business)
+                return legal_api.reports.get_pdf(rv[1], report_type)
 
             return jsonify(rv[1].json)
 
@@ -564,6 +568,17 @@ class ListFilingResource(Resource):
         if effective_date:
             is_future_effective = effective_date > datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
         return is_future_effective
+
+    @staticmethod
+    def _populate_business_info_to_filing(filing: Filing, business: Business):
+        founding_datetime = business.founding_date.astimezone(pytz.timezone('America/Vancouver'))
+        hour = founding_datetime.strftime('%I')
+        business_json = business.json()
+        business_json['formatted_founding_date_time'] = \
+            founding_datetime.strftime(f'%B %-d, %Y at {hour}:%M %p Pacific Time')
+        business_json['formatted_founding_date'] = founding_datetime.strftime('%B %-d, %Y')
+        filing.filing_json['filing']['business'] = business_json
+        filing.filing_json['filing']['header']['filingId'] = filing.id
 
 
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')
