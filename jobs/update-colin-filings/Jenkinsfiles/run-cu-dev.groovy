@@ -27,7 +27,7 @@ K8S_PATH = 'jobs/update-colin-filings/k8s/'
 RUN_JOB_LOC = 'gl2uos-tools'
 RUN_JOB_NAME = 'job-runner-pipeline'
 
-stage("details in tools run-job-pipeline") {
+stage("run colin-updater") {
     script {
         openshift.withCluster() {
             openshift.withProject("${RUN_JOB_LOC}") {
