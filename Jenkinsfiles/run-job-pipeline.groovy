@@ -69,19 +69,18 @@ stage("Verify ${JOB} success") {
     script {
         openshift.withCluster() {
             openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
-                    // below is code for verifying dataloader ran -> repurpose for colin-updater
-                // def data_loader = openshift.selector('pod', [ "job-name":"data-loader" ])
-                // data_loader.untilEach {
-                //     def pod = it.objects()[0].metadata.name
-                //     echo "pod: ${pod}"
-                //     if (it.objects()[0].status.phase == 'Succeeded') {
-                //         echo "${pod} successfully loaded data."
-                //         return true
-                //     } else {
-                //         return false;
-                //         sleep 5
-                //     }
-                // }
+                def job = openshift.selector('pod', [ "job-name":"${JOB}" ])
+                data_loader.untilEach {
+                    def pod = it.objects()[0].metadata.name
+                    echo "pod: ${pod}"
+                    if (it.objects()[0].status.phase == 'Succeeded') {
+                        echo "${pod} successfully loaded data."
+                        return true
+                    } else {
+                        return false;
+                        sleep 5
+                    }
+                }
             }
         }
     }
