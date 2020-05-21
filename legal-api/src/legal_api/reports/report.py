@@ -250,6 +250,20 @@ class Report:  # pylint: disable=too-few-public-methods
             # for standalone filings, the effective date comes from the filing data
             filing['effective_date'] = effective_date.strftime('%B %d, %Y')
 
+        elif self._filing.filing_type == 'incorporationApplication':
+            effective_date_time = effective_date.astimezone(pytz.timezone('America/Vancouver'))
+            effective_hour = effective_date_time.strftime('%I')
+            filing['header']['effective_date_time'] = \
+                effective_date_time.strftime(f'%B %-d, %Y at {effective_hour}:%M %p Pacific Time')
+            filing_hour = filing_datetime.strftime('%I')
+            filing['header']['filing_date_time'] = \
+                filing_datetime.strftime(f'%B %-d, %Y at {filing_hour}:%M %p Pacific Time')
+            self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
+            self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
+            self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['deliveryAddress'])
+            self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
+            self._format_directors(filing['incorporationApplication']['parties'])
+
         # Appears in the Description section of the PDF Document Properties as Title.
         filing['meta_title'] = '{} on {}'.format(
             self._filing.FILINGS[self._filing.filing_type]['title'], filing['filing_date_time'])

@@ -6,18 +6,14 @@
                   <table class="business-info" role="presentation">
                      <tr>
                         <td class="section-sub-title">Filed Date and Time:</td>
-                        <td>{{business.formatted_founding_date_time}}</td>
+                        <td>{{header.filing_date_time}}</td>
                      </tr>
                      <tr>
                         <td class="section-sub-title">Recognition Date and Time:</td>
-                        <td>{{business.formatted_founding_date_time}}</td>
+                        <td>{{header.effective_date_time}}</td>
                      </tr>
                   </table>
-                  <div class="filing-identifier">Filing #{{header.filingId}}
-                     {% if incorporationApplication.nameRequest%}
-                        <span> | Incorporation #{{business.identifier}}</span>
-                     {% endif %}
-                  </div>
+                  <div class="filing-identifier">Filing #{{header.filingId}}</div>
                </td>
                <td class="registar-certify-section">
                   <div class="certified-copy-text">CERTIFIED COPY</div>

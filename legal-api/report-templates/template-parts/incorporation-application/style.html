@@ -301,7 +301,7 @@ td.director-name {
 
 .share-structure-table {
 	width: 100%;
-	border-collapse: collapse color: #313132;
+	border-collapse: collapse;
 	font-size: 13px;
 	font-family: 'BCSans-Regular';
 }
@@ -309,19 +309,17 @@ td.director-name {
 .share-structure-table-header {
 	font-family: 'BCSans-Bold';
 	color: #313132;
-	font-size: 13px;
+	font-size: 12px;
 }
 
 .share-structure-table td {
 	height: 40px;
-	vertical-align: top;
+	vertical-align: middle;
 }
 
 .share-structure-table td:nth-child(1) {
 	width: 30%;
 	font-family: 'BCSans-Bold';
-	color: #313132;
-	font-size: 13px;
 }
 
 .share-structure-table td:nth-child(2) {
@@ -347,15 +345,15 @@ td.director-name {
 }
 
 .dashed-row-separator {
-	border-top: dashed 1px #BCBEC5
+	border-top: dashed 1px #BCBEC5;
 }
 
 .solid-row-separator {
-	border-bottom: solid 0.5px #BCBEC5
+	border-bottom: solid 0.5px #BCBEC5;
 }
 
 .upper-solid-row-separator {
-	border-top: solid 0.5px #BCBEC5
+	border-top: solid 0.5px #BCBEC5;
 }
 
 .no-page-break {
@@ -364,6 +362,7 @@ td.director-name {
 
 .series-name {
 	padding-left: 1rem;
+	font-size: 12px
 }
 
 .effective-date {
@@ -383,16 +382,19 @@ td.director-name {
 	string-set: filingIdentifier content()
 }
 
-.business-number {
-	visibility: hidden;
-	string-set: businessIdentifier content()
-}
-
 .capitalize-text {
 	text-transform: capitalize;
 }
 
 .right-align {
 	text-align: right;
+}
+
+td.top-align {
+    vertical-align:top;
+}
+
+.share-structure-table-container {
+   margin-top: 1rem;
 }
 </style>
