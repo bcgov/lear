@@ -61,11 +61,11 @@
                   <p>This company is a benefit company and, as such, has purposes that include conducting its
                      business in a responsible and sustainable manner and promoting one or more public benefits.
                   </p>
-                  <p class="section-sub-title">Name of Company:
+                  <p><span class="section-sub-title">Name of Company:</span>
                      {% if not incorporationApplication.nameRequest%}
                      A company name using the Incorporation Number will be provided on the Recognition Date and Time.
                      {% else %}
-                     {{business.legalName}}
+                     <span class="section-sub-title">{{business.legalName}}</span>
                      {% endif %}
                   </p>
                </div>
