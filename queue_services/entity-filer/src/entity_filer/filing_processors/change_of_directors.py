@@ -89,6 +89,6 @@ def process(business: Business, filing: Dict):  # pylint: disable=too-many-branc
     if filing.get('colinIds'):
         for director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
             # get name of director in database for comparison *
-            director_name = director.first_name + director.middle_initial + director.last_name
+            director_name = director.party.first_name + director.party.middle_initial + director.party.last_name
             if director_name.upper() not in new_director_names and director.cessation_date is None:
                 director.cessation_date = datetime.utcnow()
