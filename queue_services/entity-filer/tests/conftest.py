@@ -43,6 +43,7 @@ def not_raises(exception):
     except exception:
         raise pytest.fail(f'DID RAISE {exception}')
 
+
 # fixture to freeze utcnow to a fixed date-time
 @pytest.fixture
 def freeze_datetime_utcnow(monkeypatch):
