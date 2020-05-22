@@ -728,7 +728,6 @@ def test_file_ar_no_agm_coop(session, client, jwt):
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
-    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=ar,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
@@ -749,7 +748,6 @@ def test_file_ar_no_agm_bcorp(session, client, jwt):
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
-    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=ar,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
