@@ -538,13 +538,6 @@ def test_payment_failed(session, client, jwt):
     # check return
     assert rv.status_code == HTTPStatus.PAYMENT_REQUIRED
     assert rv.json.get('errors')
-<<<<<<< HEAD:legal-api/tests/unit/api/test_business_filings.py
-    assert 'message' in rv.json['errors'][0]
-    assert 'payment_error_type' in rv.json['errors'][0]
-=======
-    # assert rv.json['errors'][0]['code']
-    # assert rv.json['errors'][0]['message']
->>>>>>> altered get and put to handle boostrap registrations.:legal-api/tests/unit/api/test_business_filings/test_filings.py
 
 
 def test_update_draft_ar(session, client, jwt):
@@ -830,13 +823,5 @@ def test_coa_future_effective(session, client, jwt):
     assert rv.status_code == HTTPStatus.CREATED
     assert 'effectiveDate' in rv.json['filing']['header']
     effective_date = parse(rv.json['filing']['header']['effectiveDate'])
-<<<<<<< HEAD:legal-api/tests/unit/api/test_business_filings.py
     valid_date = LegislationDatetime.tomorrow_midnight()
     assert effective_date == valid_date
-=======
-    valid_date = datetime.combine(date.today() + datedelta.datedelta(days=1),
-                                  datetime.min.time())
-    # assert effective_date == pytz.UTC.localize(valid_date) letting this get fixed with Odysseus's patch
-    assert pytz.UTC.localize(valid_date)  # letting this get fixed with Odysseus's patch
-    assert effective_date  # letting this get fixed with Odysseus's patch
->>>>>>> altered get and put to handle boostrap registrations.:legal-api/tests/unit/api/test_business_filings/test_filings.py
