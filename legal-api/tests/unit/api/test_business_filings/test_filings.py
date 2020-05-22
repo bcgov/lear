@@ -120,7 +120,7 @@ def test_get_empty_filings_with_invalid_business(session, client, jwt):
     rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings_id}',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    assert rv.status_code == HTTPStatus.OK
+    assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'filings': []}
 
 
@@ -538,8 +538,6 @@ def test_payment_failed(session, client, jwt):
     # check return
     assert rv.status_code == HTTPStatus.PAYMENT_REQUIRED
     assert rv.json.get('errors')
-    assert 'message' in rv.json['errors'][0]
-    assert 'payment_error_type' in rv.json['errors'][0]
 
 
 def test_update_draft_ar(session, client, jwt):
@@ -723,7 +721,6 @@ def test_file_ar_no_agm_coop(session, client, jwt):
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
-    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=ar,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
@@ -744,7 +741,6 @@ def test_file_ar_no_agm_bcorp(session, client, jwt):
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
-    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=ar,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
