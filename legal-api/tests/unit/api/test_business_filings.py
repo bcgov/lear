@@ -17,7 +17,7 @@
 Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import copy
-from datetime import date, datetime
+from datetime import datetime
 from http import HTTPStatus
 
 import datedelta
@@ -27,6 +27,7 @@ from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHAN
 
 from legal_api.resources.business.business_filings import Filing, ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import integration_payment
 from tests.unit.services.utils import create_header
 from tests.unit.models import factory_business_mailing_address, factory_business, factory_completed_filing, factory_filing  # noqa:E501,I001
@@ -537,8 +538,8 @@ def test_payment_failed(session, client, jwt):
     # check return
     assert rv.status_code == HTTPStatus.PAYMENT_REQUIRED
     assert rv.json.get('errors')
-    assert rv.json['errors'][0]['code']
-    assert rv.json['errors'][0]['message']
+    assert 'message' in rv.json['errors'][0]
+    assert 'payment_error_type' in rv.json['errors'][0]
 
 
 def test_update_draft_ar(session, client, jwt):
@@ -798,8 +799,6 @@ def test_get_correct_fee_codes(session):
 @integration_payment
 def test_coa_future_effective(session, client, jwt):
     """Assert future effective changes do not affect Coops, and that BCORP change of address if future-effective."""
-    import pytz
-
     coa = copy.deepcopy(FILING_HEADER)
     coa['filing']['header']['name'] = 'changeOfAddress'
     coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
@@ -828,6 +827,5 @@ def test_coa_future_effective(session, client, jwt):
     assert rv.status_code == HTTPStatus.CREATED
     assert 'effectiveDate' in rv.json['filing']['header']
     effective_date = parse(rv.json['filing']['header']['effectiveDate'])
-    valid_date = datetime.combine(date.today() + datedelta.datedelta(days=1),
-                                  datetime.min.time())
-    assert effective_date == pytz.UTC.localize(valid_date)
+    valid_date = LegislationDatetime.tomorrow_midnight()
+    assert effective_date == valid_date
