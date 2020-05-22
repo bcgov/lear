@@ -123,6 +123,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET')
     ACCOUNT_SVC_TIMEOUT = os.getenv('ACCOUNT_SVC_TIMEOUT')
 
+    # legislative timezone for future effective dating
+    LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
+
     TESTING = False
     DEBUG = False
 

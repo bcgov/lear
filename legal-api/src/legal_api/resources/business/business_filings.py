@@ -18,11 +18,8 @@ Provides all the search and retrieval from the business entity datastore.
 from http import HTTPStatus
 from typing import Tuple, Union
 
-import datedelta
-import pytz
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
-from dateutil import tz
 from flask import current_app, g, jsonify, request
 from flask_babel import _
 from flask_jwt_oidc import JwtManager
@@ -39,6 +36,7 @@ from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
@@ -554,8 +552,7 @@ class ListFilingResource(Resource):
 
         elif business.legal_type != 'CP':
             if filing_type == 'changeOfAddress':
-                effective_date = datetime.datetime.combine(datetime.date.today() + datedelta.datedelta(days=1),
-                                                           datetime.datetime.min.time(), tz.tzlocal())
+                effective_date = LegislationDatetime.tomorrow_midnight()
                 filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date
                 filing.effective_date = effective_date
                 filing.save()
@@ -571,7 +568,7 @@ class ListFilingResource(Resource):
 
     @staticmethod
     def _populate_business_info_to_filing(filing: Filing, business: Business):
-        founding_datetime = business.founding_date.astimezone(pytz.timezone('America/Vancouver'))
+        founding_datetime = LegislationDatetime.as_legislation_timezone(business.founding_date)
         hour = founding_datetime.strftime('%I')
         business_json = business.json()
         business_json['formatted_founding_date_time'] = \
