@@ -66,9 +66,13 @@
                </p>
                <p><span class="section-sub-title">Name of Company:</span>
                   {% if not incorporationApplication.nameRequest%}
-                  A company name using the Incorporation Number will be provided on the Recognition Date and Time.
+                  {% if header.reportType == 'noa'%}
+                  {{business.legalName}}
                   {% else %}
-                  <span class="section-sub-title">{{business.legalName}}</span>
+                  A company name using the Incorporation Number will be provided on the Recognition Date and Time.
+                  {% endif %}
+                  {% else %}
+                  <span class="section-sub-title">{{incorporationApplication.nameRequest.legalName}}</span>
                   {% endif %}
                </p>
             </div>
