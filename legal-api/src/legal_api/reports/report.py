@@ -31,7 +31,7 @@ class Report:  # pylint: disable=too-few-public-methods
 
     incorporation_filing_reports = {
         'certificate': {'filingDescription': 'Certificate of Incorporation', 'fileName': 'certificateOfIncorporation'},
-        'noa': {'filingDescription': 'Notice of Article', 'fileName': 'noticeOfArticles'}
+        'noa': {'filingDescription': 'Notice of Article', 'fileName': 'incorporationApplication'}
     }
 
     def __init__(self, filing):
@@ -48,7 +48,7 @@ class Report:  # pylint: disable=too-few-public-methods
         data = {
             'reportName': self._get_report_filename(report_type),
             'template': "'" + base64.b64encode(bytes(self._get_template(report_type), 'utf-8')).decode() + "'",
-            'templateVars': self._get_template_data()
+            'templateVars': self._get_template_data(report_type)
         }
         response = requests.post(url=current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
 
@@ -172,7 +172,7 @@ class Report:  # pylint: disable=too-few-public-methods
             return '{}.html'.format(file_name)
         return '{}.html'.format(self._filing.filing_type)
 
-    def _get_template_data(self):  # pylint: disable=too-many-branches
+    def _get_template_data(self, report_type=None):  # pylint: disable=too-many-branches
         filing = copy.deepcopy(self._filing.filing_json['filing'])
 
         # set registered office address from either the COA filing or status quo data in AR filing
@@ -251,6 +251,7 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['effective_date'] = effective_date.strftime('%B %d, %Y')
 
         elif self._filing.filing_type == 'incorporationApplication':
+            filing['header']['reportType'] = report_type
             effective_date_time = effective_date.astimezone(pytz.timezone('America/Vancouver'))
             effective_hour = effective_date_time.strftime('%I')
             filing['header']['effective_date_time'] = \
