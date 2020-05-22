@@ -21,7 +21,7 @@ from flask import jsonify, request
 from flask_babel import _ as babel  # noqa: N813
 from flask_restplus import Resource, cors
 
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.business.business_filings import ListFilingResource
 from legal_api.services import RegistrationBootstrapService
 from legal_api.utils.auth import jwt
@@ -74,6 +74,8 @@ class BusinessResource(Resource):
 
         # @TODO rollback bootstrap if there is A failure, awaiting changes in the affiliation service
         bootstrap = RegistrationBootstrapService.create_bootstrap(filing_account_id)
-        RegistrationBootstrapService.register_bootstrap(filing_account_id, bootstrap)
+        if not isinstance(bootstrap, RegistrationBootstrap):
+            return {'error': babel('Unable to create Incorporation Filing.')}, HTTPStatus.SERVICE_UNAVAILABLE
 
+        RegistrationBootstrapService.register_bootstrap(filing_account_id, bootstrap)
         return ListFilingResource.put(bootstrap.identifier, None)

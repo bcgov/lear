@@ -52,12 +52,26 @@ class ListFilingResource(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def get(identifier, filing_id=None):
+    def get(identifier, filing_id=None):  # pylint: disable=too-many-return-statements;
+        # fix this while refactoring this whole module
         """Return a JSON object with meta information about the Service."""
+        if identifier.startswith('T'):
+            q = db.session.query(Filing). \
+                filter(Filing.temp_reg == identifier)
+
+            if filing_id:
+                q = q.filter(Filing.id == filing_id)
+
+            rv = q.one_or_none()
+
+            if not rv:
+                return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
+            return jsonify(rv.json)
+
         business = Business.find_by_identifier(identifier)
 
         if not business:
-            return jsonify(filings=[]), HTTPStatus.OK
+            return jsonify(filings=[]), HTTPStatus.NOT_FOUND
 
         if filing_id:
             rv = db.session.query(Business, Filing). \
@@ -342,7 +356,7 @@ class ListFilingResource(Resource):
                 if not rv:
                     return None, None, {'message':
                                         f'{business_identifier} no filings found'}, HTTPStatus.NOT_FOUND
-                filing = rv[1]
+                filing = rv
             else:
                 filing = Filing()
                 filing.temp_reg = bootstrap.identifier
