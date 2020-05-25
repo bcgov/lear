@@ -22,21 +22,22 @@ from typing import Dict
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 
-def _retrieve_name(var):
+def retrieve_name(var):
+    """Return the filing type."""
     return var['filing']['header']['name']
 
 
-def _get_json_sent_as_saved_example(var: object) -> Dict:
+def _get_json_sent_as_saved_example(report_output_file) -> Dict:
     """Return the example JSON sent to the Report Service."""
     try:
-        example_name = _retrieve_name(var)
+        example_name = report_output_file
         with open(os.path.join(__location__, f'{example_name}.json')) as json_file:
             return json.load(json_file)
     except:  # noqa: E722; only used for testing purposes and we don't care why it failed.
         return {}
 
 
-def matches_sent_snapshot(example, request_json, **ignore_keys):
+def matches_sent_snapshot(example, request_json, report_output_file, **ignore_keys):
     """Assert that the request_json matches the snapshot.
 
     The gold_file for the example is retrieved (the snapshot) and compared the the request_json.
@@ -44,13 +45,12 @@ def matches_sent_snapshot(example, request_json, **ignore_keys):
     If they do not match the request_json is dumped as new snapshot and an Exception is thrown.
 
     """
-    gold_json = _get_json_sent_as_saved_example(example)
-
+    gold_json = _get_json_sent_as_saved_example(report_output_file)
     if {**request_json, **ignore_keys} == {**gold_json, **ignore_keys}:
         return True
 
-    new_snap_filename = _retrieve_name(example) + \
-        datetime.datetime.utcnow().isoformat().translate(str.maketrans('T:.', '___'))
+    new_snap_filename = report_output_file + datetime.datetime.utcnow().\
+        isoformat().translate(str.maketrans('T:.', '___'))
     with open(os.path.join(__location__, f'{new_snap_filename}.json'), 'w') as f:
         json.dump(request_json, f)
 

@@ -158,6 +158,17 @@ def factory_filing(business, data_dict, filing_date=FROZEN_DATETIME):
     return filing
 
 
+def factory_incorporation_filing(business, data_dict, filing_date=FROZEN_DATETIME, effective_date=FROZEN_DATETIME):
+    """Create a filing."""
+    filing = Filing()
+    filing.business_id = business.id
+    filing.filing_date = filing_date
+    filing.effective_date = effective_date
+    filing.filing_json = data_dict
+    filing.save()
+    return filing
+
+
 def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, payment_token=None):
     """Create a completed filing."""
     if not payment_token:
