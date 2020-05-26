@@ -78,9 +78,14 @@ def test_get_pdf_error_missing_template(session, client, jwt):
     assert rv.json == {'message': 'Available on paper only.'}
 
 
+ANNUAL_REPORT['filing']['annualReport']['directors'][0]['deliveryAddress']['addressCountry'] = 'CA'
+ANNUAL_REPORT['filing']['annualReport']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
+ANNUAL_REPORT['filing']['annualReport']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
+
 COD = copy.deepcopy(FILING_HEADER)
 COD['filing']['header']['name'] = 'changeOfDirectors'
 COD['filing']['changeOfDirectors'] = CHANGE_OF_DIRECTORS
+CHANGE_OF_DIRECTORS['directors'][0]['deliveryAddress']['addressCountry'] = 'CA'
 
 COA = copy.deepcopy(FILING_HEADER)
 COA['filing']['header']['name'] = 'changeOfAddress'
