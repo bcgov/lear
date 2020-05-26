@@ -43,6 +43,30 @@ class Business:
         }
 
     @classmethod
+    def _get_bn_9s(cls, cursor, identifiers: list):
+        """Return a dict of idenifiers mapping to their bn_9 numbers."""
+        bn_9s = {}
+        if not identifiers:
+            return bn_9s
+
+        try:
+            cursor.execute(f"""
+                SELECT corp_num, bn_9
+                FROM corporation
+                WHERE corp_num in ({stringify_list(identifiers)})
+            """)
+
+            for row in cursor.fetchall():
+                row = dict(zip([x[0].lower() for x in cursor.description], row))
+                if row['bn_9']:
+                    bn_9s[f'{row["corp_num"]}'] = row['bn_9']
+            return bn_9s
+
+        except Exception as err:
+            current_app.logger.error(f'Error in Business: Failed to collect bn_9s for {identifiers}')
+            raise err
+
+    @classmethod
     def _get_last_ar_dates_for_reset(cls, cursor, event_info: list, event_ids: list):
         """Get the previous AR/AGM dates."""
         events_by_corp_num = {}

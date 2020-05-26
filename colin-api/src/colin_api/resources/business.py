@@ -15,6 +15,7 @@
 
 Currently this only provides API versioning information
 """
+from http import HTTPStatus
 
 from flask import current_app, jsonify, request
 from flask_restplus import Namespace, Resource, cors
@@ -51,14 +52,14 @@ class BusinessInfo(Resource):
                     con.rollback()
 
             if corp_num:
-                return jsonify({'corpNum': corp_num}), 200
+                return jsonify({'corpNum': corp_num}), HTTPStatus.OK
 
-            return jsonify({'message': 'Identifier required'}), 404
+            return jsonify({'message': 'Identifier required'}), HTTPStatus.NOT_FOUND
 
         try:
             business = Business.find_by_identifier(identifier)
             if not business:
-                return jsonify({'message': f'{identifier} not found'}), 404
+                return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
             return jsonify(business.as_dict())
 
         except GenericException as err:  # pylint: disable=duplicate-code
@@ -69,4 +70,33 @@ class BusinessInfo(Resource):
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
-                {'message': 'Error when trying to retrieve business record from COLIN'}), 500
+                {'message': 'Error when trying to retrieve business record from COLIN'}
+            ), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@cors_preflight('GET')
+@API.route('/internal/<string:info_type>')
+class InternalBusinessInfo(Resource):
+    """Meta information used by internal services about businesses."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    def get(info_type):
+        """Return specific business info for businesses."""
+        if info_type == 'tax_ids':
+            json_data = request.get_json()
+            if not json_data or not json_data['identifiers']:
+                return jsonify({'message': 'No input data provided'}), HTTPStatus.BAD_REQUEST
+
+            try:
+                con = DB.connection
+                con.begin()
+                cursor = con.cursor()
+                bn_9s = Business._get_bn_9s(cursor=cursor, identifiers=json_data['identifiers'])
+                return jsonify(bn_9s), HTTPStatus.OK
+
+            except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+                current_app.logger.error(err.with_traceback(None))
+                return jsonify({'message': 'Something went wrong.'}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+        return jsonify({'message': f'{info_type} not implemented.'}), HTTPStatus.NOT_IMPLEMENTED

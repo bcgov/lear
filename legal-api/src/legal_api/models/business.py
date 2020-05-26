@@ -16,6 +16,7 @@
 The Business class and Schema are held in this module
 """
 from datetime import datetime
+from enum import Enum
 
 import datedelta
 from sqlalchemy.exc import OperationalError, ResourceClosedError
@@ -42,6 +43,12 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     with people and other businesses.
     Businesses can be sole-proprietors, corporations, societies, etc.
     """
+
+    class LegalTypes(Enum):
+        """Render an Enum of the Business Legal Types."""
+
+        COOP = 'CP'
+        BCOMP = 'BC'
 
     __versioned__ = {}
     __tablename__ = 'businesses'
@@ -114,36 +121,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         return db.session.query(Address).filter(Address.business_id == self.id).\
             filter(Address.address_type == Address.DELIVERY)
 
-    @classmethod
-    def find_by_legal_name(cls, legal_name: str = None):
-        """Given a legal_name, this will return an Active Business."""
-        business = None
-        if legal_name:
-            try:
-                business = cls.query.filter_by(legal_name=legal_name).\
-                    filter_by(dissolution_date=None).one_or_none()
-            except (OperationalError, ResourceClosedError):
-                # TODO: This usually means a misconfigured database.
-                # This is not a business error if the cache is unavailable.
-                return None
-        return business
-
-    @classmethod
-    def find_by_identifier(cls, identifier: str = None):
-        """Return a Business by the id assigned by the Registrar."""
-        business = None
-        if identifier:
-            business = cls.query.filter_by(identifier=identifier).one_or_none()
-        return business
-
-    @classmethod
-    def find_by_internal_id(cls, internal_id: int = None):
-        """Return a Business by the internal id."""
-        business = None
-        if internal_id:
-            business = cls.query.filter_by(id=internal_id).one_or_none()
-        return business
-
     def save(self):
         """Render a Business to the local cache."""
         db.session.add(self)
@@ -188,6 +165,45 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             d['taxId'] = self.tax_id
 
         return d
+
+    @classmethod
+    def find_by_legal_name(cls, legal_name: str = None):
+        """Given a legal_name, this will return an Active Business."""
+        business = None
+        if legal_name:
+            try:
+                business = cls.query.filter_by(legal_name=legal_name).\
+                    filter_by(dissolution_date=None).one_or_none()
+            except (OperationalError, ResourceClosedError):
+                # TODO: This usually means a misconfigured database.
+                # This is not a business error if the cache is unavailable.
+                return None
+        return business
+
+    @classmethod
+    def find_by_identifier(cls, identifier: str = None):
+        """Return a Business by the id assigned by the Registrar."""
+        business = None
+        if identifier:
+            business = cls.query.filter_by(identifier=identifier).one_or_none()
+        return business
+
+    @classmethod
+    def find_by_internal_id(cls, internal_id: int = None):
+        """Return a Business by the internal id."""
+        business = None
+        if internal_id:
+            business = cls.query.filter_by(id=internal_id).one_or_none()
+        return business
+
+    @classmethod
+    def get_all_by_no_tax_id(cls):
+        """Return all businesses with no tax_id."""
+        no_tax_id_types = Business.LegalTypes.COOP.value
+        tax_id_types = [x.value for x in Business.LegalTypes.__members__.values()]
+        tax_id_types.remove(no_tax_id_types)
+        businesses = cls.query.filter(Business.legal_type.in_(tax_id_types)).filter_by(tax_id=None).all()
+        return businesses
 
     @classmethod
     def get_filing_by_id(cls, business_identifier: int, filing_id: str):

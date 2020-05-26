@@ -139,7 +139,7 @@ def get_filing(event_info: dict = None, application: Flask = None):
     return filing
 
 
-def run():
+def update_filings():
     successful_filings = 0
     failed_filing_events = []
     corps_with_failed_filing = []
@@ -235,6 +235,67 @@ def run():
         except Exception as err:
             application.logger.error(err)
 
+def update_business_nos():
+    application = create_app()
+    with application.app_context():
+        try:
+            # get updater-job token
+            creds = {'username': application.config['USERNAME'], 'password': application.config['PASSWORD']}
+            auth = requests.post(
+                application.config['AUTH_URL'],
+                json=creds,
+                headers={'Content-Type': 'application/json'}
+            )
+            if auth.status_code != 200:
+                application.logger.error(f'legal-updater failed to authenticate {auth.json()} {auth.status_code}')
+                raise Exception
+            token = dict(auth.json())['access_token']
+
+            # get identifiers with outstanding tax_ids
+            application.logger.debug('Getting businesses with outstanding tax ids from legal api...')
+            r = requests.get(
+                application.config['LEGAL_URL'] + '/internal/tax_ids',
+                headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
+            )
+            if r.status_code != 200:
+                application.logger.error(f'legal-updater failed to get identifiers from legal-api.')
+                raise Exception
+            identifiers = r.json()
+
+            if identifiers['identifiers']:
+                # get tax ids that exist for above entities
+                application.logger.debug(f'Getting tax ids for {identifiers["identifiers"]} from colin api...')
+                r = requests.get(
+                    application.config['COLIN_URL'] + '/internal/tax_ids',
+                    json=identifiers,
+                    headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
+                )
+                if r.status_code != 200:
+                    application.logger.error(f'legal-updater failed to get tax_ids from colin-api.')
+                    raise Exception
+                tax_ids = r.json()
+                if tax_ids.keys():
+                    # update lear with new tax ids from colin
+                    application.logger.debug(f'Updating tax ids for {tax_ids.keys()} in lear...')
+                    r = requests.post(
+                        application.config['LEGAL_URL'] + '/internal/tax_ids',
+                        json=tax_ids,
+                        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
+                    )
+                    if r.status_code != 201:
+                        application.logger.error(f'legal-updater failed to update tax_ids in lear.')
+                        raise Exception
+
+                    application.logger.debug(f'Successfully updated tax ids in lear.')
+                else:
+                    application.logger.debug(f'No tax ids in colin to update in lear.')
+            else:
+                application.logger.debug(f'No businesses in lear with outstanding tax ids.')
+
+        except Exception as err:
+            application.logger.error(err)
+
 
 if __name__ == "__main__":
-    run()
+    update_filings()
+    update_business_nos()
