@@ -15,6 +15,7 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
+from contextlib import suppress
 from http import HTTPStatus
 
 from flask import jsonify, request
@@ -77,5 +78,14 @@ class BusinessResource(Resource):
         if not isinstance(bootstrap, RegistrationBootstrap):
             return {'error': babel('Unable to create Incorporation Filing.')}, HTTPStatus.SERVICE_UNAVAILABLE
 
-        RegistrationBootstrapService.register_bootstrap(filing_account_id, bootstrap)
+        try:
+            business_name = json_input['filing']['incorporationApplication']['nameRequest']['nrNumber']
+        except KeyError:
+            business_name = bootstrap.identifier
+        rv = RegistrationBootstrapService.register_bootstrap(filing_account_id, bootstrap, business_name)
+        if not isinstance(rv, HTTPStatus):
+            with suppress(Exception):
+                bootstrap.delete()
+            return {'error': babel('Unable to create Incorporation Filing.')}, HTTPStatus.SERVICE_UNAVAILABLE
+
         return ListFilingResource.put(bootstrap.identifier, None)

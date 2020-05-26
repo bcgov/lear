@@ -38,7 +38,7 @@ def test_create_account_affiliation(app_ctx):
                                           business_registration=(f'XA{_id}')[:10],
                                           business_name='')
 
-    assert not r
+    assert r == HTTPStatus.OK
 
 
 @integration_affiliation

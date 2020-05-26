@@ -16,6 +16,7 @@
 import json
 import secrets
 import string
+from contextlib import suppress
 from http import HTTPStatus
 from typing import Dict, Union
 
@@ -54,18 +55,22 @@ class RegistrationBootstrapService:
         return {'error': babel('Unable to create bootstrap registration.')}
 
     @staticmethod
-    def register_bootstrap(account: int, bootstrap: RegistrationBootstrap) -> Dict:
+    def register_bootstrap(account: int, bootstrap: RegistrationBootstrap, business_name: str) \
+            -> Union[HTTPStatus, Dict]:
         """Return either a new bootstrap registration or an error struct."""
         if not account or not bootstrap:
             return {'error': babel('An account number must be provided.')}
 
         rv = AccountService.create_affiliation(account=account,
                                                business_registration=bootstrap.identifier,
-                                               business_name=bootstrap.identifier)
+                                               business_name=business_name)
 
         if rv == HTTPStatus.OK:
             return HTTPStatus.OK
 
+        with suppress(Exception):
+            AccountService.delete_affiliation(account=account,
+                                              business_registration=bootstrap.identifier)
         return {'error': babel('Unable to create bootstrap registration.')}
 
 
@@ -118,7 +123,7 @@ class AccountService:
 
         # Create an entity record
         entity_data = json.dumps({'businessIdentifier': business_registration,
-                                  'corpTypeCode': 'NR',  # to be deprecated
+                                  'corpTypeCode': 'TMP',  # to be deprecated
                                   'name': business_name or business_registration
                                   })
         entity_record = requests.post(
@@ -145,7 +150,7 @@ class AccountService:
         # @TODO delete affiliation and entity record next sprint when affiliation service is updated
         if affiliate.status_code != HTTPStatus.CREATED or entity_record.status_code != HTTPStatus.CREATED:
             return HTTPStatus.BAD_REQUEST
-        return None
+        return HTTPStatus.OK
 
     @classmethod
     def delete_affiliation(cls, account: int, business_registration: str) -> Dict:
