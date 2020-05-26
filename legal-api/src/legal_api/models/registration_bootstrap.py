@@ -71,6 +71,11 @@ class RegistrationBootstrap(db.Model):  # pylint: disable=too-many-instance-attr
         db.session.add(self)
         db.session.commit()
 
+    def delete(self):
+        """Render a Business to the local cache."""
+        db.session.delete(self)
+        db.session.commit()
+
     def json(self):
         """Return the Business as a json object."""
         return {
