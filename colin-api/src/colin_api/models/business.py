@@ -428,7 +428,7 @@ class Business:
         """Add record to the CORP NAME table on incorporation."""
         try:
             search_name = ''.join(e for e in corp_name if e.isalnum())
-            cursor.execute(f"""insert into CORP_NAME
+            cursor.execute("""insert into CORP_NAME
             (CORP_NAME_TYP_CD, CORP_NAME_SEQ_NUM, DD_CORP_NUM, END_EVENT_ID,
             CORP_NME, CORP_NUM, START_EVENT_ID, SRCH_NME)
             values ('CO', 0, NULL, NULL, :corp_name, :corp_num, :event_id, :search_name)
@@ -442,7 +442,7 @@ class Business:
     def create_corp_state(cls, cursor, corp_num, event_id):
         """Add record to the CORP STATE table on incorporation."""
         try:
-            cursor.execute(f"""insert into CORP_STATE
+            cursor.execute("""insert into CORP_STATE
             (CORP_NUM, START_EVENT_ID, STATE_TYP_CD)
             values (:corp_num, :event_id, 'ACT')
             """, corp_num=corp_num, event_id=event_id)
@@ -455,7 +455,7 @@ class Business:
     def create_corp_jurisdiction(cls, cursor, corp_num, event_id):
         """Add record to the JURISDICTION table on incorporation."""
         try:
-            cursor.execute(f"""insert into JURISDICTION
+            cursor.execute("""insert into JURISDICTION
             (CORP_NUM, START_EVENT_ID, STATE_TYP_CD)
             values (:corp_num, :event_id, 'ACT')
             """, corp_num=corp_num, event_id=event_id)

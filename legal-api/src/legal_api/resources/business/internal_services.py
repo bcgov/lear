@@ -68,4 +68,4 @@ class InternalBusinessResource(Resource):
             business.tax_id = json_input[identifier]
             business.save()
 
-        return jsonify({'message': f'Successfully updated tax ids.'}), HTTPStatus.CREATED
+        return jsonify({'message': 'Successfully updated tax ids.'}), HTTPStatus.CREATED
