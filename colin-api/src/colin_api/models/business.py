@@ -43,6 +43,30 @@ class Business:
         }
 
     @classmethod
+    def _get_bn_15s(cls, cursor, identifiers: list):
+        """Return a dict of idenifiers mapping to their bn_15 numbers."""
+        bn_15s = {}
+        if not identifiers:
+            return bn_15s
+
+        try:
+            cursor.execute(f"""
+                SELECT corp_num, bn_15
+                FROM corporation
+                WHERE corp_num in ({stringify_list(identifiers)})
+            """)
+
+            for row in cursor.fetchall():
+                row = dict(zip([x[0].lower() for x in cursor.description], row))
+                if row['bn_15']:
+                    bn_15s[f'{row["corp_num"]}'] = row['bn_15']
+            return bn_15s
+
+        except Exception as err:
+            current_app.logger.error(f'Error in Business: Failed to collect bn_9s for {identifiers}')
+            raise err
+
+    @classmethod
     def _get_last_ar_dates_for_reset(cls, cursor, event_info: list, event_ids: list):
         """Get the previous AR/AGM dates."""
         events_by_corp_num = {}
@@ -404,7 +428,7 @@ class Business:
         """Add record to the CORP NAME table on incorporation."""
         try:
             search_name = ''.join(e for e in corp_name if e.isalnum())
-            cursor.execute(f"""insert into CORP_NAME
+            cursor.execute("""insert into CORP_NAME
             (CORP_NAME_TYP_CD, CORP_NAME_SEQ_NUM, DD_CORP_NUM, END_EVENT_ID,
             CORP_NME, CORP_NUM, START_EVENT_ID, SRCH_NME)
             values ('CO', 0, NULL, NULL, :corp_name, :corp_num, :event_id, :search_name)
@@ -418,7 +442,7 @@ class Business:
     def create_corp_state(cls, cursor, corp_num, event_id):
         """Add record to the CORP STATE table on incorporation."""
         try:
-            cursor.execute(f"""insert into CORP_STATE
+            cursor.execute("""insert into CORP_STATE
             (CORP_NUM, START_EVENT_ID, STATE_TYP_CD)
             values (:corp_num, :event_id, 'ACT')
             """, corp_num=corp_num, event_id=event_id)
@@ -431,7 +455,7 @@ class Business:
     def create_corp_jurisdiction(cls, cursor, corp_num, event_id):
         """Add record to the JURISDICTION table on incorporation."""
         try:
-            cursor.execute(f"""insert into JURISDICTION
+            cursor.execute("""insert into JURISDICTION
             (CORP_NUM, START_EVENT_ID, STATE_TYP_CD)
             values (:corp_num, :event_id, 'ACT')
             """, corp_num=corp_num, event_id=event_id)
