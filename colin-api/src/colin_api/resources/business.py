@@ -92,7 +92,10 @@ class InternalBusinessInfo(Resource):
                 con = DB.connection
                 con.begin()
                 cursor = con.cursor()
-                bn_9s = Business._get_bn_9s(cursor=cursor, identifiers=json_data['identifiers'])
+                bn_9s = Business._get_bn_9s(  # pylint: disable = protected-access; internal call
+                    cursor=cursor,
+                    identifiers=json_data['identifiers']
+                )
                 return jsonify(bn_9s), HTTPStatus.OK
 
             except Exception as err:  # pylint: disable=broad-except; want to catch all errors
