@@ -88,7 +88,9 @@ def get_filings(app: Flask = None):
 
 async def run(loop, application: Flask = None):
     """Run the methods for applying future effective filings."""
-    application = create_app()
+    if application is None:
+        application = create_app()
+
     queue_service = ServiceWorker(
         loop=loop,
         nats_connection_options=default_nats_options,
@@ -134,9 +136,10 @@ async def run(loop, application: Flask = None):
             application.logger.error(err)
 
 if __name__ == '__main__':
+    application = create_app()
     try:
         event_loop = asyncio.get_event_loop()
-        event_loop.run_until_complete(run(event_loop))
+        event_loop.run_until_complete(run(event_loop, application))
     except Exception as err:  # pylint: disable=broad-except; Catching all errors from the frameworks
-        print('problem in running the service: %s', err, stack_info=True, exc_info=True)
+        application.logger.error(err)
 
