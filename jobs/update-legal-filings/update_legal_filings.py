@@ -78,7 +78,7 @@ def register_shellcontext(app):
     app.shell_context_processor(shell_context)
 
 
-def check_for_manual_filings(application: Flask = None):
+def check_for_manual_filings(application: Flask = None, token: dict = None):
     id_list = []
 
     # get max colin event_id from legal
@@ -112,7 +112,10 @@ def check_for_manual_filings(application: Flask = None):
             # for each event_id: if not in legal db table then add event_id to list
             for info in colin_events['events']:
                 # check that event is associated with one of the coops loaded into legal db
-                r = requests.get(f'{application.config["LEGAL_URL"]}/{info["corp_num"]}')
+                r = requests.get(
+                    f'{application.config["LEGAL_URL"]}/{info["corp_num"]}',
+                    headers={'Content-Type': 'application/json','Authorization': f'Bearer {token}'}
+                )
                 if r.status_code == 200:
                     # check legal table
                     r = requests.get(f'{application.config["LEGAL_URL"]}/internal/filings/colin_id/{info["event_id"]}')
@@ -158,7 +161,7 @@ def update_filings():
             token = dict(auth.json())['access_token']
 
             # check if there are filings to send to legal
-            manual_filings_info = check_for_manual_filings(application)
+            manual_filings_info = check_for_manual_filings(application, token)
             max_event_id = 0
 
             if len(manual_filings_info) > 0:
