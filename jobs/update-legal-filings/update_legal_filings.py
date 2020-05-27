@@ -51,20 +51,9 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
             integrations=[SENTRY_LOGGING]
         )
 
-    setup_jwt_manager(app, jwt)
-
     register_shellcontext(app)
 
     return app
-
-
-def setup_jwt_manager(app, jwt_manager):
-    """Use flask app to configure the JWTManager to work for a particular Realm."""
-    def get_roles(a_dict):
-        return a_dict['realm_access']['roles']  # pragma: no cover
-    app.config['JWT_ROLE_CALLBACK'] = get_roles
-
-    jwt_manager.init_app(app)
 
 
 def register_shellcontext(app):
@@ -132,12 +121,13 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
 
 def get_filing(event_info: dict = None, application: Flask = None):
     # call the colin api for the filing
-    if event_info['filing_typ_cd'] not in Filing.FILING_TYPES.keys():
+    legal_type = event_info['corp_num'][:2]
+    if event_info['filing_typ_cd'] not in Filing.FILING_TYPES[legal_type].keys():
         application.logger.error('Error unknown filing type: {} for event id: {}'.format(
             event_info['filing_type'], event_info['event_id']))
 
     r = requests.get(f'{application.config["COLIN_URL"]}/{event_info["corp_num"]}/filings/'
-                     f'{Filing.FILING_TYPES[event_info["filing_typ_cd"]]}?eventId={event_info["event_id"]}')
+                     f'{Filing.FILING_TYPES[legal_type][event_info["filing_typ_cd"]]}?eventId={event_info["event_id"]}')
     filing = dict(r.json())
     return filing
 
