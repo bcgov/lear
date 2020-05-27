@@ -28,28 +28,39 @@ from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 class Filing:
     """Class to contain all model-like functions for filings such as getting and setting from database."""
 
-    # in order of number filed by coops as of september 2019
-    FILING_TYPES = {'OTANN': 'annualReport',
-                    'OTCDR': 'changeOfDirectors',
-                    'OTSPE': 'specialResolution',
-                    'OTINC': 'incorporationApplication',
-                    'OTAMA': 'amalgamationApplication',
-                    'OTADD': 'changeOfAddress',
-                    'OTDIS': 'dissolved',
-                    'OTCGM': 'amendedAGM',
-                    'OTVDS': 'voluntaryDissolution',
-                    'OTNCN': 'changeOfName',
-                    'OTRES': 'restorationApplication',
-                    'OTAMR': 'amendedAnnualReport',
-                    'OTADR': 'amendedChangeOfDirectors',
-                    'OTVLQ': 'voluntaryLiquidation',
-                    'OTNRC': 'appointReceiver',
-                    'OTCON': 'continuedOut'
-                    }
+    # coops in order of number filed by coops as of september 2019
+    FILING_TYPES = {
+        'CP': {
+            'OTANN': 'annualReport',
+            'OTCDR': 'changeOfDirectors',
+            'OTSPE': 'specialResolution',
+            'OTINC': 'incorporationApplication',
+            'OTAMA': 'amalgamationApplication',
+            'OTADD': 'changeOfAddress',
+            'OTDIS': 'dissolved',
+            'OTCGM': 'amendedAGM',
+            'OTVDS': 'voluntaryDissolution',
+            'OTNCN': 'changeOfName',
+            'OTRES': 'restorationApplication',
+            'OTAMR': 'amendedAnnualReport',
+            'OTADR': 'amendedChangeOfDirectors',
+            'OTVLQ': 'voluntaryLiquidation',
+            'OTNRC': 'appointReceiver',
+            'OTCON': 'continuedOut'
+        },
+        # implemented BCOMP filings
+        'BC': {
+            'BEINC': 'incorporationApplication',
+            'ANNBC': 'annualReport',
+            'NOCDR': 'changeOfDirectors',
+            'NOCAD': 'changeOfAddress'
+        }
+    }
 
-    USERS = {'CP': 'COOPER',
-             'BC': 'BCOMPS'
-             }
+    USERS = {
+        'CP': 'COOPER',
+        'BC': 'BCOMPS'
+    }
 
     # dicts containing data
     business = None
@@ -70,6 +81,10 @@ class Filing:
         """Get corporation num, aka identifier."""
         return self.business.business['identifier']
 
+    def get_corp_type(self):
+        """Get corporation type."""
+        return self.business.business['identifier'][:2]
+
     def get_certified_by(self):
         """Get last name; currently is whole name."""
         return self.header['certifiedBy']
@@ -86,7 +101,8 @@ class Filing:
                 'business': self.business.business,
             }
         }
-        possible_filings = [self.FILING_TYPES[key] for key in self.FILING_TYPES]
+        legal_type = self.get_corp_type()
+        possible_filings = [self.FILING_TYPES[legal_type][key] for key in self.FILING_TYPES[legal_type]]
         entered_filings = [x for x in self.body.keys() if x in possible_filings]
 
         if entered_filings:  # filing object possibly storing multiple filings
@@ -145,12 +161,13 @@ class Filing:
 
             events = cursor.fetchall()
             event_list = []
+            legal_type = identifier[:2]
             for row in events:
                 row = dict(zip([x[0].lower() for x in cursor.description], row))
                 item = {'id': row['event_id'], 'date': row['event_timestmp']}
 
                 # if filing type is an AR include the period_end_dt info
-                if Filing.FILING_TYPES[filing_type_code] == 'annualReport':
+                if Filing.FILING_TYPES[legal_type][filing_type_code] == 'annualReport':
                     item['annualReportDate'] = row['period_end_dt']
 
                 event_list.append(item)
@@ -174,27 +191,29 @@ class Filing:
         :param filing_type_code: (str) filing type code
         """
         try:
-            if filing_type_code == 'OTANN':
-                cursor.execute("""
+            if filing_type_code in ['OTANN', 'ANNBC']:
+                cursor.execute(
+                    """
                     INSERT INTO filing (event_id, filing_typ_cd, effective_dt, period_end_dt, agm_date, arrangement_ind,
                     ods_typ_cd)
                     VALUES (:event_id, :filing_type_code, sysdate, TO_DATE(:period_end_date, 'YYYY-mm-dd'),
                     TO_DATE(:agm_date, 'YYYY-mm-dd'), 'N', 'P')
                     """,
-                               event_id=event_id,
-                               filing_type_code=filing_type_code,
-                               period_end_date=ar_date if not agm_date else agm_date,
-                               agm_date=agm_date
-                               )
-            elif filing_type_code == 'OTADD' or 'OTCDR':
-                cursor.execute("""
+                    event_id=event_id,
+                    filing_type_code=filing_type_code,
+                    period_end_date=ar_date if not agm_date else agm_date,
+                    agm_date=agm_date
+                )
+            elif filing_type_code in ['OTADD', 'NOCAD', 'OTCDR', 'NOCDR', 'OTINC', 'BEINC']:
+                cursor.execute(
+                    """
                     INSERT INTO filing (event_id, filing_typ_cd, effective_dt, period_end_dt)
-                      VALUES (:event_id, :filing_type_code, sysdate, TO_DATE(:period_end_date, 'YYYY-mm-dd'))
+                    VALUES (:event_id, :filing_type_code, sysdate, TO_DATE(:period_end_date, 'YYYY-mm-dd'))
                     """,
-                               event_id=event_id,
-                               filing_type_code=filing_type_code,
-                               period_end_date=ar_date,
-                               )
+                    event_id=event_id,
+                    filing_type_code=filing_type_code,
+                    period_end_date=ar_date,
+                )
             else:
                 current_app.logger.error(f'error in filing: Did not recognize filing type code: {filing_type_code}')
                 raise InvalidFilingTypeException(filing_type=filing_type_code)
@@ -490,13 +509,15 @@ class Filing:
             """)
 
         try:
+            legal_type = identifier[:2]
             cursor.execute(querystring, event_id=filing_event_info['event_id'])
             sr_info = cursor.fetchone()
             if not sr_info:
-                raise FilingNotFoundException(identifier=identifier,
-                                              filing_type=cls.FILING_TYPES[filing_event_info['filing_type_code']],
-                                              event_id=filing_event_info['event_id']
-                                              )
+                raise FilingNotFoundException(
+                    identifier=identifier,
+                    filing_type=cls.FILING_TYPES[legal_type][filing_event_info['filing_type_code']],
+                    event_id=filing_event_info['event_id']
+                )
 
             sr_info = dict(zip([x[0].lower() for x in cursor.description], sr_info))
             filing_obj = Filing()
@@ -505,7 +526,7 @@ class Filing:
                 'filedDate': convert_to_json_date(sr_info['effective_dt']),
                 'resolution': sr_info['notation'],
             }
-            filing_obj.filing_type = cls.FILING_TYPES[filing_event_info['filing_type_code']]
+            filing_obj.filing_type = cls.FILING_TYPES[legal_type][filing_event_info['filing_type_code']]
             filing_obj.paper_only = True
             filing_obj.effective_date = filing_event_info['event_timestmp']
 
@@ -527,11 +548,13 @@ class Filing:
         try:
             cursor.execute(querystring, event_id=filing_event_info['event_id'])
             vd_info = cursor.fetchone()
+            legal_type = identifier[:2]
             if not vd_info:
-                raise FilingNotFoundException(identifier=identifier,
-                                              filing_type=cls.FILING_TYPES[filing_event_info['filing_type_code']],
-                                              event_id=filing_event_info['event_id']
-                                              )
+                raise FilingNotFoundException(
+                    identifier=identifier,
+                    filing_type=cls.FILING_TYPES[legal_type][filing_event_info['filing_type_code']],
+                    event_id=filing_event_info['event_id']
+                )
 
             vd_info = dict(zip([x[0].lower() for x in cursor.description], vd_info))
             filing_obj = Filing()
@@ -539,7 +562,7 @@ class Filing:
                 'eventId': vd_info['event_id'],
                 'dissolutionDate': convert_to_json_date(vd_info['effective_dt'])
             }
-            filing_obj.filing_type = cls.FILING_TYPES[filing_event_info['filing_type_code']]
+            filing_obj.filing_type = cls.FILING_TYPES[legal_type][filing_event_info['filing_type_code']]
             filing_obj.paper_only = True
             filing_obj.effective_date = filing_event_info['event_timestmp']
 
@@ -560,13 +583,15 @@ class Filing:
             """)
 
         try:
+            legal_type = identifier[:2]
             cursor.execute(querystring, event_id=filing_event_info['event_id'])
             filing_info = cursor.fetchone()
             if not filing_info:
-                raise FilingNotFoundException(identifier=identifier,
-                                              filing_type=cls.FILING_TYPES[filing_event_info['filing_type_code']],
-                                              event_id=filing_event_info['event_id']
-                                              )
+                raise FilingNotFoundException(
+                    identifier=identifier,
+                    filing_type=cls.FILING_TYPES[legal_type][filing_event_info['filing_type_code']],
+                    event_id=filing_event_info['event_id']
+                )
 
             filing_info = dict(zip([x[0].lower() for x in cursor.description], filing_info))
             filing_obj = Filing()
@@ -575,7 +600,7 @@ class Filing:
                 'filedDate': convert_to_json_date(filing_event_info['event_timestmp']),
                 'ledgerText': filing_info['notation'],
             }
-            filing_obj.filing_type = cls.FILING_TYPES[filing_event_info['filing_type_code']]
+            filing_obj.filing_type = cls.FILING_TYPES[legal_type][filing_event_info['filing_type_code']]
             filing_obj.paper_only = True
             filing_obj.effective_date = filing_info['effective_dt']
 
@@ -583,7 +608,7 @@ class Filing:
 
         except Exception as err:
             current_app.logger.error('error getting {} filing for corp: {}'.format(
-                cls.FILING_TYPES[filing_event_info['filing_type_code']], identifier))
+                cls.FILING_TYPES[legal_type][filing_event_info['filing_type_code']], identifier))
             raise err
 
     @classmethod
@@ -629,7 +654,8 @@ class Filing:
             identifier = business.get_corp_num()
 
             # get the filing types corresponding filing code
-            code = [key for key in cls.FILING_TYPES if cls.FILING_TYPES[key] == filing_type]
+            legal_type = identifier[:2]
+            code = [key for key in cls.FILING_TYPES[legal_type] if cls.FILING_TYPES[legal_type][key] == filing_type]
             if not code:
                 raise InvalidFilingTypeException(filing_type=filing_type)
 
@@ -707,12 +733,13 @@ class Filing:
                            identifier=business.get_corp_num()
                            )
             filings_info_list = []
+            legal_type = (business.get_corp_num())[:2]
             for filing_info in cursor:
                 filings_info_list.append(dict(zip([x[0].lower() for x in cursor.description], filing_info)))
             for filing_info in filings_info_list:
-                if not cls.FILING_TYPES[filing_info['filing_typ_cd']]:
+                if not cls.FILING_TYPES[legal_type][filing_info['filing_typ_cd']]:
                     raise InvalidFilingTypeException(filing_type=filing_info['filing_typ_cd'])
-                filing_info['filing_type'] = cls.FILING_TYPES[filing_info['filing_typ_cd']]
+                filing_info['filing_type'] = cls.FILING_TYPES[legal_type][filing_info['filing_typ_cd']]
                 date = convert_to_json_date(filing_info['event_timestmp'])
                 if date < '2019-03-08':
                     filing = Filing()
@@ -774,13 +801,14 @@ class Filing:
 
             # create new event record, return event ID
             event_id = cls._get_event_id(cursor, corp_num, 'FILE')
-
             # create new filing user
             cls._create_filing_user(cursor, event_id, filing, user_id)
             if filing.filing_type == 'annualReport':
                 ar_date = filing.body['annualReportDate']
                 agm_date = filing.body['annualGeneralMeetingDate']
                 filing_type_cd = 'OTANN'
+                if legal_type == 'BC':
+                    filing_type_cd = 'ANNBC'
 
                 # create new filing
                 cls._create_filing(cursor, event_id, corp_num, ar_date, agm_date, filing_type_cd)
@@ -803,26 +831,11 @@ class Filing:
                     cursor=cursor, event_id=event_id, text=f'ANNUAL REPORT - {text}', user_id=user_id)
 
             elif filing.filing_type == 'changeOfAddress':
-                # set date to last ar date + 1 -- Bob wants this to be set to null
-                # last_ar_date = filing.business.business['lastArDate']
-                # day = int(last_ar_date[-2:]) + 1
-                # try:
-                #     date = str(datetime.datetime.strptime(last_ar_date[:-2] + ('0' + str(day))[1:], '%Y-%m-%d'))[:10]
-                # except ValueError:
-                #     try:
-                #         day = '-01'
-                #         month = int(last_ar_date[5:7]) + 1
-                #         date = str(datetime.datetime.strptime(last_ar_date[:5] + ('0' + str(month))[1:] + day,
-                #                                               '%Y-%m-%d')
-                #                    )[:10]
-                #     except ValueError:
-                #         mm_dd = '-01-01'
-                #         yyyy = int(last_ar_date[:4]) + 1
-                #         date = str(datetime.datetime.strptime(str(yyyy) + mm_dd, '%Y-%m-%d'))[:10]
                 date = None
-
                 # create new filing
                 filing_type_cd = 'OTADD'
+                if legal_type == 'BC':
+                    filing_type_cd = 'NOCAD'
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
 
                 # create new addresses for delivery + mailing, return address ids
@@ -837,6 +850,8 @@ class Filing:
                 # date = filing.business.business['lastArDate']
                 date = None
                 filing_type_cd = 'OTCDR'
+                if legal_type == 'BC':
+                    filing_type_cd = 'NOCDR'
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
 
                 # create, cease, change directors
@@ -876,12 +891,15 @@ class Filing:
                 # Add offices
                 date = None
                 filing_type_cd = 'OTINC'
+                if legal_type == 'BC':
+                    filing_type_cd = 'BEINC'
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
                 # Do incorporation here
                 corp_name = filing.get_corp_name()
                 Business.create_corp_name(cursor, corp_num, corp_name, event_id)
                 Business.create_corp_state(cursor, corp_num, event_id)
-
+                if legal_type == 'BC':
+                    Business.insert_new_bn_process(cursor, event_typ_cd='FILE', filing_typ_cd=filing_type_cd)
                 cls._add_office_from_filing(cursor, event_id, corp_num, user_id, filing)
                 cls._add_parties_from_filing(cursor, event_id, filing)
                 cls._add_shares_from_filing(cursor, event_id, corp_num, filing)

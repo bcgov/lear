@@ -177,7 +177,7 @@ class Reset:
             events = events.replace("'", '')
             cursor.execute(f"""SELECT A.CORP_NUM, B.EVENT_ID FROM
             EVENT A JOIN FILING B ON A.EVENT_ID = B.EVENT_ID
-            WHERE B.EVENT_ID IN({events}) AND B.FILING_TYP_CD = 'OTINC'""")
+            WHERE B.EVENT_ID IN({events}) AND B.FILING_TYP_CD in ('OTINC', 'BEINC')""")
             for row in cursor.fetchall():
                 new_corps[row[0]] = row[1]
             return new_corps
@@ -200,18 +200,16 @@ class Reset:
         if filing_types:
             reset_obj.filing_types = filing_types
 
-        # get all filings/event info to reset
-        reset_list = reset_obj.get_filings_for_reset()
-
         # place into lists that can be reset together
         events = []
         annual_report_events = []
         events_info = []
 
-        for filing_info in reset_list:
+        for filing_info in reset_obj.get_filings_for_reset():
             events.append(filing_info['event_id'])
             events_info.append(filing_info)
-            if Filing.FILING_TYPES[filing_info['filing_typ_cd']] == 'annualReport':
+            legal_type = 'CP' if filing_info['filing_typ_cd'] in Filing.FILING_TYPES['CP'] else 'BC'
+            if Filing.FILING_TYPES[legal_type][filing_info['filing_typ_cd']] == 'annualReport':
                 annual_report_events.append(filing_info['event_id'])
 
         try:
