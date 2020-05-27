@@ -71,7 +71,7 @@ class Business:
         """Get the previous AR/AGM dates."""
         events_by_corp_num = {}
         for info in event_info:
-            if info['filing_typ_cd'] != 'OTINC' and \
+            if info['filing_typ_cd'] not in ['OTINC', 'BEINC'] and \
              (info['corp_num'] not in events_by_corp_num or
               events_by_corp_num[info['corp_num']] > info['event_id']):
                 events_by_corp_num[info['corp_num']] = info['event_id']
@@ -102,7 +102,7 @@ class Business:
                 if row['agm_date'] and ('agm_date' not in dates or dates['agm_date'] < row['agm_date']):
                     dates['agm_date'] = row['agm_date']
                 # if there are no ARs for this coop then use date of incorporation
-                if row['filing_typ_cd'] == 'OTINC' and 'agm_date' not in dates:
+                if row['filing_typ_cd'] in ['OTINC', 'BEINC'] and 'agm_date' not in dates:
                     dates['agm_date'] = row['event_timestmp']
                     dates['ar_filed_date'] = row['event_timestmp']
 
@@ -421,6 +421,23 @@ class Business:
 
         except Exception as err:
             current_app.logger.error('Error inserting business.')
+            raise err
+
+    @classmethod
+    def insert_new_bn_process(cls, cursor, event_typ_cd: str, filing_typ_cd: str):
+        """Insert a new bn process."""
+        try:
+            cursor.execute(
+                """
+                insert into BN_PROCESS (EVENT_TYP_CD, FILING_TYP_CD, XML_VIEW)
+                values (:event_typ_cd, :filing_typ_cd, 'on')
+                """,
+                event_typ_cd=event_typ_cd,
+                filing_typ_cd=filing_typ_cd
+            )
+            return
+        except Exception as err:
+            current_app.logger.error('Error inserting into bn process table.')
             raise err
 
     @classmethod
