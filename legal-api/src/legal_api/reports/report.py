@@ -18,11 +18,11 @@ from http import HTTPStatus
 from pathlib import Path
 
 import pycountry
-import pytz
 import requests
 from flask import current_app, jsonify
 
 from legal_api.utils.auth import jwt
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 class Report:  # pylint: disable=too-few-public-methods
@@ -223,13 +223,12 @@ class Report:  # pylint: disable=too-few-public-methods
 
         # Get the string for the filing date and time - do not use a leading zero on the hour (04:30 PM) as it looks
         # too much like the 24 hour 4:30 AM. Also, we can't use "%-I" on Windows.
-        local_timezone = pytz.timezone('America/Vancouver')
-        filing_datetime = self._filing.filing_date.astimezone(local_timezone)
+        filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
         hour = filing_datetime.strftime('%I').lstrip('0')
         filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {hour}:%M %p Pacific Time')
 
         # Get the effective date
-        effective_date = self._filing.filing_date.astimezone(local_timezone) if self._filing.effective_date is None\
+        effective_date = filing_datetime if self._filing.effective_date is None\
             else self._filing.effective_date
 
         # Get source
@@ -251,19 +250,7 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['effective_date'] = effective_date.strftime('%B %d, %Y')
 
         elif self._filing.filing_type == 'incorporationApplication':
-            filing['header']['reportType'] = report_type
-            effective_date_time = effective_date.astimezone(pytz.timezone('America/Vancouver'))
-            effective_hour = effective_date_time.strftime('%I')
-            filing['header']['effective_date_time'] = \
-                effective_date_time.strftime(f'%B %-d, %Y at {effective_hour}:%M %p Pacific Time')
-            filing_hour = filing_datetime.strftime('%I')
-            filing['header']['filing_date_time'] = \
-                filing_datetime.strftime(f'%B %-d, %Y at {filing_hour}:%M %p Pacific Time')
-            self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
-            self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
-            self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['deliveryAddress'])
-            self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
-            self._format_directors(filing['incorporationApplication']['parties'])
+            self._format_incorporation_data(effective_date, filing, filing_datetime, report_type)
 
         # Appears in the Description section of the PDF Document Properties as Title.
         filing['meta_title'] = '{} on {}'.format(
@@ -275,3 +262,18 @@ class Report:  # pylint: disable=too-few-public-methods
             self._filing.filing_json['filing']['business']['identifier'])
 
         return filing
+
+    def _format_incorporation_data(self, effective_date, filing, filing_datetime, report_type):
+        filing['header']['reportType'] = report_type
+        effective_date_time = LegislationDatetime.as_legislation_timezone(effective_date)
+        effective_hour = effective_date_time.strftime('%I')
+        filing['header']['effective_date_time'] = \
+            effective_date_time.strftime(f'%B %-d, %Y at {effective_hour}:%M %p Pacific Time')
+        filing_hour = filing_datetime.strftime('%I')
+        filing['header']['filing_date_time'] = \
+            filing_datetime.strftime(f'%B %-d, %Y at {filing_hour}:%M %p Pacific Time')
+        self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
+        self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
+        self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['deliveryAddress'])
+        self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
+        self._format_directors(filing['incorporationApplication']['parties'])
