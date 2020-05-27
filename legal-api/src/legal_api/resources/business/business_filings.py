@@ -479,7 +479,7 @@ class ListFilingResource(Resource):
         return filing_types
 
     @staticmethod
-    def _create_invoice(business: Business,
+    def _create_invoice(business: Business,  # pylint: disable=too-many-locals
                         filing: Filing,
                         filing_types: list,
                         user_jwt: JwtManager) \
