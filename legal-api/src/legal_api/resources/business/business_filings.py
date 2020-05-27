@@ -521,6 +521,10 @@ class ListFilingResource(Resource):
             }
         }
 
+        folio_number = filing.json['filing']['header'].get('folioNumber', None)
+        if folio_number:
+            payload['filingInfo']['folioNumber'] = folio_number
+
         if user_jwt.validate_roles([STAFF_ROLE]):
             routing_slip_number = get_str(filing.filing_json, 'filing/header/routingSlipNumber')
             if routing_slip_number:
