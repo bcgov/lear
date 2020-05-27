@@ -36,6 +36,9 @@ from tests.unit.services.utils import create_header
 from .gold_files import matches_sent_snapshot, retrieve_name
 
 
+CONTENT_TYPE_APPLICATION_JSON = 'application/json'
+
+
 @integration_reports
 @pytest.mark.parametrize('role', [(BASIC_USER), (STAFF_ROLE)])
 def test_get_annual_report_pdf_error_on_multiple(session, client, jwt, role):
@@ -52,7 +55,7 @@ def test_get_annual_report_pdf_error_on_multiple(session, client, jwt, role):
                     )
 
     assert rv.status_code == HTTPStatus.NOT_ACCEPTABLE
-    assert rv.content_type == 'application/json'
+    assert rv.content_type == CONTENT_TYPE_APPLICATION_JSON
     assert rv.json == {'message': 'Cannot return a single PDF of multiple filing submissions.'}
 
 
@@ -117,7 +120,7 @@ def test_get_filing_submission_pdf(requests_mock, session, client, jwt, role, fi
 
     assert rv.status_code == HTTPStatus.OK
     assert requests_mock.called_once
-    assert requests_mock.last_request._request.headers.get('Content-Type') == 'application/json'
+    assert requests_mock.last_request._request.headers.get('Content-Type') == CONTENT_TYPE_APPLICATION_JSON
 
     assert matches_sent_snapshot(filing_submission, requests_mock.last_request.json(), retrieve_name(filing_submission),
                                  **ignore_vars)
@@ -164,7 +167,7 @@ def test_get_incorporation_reports(requests_mock, session, client, jwt, role, re
 
     assert rv.status_code == HTTPStatus.OK
     assert requests_mock.called_once
-    assert requests_mock.last_request._request.headers.get('Content-Type') == 'application/json'
+    assert requests_mock.last_request._request.headers.get('Content-Type') == CONTENT_TYPE_APPLICATION_JSON
 
     assert matches_sent_snapshot(INCORPORATION_APPLICATION, requests_mock.last_request.json(), report_name,
                                  **ignore_vars)
