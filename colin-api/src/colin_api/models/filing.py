@@ -22,7 +22,7 @@ from flask import current_app
 from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
 from colin_api.models import Address, Business, EntityName, Office, Party, ShareObject
 from colin_api.resources.db import DB
-from colin_api.utils import convert_to_json_date, convert_to_json_datetime, stringify_list
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
 
 class Filing:
@@ -191,7 +191,6 @@ class Filing:
         :param filing_type_code: (str) filing type code
         """
         try:
-            print(filing_type_code)
             if filing_type_code in ['OTANN', 'ANNBC']:
                 cursor.execute(
                     """
@@ -206,7 +205,6 @@ class Filing:
                     agm_date=agm_date
                 )
             elif filing_type_code in ['OTADD', 'NOCAD', 'OTCDR', 'NOCDR', 'OTINC', 'BEINC']:
-                print('inserting filing')
                 cursor.execute(
                     """
                     INSERT INTO filing (event_id, filing_typ_cd, effective_dt, period_end_dt)
@@ -216,7 +214,6 @@ class Filing:
                     filing_type_code=filing_type_code,
                     period_end_date=ar_date,
                 )
-                print('success')
             else:
                 current_app.logger.error(f'error in filing: Did not recognize filing type code: {filing_type_code}')
                 raise InvalidFilingTypeException(filing_type=filing_type_code)
@@ -271,7 +268,7 @@ class Filing:
 
     @classmethod
     def _get_filing_event_info(cls, cursor,  # pylint: disable=too-many-arguments,too-many-branches;
-                               identifier: str = None, event_id: str = None, filing_type_cd: list = [],
+                               identifier: str = None, event_id: str = None, filing_type_cd: str = None,
                                year: int = None):
         """Get the basic filing info that we care about for all filings."""
         # build base querystring
@@ -461,7 +458,6 @@ class Filing:
     def _get_inc(cls, cursor, identifier: str = None, filing_event_info: dict = None):
         """Get incorporation filing."""
         # business_obj
-        print('get')
         office_obj_list = Office.get_by_event(cursor, filing_event_info['event_id'])
         share_structure = ShareObject.get_all(cursor, identifier, filing_event_info['event_id'])
         parties = Party.get_by_event(cursor, identifier, filing_event_info['event_id'], None)
@@ -688,7 +684,6 @@ class Filing:
                 filing_obj = cls._get_vd(identifier=identifier, filing_event_info=filing_event_info, cursor=cursor)
 
             elif filing_type == 'incorporationApplication':
-                print('get_filing')
                 filing_obj = cls._get_inc(identifier=identifier, filing_event_info=filing_event_info, cursor=cursor)
 
             else:
@@ -799,7 +794,6 @@ class Filing:
         :returns (int): the filing ID of the new filing.
         """
         try:
-            print('add filing')
             corp_num = filing.get_corp_num()
             legal_type = corp_num[:2]
             user_id = Filing.USERS[legal_type] if legal_type in ('CP', 'BC') else None
@@ -807,10 +801,8 @@ class Filing:
 
             # create new event record, return event ID
             event_id = cls._get_event_id(cursor, corp_num, 'FILE')
-            print('got event')
             # create new filing user
             cls._create_filing_user(cursor, event_id, filing, user_id)
-            print('created user')
             if filing.filing_type == 'annualReport':
                 ar_date = filing.body['annualReportDate']
                 agm_date = filing.body['annualGeneralMeetingDate']
@@ -901,16 +893,13 @@ class Filing:
                 filing_type_cd = 'OTINC'
                 if legal_type == 'BC':
                     filing_type_cd = 'BEINC'
-                print('create filing')
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
                 # Do incorporation here
                 corp_name = filing.get_corp_name()
-                print('creating business')
                 Business.create_corp_name(cursor, corp_num, corp_name, event_id)
                 Business.create_corp_state(cursor, corp_num, event_id)
                 if legal_type == 'BC':
                     Business.insert_new_bn_process(cursor, event_typ_cd='FILE', filing_typ_cd=filing_type_cd)
-                print('created')
                 cls._add_office_from_filing(cursor, event_id, corp_num, user_id, filing)
                 cls._add_parties_from_filing(cursor, event_id, filing)
                 cls._add_shares_from_filing(cursor, event_id, corp_num, filing)
