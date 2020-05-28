@@ -479,7 +479,7 @@ class ListFilingResource(Resource):
         return filing_types
 
     @staticmethod
-    def _create_invoice(business: Business,
+    def _create_invoice(business: Business,  # pylint: disable=too-many-locals
                         filing: Filing,
                         filing_types: list,
                         user_jwt: JwtManager) \
@@ -520,6 +520,10 @@ class ListFilingResource(Resource):
                 'filingTypes': filing_types
             }
         }
+
+        folio_number = filing.json['filing']['header'].get('folioNumber', None)
+        if folio_number:
+            payload['filingInfo']['folioNumber'] = folio_number
 
         if user_jwt.validate_roles([STAFF_ROLE]):
             routing_slip_number = get_str(filing.filing_json, 'filing/header/routingSlipNumber')
