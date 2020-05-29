@@ -80,7 +80,7 @@ async def run(loop, token):  # pylint: disable=too-many-locals
                                     functools.partial(signal_handler, sig_loop=loop, sig_nc=nc, task=close)
                                     )
 
-        payload = {'email': {'type': {token}}}
+        payload = {'email': {'type': token}}
         await sc.publish(subject=subscription_options().get('subject'),
                          payload=json.dumps(payload).encode('utf-8'))
 
@@ -91,7 +91,7 @@ async def run(loop, token):  # pylint: disable=too-many-locals
 
 if __name__ == '__main__':
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hf:", ["etype=", ])
+        opts, args = getopt.getopt(sys.argv[1:], 'ht:', ['etype=', ])
     except getopt.GetoptError:
         print('q_cli.py -t <email_type>')
         sys.exit(2)
@@ -99,7 +99,7 @@ if __name__ == '__main__':
         if opt == '-h':
             print('q_cli.py -t <email_type>')
             sys.exit()
-        elif opt in ("-t", "--etype"):
+        elif opt in ('-t', '--etype'):
             etype = arg
 
     print('publish:', etype)
