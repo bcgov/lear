@@ -20,7 +20,7 @@
 //   See: https://docs.openshift.com/container-platform/3.9/using_images/other_images/jenkins.html for a complete list of JENKINS env vars
 // define constants
 def NAMESPACE = 'gl2uos'
-def COMPONENT_NAME = 'entity-filer'
+def COMPONENT_NAME = 'entity-emailer'
 def TAG_NAME = 'prod'
 def SOURCE_TAG = 'test'
 

@@ -19,7 +19,7 @@
 //   -> hudson.model.DirectoryBrowserSupport.CSP : removes restrictions on CSS file load, thus html pages of test reports are displayed pretty
 //   See: https://docs.openshift.com/container-platform/3.9/using_images/other_images/jenkins.html for a complete list of JENKINS env vars
 // define constants
-def COMPONENT_NAME = 'entity-filer'
+def COMPONENT_NAME = 'entity-emailer'
 def TAG_NAME = 'dev'
 def NAMESPACE = 'gl2uos'
 
@@ -163,20 +163,6 @@ node {
                             return false
                         }
                     }
-                }
-            }
-        }
-    }
-    stage("Run tests on ${COMPONENT_NAME}:${TAG_NAME}") {
-        openshift.withCluster() {
-            openshift.withProject() {
-                def test_pipeline = openshift.selector('bc', 'pytest-pipeline')
-                try {
-                    test_pipeline.startBuild('--wait=true', "-e=component=${COMPONENT_NAME}", "-e=component_tag=${TAG_NAME}", "-e=tag=${TAG_NAME}", "-e=namespace=${NAMESPACE}", "-e=db_type=PG").logs('-F')
-                    echo "All tests passed"
-                } catch (Exception e) {
-                    echo "Not all tests passed."
-                    currentBuild.result = 'FAILURE'
                 }
             }
         }
