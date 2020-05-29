@@ -17,7 +17,7 @@
             "kind": "BuildConfig",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${NAME}-${OUTPUT_IMAGE_TAG}",
+                "name": "${NAME}",
                 "labels": {
                     "app": "${NAME}"
                 }

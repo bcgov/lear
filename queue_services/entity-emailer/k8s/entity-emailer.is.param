@@ -9,7 +9,7 @@
 #=========================================================
 NAME="entity-emailer"
 GIT_REPO_URL="https://github.com/bcgov/lear.git"
-GIT_REF="3396-email-queue-svc"
+GIT_REF="master"
 SOURCE_CONTEXT_DIR="queue_services/entity-emailer"
 SOURCE_IMAGE_KIND="ImageStreamTag"
 SOURCE_IMAGE_NAME="python"
