@@ -1,0 +1,14 @@
+#=========================================================
+# Template parameters for:
+# Project:entity-emailer 
+# Component: pipeline
+# Action: build
+# Template File: templates/pipeline.json
+#=========================================================
+NAME="entity-emailer"
+PIPELINE_PURPOSE="build"
+GIT_REPO_URL="https://github.com/kialj876/lear.git"
+GIT_REF="3396-email-queue-svc"
+SOURCE_CONTEXT_DIR="queue-services/entity-emailer"
+JENKINS_FILE="Jenkinsfiles/build.groovy"
+WEBHOOK="github-lear"

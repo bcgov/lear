@@ -1,0 +1,29 @@
+#=========================================================
+# Template parameters for:
+# Project:entity-emailer 
+# Component: deploy
+# Action: build
+# Template File: templates/entity-emailer.dc.json
+# Hint: oc process -n gl2uos-dev --param-file=entity-emailer.dc.param -f templates/entity-emailer.dc.json
+# Hint: oc process -n gl2uos-dev --param-file=entity-emailer.dc.param -f templates/entity-emailer.dc.json | oc create -n gl2uos-dev -f -
+#=========================================================
+NAME="entity-emailer"
+APP_GROUP="entity-email"
+APP_FILE="email_service.py"
+DATABASE_NAME="<database>"
+SENTRY_DSN="https://<account>@sentry.io/<project>"
+PAYMENT_SVC_URL="http:///api/v1/payments"
+NATS_SERVERS="nats://nats-streaming.<namespace>.svc:4222"
+NATS_CLUSTER_ID="test-cluster"
+NATS_CLIENT_NAME="entity.email.worker"
+NATS_EMAILER_SUBJECT="entity.email"
+NATS_ENTITY_EVENT_SUBJECT="entity.events"
+NATS_QUEUE="email-worker"
+COLIN_API=<colin_api_service_url>
+IMAGE_NAMESPACE="<namespace>"
+TAG_NAME="dev"
+CPU_REQUEST="100m"
+CPU_LIMIT="750m"
+MEMORY_REQUEST="100Mi"
+MEMORY_LIMIT="2Gi"
+REPLICAS="1"
