@@ -274,8 +274,6 @@
                 "DATABASE_HOST": "postgresql-${TAG_NAME}",
                 "DATABASE_NAME": "${DATABASE_NAME}",
                 "DB_PORT": "5432",
-                "JWT_OIDC_JWKS_CACHE_TIMEOUT": "300",
-                "PAYMENT_SVC_URL": "${PAYMENT_SVC_URL}",
                 "SENTRY_DSN": "${SENTRY_DSN}",
                 "NATS_SERVERS": "${NATS_SERVERS}",
                 "NATS_CLUSTER_ID": "${NATS_CLUSTER_ID}",
@@ -321,13 +319,6 @@
             "description": "Sentry DSN URL to initialize the Sentry SDK",
             "required": true,
             "value": "https://account.sentry.ioo/project/id"
-        },
-        {
-            "name": "PAYMENT_SVC_URL",
-            "displayName": "Payment Service URL",
-            "description": "The payment service URL.",
-            "required": true,
-            "value": "http://pay-api.l4ygcl-dev.svc/api/v1/payments"
         },
         {
             "name": "NATS_SERVERS",

@@ -4,11 +4,11 @@
 # Component: imagestream
 # Action: build
 # Template File: templates/entity-emailer.is.json
-# Hint: oc process -n gl2uos-tools --param-file=entity-emailer.is.param -f templates/entity-emailer.is.json
-# Hint: oc process -n gl2uos-tools --param-file=entity-emailer.is.param -f templates/entity-emailer.is.json | oc create -n gl2uos-tools -f -
+# Hint: oc process -n gl2uos-tools -f templates/entity-emailer.is.json --param-file=entity-emailer.is.param
+# Hint: oc process -n gl2uos-tools -f templates/entity-emailer.is.json --param-file=entity-emailer.is.param | oc create -n gl2uos-tools -f -
 #=========================================================
 NAME="entity-emailer"
-GIT_REPO_URL="https://github.com/kialj876/lear.git"
+GIT_REPO_URL="https://github.com/bcgov/lear.git"
 GIT_REF="3396-email-queue-svc"
 SOURCE_CONTEXT_DIR="queue-services/entity-emailer"
 SOURCE_IMAGE_KIND="ImageStreamTag"
