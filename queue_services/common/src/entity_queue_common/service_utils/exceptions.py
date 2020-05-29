@@ -20,3 +20,7 @@ class QueueException(Exception):
 
 class FilingException(Exception):
     """No filing found to match queue payload."""
+
+
+class EmailException(Exception):
+    """No email processor to match queue payload."""
