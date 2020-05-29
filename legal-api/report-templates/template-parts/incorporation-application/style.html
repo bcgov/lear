@@ -4,7 +4,7 @@
         size: Letter;
 
         @bottom-right {
-          font-family: 'BCSans-Regular';
+          font-family: 'BCSans-Regular', sans-serif !important;
           font-size: 12px;
           color: #003366;
           margin-right: 5px;
@@ -61,7 +61,7 @@ td.director-name {
 }
 
 .section-title {
-	font-family: 'BCSans-Bold';
+	font-family: 'BCSans-Bold', sans-serif !important;
 	color: #234075;
 	font-size: 14px;
 	line-height: 22px;
@@ -72,7 +72,7 @@ td.director-name {
 }
 
 .section-sub-title {
-	font-family: 'BCSans-Bold';
+	font-family: 'BCSans-Bold', sans-serif !important;
 	color: #313132;
 	font-size: 13px;
 	text-align: left;
@@ -84,7 +84,7 @@ td.director-name {
 	border-top: solid 2px #234075;
 	border-bottom: solid 2px #234075;
 	height: 33px;
-	font-family: 'BCSans-Bold';
+	font-family: 'BCSans-Bold', sans-serif !important;
 	text-align: center;
 	font-size: 14px;
 	color: #234075;
@@ -100,7 +100,7 @@ td.director-name {
 }
 
 .section-data {
-	font-family: 'BCSans-Regular';
+	font-family: 'BCSans-Regular', sans-serif !important;
 	color: #313132;
 	font-size: 13px;
 	line-height: 15px;
@@ -108,14 +108,14 @@ td.director-name {
 }
 
 .report-type-desc {
-	font-family: 'BCSans-Regular';
+	font-family: 'BCSans-Regular', sans-serif !important;
 	color: #1A5A96;
 	font-size: 14px;
 	text-align: right;
 }
 
 .report-type {
-	font-family: 'BCSans-Bold';
+	font-family: 'BCSans-Bold', sans-serif !important;
 	color: #234075;
 	font-size: 16px;
 	text-align: right;
@@ -210,7 +210,7 @@ td.director-name {
 
 .business-details-table {
 	width: 100%;
-	font-family: 'BCSans-Regular';
+	font-family: 'BCSans-Regular', sans-serif !important;
 	color: #313132;
 	font-size: 13px;
 	line-height: 15px;
@@ -241,7 +241,7 @@ td.director-name {
 
 .lbl-business-name {
 	padding-left: 1.5rem;
-	font-family: 'BCSans-Bold';
+	font-family: 'BCSans-Bold', sans-serif !important;
 	font-size: 15px;
 	color: white;
 	text-transform: capitalize
@@ -270,7 +270,7 @@ td.director-name {
 .certified-copy-text {
 	font-size: 11px;
 	color: #234075;
-	font-family: 'BCSans-Bold';
+	font-family: 'BCSans-Bold', sans-serif !important;
 	text-align: center
 }
 
@@ -284,7 +284,7 @@ td.director-name {
 
 .registrar-name {
 	font-size: 9px;
-	font-family: 'BCSans-Bold';
+	font-family: 'BCSans-Bold', sans-serif !important;
 	text-align: center
 }
 
@@ -296,32 +296,29 @@ td.director-name {
 	width: 64px;
 	height: 29px;
 	vertical-align: center;
-	display-inline: block;
 }
 
 .share-structure-table {
 	width: 100%;
-	border-collapse: collapse color: #313132;
+	border-collapse: collapse;
 	font-size: 13px;
-	font-family: 'BCSans-Regular';
+	font-family: 'BCSans-Regular', sans-serif !important;
 }
 
 .share-structure-table-header {
-	font-family: 'BCSans-Bold';
+	font-family: 'BCSans-Bold', sans-serif !important;
 	color: #313132;
-	font-size: 13px;
+	font-size: 12px;
 }
 
 .share-structure-table td {
 	height: 40px;
-	vertical-align: top;
+	vertical-align: middle;
 }
 
 .share-structure-table td:nth-child(1) {
 	width: 30%;
-	font-family: 'BCSans-Bold';
-	color: #313132;
-	font-size: 13px;
+	font-family: 'BCSans-Bold', sans-serif !important;
 }
 
 .share-structure-table td:nth-child(2) {
@@ -347,15 +344,15 @@ td.director-name {
 }
 
 .dashed-row-separator {
-	border-top: dashed 1px #BCBEC5
+	border-top: dashed 1px #BCBEC5;
 }
 
 .solid-row-separator {
-	border-bottom: solid 0.5px #BCBEC5
+	border-bottom: solid 0.5px #BCBEC5;
 }
 
 .upper-solid-row-separator {
-	border-top: solid 0.5px #BCBEC5
+	border-top: solid 0.5px #BCBEC5;
 }
 
 .no-page-break {
@@ -364,6 +361,7 @@ td.director-name {
 
 .series-name {
 	padding-left: 1rem;
+	font-size: 12px
 }
 
 .effective-date {
@@ -383,16 +381,19 @@ td.director-name {
 	string-set: filingIdentifier content()
 }
 
-.business-number {
-	visibility: hidden;
-	string-set: businessIdentifier content()
-}
-
 .capitalize-text {
 	text-transform: capitalize;
 }
 
 .right-align {
 	text-align: right;
+}
+
+td.top-align {
+    vertical-align:top;
+}
+
+.share-structure-table-container {
+   margin-top: 1rem;
 }
 </style>

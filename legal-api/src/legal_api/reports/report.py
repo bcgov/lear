@@ -18,11 +18,11 @@ from http import HTTPStatus
 from pathlib import Path
 
 import pycountry
-import pytz
 import requests
 from flask import current_app, jsonify
 
 from legal_api.utils.auth import jwt
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 class Report:  # pylint: disable=too-few-public-methods
@@ -31,7 +31,7 @@ class Report:  # pylint: disable=too-few-public-methods
 
     incorporation_filing_reports = {
         'certificate': {'filingDescription': 'Certificate of Incorporation', 'fileName': 'certificateOfIncorporation'},
-        'noa': {'filingDescription': 'Notice of Article', 'fileName': 'noticeOfArticles'}
+        'noa': {'filingDescription': 'Notice of Article', 'fileName': 'incorporationApplication'}
     }
 
     def __init__(self, filing):
@@ -48,7 +48,7 @@ class Report:  # pylint: disable=too-few-public-methods
         data = {
             'reportName': self._get_report_filename(report_type),
             'template': "'" + base64.b64encode(bytes(self._get_template(report_type), 'utf-8')).decode() + "'",
-            'templateVars': self._get_template_data()
+            'templateVars': self._get_template_data(report_type)
         }
         response = requests.post(url=current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
 
@@ -60,24 +60,12 @@ class Report:  # pylint: disable=too-few-public-methods
     def _get_report_filename(self, report_type=None):
         legal_entity_number = self._filing.filing_json['filing']['business']['identifier']
         filing_date = str(self._filing.filing_date)[:19]
-        filing_description = self._get_filing_description()
+        filing_description = self._get_primary_filing()['title']
 
         if self._filing.filing_type == 'incorporationApplication' and report_type:
             filing_description = Report.incorporation_filing_reports[report_type]['filingDescription']
 
         return '{}_{}_{}.pdf'.format(legal_entity_number, filing_date, filing_description).replace(' ', '_')
-
-    def _get_filing_description(self):
-        return self._get_primary_filing()['title']
-
-    def _format_directors(self, directors):
-        for director in directors:
-            try:
-                self._format_address(director['deliveryAddress'])
-                self._format_address(director['mailingAddress'])
-            except KeyError:
-                pass
-        return directors
 
     def _get_primary_filing(self):
         filings = self._filing.FILINGS
@@ -99,13 +87,6 @@ class Report:  # pylint: disable=too-few-public-methods
             raise err
 
         return template_code
-
-    @staticmethod
-    def _format_address(address):
-        country = address['addressCountry']
-        country = pycountry.countries.search_fuzzy(country)[0].name
-        address['addressCountry'] = country
-        return address
 
     @staticmethod
     def _substitute_template_parts(template_code):
@@ -172,69 +153,34 @@ class Report:  # pylint: disable=too-few-public-methods
             return '{}.html'.format(file_name)
         return '{}.html'.format(self._filing.filing_type)
 
-    def _get_template_data(self):  # pylint: disable=too-many-branches
+    def _get_template_data(self, report_type=None):  # pylint: disable=too-many-branches
         filing = copy.deepcopy(self._filing.filing_json['filing'])
+        if self._filing.filing_type == 'incorporationApplication':
+            self._format_incorporation_data(filing, report_type)
+        else:
+            # set registered office address from either the COA filing or status quo data in AR filing
+            try:
+                self._set_addresses(filing)
+            except KeyError:
+                pass
 
-        # set registered office address from either the COA filing or status quo data in AR filing
-        try:
-            if filing.get('changeOfAddress'):
-                if filing.get('changeOfAddress').get('offices'):
-                    filing['registeredOfficeAddress'] = filing['changeOfAddress']['offices']['registeredOffice']
-                else:
-                    filing['registeredOfficeAddress'] = filing['changeOfAddress']
-            else:
-                if filing.get('annualReport', {}).get('deliveryAddress'):
-                    filing['registeredOfficeAddress'] = {
-                        'deliveryAddress': filing['annualReport']['deliveryAddress'],
-                        'mailingAddress': filing['annualReport']['mailingAddress']
-                    }
-                else:
-                    filing['registeredOfficeAddress'] = {
-                        'deliveryAddress': filing['annualReport']['offices']['registeredOffice']['deliveryAddress'],
-                        'mailingAddress': filing['annualReport']['offices']['registeredOffice']['mailingAddress']
-                    }
-            delivery_address = filing['registeredOfficeAddress']['deliveryAddress']
-            mailing_address = filing['registeredOfficeAddress']['mailingAddress']
+            # set director list from either the COD filing or status quo data in AR filing
+            try:
+                self._set_directors(filing)
+            except KeyError:
+                pass
+            self._set_dates(filing)
 
-            filing['registeredOfficeAddress']['deliveryAddress'] = self._format_address(delivery_address)
-            filing['registeredOfficeAddress']['mailingAddress'] = self._format_address(mailing_address)
+        self._set_meta_info(filing)
+        return filing
 
-        except KeyError:
-            pass
-
-        # set director list from either the COD filing or status quo data in AR filing
-        try:
-            if filing.get('changeOfDirectors'):
-                filing['listOfDirectors'] = filing['changeOfDirectors']
-            else:
-                filing['listOfDirectors'] = {
-                    'directors': filing['annualReport']['directors']
-                }
-
-            # create helper lists of appointed and ceased directors
-            directors = self._format_directors(filing['listOfDirectors']['directors'])
-
-            filing['listOfDirectors']['directorsAppointed'] = [el for el in directors if 'appointed' in el['actions']]
-            filing['listOfDirectors']['directorsCeased'] = [el for el in directors if 'ceased' in el['actions']]
-        except KeyError:
-            pass
-
-        filing['environment'] = f'{self._get_environment()} FILING #{self._filing.id}'.lstrip()
-
-        # Get the string for the filing date and time - do not use a leading zero on the hour (04:30 PM) as it looks
-        # too much like the 24 hour 4:30 AM. Also, we can't use "%-I" on Windows.
-        local_timezone = pytz.timezone('America/Vancouver')
-        filing_datetime = self._filing.filing_date.astimezone(local_timezone)
+    def _set_dates(self, filing):
+        filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
         hour = filing_datetime.strftime('%I').lstrip('0')
         filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {hour}:%M %p Pacific Time')
-
         # Get the effective date
-        effective_date = self._filing.filing_date.astimezone(local_timezone) if self._filing.effective_date is None\
+        effective_date = filing_datetime if self._filing.effective_date is None \
             else self._filing.effective_date
-
-        # Get source
-        filing['source'] = self._filing.source
-
         # TODO: best: custom date/time filters in the report-api. Otherwise: a subclass for filing-specific data.
         if self._filing.filing_type == 'annualReport':
             agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
@@ -245,18 +191,85 @@ class Report:  # pylint: disable=too-few-public-methods
                 filing['effective_date'] = agm_date.strftime('%B %d, %Y')
             else:
                 filing['agm_date'] = 'No AGM'
-
         elif self._filing.filing_type in ('changeOfAddress', 'changeOfDirectors'):
             # for standalone filings, the effective date comes from the filing data
             filing['effective_date'] = effective_date.strftime('%B %d, %Y')
 
+    def _set_directors(self, filing):
+        if filing.get('changeOfDirectors'):
+            filing['listOfDirectors'] = filing['changeOfDirectors']
+        else:
+            filing['listOfDirectors'] = {
+                'directors': filing['annualReport']['directors']
+            }
+        # create helper lists of appointed and ceased directors
+        directors = self._format_directors(filing['listOfDirectors']['directors'])
+        filing['listOfDirectors']['directorsAppointed'] = [el for el in directors if 'appointed' in el['actions']]
+        filing['listOfDirectors']['directorsCeased'] = [el for el in directors if 'ceased' in el['actions']]
+
+    def _format_directors(self, directors):
+        for director in directors:
+            try:
+                self._format_address(director['deliveryAddress'])
+                self._format_address(director['mailingAddress'])
+            except KeyError:
+                pass
+        return directors
+
+    def _set_addresses(self, filing):
+        if filing.get('changeOfAddress'):
+            if filing.get('changeOfAddress').get('offices'):
+                filing['registeredOfficeAddress'] = filing['changeOfAddress']['offices']['registeredOffice']
+            else:
+                filing['registeredOfficeAddress'] = filing['changeOfAddress']
+        else:
+            if filing.get('annualReport', {}).get('deliveryAddress'):
+                filing['registeredOfficeAddress'] = {
+                    'deliveryAddress': filing['annualReport']['deliveryAddress'],
+                    'mailingAddress': filing['annualReport']['mailingAddress']
+                }
+            else:
+                filing['registeredOfficeAddress'] = {
+                    'deliveryAddress': filing['annualReport']['offices']['registeredOffice']['deliveryAddress'],
+                    'mailingAddress': filing['annualReport']['offices']['registeredOffice']['mailingAddress']
+                }
+        delivery_address = filing['registeredOfficeAddress']['deliveryAddress']
+        mailing_address = filing['registeredOfficeAddress']['mailingAddress']
+        filing['registeredOfficeAddress']['deliveryAddress'] = self._format_address(delivery_address)
+        filing['registeredOfficeAddress']['mailingAddress'] = self._format_address(mailing_address)
+
+    @staticmethod
+    def _format_address(address):
+        country = address['addressCountry']
+        country = pycountry.countries.search_fuzzy(country)[0].name
+        address['addressCountry'] = country
+        return address
+
+    def _format_incorporation_data(self, filing, report_type):
+        filing['header']['reportType'] = report_type
+        filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
+        effective_date_time = LegislationDatetime.as_legislation_timezone(self._filing.effective_date)
+        effective_hour = effective_date_time.strftime('%I')
+        filing_hour = filing_datetime.strftime('%I')
+        filing['header']['effective_date_time'] = \
+            effective_date_time.strftime(f'%B %-d, %Y at {effective_hour}:%M %p Pacific Time')
+        filing['header']['filing_date_time'] = \
+            filing_datetime.strftime(f'%B %-d, %Y at {filing_hour}:%M %p Pacific Time')
+        filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {filing_hour}:%M %p Pacific Time')
+        self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
+        self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
+        self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['deliveryAddress'])
+        self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
+        self._format_directors(filing['incorporationApplication']['parties'])
+
+    def _set_meta_info(self, filing):
+        filing['environment'] = f'{self._get_environment()} FILING #{self._filing.id}'.lstrip()
+        # Get source
+        filing['source'] = self._filing.source
         # Appears in the Description section of the PDF Document Properties as Title.
         filing['meta_title'] = '{} on {}'.format(
             self._filing.FILINGS[self._filing.filing_type]['title'], filing['filing_date_time'])
-
         # Appears in the Description section of the PDF Document Properties as Subject.
         filing['meta_subject'] = '{} ({})'.format(
             self._filing.filing_json['filing']['business']['legalName'],
             self._filing.filing_json['filing']['business']['identifier'])
-
-        return filing
