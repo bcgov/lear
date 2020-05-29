@@ -158,24 +158,6 @@
                                         }
                                     },
                                     {
-                                        "name": "JWT_OIDC_JWKS_CACHE_TIMEOUT",
-                                        "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "name": "${NAME}-${TAG_NAME}-config",
-                                                "key": "JWT_OIDC_JWKS_CACHE_TIMEOUT"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "name": "PAYMENT_SVC_URL",
-                                        "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "name": "${NAME}-${TAG_NAME}-config",
-                                                "key": "PAYMENT_SVC_URL"
-                                            }
-                                        }
-                                    },
-                                    {
                                         "name": "APP_FILE",
                                         "valueFrom": {
                                             "configMapKeyRef": {
