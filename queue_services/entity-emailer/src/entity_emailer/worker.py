@@ -33,7 +33,6 @@ from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import EmailException, QueueException, logger
 from flask import Flask
 from legal_api import db
-# from legal_api.models import Business
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
@@ -74,7 +73,6 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             raise EmailException(f'Unrecognizable type: {email_msg["email"]["type"]}')
         # TODO: send email via email service
         logger.debug('NI: Sending email: %s', email)
-        return
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):

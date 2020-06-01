@@ -59,7 +59,6 @@ def freeze_datetime_utcnow(monkeypatch):
 @pytest.fixture(scope='session')
 def app():
     """Return a session-wide application configured in TEST mode."""
-    # _app = create_app('testing')
     _app = Flask(__name__)
     _app.config.from_object(get_named_config('testing'))
     db.init_app(_app)
@@ -96,7 +95,6 @@ def client_ctx(app):  # pylint: disable=redefined-outer-name
 def client_id():
     """Return a unique client_id that can be used in tests."""
     _id = random.SystemRandom().getrandbits(0x58)
-#     _id = (base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace('=', '')
 
     return f'client-{_id}'
 
