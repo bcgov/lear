@@ -1,0 +1,7 @@
+Flask
+python-dotenv
+sentry-sdk[flask]
+asyncio-nats-client
+asyncio-nats-streaming
+attrs<19.2.0
+Werkzeug<1.0
