@@ -17,7 +17,7 @@ When deployed in OKD, it adds the last commit hash onto the version info.
 """
 import os
 
-from entity_filer.version import __version__
+from entity_emailer.version import __version__
 
 
 def _get_build_openshift_commit_hash():
