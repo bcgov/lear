@@ -37,7 +37,9 @@ clean-test:
 	rm -f .coverage
 	rm -fr htmlcov/
 
-setup: clean venv/bin/activate install-dev
+build-req: clean venv/bin/activate
+
+setup: clean setup-venv install-dev
 
 venv/bin/activate: requirements/prod.txt requirements/dev.txt
 	rm -rf venv/
@@ -46,14 +48,22 @@ venv/bin/activate: requirements/prod.txt requirements/dev.txt
 	pip install --upgrade pip ;\
 	pip install -Ur requirements/prod.txt ;\
 	pip freeze | sort > requirements.txt ;\
-	cat requirements/repo-libraries.txt >> requirements.txt ;\
-	pip install -Ur requirements/repo-libraries.txt ;\
+	cat requirements/bcregistry-libraries.txt >> requirements.txt ;\
+	pip install -Ur requirements/bcregistry-libraries.txt ;\
 	pip install -Ur requirements/dev.txt
 	touch venv/bin/activate  # update so it's as new as requirements/prod.txt
+
+setup-venv: requirements.txt
+	rm -rf venv/
+	test -f venv/bin/activate || python3 -m venv  $(current_abs_dir)/venv
+	. venv/bin/activate ;\
+	pip install --upgrade pip ;\
+	pip install -Ur requirements.txt
 
 .PHONY: install-dev
 install-dev: venv/bin/activate
 	. venv/bin/activate ; \
+	pip install -Ur requirements/dev.txt; \
 	pip install -e .
 
 .PHONY: activate
@@ -84,7 +94,6 @@ mac-cov:	install-dev coverage-report
 pylint:
 	pylint --rcfile=setup.cfg \
 	 --load-plugins=pylint_flask \
-	 --disable=C0301,W0511 \
 	 src/$(project_name)
 
 ## run flake8 on the package and tests
@@ -94,6 +103,11 @@ flake8:
 ## Verify source code license headers.
 license:
 	./scripts/verify_license_headers.sh src/$(project_name) tests
+
+.PHONY: test-ratio
+test-ratio:
+	./scripts/test_ratio.sh
+
 
 #################################################################################
 # Self Documenting Commands                                                     #
