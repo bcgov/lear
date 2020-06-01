@@ -1736,7 +1736,7 @@
 									"pm.test(\"Returns the required fields for business\", () => {",
 									"    var jsonData = pm.response.json()",
 									"    pm.expect(jsonData.A0004016).to.exist",
-									"    pm.expect(jsonData.A0004016).to.eql('124686981')",
+									"    pm.expect(jsonData.A0004016).to.contain('124686981')",
 									"});"
 								],
 								"type": "text/javascript"
@@ -4685,26 +4685,35 @@
 									"pm.test(\"Returns parties added during incorporation\", () => {",
 									"     var result = jsonData.filing.incorporationApplication;",
 									"     var parties = result.parties;",
-									"     pm.expect(parties.length).to.eql(2);",
+									"     pm.expect(parties.length).to.eql(3);",
 									"     var party1 = result.parties.filter(x=>x.officer.firstName == 'Joe')[0];",
 									"     console.log(party1);",
 									"     var party2 = result.parties.filter(x=> x.officer.orgName == 'Xyz Inc.')[0];",
 									"     console.log(party2);",
-									"     pm.expect(party1.officer).to.exist;",
+									"     var party3 = result.parties.filter(x=> x.officer.firstName == 'Test')[0];",
+									"     console.log(party3);",
 									"     pm.expect(party1.mailingAddress).to.exist;",
 									"     pm.expect(party1.deliveryAddress).to.exist;",
 									"     pm.expect(party1.officer.firstName).to.eql('Joe');",
 									"     pm.expect(party1.officer.lastName).to.eql('Swanson');",
 									"     pm.expect(party1.officer.middleInitial).to.eql('P');",
 									"     pm.expect(party1.roles).to.exist;",
-									"     pm.expect(party1.roles.filter(x=>x.roleType=='completing party')).to.exist;",
-									"     pm.expect(party1.roles.filter(x=>x.roleType=='director')).to.exist;",
+									"     pm.expect(party1.roles.filter(x=>x.roleType=='Completing Party')).to.exist;",
+									"     pm.expect(party1.roles.filter(x=>x.roleType=='Director')).to.exist;",
 									"",
-									"     pm.expect(party2.officer).to.exist;",
 									"     pm.expect(party2.officer.orgName).to.eql('Xyz Inc.');",
 									"     pm.expect(party2.officer.firstName).to.eql('');",
 									"     pm.expect(party2.officer.lastName).to.eql('');",
 									"     pm.expect(party2.roles).to.exist;",
+									"     pm.expect(party2.roles.filter(x=>x.roleType=='Director')).to.exist;",
+									"     pm.expect(party2.roles.filter(x=>x.roleType=='Incorporator')).to.exist;",
+									"     ",
+									"     pm.expect(party3.mailingAddress).to.exist;",
+									"     pm.expect(party3.deliveryAddress).to.exist;",
+									"     pm.expect(party3.officer.firstName).to.eql('Test');",
+									"     pm.expect(party3.officer.lastName).to.eql('Director');",
+									"     pm.expect(party3.roles).to.exist;",
+									"     pm.expect(party3.roles.filter(x=>x.roleType=='Director')).to.exist;",
 									"});",
 									"",
 									"pm.test(\"Returns Shares/Series added during incorporation\", () => {",
@@ -4732,7 +4741,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n\t\t},\n\t\t \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08T00:00:00+00:00\",\n            \"identifier\": \"{{newCorpNum}}\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\",\n            \"legalType\": \"CP\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"nrNumber\": \"{{newCorpNum}}\",\n\t\t\t\t\"legalType\": \"BC\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t},\n\t\t\t\t\"recordsOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"parties\": [\n        {\n            \"officer\": {\n                \"id\": 1,\n                \"firstName\": \"Joe\",\n                \"lastName\": \"Swanson\",\n                \"middleInitial\": \"P\",\n                \"orgName\": \"\",\n                \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n                \"streetAddress\": \"mailing_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"mailing_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n                \"streetAddress\": \"delivery_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"delivery_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"appointmentDate\": \"2018-01-01\",\n            \"roles\": [\n                {\n                    \"roleType\": \"Completing Party\",\n                    \"appointmentDate\": \"2018-01-01\"\n\n                },\n                {\n                    \"roleType\": \"Director\",\n                    \"appointmentDate\": \"2018-01-01\"\n\n                }\n            ]\n        },\n        {\n            \"officer\": {\n                \"id\": 2,\n                \"firstName\": \"\",\n                \"lastName\": \"\",\n                \"middleInitial\": \"\",\n                \"orgName\": \"Xyz Inc.\",\n                \"partyType\": \"org\"\n            },\n            \"mailingAddress\": {\n                \"streetAddress\": \"mailing_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"mailing_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"appointmentDate\": \"2018-01-01\",\n           \"roles\": [\n                {\n                    \"roleType\": \"Incorporator\",\n                    \"appointmentDate\": \"2018-01-01\"\n                },\n                 {\n                    \"roleType\": \"Director\",\n                    \"appointmentDate\": \"2018-01-01\"\n                }\n            ]\n        }\n    ], \n    \"shareClasses\": [\n        {\n            \"id\": 1,\n            \"name\": \"Share Class 1\",\n            \"priority\": 1,\n            \"hasMaximumShares\": true,\n            \"maxNumberOfShares\": 100,\n            \"hasParValue\": true,\n            \"parValue\": 10,\n            \"currency\": \"CAD\",\n            \"hasRightsOrRestrictions\": false,\n            \"series\": [\n                {\n                    \"id\": 1,\n                    \"name\": \"Share Series 1\",\n                    \"priority\": 1,\n                    \"hasMaximumShares\": true,\n                    \"maxNumberOfShares\": 50,\n                    \"hasRightsOrRestrictions\": false\n                },\n                {\n                    \"id\": 2,\n                    \"name\": \"Share Series 2\",\n                    \"priority\": 2,\n                    \"hasMaximumShares\": true,\n                    \"maxNumberOfShares\": 100,\n                    \"hasRightsOrRestrictions\": false\n                }\n            ]\n        },\n        {\n            \"id\": 2,\n            \"name\": \"Share Class 2\",\n            \"priority\": 1,\n            \"hasMaximumShares\": false,\n            \"maxNumberOfShares\": null,\n            \"hasParValue\": false,\n            \"parValue\": null,\n            \"currency\": null,\n            \"hasRightsOrRestrictions\": true,\n            \"series\": []\n        }\n    ],\n\t\t\t\"businessContact\": {\n\t\t\t\t\"email\": \"no_one@never.get\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
+							"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n\t\t},\n\t\t\"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08T00:00:00+00:00\",\n            \"identifier\": \"{{newCorpNum}}\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\",\n            \"legalType\": \"CP\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"nrNumber\": \"{{newCorpNum}}\",\n\t\t\t\t\"legalType\": \"BC\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t},\n\t\t\t\t\"recordsOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"parties\": [\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"id\": 1,\n\t\t                \"firstName\": \"Joe\",\n\t\t                \"lastName\": \"Swanson\",\n\t\t                \"middleInitial\": \"P\",\n\t\t                \"orgName\": \"\",\n\t\t                \"partyType\": \"person\",\n\t\t                \"email\": \"test@test.com\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing_address - address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing_address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"H0H0H0\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"deliveryAddress\": {\n\t\t                \"streetAddress\": \"delivery_address - address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"delivery_address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"H0H0H0\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t            \"roles\": [\n\t\t                {\n\t\t                    \"roleType\": \"Completing Party\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t\n\t\t                },\n\t\t                {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"id\": 2,\n\t\t                \"firstName\": \"\",\n\t\t                \"lastName\": \"\",\n\t\t                \"middleInitial\": \"\",\n\t\t                \"orgName\": \"Xyz Inc.\",\n\t\t                \"partyType\": \"org\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing_address - address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing_address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"H0H0H0\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t           \"roles\": [\n\t\t                {\n\t\t                    \"roleType\": \"Incorporator\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                },\n\t\t                 {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"firstName\": \"Test\",\n\t\t                \"lastName\": \"Director\",\n\t\t                \"middleInitial\": \"\",\n\t\t                \"partyType\": \"person\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing_address - address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing_address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"H0H0H0\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t           \"roles\": [\n\t\t                 {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                }\n\t\t            ]\n\t\t        }\n    \t\t], \n    \t\t\"shareClasses\": [\n\t\t        {\n\t\t            \"id\": 1,\n\t\t            \"name\": \"Share Class 1\",\n\t\t            \"priority\": 1,\n\t\t            \"hasMaximumShares\": true,\n\t\t            \"maxNumberOfShares\": 100,\n\t\t            \"hasParValue\": true,\n\t\t            \"parValue\": 10,\n\t\t            \"currency\": \"CAD\",\n\t\t            \"hasRightsOrRestrictions\": false,\n\t\t            \"series\": [\n\t\t                {\n\t\t                    \"id\": 1,\n\t\t                    \"name\": \"Share Series 1\",\n\t\t                    \"priority\": 1,\n\t\t                    \"hasMaximumShares\": true,\n\t\t                    \"maxNumberOfShares\": 50,\n\t\t                    \"hasRightsOrRestrictions\": false\n\t\t                },\n\t\t                {\n\t\t                    \"id\": 2,\n\t\t                    \"name\": \"Share Series 2\",\n\t\t                    \"priority\": 2,\n\t\t                    \"hasMaximumShares\": true,\n\t\t                    \"maxNumberOfShares\": 100,\n\t\t                    \"hasRightsOrRestrictions\": false\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"id\": 2,\n\t\t            \"name\": \"Share Class 2\",\n\t\t            \"priority\": 1,\n\t\t            \"hasMaximumShares\": false,\n\t\t            \"maxNumberOfShares\": null,\n\t\t            \"hasParValue\": false,\n\t\t            \"parValue\": null,\n\t\t            \"currency\": null,\n\t\t            \"hasRightsOrRestrictions\": true,\n\t\t            \"series\": []\n\t\t        }\n\t\t    ],\n\t\t\t\"businessContact\": {\n\t\t\t\t\"email\": \"no_one@never.get\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -4865,140 +4874,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n\t\t},\n\t\t \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08T00:00:00+00:00\",\n            \"identifier\": \"{{newCorpNum}}\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\",\n            \"legalType\": \"CP\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"nrNumber\": \"{{newCorpNum}}\",\n\t\t\t\t\"legalType\": \"CP\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"parties\": [\n        {\n            \"officer\": {\n                \"id\": 1,\n                \"firstName\": \"Joe\",\n                \"lastName\": \"Swanson\",\n                \"middleInitial\": \"P\",\n                \"orgName\": \"\",\n                \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n                \"streetAddress\": \"mailing_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"mailing_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n                \"streetAddress\": \"delivery_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"delivery_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"appointmentDate\": \"2018-01-01\",\n            \"roles\": [\n                {\n                    \"roleType\": \"Completing Party\",\n                    \"appointmentDate\": \"2018-01-01\"\n\n                },\n                {\n                    \"roleType\": \"Director\",\n                    \"appointmentDate\": \"2018-01-01\"\n\n                }\n            ]\n        },\n        {\n            \"officer\": {\n                \"id\": 2,\n                \"firstName\": \"\",\n                \"lastName\": \"\",\n                \"middleInitial\": \"\",\n                \"orgName\": \"Xyz Inc.\",\n                \"partyType\": \"org\"\n            },\n            \"mailingAddress\": {\n                \"streetAddress\": \"mailing_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"mailing_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"appointmentDate\": \"2018-01-01\",\n           \"roles\": [\n                {\n                    \"roleType\": \"Incorporator\",\n                    \"appointmentDate\": \"2018-01-01\"\n                }\n            ]\n        }\n    ],\n\t\t\t\"businessContact\": {\n\t\t\t\t\"email\": \"no_one@never.get\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{url}}/api/v1/businesses/{{newCorpNum}}/filings/incorporationApplication",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses",
-								"{{newCorpNum}}",
-								"filings",
-								"incorporationApplication"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GET New Corp Number, COOP",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "44cab698-aa3e-45a9-8258-4a80201033a1",
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"Set the next available Corp Num\", () => {",
-									"    pm.expect(jsonData.corpNum).to.exist;",
-									"    pm.environment.set(\"newCorpNum\", 'CP'+(jsonData.corpNum[0]));",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{url}}/api/v1/businesses?legal_type=CP",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"businesses"
-							],
-							"query": [
-								{
-									"key": "legal_type",
-									"value": "CP"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "POST COOP Incorporation Filing",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "f538f84d-3fa3-4e65-ab8e-29414a956766",
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Response time is less than 10000ms\", function () {",
-									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
-									"});",
-									"",
-									"pm.test(\"Status code is 201\", function () {",
-									"    pm.response.to.have.status(201);",
-									"});",
-									"",
-									"pm.test('should return JSON', function () {",
-									"    pm.response.to.have.header('Content-Type', 'application/json');",
-									"});",
-									"",
-									"pm.test(\"Assert new Business record has been created.\", () => {",
-									"    pm.expect(jsonData.filing.incorporationApplication).to.exist",
-									"    var result = jsonData.filing.incorporationApplication",
-									"    pm.expect(jsonData.filing.business.identifier).to.eql(pm.environment.get('newCorpNum'))",
-									"});",
-									"",
-									"pm.test(\"Returns the required fields for each address\", () => {",
-									"    var result = jsonData.filing.incorporationApplication",
-									"    var registeredOffice = result.offices.registeredOffice",
-									"    pm.expect(registeredOffice.deliveryAddress.addressCity).to.eql(\"DELIVERY_ADDRESS CITY\")",
-									"    pm.expect(registeredOffice.deliveryAddress.addressCountry).to.eql(\"CANADA\")",
-									"    pm.expect(registeredOffice.deliveryAddress.addressId).to.exist",
-									"    pm.expect(registeredOffice.deliveryAddress.addressRegion).to.eql(\"BC\")",
-									"    pm.expect(registeredOffice.deliveryAddress.deliveryInstructions).to.exist",
-									"    pm.expect(registeredOffice.deliveryAddress.postalCode).to.eql(\"H0H0H0\")",
-									"    pm.expect(registeredOffice.deliveryAddress.streetAddress).to.eql(\"DELIVERY_ADDRESS - ADDRESS LINE ONE\")",
-									"    pm.expect(registeredOffice.deliveryAddress.streetAddressAdditional).to.exist",
-									"    pm.expect(registeredOffice.mailingAddress.addressCity).to.eql(\"MAILING_ADDRESS CITY\")",
-									"    pm.expect(registeredOffice.mailingAddress.addressCountry).to.eql(\"CANADA\")",
-									"    pm.expect(registeredOffice.mailingAddress.addressId).to.exist",
-									"    pm.expect(registeredOffice.mailingAddress.addressRegion).to.eql(\"BC\")",
-									"    pm.expect(registeredOffice.mailingAddress.deliveryInstructions).to.exist",
-									"    pm.expect(registeredOffice.mailingAddress.postalCode).to.eql(\"H0H0H0\")",
-									"    pm.expect(registeredOffice.mailingAddress.streetAddress).to.eql(\"MAILING_ADDRESS - ADDRESS LINE ONE\")",
-									"    pm.expect(registeredOffice.mailingAddress.streetAddressAdditional).to.exist",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n\t\t},\n\t\t \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08T00:00:00+00:00\",\n            \"identifier\": \"{{newCorpNum}}\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\",\n            \"legalType\": \"CP\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"nrNumber\": \"{{newCorpNum}}\",\n\t\t\t\t\"legalType\": \"CP\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"parties\": [\n        {\n            \"officer\": {\n                \"id\": 1,\n                \"firstName\": \"Joe\",\n                \"lastName\": \"Swanson\",\n                \"middleInitial\": \"P\",\n                \"orgName\": \"\",\n                \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n                \"streetAddress\": \"mailing_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"mailing_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n                \"streetAddress\": \"delivery_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"delivery_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"appointmentDate\": \"2018-01-01\",\n            \"roles\": [\n                {\n                    \"roleType\": \"Completing Party\",\n                    \"appointmentDate\": \"2018-01-01\"\n\n                },\n                {\n                    \"roleType\": \"Director\",\n                    \"appointmentDate\": \"2018-01-01\"\n\n                }\n            ]\n        },\n        {\n            \"officer\": {\n                \"id\": 2,\n                \"firstName\": \"\",\n                \"lastName\": \"\",\n                \"middleInitial\": \"\",\n                \"orgName\": \"Xyz Inc.\",\n                \"partyType\": \"org\"\n            },\n            \"mailingAddress\": {\n                \"streetAddress\": \"mailing_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"mailing_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"appointmentDate\": \"2018-01-01\",\n           \"roles\": [\n                {\n                    \"roleType\": \"Incorporator\",\n                    \"appointmentDate\": \"2018-01-01\"\n                }\n            ]\n        }\n    ],\n\t\t\t\"businessContact\": {\n\t\t\t\t\"email\": \"no_one@never.get\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
+							"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n\t\t},\n\t\t \"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08T00:00:00+00:00\",\n            \"identifier\": \"{{newCorpNum}}\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\",\n            \"legalType\": \"CP\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"nrNumber\": \"{{newCorpNum}}\",\n\t\t\t\t\"legalType\": \"CP\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"parties\": [\n        {\n            \"officer\": {\n                \"id\": 1,\n                \"firstName\": \"Joe\",\n                \"lastName\": \"Swanson\",\n                \"middleInitial\": \"P\",\n                \"orgName\": \"\",\n                \"partyType\": \"person\",\n                \"email\": \"test@test.com\"\n            },\n            \"mailingAddress\": {\n                \"streetAddress\": \"mailing_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"mailing_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n                \"streetAddress\": \"delivery_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"delivery_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"appointmentDate\": \"2018-01-01\",\n            \"roles\": [\n                {\n                    \"roleType\": \"Completing Party\",\n                    \"appointmentDate\": \"2018-01-01\"\n\n                },\n                {\n                    \"roleType\": \"Director\",\n                    \"appointmentDate\": \"2018-01-01\"\n\n                }\n            ]\n        },\n        {\n            \"officer\": {\n                \"id\": 2,\n                \"firstName\": \"\",\n                \"lastName\": \"\",\n                \"middleInitial\": \"\",\n                \"orgName\": \"Xyz Inc.\",\n                \"partyType\": \"org\"\n            },\n            \"mailingAddress\": {\n                \"streetAddress\": \"mailing_address - address line one\",\n                \"streetAddressAdditional\": \"\",\n                \"addressCity\": \"mailing_address city\",\n                \"addressCountry\": \"CA\",\n                \"postalCode\": \"H0H0H0\",\n                \"addressRegion\": \"BC\"\n            },\n            \"appointmentDate\": \"2018-01-01\",\n           \"roles\": [\n                {\n                    \"roleType\": \"Incorporator\",\n                    \"appointmentDate\": \"2018-01-01\"\n                }\n            ]\n        }\n    ],\n\t\t\t\"businessContact\": {\n\t\t\t\t\"email\": \"no_one@never.get\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
