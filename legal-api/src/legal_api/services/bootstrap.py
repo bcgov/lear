@@ -193,6 +193,6 @@ class AccountService:
         )
 
         if affiliate.status_code != HTTPStatus.OK \
-                or entity_record.status_code not in(HTTPStatus.OK, HTTPStatus.NO_CONTENT):
+                or entity_record.status_code not in (HTTPStatus.OK, HTTPStatus.NO_CONTENT):
             return HTTPStatus.BAD_REQUEST
         return HTTPStatus.OK
