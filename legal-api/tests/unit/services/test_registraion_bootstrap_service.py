@@ -49,7 +49,6 @@ def account(app):
             timeout=20
         )
 
-        # account_id = 28
         account_id = rv.json()['id']
 
         yield account_id
