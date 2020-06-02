@@ -21,7 +21,7 @@ from http import HTTPStatus
 
 from registry_schemas.example_data import FILING_TEMPLATE, INCORPORATION
 
-from legal_api.models import Filing
+from legal_api.models import Filing, RegistrationBootstrap
 from legal_api.services.authz import STAFF_ROLE
 from tests import integration_affiliation, integration_payment
 from tests.unit.services.utils import create_header
@@ -64,6 +64,22 @@ def test_get_bootstrap_draft_filing(client, jwt, session):
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['filing']['business']['identifier'] == identifier
     assert rv.json['filing']['header']['filingId'] == filing_id
+
+
+@integration_affiliation
+def test_delete_bootstrap_draft_filing(client, jwt, session):
+    """Assert that a draft IA filing can be retrieved."""
+    account_id = 26
+    identifier, filing_id = setup_bootstrap_ia_minimal(jwt, session, client, account_id)
+    #
+    # Test that we can get the filing
+    #
+    rv = client.delete(f'/api/v1/businesses/{identifier}/filings/{filing_id}',
+                       headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert not Filing.find_by_id(filing_id)
+    assert not RegistrationBootstrap.find_by_identifier(identifier)
 
 
 @integration_affiliation
