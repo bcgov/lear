@@ -1,0 +1,53 @@
+<!-- table and cell padding doesn't work consistently -- use cellspacing instead -->
+<table class="business-info-table" cellspacing="10" role="presentation">
+  <tr>
+    <td class="name">Company Name:</td>
+    {% if incorporationApplication.nameRequest %}
+    <td class="value">{{ incorporationApplication.nameRequest.legalName }}</td>
+    {% elif business.legalType == 'BC' %}
+    <td class="value">Numbered Benefit Company</td>
+    {% else %}
+    <!-- add other cases here -->
+    <td class="value">Unknown</td>
+    {% endif %}
+  </tr>
+
+  {% if business.legalName %}
+  <tr>
+    <td class="name">Company Name:</td>
+    <td class="value">{{ business.legalName }}</td>
+  </tr>
+  {% endif %}
+
+  <tr>
+    <td class="name">Business Number:</td>
+    {% if header.status == 'PAID' %}
+    <td class="value">Pending</td>
+    {% elif header.status == 'COMPLETED' %}
+    <td class="value">{{ business.identifier }}</td>
+    {% else %}
+    <!-- add other cases here -->
+    <td class="value">Unknown</td>
+    {% endif %}
+  </tr>
+
+  {% if business.tax_id %}
+  <tr>
+    <td class="name">Business Tax ID:</td>
+    <td class="value">{{ business.tax_id }}</td>
+  </tr>
+  {% endif %}
+
+  <tr>
+    <td class="name">Date and Time of Filing:</td>
+    <td class="value">{{ filing_date_time }}</td>
+  </tr>
+
+  <!-- effective_date_time is assigned only if it's in the future -->
+  {% if effective_date_time %}
+  <tr>
+    <td class="name">Effective Date and Time:</td>
+    <td class="value">{{ effective_date_time }}</td>
+  </tr>
+  {% endif %}
+</table>
