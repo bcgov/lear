@@ -31,7 +31,7 @@ from legal_api.exceptions import BusinessException
 from legal_api.models import Address, Business, Filing, RegistrationBootstrap, User, db
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
-from legal_api.services import COLIN_SVC_ROLE, STAFF_ROLE, RegistrationBootstrapService, authorized, queue
+from legal_api.services import COLIN_SVC_ROLE, STAFF_ROLE, RegistrationBootstrapService, authorized, document_meta, queue
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
@@ -66,7 +66,12 @@ class ListFilingResource(Resource):
 
             if not rv:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
-            return jsonify(rv.json)
+            if str(request.accept_mimetypes) == 'application/pdf' and filing_id:
+                if rv.filing_type == 'incorporationApplication':
+                    return legal_api.reports.get_pdf(rv, None)
+            filing_json = rv.json
+            filing_json['filing']['documents'] = document_meta.get_documents(filing_json)
+            return jsonify(filing_json)
 
         business = Business.find_by_identifier(identifier)
 
@@ -87,7 +92,6 @@ class ListFilingResource(Resource):
                 if rv[1].filing_type == 'incorporationApplication':
                     ListFilingResource._populate_business_info_to_filing(rv[1], business)
                 return legal_api.reports.get_pdf(rv[1], report_type)
-
             return jsonify(rv[1].json)
 
         # Does it make sense to get a PDF of all filings?
@@ -98,7 +102,9 @@ class ListFilingResource(Resource):
         rv = []
         filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value, Filing.Status.PAID.value])
         for filing in filings:
-            rv.append(filing.json)
+            filing_json = filing.json
+            filing_json['filing']['documents'] = document_meta.get_documents(filing_json)
+            rv.append(filing_json)
 
         return jsonify(filings=rv)
 

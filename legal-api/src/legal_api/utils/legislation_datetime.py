@@ -40,3 +40,15 @@ class LegislationDatetime():
     def as_legislation_timezone(date_time: datetime):
         """Return a datetime adjusted to the legislation timezone."""
         return date_time.astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
+
+    @staticmethod
+    def format_as_legislation_date(date_string: str):
+        """Return the date in legislation timezone as a string."""
+        date_time = datetime.datetime.fromisoformat(date_string)
+        return date_time.astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE'))).strftime('%Y-%m-%d')
+
+    @staticmethod
+    def is_future(date_string: str) -> bool:
+        """Return the boolean for whether the date string is in the future."""
+        effective_date = datetime.datetime.fromisoformat(date_string)
+        return effective_date > datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
