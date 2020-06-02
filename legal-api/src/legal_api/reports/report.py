@@ -270,6 +270,7 @@ class Report:  # pylint: disable=too-few-public-methods
         filing['meta_title'] = '{} on {}'.format(
             self._filing.FILINGS[self._filing.filing_type]['title'], filing['filing_date_time'])
         # Appears in the Description section of the PDF Document Properties as Subject.
+        legal_name = self._filing.filing_json['filing']['business'].get('legalName', 'NA')
         filing['meta_subject'] = '{} ({})'.format(
-            self._filing.filing_json['filing']['business']['legalName'],
+            legal_name,
             self._filing.filing_json['filing']['business']['identifier'])
