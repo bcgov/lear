@@ -31,7 +31,14 @@ from legal_api.exceptions import BusinessException
 from legal_api.models import Address, Business, Filing, RegistrationBootstrap, User, db
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
-from legal_api.services import COLIN_SVC_ROLE, STAFF_ROLE, RegistrationBootstrapService, authorized, document_meta, queue
+from legal_api.services import (
+    COLIN_SVC_ROLE,
+    STAFF_ROLE,
+    RegistrationBootstrapService,
+    authorized,
+    document_meta,
+    queue,
+)
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
