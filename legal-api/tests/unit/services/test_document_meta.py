@@ -61,6 +61,26 @@ def test_paper_only_documents_empty(app):
         assert len(document_meta.get_documents(filing)) == 0
 
 
+def test_coa_paid_documents_empty(app):
+    """Assert that no documents are returned for a not complete change of address."""
+    with app.app_context():
+        filing = {
+            'filing': {
+                'header': {
+                    'filingId': 12356,
+                    'status': 'PAID',
+                    'name': 'changeOfAddress',
+                    'availableOnPaperOnly': False,
+                    'date': LegislationDatetime.now().isoformat()
+                },
+                'business': {
+                    'identifier': 'BC1234567'
+                }
+            }
+        }
+        assert len(document_meta.get_documents(filing)) == 0
+
+
 def test_ar_documents(app):
     """Assert that annual report documents are returned."""
     with app.app_context():
@@ -244,7 +264,7 @@ def test_voluntary_dissolution_documents(app):
 
 
 def test_incorporation_application_fed_documents(app):
-    """Assert that voluntary dissolution documents are returned."""
+    """Assert that future effective incorporation documents are returned."""
     with app.app_context():
         filing = {
             'filing': {
@@ -279,8 +299,44 @@ def test_incorporation_application_fed_documents(app):
         assert documents[0]['filename'] == filename
 
 
+def test_incorporation_application_pending_documents(app):
+    """Assert that pending incorporation application documents are returned."""
+    with app.app_context():
+        filing = {
+            'filing': {
+                'header': {
+                    'filingId': 12356,
+                    'status': 'PAID',
+                    'name': 'incorporationApplication',
+                    'availableOnPaperOnly': False,
+                    'effectiveDate': LegislationDatetime.now().isoformat(),
+                    'date': LegislationDatetime.now().isoformat()
+                },
+                'business': {
+                    'identifier': 'BC1234567'
+                }
+            }
+        }
+        documents = document_meta.get_documents(filing)
+
+        assert len(documents) == 1
+        assert documents[0]['type'] == 'REPORT'
+        assert documents[0]['reportType'] is None
+        assert documents[0]['filingId'] == filing['filing']['header']['filingId']
+        assert documents[0]['title'] == 'Incorporation Application - Pending'
+
+        business_identifier = filing['filing']['business']['identifier']
+        filing_date = filing['filing']['header']['date']
+        filename = document_meta.get_general_filename(business_identifier,
+                                                      'Incorporation Application (Pending)',
+                                                      filing_date,
+                                                      'pdf'
+                                                      )
+        assert documents[0]['filename'] == filename
+
+
 def test_incorporation_application_documents(app):
-    """Assert that voluntary dissolution documents are returned."""
+    """Assert that incorporation documents are returned."""
     with app.app_context():
         filing = {
             'filing': {

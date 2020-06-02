@@ -47,20 +47,23 @@ class DocumentMetaService():
         if filing_status not in (Filing.Status.COMPLETED.value, Filing.Status.PAID.value) or paper_only:
             return []
 
-        if filing_type == 'annualReport':
-            documents = self.get_annual_report(filing_id, business_identifier, filing_date)
-        elif filing_type == 'changeOfAddress':
-            documents = self.get_coa_report(filing_id, business_identifier, filing_date)
-        elif filing_type == 'changeOfDirectors':
-            documents = self.get_cod_report(filing_id, business_identifier, filing_date)
-        elif filing_type == 'changeOfName':
-            documents = self.get_con_report(filing_id, business_identifier, filing_date)
-        elif filing_type == 'specialResolution':
-            documents = self.get_special_resolution_report(filing_id, business_identifier, filing_date)
-        elif filing_type == 'voluntaryDissolution':
-            documents = self.get_voluntary_dissolution_report(filing_id, business_identifier, filing_date)
-        elif filing_type == 'incorporationApplication':
+        if filing_type == 'incorporationApplication':
             documents = self.get_incorporation_application_report(filing)
+            return documents
+
+        if filing_status == Filing.Status.COMPLETED.value:
+            if filing_type == 'annualReport':
+                documents = self.get_annual_report(filing_id, business_identifier, filing_date)
+            elif filing_type == 'changeOfAddress':
+                documents = self.get_coa_report(filing_id, business_identifier, filing_date)
+            elif filing_type == 'changeOfDirectors':
+                documents = self.get_cod_report(filing_id, business_identifier, filing_date)
+            elif filing_type == 'changeOfName':
+                documents = self.get_con_report(filing_id, business_identifier, filing_date)
+            elif filing_type == 'specialResolution':
+                documents = self.get_special_resolution_report(filing_id, business_identifier, filing_date)
+            elif filing_type == 'voluntaryDissolution':
+                documents = self.get_voluntary_dissolution_report(filing_id, business_identifier, filing_date)
 
         return documents
 
@@ -105,6 +108,7 @@ class DocumentMetaService():
         filing_id = filing_id = filing['filing']['header']['filingId']
         business_identifier = filing['filing']['business']['identifier']
         filing_date = filing['filing']['header']['date']
+        filing_status = filing['filing']['header']['status']
         is_fed = LegislationDatetime.is_future(filing['filing']['header']['effectiveDate'])
         ia_name = 'Incorporation Application'
         certificate_name = 'Certificate'
@@ -115,6 +119,17 @@ class DocumentMetaService():
                                           f'{ia_name} - Future Effective Incorporation',
                                           self.get_general_filename(business_identifier,
                                                                     f'{ia_name} (Future Effective)',
+                                                                    filing_date,
+                                                                    'pdf'
+                                                                    )
+                                          )
+            ]
+        if filing_status == Filing.Status.PAID.value:
+            return [
+                self.create_report_object(filing_id,
+                                          f'{ia_name} - Pending',
+                                          self.get_general_filename(business_identifier,
+                                                                    f'{ia_name} (Pending)',
                                                                     filing_date,
                                                                     'pdf'
                                                                     )
