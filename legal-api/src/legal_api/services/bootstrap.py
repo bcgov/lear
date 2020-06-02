@@ -13,20 +13,19 @@
 # limitations under the License.
 
 """This is a service to bootstrap the Incorporation Application process."""
+import contextlib
 import json
 import secrets
 import string
-from contextlib import suppress
 from http import HTTPStatus
 from typing import Dict, Union
 
 import requests
 from flask import current_app
-from flask_babel import _ as babel  # noqa: N813, I001; casting _ to babel
-from sqlalchemy.orm.exc import FlushError
+from flask_babel import _ as babel  # noqa: N813, I001, I003 casting _ to babel
+from sqlalchemy.orm.exc import FlushError  # noqa: I001
 
-from legal_api.models import RegistrationBootstrap
-# noqa: D204, I003; isort work around because of babel cast above
+from legal_api.models import RegistrationBootstrap  # noqa: D204, I003, I001;# due to babel cast above
 
 
 class RegistrationBootstrapService:
@@ -55,23 +54,37 @@ class RegistrationBootstrapService:
         return {'error': babel('Unable to create bootstrap registration.')}
 
     @staticmethod
-    def register_bootstrap(account: int, bootstrap: RegistrationBootstrap, business_name: str) \
+    def delete_bootstrap(bootstrap: RegistrationBootstrap):
+        """Delete the bootstrap registration."""
+        with contextlib.suppress(Exception):
+            bootstrap.delete()
+        return HTTPStatus.OK
+
+    @staticmethod
+    def register_bootstrap(bootstrap: RegistrationBootstrap, business_name: str) \
             -> Union[HTTPStatus, Dict]:
         """Return either a new bootstrap registration or an error struct."""
-        if not account or not bootstrap:
+        if not bootstrap:
             return {'error': babel('An account number must be provided.')}
 
-        rv = AccountService.create_affiliation(account=account,
+        rv = AccountService.create_affiliation(account=bootstrap.account,
                                                business_registration=bootstrap.identifier,
                                                business_name=business_name)
 
         if rv == HTTPStatus.OK:
             return HTTPStatus.OK
 
-        with suppress(Exception):
-            AccountService.delete_affiliation(account=account,
+        with contextlib.suppress(Exception):
+            AccountService.delete_affiliation(account=bootstrap.account,
                                               business_registration=bootstrap.identifier)
         return {'error': babel('Unable to create bootstrap registration.')}
+
+    @staticmethod
+    def deregister_bootstrap(bootstrap: RegistrationBootstrap) -> HTTPStatus:
+        """Remove the bootstrap registration."""
+        affiliation_status = AccountService.delete_affiliation(account=bootstrap.account,
+                                                               business_registration=bootstrap.identifier)
+        return affiliation_status
 
 
 class AccountService:
@@ -166,7 +179,7 @@ class AccountService:
 
         # Create an account:business affiliation
         affiliate = requests.delete(
-            url=account_svc_affiliate_url + '/' + str(374),
+            url=account_svc_affiliate_url + '/' + business_registration,
             headers={**cls.CONTENT_TYPE_JSON,
                      'Authorization': cls.BEARER + token},
             timeout=cls.timeout
@@ -179,6 +192,7 @@ class AccountService:
             timeout=cls.timeout
         )
 
-        if affiliate.status_code != HTTPStatus.OK or entity_record.status_code != HTTPStatus.OK:
+        if affiliate.status_code != HTTPStatus.OK \
+                or entity_record.status_code not in (HTTPStatus.OK, HTTPStatus.NO_CONTENT):
             return HTTPStatus.BAD_REQUEST
-        return None
+        return HTTPStatus.OK

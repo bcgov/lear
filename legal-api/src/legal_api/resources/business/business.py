@@ -82,7 +82,7 @@ class BusinessResource(Resource):
             business_name = json_input['filing']['incorporationApplication']['nameRequest']['nrNumber']
         except KeyError:
             business_name = bootstrap.identifier
-        rv = RegistrationBootstrapService.register_bootstrap(filing_account_id, bootstrap, business_name)
+        rv = RegistrationBootstrapService.register_bootstrap(bootstrap, business_name)
         if not isinstance(rv, HTTPStatus):
             with suppress(Exception):
                 bootstrap.delete()

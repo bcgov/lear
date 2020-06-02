@@ -31,7 +31,7 @@ from legal_api.exceptions import BusinessException
 from legal_api.models import Address, Business, Filing, RegistrationBootstrap, User, db
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
-from legal_api.services import COLIN_SVC_ROLE, STAFF_ROLE, authorized, queue
+from legal_api.services import COLIN_SVC_ROLE, STAFF_ROLE, RegistrationBootstrapService, authorized, queue
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
@@ -184,24 +184,28 @@ class ListFilingResource(Resource):
                             _('You are not authorized to delete a filing for:') + identifier}),\
                 HTTPStatus.UNAUTHORIZED
 
-        filing = Business.get_filing_by_id(identifier, filing_id)
+        if identifier.startswith('T'):
+            filing = Filing.get_temp_reg_filing(identifier, filing_id)
+        else:
+            filing = Business.get_filing_by_id(identifier, filing_id)
 
         if not filing:
-            return jsonify({'message':
-                            _('Filing Not Found.')}), \
-                HTTPStatus.NOT_FOUND
+            return jsonify({'message': _('Filing Not Found.')}), HTTPStatus.NOT_FOUND
 
         try:
             filing.delete()
-            return jsonify({'message':
-                            _('Filing deleted.')}), \
-                HTTPStatus.OK
         except BusinessException as err:
-            return jsonify({'errors': [
-                {'error': err.error},
-            ]}), err.status_code
+            return jsonify({'errors': [{'error': err.error}, ]}), err.status_code
 
-        return {}, HTTPStatus.NOT_IMPLEMENTED
+        if identifier.startswith('T'):
+            bootstrap = RegistrationBootstrap.find_by_identifier(identifier)
+            if bootstrap:
+                deregister_status = RegistrationBootstrapService.deregister_bootstrap(bootstrap)
+                delete_status = RegistrationBootstrapService.delete_bootstrap(bootstrap)
+                if deregister_status != HTTPStatus.OK or delete_status != HTTPStatus.OK:
+                    current_app.logger.error('Unable to deregister and delete temp reg:', identifier)
+
+        return jsonify({'message': _('Filing deleted.')}), HTTPStatus.OK
 
     @staticmethod
     @cors.crossdomain(origin='*')

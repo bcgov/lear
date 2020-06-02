@@ -16,11 +16,48 @@
 
 Test-Suite to ensure that the RegistrationBootstrap Service is working as expected.
 """
+import json
 import random
+import uuid
 from http import HTTPStatus
 
+import pytest
+import requests
+from flask import current_app
+
 from legal_api.services import RegistrationBootstrapService
+from legal_api.services.bootstrap import AccountService
 from tests import integration_affiliation
+
+
+@pytest.fixture(scope='function')
+def account(app):
+    """Create an account to be used for testing."""
+    with app.app_context():
+        account_url = current_app.config.get('ACCOUNT_SVC_AFFILIATE_URL')
+        account_url = account_url[:account_url.rfind('{') - 1]
+
+        org_data = json.dumps({'name': str(uuid.uuid4())})
+        token = AccountService.get_bearer_token()
+
+        # with app.app_context():
+        rv = requests.post(
+            url=account_url,
+            data=org_data,
+            headers={**AccountService.CONTENT_TYPE_JSON,
+                     'Authorization': AccountService.BEARER + token},
+            timeout=20
+        )
+
+        account_id = rv.json()['id']
+
+        yield account_id
+
+        rv = requests.delete(url=f'{account_url}/{account_id}',
+                             headers={'Authorization': AccountService.BEARER + token},
+                             timeout=20
+                             )
+        print(rv)
 
 
 def test_create_bootstrap_registrations(session):
@@ -30,23 +67,17 @@ def test_create_bootstrap_registrations(session):
 
 
 @integration_affiliation
-def test_create_account_affiliation(app_ctx):
+def test_account_affiliation_integration(account, app_ctx):
     """Assert that the affiliation can be created."""
-    from legal_api.services.bootstrap import AccountService
-    _id = random.SystemRandom().getrandbits(0x58)
-    r = AccountService.create_affiliation(account=28,
-                                          business_registration=(f'XA{_id}')[:10],
+    business_registration = (f'T{random.SystemRandom().getrandbits(0x58)}')[:10]
+    r = AccountService.create_affiliation(account=account,
+                                          business_registration=business_registration,
                                           business_name='')
 
     assert r == HTTPStatus.OK
 
-
-@integration_affiliation
-def test_delete_account_affiliation(app_ctx):
-    """Assert that it can be un-affiliated."""
-    from legal_api.services.bootstrap import AccountService
-    r = AccountService.delete_affiliation(account=28,
-                                          business_registration='T231abc')
+    r = AccountService.delete_affiliation(account=account,
+                                          business_registration=business_registration)
 
     # @TODO change this next sprint when affiliation service is updated.
-    assert r == HTTPStatus.BAD_REQUEST
+    assert r == HTTPStatus.OK
