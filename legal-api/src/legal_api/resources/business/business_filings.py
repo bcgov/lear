@@ -506,7 +506,7 @@ class ListFilingResource(Resource):
             try:
                 business.legal_name = filing.json['filing']['incorporationApplication']['nameRequest']['legalName']
             except KeyError:
-                business.legal_name =  business.identifier
+                business.legal_name = business.identifier
 
         else:
             mailing_address = business.mailing_address.one_or_none()
