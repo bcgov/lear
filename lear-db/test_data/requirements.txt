@@ -1,11 +1,9 @@
 Flask
-Flask-SQLAlchemy
-SQLAlchemy-Continuum
 python-dotenv
 psycopg2-binary
 pycountry
 requests
 werkzeug < 1.0
 
-git+https://github.com/bcgov/business-schemas.git@2.5.0#egg=registry_schemas
+git+https://github.com/bcgov/business-schemas.git@2.5.11#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
