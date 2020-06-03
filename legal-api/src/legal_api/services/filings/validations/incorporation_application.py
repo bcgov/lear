@@ -116,14 +116,14 @@ def validate_roles(incorporation_json) -> Error:
         err_path = '/filing/incorporationApplication/parties/roles'
         msg.append({'error': 'Must have a maximum of one completing party', 'path': err_path})
 
-    if incorporation_json['filing']['incorporationApplication']['nameRequest']['legalType'] == 'BC':
-        if incorporator_count < 1:
-            err_path = '/filing/incorporationApplication/parties/roles'
-            msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
+    # FUTURE: THis may have to be altered based on entity type in the future
+    if incorporator_count < 1:
+        err_path = '/filing/incorporationApplication/parties/roles'
+        msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
 
-        if director_count < 1:
-            err_path = '/filing/incorporationApplication/parties/roles'
-            msg.append({'error': 'Must have a minimum of one Director', 'path': err_path})
+    if director_count < 1:
+        err_path = '/filing/incorporationApplication/parties/roles'
+        msg.append({'error': 'Must have a minimum of one Director', 'path': err_path})
 
     if msg:
         return msg
