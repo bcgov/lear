@@ -501,9 +501,12 @@ class ListFilingResource(Resource):
         if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name'):
             mailing_address = Address.create_address(
                 filing.json['filing']['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
-            corp_type = filing.json['filing']['incorporationApplication']['nameRequest']['legalType']
-            business.legal_name = filing.json['filing']['incorporationApplication']['nameRequest'].get('legalName') \
-                or business.identifier
+            corp_type = filing.json['filing']['business'].get('legalType', 'BC')
+
+            try:
+                business.legal_name = filing.json['filing']['incorporationApplication']['nameRequest']['legalName']
+            except KeyError:
+                business.legal_name =  business.identifier
 
         else:
             mailing_address = business.mailing_address.one_or_none()
