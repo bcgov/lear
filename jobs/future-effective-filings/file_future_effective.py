@@ -141,5 +141,4 @@ if __name__ == '__main__':
         event_loop = asyncio.get_event_loop()
         event_loop.run_until_complete(run(event_loop, application))
     except Exception as err:  # pylint: disable=broad-except; Catching all errors from the frameworks
-        application.logger.error(err)
-
+        sentry_sdk.capture_exception(err)
