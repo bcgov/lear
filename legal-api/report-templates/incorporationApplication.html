@@ -25,9 +25,13 @@
          <div class="business-name-header">
             <label class="lbl-business-name">
             {% if not incorporationApplication.nameRequest%}
-            Numbered Benefit Company
+               {% if header.reportType == 'noa'%}
+                  {{business.legalName}}
+               {% else %}
+                  Numbered Benefit Company
+               {% endif %}
             {% else %}
-            {{business.legalName}}
+               {{incorporationApplication.nameRequest.legalName}}
             {% endif %}
             </label>
          </div>
@@ -44,7 +48,11 @@
             <div class="effective-date">
                <div class="section-title">Incorporation Effective Date</div>
                <div class="section-data">
-                  The incorporation is to take effect at the time that this application is filed with the Registrar.
+                  {% if header.isFutureEffective}
+                     {{header.effective_date_time}}
+                  {% else %}
+                     The incorporation is to take effect at the time that this application is filed with the Registrar.
+                  {% endif %}
                </div>
             </div>
             <div class="separator"></div>
