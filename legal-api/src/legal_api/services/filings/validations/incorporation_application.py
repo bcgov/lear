@@ -181,7 +181,7 @@ def validate_share_structure(incorporation_json) -> Error:
                     })
                 else:
                     if item['hasMaximumShares'] and item.get('maxNumberOfShares', None) and \
-                            series['maxNumberOfShares'] > item['maxNumberOfShares']:
+                            int(series['maxNumberOfShares']) > int(item['maxNumberOfShares']):
                         msg.append({
                             'error': 'Series %s share quantity must be less than or equal to that of its class %s'
                                      % (series['name'], item['name']),
