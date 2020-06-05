@@ -31,7 +31,7 @@ import json
 import os
 
 import nats
-from entity_queue_common.messages import create_filing_msg
+from entity_queue_common.messages import create_email_msg, create_filing_msg
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
@@ -65,6 +65,14 @@ async def publish_filing(filing: Filing):
     payload = create_filing_msg(filing.id)
     subject = APP_CONFIG.FILER_PUBLISH_OPTIONS['subject']
 
+    await qsm.service.publish(subject, payload)
+
+
+async def publish_email_message(filing: Filing):
+    option = 'future' if filing.effective_date >= datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)\
+        else 'immediate'
+    payload = create_email_msg(filing.id, filing.filing_type, option)
+    subject = APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject']
     await qsm.service.publish(subject, payload)
 
 
@@ -118,6 +126,14 @@ async def process_payment(payment_token, flask_app):
                     capture_message(
                         'Queue Error: Failied to place filing:{filing_submission.id} on Queue with error:{err}',
                         level='error')
+
+            try:
+                await publish_email_message(filing_submission)
+            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                # mark any failure for human review
+                capture_message(
+                    'Queue Error: Failied to place filing:{filing_submission.id} on Queue with error:{err}',
+                    level='error')
 
             return
 

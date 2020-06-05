@@ -32,6 +32,15 @@ def get_filing_id_from_msg(msg: nats.aio.client.Msg):
         return None
 
 
+def get_data_from_msg(msg: nats.aio.client.Msg, key):
+    """Return the identifier of the filing in the NATS msg."""
+    try:
+        token = json.loads(msg.data.decode('utf-8'))
+        return token['filing'].get(str)
+    except (AttributeError, NameError, json.decoder.JSONDecodeError):
+        return None
+
+
 def create_payment_msg(identifier, status):
     """Create a payment payload for the paymentToken."""
     payment_msg = {'paymentToken': {'id': identifier, 'statusCode': status}}
@@ -45,3 +54,9 @@ def get_payment_id_from_msg(msg: nats.aio.client.Msg):
         return token['paymentToken'].get('id')
     except (AttributeError, NameError, json.decoder.JSONDecodeError):
         return None
+
+
+def create_email_msg(identifier, filing_type, option):
+    """Create a payload for the email service."""
+    payment_msg = {'email': {'filingId': identifier, 'type': filing_type, 'option': option}}
+    return payment_msg

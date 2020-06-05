@@ -14,9 +14,11 @@
 """Test Suite to ensure the worker routines are working as expected."""
 import asyncio
 import random
+import datetime
 
 import pytest
-from entity_queue_common.messages import get_filing_id_from_msg
+from entity_queue_common.messages import get_data_from_msg, get_filing_id_from_msg
+
 
 from .utils import helper_add_payment_to_queue, subscribe_to_queue
 
@@ -138,3 +140,56 @@ async def test_publish_filing(app, session, stan_server, event_loop, client_id, 
     # check it out
     assert len(msgs) == 1
     assert get_filing_id_from_msg(msgs[0]) == filing.id
+
+
+@pytest.mark.asyncio
+async def test_publish_email_message(app, session, stan_server, event_loop, client_id, entity_stan, future):
+    """Assert that payment tokens can be retrieved and decoded from the Queue."""
+    # Call back for the subscription
+    from entity_queue_common.service import ServiceWorker
+    from entity_pay.worker import APP_CONFIG, publish_email_message, qsm
+    from legal_api.models import Filing
+
+    # file handler callback
+    msgs = []
+
+    async def cb_file_handler(msg):
+        nonlocal msgs
+        nonlocal future
+        msgs.append(msg)
+        if len(msgs) == 1:
+            future.set_result(True)
+
+    file_handler_subject = APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject']
+    await subscribe_to_queue(entity_stan,
+                             file_handler_subject,
+                             f'entity_queue.{file_handler_subject}',
+                             f'entity_durable_name.{file_handler_subject}',
+                             cb_file_handler)
+
+    s = ServiceWorker()
+    s.sc = entity_stan
+    qsm.service = s
+
+    # Test
+    filing = Filing()
+    filing.id = 101
+    filing.filing_type = 'incorporationApplication'
+    filing_date = datetime.datetime.utcnow()
+    filing.filing_date = filing_date
+    filing.effective_date = filing_date
+
+    await publish_email_message(filing)
+
+    try:
+        await asyncio.wait_for(future, 2, loop=event_loop)
+    except Exception as err:
+        print(err)
+
+    # check it out
+    assert len(msgs) == 1
+    assert get_data_from_msg(msgs[0], 'id') == filing.id
+    assert get_data_from_msg(msgs[0], 'type') == filing.filing_type
+    assert get_data_from_msg(msgs[0], 'option') == 'immediate'
+
+
