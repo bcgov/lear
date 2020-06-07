@@ -33,7 +33,6 @@ def test_incorporation_filing_process(app, session):
         identifier = 'NR 1234567'
         filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
         filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
-        # business = create_business(identifier)
         create_filing('123', filing)
 
         effective_date = datetime.utcnow()

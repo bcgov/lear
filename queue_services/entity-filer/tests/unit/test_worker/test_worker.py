@@ -308,7 +308,6 @@ def test_process_cod_mailing_address(app, session):
     # TEST
     process_filing(filing_msg, app)
 
-    filing = Filing.find_by_id(filing_id)
     business = Business.find_by_internal_id(business_id)
 
     directors = PartyRole.get_active_directors(business.id, end_date)
@@ -342,13 +341,11 @@ def test_process_cod_mailing_address(app, session):
     filing_msg = {'filing': {'id': filing_id}}
     process_filing(filing_msg, app)
 
-    filing = Filing.find_by_id(filing_id)
     business = Business.find_by_internal_id(business_id)
 
     directors = PartyRole.get_active_directors(business.id, end_date)
     # Get modified data
     filing = Filing.find_by_id(filing_id)
-    business = Business.find_by_internal_id(business_id)
 
     # check it out
     assert len(list(filter(lambda x: x.party.mailing_address is not None, directors))) == 2

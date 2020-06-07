@@ -69,7 +69,7 @@ def update_affiliation(business: Business, filing: Filing):
 
         if rv != HTTPStatus.OK or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK):
             raise QueueException
-    except:  # pylint: disable=bare-except # noqa: E722; note out any exception, but don't fail the call
+    except Exception:  # pylint: disable=broad-except; note out any exception, but don't fail the call
         sentry_sdk.capture_message(f'Queue Error: Affiliation error for filing:{filing.id}', level='error')
 
 
