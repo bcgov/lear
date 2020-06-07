@@ -14,13 +14,15 @@
 """Common setup and fixtures for the pytest suite used by this service."""
 import asyncio
 import datetime
+import json
 import os
 import random
 import time
 from contextlib import contextmanager
 
 import pytest
-from flask import Flask
+import requests
+from flask import Flask, current_app
 from legal_api import db
 from legal_api import jwt as _jwt
 from nats.aio.client import Client as Nats
@@ -90,6 +92,38 @@ def client_ctx(app):  # pylint: disable=redefined-outer-name
     """Return session-wide Flask test client."""
     with app.test_client() as _client:
         yield _client
+
+
+@pytest.fixture(scope='function')
+def account(app):
+    """Create an account to be used for testing."""
+    import uuid
+    from legal_api.services.bootstrap import AccountService
+    with app.app_context():
+        account_url = current_app.config.get('ACCOUNT_SVC_AFFILIATE_URL')
+        account_url = account_url[:account_url.rfind('{') - 1]
+
+        org_data = json.dumps({'name': str(uuid.uuid4())})
+        token = AccountService.get_bearer_token()
+
+        # with app.app_context():
+        rv = requests.post(
+            url=account_url,
+            data=org_data,
+            headers={**AccountService.CONTENT_TYPE_JSON,
+                     'Authorization': AccountService.BEARER + token},
+            timeout=20
+        )
+
+        account_id = rv.json()['id']
+
+        yield account_id
+
+        rv = requests.delete(url=f'{account_url}/{account_id}',
+                             headers={'Authorization': AccountService.BEARER + token},
+                             timeout=20
+                             )
+        print(rv)
 
 
 @pytest.fixture('function')

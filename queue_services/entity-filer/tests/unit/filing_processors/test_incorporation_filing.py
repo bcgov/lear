@@ -21,7 +21,7 @@ from legal_api.models import Filing
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from entity_filer.filing_processors import incorporation_filing
-from tests.unit import create_business, create_filing
+from tests.unit import create_filing
 
 
 def test_incorporation_filing_process(app, session):
@@ -33,14 +33,14 @@ def test_incorporation_filing_process(app, session):
         identifier = 'NR 1234567'
         filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
         filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
-        business = create_business(identifier)
-        create_filing('123', filing, business.id)
+        # business = create_business(identifier)
+        create_filing('123', filing)
 
         effective_date = datetime.utcnow()
-        filing_rec = Filing(effective_date=effective_date)
+        filing_rec = Filing(effective_date=effective_date, filing_json=filing)
 
         # test
-        incorporation_filing.process(business, filing['filing'], filing_rec)
+        business, filing_rec = incorporation_filing.process(None, filing['filing'], filing_rec)
 
         # Assertions
         assert business.identifier == next_corp_num
@@ -48,7 +48,6 @@ def test_incorporation_filing_process(app, session):
         assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
         assert business.legal_name == filing['filing']['incorporationApplication']['nameRequest']['legalName']
         assert len(business.share_classes.all()) == 2
-        assert len(business.offices.all()) == 3  # One office is created in create_business method.
+        assert len(business.offices.all()) == 2  # One office is created in create_business method.
 
-    mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'],
-                                              None)
+    mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])

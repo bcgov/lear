@@ -21,18 +21,16 @@ import pytz
 from freezegun import freeze_time
 from legal_api.models import Business, Filing, PartyRole, User
 from legal_api.resources.business import DirectorResource
-from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, INCORPORATION
+from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR
 
 from entity_filer.filing_processors import create_party, create_role
 from entity_filer.worker import process_filing
-from tests.pytest_marks import colin_api_integration
 from tests.unit import (
     AR_FILING,
     COA_FILING,
     COD_FILING,
     COD_FILING_TWO_ADDRESSES,
     COMBINED_FILING,
-    INCORP_FILING,
     create_business,
     create_filing,
     create_user,
@@ -478,55 +476,6 @@ def test_process_filing_completed(app, session):
     assert filing.transaction_id
     assert business.last_agm_date
     assert business.last_ar_date
-
-
-@colin_api_integration
-def test_incorporation_filing(app, session):
-    """Assert we can retrieve a new corp number from COLIN and incorporate a business."""
-    # vars
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing = copy.deepcopy(INCORP_FILING)
-    identifier = filing['filing']['incorporationApplication']['nameRequest']['nrNumber']
-    business = create_business(identifier)
-    filing_id = (create_filing(payment_id, filing, business.id)).id
-    filing_msg = {'filing': {'id': filing_id}}
-
-    assert business.identifier == 'NR 1234567'
-
-    process_filing(filing_msg, app)
-    filing = Filing.find_by_id(filing_id)
-    business = Business.find_by_internal_id(filing.business_id)
-    assert business.identifier != 'NR 1234567'
-    assert len(business.share_classes.all()) == 2
-    assert len(business.offices.all()) == 3  # One office is created in create_business method.
-
-
-@colin_api_integration
-def test_process_incorporation_parties(app, session):
-    """Assert we successfully add parties in incorporation filing."""
-    # vars
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing = copy.deepcopy(INCORP_FILING)
-    schema_incorp = copy.deepcopy(INCORPORATION)
-    filing['filing']['incorporationApplication']['parties'] = schema_incorp['parties']
-
-    identifier = filing['filing']['incorporationApplication']['nameRequest']['nrNumber']
-    business = create_business(identifier)
-    filing_id = (create_filing(payment_id, filing, business.id)).id
-    filing_msg = {'filing': {'id': filing_id}}
-
-    process_filing(filing_msg, app)
-    filing = Filing.find_by_id(filing_id)
-    business = Business.find_by_internal_id(filing.business_id)
-    assert len(PartyRole.get_parties_by_role(business.id, 'director')) == 1
-    assert len(PartyRole.get_parties_by_role(business.id, 'incorporator')) == 1
-    assert len(PartyRole.get_parties_by_role(business.id, 'completing_party')) == 1
-    director = (PartyRole.get_parties_by_role(business.id, 'director'))[0]
-    incorporator = (PartyRole.get_parties_by_role(business.id, 'incorporator'))[0]
-    completing_party = (PartyRole.get_parties_by_role(business.id, 'completing_party'))[0]
-    assert director.appointment_date
-    assert incorporator.appointment_date
-    assert completing_party.appointment_date
 
 
 def test_correction_filing(app, session):

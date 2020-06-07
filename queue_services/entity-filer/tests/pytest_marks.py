@@ -25,4 +25,7 @@ load_dotenv(find_dotenv())
 colin_api_integration = pytest.mark.skipif((os.getenv('RUN_COLIN_API', False) is False),
                                            reason='requires access to COLIN API')
 
+integration_affiliation = pytest.mark.skipif((os.getenv('RUN_AFFILIATION_TESTS', False) is False),
+                                             reason='Account affiliation tests are only run when requested.')
+
 skip_in_pod = pytest.mark.skipif((os.getenv('POD_TESTING', False) is False), reason='Skip test when running in pod')
