@@ -24,7 +24,7 @@ from entity_filer.filing_processors import incorporation_filing
 from tests.unit import create_filing
 
 
-def test_incorporation_filing_process(app, session):
+def test_incorporation_filing_process_with_nr(app, session):
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     next_corp_num = 'BC0001095'
@@ -46,6 +46,31 @@ def test_incorporation_filing_process(app, session):
         assert business.founding_date == effective_date
         assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
         assert business.legal_name == filing['filing']['incorporationApplication']['nameRequest']['legalName']
+        assert len(business.share_classes.all()) == 2
+        assert len(business.offices.all()) == 2  # One office is created in create_business method.
+
+    mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+
+
+def test_incorporation_filing_process_no_nr(app, session):
+    """Assert that the incorporation object is correctly populated to model objects."""
+    # setup
+    next_corp_num = 'BC0001095'
+    with patch.object(incorporation_filing, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
+        filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+        create_filing('123', filing)
+
+        effective_date = datetime.utcnow()
+        filing_rec = Filing(effective_date=effective_date, filing_json=filing)
+
+        # test
+        business, filing_rec = incorporation_filing.process(None, filing['filing'], filing_rec)
+
+        # Assertions
+        assert business.identifier == next_corp_num
+        assert business.founding_date == effective_date
+        assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
+        assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
         assert len(business.share_classes.all()) == 2
         assert len(business.offices.all()) == 2  # One office is created in create_business method.
 

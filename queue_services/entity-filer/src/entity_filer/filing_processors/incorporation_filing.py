@@ -46,7 +46,7 @@ def update_business_info(corp_num: str, business: Business, business_info: Dict,
     if corp_num and business and business_info and filing and filing_rec:
         legal_name = business_info.get('legalName', None)
         business.identifier = corp_num
-        business.legal_name = legal_name if legal_name else corp_num
+        business.legal_name = legal_name if legal_name else corp_num[2:] + ' B.C. LTD.'
         business.legal_type = business_info.get('legalType', None)
         business.founding_date = filing_rec.effective_date
         return business
@@ -82,7 +82,6 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
     if not incorp_filing:
         raise QueueException(f'IA legal_filing:incorporationApplication missing from {filing_rec.id}')
     if business:
-        print(business)
         raise QueueException(f'Business Already Exist: IA legal_filing:incorporationApplication {filing_rec.id}')
 
     offices = incorp_filing.get('offices', None)
