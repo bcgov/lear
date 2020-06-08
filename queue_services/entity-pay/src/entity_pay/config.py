@@ -102,6 +102,10 @@ class _Config():  # pylint: disable=too-few-public-methods
         'subject': os.getenv('NATS_FILER_SUBJECT', 'entity.filing.filer'),
     }
 
+    EMAIL_PUBLISH_OPTIONS = {
+        'subject': os.getenv('NATS_EMAILER_SUBJECT', 'entity.email'),
+    }
+
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""
