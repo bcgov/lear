@@ -360,66 +360,66 @@ COMBINED_FILING = {
 }
 
 INCORP_FILING = {
-        'filing': {
-            'header': {
-                'name': 'incorporationApplication',
-                'date': '2019-04-08',
-                'certifiedBy': 'full name',
-                'email': 'no_one@never.get',
-                'filingId': 1,
-                'effectiveDate': '2019-04-15T00:00:00+00:00'
+    'filing': {
+        'header': {
+            'name': 'incorporationApplication',
+            'date': '2019-04-08',
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get',
+            'filingId': 1,
+            'effectiveDate': '2019-04-15T00:00:00+00:00'
+        },
+        'incorporationApplication': {
+            'nameRequest': {
+                'nrNumber': 'NR 1234567',
+                'legalType': 'BC'
             },
-            'incorporationApplication': {
-                'nameRequest': {
-                    'nrNumber': 'NR 1234567',
-                    'legalType': 'BC'
-                },
-                'offices': {
-                    'registeredOffice': {
-                        'deliveryAddress': {
-                            'streetAddress': '123 Fake Street',
-                            'addressCity': 'Duncan',
-                            'addressCountry': 'Canada',
-                            'postalCode': 'H0H0H0',
-                            'addressRegion': 'BC'
-                        },
-                        'mailingAddress': {
-                            'streetAddress': '123 Fake Street',
-                            'addressCity': 'Duncan',
-                            'addressCountry': 'Canada',
-                            'postalCode': 'H0H0H0',
-                            'addressRegion': 'BC',
-                        }
+            'offices': {
+                'registeredOffice': {
+                    'deliveryAddress': {
+                        'streetAddress': '123 Fake Street',
+                        'addressCity': 'Duncan',
+                        'addressCountry': 'Canada',
+                        'postalCode': 'H0H0H0',
+                        'addressRegion': 'BC'
                     },
-                    'recordsOffice': {
-                        'deliveryAddress': {
-                            'streetAddress': '123 Fake Street',
-                            'addressCity': 'Duncan',
-                            'addressCountry': 'Canada',
-                            'postalCode': 'H0H0H0',
-                            'addressRegion': 'BC'
-                        },
-                        'mailingAddress': {
-                            'streetAddress': '123 Fake Street',
-                            'addressCity': 'Duncan',
-                            'addressCountry': 'Canada',
-                            'postalCode': 'H0H0H0',
-                            'addressRegion': 'BC'
-                        }
+                    'mailingAddress': {
+                        'streetAddress': '123 Fake Street',
+                        'addressCity': 'Duncan',
+                        'addressCountry': 'Canada',
+                        'postalCode': 'H0H0H0',
+                        'addressRegion': 'BC',
                     }
                 },
-                'shareClasses': [
-                    {
-                        'id': 1,
-                        'name': 'Share Class 1',
-                        'priority': 1,
-                        'hasMaximumShares': True,
-                        'maxNumberOfShares': 100,
-                        'hasParValue': True,
-                        'parValue': 10,
-                        'currency': 'CAD',
-                        'hasRightsOrRestrictions': False,
-                        'series': [
+                'recordsOffice': {
+                    'deliveryAddress': {
+                        'streetAddress': '123 Fake Street',
+                        'addressCity': 'Duncan',
+                        'addressCountry': 'Canada',
+                        'postalCode': 'H0H0H0',
+                        'addressRegion': 'BC'
+                    },
+                    'mailingAddress': {
+                        'streetAddress': '123 Fake Street',
+                        'addressCity': 'Duncan',
+                        'addressCountry': 'Canada',
+                        'postalCode': 'H0H0H0',
+                        'addressRegion': 'BC'
+                    }
+                }
+            },
+            'shareClasses': [
+                {
+                    'id': 1,
+                    'name': 'Share Class 1',
+                    'priority': 1,
+                    'hasMaximumShares': True,
+                    'maxNumberOfShares': 100,
+                    'hasParValue': True,
+                    'parValue': 10,
+                    'currency': 'CAD',
+                    'hasRightsOrRestrictions': False,
+                    'series': [
                             {
                                 'id': 1,
                                 'name': 'Share Series 1',
@@ -428,7 +428,7 @@ INCORP_FILING = {
                                 'maxNumberOfShares': 50,
                                 'hasRightsOrRestrictions': False,
                             },
-                            {
+                        {
                                 'id': 2,
                                 'name': 'Share Series 2',
                                 'priority': 2,
@@ -436,31 +436,31 @@ INCORP_FILING = {
                                 'maxNumberOfShares': 100,
                                 'hasRightsOrRestrictions': False,
                             }
-                        ]
-                    },
-                    {
-                        'id': 2,
-                        'name': 'Share Class 2',
-                        'priority': 1,
-                        'hasMaximumShares': False,
-                        'maxNumberOfShares': None,
-                        'hasParValue': False,
-                        'parValue': None,
-                        'currency': None,
-                        'hasRightsOrRestrictions': True,
-                        'series': []
-                    },
-                ],
-                'contactPoint': {
-                    'email': 'no_one@never.get',
-                    'phone': '123-456-7890'
-                }
+                    ]
+                },
+                {
+                    'id': 2,
+                    'name': 'Share Class 2',
+                    'priority': 1,
+                    'hasMaximumShares': False,
+                    'maxNumberOfShares': None,
+                    'hasParValue': False,
+                    'parValue': None,
+                    'currency': None,
+                    'hasRightsOrRestrictions': True,
+                    'series': []
+                },
+            ],
+            'contactPoint': {
+                'email': 'no_one@never.get',
+                'phone': '123-456-7890'
             }
         }
     }
+}
 
 
-def create_filing(token, json_filing=None, business_id=None, filing_date=EPOCH_DATETIME):
+def create_filing(token, json_filing=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
     """Return a test filing."""
     from legal_api.models import Filing
     filing = Filing()
@@ -471,6 +471,8 @@ def create_filing(token, json_filing=None, business_id=None, filing_date=EPOCH_D
         filing.filing_json = json_filing
     if business_id:
         filing.business_id = business_id
+    if bootstrap_id:
+        filing.temp_reg = bootstrap_id
 
     filing.save()
     return filing

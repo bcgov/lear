@@ -138,7 +138,7 @@ def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-m
                     voluntary_dissolution.process(business, filing)
 
                 elif filing.get('incorporationApplication'):
-                    incorporation_filing.process(business, filing, filing_submission, flask_app)
+                    business, filing_submission = incorporation_filing.process(business, filing, filing_submission)
 
                 elif filing.get('correction'):
                     correction.process(filing_submission, filing)
@@ -149,6 +149,12 @@ def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-m
             db.session.add(business)
             db.session.add(filing_submission)
             db.session.commit()
+
+            if any('incorporationApplication' in x for x in legal_filings):
+                filing_submission.business_id = business.id
+                db.session.add(filing_submission)
+                db.session.commit()
+                incorporation_filing.update_affiliation(business, filing_submission)
 
             publish_event(business, filing_submission)
         return
