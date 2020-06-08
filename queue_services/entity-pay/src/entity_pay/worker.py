@@ -125,7 +125,7 @@ async def process_payment(payment_token, flask_app):
                 except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
                     # mark any failure for human review
                     capture_message(
-                        'Queue Error: Failied to place filing:{filing_submission.id} on Queue with error:{err}',
+                        'Queue Error: Failed to place filing:{filing_submission.id} on Queue with error:{err}',
                         level='error')
 
             try:
@@ -133,7 +133,7 @@ async def process_payment(payment_token, flask_app):
             except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
                 # mark any failure for human review
                 capture_message(
-                    'Queue Error: Failied to place filing:{filing_submission.id} on Queue with error:{err}',
+                    'Queue Error: Failed to place email for filing:{filing_submission.id} on Queue with error:{err}',
                     level='error')
 
             return
