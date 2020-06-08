@@ -69,6 +69,7 @@ async def publish_filing(filing: Filing):
 
 
 async def publish_email_message(filing: Filing):
+    """Publish the email message onto the NATS emailer subject."""
     option = 'future' if filing.effective_date >= datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)\
         else 'immediate'
     payload = create_email_msg(filing.id, filing.filing_type, option)
