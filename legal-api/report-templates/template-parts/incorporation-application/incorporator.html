@@ -14,22 +14,25 @@
               {% endif %}
                   <td class="director-name">
                       <div class="section-sub-title">
-                          <span class="capitalize-text">{{ party.officer.lastName }}</span>,
-                          <span class="capitalize-text">{{ party.officer.firstName }}</span>
-                        {% if party.officer.middleInitial is defined %}
-                        <span class="capitalize-text">{{ party.officer.middleInitial }}</span>
-                        {% endif %}
+                          {% if party.officer.partyType == 'Org' %}
+                              <span class="capitalize-text">{{ party.officer.orgName }}</span>
+                          {% else %}
+                              <span class="capitalize-text">{{ party.officer.lastName }}</span>,
+                              <span class="capitalize-text">{{ party.officer.firstName }}</span>
+                              {% if party.officer.middleInitial is defined %}
+                                <span class="capitalize-text">{{ party.officer.middleInitial }}</span>
+                              {% endif %}
+                          {% endif %}
                       </div>
                   </td>
                   <td>
                       <div class="section-sub-title">Mailing Address</div>
-                      <div>{{ party.deliveryAddress.streetAddress }}</div>
-                      <div>{{ party.deliveryAddress.streetAddressAdditional }}</div>
-                      <div>{{ party.deliveryAddress.addressCity }}
-                        {{ party.deliveryAddress.addressRegion }}
-                        &nbsp;{{ party.deliveryAddress.postalCode }}</div>
-                      <div>{{ party.deliveryAddress.addressCountry }}</div>
-                      <div>{{ party.deliveryAddress.deliveryInstructions }}</div>
+                      <div>{{ party.mailingAddress.streetAddress }}</div>
+                      <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
+                      <div>{{ party.mailingAddress.addressCity }}
+                        {{ party.mailingAddress.addressRegion }}
+                        &nbsp;{{ party.mailingAddress.postalCode }}</div>
+                      <div>{{ party.mailingAddress.addressCountry }}</div>
                   </td>
               </tr>
           </table>
