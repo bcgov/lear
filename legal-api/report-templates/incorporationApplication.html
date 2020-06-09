@@ -24,7 +24,7 @@
          </table>
          <div class="business-name-header">
             <label class="lbl-business-name">
-            {% if not incorporationApplication.nameRequest%}
+            {% if not incorporationApplication.nameRequest.nrNumber%}
                {% if header.reportType == 'noa'%}
                   {{business.legalName}}
                {% else %}
@@ -73,7 +73,7 @@
                   business in a responsible and sustainable manner and promoting one or more public benefits.
                </p>
                <p><span class="section-sub-title">Name of Company:</span>
-                  {% if not incorporationApplication.nameRequest%}
+                  {% if not incorporationApplication.nameRequest.nrNumber%}
                   {% if header.reportType == 'noa'%}
                   {{business.legalName}}
                   {% else %}
