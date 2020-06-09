@@ -2,7 +2,7 @@
 <table class="business-info-table" cellspacing="10" role="presentation">
   <tr>
     <td class="name">Company Name:</td>
-    {% if incorporationApplication.nameRequest %}
+    {% if incorporationApplication.nameRequest.nrNumber %}
     <td class="value">{{ incorporationApplication.nameRequest.legalName }}</td>
     {% elif business.legalType == 'BC' %}
     <td class="value">Numbered Benefit Company</td>
