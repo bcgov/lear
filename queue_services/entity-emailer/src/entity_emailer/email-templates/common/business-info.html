@@ -43,8 +43,7 @@
     <td class="value">{{ filing_date_time }}</td>
   </tr>
 
-  <!-- effective_date_time is assigned only if it's in the future -->
-  {% if effective_date_time %}
+  {% if header.isFutureEffective %}
   <tr>
     <td class="name">Effective Date and Time:</td>
     <td class="value">{{ effective_date_time }}</td>
