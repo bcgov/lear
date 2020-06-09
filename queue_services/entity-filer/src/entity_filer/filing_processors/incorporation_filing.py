@@ -86,7 +86,8 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
 
     offices = incorp_filing.get('offices', None)
     parties = incorp_filing.get('parties', None)
-    business_info = incorp_filing['nameRequest']
+    business_info = incorp_filing.get('nameRequest', {'legalType': 'BC'})
+    # @TODO REMOVE THIS HACK before ANY OTHER FILING TYPES ARE ADDED HERE!!!!!!!!!
     share_classes = incorp_filing['shareClasses']
 
     # Reserve the Corp Numper for this entity
