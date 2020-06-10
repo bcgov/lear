@@ -31,6 +31,7 @@ def get_next_corp_num(business_type: str):
     try:
         resp = requests.get(f'{current_app.config["COLIN_API"]}?legal_type={business_type}')
     except requests.exceptions.ConnectionError:
+        current_app.logger.error(f'Failed to connect to {current_app.config["COLIN_API"]}')
         return None
 
     if resp.status_code == 200:
@@ -86,20 +87,19 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
 
     offices = incorp_filing.get('offices', None)
     parties = incorp_filing.get('parties', None)
-    business_info = incorp_filing.get('nameRequest', {'legalType': 'BC'})
-    # @TODO REMOVE THIS HACK before ANY OTHER FILING TYPES ARE ADDED HERE!!!!!!!!!
+    business_info = incorp_filing.get('nameRequest')
     share_classes = incorp_filing['shareClasses']
 
     # Reserve the Corp Numper for this entity
     corp_num = get_next_corp_num(business_info['legalType'])
     if not corp_num:
-        raise QueueException('incorporationApplication {filing_rec.id} unable to get a business registration number.')
+        raise QueueException(f'incorporationApplication {filing_rec.id} unable to get a business registration number.')
 
     # Initial insert of the business record
     business = Business()
     business = update_business_info(corp_num, business, business_info, incorp_filing, filing_rec)
     if not business:
-        raise QueueException('IA incorporationApplication {filing_rec.id}, Unable to create business.')
+        raise QueueException(f'IA incorporationApplication {filing_rec.id}, Unable to create business.')
 
     for office_type, addresses in offices.items():
         office = create_office(business, office_type, addresses)
