@@ -236,7 +236,14 @@ class ListFilingResource(Resource):
                             _('You are not authorized to delete a filing for:') + identifier}), \
                 HTTPStatus.UNAUTHORIZED
 
-        filing = Business.get_filing_by_id(identifier, filing_id)
+        if identifier.startswith('T'):
+            q = db.session.query(Filing). \
+                filter(Filing.temp_reg == identifier).\
+                filter(Filing.id == filing_id)
+
+            filing = q.one_or_none()
+        else:
+            filing = Business.get_filing_by_id(identifier, filing_id)
 
         if not filing:
             return jsonify({'message': ('Filing Not Found.')}), \
