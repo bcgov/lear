@@ -65,10 +65,11 @@ def update_affiliation(business: Business, filing: Filing):
             business_name=business.legal_name
         )
 
-        if rv == HTTPStatus.OK:
+        if rv in (HTTPStatus.OK, HTTPStatus.CREATED):
             deaffiliation = AccountService.delete_affiliation(bootstrap.account, business.identifier)
 
-        if rv != HTTPStatus.OK or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK):
+        if rv not in (HTTPStatus.OK, HTTPStatus.CREATED) \
+                or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK):
             raise QueueException
     except Exception:  # pylint: disable=broad-except; note out any exception, but don't fail the call
         sentry_sdk.capture_message(f'Queue Error: Affiliation error for filing:{filing.id}', level='error')
