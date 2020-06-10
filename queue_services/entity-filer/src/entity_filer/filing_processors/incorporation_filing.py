@@ -65,7 +65,7 @@ def update_affiliation(business: Business, filing: Filing):
             business_name=business.legal_name
         )
 
-        if rv in (HTTPStatus.OK, HTTPStatus.CREATED):
+        if rv not in (HTTPStatus.OK, HTTPStatus.CREATED):
             deaffiliation = AccountService.delete_affiliation(bootstrap.account, business.identifier)
 
         if rv not in (HTTPStatus.OK, HTTPStatus.CREATED) \
