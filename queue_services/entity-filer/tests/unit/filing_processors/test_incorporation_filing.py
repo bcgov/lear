@@ -17,6 +17,7 @@ import copy
 from datetime import datetime
 from unittest.mock import patch
 
+import pytest
 from legal_api.models import Filing
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
@@ -75,3 +76,21 @@ def test_incorporation_filing_process_no_nr(app, session):
         assert len(business.offices.all()) == 2  # One office is created in create_business method.
 
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+
+
+@pytest.mark.parametrize('test_name,response,expected', [
+    ('short number', 1234, 'BC0001234'),
+    ('full 9 number', 1234567, 'BC1234567'),
+    ('too big number', 12345678, None),
+])
+def test_get_next_corp_num(requests_mock, app, test_name, response, expected):
+    """Assert that the corpnum is the correct format."""
+    from entity_filer.filing_processors.incorporation_filing import get_next_corp_num
+    from flask import current_app
+
+    with app.app_context():
+        requests_mock.get(f'{current_app.config["COLIN_API"]}?legal_type=BC', json={'corpNum': [response]})
+
+        corp_num = get_next_corp_num('BC')
+
+    assert corp_num == expected

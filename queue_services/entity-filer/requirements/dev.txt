@@ -8,6 +8,7 @@ pytest-aiohttp
 pytest-asyncio
 pytest-mock
 requests
+requests_mock
 pyhamcrest
 dpath
 
