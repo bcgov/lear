@@ -106,7 +106,7 @@ def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-m
         if filing_submission.status == Filing.Status.COMPLETED.value:
             logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
                            filing_submission.business_id, filing_submission.id, filing_msg)
-            return
+            return None, None
 
         legal_filings = filing_submission.legal_filings()
 
@@ -156,8 +156,7 @@ def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-m
                 db.session.commit()
                 incorporation_filing.update_affiliation(business, filing_submission)
 
-            publish_event(business, filing_submission)
-        return
+        return business, filing_submission
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
@@ -166,7 +165,9 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
         filing_msg = json.loads(msg.data.decode('utf-8'))
         logger.debug('Extracted filing msg: %s', filing_msg)
-        process_filing(filing_msg, FLASK_APP)
+        business, filing_submission = process_filing(filing_msg, FLASK_APP)
+        if business and filing_submission:
+            await publish_event(business, filing_submission)
     except OperationalError as err:
         logger.error('Queue Blocked - Database Issue: %s', json.dumps(filing_msg), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue
