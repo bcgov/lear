@@ -17,6 +17,8 @@ Processors hold the business logic for how an email is interpreted and sent.
 """
 from pathlib import Path
 
+from flask import current_app
+
 
 def substitute_template_parts(template_code):
     """Substitute template parts in main template.
@@ -48,7 +50,7 @@ def substitute_template_parts(template_code):
 
     # substitute template parts - marked up by [[filename]]
     for template_part in template_parts:
-        template_part_code = Path(f'email_templates/common/{template_part}.html').read_text()
+        template_part_code = Path(f'{current_app.config.get("TEMPLATE_PATH")}/common/{template_part}.html').read_text()
         template_code = template_code.replace('[[{}.html]]'.format(template_part), template_part_code)
 
     return template_code
