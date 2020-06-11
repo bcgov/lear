@@ -1,7 +1,9 @@
 Flask
-python-dotenv
-sentry-sdk[flask]
 asyncio-nats-client
 asyncio-nats-streaming
 attrs<19.2.0
+jinja2
+python-dotenv
+requests
+sentry-sdk[flask]
 Werkzeug<1.0

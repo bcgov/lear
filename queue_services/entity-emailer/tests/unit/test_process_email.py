@@ -30,10 +30,10 @@ def test_process_filing_missing_app(app, session):
 def test_process_bn_email(app, session):
     """Assert that a BN email msg is processed correctly."""
     # setup
-    email_msg = {'email': {'type': 'bn'}}
+    # email_msg = {'email': {'type': 'bn'}}
 
-    # TEST
-    process_email(email_msg, app)
+    # # TEST
+    # process_email(email_msg, app)
 
     # Get modified data to be implemented after email is sending
 
@@ -43,10 +43,10 @@ def test_process_bn_email(app, session):
 def test_process_incorp_email(app, session):
     """Assert that an INCORP email msg is processed correctly."""
     # setup
-    email_msg = {'email': {'type': 'incorp'}}
+    # email_msg = {'email': {'filingId': 1234, 'type': 'incorporationApplication', 'option': 'filed'}}
 
     # TEST
-    process_email(email_msg, app)
+    # process_email(email_msg, app)
 
     # Get modified data to be implemented after email is sending
 
