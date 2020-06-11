@@ -76,7 +76,6 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
         else:
             raise EmailException(f'Unrecognizable type: {email_msg["email"]["type"]}')
 
-        email['recipients'] = 'kial.jinnah@gov.bc.ca'
         resp = requests.post(
             f'{APP_CONFIG.NOTIFY_API_URL}',
             json=email,

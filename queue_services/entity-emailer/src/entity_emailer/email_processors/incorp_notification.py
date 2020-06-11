@@ -44,7 +44,7 @@ def _get_pdfs(stage: str, token: str, business: dict, filing: Filing, filing_dat
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
             headers=headers
         )
-        if inc_app.status_code != HTTPStatus.CREATED:
+        if inc_app.status_code != HTTPStatus.OK:
             logger.error('Failed to get IA pdf for filing: %s', filing.id)
             capture_message(f'Email Queue: filing id={filing.id}, error=pdf generation', level='error')
         else:
@@ -85,7 +85,7 @@ def _get_pdfs(stage: str, token: str, business: dict, filing: Filing, filing_dat
             ?type=noa',
             headers=headers
         )
-        if noa.status_code != HTTPStatus.CREATED:
+        if noa.status_code != HTTPStatus.OK:
             logger.error('Failed to get noa pdf for filing: %s', filing.id)
             capture_message(f'Email Queue: filing id={filing.id}, error=noa generation', level='error')
         else:
@@ -103,7 +103,7 @@ def _get_pdfs(stage: str, token: str, business: dict, filing: Filing, filing_dat
             ?type=certificate',
             headers=headers
         )
-        if certificate.status_code != HTTPStatus.CREATED:
+        if certificate.status_code != HTTPStatus.OK:
             logger.error('Failed to get certificate pdf for filing: %s', filing.id)
             capture_message(f'Email Queue: filing id={filing.id}, error=certificate generation', level='error')
         else:

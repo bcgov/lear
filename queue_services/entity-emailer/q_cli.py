@@ -81,6 +81,7 @@ async def run(loop, email_info):  # pylint: disable=too-many-locals
                                     )
 
         payload = {'email': email_info}
+        print('publishing:', payload)
         await sc.publish(subject=subscription_options().get('subject'),
                          payload=json.dumps(payload).encode('utf-8'))
 
@@ -108,6 +109,5 @@ if __name__ == '__main__':
         sys.exit()
 
     email_info = {'filingId': fid, 'type': etype, 'option': option}
-    print('publish:', email_info)
     event_loop = asyncio.get_event_loop()
     event_loop.run_until_complete(run(event_loop, email_info))
