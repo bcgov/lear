@@ -34,14 +34,15 @@ ENV = Environment(loader=FileSystemLoader('email-templates'), autoescape=True)
 def _get_pdfs(stage: str, token: str, business: dict, filing: Filing, filing_date_time: str):
     """Get the pdfs for the incorporation output."""
     pdfs = []
+    headers = {
+        'Accept': 'application/pdf',
+        'Authorization': f'Bearer {token}'
+    }
     if stage == 'filed':
         # IA pdf
         inc_app = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-            headers={
-                'Accept': 'application/pdf',
-                'Authorization': f'Bearer {token}'
-            }
+            headers=headers
         )
         if inc_app.status_code != HTTPStatus.CREATED:
             logger.error('Failed to get IA pdf for filing: %s', filing.id)
@@ -63,10 +64,7 @@ def _get_pdfs(stage: str, token: str, business: dict, filing: Filing, filing_dat
                 'corpName': filing.filing_json['filing']['incorporationApplication']['nameRequest'].get('legalName'),
                 'filingDateTime': filing_date_time
             },
-            headers={
-                'Accept': 'application/pdf',
-                'Authorization': f'Bearer {token}'
-            }
+            headers=headers
         )
         if receipt.status_code != HTTPStatus.CREATED:
             logger.error('Failed to get receipt pdf for filing: %s', filing.id)
@@ -85,10 +83,7 @@ def _get_pdfs(stage: str, token: str, business: dict, filing: Filing, filing_dat
         noa = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}\
             ?type=noa',
-            headers={
-                'Accept': 'application/pdf',
-                'Authorization': f'Bearer {token}'
-            }
+            headers=headers
         )
         if noa.status_code != HTTPStatus.CREATED:
             logger.error('Failed to get noa pdf for filing: %s', filing.id)
@@ -106,10 +101,7 @@ def _get_pdfs(stage: str, token: str, business: dict, filing: Filing, filing_dat
         certificate = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}\
             ?type=certificate',
-            headers={
-                'Accept': 'application/pdf',
-                'Authorization': f'Bearer {token}'
-            }
+            headers=headers
         )
         if certificate.status_code != HTTPStatus.CREATED:
             logger.error('Failed to get certificate pdf for filing: %s', filing.id)

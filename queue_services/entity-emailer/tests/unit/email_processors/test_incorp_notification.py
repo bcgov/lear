@@ -17,9 +17,3 @@
 
 def test_incorp_notification(app, session):
     """Assert that the legal name is changed."""
-    # setup
-    # email_msg = {'filingId': 1234, 'type': 'incorporationApplication', 'option': 'filed'}
-    # # test
-    # email = incorp_notification.process(email_msg, '')
-    # # validate
-    # assert
