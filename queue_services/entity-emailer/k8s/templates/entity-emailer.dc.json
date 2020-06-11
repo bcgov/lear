@@ -321,6 +321,7 @@
                 "DB_PORT": "5432",
                 "SENTRY_DSN": "${SENTRY_DSN}",
                 "NATS_SERVERS": "${NATS_SERVERS}",
+                "NATS_QUEUE": "${NATS_QUEUE}",
                 "NATS_CLUSTER_ID": "${NATS_CLUSTER_ID}",
                 "NATS_CLIENT_NAME": "${NATS_CLIENT_NAME}",
                 "NATS_EMAILER_SUBJECT": "${NATS_EMAILER_SUBJECT}",
