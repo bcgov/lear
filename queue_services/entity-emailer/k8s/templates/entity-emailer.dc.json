@@ -228,6 +228,69 @@
                                                 "key": "NATS_QUEUE"
                                             }
                                         }
+                                    },
+                                    {
+                                        "name": "DASHBOARD_URL",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "DASHBOARD_URL"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NOTIFY_API_URL",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NOTIFY_API_URL"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "LEGAL_API_URL",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "LEGAL_API_URL"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "PAY_API_URL",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "PAY_API_URL"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "ACCOUNT_SVC_AUTH_URL",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "ACCOUNT_SVC_AUTH_URL"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "ACCOUNT_SVC_CLIENT_ID",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "ACCOUNT_SVC_CLIENT_ID"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "ACCOUNT_SVC_CLIENT_SECRET",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "ACCOUNT_SVC_CLIENT_SECRET"
+                                            }
+                                        }
                                     }
                                 ]
                             }
@@ -262,7 +325,13 @@
                 "NATS_CLIENT_NAME": "${NATS_CLIENT_NAME}",
                 "NATS_EMAILER_SUBJECT": "${NATS_EMAILER_SUBJECT}",
                 "NATS_ENTITY_EVENT_SUBJECT": "${NATS_ENTITY_EVENT_SUBJECT}",
-                "NATS_QUEUE": "${NATS_QUEUE}"
+                "DASHBOARD_URL": "${DASHBOARD_URL}",
+                "NOTIFY_API_URL": "${NOTIFY_API_URL}",
+                "LEGAL_API_URL": "${LEGAL_API_URL}",
+                "PAY_API_URL": "${PAY_API_URL}",
+                "ACCOUNT_SVC_AUTH_URL": "${ACCOUNT_SVC_AUTH_URL}",
+                "ACCOUNT_SVC_CLIENT_ID": "${ACCOUNT_SVC_CLIENT_ID}",
+                "ACCOUNT_SVC_CLIENT_SECRET": "${ACCOUNT_SVC_CLIENT_SECRET}"
             }
         }
     ],
@@ -326,7 +395,7 @@
         {
             "name": "NATS_EMAILER_SUBJECT",
             "displayName": "NATS Subject Name",
-            "description": "A unique NATS subject name that is set to receive payment tokens.",
+            "description": "A unique NATS subject name that is set to receive email msgs.",
             "required": true,
             "value": "entity.email"
         },
@@ -340,9 +409,58 @@
         {
             "name": "NATS_QUEUE",
             "displayName": "NATS Queue Name",
-            "description": "A unique NATS queue name that is set to receive payment tokens.",
+            "description": "A unique NATS queue name that is set to receive email tokens.",
             "required": true,
             "value": "email-worker"
+        },
+        {
+            "name": "DASHBOARD_URL",
+            "displayName": "DASHBOARD_URL",
+            "description": "Url to the business dashboard.",
+            "required": true,
+            "value": ""
+        },
+        {
+            "name": "NOTIFY_API_URL",
+            "displayName": "NOTIFY_API_URL",
+            "description": "Url to the email sender service.",
+            "required": true,
+            "value": ""
+        },
+        {
+            "name": "LEGAL_API_URL",
+            "displayName": "LEGAL_API_URL",
+            "description": "Url to the legal api.",
+            "required": true,
+            "value": ""
+        },
+        {
+            "name": "PAY_API_URL",
+            "displayName": "PAY_API_URL",
+            "description": "Url to the payment api.",
+            "required": true,
+            "value": ""
+        },
+        {
+            "name": "ACCOUNT_SVC_AUTH_URL",
+            "displayName": "ACCOUNT_SVC_AUTH_URL",
+            "description": "Url to the auth service.",
+            "required": true,
+            "value": ""
+        },
+        {
+            "name": "ACCOUNT_SVC_CLIENT_ID",
+            "displayName": "ACCOUNT_SVC_CLIENT_ID",
+            "description": "keycloak client.",
+            "required": true,
+            "value": ""
+        },
+        {
+            "name": "ACCOUNT_SVC_CLIENT_SECRET",
+            "displayName": "ACCOUNT_SVC_CLIENT_SECRET",
+            "description": "keycloak secret",
+            "required": true,
+            "value": ""
         },
         {
             "name": "IMAGE_NAMESPACE",

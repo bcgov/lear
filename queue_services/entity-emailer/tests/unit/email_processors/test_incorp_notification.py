@@ -12,14 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the Incorporation filing."""
-from entity_emailer.email_processors import incorp_notification
 
 
 def test_incorp_notification(app, session):
     """Assert that the legal name is changed."""
-    # setup
-    email_msg = {'email': {'type': 'incorp'}}
-    # test
-    email = incorp_notification.process(email_msg)
-    # validate
-    assert email == 'incorp hardcoded'

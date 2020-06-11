@@ -5,13 +5,20 @@
 # Action: build
 # Template File: templates/entity-emailer.dc.json
 # Hint: oc process -n gl2uos-dev -f templates/entity-emailer.dc.json --param-file=entity-emailer.dc.param
-# Hint: oc process -n gl2uos-dev -f templates/entity-emailer.dc.json --param-file=entity-emailer.dc.param | oc create -n gl2uos-dev -f -
+# Hint: oc process -n gl2uos-dev -f templates/entity-emailer.dc.json --param-file=entity-emailer.dc.param | oc replace -n gl2uos-dev -f -
 #=========================================================
 NAME="entity-emailer"
 APP_GROUP="entity-email"
 APP_FILE="email_service.py"
 DATABASE_NAME="lear"
-SENTRY_DSN="https://<account>@sentry.io/<project>"
+SENTRY_DSN="https://7a2b69c9ba524798863e43434a38011b@sentry.io/1529856"
+DASHBOARD_URL="https://dev.bcregistry.ca/cooperatives/"
+NOTIFY_API_URL="https://notify-api-dev.pathfinder.gov.bc.ca/api/v1/notify/"
+LEGAL_API_URL="https://legal-api-dev.pathfinder.gov.bc.ca/api/v1"
+PAY_API_URL="https://pay-api-dev.pathfinder.gov.bc.ca/api/v1/payment-requests"
+ACCOUNT_SVC_AUTH_URL="https://sso-dev.pathfinder.gov.bc.ca/auth/realms/fcf0kpqr/protocol/openid-connect/token"
+ACCOUNT_SVC_CLIENT_ID="entity-service-account"
+ACCOUNT_SVC_CLIENT_SECRET="<keycloak client secret>"
 NATS_SERVERS="nats://nats-streaming.hak2zo-dev.svc:4222"
 NATS_CLUSTER_ID="test-cluster"
 NATS_CLIENT_NAME="entity.email.worker"

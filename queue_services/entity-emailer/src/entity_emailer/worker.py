@@ -29,10 +29,12 @@ import json
 import os
 
 import nats
+import requests
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import EmailException, QueueException, logger
 from flask import Flask
 from legal_api import db
+from legal_api.services.bootstrap import AccountService
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
@@ -52,7 +54,7 @@ async def publish_event(payload: dict):
     try:
         subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
         await qsm.service.publish(subject, payload)
-    except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
+    except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the email, so ignore all.
         capture_message(f'Queue Publish Event Error: email msg={payload}, error={err}', level='error')
         logger.error('Queue Publish Event Error: email msg=%s', payload, exc_info=True)
 
@@ -64,15 +66,27 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
 
     with flask_app.app_context():
         logger.debug('Attempting to process email: %s', email_msg)
-        email = None
+
+        token = AccountService.get_bearer_token()
+
         if email_msg['email']['type'] == 'bn':
             email = bn_notification.process(email_msg)
-        elif email_msg['email']['type'] == 'incorp':
-            email = incorp_notification.process(email_msg)
+        elif email_msg['email']['type'] == 'incorporationApplication':
+            email = incorp_notification.process(email_msg['email'], token)
         else:
             raise EmailException(f'Unrecognizable type: {email_msg["email"]["type"]}')
-        # TODO: send email via email service
-        logger.debug('NI: Sending email: %s', email)
+
+        resp = requests.post(
+            f'{APP_CONFIG.NOTIFY_API_URL}',
+            json=email,
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {token}'
+            }
+        )
+        if resp.status_code != 200:
+            # this should log the error and put the email msg back on the queue
+            raise EmailException
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
@@ -86,7 +100,7 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         logger.error('Queue Blocked - Database Issue: %s', json.dumps(email_msg), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue
     except EmailException as err:
-        logger.error('Queue Error - cannot find email template: %s'
+        logger.error('Queue Error - email failed to send: %s'
                      '\n\nThis message has been put back on the queue for reprocessing.',
                      json.dumps(email_msg), exc_info=True)
         raise err  # we don't want to handle the error, so that the message gets put back on the queue

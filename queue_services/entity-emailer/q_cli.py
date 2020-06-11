@@ -32,7 +32,7 @@ from nats.aio.client import Client as NATS  # noqa N814; by convention the name 
 from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 
 
-async def run(loop, token):  # pylint: disable=too-many-locals
+async def run(loop, email_info):  # pylint: disable=too-many-locals
     """Run the main application loop for the service.
 
     This runs the main top level service functions for working with the Queue.
@@ -80,7 +80,8 @@ async def run(loop, token):  # pylint: disable=too-many-locals
                                     functools.partial(signal_handler, sig_loop=loop, sig_nc=nc, task=close)
                                     )
 
-        payload = {'email': {'type': token}}
+        payload = {'email': email_info}
+        print('publishing:', payload)
         await sc.publish(subject=subscription_options().get('subject'),
                          payload=json.dumps(payload).encode('utf-8'))
 
@@ -91,17 +92,22 @@ async def run(loop, token):  # pylint: disable=too-many-locals
 
 if __name__ == '__main__':
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'ht:', ['etype=', ])
+        opts, args = getopt.getopt(sys.argv[1:], 'f:t:o:', ['fid=', 'etype=', 'option='])
     except getopt.GetoptError:
-        print('q_cli.py -t <email_type>')
+        print('q_cli.py -f <filing_id> -t <email_type> -o <option>')
         sys.exit(2)
+    fid, etype, option = None, None, None
     for opt, arg in opts:
-        if opt == '-h':
-            print('q_cli.py -t <email_type>')
-            sys.exit()
+        if opt in ('-f', '--fid'):
+            fid = arg
         elif opt in ('-t', '--etype'):
             etype = arg
+        elif opt in ('-o', '--option'):
+            option = arg
+    if not all([fid, etype, option]):
+        print('q_cli.py -f <filing_id> -t <email_type> -o <option>')
+        sys.exit()
 
-    print('publish:', etype)
+    email_info = {'filingId': fid, 'type': etype, 'option': option}
     event_loop = asyncio.get_event_loop()
-    event_loop.run_until_complete(run(event_loop, etype))
+    event_loop.run_until_complete(run(event_loop, email_info))
