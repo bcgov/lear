@@ -291,6 +291,15 @@
                                                 "key": "ACCOUNT_SVC_CLIENT_SECRET"
                                             }
                                         }
+                                    },
+                                    {
+                                        "name": "TEMPLATE_PATH",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "TEMPLATE_PATH"
+                                            }
+                                        }
                                     }
                                 ]
                             }
@@ -320,6 +329,7 @@
                 "DATABASE_NAME": "${DATABASE_NAME}",
                 "DB_PORT": "5432",
                 "SENTRY_DSN": "${SENTRY_DSN}",
+                "TEMPLATE_PATH": "${TEMPLATE_PATH}",
                 "NATS_SERVERS": "${NATS_SERVERS}",
                 "NATS_QUEUE": "${NATS_QUEUE}",
                 "NATS_CLUSTER_ID": "${NATS_CLUSTER_ID}",
@@ -460,6 +470,13 @@
             "name": "ACCOUNT_SVC_CLIENT_SECRET",
             "displayName": "ACCOUNT_SVC_CLIENT_SECRET",
             "description": "keycloak secret",
+            "required": true,
+            "value": ""
+        },
+        {
+            "name": "TEMPLATE_PATH",
+            "displayName": "TEMPLATE_PATH",
+            "description": "Path to template files.",
             "required": true,
             "value": ""
         },

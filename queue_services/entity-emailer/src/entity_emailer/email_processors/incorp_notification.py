@@ -139,7 +139,7 @@ def process(email_msg: dict, token: str):
     """Build the email for Business Number notification."""
     logger.debug('incorp_notification: %s', email_msg)
     # get template and fill in parts
-    template = Path(f'email_templates/BC-{email_msg["option"]}-success.html').read_text()
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-{email_msg["option"]}-success.html').read_text()
     filled_template = substitute_template_parts(template)
 
     # get template vars from filing
