@@ -69,6 +69,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     PAY_API_URL = os.getenv('PAY_API_URL', None)
     DASHBOARD_URL = os.getenv('DASHBOARD_URL', None)
     LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
+    TEMPLATE_PATH = os.getenv('TEMPLATE_PATH', None)
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
