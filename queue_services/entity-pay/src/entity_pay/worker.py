@@ -31,7 +31,7 @@ import json
 import os
 
 import nats
-from entity_queue_common.messages import create_email_msg, create_filing_msg
+from entity_queue_common.messages import create_filing_msg, publish_email_message
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
@@ -68,13 +68,6 @@ async def publish_filing(filing: Filing):
     await qsm.service.publish(subject, payload)
 
 
-async def publish_email_message(filing: Filing):
-    """Publish the email message onto the NATS emailer subject."""
-    payload = create_email_msg(filing.id, filing.filing_type, 'filed')
-    subject = APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject']
-    await qsm.service.publish(subject, payload)
-
-
 async def process_payment(payment_token, flask_app):
     """Render the payment status."""
     if not flask_app:
@@ -101,7 +94,7 @@ async def process_payment(payment_token, flask_app):
             logger.warning('Queue: Attempting to reprocess business.id=%s, filing.id=%s payment=%s',
                            filing_submission.business_id, filing_submission.id, payment_token)
             capture_message(f'Queue Issue: Attempting to reprocess business.id={filing_submission.business_id},'
-                            'filing.id={filing_submission.id} payment={payment_token}')
+                            f'filing.id={filing_submission.id} payment={payment_token}')
             return
 
         if payment_token['paymentToken'].get('statusCode') == 'TRANSACTION_FAILED':
@@ -123,15 +116,16 @@ async def process_payment(payment_token, flask_app):
                 except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
                     # mark any failure for human review
                     capture_message(
-                        'Queue Error: Failed to place filing:{filing_submission.id} on Queue with error:{err}',
+                        f'Queue Error: Failed to place filing:{filing_submission.id} on Queue with error:{err}',
                         level='error')
 
             try:
-                await publish_email_message(filing_submission)
+                await publish_email_message(
+                    qsm, filing_submission, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], 'filed')
             except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
                 # mark any failure for human review
                 capture_message(
-                    'Queue Error: Failed to place email for filing:{filing_submission.id} on Queue with error:{err}',
+                    f'Queue Error: Failed to place email for filing:{filing_submission.id} on Queue with error:{err}',
                     level='error')
 
             return

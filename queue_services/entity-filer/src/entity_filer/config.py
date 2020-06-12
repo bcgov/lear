@@ -102,6 +102,10 @@ class _Config():  # pylint: disable=too-few-public-methods
         'subject': os.getenv('NATS_ENTITY_EVENT_SUBJECT', 'entity.events'),
     }
 
+    EMAIL_PUBLISH_OPTIONS = {
+        'subject': os.getenv('NATS_EMAILER_SUBJECT', 'entity.email'),
+    }
+
     COLIN_API = os.getenv('COLIN_API', '')
 
     # service accounts

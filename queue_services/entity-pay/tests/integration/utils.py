@@ -13,34 +13,8 @@
 # limitations under the License.
 """Utilities used by the integration tests."""
 import json
-from typing import Callable
 
 import stan
-
-
-async def subscribe_to_queue(stan_client: stan.aio.client.Client,
-                             subject: str,
-                             queue: str,
-                             durable_name: str,
-                             call_back: Callable[[stan.aio.client.Msg], None]) \
-        -> str:
-    """Subscribe to the Queue using the environment setup.
-
-    Args:
-        stan_client: the stan connection
-        call_back: a callback function that accepts 1 parameter, a Msg
-    Returns:
-       str: the name of the queue
-    """
-    # entity_subject = os.getenv('LEGAL_FILING_STAN_SUBJECT')
-    # entity_queue = os.getenv('LEGAL_FILING_STAN_QUEUE')
-    # entity_durable_name = os.getenv('LEGAL_FILING_STAN_DURABLE_NAME')
-
-    await stan_client.subscribe(subject=subject,
-                                queue=queue,
-                                durable_name=durable_name,
-                                cb=call_back)
-    return subject
 
 
 async def helper_add_payment_to_queue(stan_client: stan.aio.client.Client,
