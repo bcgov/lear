@@ -30,7 +30,7 @@ import os
 from typing import Dict
 
 import nats
-from entity_queue_common.messages import create_email_msg, publish_email_msg
+from entity_queue_common.messages import publish_email_message
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
@@ -157,11 +157,13 @@ def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-m
                 db.session.commit()
                 incorporation_filing.update_affiliation(business, filing_submission)
                 try:
-                    await publish_email_message(qsm, filing_submission, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], 'registered')
+                    await publish_email_message(
+                        qsm, filing_submission, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], 'registered')
                 except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
                     # mark any failure for human review
                     capture_message(
-                        f'Queue Error: Failed to place email for filing:{filing_submission.id} on Queue with error:{err}',
+                        f'Queue Error: Failed to place email for filing:{filing_submission.id}'
+                        f'on Queue with error:{err}',
                         level='error'
                     )
 
