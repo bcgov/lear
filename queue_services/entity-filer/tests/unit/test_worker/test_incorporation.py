@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Test Suites to ensure that the worker is operating correctly."""
+import asyncio
 import copy
+import datetime
 import random
 
 import pytest
+from entity_queue_common.messages import get_data_from_msg
+from entity_queue_common.service_utils import subscribe_to_queue
 from legal_api.models import Business, Filing, PartyRole
 from legal_api.services import RegistrationBootstrapService
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
@@ -88,3 +92,54 @@ def test_update_affiliation_error(mocker):
     sentry_sdk.capture_message.assert_called_once_with(
         f'Queue Error: Affiliation error for filing:{filing.id}', level='error'
     )
+
+
+@pytest.mark.asyncio
+async def test_publish_email_message(app, session, stan_server, event_loop, client_id, entity_stan, future):
+    """Assert that payment tokens can be retrieved and decoded from the Queue."""
+    # Call back for the subscription
+    from entity_queue_common.service import ServiceWorker
+    from entity_pay.worker import APP_CONFIG, publish_email_message, qsm
+    from legal_api.models import Filing
+
+    # file handler callback
+    msgs = []
+
+    async def cb_file_handler(msg):
+        nonlocal msgs
+        nonlocal future
+        msgs.append(msg)
+        if len(msgs) == 1:
+            future.set_result(True)
+
+    file_handler_subject = APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject']
+    await subscribe_to_queue(entity_stan,
+                             file_handler_subject,
+                             f'entity_queue.{file_handler_subject}',
+                             f'entity_durable_name.{file_handler_subject}',
+                             cb_file_handler)
+
+    s = ServiceWorker()
+    s.sc = entity_stan
+    qsm.service = s
+
+    # Test
+    filing = Filing()
+    filing.id = 101
+    filing.filing_type = 'incorporationApplication'
+    filing_date = datetime.datetime.utcnow()
+    filing.filing_date = filing_date
+    filing.effective_date = filing_date
+
+    await publish_email_message(filing)
+
+    try:
+        await asyncio.wait_for(future, 2, loop=event_loop)
+    except Exception as err:
+        print(err)
+
+    # check it out
+    assert len(msgs) == 1
+    assert get_data_from_msg(msgs[0], 'id') == filing.id
+    assert get_data_from_msg(msgs[0], 'type') == filing.filing_type
+    assert get_data_from_msg(msgs[0], 'option') == 'registered'

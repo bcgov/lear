@@ -16,6 +16,9 @@ import json
 
 import nats
 
+from entity_queue_common.service import QueueServiceManager
+from legal_api.models import Filing
+
 
 def create_filing_msg(identifier):
     """Create the filing payload."""
@@ -60,3 +63,9 @@ def create_email_msg(identifier, filing_type, option):
     """Create a payload for the email service."""
     payment_msg = {'email': {'filingId': identifier, 'type': filing_type, 'option': option}}
     return payment_msg
+
+
+async def publish_email_message(qsm: QueueServiceManager, subject: str, filing: Filing, option: str):
+    """Publish the email message onto the NATS emailer subject."""
+    payload = create_email_msg(filing.id, filing.filing_type, option)
+    await qsm.service.publish(subject, payload)

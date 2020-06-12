@@ -18,8 +18,9 @@ import random
 
 import pytest
 from entity_queue_common.messages import get_data_from_msg, get_filing_id_from_msg
+from entity_queue_common.service_utils import subscribe_to_queue
 
-from .utils import helper_add_payment_to_queue, subscribe_to_queue
+from .utils import helper_add_payment_to_queue
 
 
 @pytest.mark.asyncio
@@ -189,4 +190,4 @@ async def test_publish_email_message(app, session, stan_server, event_loop, clie
     assert len(msgs) == 1
     assert get_data_from_msg(msgs[0], 'id') == filing.id
     assert get_data_from_msg(msgs[0], 'type') == filing.filing_type
-    assert get_data_from_msg(msgs[0], 'option') == 'immediate'
+    assert get_data_from_msg(msgs[0], 'option') == 'filed'
