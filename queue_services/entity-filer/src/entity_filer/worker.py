@@ -92,7 +92,7 @@ async def publish_event(business: Business, filing: Filing):
         logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
 
 
-def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches
+async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches
     """Render the filings contained in the submission."""
     if not flask_app:
         raise QueueException('Flask App not available.')
@@ -176,7 +176,7 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
         filing_msg = json.loads(msg.data.decode('utf-8'))
         logger.debug('Extracted filing msg: %s', filing_msg)
-        business, filing_submission = process_filing(filing_msg, FLASK_APP)
+        business, filing_submission = await process_filing(filing_msg, FLASK_APP)
         if business and filing_submission:
             await publish_event(business, filing_submission)
     except OperationalError as err:
