@@ -59,6 +59,21 @@ async def publish_event(payload: dict):
         logger.error('Queue Publish Event Error: email msg=%s', payload, exc_info=True)
 
 
+def send_email(email: dict, token: str):
+    """Send the email."""
+    resp = requests.post(
+        f'{APP_CONFIG.NOTIFY_API_URL}',
+        json=email,
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {token}'
+        }
+    )
+    if resp.status_code != 200:
+        # this should log the error and put the email msg back on the queue
+        raise EmailException('Unsuccessful response when sending email.')
+
+
 def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-many-branches
     """Process the email contained in the submission."""
     if not flask_app:
@@ -71,22 +86,12 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
 
         if email_msg['email']['type'] == 'bn':
             email = bn_notification.process(email_msg)
+            send_email(email, token)
         elif email_msg['email']['type'] == 'incorporationApplication':
             email = incorp_notification.process(email_msg['email'], token)
+            send_email(email, token)
         else:
-            raise EmailException(f'Unrecognizable type: {email_msg["email"]["type"]}')
-
-        resp = requests.post(
-            f'{APP_CONFIG.NOTIFY_API_URL}',
-            json=email,
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': f'Bearer {token}'
-            }
-        )
-        if resp.status_code != 200:
-            # this should log the error and put the email msg back on the queue
-            raise EmailException
+            logger.debug('Not email to send for: %s', email_msg)
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
