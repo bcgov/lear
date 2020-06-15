@@ -81,8 +81,8 @@ def _get_pdfs(stage: str, token: str, business: dict, filing: Filing, filing_dat
             )
     if stage == 'registered':
         noa = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}\
-            ?type=noa',
+            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+            '?type=noa',
             headers=headers
         )
         if noa.status_code != HTTPStatus.OK:
@@ -99,8 +99,8 @@ def _get_pdfs(stage: str, token: str, business: dict, filing: Filing, filing_dat
                 }
             )
         certificate = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}\
-            ?type=certificate',
+            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+            '?type=certificate',
             headers=headers
         )
         if certificate.status_code != HTTPStatus.OK:
