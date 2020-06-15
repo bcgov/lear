@@ -61,7 +61,8 @@ def _get_pdfs(stage: str, token: str, business: dict, filing: Filing, filing_dat
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
             json={
-                'corpName': filing.filing_json['filing']['incorporationApplication']['nameRequest'].get('legalName'),
+                'corpName': filing.filing_json['filing']['incorporationApplication']['nameRequest'].get(
+                    'legalName', 'Numbered Company'),
                 'filingDateTime': filing_date_time
             },
             headers=headers
