@@ -158,7 +158,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 incorporation_filing.update_affiliation(business, filing_submission)
                 try:
                     await publish_email_message(
-                        qsm, filing_submission, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], 'registered')
+                        qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'registered')
                 except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
                     # mark any failure for human review
                     capture_message(
