@@ -73,23 +73,27 @@ def get_filing_types(legal_filings: dict):
     return filing_types
 
 
-async def publish_event(business: Business, filing: Filing):
+async def publish_event(business: Business, filing: Filing, flask_app: Flask):
     """Publish the filing message onto the NATS filing subject."""
-    try:
-        payload = {'filing':
-                   {
-                       'identifier': business.identifier,
-                       'legalName': business.legal_name,
-                       'filingId': filing.id,
-                       'effectiveDate': filing.effective_date.isoformat(),
-                       'legalFilings': get_filing_types(filing.filing_json)
-                   }
-                   }
-        subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
-        await qsm.service.publish(subject, payload)
-    except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
-        capture_message('Queue Publish Event Error: filing.id=' + str(filing.id) + str(err), level='error')
-        logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
+    if not flask_app:
+        raise QueueException('Flask App not available.')
+
+    with flask_app.app_context():
+        try:
+            payload = {
+                'filing': {
+                    'identifier': business.identifier,
+                    'legalName': business.legal_name,
+                    'filingId': filing.id,
+                    'effectiveDate': filing.effective_date.isoformat(),
+                    'legalFilings': get_filing_types(filing.filing_json)
+                }
+            }
+            subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
+            await qsm.service.publish(subject, payload)
+        except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
+            capture_message('Queue Publish Event Error: filing.id=' + str(filing.id) + str(err), level='error')
+            logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
 
 
 async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches
@@ -178,7 +182,7 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         logger.debug('Extracted filing msg: %s', filing_msg)
         business, filing_submission = await process_filing(filing_msg, FLASK_APP)
         if business and filing_submission:
-            await publish_event(business, filing_submission)
+            await publish_event(business, filing_submission, FLASK_APP)
     except OperationalError as err:
         logger.error('Queue Blocked - Database Issue: %s', json.dumps(filing_msg), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue
