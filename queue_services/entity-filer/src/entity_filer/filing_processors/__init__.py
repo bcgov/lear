@@ -41,7 +41,7 @@ def create_address(address_info: Dict, address_type: str) -> Address:
                       country=pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2,
                       postal_code=address_info.get('postalCode'),
                       delivery_instructions=address_info.get('deliveryInstructions'),
-                      address_type=address_type
+                      address_type=address_type.replace('Address', '')
                       )
     return address
 
