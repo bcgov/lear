@@ -41,7 +41,6 @@ def substitute_template_parts(template_code):
         'header',
         'initiative-notice',
         'logo',
-        'partners',
         'pdf-notice',
         'style',
         'whitespace-16px',

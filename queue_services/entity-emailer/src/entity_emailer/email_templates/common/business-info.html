@@ -2,9 +2,14 @@
 <table class="business-info-table" cellspacing="10" role="presentation">
   <tr>
     <td class="name">Company Name:</td>
-    {% if incorporationApplication.nameRequest.nrNumber %}
+    {% if business.legalName %}
+    <!-- try to get legal name from Business object -->
+    <td class="value">{{ business.legalName }}</td>
+    {% elif incorporationApplication.nameRequest.legalName %}
+    <!-- try to get legal name from Name Request object -->
     <td class="value">{{ incorporationApplication.nameRequest.legalName }}</td>
     {% elif business.legalType == 'BC' %}
+    <!-- fallback BC label -->
     <td class="value">Numbered Benefit Company</td>
     {% else %}
     <!-- add other cases here -->
@@ -12,18 +17,12 @@
     {% endif %}
   </tr>
 
-  {% if business.legalName %}
   <tr>
-    <td class="name">Company Name:</td>
-    <td class="value">{{ business.legalName }}</td>
-  </tr>
-  {% endif %}
-
-  <tr>
-    <td class="name">Business Number:</td>
+    <td class="name">Incorporation Number:</td>
     {% if header.status == 'PAID' %}
     <td class="value">Pending</td>
     {% elif header.status == 'COMPLETED' %}
+    <!-- Eg, BC0878529 -->
     <td class="value">{{ business.identifier }}</td>
     {% else %}
     <!-- add other cases here -->
@@ -33,7 +32,7 @@
 
   {% if business.tax_id %}
   <tr>
-    <td class="name">Business Tax ID:</td>
+    <td class="name">Business Number:</td>
     <td class="value">{{ business.tax_id }}</td>
   </tr>
   {% endif %}
