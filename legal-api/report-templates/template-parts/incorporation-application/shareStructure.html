@@ -17,6 +17,7 @@
             {% if share_class.hasMaximumShares %}
             {{ '{0:,}'.format(share_class.maxNumberOfShares | int) }}
             {% else %}
+            No Maximum
             {% endif %}
          </td>
          <td class="right-align">
@@ -26,6 +27,7 @@
             {% endif %}
             {{ share_class.parValue }}
             {% else %}
+            No Par Value
             {% endif %}
          </td>
          <td>
@@ -49,6 +51,7 @@
             {% if series.hasMaximumShares %}
              {{ '{0:,}'.format(series.maxNumberOfShares | int) }}
             {% else %}
+            No Maximum
             {% endif %}
          </td>
          <td class="right-align">
@@ -58,6 +61,7 @@
             {% endif %}
             {{ series.parValue }}
             {% else %}
+            No Par Value
             {% endif %}
          </td>
          <td>
