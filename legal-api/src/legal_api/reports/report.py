@@ -247,6 +247,7 @@ class Report:  # pylint: disable=too-few-public-methods
 
     def _format_incorporation_data(self, filing, report_type):
         filing['header']['reportType'] = report_type
+        filing['header']['filingId'] = self._filing.id
         filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
         effective_date_time = LegislationDatetime.as_legislation_timezone(self._filing.effective_date)
         effective_hour = effective_date_time.strftime('%I')
