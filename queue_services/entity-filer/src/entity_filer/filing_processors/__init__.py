@@ -38,7 +38,7 @@ def create_address(address_info: Dict, address_type: str) -> Address:
     db_address_type = address_type
 
     if db_address_type == 'mailingAddress':
-        db_address_type == 'mailing'
+        db_address_type = 'mailing'
     elif db_address_type == 'deliveryAddress':
         db_address_type = 'delivery'
 
