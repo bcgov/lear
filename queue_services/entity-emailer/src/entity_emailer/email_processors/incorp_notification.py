@@ -136,7 +136,7 @@ def _get_recipients(stage: str, filing_json: dict):
     return recipients
 
 
-def process(email_msg: dict, token: str):
+def process(email_msg: dict, token: str):  # pylint: disable=too-many-locals
     """Build the email for Business Number notification."""
     logger.debug('incorp_notification: %s', email_msg)
     # get template and fill in parts
@@ -167,11 +167,20 @@ def process(email_msg: dict, token: str):
     # get attachments
     pdfs = _get_pdfs(email_msg['option'], token, business, filing, leg_tmz_filing_date)
     recipients = _get_recipients(email_msg['option'], filing.filing_json)
+
+    # assign subject
+    if email_msg['option'] == 'filed':
+        subject = 'Confirmation of Filing from the Business Registry'
+    elif email_msg['option'] == 'registered':
+        subject = 'Incorporation Documents from the Business Registry'
+    else:  # fallback case - should never happen
+        subject = 'Notification from the BC Business Registry'
+
     return {
         'recipients': recipients,
         'requestBy': '',
         'content': {
-            'subject': 'Incorporation Documents from the Business Registry',
+            'subject': subject,
             'body': f'{html_out}',
             'attachments': pdfs
         }
