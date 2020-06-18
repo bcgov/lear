@@ -34,6 +34,14 @@ def create_address(address_info: Dict, address_type: str) -> Address:
     """Create an address."""
     if not address_info:
         return Address()
+
+    db_address_type = address_type
+
+    if db_address_type == 'mailingAddress':
+        db_address_type = 'mailing'
+    elif db_address_type == 'deliveryAddress':
+        db_address_type = 'delivery'
+
     address = Address(street=address_info.get('streetAddress'),
                       street_additional=address_info.get('streetAddressAdditional'),
                       city=address_info.get('addressCity'),
@@ -41,7 +49,7 @@ def create_address(address_info: Dict, address_type: str) -> Address:
                       country=pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2,
                       postal_code=address_info.get('postalCode'),
                       delivery_instructions=address_info.get('deliveryInstructions'),
-                      address_type=address_type
+                      address_type=db_address_type
                       )
     return address
 
