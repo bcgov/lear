@@ -123,7 +123,10 @@ class AccountService:
             return None
 
     @classmethod
-    def create_affiliation(cls, account: int, business_registration: str, business_name: str = None, corp_type_code: str = 'TMP'):
+    def create_affiliation(cls, account: int,
+                           business_registration: str,
+                           business_name: str = None,
+                           corp_type_code: str = 'TMP'):
         """Affiliate a business to an account."""
         account_svc_entity_url = current_app.config.get('ACCOUNT_SVC_ENTITY_URL')
         template_url = current_app.config.get('ACCOUNT_SVC_AFFILIATE_URL')
