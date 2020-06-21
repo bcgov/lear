@@ -28,4 +28,7 @@ colin_api_integration = pytest.mark.skipif((os.getenv('RUN_COLIN_API', False) is
 integration_affiliation = pytest.mark.skipif((os.getenv('RUN_AFFILIATION_TESTS', False) is False),
                                              reason='Account affiliation tests are only run when requested.')
 
+integration_namex_api = pytest.mark.skipif((os.getenv('RUN_NAMEX_API', False) is False),
+                                           reason='NameX tests are only run when requested.')
+
 skip_in_pod = pytest.mark.skipif((os.getenv('POD_TESTING', False) is False), reason='Skip test when running in pod')

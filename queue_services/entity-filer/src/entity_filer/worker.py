@@ -156,6 +156,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 db.session.add(filing_submission)
                 db.session.commit()
                 incorporation_filing.update_affiliation(business, filing_submission)
+                incorporation_filing.consume_nr(business, filing_submission)
                 try:
                     await publish_email_message(
                         qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'registered')
@@ -167,6 +168,16 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         level='error'
                     )
 
+            try:
+                await publish_event(business, filing_submission)
+            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                # mark any failure for human review
+                capture_message(
+                    f'Queue Error: Failed to publish event for filing:{filing_submission.id}'
+                    f'on Queue with error:{err}',
+                    level='error'
+                )
+
         return business, filing_submission
 
 
@@ -176,11 +187,9 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
         filing_msg = json.loads(msg.data.decode('utf-8'))
         logger.debug('Extracted filing msg: %s', filing_msg)
-        business, filing_submission = await process_filing(filing_msg, FLASK_APP)
+        await process_filing(filing_msg, FLASK_APP)
         logger.debug('Business: %s', business, exc_info=True)
         logger.debug('Filing: %s', filing_submission, exc_info=True)
-        # if business and filing_submission:
-        #     await publish_event(business, filing_submission)
     except OperationalError as err:
         logger.error('Queue Blocked - Database Issue: %s', json.dumps(filing_msg), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue

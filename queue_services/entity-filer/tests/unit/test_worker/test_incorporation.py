@@ -25,23 +25,20 @@ from legal_api.services import RegistrationBootstrapService
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from entity_filer.worker import process_filing
-from tests.pytest_marks import colin_api_integration, integration_affiliation
+from tests.pytest_marks import colin_api_integration, integration_affiliation, integration_namex_api
 from tests.unit import create_filing
 
 
 @pytest.fixture(scope='function')
-def ia_filing(account):
+def bootstrap(account):
     """Create a IA filing for processing."""
     from legal_api.services.bootstrap import AccountService
 
-    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
     bootstrap = RegistrationBootstrapService.create_bootstrap(account=account)
     RegistrationBootstrapService.register_bootstrap(bootstrap, bootstrap.identifier)
     identifier = bootstrap.identifier
-    filing_id = (create_filing(payment_id, filing, bootstrap_id=bootstrap.identifier)).id
 
-    yield filing_id
+    yield identifier
 
     try:
         rv = AccountService.delete_affiliation(account, identifier)
@@ -52,15 +49,20 @@ def ia_filing(account):
 
 @colin_api_integration
 @integration_affiliation
-def test_incorporation_filing(app, session, ia_filing):
+async def test_incorporation_filing(app, session, bootstrap):
     """Assert we can retrieve a new corp number from COLIN and incorporate a business."""
-    filing_msg = {'filing': {'id': ia_filing}}
+    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing['filing']['incorporationApplication']['nameRequest']['nrNumber']='NR 0000021'
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_id = (create_filing(payment_id, filing, bootstrap_id=bootstrap)).id
+
+    filing_msg = {'filing': {'id': filing_id}}
 
     # Test
-    process_filing(filing_msg, app)
+    await process_filing(filing_msg, app)
 
     # Check outcome
-    filing = Filing.find_by_id(ia_filing)
+    filing = Filing.find_by_id(filing_id)
     business = Business.find_by_internal_id(filing.business_id)
 
     filing_json = filing.filing_json

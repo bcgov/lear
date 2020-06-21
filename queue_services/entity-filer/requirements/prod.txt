@@ -5,5 +5,5 @@ sentry-sdk[flask]
 asyncio-nats-client
 asyncio-nats-streaming
 pycountry
-attrs
-Werkzeug
+attr
+Werkzeug<1
