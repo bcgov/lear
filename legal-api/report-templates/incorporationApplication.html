@@ -16,7 +16,14 @@
                </td>
                <td>
                   <div class="header-right">
-                     <div class="report-type">INCORPORATION APPLICATION</div>
+                     <div class="report-type">
+                        {% if header.reportType == 'noa'%}
+                         NOTICE OF ARTICLES
+                        {% else %}
+                         INCORPORATION APPLICATION
+                        {% endif %}
+                     </div>
+
                      <div class="report-type-desc">BC Benefit Company - Business Corporations Act</div>
                   </div>
                </td>
