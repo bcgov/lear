@@ -49,10 +49,11 @@ def bootstrap(account):
 
 @colin_api_integration
 @integration_affiliation
+@integration_namex_api
 async def test_incorporation_filing(app, session, bootstrap):
     """Assert we can retrieve a new corp number from COLIN and incorporate a business."""
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    filing['filing']['incorporationApplication']['nameRequest']['nrNumber']='NR 0000021'
+    filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 0000021'
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, bootstrap_id=bootstrap)).id
 

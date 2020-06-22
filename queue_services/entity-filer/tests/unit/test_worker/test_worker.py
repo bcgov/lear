@@ -79,7 +79,7 @@ def check_directors(business, directors, director_ceased_id, ceased_directors, a
     assert DirectorResource._get_director(business, director_ceased_id)[0]['director']['cessationDate'] is not None
 
 
-def test_process_filing_missing_app(app, session):
+async def test_process_filing_missing_app(app, session):
     """Assert that a filling will fail with no flask app supplied."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -92,10 +92,10 @@ def test_process_filing_missing_app(app, session):
 
     # TEST
     with pytest.raises(Exception):
-        process_filing(filing_msg, flask_app=None)
+        await process_filing(filing_msg, flask_app=None)
 
 
-def test_process_ar_filing(app, session):
+async def test_process_ar_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -117,7 +117,7 @@ def test_process_ar_filing(app, session):
         filing = create_filing(payment_id, ar, business.id)
         filing_id = filing.id
         filing_msg = {'filing': {'id': filing_id}}
-        process_filing(filing_msg, app)
+        await process_filing(filing_msg, app)
 
     # Get modified data
     filing = Filing.find_by_id(filing_id)
@@ -131,7 +131,7 @@ def test_process_ar_filing(app, session):
     assert datetime.datetime.date(business.last_ar_date) == agm_date
 
 
-def test_process_ar_filing_no_agm(app, session):
+async def test_process_ar_filing_no_agm(app, session):
     """Assert that a no agm AR filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -153,7 +153,7 @@ def test_process_ar_filing_no_agm(app, session):
         filing = create_filing(payment_id, ar, business.id)
         filing_id = filing.id
         filing_msg = {'filing': {'id': filing_id}}
-        process_filing(filing_msg, app)
+        await process_filing(filing_msg, app)
 
     # Get modified data
     filing = Filing.find_by_id(filing_id)
@@ -167,7 +167,7 @@ def test_process_ar_filing_no_agm(app, session):
     assert datetime.datetime.date(business.last_ar_date) == ar_date
 
 
-def test_process_coa_filing(app, session):
+async def test_process_coa_filing(app, session):
     """Assert that a COD filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -182,7 +182,7 @@ def test_process_coa_filing(app, session):
     filing_msg = {'filing': {'id': filing_id}}
 
     # TEST
-    process_filing(filing_msg, app)
+    await process_filing(filing_msg, app)
 
     # Get modified data
     filing = Filing.find_by_id(filing_id)
@@ -201,7 +201,7 @@ def test_process_coa_filing(app, session):
     compare_addresses(mailing_address, new_mailing_address)
 
 
-def test_process_cod_filing(app, session):
+async def test_process_cod_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -268,7 +268,7 @@ def test_process_cod_filing(app, session):
     filing_msg = {'filing': {'id': filing_id}}
 
     # TEST
-    process_filing(filing_msg, app)
+    await process_filing(filing_msg, app)
 
     # Get modified data
     filing = Filing.find_by_id(filing_id)
@@ -283,7 +283,7 @@ def test_process_cod_filing(app, session):
     check_directors(business, directors, director_ceased_id, ceased_directors, active_directors)
 
 
-def test_process_cod_mailing_address(app, session):
+async def test_process_cod_mailing_address(app, session):
     """Assert that a COD address change filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -306,7 +306,7 @@ def test_process_cod_mailing_address(app, session):
     filing_id = (create_filing(payment_id, filing_data, business_id)).id
     filing_msg = {'filing': {'id': filing_id}}
     # TEST
-    process_filing(filing_msg, app)
+    await process_filing(filing_msg, app)
 
     business = Business.find_by_internal_id(business_id)
 
@@ -339,7 +339,7 @@ def test_process_cod_mailing_address(app, session):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing_data, business_id)).id
     filing_msg = {'filing': {'id': filing_id}}
-    process_filing(filing_msg, app)
+    await process_filing(filing_msg, app)
 
     business = Business.find_by_internal_id(business_id)
 
@@ -349,12 +349,11 @@ def test_process_cod_mailing_address(app, session):
 
     # check it out
     assert len(list(filter(lambda x: x.party.mailing_address is not None, directors))) == 2
-    assert filing.transaction_id
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
 
 
-def test_process_combined_filing(app, session):
+async def test_process_combined_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -424,7 +423,7 @@ def test_process_combined_filing(app, session):
     filing_msg = {'filing': {'id': filing_id}}
 
     # TEST
-    process_filing(filing_msg, app)
+    await process_filing(filing_msg, app)
 
     # Get modified data
     filing = Filing.find_by_id(filing_id)
@@ -448,7 +447,7 @@ def test_process_combined_filing(app, session):
     check_directors(business, directors, director_ceased_id, ceased_directors, active_directors)
 
 
-def test_process_filing_completed(app, session):
+async def test_process_filing_completed(app, session):
     """Assert that an AR filling status is set to completed once processed."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -461,7 +460,7 @@ def test_process_filing_completed(app, session):
     filing_msg = {'filing': {'id': filing_id}}
 
     # TEST
-    process_filing(filing_msg, app)
+    await process_filing(filing_msg, app)
 
     # Get modified data
     filing = Filing.find_by_id(filing_id)
@@ -475,7 +474,7 @@ def test_process_filing_completed(app, session):
     assert business.last_ar_date
 
 
-def test_correction_filing(app, session):
+async def test_correction_filing(app, session):
     """Assert we can process a correction filing."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -504,7 +503,7 @@ def test_correction_filing(app, session):
     correction_filing_id = correction_filing.id
     filing_msg = {'filing': {'id': correction_filing_id}}
 
-    process_filing(filing_msg, app)
+    await process_filing(filing_msg, app)
 
     # Get modified data
     original_filing = Filing.find_by_id(original_filing_id)

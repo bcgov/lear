@@ -151,6 +151,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             db.session.add(filing_submission)
             db.session.commit()
 
+            # post filing changes to other services
             if any('incorporationApplication' in x for x in legal_filings):
                 filing_submission.business_id = business.id
                 db.session.add(filing_submission)
@@ -188,8 +189,6 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         filing_msg = json.loads(msg.data.decode('utf-8'))
         logger.debug('Extracted filing msg: %s', filing_msg)
         await process_filing(filing_msg, FLASK_APP)
-        logger.debug('Business: %s', business, exc_info=True)
-        logger.debug('Filing: %s', filing_submission, exc_info=True)
     except OperationalError as err:
         logger.error('Queue Blocked - Database Issue: %s', json.dumps(filing_msg), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue

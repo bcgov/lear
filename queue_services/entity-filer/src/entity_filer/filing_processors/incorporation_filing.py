@@ -79,11 +79,8 @@ def update_affiliation(business: Business, filing: Filing):
                 business_name=business.identifier,
                 corp_type_code='TMP'
             )
-            if new_bs_affiliation in (HTTPStatus.OK, HTTPStatus.CREATED) \
-                    and old_bs_affiliation == HTTPStatus.OK:
-                reaffiliate = True
-            else:
-                reaffiliate = False
+            reaffiliate = bool(new_bs_affiliation in (HTTPStatus.OK, HTTPStatus.CREATED)
+                               and old_bs_affiliation == HTTPStatus.OK)
 
         if rv not in (HTTPStatus.OK, HTTPStatus.CREATED) \
                 or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK)\
