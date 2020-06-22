@@ -179,8 +179,6 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     level='error'
                 )
 
-        return business, filing_submission
-
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
     """Use Callback to process Queue Msg objects."""
