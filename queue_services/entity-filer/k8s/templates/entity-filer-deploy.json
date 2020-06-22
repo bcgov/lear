@@ -307,6 +307,15 @@
                         "name": "${NAME}-${TAG_NAME}-config"
                       }
                     }
+                  },
+                  {
+                    "name": "NAMEX_API",
+                    "valueFrom": {
+                      "configMapKeyRef": {
+                        "key": "NAMEX_API",
+                        "name": "${NAME}-${TAG_NAME}-config"
+                      }
+                    }
                   }
                 ]
               }
@@ -350,7 +359,8 @@
         "ACCOUNT_SVC_AFFILIATE_URL": "${ACCOUNT_SVC_AFFILIATE_URL}",
         "ACCOUNT_SVC_CLIENT_ID": "${ACCOUNT_SVC_CLIENT_ID}",
         "ACCOUNT_SVC_CLIENT_SECRET": "${ACCOUNT_SVC_CLIENT_SECRET}",
-        "ACCOUNT_SVC_TIMEOUT": "${ACCOUNT_SVC_TIMEOUT}"
+        "ACCOUNT_SVC_TIMEOUT": "${ACCOUNT_SVC_TIMEOUT}",
+        "NAMEX_API": "${NAMEX_API}"
       }
     }
   ],
@@ -536,6 +546,13 @@
       "description": "Service Account timeout.",
       "required": true,
       "value": 20
+    },
+    {
+      "name": "NAMEX_API",
+      "displayName": "Namex API URL.",
+      "description": "NameX API URL in the LEAR namespace.",
+      "required": true,
+      "value": "http://namex-api-dev:8080/api/v1/requests/"
     }
   ]
 }

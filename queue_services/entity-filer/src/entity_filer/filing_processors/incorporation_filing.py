@@ -13,6 +13,7 @@
 # limitations under the License.
 """File processing rules and actions for the incorporation of a business."""
 import copy
+import json
 from http import HTTPStatus
 from typing import Dict
 
@@ -62,17 +63,60 @@ def update_affiliation(business: Business, filing: Filing):
         rv = AccountService.create_affiliation(
             account=bootstrap.account,
             business_registration=business.identifier,
-            business_name=business.legal_name
+            business_name=business.legal_name,
+            corp_type_code=business.legal_type
         )
 
         if rv not in (HTTPStatus.OK, HTTPStatus.CREATED):
             deaffiliation = AccountService.delete_affiliation(bootstrap.account, business.identifier)
+        else:
+            # flip the registration
+            # recreate the bootstrap, but point to the new business in the name
+            old_bs_affiliation = AccountService.delete_affiliation(bootstrap.account, bootstrap.identifier)
+            new_bs_affiliation = AccountService.create_affiliation(
+                account=bootstrap.account,
+                business_registration=bootstrap.identifier,
+                business_name=business.identifier,
+                corp_type_code='TMP'
+            )
+            reaffiliate = bool(new_bs_affiliation in (HTTPStatus.OK, HTTPStatus.CREATED)
+                               and old_bs_affiliation == HTTPStatus.OK)
 
         if rv not in (HTTPStatus.OK, HTTPStatus.CREATED) \
-                or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK):
+                or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK)\
+                or ('reaffiliate' in locals() and not reaffiliate):
             raise QueueException
     except Exception:  # pylint: disable=broad-except; note out any exception, but don't fail the call
         sentry_sdk.capture_message(f'Queue Error: Affiliation error for filing:{filing.id}', level='error')
+
+
+def consume_nr(business: Business, filing: Filing):
+    """Update the nr to a consumed state."""
+    try:
+        # use the fact that getting a non-existant NR will fail with a KeyError to bail early
+        nr_num = filing.filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber']
+        bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
+        namex_svc_url = current_app.config.get('NAMEX_API')
+        token = AccountService.get_bearer_token()
+
+        # Create an entity record
+        data = json.dumps({'consume': {'corpNum': business.identifier}})
+        rv = requests.patch(
+            url=''.join([namex_svc_url, nr_num]),
+            headers={**AccountService.CONTENT_TYPE_JSON,
+                     'Authorization': AccountService.BEARER + token},
+            data=data,
+            timeout=AccountService.timeout
+        )
+        if not rv.status_code == HTTPStatus.OK:
+            raise QueueException
+
+        # remove the NR from the account
+        AccountService.delete_affiliation(bootstrap.account, nr_num)
+    except KeyError:
+        pass  # return
+    except Exception:  # pylint: disable=broad-except; note out any exception, but don't fail the call
+        sentry_sdk.capture_message(f'Queue Error: Consume NR error for filing:{filing.id}', level='error')
 
 
 def process(business: Business, filing: Dict, filing_rec: Filing):
