@@ -27,6 +27,7 @@ to be pursued.
 """
 import json
 import os
+from http import HTTPStatus
 
 import nats
 import requests
@@ -39,7 +40,7 @@ from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
 from entity_emailer import config
-from entity_emailer.email_processors import bn_notification, incorp_notification
+from entity_emailer.email_processors import bn_notification, incorp_notification, mras_notification
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
@@ -69,7 +70,7 @@ def send_email(email: dict, token: str):
             'Authorization': f'Bearer {token}'
         }
     )
-    if resp.status_code != 200:
+    if resp.status_code != HTTPStatus.OK:
         # this should log the error and put the email msg back on the queue
         raise EmailException('Unsuccessful response when sending email.')
 
@@ -88,16 +89,19 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             email = bn_notification.process(email_msg)
             send_email(email, token)
         elif email_msg['email']['type'] == 'incorporationApplication':
-            email = incorp_notification.process(email_msg['email'], token)
+            if email_msg['email']['option'] == 'mras':
+                email = mras_notification.process(email_msg['email'])
+            else:
+                email = incorp_notification.process(email_msg['email'], token)
             send_email(email, token)
         else:
-            logger.debug('Not email to send for: %s', email_msg)
+            logger.debug('No email to send for: %s', email_msg)
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
     """Use Callback to process Queue Msg objects."""
     try:
-        logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
+        logger.info('Received raw message seq: %s, data=  %s', msg.sequence, msg.data.decode())
         email_msg = json.loads(msg.data.decode('utf-8'))
         logger.debug('Extracted email msg: %s', email_msg)
         process_email(email_msg, FLASK_APP)
@@ -111,5 +115,5 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         raise err  # we don't want to handle the error, so that the message gets put back on the queue
     except (QueueException, Exception):  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
-        capture_message('Queue Error:' + json.dumps(email_msg), level='error')
+        capture_message('Queue Error: ' + json.dumps(email_msg), level='error')
         logger.error('Queue Error: %s', json.dumps(email_msg), exc_info=True)

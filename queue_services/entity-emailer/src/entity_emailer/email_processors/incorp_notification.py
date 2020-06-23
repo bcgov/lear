@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Email processing rules and actions for completeing incorporation."""
+from __future__ import annotations
+
 import base64
-from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 
@@ -22,16 +23,15 @@ from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Environment, FileSystemLoader, Template
 from legal_api.models import Filing
-from legal_api.utils.legislation_datetime import LegislationDatetime
 from sentry_sdk import capture_message
 
-from entity_emailer.email_processors import substitute_template_parts
+from entity_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
 
 
 ENV = Environment(loader=FileSystemLoader('email-templates'), autoescape=True)
 
 
-def _get_pdfs(stage: str, token: str, business: dict, filing: Filing, filing_date_time: str):
+def _get_pdfs(stage: str, token: str, business: dict, filing: Filing, filing_date_time: str) -> list:
     """Get the pdfs for the incorporation output."""
     pdfs = []
     headers = {
@@ -121,22 +121,7 @@ def _get_pdfs(stage: str, token: str, business: dict, filing: Filing, filing_dat
     return pdfs
 
 
-def _get_recipients(stage: str, filing_json: dict):
-    """Get the recipients for the incorporation output."""
-    recipients = filing_json['filing']['incorporationApplication']['contactPoint']['email']
-    if stage == 'filed':
-        parties = filing_json['filing']['incorporationApplication'].get('parties')
-        comp_party_email = None
-        for party in parties:
-            for role in party['roles']:
-                if role['roleType'] == 'Completing Party':
-                    comp_party_email = party['officer']['email']
-                    break
-        recipients = f'{recipients}, {comp_party_email}'
-    return recipients
-
-
-def process(email_msg: dict, token: str):  # pylint: disable=too-many-locals
+def process(email_msg: dict, token: str) -> dict:  # pylint: disable=too-many-locals
     """Build the email for Business Number notification."""
     logger.debug('incorp_notification: %s', email_msg)
     # get template and fill in parts
@@ -144,13 +129,7 @@ def process(email_msg: dict, token: str):  # pylint: disable=too-many-locals
     filled_template = substitute_template_parts(template)
 
     # get template vars from filing
-    filing = Filing.find_by_id(email_msg['filingId'])
-    filing_json = filing.json
-    business = filing_json['filing']['business']
-    filing_date = datetime.fromisoformat(filing.filing_date.isoformat())
-    leg_tmz_filing_date = LegislationDatetime.as_legislation_timezone(filing_date).strftime('%Y-%m-%d %I:%M %p')
-    effective_date = datetime.fromisoformat(filing.effective_date.isoformat())
-    leg_tmz_effective_date = LegislationDatetime.as_legislation_timezone(effective_date).strftime('%Y-%m-%d %I:%M %p')
+    filing, filing_json, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_msg['filingId'])
 
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
@@ -166,7 +145,9 @@ def process(email_msg: dict, token: str):  # pylint: disable=too-many-locals
 
     # get attachments
     pdfs = _get_pdfs(email_msg['option'], token, business, filing, leg_tmz_filing_date)
-    recipients = _get_recipients(email_msg['option'], filing.filing_json)
+
+    # get attachments
+    recipients = get_recipients(email_msg['option'], filing.filing_json)
 
     # assign subject
     if email_msg['option'] == 'filed':
@@ -178,7 +159,7 @@ def process(email_msg: dict, token: str):  # pylint: disable=too-many-locals
 
     return {
         'recipients': recipients,
-        'requestBy': '',
+        'requestBy': 'BCRegistries@gov.bc.ca',
         'content': {
             'subject': subject,
             'body': f'{html_out}',

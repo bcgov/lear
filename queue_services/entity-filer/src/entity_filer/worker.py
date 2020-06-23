@@ -98,7 +98,6 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
         raise QueueException('Flask App not available.')
 
     with flask_app.app_context():
-
         filing_submission = Filing.find_by_id(filing_msg['filing']['id'])
 
         if not filing_submission:
@@ -112,7 +111,6 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
         legal_filings = filing_submission.legal_filings()
 
         if legal_filings:
-
             uow = versioning_manager.unit_of_work(db.session)
             transaction = uow.create_transaction(db.session)
 
@@ -161,6 +159,8 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 try:
                     await publish_email_message(
                         qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'registered')
+                    await publish_email_message(
+                        qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'mras')
                 except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
                     # mark any failure for human review
                     capture_message(

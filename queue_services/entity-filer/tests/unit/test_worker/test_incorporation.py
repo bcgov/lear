@@ -102,7 +102,7 @@ async def test_publish_email_message(app, session, stan_server, event_loop, clie
     """Assert that payment tokens can be retrieved and decoded from the Queue."""
     # Call back for the subscription
     from entity_queue_common.service import ServiceWorker
-    from entity_pay.worker import APP_CONFIG, publish_email_message, qsm
+    from entity_filer.worker import APP_CONFIG, publish_email_message, qsm
     from legal_api.models import Filing
 
     # file handler callback
@@ -134,7 +134,7 @@ async def test_publish_email_message(app, session, stan_server, event_loop, clie
     filing.filing_date = filing_date
     filing.effective_date = filing_date
 
-    await publish_email_message(filing)
+    await publish_email_message(qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing, 'registered')
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)
@@ -146,3 +146,16 @@ async def test_publish_email_message(app, session, stan_server, event_loop, clie
     assert get_data_from_msg(msgs[0], 'id') == filing.id
     assert get_data_from_msg(msgs[0], 'type') == filing.filing_type
     assert get_data_from_msg(msgs[0], 'option') == 'registered'
+
+    await publish_email_message(qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing, 'mras')
+
+    try:
+        await asyncio.wait_for(future, 2, loop=event_loop)
+    except Exception as err:
+        print(err)
+
+    # check it out
+    assert len(msgs) == 1
+    assert get_data_from_msg(msgs[0], 'id') == filing.id
+    assert get_data_from_msg(msgs[0], 'type') == filing.filing_type
+    assert get_data_from_msg(msgs[0], 'option') == 'mras'
