@@ -146,7 +146,7 @@ def process(email_msg: dict, token: str) -> dict:  # pylint: disable=too-many-lo
     # get attachments
     pdfs = _get_pdfs(email_msg['option'], token, business, filing, leg_tmz_filing_date)
 
-    # get attachments
+    # get recipients
     recipients = get_recipients(email_msg['option'], filing.filing_json)
 
     # assign subject
