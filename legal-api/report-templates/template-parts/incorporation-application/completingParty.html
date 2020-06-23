@@ -13,8 +13,8 @@
                <div class="section-sub-title">
                   <span class="capitalize-text">{{ party.officer.lastName }}</span>,
                   <span class="capitalize-text">{{ party.officer.firstName }}</span>
-                  {% if party.officer.middleInitial is defined %}
-                  <span class="capitalize-text">{{ party.officer.middleInitial }}</span>
+                  {% if party.officer.middleName %}
+                  <span class="capitalize-text">{{ party.officer.middleName }}</span>
                   {% endif %}
                </div>
             </td>
@@ -44,8 +44,8 @@
    <div class="section-data">
       I,
       <span class="capitalize-text">{{ ns.cp.officer.firstName}}</span>
-      {% if ns.cp.officer.middleInitial is defined %}
-      <span class="capitalize-text">{{ ns.cp.officer.middleInitial}}</span>
+      {% if ns.cp.officer.middleName %}
+      <span class="capitalize-text">{{ ns.cp.officer.middleName}}</span>
       {% endif %}
       <span class="capitalize-text">{{ ns.cp.officer.lastName}}</span>, the completing party, have examined the articles
       and the incorporation agreement applicable to the company that is to be incorporated by the filing of the
