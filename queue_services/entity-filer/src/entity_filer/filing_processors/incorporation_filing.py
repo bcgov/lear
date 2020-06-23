@@ -152,7 +152,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
 
     if parties:
         for party_info in parties:
-            party = create_party(business_id=business.id, party_info=party_info,  create=False)
+            party = create_party(business_id=business.id, party_info=party_info, create=False)
             for role_type in party_info.get('roles'):
                 role = {
                     'roleType': role_type.get('roleType'),
