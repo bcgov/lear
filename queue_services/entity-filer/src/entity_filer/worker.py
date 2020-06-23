@@ -130,9 +130,6 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 elif filing.get('changeOfName'):
                     change_of_name.process(business, filing)
 
-                elif filing.get('specialResolution'):
-                    pass  # nothing to do here
-
                 elif filing.get('voluntaryDissolution'):
                     voluntary_dissolution.process(business, filing)
 
