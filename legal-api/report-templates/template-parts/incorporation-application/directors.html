@@ -17,8 +17,8 @@
                           <div class="section-sub-title">
                               <span class="capitalize-text">{{ party.officer.lastName }}</span>,
                               <span class="capitalize-text">{{ party.officer.firstName }}</span>
-                            {% if party.officer.middleInitial is defined %}
-                              <span class="capitalize-text">{{ party.officer.middleInitial }}</span>
+                            {% if party.officer.middleName %}
+                              <span class="capitalize-text">{{ party.officer.middleName }}</span>
                             {% endif %}
                           </div>
                       </td>
