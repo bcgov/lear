@@ -404,6 +404,7 @@ class Business:
         try:
             cursor = con.cursor()
             corp_num = incorporation['nameRequest']['nrNumber']
+            corp_num = corp_num.replace('BC', '00')[-7:]
             creation_date = datetime.now()
             legal_type = incorporation['nameRequest']['legalType']
             # Expand query as NR data/ business info becomes more aparent
@@ -449,7 +450,7 @@ class Business:
             (CORP_NAME_TYP_CD, CORP_NAME_SEQ_NUM, DD_CORP_NUM, END_EVENT_ID,
             CORP_NME, CORP_NUM, START_EVENT_ID, SRCH_NME)
             values ('CO', 0, NULL, NULL, :corp_name, :corp_num, :event_id, :search_name)
-            """, corp_name=corp_name, corp_num=corp_num, event_id=event_id, search_name=search_name)
+            """, corp_name=corp_name, corp_num=corp_num, event_id=event_id, search_name=search_name.upper())
 
         except Exception as err:
             current_app.logger.error('Error inserting corp name.')

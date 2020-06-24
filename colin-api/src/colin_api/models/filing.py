@@ -83,7 +83,7 @@ class Filing:
 
     def get_corp_type(self):
         """Get corporation type."""
-        return self.business.business['identifier'][:2]
+        return self.business.business['legalType']
 
     def get_certified_by(self):
         """Get last name; currently is whole name."""
@@ -121,9 +121,21 @@ class Filing:
         :return: (int) event ID
         """
         try:
-            cursor.execute("""select noncorp_event_seq.NEXTVAL from dual""")
-            row = cursor.fetchone()
-            event_id = int(row[0])
+            cursor.execute("""
+                SELECT id_num
+                FROM system_id
+                WHERE id_typ_cd = 'EV'
+                FOR UPDATE
+            """)
+
+            event_id = int(cursor.fetchone()[0])
+
+            if event_id:
+                cursor.execute("""
+                UPDATE system_id
+                SET id_num = :new_num
+                WHERE id_typ_cd = 'EV'
+            """, new_num=event_id+1)
 
             cursor.execute("""
                 INSERT INTO event (event_id, corp_num, event_typ_cd, event_timestmp, trigger_dts)
@@ -654,7 +666,7 @@ class Filing:
             identifier = business.get_corp_num()
 
             # get the filing types corresponding filing code
-            legal_type = identifier[:2]
+            legal_type = business.business['legalType']
             code = [key for key in cls.FILING_TYPES[legal_type] if cls.FILING_TYPES[legal_type][key] == filing_type]
             if not code:
                 raise InvalidFilingTypeException(filing_type=filing_type)
@@ -796,6 +808,11 @@ class Filing:
         try:
             corp_num = filing.get_corp_num()
             legal_type = corp_num[:2]
+
+            if (legal_type!='CP'):
+               # Future: May need a different way of determining legal type
+               legal_type = 'BC'
+
             user_id = Filing.USERS[legal_type] if legal_type in ('CP', 'BC') else None
             cursor = con.cursor()
 
@@ -893,6 +910,7 @@ class Filing:
                 filing_type_cd = 'OTINC'
                 if legal_type == 'BC':
                     filing_type_cd = 'BEINC'
+                    corp_num = corp_num.replace('BC', '00')[-7:]
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
                 # Do incorporation here
                 corp_name = filing.get_corp_name()

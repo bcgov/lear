@@ -118,9 +118,22 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
     def create_new_address(cls, cursor, address_info: dict = None):
         """Get new address id and insert address into address table."""
         try:
-            cursor.execute("""select noncorp_address_seq.NEXTVAL from dual""")
-            row = cursor.fetchone()
-            addr_id = int(row[0])
+            cursor.execute("""
+                SELECT id_num
+                FROM system_id
+                WHERE id_typ_cd = 'ADD'
+                FOR UPDATE
+            """)
+
+            addr_id = int(cursor.fetchone()[0])
+
+            if addr_id:
+                cursor.execute("""
+                UPDATE system_id
+                SET id_num = :new_num
+                WHERE id_typ_cd = 'ADD'
+            """, new_num=addr_id+1)
+
             country_typ_cd = pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))

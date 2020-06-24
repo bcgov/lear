@@ -340,9 +340,22 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
 
         # create new corp party entry
         try:
-            cursor.execute("""select noncorp_party_seq.NEXTVAL from dual""")
-            row = cursor.fetchone()
-            corp_party_id = int(row[0])
+            cursor.execute("""
+                SELECT id_num
+                FROM system_id
+                WHERE id_typ_cd = 'CP'
+                FOR UPDATE
+            """)
+
+            corp_party_id = int(cursor.fetchone()[0])
+
+            if corp_party_id:
+                cursor.execute("""
+                UPDATE system_id
+                SET id_num = :new_num
+                WHERE id_typ_cd = 'CP'
+            """, new_num=corp_party_id+1)
+
         except Exception as err:
             current_app.logger.error('Error in corp_party: Failed to get next corp_party_id.')
             raise err
