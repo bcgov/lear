@@ -27,10 +27,12 @@ def test_incorporate_bcomp(client):
     """Assert that a new BCOMP can be created via incorporation application."""
     headers = {'content-type': 'application/json'}
     rv = client.get('/api/v1/businesses?legal_type=BC')
-    test_bcomp = f"BC{rv.json['corpNum'][0]}"
+    test_bcomp = f"{rv.json['corpNum']}"
     legal_name = f'legal name - {test_bcomp}'
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = test_bcomp
+    filing['filing']['incorporationApplication']['nameRequest']['legalType'] = 'BEN'
     filing['filing']['business'] = {
             'cacheId': 1,
             'foundingDate': '2007-04-08T00:00:00+00:00',

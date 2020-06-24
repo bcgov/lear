@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "afa4b432-f595-48b9-8bf3-f75d501a90d7",
+		"_postman_id": "31b3f193-7e45-4c91-b78a-267c87f80d77",
 		"name": "colin-api",
 		"description": "version=0.108 - This is a Colin API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -15,7 +15,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f4d972ed-c1d0-4af7-b416-f7459e12882e",
+								"id": "59ad5008-ed3a-4c2b-8fb0-4bee50e41818",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -63,7 +63,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "be1e6386-cb4d-436d-a662-a0888266fa6b",
+								"id": "ea49d631-d3e4-473c-ae91-38666e0f92d1",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -111,7 +111,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2dead89c-6d75-4e55-a827-3092df1b98cc",
+								"id": "033c13ee-83d0-4201-ae16-341a53fe291f",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -217,7 +217,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "496829fd-2543-47b6-b78b-f33c89f6160b",
+								"id": "976c119d-4862-43b9-a196-923602e6f976",
 								"exec": [
 									"pm.test(\"Response time is less than 20000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -368,7 +368,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c2af8ff7-69eb-4bbe-a1ff-cd261d2fe117",
+								"id": "e960c42e-ff11-43e2-84e7-f9e28afdfc9f",
 								"exec": [
 									"// set event id variable (used for future tests)",
 									"var jsonData = pm.response.json()",
@@ -424,7 +424,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "e58436d8-eb6e-4651-9fa4-6cfc1e44360e",
+								"id": "235374a8-89cf-4923-af1e-518507fd8c45",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -548,7 +548,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "137b4dfa-39df-41e1-81f7-d58d19d575ba",
+								"id": "c26b2bc7-5020-4d2a-871c-e4523c1acf71",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -603,7 +603,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "9155d826-75b7-4f8b-b217-b95dc5171a75",
+								"id": "a7b054bb-215e-49ff-8e83-55a818137c02",
 								"exec": [
 									""
 								],
@@ -708,7 +708,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f086af09-7fee-4c4c-a573-b0d43b996ff2",
+								"id": "1f338dad-fde6-4744-89e8-05da69347f84",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -870,7 +870,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4626f1fe-978e-454f-8cd5-7b67b1a25340",
+								"id": "7ecaa9a2-bbb7-4658-8139-3ea764c0786f",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -1032,7 +1032,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "16f2d5e0-cca0-4c43-97f8-e418be6b3def",
+								"id": "f4116028-0c55-421d-92c2-5c71fcfa949d",
 								"exec": [
 									"// set event id variable (used for future tests)",
 									"var jsonData = pm.response.json()",
@@ -1089,7 +1089,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "77d72c3a-826c-4357-ae82-55fbab61e741",
+								"id": "233455a5-982b-4b10-ac5d-c2776372d817",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -1213,7 +1213,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3b87b097-c728-40f3-a4c7-f35c8743ef38",
+								"id": "5441df71-4134-47a0-b7d4-a6d4a25956af",
 								"exec": [
 									"// set event id variable (used for future tests)",
 									"var jsonData = pm.response.json()",
@@ -1269,7 +1269,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "3d8d4905-ad99-45b7-a79f-2f7e3062ea4f",
+								"id": "ff82d47c-409b-461e-942d-52de7ffa48c4",
 								"exec": [
 									""
 								],
@@ -1380,7 +1380,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "16bf9c4f-ca6f-468f-805d-238620a55741",
+								"id": "4603ce53-edc3-4e3e-84fa-abd337d63123",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1505,7 +1505,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5ef6151c-c4d2-4773-a69a-e68b8c1846ef",
+								"id": "7f850615-cf41-4f4f-bcc6-a67b077cf169",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1626,7 +1626,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3f4269cc-f72a-4f90-ace7-6756e5150dd0",
+								"id": "55a0a199-a310-4824-9307-c6453d99624e",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1671,7 +1671,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "68c7b26e-fb40-48d8-8475-26f92ed304a0",
+								"id": "9609a560-71a7-4469-b9e2-6872ba0c6223",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1719,7 +1719,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4f1c7982-1d8c-4ee3-bb4c-ce386feeb7c5",
+								"id": "f8e68841-1cdf-4eb3-91f3-7827210afd4b",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1855,7 +1855,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "de0a211c-a155-49c1-a4f9-43eb846ac450",
+								"id": "1982964a-b313-43f3-ab11-1dc1db8f7c32",
 								"exec": [
 									"pm.test(\"Response time is less than 20000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -1998,7 +1998,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "861bd8ea-a5cc-4da1-99a7-3781f30933a0",
+								"id": "880d1cf0-7eba-4148-a5cf-24f78fd99bcd",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -2163,7 +2163,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "2b8f13b9-7214-4ba9-9250-35efdb4f31e7",
+								"id": "91213799-7564-46c5-9cc7-057c3685ea19",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -2293,7 +2293,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "369fd800-ed41-4b09-94b8-94b5dd4d481d",
+								"id": "87ee77ce-1895-4cd0-ac16-c887e53dd484",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -2433,7 +2433,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1e3f850b-5ae9-4f05-a0a4-e1762b7879d9",
+								"id": "ec2be262-c30b-42f2-8c66-d399b24fbe3e",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"pm.environment.set(\"coaEventId\", jsonData.filing.changeOfAddress.eventId)",
@@ -2511,7 +2511,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "3e238b5e-9071-4d95-b01a-fffa2f0e14fb",
+								"id": "712bc1ce-6d3b-43e6-9005-6884d9de0a0f",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -2630,7 +2630,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c639a63b-0184-4856-a037-b9226fe11de5",
+								"id": "c4a3d109-2808-4c3e-9ec2-9d2413e8206e",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"pm.test(\"Response time is less than 10000ms\", function () {",
@@ -2800,7 +2800,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bcbd0676-0fe3-4ec4-8cef-e101c1004cea",
+								"id": "0b105aa0-fe61-4a24-8a97-ad3dc7d27f9d",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"pm.test(\"Response time is less than 10000ms\", function () {",
@@ -2987,7 +2987,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "81229997-e26f-4cbf-9e91-b76f1e6f1079",
+								"id": "3ddb93c6-9ebe-41fa-96cd-d5e49a720d16",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -3061,7 +3061,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3c4ef1db-dfb9-454c-8a7c-84abd01287af",
+								"id": "5afa253d-8c1a-4133-ac4a-5900512dbc84",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -3190,7 +3190,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e4c31c16-2fa1-41db-ba96-a5550931cae1",
+								"id": "cb48340b-7c46-4a38-8c87-da475b500945",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -3278,7 +3278,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "fa4718cf-7707-46a6-a44a-56369060e2c4",
+								"id": "bed67ca4-7e86-4a78-af6c-c0470389e824",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -3397,7 +3397,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4a0f4691-23c2-4645-9a5e-0f845c98565c",
+								"id": "84400a85-a34f-44e7-9b18-23e599a41caa",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -3580,7 +3580,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7da9fb2b-d5e9-453e-bda1-8cdfa58522b4",
+								"id": "c2c02164-f91a-45c0-af86-e7a8a12c191c",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -3770,7 +3770,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b58a9269-c29e-44b5-ba02-01cd082aa55a",
+								"id": "fed8d3f9-4327-4a09-b400-ff6da446504c",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -3857,7 +3857,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "22c0794a-2757-453f-a823-4ceec5933fd2",
+								"id": "05ba4cc1-ea24-46a1-b98c-f435ac6b31d0",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
@@ -3986,7 +3986,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "63d5596c-df07-4706-b3b9-083dee877866",
+								"id": "88a64023-20dd-4332-8733-39f96fa30e33",
 								"exec": [
 									"pm.test(\"Response time is less than 20000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4131,7 +4131,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e0d75b5a-9048-4995-8da1-c617e61b1c54",
+								"id": "14d5e4cc-50d4-44d1-a430-d7b1c35d4fd2",
 								"exec": [
 									"pm.test(\"Response time is less than 20000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4277,7 +4277,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f0a798a9-c2a3-46ce-b751-6b9ddd9bff54",
+								"id": "edd06629-2fac-4b2e-82ba-372e7c783245",
 								"exec": [
 									"pm.test(\"Response time is less than 20000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4422,7 +4422,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "377b7dd1-8232-4df2-b25d-5ec26824ad6b",
+								"id": "5cb7f3ee-d835-4569-b738-c0ebbcfa1cae",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -4579,7 +4579,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bfa22d7f-0c8e-441d-aba9-fcf3bd1e5051",
+								"id": "37b95b22-041d-4911-bcf0-7934a3e11cfd",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -4622,7 +4622,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "36c8a578-9410-46be-93aa-f0c16ea2bb3e",
+								"id": "8f423a5f-2f70-4951-a3b2-e9a2c50e6462",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -4741,7 +4741,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n\t\t},\n\t\t\"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08T00:00:00+00:00\",\n            \"identifier\": \"{{newCorpNum}}\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\",\n            \"legalType\": \"CP\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"nrNumber\": \"{{newCorpNum}}\",\n\t\t\t\t\"legalType\": \"BC\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t},\n\t\t\t\t\"recordsOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"parties\": [\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"id\": 1,\n\t\t                \"firstName\": \"Joe\",\n\t\t                \"lastName\": \"Swanson\",\n\t\t                \"middleInitial\": \"P\",\n\t\t                \"orgName\": \"\",\n\t\t                \"partyType\": \"person\",\n\t\t                \"email\": \"test@test.com\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing_address - address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing_address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"H0H0H0\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"deliveryAddress\": {\n\t\t                \"streetAddress\": \"delivery_address - address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"delivery_address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"H0H0H0\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t            \"roles\": [\n\t\t                {\n\t\t                    \"roleType\": \"Completing Party\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t\n\t\t                },\n\t\t                {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"id\": 2,\n\t\t                \"firstName\": \"\",\n\t\t                \"lastName\": \"\",\n\t\t                \"middleInitial\": \"\",\n\t\t                \"orgName\": \"Xyz Inc.\",\n\t\t                \"partyType\": \"org\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing_address - address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing_address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"H0H0H0\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t           \"roles\": [\n\t\t                {\n\t\t                    \"roleType\": \"Incorporator\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                },\n\t\t                 {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"firstName\": \"Test\",\n\t\t                \"lastName\": \"Director\",\n\t\t                \"middleInitial\": \"\",\n\t\t                \"partyType\": \"person\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing_address - address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing_address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"H0H0H0\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t           \"roles\": [\n\t\t                 {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                }\n\t\t            ]\n\t\t        }\n    \t\t], \n    \t\t\"shareClasses\": [\n\t\t        {\n\t\t            \"id\": 1,\n\t\t            \"name\": \"Share Class 1\",\n\t\t            \"priority\": 1,\n\t\t            \"hasMaximumShares\": true,\n\t\t            \"maxNumberOfShares\": 100,\n\t\t            \"hasParValue\": true,\n\t\t            \"parValue\": 10,\n\t\t            \"currency\": \"CAD\",\n\t\t            \"hasRightsOrRestrictions\": false,\n\t\t            \"series\": [\n\t\t                {\n\t\t                    \"id\": 1,\n\t\t                    \"name\": \"Share Series 1\",\n\t\t                    \"priority\": 1,\n\t\t                    \"hasMaximumShares\": true,\n\t\t                    \"maxNumberOfShares\": 50,\n\t\t                    \"hasRightsOrRestrictions\": false\n\t\t                },\n\t\t                {\n\t\t                    \"id\": 2,\n\t\t                    \"name\": \"Share Series 2\",\n\t\t                    \"priority\": 2,\n\t\t                    \"hasMaximumShares\": true,\n\t\t                    \"maxNumberOfShares\": 100,\n\t\t                    \"hasRightsOrRestrictions\": false\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"id\": 2,\n\t\t            \"name\": \"Share Class 2\",\n\t\t            \"priority\": 1,\n\t\t            \"hasMaximumShares\": false,\n\t\t            \"maxNumberOfShares\": null,\n\t\t            \"hasParValue\": false,\n\t\t            \"parValue\": null,\n\t\t            \"currency\": null,\n\t\t            \"hasRightsOrRestrictions\": true,\n\t\t            \"series\": []\n\t\t        }\n\t\t    ],\n\t\t\t\"businessContact\": {\n\t\t\t\t\"email\": \"no_one@never.get\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
+							"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\"\n\t\t},\n\t\t\"business\": {\n            \"cacheId\": 1,\n            \"foundingDate\": \"2007-04-08T00:00:00+00:00\",\n            \"identifier\": \"{{newCorpNum}}\",\n            \"lastLedgerTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"lastPreBobFilingTimestamp\": \"2019-04-15T20:05:49.068272+00:00\",\n            \"legalName\": \"legal name - CP1234567\",\n            \"legalType\": \"BEN\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"nrNumber\": \"{{newCorpNum}}\",\n\t\t\t\t\"legalType\": \"BEN\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t},\n\t\t\t\t\"recordsOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing_address - address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing_address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"H0H0H0\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"parties\": [\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"id\": 1,\n\t\t                \"firstName\": \"Joe\",\n\t\t                \"lastName\": \"Swanson\",\n\t\t                \"middleInitial\": \"P\",\n\t\t                \"orgName\": \"\",\n\t\t                \"partyType\": \"person\",\n\t\t                \"email\": \"test@test.com\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing_address - address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing_address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"H0H0H0\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"deliveryAddress\": {\n\t\t                \"streetAddress\": \"delivery_address - address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"delivery_address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"H0H0H0\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t            \"roles\": [\n\t\t                {\n\t\t                    \"roleType\": \"Completing Party\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t\n\t\t                },\n\t\t                {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"id\": 2,\n\t\t                \"firstName\": \"\",\n\t\t                \"lastName\": \"\",\n\t\t                \"middleInitial\": \"\",\n\t\t                \"orgName\": \"Xyz Inc.\",\n\t\t                \"partyType\": \"org\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing_address - address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing_address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"H0H0H0\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t           \"roles\": [\n\t\t                {\n\t\t                    \"roleType\": \"Incorporator\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                },\n\t\t                 {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"firstName\": \"Test\",\n\t\t                \"lastName\": \"Director\",\n\t\t                \"middleInitial\": \"\",\n\t\t                \"partyType\": \"person\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing_address - address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing_address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"H0H0H0\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t           \"roles\": [\n\t\t                 {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                }\n\t\t            ]\n\t\t        }\n    \t\t], \n    \t\t\"shareClasses\": [\n\t\t        {\n\t\t            \"id\": 1,\n\t\t            \"name\": \"Share Class 1\",\n\t\t            \"priority\": 1,\n\t\t            \"hasMaximumShares\": true,\n\t\t            \"maxNumberOfShares\": 100,\n\t\t            \"hasParValue\": true,\n\t\t            \"parValue\": 10,\n\t\t            \"currency\": \"CAD\",\n\t\t            \"hasRightsOrRestrictions\": false,\n\t\t            \"series\": [\n\t\t                {\n\t\t                    \"id\": 1,\n\t\t                    \"name\": \"Share Series 1\",\n\t\t                    \"priority\": 1,\n\t\t                    \"hasMaximumShares\": true,\n\t\t                    \"maxNumberOfShares\": 50,\n\t\t                    \"hasRightsOrRestrictions\": false\n\t\t                },\n\t\t                {\n\t\t                    \"id\": 2,\n\t\t                    \"name\": \"Share Series 2\",\n\t\t                    \"priority\": 2,\n\t\t                    \"hasMaximumShares\": true,\n\t\t                    \"maxNumberOfShares\": 100,\n\t\t                    \"hasRightsOrRestrictions\": false\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"id\": 2,\n\t\t            \"name\": \"Share Class 2\",\n\t\t            \"priority\": 1,\n\t\t            \"hasMaximumShares\": false,\n\t\t            \"maxNumberOfShares\": null,\n\t\t            \"hasParValue\": false,\n\t\t            \"parValue\": null,\n\t\t            \"currency\": null,\n\t\t            \"hasRightsOrRestrictions\": true,\n\t\t            \"series\": []\n\t\t        }\n\t\t    ],\n\t\t\t\"businessContact\": {\n\t\t\t\t\"email\": \"no_one@never.get\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -4771,7 +4771,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e090ae5e-d361-4a69-8a9d-8233f6ae20bb",
+								"id": "dac43f0d-f8fd-4c0a-b5f3-d36f311e4946",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -4814,7 +4814,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1e1285ba-1786-4f66-977b-74fca178f03f",
+								"id": "00f35d9b-2eb5-40bf-a2ac-ae06fb62e2d7",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -4910,7 +4910,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e80969e2-2c81-41ae-a2d8-4ff1d43a1e63",
+								"id": "66d60c9f-3fcf-4f17-9969-30f67050eaa2",
 								"exec": [
 									"pm.test(\"Response time is less than 20000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4931,7 +4931,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "0f952ec2-5cef-4e00-a7ab-1add05977b3a",
+								"id": "d578d551-ebbd-4e8d-858d-32b912f5a983",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -5053,7 +5053,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "706d5318-7df1-4d8f-b3a3-a219a2ae302d",
+								"id": "783aab66-d43e-4345-9ff6-f866dbf67e7b",
 								"exec": [
 									"pm.test(\"Response time is less than 20000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -5074,7 +5074,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "f4b0e598-afb2-46c0-9dc1-6db68c6ebf85",
+								"id": "213ab377-fb4c-4988-94f7-cca9053650ac",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -5196,7 +5196,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bbd43bc9-9ef6-45c9-b8f2-ec217a1195ab",
+								"id": "e3826a5f-10b2-4774-940d-53ad75e9de81",
 								"exec": [
 									"pm.test(\"Response time is less than 20000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -5217,7 +5217,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "2ff33306-c523-406e-92e2-3564eb47d433",
+								"id": "f3c8ca6f-1aa8-4e75-8986-e54efdd14b68",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -5339,7 +5339,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "55c597b7-a0c0-40d0-b652-2632495f060f",
+								"id": "9847d994-f9ea-48f6-aea9-2181ae83d8dd",
 								"exec": [
 									"pm.test(\"Response time is less than 20000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -5360,7 +5360,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "30bd4654-c277-4c1c-8100-526f79f3d567",
+								"id": "4429bf03-a0b2-4b8c-84a2-3f3e303c5299",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -5485,7 +5485,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "565e6e7d-4b8d-427d-a4e4-78733ba40c59",
+				"id": "65237592-f2d1-4743-9cba-ef3381b6cb63",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -5495,7 +5495,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "cc598bb6-68da-4f4a-b4e6-21f1b63ab146",
+				"id": "c1692a5e-bfe0-4845-9533-023ffa7e4e9b",
 				"type": "text/javascript",
 				"exec": [
 					""

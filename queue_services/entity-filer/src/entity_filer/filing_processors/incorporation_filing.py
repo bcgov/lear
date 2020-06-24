@@ -36,7 +36,7 @@ def get_next_corp_num(business_type: str):
         return None
 
     if resp.status_code == 200:
-        new_corpnum = resp.json()['corpNum'][0]
+        new_corpnum = resp.json()['corpNum']
         if new_corpnum and new_corpnum <= 9999999:
             # TODO: Fix endpoint
             return f'{business_type}{new_corpnum:07d}'
