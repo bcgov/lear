@@ -12,13 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Email processing rules and actions for business number notification."""
+from __future__ import annotations
+
 from entity_queue_common.service_utils import logger
 
 
-def process(email_msg):
+def process(email_msg: dict) -> dict:
     """Build the email for Business Number notification."""
     logger.debug('bn_notification: %s', email_msg)
-    email = 'bn hardcoded'
     # build email from template
     # get links etc.
-    return email
+    return {
+        'recipients': 'hardcoded@email.com',
+        'requestBy': '',
+        'content': {
+            'subject': 'hardcoded',
+            'body': 'hardcoded',
+            'attachments': []
+        }
+    }
