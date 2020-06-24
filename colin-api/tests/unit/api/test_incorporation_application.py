@@ -19,7 +19,7 @@ import json
 
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
-from tests import oracle_integration
+from tests import oracle_integration, skip_coop_ia
 
 
 @oracle_integration
@@ -38,7 +38,7 @@ def test_incorporate_bcomp(client):
             'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
             'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',
             'legalName': legal_name,
-            'legalType': 'BC'
+            'legalType': 'BEN'
         }
 
     rv = client.post(f'/api/v1/businesses/{test_bcomp}/filings/incorporationApplication',
@@ -64,7 +64,7 @@ def test_incorporate_bcomp(client):
     assert offices['registeredOffice']
 
 
-@oracle_integration
+@skip_coop_ia
 def test_incorporate_coop(client):
     """Assert that a new COOP can be created via incorporation application."""
     headers = {'content-type': 'application/json'}

@@ -21,6 +21,7 @@ from dotenv import find_dotenv, load_dotenv
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
 
+skip_coop_ia = pytest.mark.skip(reason='no coop IA currently')
 
 oracle_integration = pytest.mark.skipif((os.getenv('ORACLE_INTEGRATION_TESTING', False) is False),
                                         reason='requires access to a test version of Oracle CTST')

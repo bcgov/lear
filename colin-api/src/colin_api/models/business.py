@@ -393,7 +393,7 @@ class Business:
                 WHERE id_typ_cd = :corp_type
             """, new_num=corp_num[0]+1, corp_type=corp_type)
 
-            return corp_num
+            return '%07d' % corp_num
         except Exception as err:
             current_app.logger.error('Error looking up corp_num')
             raise err
@@ -425,23 +425,6 @@ class Business:
 
         except Exception as err:
             current_app.logger.error('Error inserting business.')
-            raise err
-
-    @classmethod
-    def insert_new_bn_process(cls, cursor, event_typ_cd: str, filing_typ_cd: str):
-        """Insert a new bn process."""
-        try:
-            cursor.execute(
-                """
-                insert into BN_PROCESS (EVENT_TYP_CD, FILING_TYP_CD, XML_VIEW)
-                values (:event_typ_cd, :filing_typ_cd, 'on')
-                """,
-                event_typ_cd=event_typ_cd,
-                filing_typ_cd=filing_typ_cd
-            )
-            return
-        except Exception as err:
-            current_app.logger.error('Error inserting into bn process table.')
             raise err
 
     @classmethod

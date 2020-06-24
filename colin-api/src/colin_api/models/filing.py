@@ -809,9 +809,9 @@ class Filing:
             corp_num = filing.get_corp_num()
             legal_type = corp_num[:2]
 
-            if (legal_type!='CP'):
-               # Future: May need a different way of determining legal type
-               legal_type = 'BEN'
+            if legal_type != 'CP':
+                # Future: May need a different way of determining legal type
+                legal_type = 'BEN'
 
             user_id = Filing.USERS[legal_type] if legal_type in ('CP', 'BEN') else None
             cursor = con.cursor()
@@ -916,8 +916,7 @@ class Filing:
                 corp_name = filing.get_corp_name()
                 Business.create_corp_name(cursor, corp_num, corp_name, event_id)
                 Business.create_corp_state(cursor, corp_num, event_id)
-                if legal_type == 'BEN':
-                    Business.insert_new_bn_process(cursor, event_typ_cd='FILE', filing_typ_cd=filing_type_cd)
+
                 cls._add_office_from_filing(cursor, event_id, corp_num, user_id, filing)
                 cls._add_parties_from_filing(cursor, event_id, filing)
                 cls._add_shares_from_filing(cursor, event_id, corp_num, filing)
