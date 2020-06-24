@@ -125,7 +125,7 @@ async def run(loop, application: Flask = None):
             for filing in filings:
                 filing_id = filing['filing']['header']['filingId']
                 effective_date = filing['filing']['header']['effectiveDate']
-                # TODO Use UTC time?
+                # NB: effective_date and now are both UTC
                 now = datetime.utcnow().replace(tzinfo=timezone.utc)
                 valid = effective_date and parse(effective_date) <= now
                 if valid:
