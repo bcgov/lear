@@ -141,7 +141,7 @@ class Business:
                 left join JURISDICTION on JURISDICTION.corp_num = corp.corp_num
                 join event on corp.corp_num = event.corp_num
                 left join filing on event.event_id = filing.event_id and filing.filing_typ_cd = 'OTANN'
-                where corp_typ_cd in ('CP', 'BC')
+                where corp_typ_cd in ('CP', 'BEN')
                 and corp.CORP_NUM=:corp_num
                 order by last_ar_date desc nulls last""", corp_num=identifier)
             business = cursor.fetchone()
@@ -404,7 +404,10 @@ class Business:
         try:
             cursor = con.cursor()
             corp_num = incorporation['nameRequest']['nrNumber']
-            corp_num = corp_num.replace('BC', '00')[-7:]
+
+            if corp_num[:2] != 'CP':
+                corp_num = corp_num[-7:]
+
             creation_date = datetime.now()
             legal_type = incorporation['nameRequest']['legalType']
             # Expand query as NR data/ business info becomes more aparent

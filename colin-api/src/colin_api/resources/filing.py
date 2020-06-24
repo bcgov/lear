@@ -107,7 +107,9 @@ class FilingInfo(Resource):
                 completed_filing = Filing()
                 completed_filing.header = json_data['header']
                 completed_filing.header['colinIds'] = []
-                search_corp_num = identifier.replace('BC', '00')[-7:]
+                search_corp_num = json_data['business']['identifier']
+                if search_corp_num[:2] != 'CP':
+                    search_corp_num = search_corp_num[-7:]
                 # get business info again - could have changed since filings were applied
                 completed_filing.business = Business.find_by_identifier(search_corp_num, con)
                 completed_filing.body = {}
