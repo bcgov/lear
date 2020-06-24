@@ -30,14 +30,14 @@ def process(email_msg: dict) -> dict:
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-MRAS.html').read_text()
     filled_template = substitute_template_parts(template)
     # get template info from filing
-    filing, filing_json, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_msg['filingId'])
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_msg['filingId'])
 
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
     html_out = jnja_template.render(
         business=business,
-        incorporationApplication=filing_json['filing']['incorporationApplication'],
-        header=filing_json['filing']['header'],
+        incorporationApplication=(filing.json)['filing']['incorporationApplication'],
+        header=(filing.json)['filing']['header'],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date
     )

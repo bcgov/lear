@@ -28,8 +28,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 def get_filing_info(filing_id: str) -> (Filing, dict, dict, str, str):
     """Get filing info for the email."""
     filing = Filing.find_by_id(filing_id)
-    filing_json = filing.json
-    business = filing_json['filing']['business']
+    business = (filing.json)['filing']['business']
 
     filing_date = datetime.fromisoformat(filing.filing_date.isoformat())
     leg_tmz_filing_date = LegislationDatetime.as_legislation_timezone(filing_date)
@@ -41,7 +40,7 @@ def get_filing_info(filing_id: str) -> (Filing, dict, dict, str, str):
     hour = leg_tmz_effective_date.strftime('%I').lstrip('0')
     leg_tmz_effective_date = leg_tmz_effective_date.strftime(f'%B %d, %Y {hour}:%M %p Pacific Time')
 
-    return filing, filing_json, business, leg_tmz_filing_date, leg_tmz_effective_date
+    return filing, business, leg_tmz_filing_date, leg_tmz_effective_date
 
 
 def get_recipients(option: str, filing_json: dict) -> str:
