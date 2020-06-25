@@ -4585,7 +4585,7 @@
 									"",
 									"pm.test(\"Set the next available Corp Num\", () => {",
 									"    pm.expect(jsonData.corpNum).to.exist;",
-									"    pm.environment.set(\"newCorpNum\", 'BC'+(jsonData.corpNum[0]));",
+									"    pm.environment.set(\"newCorpNum\", (jsonData.corpNum));",
 									"});",
 									""
 								],
