@@ -42,20 +42,13 @@ def get_filing_info(filing_id: str) -> (Filing, dict, dict, str, str):
 
     return filing, business, leg_tmz_filing_date, leg_tmz_effective_date
 
-<<<<<<< Updated upstream
 
-=======
->>>>>>> Stashed changes
 def get_recipients(option: str, filing_json: dict) -> str:
     """Get the recipients for the email output."""
     recipients = ''
     if filing_json['filing'].get('incorporationApplication'):
         recipients = filing_json['filing']['incorporationApplication']['contactPoint']['email']
-<<<<<<< Updated upstream
-        if option in ['filed']:
-=======
         if option in ['filed', 'bn']:
->>>>>>> Stashed changes
             parties = filing_json['filing']['incorporationApplication'].get('parties')
             comp_party_email = None
             for party in parties:
