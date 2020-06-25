@@ -79,9 +79,9 @@ def test_incorporation_filing_process_no_nr(app, session):
 
 
 @pytest.mark.parametrize('test_name,response,expected', [
-    ('short number', 1234, 'BC0001234'),
-    ('full 9 number', 1234567, 'BC1234567'),
-    ('too big number', 12345678, None),
+    ('short number', '1234', 'BC0001234'),
+    ('full 9 number', '1234567', 'BC1234567'),
+    ('too big number', '12345678', None),
 ])
 def test_get_next_corp_num(requests_mock, app, test_name, response, expected):
     """Assert that the corpnum is the correct format."""
