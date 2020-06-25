@@ -339,22 +339,28 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             current_app.logger.error('Error in corp_party: No party data given to create party.')
 
         # create new corp party entry
+        corp_num = business['business']['identifier']
         try:
-            cursor.execute("""
-                SELECT id_num
-                FROM system_id
-                WHERE id_typ_cd = 'CP'
-                FOR UPDATE
-            """)
-
-            corp_party_id = int(cursor.fetchone()[0])
-
-            if corp_party_id:
+            if corp_num == 'CP':
+                cursor.execute("""select noncorp_party_seq.NEXTVAL from dual""")
+                row = cursor.fetchone()
+                corp_party_id = int(row[0])
+            else:
                 cursor.execute("""
-                UPDATE system_id
-                SET id_num = :new_num
-                WHERE id_typ_cd = 'CP'
-            """, new_num=corp_party_id+1)
+                    SELECT id_num
+                    FROM system_id
+                    WHERE id_typ_cd = 'CP'
+                    FOR UPDATE
+                """)
+
+                corp_party_id = int(cursor.fetchone()[0])
+
+                if corp_party_id:
+                    cursor.execute("""
+                        UPDATE system_id
+                        SET id_num = :new_num
+                        WHERE id_typ_cd = 'CP'
+                    """, new_num=corp_party_id+1)
 
         except Exception as err:
             current_app.logger.error('Error in corp_party: Failed to get next corp_party_id.')
@@ -365,11 +371,12 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             delivery_info = party['deliveryAddress'] if 'deliveryAddress' in party else party['mailingAddress']
 
             # create new address
-            delivery_addr_id = Address.create_new_address(cursor=cursor, address_info=delivery_info)
+            delivery_addr_id = Address.create_new_address(cursor=cursor, address_info=delivery_info, corp_num=corp_num)
             mailing_addr_id = delivery_addr_id
 
             if 'mailingAddress' in party:
-                mailing_addr_id = Address.create_new_address(cursor=cursor, address_info=party['mailingAddress'])
+                mailing_addr_id = Address.create_new_address(
+                    cursor=cursor, address_info=party['mailingAddress'], corp_num=corp_num)
 
             if role_type == 'CPRTY':
                 cursor.execute(
@@ -387,7 +394,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                     corp_party_id=corp_party_id,
                     mailing_addr_id=mailing_addr_id,
                     delivery_addr_id=delivery_addr_id,
-                    corp_num=business['business']['identifier'],
+                    corp_num=corp_num,
                     party_typ_cd=role_type,
                     start_event_id=event_id,
                     end_event_id=event_id if party.get('cessationDate', '') else None,
