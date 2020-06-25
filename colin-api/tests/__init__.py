@@ -13,4 +13,4 @@
 # limitations under the License.
 """The Test Suites to ensure that the service is built and operating correctly."""
 
-from .utilities.decorators import oracle_integration, skip_coop_ia, skip_in_pod 
+from .utilities.decorators import oracle_integration, skip_coop_ia, skip_in_pod
