@@ -28,7 +28,7 @@ def test_get_shares(client):
     """Assert the shares for a company can be retrieved."""
     headers = {'content-type': 'application/json'}
     rv = client.get('/api/v1/businesses?legal_type=BC')
-    test_bcomp = f"BC{rv.json['corpNum'][0]}"
+    test_bcomp = f"{rv.json['corpNum']}"
 
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = test_bcomp
@@ -39,8 +39,10 @@ def test_get_shares(client):
             'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
             'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',
             'legalName': 'legal name - CP1234567',
-            'legalType': 'BC'
+            'legalType': 'BEN'
         }
+
+    filing['filing']['incorporationApplication']['nameRequest']['legalType'] = 'BEN'
 
     rv = client.post(f'/api/v1/businesses/{test_bcomp}/filings/incorporationApplication',
                      data=json.dumps(filing), headers=headers)

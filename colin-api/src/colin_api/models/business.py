@@ -141,7 +141,7 @@ class Business:
                 left join JURISDICTION on JURISDICTION.corp_num = corp.corp_num
                 join event on corp.corp_num = event.corp_num
                 left join filing on event.event_id = filing.event_id and filing.filing_typ_cd = 'OTANN'
-                where corp_typ_cd in ('CP', 'BC')
+                where corp_typ_cd in ('CP', 'BEN')
                 and corp.CORP_NUM=:corp_num
                 order by last_ar_date desc nulls last""", corp_num=identifier)
             business = cursor.fetchone()
@@ -393,7 +393,7 @@ class Business:
                 WHERE id_typ_cd = :corp_type
             """, new_num=corp_num[0]+1, corp_type=corp_type)
 
-            return corp_num
+            return '%07d' % corp_num
         except Exception as err:
             current_app.logger.error('Error looking up corp_num')
             raise err
@@ -404,6 +404,10 @@ class Business:
         try:
             cursor = con.cursor()
             corp_num = incorporation['nameRequest']['nrNumber']
+
+            if corp_num[:2] != 'CP':
+                corp_num = corp_num[-7:]
+
             creation_date = datetime.now()
             legal_type = incorporation['nameRequest']['legalType']
             # Expand query as NR data/ business info becomes more aparent
@@ -424,23 +428,6 @@ class Business:
             raise err
 
     @classmethod
-    def insert_new_bn_process(cls, cursor, event_typ_cd: str, filing_typ_cd: str):
-        """Insert a new bn process."""
-        try:
-            cursor.execute(
-                """
-                insert into BN_PROCESS (EVENT_TYP_CD, FILING_TYP_CD, XML_VIEW)
-                values (:event_typ_cd, :filing_typ_cd, 'on')
-                """,
-                event_typ_cd=event_typ_cd,
-                filing_typ_cd=filing_typ_cd
-            )
-            return
-        except Exception as err:
-            current_app.logger.error('Error inserting into bn process table.')
-            raise err
-
-    @classmethod
     def create_corp_name(cls, cursor, corp_num, corp_name, event_id):
         """Add record to the CORP NAME table on incorporation."""
         try:
@@ -449,7 +436,7 @@ class Business:
             (CORP_NAME_TYP_CD, CORP_NAME_SEQ_NUM, DD_CORP_NUM, END_EVENT_ID,
             CORP_NME, CORP_NUM, START_EVENT_ID, SRCH_NME)
             values ('CO', 0, NULL, NULL, :corp_name, :corp_num, :event_id, :search_name)
-            """, corp_name=corp_name, corp_num=corp_num, event_id=event_id, search_name=search_name)
+            """, corp_name=corp_name, corp_num=corp_num, event_id=event_id, search_name=search_name.upper())
 
         except Exception as err:
             current_app.logger.error('Error inserting corp name.')

@@ -49,7 +49,7 @@ class Filing:
             'OTCON': 'continuedOut'
         },
         # implemented BCOMP filings
-        'BC': {
+        'BEN': {
             'BEINC': 'incorporationApplication',
             'ANNBC': 'annualReport',
             'NOCDR': 'changeOfDirectors',
@@ -59,7 +59,7 @@ class Filing:
 
     USERS = {
         'CP': 'COOPER',
-        'BC': 'BCOMPS'
+        'BEN': 'BCOMPS'
     }
 
     # dicts containing data
@@ -83,7 +83,7 @@ class Filing:
 
     def get_corp_type(self):
         """Get corporation type."""
-        return self.business.business['identifier'][:2]
+        return self.business.business['legalType']
 
     def get_certified_by(self):
         """Get last name; currently is whole name."""
@@ -121,9 +121,21 @@ class Filing:
         :return: (int) event ID
         """
         try:
-            cursor.execute("""select noncorp_event_seq.NEXTVAL from dual""")
-            row = cursor.fetchone()
-            event_id = int(row[0])
+            cursor.execute("""
+                SELECT id_num
+                FROM system_id
+                WHERE id_typ_cd = 'EV'
+                FOR UPDATE
+            """)
+
+            event_id = int(cursor.fetchone()[0])
+
+            if event_id:
+                cursor.execute("""
+                UPDATE system_id
+                SET id_num = :new_num
+                WHERE id_typ_cd = 'EV'
+            """, new_num=event_id+1)
 
             cursor.execute("""
                 INSERT INTO event (event_id, corp_num, event_typ_cd, event_timestmp, trigger_dts)
@@ -654,7 +666,7 @@ class Filing:
             identifier = business.get_corp_num()
 
             # get the filing types corresponding filing code
-            legal_type = identifier[:2]
+            legal_type = business.business['legalType']
             code = [key for key in cls.FILING_TYPES[legal_type] if cls.FILING_TYPES[legal_type][key] == filing_type]
             if not code:
                 raise InvalidFilingTypeException(filing_type=filing_type)
@@ -796,7 +808,12 @@ class Filing:
         try:
             corp_num = filing.get_corp_num()
             legal_type = corp_num[:2]
-            user_id = Filing.USERS[legal_type] if legal_type in ('CP', 'BC') else None
+
+            if legal_type != 'CP':
+                # Future: May need a different way of determining legal type
+                legal_type = 'BEN'
+
+            user_id = Filing.USERS[legal_type] if legal_type in ('CP', 'BEN') else None
             cursor = con.cursor()
 
             # create new event record, return event ID
@@ -807,7 +824,7 @@ class Filing:
                 ar_date = filing.body['annualReportDate']
                 agm_date = filing.body['annualGeneralMeetingDate']
                 filing_type_cd = 'OTANN'
-                if legal_type == 'BC':
+                if legal_type == 'BEN':
                     filing_type_cd = 'ANNBC'
 
                 # create new filing
@@ -834,7 +851,7 @@ class Filing:
                 date = None
                 # create new filing
                 filing_type_cd = 'OTADD'
-                if legal_type == 'BC':
+                if legal_type == 'BEN':
                     filing_type_cd = 'NOCAD'
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
 
@@ -850,7 +867,7 @@ class Filing:
                 # date = filing.business.business['lastArDate']
                 date = None
                 filing_type_cd = 'OTCDR'
-                if legal_type == 'BC':
+                if legal_type == 'BEN':
                     filing_type_cd = 'NOCDR'
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
 
@@ -891,15 +908,15 @@ class Filing:
                 # Add offices
                 date = None
                 filing_type_cd = 'OTINC'
-                if legal_type == 'BC':
+                if legal_type == 'BEN':
                     filing_type_cd = 'BEINC'
+                    corp_num = corp_num[-7:]
                 cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
                 # Do incorporation here
                 corp_name = filing.get_corp_name()
                 Business.create_corp_name(cursor, corp_num, corp_name, event_id)
                 Business.create_corp_state(cursor, corp_num, event_id)
-                if legal_type == 'BC':
-                    Business.insert_new_bn_process(cursor, event_typ_cd='FILE', filing_typ_cd=filing_type_cd)
+
                 cls._add_office_from_filing(cursor, event_id, corp_num, user_id, filing)
                 cls._add_parties_from_filing(cursor, event_id, filing)
                 cls._add_shares_from_filing(cursor, event_id, corp_num, filing)
