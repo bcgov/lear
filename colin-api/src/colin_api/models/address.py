@@ -115,24 +115,29 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
             raise AddressNotFoundException(address_id=address_id)
 
     @classmethod
-    def create_new_address(cls, cursor, address_info: dict = None):
+    def create_new_address(cls, cursor, address_info: dict = None, corp_num: str = None):
         """Get new address id and insert address into address table."""
         try:
-            cursor.execute("""
-                SELECT id_num
-                FROM system_id
-                WHERE id_typ_cd = 'ADD'
-                FOR UPDATE
-            """)
-
-            addr_id = int(cursor.fetchone()[0])
-
-            if addr_id:
+            if corp_num[:2] == 'CP':
+                cursor.execute("""select noncorp_address_seq.NEXTVAL from dual""")
+                row = cursor.fetchone()
+                addr_id = int(row[0])
+            else:
                 cursor.execute("""
-                UPDATE system_id
-                SET id_num = :new_num
-                WHERE id_typ_cd = 'ADD'
-            """, new_num=addr_id+1)
+                    SELECT id_num
+                    FROM system_id
+                    WHERE id_typ_cd = 'ADD'
+                    FOR UPDATE
+                """)
+
+                addr_id = int(cursor.fetchone()[0])
+
+                if addr_id:
+                    cursor.execute("""
+                        UPDATE system_id
+                        SET id_num = :new_num
+                        WHERE id_typ_cd = 'ADD'
+                    """, new_num=addr_id+1)
 
             country_typ_cd = pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2
         except Exception as err:

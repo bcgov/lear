@@ -121,21 +121,26 @@ class Filing:
         :return: (int) event ID
         """
         try:
-            cursor.execute("""
-                SELECT id_num
-                FROM system_id
-                WHERE id_typ_cd = 'EV'
-                FOR UPDATE
-            """)
-
-            event_id = int(cursor.fetchone()[0])
-
-            if event_id:
+            if corp_num[:2] == 'CP':
+                cursor.execute("""select noncorp_event_seq.NEXTVAL from dual""")
+                row = cursor.fetchone()
+                event_id = int(row[0])
+            else:
                 cursor.execute("""
-                UPDATE system_id
-                SET id_num = :new_num
-                WHERE id_typ_cd = 'EV'
-            """, new_num=event_id+1)
+                    SELECT id_num
+                    FROM system_id
+                    WHERE id_typ_cd = 'EV'
+                    FOR UPDATE
+                """)
+
+                event_id = int(cursor.fetchone()[0])
+
+                if event_id:
+                    cursor.execute("""
+                        UPDATE system_id
+                        SET id_num = :new_num
+                        WHERE id_typ_cd = 'EV'
+                    """, new_num=event_id+1)
 
             cursor.execute("""
                 INSERT INTO event (event_id, corp_num, event_typ_cd, event_timestmp, trigger_dts)
@@ -634,8 +639,8 @@ class Filing:
 
         for office_type in filing.body['offices']:
             office_arr = filing.body['offices'][office_type]
-            delivery_addr_id = Address.create_new_address(cursor, office_arr['deliveryAddress'])
-            mailing_addr_id = Address.create_new_address(cursor, office_arr['mailingAddress'])
+            delivery_addr_id = Address.create_new_address(cursor, office_arr['deliveryAddress'], corp_num=corp_num)
+            mailing_addr_id = Address.create_new_address(cursor, office_arr['mailingAddress'], corp_num=corp_num)
             office_desc = (office_type.replace('O', ' O')).title()
             office_code = Office.OFFICE_TYPES_CODES[office_type]
             # update office table to include new addresses
