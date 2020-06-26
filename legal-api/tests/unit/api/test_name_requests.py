@@ -18,7 +18,11 @@ Test-Suite to ensure that the /nameRequests endpoint is working as expected.
 """
 from http import HTTPStatus
 
+import datedelta
+import pytz
+
 from legal_api.services import namex
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import integration_namerequests
 
 
@@ -169,6 +173,28 @@ def test_name_requests_not_found(client):
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': 'NR 1234567 not found.'}
+
+
+@integration_namerequests
+def test_name_request_update_expiration(app, client):
+    """Assert that nr expiration can be updated."""
+    with app.app_context():
+        nr_original = namex.query_nr_number('NR 2772704')
+
+        effective_date = LegislationDatetime.tomorrow_midnight()
+        # expecting a buffer in the date to make sure future effective filings have time to process
+        effective_date = (effective_date + datedelta.datedelta(days=1)).astimezone(pytz.timezone('GMT'))
+        expected_date_string = effective_date.strftime(namex.DATE_FORMAT)
+
+        nr_response = namex.update_nr_as_future_effective(nr_original.json(), LegislationDatetime.tomorrow_midnight())
+        json = nr_response.json()
+
+        # check if expiration is extended
+        assert json['expirationDate'] == expected_date_string
+
+        # revert to original json
+        nr_response = namex.update_nr(nr_original.json())
+        assert nr_response.json()['expirationDate'] == nr_original.json()['expirationDate']
 
 
 def test_validate_nr_consumable_approved():

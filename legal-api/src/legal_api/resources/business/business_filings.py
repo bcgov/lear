@@ -37,6 +37,7 @@ from legal_api.services import (
     RegistrationBootstrapService,
     authorized,
     document_meta,
+    namex,
     queue,
 )
 from legal_api.services.filings import validate
@@ -269,6 +270,21 @@ class ListFilingResource(Resource):
         return jsonify(filing.json), HTTPStatus.ACCEPTED
 
     @staticmethod
+    def _check_and_update_nr(filing):
+        """Check and update NR to extend expiration date as needed."""
+        # if this is an incorporation filing for a name request
+        if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name'):
+            nr_number = filing.json['filing']['incorporationApplication']['nameRequest'].get('nrNumber', None)
+            effective_date = filing.json['filing']['header'].get('effectiveDate', None)
+            if effective_date:
+                effective_date = datetime.datetime.fromisoformat(effective_date)
+            if nr_number:
+                nr_response = namex.query_nr_number(nr_number)
+                # If there is an effective date, check if we need to extend the NR expiration
+                if effective_date and namex.is_date_past_expiration(nr_response.json(), effective_date):
+                    namex.update_nr_as_future_effective(nr_response.json(), effective_date)
+
+    @staticmethod
     def complete_filing(business, filing, draft) -> Tuple[dict, int]:
         """Complete the filing, either to COLIN or by getting an invoice.
 
@@ -281,6 +297,9 @@ class ListFilingResource(Resource):
 
         # create invoice
         if not draft:
+            # Check if this is an nr and update as needed
+            ListFilingResource._check_and_update_nr(filing)
+
             filing_types = ListFilingResource._get_filing_types(filing.filing_json)
             err_msg, err_code = ListFilingResource._create_invoice(business, filing, filing_types, jwt)
             if err_code:
