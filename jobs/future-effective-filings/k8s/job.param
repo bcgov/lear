@@ -4,6 +4,7 @@
 # Component: job
 # Action: build
 # Template File: templates/job.json
+# Hint: oc process -n gl2uos-dev -f templates/job.json --param-file=job.param | oc replace -n gl2uos-dev -f -
 #=========================================================
 NAME="future-effective-filings"
 NAMESPACE="gl2uos"

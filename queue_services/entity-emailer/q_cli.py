@@ -93,11 +93,11 @@ async def run(loop, email_info):  # pylint: disable=too-many-locals
 
 if __name__ == '__main__':
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'f:t:o:', ['fid=', 'etype=', 'option='])
+        opts, args = getopt.getopt(sys.argv[1:], 'f:t:o:i:', ['fid=', 'etype=', 'option=', 'identifier='])
     except getopt.GetoptError:
-        print('q_cli.py -f <filing_id> -t <email_type> -o <option>')
+        print('q_cli.py -f <filing_id> -t <email_type> -o <option> -i <identifier>')
         sys.exit(2)
-    fid, etype, option = None, None, None
+    fid, etype, option, identifier = None, None, None, None
     for opt, arg in opts:
         if opt in ('-f', '--fid'):
             fid = arg
@@ -105,10 +105,12 @@ if __name__ == '__main__':
             etype = arg
         elif opt in ('-o', '--option'):
             option = arg
+        elif opt in ('-i', '--identifier'):
+            identifier = arg
     if not all([fid, etype, option]):
-        print('q_cli.py -f <filing_id> -t <email_type> -o <option>')
+        print('q_cli.py -f <filing_id> -t <email_type> -o <option> -i <identifier>')
         sys.exit()
 
-    email_info = {'filingId': fid, 'type': etype, 'option': option}
+    email_info = {'filingId': fid, 'type': etype, 'option': option, 'identifier': identifier}
     event_loop = asyncio.get_event_loop()
     event_loop.run_until_complete(run(event_loop, email_info))
