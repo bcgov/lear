@@ -28,7 +28,6 @@ from dotenv import find_dotenv, load_dotenv
 from entity_queue_common.service import ServiceWorker
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 from flask import Flask
-from flask_jwt_oidc import JwtManager
 from nats.aio.client import Client as NATS, DEFAULT_CONNECT_TIMEOUT  # noqa N814; by convention the name is NATS
 from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 
@@ -53,9 +52,6 @@ subject = os.getenv('NATS_FILER_SUBJECT', '')
 
 # this will load all the envars from a .env file located in the project root
 load_dotenv(find_dotenv())
-
-# lower case name as used by convention in most Flask apps
-jwt = JwtManager()  # pylint: disable=invalid-name
 
 SENTRY_LOGGING = LoggingIntegration(
     event_level=logging.ERROR  # send errors as events
@@ -102,23 +98,6 @@ async def run(loop, application: Flask = None):
 
     with application.app_context():
         try:
-            # get updater-job token
-            creds = {
-                'username': application.config['USERNAME'],
-                'password': application.config['PASSWORD']
-            }
-            auth = requests.post(
-                application.config['AUTH_URL'],
-                json=creds,
-                headers={'Content-Type': 'application/json'}
-            )
-            if auth.status_code != 200:
-                application.logger.error(
-                    f'file_future_effective failed to authenticate {auth.json()} {auth.status_code}'
-                )
-                raise Exception
-            # TODO token = dict(auth.json())['access_token']
-
             filings = get_filings(app=application)
             if not filings:
                 application.logger.debug(f'No PAID filings found to apply.')
@@ -143,4 +122,3 @@ if __name__ == '__main__':
     except Exception as err:  # pylint: disable=broad-except; Catching all errors from the frameworks
         application.logger.error(err)
         raise err
-

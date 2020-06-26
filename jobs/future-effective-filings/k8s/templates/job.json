@@ -55,29 +55,20 @@
                                         }
                                     },
                                     {
-                                        "name": "AUTH_URL",
+                                        "name": "ACCOUNT_SVC_CLIENT_ID",
                                         "valueFrom": {
                                             "configMapKeyRef": {
-                                                "key": "AUTH_URL",
+                                                "key": "ACCOUNT_SVC_CLIENT_ID",
                                                 "name": "updater-jobs-${ENV}-config"
                                             }
                                         }
                                     },
                                     {
-                                        "name": "AUTH_USERNAME",
+                                        "name": "ACCOUNT_SVC_CLIENT_SECRET",
                                         "valueFrom": {
-                                            "secretKeyRef": {
-                                                "key": "AUTH_USERNAME",
-                                                "name": "updater-job"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "name": "AUTH_PASSWORD",
-                                        "valueFrom": {
-                                            "secretKeyRef": {
-                                                "key": "AUTH_PASSWORD",
-                                                "name": "updater-job"
+                                            "configMapKeyRef": {
+                                                "key": "ACCOUNT_SVC_CLIENT_SECRET",
+                                                "name": "updater-jobs-${ENV}-config"
                                             }
                                         }
                                     }
