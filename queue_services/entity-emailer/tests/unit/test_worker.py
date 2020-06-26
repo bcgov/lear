@@ -15,6 +15,7 @@
 from unittest.mock import patch
 
 import pytest
+from legal_api.models import Business
 from legal_api.services.bootstrap import AccountService
 
 from entity_emailer import worker
@@ -30,11 +31,6 @@ def test_process_filing_missing_app(app, session):
     # TEST
     with pytest.raises(Exception):
         worker.process_email(email_msg, flask_app=None)
-
-
-@pytest.mark.skip(reason='Not Implemented')
-def test_process_bn_email(app, session):
-    """Assert that a BN email msg is processed correctly."""
 
 
 @pytest.mark.parametrize('option', [
@@ -88,3 +84,29 @@ def test_process_mras_email(app, session):
             assert mock_send_email.call_args[0][0]['content']['body']
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
             assert mock_send_email.call_args[0][1] == token
+
+
+def test_process_bn_email(app, session):
+    """Assert that a BN email msg is processed correctly."""
+    # setup filing + business for email
+    identifier = 'BC1234567'
+    filing = email_prepped_filing(session, identifier, '1', 'bn')
+    business = Business.find_by_identifier(identifier)
+    # sanity check
+    assert filing.id
+    assert business.id
+    token = '1'
+    # run worker
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+            worker.process_email(
+                {'email': {'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': 'BC1234567'}},
+                app
+            )
+            # check email values
+            assert 'comp_party@email.com' in mock_send_email.call_args[0][0]['recipients']
+            assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
+            assert mock_send_email.call_args[0][0]['content']['subject'] == \
+                f'{business.legal_name} - Business Number Information'
+            assert mock_send_email.call_args[0][0]['content']['body']
+            assert mock_send_email.call_args[0][0]['content']['attachments'] == []

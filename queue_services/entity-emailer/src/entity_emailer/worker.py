@@ -85,8 +85,8 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
 
         token = AccountService.get_bearer_token()
 
-        if email_msg['email']['type'] == 'bn':
-            email = bn_notification.process(email_msg)
+        if email_msg['email']['type'] == 'businessNumber':
+            email = bn_notification.process(email_msg['email'])
             send_email(email, token)
         elif email_msg['email']['type'] == 'incorporationApplication':
             if email_msg['email']['option'] == 'mras':

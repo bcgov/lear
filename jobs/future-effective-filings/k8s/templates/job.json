@@ -55,29 +55,83 @@
                                         }
                                     },
                                     {
-                                        "name": "AUTH_URL",
+                                        "name": "ACCOUNT_SVC_AUTH_URL",
                                         "valueFrom": {
                                             "configMapKeyRef": {
-                                                "key": "AUTH_URL",
+                                                "key": "ACCOUNT_SVC_AUTH_URL",
                                                 "name": "updater-jobs-${ENV}-config"
                                             }
                                         }
                                     },
                                     {
-                                        "name": "AUTH_USERNAME",
+                                        "name": "ACCOUNT_SVC_CLIENT_ID",
                                         "valueFrom": {
-                                            "secretKeyRef": {
-                                                "key": "AUTH_USERNAME",
-                                                "name": "updater-job"
+                                            "configMapKeyRef": {
+                                                "key": "ACCOUNT_SVC_CLIENT_ID",
+                                                "name": "updater-jobs-${ENV}-config"
                                             }
                                         }
                                     },
                                     {
-                                        "name": "AUTH_PASSWORD",
+                                        "name": "ACCOUNT_SVC_CLIENT_SECRET",
                                         "valueFrom": {
-                                            "secretKeyRef": {
-                                                "key": "AUTH_PASSWORD",
-                                                "name": "updater-job"
+                                            "configMapKeyRef": {
+                                                "key": "ACCOUNT_SVC_CLIENT_SECRET",
+                                                "name": "updater-jobs-${ENV}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "SENTRY_DSN",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "SENTRY_DSN",
+                                                "name": "updater-jobs-${ENV}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_SERVERS",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NATS_SERVERS",
+                                                "name": "entity-filer-${ENV}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_CLIENT_NAME",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NATS_CLIENT_NAME",
+                                                "name": "entity-filer-${ENV}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_CLUSTER_ID",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NATS_CLUSTER_ID",
+                                                "name": "entity-filer-${ENV}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_FILER_SUBJECT",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NATS_FILER_SUBJECT",
+                                                "name": "entity-filer-${ENV}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_QUEUE",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NATS_QUEUE",
+                                                "name": "entity-filer-${ENV}-config"
                                             }
                                         }
                                     }

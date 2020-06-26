@@ -18,27 +18,26 @@ This module is the API for the Legal Entity system.
 import logging
 import os
 
+import requests
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
+from colin_api.models.filing import Filing
+from entity_queue_common.service import QueueServiceManager
+from legal_api.services.bootstrap import AccountService
+from sentry_sdk import capture_message
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 from flask import Flask
-from flask_jwt_oidc import JwtManager
 
-import requests
 import config
-
-from colin_api.models.filing import Filing
-from registry_schemas import validate
 from utils.logging import setup_logging
 
-setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
-
-# lower case name as used by convention in most Flask apps
-jwt = JwtManager()  # pylint: disable=invalid-name
+setup_logging(
+    os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))
 
 SENTRY_LOGGING = LoggingIntegration(
     event_level=logging.ERROR  # send errors as events
 )
 SET_EVENTS_MANUALLY = False
+
 
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
@@ -60,14 +59,13 @@ def register_shellcontext(app):
     """Register shell context objects."""
     def shell_context():
         """Shell context objects."""
-        return {
-            'app': app,
-            'jwt': jwt}  # pragma: no cover
+        return {'app': app}
 
     app.shell_context_processor(shell_context)
 
 
 def check_for_manual_filings(application: Flask = None, token: dict = None):
+    """Check for colin filings in oracle."""
     id_list = []
 
     # get max colin event_id from legal
@@ -142,13 +140,7 @@ def update_filings():
     with application.app_context():
         try:
             # get updater-job token
-            creds = {'username': application.config['USERNAME'], 'password': application.config['PASSWORD']}
-            auth = requests.post(application.config['AUTH_URL'], json=creds, headers={
-                'Content-Type': 'application/json'})
-            if auth.status_code != 200:
-                application.logger.error(f'legal-updater failed to authenticate {auth.json()} {auth.status_code}')
-                raise Exception
-            token = dict(auth.json())['access_token']
+            token = AccountService.get_bearer_token()
 
             # check if there are filings to send to legal
             manual_filings_info = check_for_manual_filings(application, token)
@@ -161,35 +153,24 @@ def update_filings():
                     if event_info['corp_num'] not in corps_with_failed_filing:
                         filing = get_filing(event_info, application)
 
-                        # validate schema
-                        is_valid, errors = validate(filing, 'filing', validate_schema=True)
-                        if errors:
-                            for err in errors:
-                                if not first_failed_id:
-                                    first_failed_id = event_info['event_id']
-                                failed_filing_events.append(event_info)
-                                corps_with_failed_filing.append(event_info['corp_num'])
-                                application.logger.error(err.message)
-
+                        # call legal api with filing
+                        application.logger.debug('sending filing with event info: {} to legal api.'.format(event_info))
+                        r = requests.post(application.config['LEGAL_URL'] + '/' + event_info['corp_num'] + '/filings',
+                                            json=filing, headers={'Content-Type': 'application/json',
+                                                                'Authorization': f'Bearer {token}'})
+                        if r.status_code != 201:
+                            if not first_failed_id:
+                                first_failed_id = event_info['event_id']
+                            failed_filing_events.append(event_info)
+                            corps_with_failed_filing.append(event_info['corp_num'])
+                            application.logger.error(f'{r.json()} {r.status_code}')
+                            application.logger.error(f'Legal failed to create filing with event_id '
+                                                        f'{event_info["event_id"]} for {event_info["corp_num"]}')
                         else:
-                            # call legal api with filing
-                            application.logger.debug('sending filing with event info: {} to legal api.'.format(event_info))
-                            r = requests.post(application.config['LEGAL_URL'] + '/' + event_info['corp_num'] + '/filings',
-                                              json=filing, headers={'Content-Type': 'application/json',
-                                                                    'Authorization': f'Bearer {token}'})
-                            if r.status_code != 201:
-                                if not first_failed_id:
-                                    first_failed_id = event_info['event_id']
-                                failed_filing_events.append(event_info)
-                                corps_with_failed_filing.append(event_info['corp_num'])
-                                application.logger.error(f'{r.json()} {r.status_code}')
-                                application.logger.error(f'Legal failed to create filing with event_id '
-                                                         f'{event_info["event_id"]} for {event_info["corp_num"]}')
-                            else:
-                                # update max_event_id entered
-                                successful_filings += 1
-                                if int(event_info['event_id']) > max_event_id:
-                                    max_event_id = int(event_info['event_id'])
+                            # update max_event_id entered
+                            successful_filings += 1
+                            if int(event_info['event_id']) > max_event_id:
+                                max_event_id = int(event_info['event_id'])
                     else:
                         skipped_filings.append(event_info)
             else:
@@ -228,21 +209,31 @@ def update_filings():
         except Exception as err:
             application.logger.error(err)
 
+
+async def send_emails(tax_ids: dict, application: Flask):
+    """Put bn email messages on the queue for all businesses with new tax ids."""
+    qsm = QueueServiceManager()
+    for identifier in tax_ids.keys():
+        try:
+            subject = application.config['EMAIL_PUBLISH_OPTIONS']['subject']
+            payload = {'email': {'filingId': None, 'type': 'bussinessNumber', 'option': 'bn', 'identifier': identifier}}
+            await qsm.service.publish(subject, payload)
+        except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+            # mark any failure for human review
+            capture_message(
+                f'Queue Error: Failed to place bn email for {identifier}'
+                f'on Queue with error:{err}',
+                level='error'
+            )
+
+
 def update_business_nos():
+    """Update the tax_ids for corps with new bn_15s."""
     application = create_app()
     with application.app_context():
         try:
             # get updater-job token
-            creds = {'username': application.config['USERNAME'], 'password': application.config['PASSWORD']}
-            auth = requests.post(
-                application.config['AUTH_URL'],
-                json=creds,
-                headers={'Content-Type': 'application/json'}
-            )
-            if auth.status_code != 200:
-                application.logger.error(f'legal-updater failed to authenticate {auth.json()} {auth.status_code}')
-                raise Exception
-            token = dict(auth.json())['access_token']
+            token = AccountService.get_bearer_token()
 
             # get identifiers with outstanding tax_ids
             application.logger.debug('Getting businesses with outstanding tax ids from legal api...')
@@ -279,6 +270,8 @@ def update_business_nos():
                         application.logger.error(f'legal-updater failed to update tax_ids in lear.')
                         raise Exception
 
+                    send_emails(tax_ids, application)
+
                     application.logger.debug(f'Successfully updated tax ids in lear.')
                 else:
                     application.logger.debug(f'No tax ids in colin to update in lear.')
@@ -289,6 +282,6 @@ def update_business_nos():
             application.logger.error(err)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     update_filings()
     update_business_nos()

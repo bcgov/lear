@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="origin-when-cross-origin"/>
     <meta name="author" content="BC Registries and Online Services">
-    <title>BC Business Registry Partner Information</title>
+    <title>{{business.legalName}} - Business Number Information</title>
     [[style.html]]
   </head>
 
@@ -18,16 +18,16 @@
 
           <div class="container">
             <p>
-              You have successfully registered a business with BC Business Registry.
-              You can do business in other provinces and territories in Canada.​
+              Canada Revenue Agency has provided a Business Number for the company {{business.legalName}},
+              Incorporation Number {{business.identifier}}.
             </p>
-
             [[whitespace-16px.html]]
-            [[business-info.html]]
-
-            [[whitespace-16px.html]]
-            [[initiative-notice.html]]
-
+            <table class="business-info-table" cellspacing="10" role="presentation">
+              <tr>
+                <td class="name">Business Number:</td>
+                <td class="value">{{business.taxId}}</td>
+              </tr>
+            </table>
             [[whitespace-16px.html]]
             [[footer.html]]
           </div>

@@ -14,20 +14,42 @@
 """Email processing rules and actions for business number notification."""
 from __future__ import annotations
 
+from pathlib import Path
+
 from entity_queue_common.service_utils import logger
+from flask import current_app
+from jinja2 import Template
+from legal_api.models import Business, Filing
+
+from entity_emailer.email_processors import get_recipients, substitute_template_parts
 
 
 def process(email_msg: dict) -> dict:
     """Build the email for Business Number notification."""
-    logger.debug('bn_notification: %s', email_msg)
-    # build email from template
-    # get links etc.
+    logger.debug('bn notification: %s', email_msg)
+
+    # get template and fill in parts
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-BN.html').read_text()
+    filled_template = substitute_template_parts(template)
+
+    # get filing and business json
+    business = Business.find_by_identifier(email_msg['identifier'])
+    filing = (Filing.get_a_businesses_most_recent_filing_of_a_type(business.id, 'incorporationApplication'))
+
+    # render template with vars
+    jnja_template = Template(filled_template, autoescape=True)
+    html_out = jnja_template.render(
+        business=business.json()
+    )
+
+    # get recipients
+    recipients = get_recipients(email_msg['option'], filing.filing_json)
     return {
-        'recipients': 'hardcoded@email.com',
-        'requestBy': '',
+        'recipients': recipients,
+        'requestBy': 'BCRegistries@gov.bc.ca',
         'content': {
-            'subject': 'hardcoded',
-            'body': 'hardcoded',
+            'subject': f'{business.legal_name} - Business Number Information',
+            'body': html_out,
             'attachments': []
         }
     }

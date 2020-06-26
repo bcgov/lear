@@ -19,20 +19,17 @@ import logging
 import os
 
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
-from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
+import requests
 from flask import Flask
-from flask_jwt_oidc import JwtManager
+from legal_api.services.bootstrap import AccountService
+from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 
 import config
-import requests
-
-from registry_schemas import validate
 from utils.logging import setup_logging
 
-setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
-# lower case name as used by convention in most Flask apps
-jwt = JwtManager()  # pylint: disable=invalid-name
+setup_logging(os.path.join(
+    os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))
 
 SENTRY_LOGGING = LoggingIntegration(
     event_level=logging.ERROR  # send errors as events
@@ -50,29 +47,16 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
             integrations=[SENTRY_LOGGING]
         )
 
-    setup_jwt_manager(app, jwt)
-
     register_shellcontext(app)
 
     return app
-
-
-def setup_jwt_manager(app, jwt_manager):
-    """Use flask app to configure the JWTManager to work for a particular Realm."""
-    def get_roles(a_dict):
-        return a_dict['realm_access']['roles']  # pragma: no cover
-    app.config['JWT_ROLE_CALLBACK'] = get_roles
-
-    jwt_manager.init_app(app)
 
 
 def register_shellcontext(app):
     """Register shell context objects."""
     def shell_context():
         """Shell context objects."""
-        return {
-            'app': app,
-            'jwt': jwt}  # pragma: no cover
+        return {'app': app}
 
     app.shell_context_processor(shell_context)
 
@@ -90,26 +74,19 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
     """Post to colin-api with filing."""
     clean_none(filing)
 
-    # validate schema
-    is_valid, errors = validate(filing, 'filing')
-    if errors:
-        for err in errors:
-            app.logger.error(err.message)
+    filing_type = filing['filing']['header']['name']
+    app.logger.debug(f'Filing {filing_id} in colin for {filing["filing"]["business"]["identifier"]}.')
+    r = requests.post(f'{app.config["COLIN_URL"]}/{filing["filing"]["business"]["identifier"]}/filings/'
+                        f'{filing_type}', json=filing)
+    if not r or r.status_code != 201:
+        app.logger.error(f'Filing {filing_id} not created in colin {filing["filing"]["business"]["identifier"]}.')
+        # raise Exception
         return None
-    else:
-        filing_type = filing['filing']['header']['name']
-        app.logger.debug(f'Filing {filing_id} in colin for {filing["filing"]["business"]["identifier"]}.')
-        r = requests.post(f'{app.config["COLIN_URL"]}/{filing["filing"]["business"]["identifier"]}/filings/'
-                          f'{filing_type}', json=filing)
-        if not r or r.status_code != 201:
-            app.logger.error(f'Filing {filing_id} not created in colin {filing["filing"]["business"]["identifier"]}.')
-            # raise Exception
-            return None
-        # if it's an AR containing multiple filings it will have multiple colinIds
-        return r.json()['filing']['header']['colinIds']
+    # if it's an AR containing multiple filings it will have multiple colinIds
+    return r.json()['filing']['header']['colinIds']
 
 
-def update_colin_id(app: Flask = None, filing_id: str = None, colin_ids: list = None, token: jwt = None):
+def update_colin_id(app: Flask = None, filing_id: str = None, colin_ids: list = None, token: dict = None):
     """Update the colin_id in the filings table."""
     r = requests.patch(f'{app.config["LEGAL_URL"]}/internal/filings/{filing_id}',
                        json={'colinIds': colin_ids},
@@ -145,13 +122,7 @@ def run():
     with application.app_context():
         try:
             # get updater-job token
-            creds = {'username': application.config['USERNAME'], 'password': application.config['PASSWORD']}
-            auth = requests.post(application.config['AUTH_URL'], json=creds, headers={
-                'Content-Type': 'application/json'})
-            if auth.status_code != 200:
-                application.logger.error(f'colin-updater failed to authenticate {auth.json()} {auth.status_code}')
-                raise Exception
-            token = dict(auth.json())['access_token']
+            token = AccountService.get_bearer_token()
 
             filings = get_filings(app=application)
             if not filings:
@@ -159,7 +130,7 @@ def run():
             for filing in filings:
                 filing_id = filing['filingId']
                 identifier = filing['filing']['business']['identifier']
-                if identifier in corps_with_failed_filing or is_bcomp(identifier) or is_test_coop(identifier):
+                if identifier in corps_with_failed_filing or is_test_coop(identifier):
                     application.logger.debug(f'Skipping filing {filing_id} for'
                                              f' {filing["filing"]["business"]["identifier"]}.')
                 else:
@@ -170,12 +141,12 @@ def run():
                     if update:
                         application.logger.debug(f'Successfully updated filing {filing_id}')
                     else:
-                        corps_with_failed_filing.append(filing["filing"]["business"]["identifier"])
+                        corps_with_failed_filing.append(filing['filing']['business']['identifier'])
                         application.logger.error(f'Failed to update filing {filing_id} with colin event id.')
 
         except Exception as err:
             application.logger.error(err)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     run()
