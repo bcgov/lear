@@ -73,18 +73,18 @@
                                             {
                                                 "name": "ACCOUNT_SVC_CLIENT_ID",
                                                 "valueFrom": {
-                                                    "secretKeyRef": {
+                                                    "configMapKeyRef": {
                                                         "key": "ACCOUNT_SVC_CLIENT_ID",
-                                                        "name": "updater-job"
+                                                        "name": "updater-jobs-${ENV}-config"
                                                     }
                                                 }
                                             },
                                             {
                                                 "name": "ACCOUNT_SVC_CLIENT_SECRET",
                                                 "valueFrom": {
-                                                    "secretKeyRef": {
+                                                    "configMapKeyRef": {
                                                         "key": "ACCOUNT_SVC_CLIENT_SECRET",
-                                                        "name": "updater-job"
+                                                        "name": "updater-jobs-${ENV}-config"
                                                     }
                                                 }
                                             }

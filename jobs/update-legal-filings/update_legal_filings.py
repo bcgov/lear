@@ -222,7 +222,7 @@ def update_filings():
             application.logger.error(err)
 
 
-def send_emails(tax_ids: dict, application: Flask):
+async def send_emails(tax_ids: dict, application: Flask):
     """Put bn email messages on the queue for all businesses with new tax ids."""
     qsm = QueueServiceManager()
     for identifier in tax_ids.keys():
