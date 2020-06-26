@@ -23,6 +23,7 @@ import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts wi
 from colin_api.models.filing import Filing
 from entity_queue_common.service import QueueServiceManager
 from legal_api.services.bootstrap import AccountService
+from sentry_sdk import capture_message
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 from flask import Flask
 from registry_schemas import validate

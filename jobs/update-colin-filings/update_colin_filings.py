@@ -93,7 +93,7 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
         return r.json()['filing']['header']['colinIds']
 
 
-def update_colin_id(app: Flask = None, filing_id: str = None, colin_ids: list = None, token: jwt = None):
+def update_colin_id(app: Flask = None, filing_id: str = None, colin_ids: list = None, token: dict = None):
     """Update the colin_id in the filings table."""
     r = requests.patch(f'{app.config["LEGAL_URL"]}/internal/filings/{filing_id}',
                        json={'colinIds': colin_ids},
