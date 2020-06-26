@@ -12,17 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for business number email processor."""
-import pytest
+from legal_api.models import Business
 
 from entity_emailer.email_processors import bn_notification
+from tests.unit import email_prepped_filing
 
 
-@pytest.mark.skip(reason='Not Implemented')
 def test_bn_notificaton(app, session):
     """Assert that the bn email processor builds the email correctly."""
-    # setup
-    email_msg = {'email': {'type': 'bn'}}
-    # test
-    email = bn_notification.process(email_msg)
-    # validate
-    assert email == 'bn hardcoded'
+    # setup filing + business for email
+    identifier = 'BC1234567'
+    filing = email_prepped_filing(session, identifier, '1', 'bn')
+    business = Business.find_by_identifier(identifier)
+    # sanity check
+    assert filing.id
+    assert business.id
+    # run processor
+    email = bn_notification.process(
+        {'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': 'BC1234567'})
+    # check email values
+    assert 'comp_party@email.com' in email['recipients']
+    assert 'test@test.com' in email['recipients']
+    assert email['content']['subject'] == f'{business.legal_name} - Business Number Information'
+    assert email['content']['body']
+    assert email['content']['attachments'] == []

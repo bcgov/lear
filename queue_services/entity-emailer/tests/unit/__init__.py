@@ -61,7 +61,7 @@ def email_prepped_filing(session, identifier, payment_id, option):
     filing = create_filing(token=payment_id, json_filing=filing_template, business_id=business.id)
     filing.payment_completion_date = filing.filing_date
     filing.save()
-    if option == 'registered':
+    if option in ['registered', 'bn']:
         uow = versioning_manager.unit_of_work(session)
         transaction = uow.create_transaction(session)
         filing.transaction_id = transaction.id

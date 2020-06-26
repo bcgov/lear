@@ -29,12 +29,12 @@ def process(email_msg: dict) -> dict:
     logger.debug('bn notification: %s', email_msg)
 
     # get template and fill in parts
-    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-MRAS.html').read_text()
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-BN.html').read_text()
     filled_template = substitute_template_parts(template)
 
     # get filing and business json
-    filing = Filing.find_by_id(email_msg['filingId'])
-    business = Business.find_by_identifier((filing.json)['filing']['business']['identifier'])
+    business = Business.find_by_identifier(email_msg['identifier'])
+    filing = (Filing.get_a_businesses_most_recent_filing_of_a_type(business.id, 'incorporationApplication'))
 
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)

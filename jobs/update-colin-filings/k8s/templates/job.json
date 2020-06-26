@@ -55,28 +55,28 @@
                                         }
                                     },
                                     {
-                                        "name": "AUTH_URL",
+                                        "name": "ACCOUNT_SVC_AUTH_URL",
                                         "valueFrom": {
                                             "configMapKeyRef": {
-                                                "key": "AUTH_URL",
+                                                "key": "ACCOUNT_SVC_AUTH_URL",
                                                 "name": "updater-jobs-${ENV}-config"
                                             }
                                         }
                                     },
                                     {
-                                        "name": "AUTH_USERNAME",
+                                        "name": "ACCOUNT_SVC_CLIENT_ID",
                                         "valueFrom": {
                                             "secretKeyRef": {
-                                                "key": "AUTH_USERNAME",
+                                                "key": "ACCOUNT_SVC_CLIENT_ID",
                                                 "name": "updater-job"
                                             }
                                         }
                                     },
                                     {
-                                        "name": "AUTH_PASSWORD",
+                                        "name": "ACCOUNT_SVC_CLIENT_SECRET",
                                         "valueFrom": {
                                             "secretKeyRef": {
-                                                "key": "AUTH_PASSWORD",
+                                                "key": "ACCOUNT_SVC_CLIENT_SECRET",
                                                 "name": "updater-job"
                                             }
                                         }

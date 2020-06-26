@@ -7,5 +7,4 @@ flask-jwt-oidc>=0.1.5
 python-dotenv
 requests
 sentry-sdk[flask]
-
-git+https://github.com/bcgov/business-schemas.git@2.5.0#egg=registry_schemas
+werkzeug<1.0

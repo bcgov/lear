@@ -19,20 +19,17 @@ import logging
 import os
 
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
-from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 from flask import Flask
-from flask_jwt_oidc import JwtManager
+from legal_api.services.bootstrap import AccountService
+from registry_schemas import validate
+from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 
 import config
 import requests
-
-from registry_schemas import validate
 from utils.logging import setup_logging
 
-setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
-
-# lower case name as used by convention in most Flask apps
-jwt = JwtManager()  # pylint: disable=invalid-name
+setup_logging(os.path.join(
+    os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))
 
 SENTRY_LOGGING = LoggingIntegration(
     event_level=logging.ERROR  # send errors as events
@@ -50,29 +47,16 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
             integrations=[SENTRY_LOGGING]
         )
 
-    setup_jwt_manager(app, jwt)
-
     register_shellcontext(app)
 
     return app
-
-
-def setup_jwt_manager(app, jwt_manager):
-    """Use flask app to configure the JWTManager to work for a particular Realm."""
-    def get_roles(a_dict):
-        return a_dict['realm_access']['roles']  # pragma: no cover
-    app.config['JWT_ROLE_CALLBACK'] = get_roles
-
-    jwt_manager.init_app(app)
 
 
 def register_shellcontext(app):
     """Register shell context objects."""
     def shell_context():
         """Shell context objects."""
-        return {
-            'app': app,
-            'jwt': jwt}  # pragma: no cover
+        return {'app': app}
 
     app.shell_context_processor(shell_context)
 
@@ -145,13 +129,7 @@ def run():
     with application.app_context():
         try:
             # get updater-job token
-            creds = {'username': application.config['USERNAME'], 'password': application.config['PASSWORD']}
-            auth = requests.post(application.config['AUTH_URL'], json=creds, headers={
-                'Content-Type': 'application/json'})
-            if auth.status_code != 200:
-                application.logger.error(f'colin-updater failed to authenticate {auth.json()} {auth.status_code}')
-                raise Exception
-            token = dict(auth.json())['access_token']
+            token = AccountService.get_bearer_token()
 
             filings = get_filings(app=application)
             if not filings:
@@ -170,12 +148,12 @@ def run():
                     if update:
                         application.logger.debug(f'Successfully updated filing {filing_id}')
                     else:
-                        corps_with_failed_filing.append(filing["filing"]["business"]["identifier"])
+                        corps_with_failed_filing.append(filing['filing']['business']['identifier'])
                         application.logger.error(f'Failed to update filing {filing_id} with colin event id.')
 
         except Exception as err:
             application.logger.error(err)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     run()
