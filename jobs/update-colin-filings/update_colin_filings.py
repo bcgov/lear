@@ -137,7 +137,7 @@ def run():
             for filing in filings:
                 filing_id = filing['filingId']
                 identifier = filing['filing']['business']['identifier']
-                if identifier in corps_with_failed_filing or is_bcomp(identifier) or is_test_coop(identifier):
+                if identifier in corps_with_failed_filing or is_test_coop(identifier):
                     application.logger.debug(f'Skipping filing {filing_id} for'
                                              f' {filing["filing"]["business"]["identifier"]}.')
                 else:

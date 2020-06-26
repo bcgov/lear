@@ -59,7 +59,7 @@ class Business:
             for row in cursor.fetchall():
                 row = dict(zip([x[0].lower() for x in cursor.description], row))
                 if row['bn_15']:
-                    bn_15s[f'{row["corp_num"]}'] = row['bn_15']
+                    bn_15s[f'BC{row["corp_num"]}'] = row['bn_15']
             return bn_15s
 
         except Exception as err:

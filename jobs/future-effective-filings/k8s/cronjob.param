@@ -8,5 +8,5 @@
 #=========================================================
 NAME="future-effective-filings"
 NAMESPACE="gl2uos"
-ENV="test"
+ENV="dev"
 SCHEDULE="0 * * * *"
