@@ -39,7 +39,7 @@ def process(email_msg: dict) -> dict:
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
     html_out = jnja_template.render(
-        business=business.json
+        business=business.json()
     )
 
     # get recipients
