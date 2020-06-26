@@ -19,14 +19,14 @@ import logging
 import os
 
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
+import requests
 from flask import Flask
 from legal_api.services.bootstrap import AccountService
-from registry_schemas import validate
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 
 import config
-import requests
 from utils.logging import setup_logging
+
 
 setup_logging(os.path.join(
     os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))
@@ -74,23 +74,16 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
     """Post to colin-api with filing."""
     clean_none(filing)
 
-    # validate schema
-    is_valid, errors = validate(filing, 'filing')
-    if errors:
-        for err in errors:
-            app.logger.error(err.message)
+    filing_type = filing['filing']['header']['name']
+    app.logger.debug(f'Filing {filing_id} in colin for {filing["filing"]["business"]["identifier"]}.')
+    r = requests.post(f'{app.config["COLIN_URL"]}/{filing["filing"]["business"]["identifier"]}/filings/'
+                        f'{filing_type}', json=filing)
+    if not r or r.status_code != 201:
+        app.logger.error(f'Filing {filing_id} not created in colin {filing["filing"]["business"]["identifier"]}.')
+        # raise Exception
         return None
-    else:
-        filing_type = filing['filing']['header']['name']
-        app.logger.debug(f'Filing {filing_id} in colin for {filing["filing"]["business"]["identifier"]}.')
-        r = requests.post(f'{app.config["COLIN_URL"]}/{filing["filing"]["business"]["identifier"]}/filings/'
-                          f'{filing_type}', json=filing)
-        if not r or r.status_code != 201:
-            app.logger.error(f'Filing {filing_id} not created in colin {filing["filing"]["business"]["identifier"]}.')
-            # raise Exception
-            return None
-        # if it's an AR containing multiple filings it will have multiple colinIds
-        return r.json()['filing']['header']['colinIds']
+    # if it's an AR containing multiple filings it will have multiple colinIds
+    return r.json()['filing']['header']['colinIds']
 
 
 def update_colin_id(app: Flask = None, filing_id: str = None, colin_ids: list = None, token: dict = None):

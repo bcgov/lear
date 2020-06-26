@@ -26,7 +26,6 @@ from legal_api.services.bootstrap import AccountService
 from sentry_sdk import capture_message
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 from flask import Flask
-from registry_schemas import validate
 
 import config
 from utils.logging import setup_logging
@@ -154,35 +153,24 @@ def update_filings():
                     if event_info['corp_num'] not in corps_with_failed_filing:
                         filing = get_filing(event_info, application)
 
-                        # validate schema
-                        is_valid, errors = validate(filing, 'filing', validate_schema=True)
-                        if errors:
-                            for err in errors:
-                                if not first_failed_id:
-                                    first_failed_id = event_info['event_id']
-                                failed_filing_events.append(event_info)
-                                corps_with_failed_filing.append(event_info['corp_num'])
-                                application.logger.error(err.message)
-
+                        # call legal api with filing
+                        application.logger.debug('sending filing with event info: {} to legal api.'.format(event_info))
+                        r = requests.post(application.config['LEGAL_URL'] + '/' + event_info['corp_num'] + '/filings',
+                                            json=filing, headers={'Content-Type': 'application/json',
+                                                                'Authorization': f'Bearer {token}'})
+                        if r.status_code != 201:
+                            if not first_failed_id:
+                                first_failed_id = event_info['event_id']
+                            failed_filing_events.append(event_info)
+                            corps_with_failed_filing.append(event_info['corp_num'])
+                            application.logger.error(f'{r.json()} {r.status_code}')
+                            application.logger.error(f'Legal failed to create filing with event_id '
+                                                        f'{event_info["event_id"]} for {event_info["corp_num"]}')
                         else:
-                            # call legal api with filing
-                            application.logger.debug('sending filing with event info: {} to legal api.'.format(event_info))
-                            r = requests.post(application.config['LEGAL_URL'] + '/' + event_info['corp_num'] + '/filings',
-                                              json=filing, headers={'Content-Type': 'application/json',
-                                                                    'Authorization': f'Bearer {token}'})
-                            if r.status_code != 201:
-                                if not first_failed_id:
-                                    first_failed_id = event_info['event_id']
-                                failed_filing_events.append(event_info)
-                                corps_with_failed_filing.append(event_info['corp_num'])
-                                application.logger.error(f'{r.json()} {r.status_code}')
-                                application.logger.error(f'Legal failed to create filing with event_id '
-                                                         f'{event_info["event_id"]} for {event_info["corp_num"]}')
-                            else:
-                                # update max_event_id entered
-                                successful_filings += 1
-                                if int(event_info['event_id']) > max_event_id:
-                                    max_event_id = int(event_info['event_id'])
+                            # update max_event_id entered
+                            successful_filings += 1
+                            if int(event_info['event_id']) > max_event_id:
+                                max_event_id = int(event_info['event_id'])
                     else:
                         skipped_filings.append(event_info)
             else:
