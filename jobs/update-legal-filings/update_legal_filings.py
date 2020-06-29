@@ -227,7 +227,7 @@ async def send_emails(tax_ids: dict, application: Flask):
             )
 
 
-def update_business_nos():
+async def update_business_nos():
     """Update the tax_ids for corps with new bn_15s."""
     application = create_app()
     with application.app_context():
@@ -270,7 +270,7 @@ def update_business_nos():
                         application.logger.error(f'legal-updater failed to update tax_ids in lear.')
                         raise Exception
 
-                    send_emails(tax_ids, application)
+                    await send_emails(tax_ids, application)
 
                     application.logger.debug(f'Successfully updated tax ids in lear.')
                 else:
@@ -284,4 +284,4 @@ def update_business_nos():
 
 if __name__ == '__main__':
     update_filings()
-    update_business_nos()
+    await update_business_nos()
