@@ -146,7 +146,7 @@ class FilingInfo(Resource):
             if filing_type != 'incorporationApplication':
                 filing.business = Business.find_by_identifier(identifier, con)
             else:
-                filing.business = Business.insert_new_business(con, filing_list[filing_type])
+                filing.business = Business.insert_new_business(con, filing_list[filing_type], identifier)
             filing.header = json_data['header']
             filing.filing_type = filing_type
             filing.body = filing_list[filing_type]

@@ -40,7 +40,7 @@ def test_incorporate_bcomp(client):
             'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
             'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',
             'legalName': legal_name,
-            'legalType': 'BEN'
+            'legalType': 'BC'
         }
 
     rv = client.post(f'/api/v1/businesses/{test_bcomp}/filings/incorporationApplication',
