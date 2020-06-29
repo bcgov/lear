@@ -63,6 +63,12 @@ class _Config(object):  # pylint: disable=too-few-public-methods
         'subject': os.getenv('NATS_EMAILER_SUBJECT', 'entity.email'),
     }
 
+    SUBSCRIPTION_OPTIONS = {
+        'subject': os.getenv('NATS_EMAILER_SUBJECT', 'error'),
+        'queue': os.getenv('NATS_QUEUE', 'error'),
+        'durable_name': os.getenv('NATS_QUEUE', 'error') + '_durable',
+    }
+
     SECRET_KEY = 'a secret'
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
