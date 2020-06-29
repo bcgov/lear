@@ -80,6 +80,42 @@
                                                 "name": "updater-jobs-${ENV}-config"
                                             }
                                         }
+                                    },
+                                    {
+                                        "name": "NATS_SERVERS",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NATS_SERVERS",
+                                                "name": "updater-jobs-${ENV}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_CLUSTER_ID",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NATS_CLUSTER_ID",
+                                                "name": "updater-jobs-${ENV}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_CLIENT_NAME",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NATS_CLIENT_NAME",
+                                                "name": "updater-jobs-${ENV}-config"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NATS_EMAILER_SUBJECT",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "key": "NATS_EMAILER_SUBJECT",
+                                                "name": "updater-jobs-${ENV}-config"
+                                            }
+                                        }
                                     }
                                 ],
                                 "image": "docker-registry.default.svc:5000/gl2uos-tools/${NAME}:${ENV}",

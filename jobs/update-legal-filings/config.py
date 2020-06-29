@@ -54,6 +54,11 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID', None)
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET', None)
 
+    NATS_SERVERS = os.getenv('NATS_SERVERS', None)
+    NATS_CLUSTER_ID = os.getenv('NATS_CLUSTER_ID', None)
+    NATS_CLIENT_NAME = os.getenv('NATS_CLIENT_NAME', None)
+    NATS_EMAILER_SUBJECT = os.getenv('NATS_EMAILER_SUBJECT', None)
+
     EMAIL_PUBLISH_OPTIONS = {
         'subject': os.getenv('NATS_EMAILER_SUBJECT', 'entity.email'),
     }
