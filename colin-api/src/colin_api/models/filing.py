@@ -91,7 +91,9 @@ class Filing:
 
     def get_email(self):
         """Get email address."""
-        return self.header['email']
+        if self.body.get('incorporationApplication'):
+            return self.body['incorporationApplication']['contactPoint']['email']
+        return ''
 
     def as_dict(self):
         """Return dict of object that can be json serialized and fits schema requirements."""
@@ -672,6 +674,8 @@ class Filing:
 
             # get the filing types corresponding filing code
             legal_type = business.business['legalType']
+            if legal_type == 'BC':
+                legal_type = 'BEN'
             code = [key for key in cls.FILING_TYPES[legal_type] if cls.FILING_TYPES[legal_type][key] == filing_type]
             if not code:
                 raise InvalidFilingTypeException(filing_type=filing_type)

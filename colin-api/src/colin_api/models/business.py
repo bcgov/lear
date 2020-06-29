@@ -399,17 +399,17 @@ class Business:
             raise err
 
     @classmethod
-    def insert_new_business(cls, con, incorporation):
+    def insert_new_business(cls, con, incorporation, corp_num):
         """Insert a new business from an incorporation filing."""
         try:
             cursor = con.cursor()
-            corp_num = incorporation['nameRequest']['nrNumber']
 
+            legal_type = incorporation['nameRequest']['legalType']
             if corp_num[:2] != 'CP':
                 corp_num = corp_num[-7:]
+                legal_type = 'BEN'
 
             creation_date = datetime.now()
-            legal_type = incorporation['nameRequest']['legalType']
             # Expand query as NR data/ business info becomes more aparent
             cursor.execute("""insert into CORPORATION
             (CORP_NUM, CORP_TYP_CD, RECOGNITION_DTS)
