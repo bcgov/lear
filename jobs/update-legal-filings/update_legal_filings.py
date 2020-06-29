@@ -15,6 +15,7 @@
 
 This module is the API for the Legal Entity system.
 """
+import asyncio
 import logging
 import os
 
@@ -284,4 +285,6 @@ async def update_business_nos():
 
 if __name__ == '__main__':
     update_filings()
-    update_business_nos()
+    event_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(event_loop)
+    event_loop.run_until_complete(update_business_nos())
