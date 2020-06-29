@@ -131,89 +131,86 @@ def get_filing(event_info: dict = None, application: Flask = None):
     return filing
 
 
-def update_filings():
+def update_filings(application):
     successful_filings = 0
     failed_filing_events = []
     corps_with_failed_filing = []
     skipped_filings = []
     first_failed_id = None
-    application = create_app()
-    with application.app_context():
-        try:
-            # get updater-job token
-            token = AccountService.get_bearer_token()
+    try:
+        # get updater-job token
+        token = AccountService.get_bearer_token()
 
-            # check if there are filings to send to legal
-            manual_filings_info = check_for_manual_filings(application, token)
-            max_event_id = 0
+        # check if there are filings to send to legal
+        manual_filings_info = check_for_manual_filings(application, token)
+        max_event_id = 0
 
-            if len(manual_filings_info) > 0:
-                for event_info in manual_filings_info:
-                    # Make sure this coop has no outstanding filings that failed to be applied.
-                    # This ensures we don't apply filings out of order when one fails.
-                    if event_info['corp_num'] not in corps_with_failed_filing:
-                        filing = get_filing(event_info, application)
+        if len(manual_filings_info) > 0:
+            for event_info in manual_filings_info:
+                # Make sure this coop has no outstanding filings that failed to be applied.
+                # This ensures we don't apply filings out of order when one fails.
+                if event_info['corp_num'] not in corps_with_failed_filing:
+                    filing = get_filing(event_info, application)
 
-                        # call legal api with filing
-                        application.logger.debug('sending filing with event info: {} to legal api.'.format(event_info))
-                        r = requests.post(application.config['LEGAL_URL'] + '/' + event_info['corp_num'] + '/filings',
-                                            json=filing, headers={'Content-Type': 'application/json',
-                                                                'Authorization': f'Bearer {token}'})
-                        if r.status_code != 201:
-                            if not first_failed_id:
-                                first_failed_id = event_info['event_id']
-                            failed_filing_events.append(event_info)
-                            corps_with_failed_filing.append(event_info['corp_num'])
-                            application.logger.error(f'{r.json()} {r.status_code}')
-                            application.logger.error(f'Legal failed to create filing with event_id '
-                                                        f'{event_info["event_id"]} for {event_info["corp_num"]}')
-                        else:
-                            # update max_event_id entered
-                            successful_filings += 1
-                            if int(event_info['event_id']) > max_event_id:
-                                max_event_id = int(event_info['event_id'])
+                    # call legal api with filing
+                    application.logger.debug('sending filing with event info: {} to legal api.'.format(event_info))
+                    r = requests.post(application.config['LEGAL_URL'] + '/' + event_info['corp_num'] + '/filings',
+                                        json=filing, headers={'Content-Type': 'application/json',
+                                                            'Authorization': f'Bearer {token}'})
+                    if r.status_code != 201:
+                        if not first_failed_id:
+                            first_failed_id = event_info['event_id']
+                        failed_filing_events.append(event_info)
+                        corps_with_failed_filing.append(event_info['corp_num'])
+                        application.logger.error(f'{r.json()} {r.status_code}')
+                        application.logger.error(f'Legal failed to create filing with event_id '
+                                                    f'{event_info["event_id"]} for {event_info["corp_num"]}')
                     else:
-                        skipped_filings.append(event_info)
-            else:
-                application.logger.debug('0 filings updated in legal db.')
-
-            application.logger.debug(f'successful filings: {successful_filings}')
-            application.logger.debug(f'skipped filings due to related erred filings: {len(skipped_filings)}')
-            application.logger.debug(f'failed filings: {len(failed_filing_events)}')
-            application.logger.debug(f'failed filings event info: {failed_filing_events}')
-
-            # if manually bringing across filings, set to first id so you don't skip any filings on the next run
-            if SET_EVENTS_MANUALLY:
-                first_failed_id = 102125621
-
-            # if one of the events failed then save that id minus one so that the next run will try it again
-            # this way failed filings wont get buried/forgotten after multiple runs
-            if first_failed_id:
-                max_event_id = first_failed_id - 1
-            if max_event_id > 0:
-                # update max_event_id in legal_db
-                application.logger.debug('setting last_event_id in legal_db to {}'.format(max_event_id))
-                r = requests.post(f'{application.config["LEGAL_URL"]}/internal/filings/colin_id/{max_event_id}',
-                                  headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'})
-                if r.status_code != 201:
-                    application.logger.error(f'Error adding {max_event_id} colin_last_update table in legal db '
-                                             f'{r.status_code}')
+                        # update max_event_id entered
+                        successful_filings += 1
+                        if int(event_info['event_id']) > max_event_id:
+                            max_event_id = int(event_info['event_id'])
                 else:
-                    if dict(r.json())['maxId'] != max_event_id:
-                        application.logger.error(f'Updated colin id is not max colin id in legal db.')
-                    else:
-                        application.logger.debug(f'Successfully updated colin id in legal db.')
+                    skipped_filings.append(event_info)
+        else:
+            application.logger.debug('0 filings updated in legal db.')
 
+        application.logger.debug(f'successful filings: {successful_filings}')
+        application.logger.debug(f'skipped filings due to related erred filings: {len(skipped_filings)}')
+        application.logger.debug(f'failed filings: {len(failed_filing_events)}')
+        application.logger.debug(f'failed filings event info: {failed_filing_events}')
+
+        # if manually bringing across filings, set to first id so you don't skip any filings on the next run
+        if SET_EVENTS_MANUALLY:
+            first_failed_id = 102125621
+
+        # if one of the events failed then save that id minus one so that the next run will try it again
+        # this way failed filings wont get buried/forgotten after multiple runs
+        if first_failed_id:
+            max_event_id = first_failed_id - 1
+        if max_event_id > 0:
+            # update max_event_id in legal_db
+            application.logger.debug('setting last_event_id in legal_db to {}'.format(max_event_id))
+            r = requests.post(f'{application.config["LEGAL_URL"]}/internal/filings/colin_id/{max_event_id}',
+                                headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'})
+            if r.status_code != 201:
+                application.logger.error(f'Error adding {max_event_id} colin_last_update table in legal db '
+                                            f'{r.status_code}')
             else:
-                application.logger.debug('colin_last_update not updated in legal db.')
+                if dict(r.json())['maxId'] != max_event_id:
+                    application.logger.error(f'Updated colin id is not max colin id in legal db.')
+                else:
+                    application.logger.debug(f'Successfully updated colin id in legal db.')
 
-        except Exception as err:
-            application.logger.error(err)
+        else:
+            application.logger.debug('colin_last_update not updated in legal db.')
+
+    except Exception as err:
+        application.logger.error(err)
 
 
 async def send_emails(tax_ids: dict, application: Flask):
     """Put bn email messages on the queue for all businesses with new tax ids."""
-    qsm = QueueServiceManager()
     for identifier in tax_ids.keys():
         try:
             subject = application.config['EMAIL_PUBLISH_OPTIONS']['subject']
@@ -223,68 +220,69 @@ async def send_emails(tax_ids: dict, application: Flask):
             # mark any failure for human review
             capture_message(
                 f'Queue Error: Failed to place bn email for {identifier}'
-                f'on Queue with error:{err}',
+                f' on Queue with error:{err}',
                 level='error'
             )
 
 
-async def update_business_nos():
+async def update_business_nos(application):
     """Update the tax_ids for corps with new bn_15s."""
-    application = create_app()
-    with application.app_context():
-        try:
-            # get updater-job token
-            token = AccountService.get_bearer_token()
+    try:
+        # get updater-job token
+        token = AccountService.get_bearer_token()
 
-            # get identifiers with outstanding tax_ids
-            application.logger.debug('Getting businesses with outstanding tax ids from legal api...')
+        # get identifiers with outstanding tax_ids
+        application.logger.debug('Getting businesses with outstanding tax ids from legal api...')
+        r = requests.get(
+            application.config['LEGAL_URL'] + '/internal/tax_ids',
+            headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
+        )
+        if r.status_code != 200:
+            application.logger.error(f'legal-updater failed to get identifiers from legal-api.')
+            raise Exception
+        identifiers = r.json()
+
+        if identifiers['identifiers']:
+            # get tax ids that exist for above entities
+            application.logger.debug(f'Getting tax ids for {identifiers["identifiers"]} from colin api...')
             r = requests.get(
-                application.config['LEGAL_URL'] + '/internal/tax_ids',
+                application.config['COLIN_URL'] + '/internal/tax_ids',
+                json=identifiers,
                 headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
             )
             if r.status_code != 200:
-                application.logger.error(f'legal-updater failed to get identifiers from legal-api.')
+                application.logger.error(f'legal-updater failed to get tax_ids from colin-api.')
                 raise Exception
-            identifiers = r.json()
-
-            if identifiers['identifiers']:
-                # get tax ids that exist for above entities
-                application.logger.debug(f'Getting tax ids for {identifiers["identifiers"]} from colin api...')
-                r = requests.get(
-                    application.config['COLIN_URL'] + '/internal/tax_ids',
-                    json=identifiers,
+            tax_ids = r.json()
+            if tax_ids.keys():
+                # update lear with new tax ids from colin
+                application.logger.debug(f'Updating tax ids for {tax_ids.keys()} in lear...')
+                r = requests.post(
+                    application.config['LEGAL_URL'] + '/internal/tax_ids',
+                    json=tax_ids,
                     headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
                 )
-                if r.status_code != 200:
-                    application.logger.error(f'legal-updater failed to get tax_ids from colin-api.')
+                if r.status_code != 201:
+                    application.logger.error(f'legal-updater failed to update tax_ids in lear.')
                     raise Exception
-                tax_ids = r.json()
-                if tax_ids.keys():
-                    # update lear with new tax ids from colin
-                    application.logger.debug(f'Updating tax ids for {tax_ids.keys()} in lear...')
-                    r = requests.post(
-                        application.config['LEGAL_URL'] + '/internal/tax_ids',
-                        json=tax_ids,
-                        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
-                    )
-                    if r.status_code != 201:
-                        application.logger.error(f'legal-updater failed to update tax_ids in lear.')
-                        raise Exception
 
-                    await send_emails(tax_ids, application)
+                await send_emails(tax_ids, application)
 
-                    application.logger.debug(f'Successfully updated tax ids in lear.')
-                else:
-                    application.logger.debug(f'No tax ids in colin to update in lear.')
+                application.logger.debug(f'Successfully updated tax ids in lear.')
             else:
-                application.logger.debug(f'No businesses in lear with outstanding tax ids.')
+                application.logger.debug(f'No tax ids in colin to update in lear.')
+        else:
+            application.logger.debug(f'No businesses in lear with outstanding tax ids.')
 
-        except Exception as err:
-            application.logger.error(err)
+    except Exception as err:
+        application.logger.error(err)
 
 
 if __name__ == '__main__':
-    update_filings()
-    event_loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(event_loop)
-    event_loop.run_until_complete(update_business_nos())
+    application = create_app()
+    with application.app_context():
+        update_filings(application)
+        qsm = QueueServiceManager()
+        event_loop = asyncio.get_event_loop()
+        event_loop.run_until_complete(qsm.run(loop=event_loop, config=application.config, callback=None))
+        event_loop.run_until_complete(update_business_nos(application))
