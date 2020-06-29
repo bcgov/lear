@@ -284,4 +284,4 @@ async def update_business_nos():
 
 if __name__ == '__main__':
     update_filings()
-    await update_business_nos()
+    update_business_nos()
