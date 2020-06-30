@@ -24,6 +24,7 @@ import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts wi
 from colin_api.models.filing import Filing
 from entity_queue_common.service import QueueServiceManager
 from legal_api.services.bootstrap import AccountService
+from legal_api.services.queue import QueueService
 from sentry_sdk import capture_message
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 from flask import Flask
@@ -214,8 +215,8 @@ async def send_emails(tax_ids: dict, application: Flask):
     for identifier in tax_ids.keys():
         try:
             subject = application.config['EMAIL_PUBLISH_OPTIONS']['subject']
-            payload = {'email': {'filingId': None, 'type': 'bussinessNumber', 'option': 'bn', 'identifier': identifier}}
-            await qsm.service.publish(subject, payload)
+            payload = {'email': {'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': identifier}}
+            await qsm.publish_json_to_subject(payload, subject)
         except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
             # mark any failure for human review
             capture_message(
@@ -282,7 +283,6 @@ if __name__ == '__main__':
     application = create_app()
     with application.app_context():
         update_filings(application)
-        qsm = QueueServiceManager()
         event_loop = asyncio.get_event_loop()
-        event_loop.run_until_complete(qsm.run(loop=event_loop, config=application.config, callback=None))
+        qsm = QueueService(app=application, loop=event_loop)
         event_loop.run_until_complete(update_business_nos(application))
