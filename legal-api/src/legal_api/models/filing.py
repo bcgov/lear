@@ -404,10 +404,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def get_completed_filings_for_colin():
         """Return the filings with statuses in the status array input."""
         filings = db.session.query(Filing). \
-            filter(Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
-                   Filing._status == Filing.Status.COMPLETED.value,
-                   Filing._filing_type != Filing.FILINGS['correction'].get('name'))\
-            .order_by(Filing.filing_date).all()
+            filter(
+                Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
+                Filing._status == Filing.Status.COMPLETED.value,
+                Filing._filing_type != Filing.FILINGS['correction'].get('name'),
+                Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
+            ).order_by(Filing.filing_date).all()
         return filings
 
     @staticmethod

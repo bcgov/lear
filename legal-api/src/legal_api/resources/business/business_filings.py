@@ -643,6 +643,7 @@ class InternalFilings(Resource):
                 filing_json = filing.filing_json
                 if filing_json and filing.filing_type != 'lear_epoch':
                     filing_json['filingId'] = filing.id
+                    filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
                     if not filing_json['filing']['business'].get('legalName'):
                         business = Business.find_by_internal_id(filing.business_id)
                         filing_json['filing']['business']['legalName'] = business.legal_name

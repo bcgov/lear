@@ -48,6 +48,8 @@ def test_post_cod(client):
     headers = {'content-type': 'application/json'}
 
     fake_filing = FILING_HEADER
+    fake_filing['filing']['header']['learEffectiveDate'] = \
+        f'{fake_filing["filing"]["header"]["date"]}T15:22:39.868757+00:00'
     fake_filing['filing']['header']['name'] = 'changeOfDirectors'
     fake_filing['filing']['business']['identifier'] = 'CP0001965'
     fake_filing['filing']['changeOfDirectors'] = CHANGE_OF_DIRECTORS
