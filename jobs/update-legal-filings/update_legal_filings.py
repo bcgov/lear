@@ -22,7 +22,6 @@ import os
 import requests
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 from colin_api.models.filing import Filing
-from entity_queue_common.service import QueueServiceManager
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.queue import QueueService
 from sentry_sdk import capture_message
