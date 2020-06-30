@@ -120,17 +120,25 @@ class QueueService():
     def publish_json(self, payload=None):
         """Publish the json payload to the Queue Service."""
         try:
-            self.loop.run_until_complete(self.async_publish_json(payload))
+            self.loop.run_until_complete(self.async_publish_json(payload, self.subject))
         except Exception as err:
             self.logger.error('Error: %s', err)
             raise err
 
-    async def async_publish_json(self, payload=None):
+    async def publish_json_to_subject(self, payload=None, subject=None):
+        """Publish the json payload to the specified subject."""
+        try:
+            await self.async_publish_json(payload, subject)
+        except Exception as err:
+            self.logger.error('Error: %s', err)
+            raise err
+
+    async def async_publish_json(self, payload=None, subject=None):
         """Publish the json payload to the Queue Service."""
         if not self.is_connected:
             await self.connect()
 
-        await self.stan.publish(subject=self.subject,
+        await self.stan.publish(subject=subject,
                                 payload=json.dumps(payload).encode('utf-8'))
 
     async def on_error(self, e):
