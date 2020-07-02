@@ -116,7 +116,7 @@ class Filing:
         return filing
 
     @classmethod
-    def _get_event_id(cls, cursor, corp_num, event_type='FILE'):
+    def _get_event_id(cls, cursor, corp_num, effective_date, event_type='FILE'):
         """Get next event ID for filing.
 
         :param cursor: oracle cursor
@@ -144,14 +144,22 @@ class Filing:
                         WHERE id_typ_cd = 'EV'
                     """, new_num=event_id+1)
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO event (event_id, corp_num, event_typ_cd, event_timestmp, trigger_dts)
-                  VALUES (:event_id, :corp_num, :event_type, sysdate, NULL)
+                VALUES (
+                    :event_id,
+                    :corp_num,
+                    :event_type,
+                    TO_TIMESTAMP_TZ(:effective_date,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'),
+                    NULL
+                )
                 """,
-                           event_id=event_id,
-                           corp_num=corp_num,
-                           event_type=event_type
-                           )
+                event_id=event_id,
+                corp_num=corp_num,
+                event_type=event_type,
+                effective_date=effective_date
+            )
         except Exception as err:
             current_app.logger.error('Error in filing: Failed to create new event.')
             raise err
@@ -198,7 +206,7 @@ class Filing:
         return event_list
 
     @classmethod
-    def _create_filing(cls, cursor, event_id, corp_num, ar_date,  # pylint: disable=too-many-arguments;
+    def _create_filing(cls, cursor, event_id, effective_date, corp_num, ar_date,  # pylint: disable=too-many-arguments;
                        agm_date, filing_type_code='FILE'):
         """Add record to FILING.
 
@@ -215,11 +223,13 @@ class Filing:
                     """
                     INSERT INTO filing (event_id, filing_typ_cd, effective_dt, period_end_dt, agm_date, arrangement_ind,
                     ods_typ_cd)
-                    VALUES (:event_id, :filing_type_code, sysdate, TO_DATE(:period_end_date, 'YYYY-mm-dd'),
-                    TO_DATE(:agm_date, 'YYYY-mm-dd'), 'N', 'P')
+                    VALUES (:event_id, :filing_type_code,
+                    TO_TIMESTAMP_TZ(:effective_dt,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'),
+                    TO_DATE(:period_end_date, 'YYYY-mm-dd'), TO_DATE(:agm_date, 'YYYY-mm-dd'), 'N', 'P')
                     """,
                     event_id=event_id,
                     filing_type_code=filing_type_code,
+                    effective_dt=effective_date,
                     period_end_date=ar_date if not agm_date else agm_date,
                     agm_date=agm_date
                 )
@@ -826,7 +836,7 @@ class Filing:
             cursor = con.cursor()
 
             # create new event record, return event ID
-            event_id = cls._get_event_id(cursor, corp_num, 'FILE')
+            event_id = cls._get_event_id(cursor, corp_num, filing.header['learEffectiveDate'], 'FILE')
             # create new filing user
             cls._create_filing_user(cursor, event_id, filing, user_id)
             if filing.filing_type == 'annualReport':
@@ -837,7 +847,8 @@ class Filing:
                     filing_type_cd = 'ANNBC'
 
                 # create new filing
-                cls._create_filing(cursor, event_id, corp_num, ar_date, agm_date, filing_type_cd)
+                cls._create_filing(
+                    cursor, event_id, filing.header['learEffectiveDate'], corp_num, ar_date, agm_date, filing_type_cd)
 
                 # update corporation record
                 Business.update_corporation(cursor, corp_num, agm_date, True)
@@ -862,7 +873,8 @@ class Filing:
                 filing_type_cd = 'OTADD'
                 if legal_type == 'BEN':
                     filing_type_cd = 'NOCAD'
-                cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
+                cls._create_filing(
+                    cursor, event_id, filing.header['learEffectiveDate'], corp_num, date, None, filing_type_cd)
 
                 # create new addresses for delivery + mailing, return address ids
 
@@ -878,7 +890,8 @@ class Filing:
                 filing_type_cd = 'OTCDR'
                 if legal_type == 'BEN':
                     filing_type_cd = 'NOCDR'
-                cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
+                cls._create_filing(
+                    cursor, event_id, filing.header['learEffectiveDate'], corp_num, date, None, filing_type_cd)
 
                 # create, cease, change directors
                 changed_dirs = []
@@ -920,7 +933,8 @@ class Filing:
                 if legal_type == 'BEN':
                     filing_type_cd = 'BEINC'
                     corp_num = corp_num[-7:]
-                cls._create_filing(cursor, event_id, corp_num, date, None, filing_type_cd)
+                cls._create_filing(
+                    cursor, event_id, filing.header['learEffectiveDate'], corp_num, date, None, filing_type_cd)
                 # Do incorporation here
                 corp_name = filing.get_corp_name()
                 Business.create_corp_name(cursor, corp_num, corp_name, event_id)

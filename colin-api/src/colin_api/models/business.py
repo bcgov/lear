@@ -399,7 +399,7 @@ class Business:
             raise err
 
     @classmethod
-    def insert_new_business(cls, con, incorporation, corp_num):
+    def insert_new_business(cls, con, incorporation, corp_num, recognition_date):
         """Insert a new business from an incorporation filing."""
         try:
             cursor = con.cursor()
@@ -409,12 +409,11 @@ class Business:
                 corp_num = corp_num[-7:]
                 legal_type = 'BEN'
 
-            creation_date = datetime.now()
             # Expand query as NR data/ business info becomes more aparent
             cursor.execute("""insert into CORPORATION
             (CORP_NUM, CORP_TYP_CD, RECOGNITION_DTS)
-            values (:corp_num, :legal_type, :creation_date)
-            """, corp_num=corp_num, legal_type=legal_type, creation_date=creation_date)
+            values (:corp_num, :legal_type, TO_TIMESTAMP_TZ(:recognition_date,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'))
+            """, corp_num=corp_num, legal_type=legal_type, recognition_date=recognition_date)
 
             business = {'identifier': corp_num}
 

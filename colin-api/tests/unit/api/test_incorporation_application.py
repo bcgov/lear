@@ -30,7 +30,8 @@ def test_incorporate_bcomp(client):
     test_bcomp = f"{rv.json['corpNum']}"
     legal_name = f'legal name - {test_bcomp}'
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-
+    filing['filing']['header']['learEffectiveDate'] = \
+        f'{filing["filing"]["header"]["date"]}T15:22:39.868757+00:00'
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = test_bcomp
     filing['filing']['incorporationApplication']['nameRequest']['legalType'] = 'BEN'
     filing['filing']['business'] = {
@@ -75,6 +76,8 @@ def test_incorporate_coop(client):
     legal_name = f'legal name - {test_coop}'
 
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing['filing']['header']['learEffectiveDate'] = \
+        f'{filing["filing"]["header"]["date"]}T15:22:39.868757+00:00'
     filing['filing']['incorporationApplication']['nameRequest']['legalType'] = 'CP'
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = test_coop
     del filing['filing']['incorporationApplication']['offices']['recordsOffice']

@@ -43,6 +43,8 @@ def test_post_ar(client):
     """Assert that business for regular (not xpro) business is correct to spec."""
     headers = {'content-type': 'application/json'}
     fake_filing = ANNUAL_REPORT
+    fake_filing['filing']['header']['learEffectiveDate'] = \
+        f'{fake_filing["filing"]["header"]["date"]}T15:22:39.868757+00:00'
     fake_filing['filing']['business']['identifier'] = 'CP0001965'
     fake_filing['filing']['annualReport']['annualGeneralMeetingDate'] = '2018-04-08'
     fake_filing['filing']['annualReport']['annualReportDate'] = '2018-04-08'
@@ -81,6 +83,8 @@ def test_post_ar_with_coa_cod(client):
     """Assert that business for regular (not xpro) business is correct to spec."""
     headers = {'content-type': 'application/json'}
     fake_filing = ANNUAL_REPORT
+    fake_filing['filing']['header']['learEffectiveDate'] = \
+        f'{fake_filing["filing"]["header"]["date"]}T15:22:39.868757+00:00'
     fake_filing['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
     fake_filing['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = \
         'Canada'
