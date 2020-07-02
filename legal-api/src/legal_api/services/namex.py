@@ -16,12 +16,16 @@
 from datetime import datetime
 from enum import Enum
 
+import datedelta
+import pytz
 import requests
 from flask import current_app
 
 
 class NameXService():
     """Provides services to use the namex-api."""
+
+    DATE_FORMAT = '%a, %d %b %Y %H:%M:%S %Z'
 
     class State(Enum):
         """Name request states."""
@@ -65,6 +69,46 @@ class NameXService():
         return nr_response
 
     @staticmethod
+    def update_nr(nr_json):
+        """Update name request with nr_json."""
+        auth_url = current_app.config.get('NAMEX_AUTH_SVC_URL')
+        username = current_app.config.get('NAMEX_SERVICE_CLIENT_USERNAME')
+        secret = current_app.config.get('NAMEX_SERVICE_CLIENT_SECRET')
+        namex_url = current_app.config.get('NAMEX_SVC_URL')
+
+        # Get access token for namex-api in a different keycloak realm
+        auth = requests.post(auth_url, auth=(username, secret), headers={
+            'Content-Type': 'application/x-www-form-urlencoded'}, data={'grant_type': 'client_credentials'})
+
+        # Return the auth response if an error occurs
+        if auth.status_code != 200:
+            return auth.json()
+
+        token = dict(auth.json())['access_token']
+
+        # Perform update proxy call using nr number (e.g. NR 1234567)
+        nr_response = requests.put(namex_url + 'requests/' + nr_json['nrNum'], headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+            }, json=nr_json)
+
+        return nr_response
+
+    @staticmethod
+    def update_nr_as_future_effective(nr_json, future_effective_date: datetime):
+        """Set expiration date of a name request to the future effective date and update the name request."""
+        # Convert to namex supported timezone
+        future_effective_date = future_effective_date.astimezone(pytz.timezone('GMT'))
+
+        # add expiration buffer as future-effective-filings processing may not be immediate
+        future_effective_date += datedelta.datedelta(days=1)
+
+        nr_json['expirationDate'] = future_effective_date.strftime(NameXService.DATE_FORMAT)
+        update_nr_response = NameXService.update_nr(nr_json)
+
+        return update_nr_response
+
+    @staticmethod
     def validate_nr(nr_json):
         """Provide validation info based on a name request response payload."""
         # Initial validation result state
@@ -76,7 +120,7 @@ class NameXService():
         nr_state = nr_json['state']
 
         if nr_json['expirationDate']:
-            expiration_date = datetime.strptime(nr_json['expirationDate'], '%a, %d %b %Y %H:%M:%S %Z')
+            expiration_date = datetime.strptime(nr_json['expirationDate'], NameXService.DATE_FORMAT)
             if expiration_date < datetime.today():
                 is_expired = True
 
@@ -114,3 +158,12 @@ class NameXService():
             'consent_required': consent_required,
             'consent_received': consent_received
             }
+
+    @staticmethod
+    def is_date_past_expiration(nr_json, date_time):
+        """Return true if the inputted date time is passed the name request expiration."""
+        expiration_date = datetime.strptime(nr_json['expirationDate'], NameXService.DATE_FORMAT)
+        expiration_date = expiration_date.astimezone(pytz.timezone('GMT'))
+        if expiration_date < date_time:
+            return True
+        return False
