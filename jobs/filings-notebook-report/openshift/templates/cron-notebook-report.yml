@@ -13,7 +13,7 @@ objects:
     name: "filings-notebook-report"
   spec:
     concurrencyPolicy: "Forbid"
-    schedule: "30 7 1 * *"
+    schedule: "30 7 * * *"
     suspend: false
     jobTemplate:
       spec:
@@ -56,10 +56,14 @@ objects:
                     value: 'lear@noreply.github.com'
                   - name: ERROR_EMAIL_RECIPIENTS
                     value: '[sbc_itoperationssupport@gov.bc.ca, steven.chen@gov.bc.ca]'
-                  - name: FILINGS_REPORT_RECIPIENTS
+                  - name: INCORPORATION_FILINGS_DAILY_REPORT_RECIPIENTS
+                    value: '[Kaine.Sparks@gov.bc.ca, Linda.McClung@gov.bc.ca, Karla.Maria.Ramirez@gov.bc.ca, steven.chen@gov.bc.ca]'  
+                  - name: COOP_FILINGS_MONTHLY_REPORT_RECIPIENTS
                     value: '[Trish.Reimer@gov.bc.ca, steven.chen@gov.bc.ca]'
-                  - name: COOPERATIVE_REPORT_RECIPIENTS
+                  - name: COOPERATIVE_MONTHLY_REPORT_RECIPIENTS
                     value: '[Debbie.Blyth@gov.bc.ca, Sinead.OCallaghan@gov.bc.ca, steven.chen@gov.bc.ca]'
+                  - name: MONTH_REPORT_DATES
+                    value: '[1]'  
                   - name: EMAIL_SMTP
                     value: 'apps.smtp.gov.bc.ca'  
                   - name: RETRY_TIMES
