@@ -31,23 +31,23 @@ def validate(incorporation_json: Dict):
 
     err = validate_offices(incorporation_json)
     if err:
-        msg.append(err)
+        msg.extend(err)
 
     err = validate_roles(incorporation_json)
     if err:
-        msg.append(err)
+        msg.extend(err)
 
     err = validate_parties_mailing_address(incorporation_json)
     if err:
-        msg.append(err)
+        msg.extend(err)
 
     err = validate_share_structure(incorporation_json)
     if err:
-        msg.append(err)
+        msg.extend(err)
 
     err = validate_incorporation_effective_date(incorporation_json)
     if err:
-        msg.append(err)
+        msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
