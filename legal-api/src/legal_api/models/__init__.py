@@ -13,12 +13,12 @@
 # limitations under the License.
 
 """This exports all of the models and schemas used by the application."""
+from .db import db  # noqa: I001
 from .address import Address
 from .alias import Alias
 from .business import Business  # noqa: I001
 from .colin_update import ColinLastUpdate
 from .comment import Comment
-from .db import db  # noqa: I001
 from .filing import Filing
 from .office import Office, OfficeType
 from .party_role import Party, PartyRole
