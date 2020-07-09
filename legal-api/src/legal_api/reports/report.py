@@ -169,6 +169,13 @@ class Report:  # pylint: disable=too-few-public-methods
                 self._set_directors(filing)
             except KeyError:
                 pass
+
+            # set translation list from the alteration filing
+            try:
+                self._set_translations(filing)
+            except KeyError:
+                pass
+
             self._set_dates(filing)
 
         self._set_meta_info(filing)
@@ -216,6 +223,24 @@ class Report:  # pylint: disable=too-few-public-methods
                 pass
         return directors
 
+    def _set_translations(self, filing):
+        # initial (existing) translations, if any
+        name_translations = filing['business'].get('nameTranslations', [])
+
+        if filing.get('alteration'):
+            alter_name_translations = filing['alteration'].get('alterNameTranslations')
+            if alter_name_translations:
+                # remove modified old translations and add modified new translations, if any
+                for modified_translation in alter_name_translations.get('modifiedTranslations', []):
+                    name_translations.remove(modified_translation['oldValue'])
+                    name_translations.append(modified_translation['newValue'])
+
+                # removed ceased translations, if any
+                for ceased_translation in alter_name_translations.get('ceasedTranslations', []):
+                    name_translations.remove(ceased_translation)
+
+        filing['listOfTranslations'] = name_translations
+
     def _set_addresses(self, filing):
         if filing.get('changeOfAddress'):
             if filing.get('changeOfAddress').get('offices'):
@@ -262,6 +287,8 @@ class Report:  # pylint: disable=too-few-public-methods
         self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['deliveryAddress'])
         self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
         self._format_directors(filing['incorporationApplication']['parties'])
+        # create helper list for translations
+        filing['listOfTranslations'] = filing['incorporationApplication']['nameTranslations']
 
     def _set_meta_info(self, filing):
         filing['environment'] = f'{self._get_environment()} FILING #{self._filing.id}'.lstrip()

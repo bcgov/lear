@@ -90,6 +90,13 @@
                   <span class="section-sub-title">{{incorporationApplication.nameRequest.legalName}}</span>
                   {% endif %}
                </p>
+               {% if listOfTranslations|length > 0 %}
+               <p>
+                  <div class="title">Translation(s) of Company Name:</div>
+                  {% for translation in listOfTranslations %}
+                  <div>{{translation}}</div>
+                  {% endfor %}
+               </p>
             </div>
          </div>
          <div class="separator"></div>
