@@ -28,6 +28,7 @@ class Alias(db.Model):  # pylint: disable=too-many-instance-attributes
         TRANSLATION = 'TRANSLATION'
         DBA = 'DBA'
 
+    __versioned__ = {}
     __tablename__ = 'aliases'
 
     id = db.Column(db.Integer, primary_key=True)
