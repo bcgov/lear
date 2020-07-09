@@ -223,7 +223,7 @@ class Report:  # pylint: disable=too-few-public-methods
                 pass
         return directors
 
-    def _set_translations(self, filing):
+    def _set_translations(self, filing):  # pylint: disable=no-self-use
         # initial (existing) translations, if any
         name_translations = filing['business'].get('nameTranslations', [])
 
