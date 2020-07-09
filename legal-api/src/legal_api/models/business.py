@@ -30,6 +30,7 @@ from .share_class import ShareClass  # noqa: F401 pylint: disable=unused-import
 
 
 from .address import Address  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
@@ -76,6 +77,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     offices = db.relationship('Office', lazy='dynamic')
     party_roles = db.relationship('PartyRole', lazy='dynamic')
     share_classes = db.relationship('ShareClass', lazy='dynamic')
+    aliases = db.relationship('Alias', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):
