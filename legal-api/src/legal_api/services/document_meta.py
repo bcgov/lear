@@ -13,10 +13,9 @@
 # limitations under the License.
 
 """This provides the service for filings documents meta data."""
-
 from enum import Enum
 
-from legal_api.models import Filing
+from legal_api.models import Business, Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
@@ -34,136 +33,236 @@ class DocumentMetaService():
         CERTIFICATE = 'certificate'
         NOTICE_OF_ARTICLES = 'noa'
 
+    def __init__(self):
+        """Create the document meta instance."""
+        # init global attributes
+        self._business_identifier = None
+        self._legal_type = None
+        self._filing_status = None
+        self._filing_id = None
+        self._filing_date = None
+
     def get_documents(self, filing: dict):
         """Return an array of document meta for a filing."""
-        business_identifier = filing['filing']['business']['identifier']
-        filing_id = filing['filing']['header']['filingId']
-        filing_date = filing['filing']['header']['date']
-        filing_status = filing['filing']['header']['status']
-        filing_type = filing['filing']['header']['name']
-        paper_only = filing['filing']['header']['availableOnPaperOnly']
-        documents = []
+        # look up legal type
+        self._business_identifier = filing['filing']['business']['identifier']
+        business = Business.find_by_identifier(self._business_identifier)
+        if not business:
+            return []  # business not found
+        self._legal_type = business.legal_type
 
-        if filing_status not in (Filing.Status.COMPLETED.value, Filing.Status.PAID.value) or paper_only:
-            return []
+        self._filing_status = filing['filing']['header']['status']
+        is_paper_only = filing['filing']['header']['availableOnPaperOnly']
+
+        if self._filing_status not in (Filing.Status.COMPLETED.value, Filing.Status.PAID.value) or is_paper_only:
+            return []  # wrong filing status
+
+        filing_type = filing['filing']['header']['name']
+        self._filing_id = filing['filing']['header']['filingId']
+        self._filing_date = filing['filing']['header']['date']
 
         if filing_type == 'incorporationApplication':
-            documents = self.get_incorporation_application_report(filing)
-            return documents
-
-        if filing_status == Filing.Status.COMPLETED.value:
-            if filing_type == 'annualReport':
-                documents = self.get_annual_report(filing_id, business_identifier, filing_date)
-            elif filing_type == 'changeOfAddress':
-                documents = self.get_coa_report(filing_id, business_identifier, filing_date)
-            elif filing_type == 'changeOfDirectors':
-                documents = self.get_cod_report(filing_id, business_identifier, filing_date)
-            elif filing_type == 'changeOfName':
-                documents = self.get_con_report(filing_id, business_identifier, filing_date)
-            elif filing_type == 'specialResolution':
-                documents = self.get_special_resolution_report(filing_id, business_identifier, filing_date)
-            elif filing_type == 'voluntaryDissolution':
-                documents = self.get_voluntary_dissolution_report(filing_id, business_identifier, filing_date)
+            documents = self.get_incorporation_application_reports(filing)
+        elif filing_type == 'annualReport':
+            documents = self.get_ar_reports()
+        elif filing_type == 'changeOfAddress':
+            documents = self.get_coa_reports()
+        elif filing_type == 'changeOfDirectors':
+            documents = self.get_cod_reports()
+        elif filing_type == 'changeOfName':
+            documents = self.get_con_reports()
+        elif filing_type == 'specialResolution':
+            documents = self.get_special_resolution_reports()
+        elif filing_type == 'voluntaryDissolution':
+            documents = self.get_voluntary_dissolution_reports()
+        elif filing_type == 'correction':
+            documents = self.get_correction_reports()
+        elif filing_type == 'alteration':
+            documents = self.get_alteration_reports()
+        else:
+            documents = []
 
         return documents
 
-    def get_annual_report(self, filing_id, business_identifier, filing_date):
-        """Return an annual report document meta object."""
-        return [self.create_report_object(filing_id, 'Annual Report',
-                                          self.get_general_filename(business_identifier,
-                                                                    'Annual Report', filing_date, 'pdf'))]
-
-    def get_coa_report(self, filing_id, business_identifier, filing_date):
-        """Return a change of address report document meta object."""
-        return [self.create_report_object(filing_id, 'Address Change',
-                                          self.get_general_filename(business_identifier,
-                                                                    'Address Change', filing_date, 'pdf'))]
-
-    def get_cod_report(self, filing_id, business_identifier, filing_date):
-        """Return a change of director report document meta object."""
-        return [self.create_report_object(filing_id, 'Director Change',
-                                          self.get_general_filename(business_identifier,
-                                                                    'Director Change', filing_date, 'pdf'))]
-
-    def get_con_report(self, filing_id, business_identifier, filing_date):
-        """Return a change of name report document meta object."""
-        return [self.create_report_object(filing_id, 'Legal Name Change',
-                                          self.get_general_filename(business_identifier,
-                                                                    'Legal Name Change', filing_date, 'pdf'))]
-
-    def get_special_resolution_report(self, filing_id, business_identifier, filing_date):
-        """Return a special resolution report document meta object."""
-        return [self.create_report_object(filing_id, 'Special Resolution',
-                                          self.get_general_filename(business_identifier,
-                                                                    'Special Resolution', filing_date, 'pdf'))]
-
-    def get_voluntary_dissolution_report(self, filing_id, business_identifier, filing_date):
-        """Return a voluntary dissolution report document meta object."""
-        return [self.create_report_object(filing_id, 'Voluntary Dissolution',
-                                          self.get_general_filename(business_identifier,
-                                                                    'Voluntary Dissolution', filing_date, 'pdf'))]
-
-    def get_incorporation_application_report(self, filing: dict):
-        """Return a incoporation application report document meta object."""
-        filing_id = filing_id = filing['filing']['header']['filingId']
-        business_identifier = filing['filing']['business']['identifier']
-        filing_date = filing['filing']['header']['date']
-        filing_status = filing['filing']['header']['status']
-        is_fed = LegislationDatetime.is_future(filing['filing']['header']['effectiveDate'])
-        ia_name = 'Incorporation Application'
-        certificate_name = 'Certificate'
-        noa_name = 'Notice of Articles'
-        if is_fed:
-            return [
-                self.create_report_object(filing_id,
-                                          f'{ia_name} - Future Effective Incorporation',
-                                          self.get_general_filename(business_identifier,
-                                                                    f'{ia_name} (Future Effective)',
-                                                                    filing_date,
-                                                                    'pdf'
-                                                                    )
-                                          )
-            ]
-        if filing_status == Filing.Status.PAID.value:
-            return [
-                self.create_report_object(filing_id,
-                                          f'{ia_name} - Pending',
-                                          self.get_general_filename(business_identifier,
-                                                                    f'{ia_name} (Pending)',
-                                                                    filing_date,
-                                                                    'pdf'
-                                                                    )
-                                          )
-            ]
+    def get_ar_reports(self):
+        """Return annual report meta object(s)."""
+        # whether PAID or COMPLETED, whether BCOMP or COOP, return just AR object
         return [
-            self.create_report_object(filing_id, 'Incorporation Application',
-                                      self.get_general_filename(business_identifier,
-                                                                'Incorporation Application', filing_date, 'pdf')),
-            self.create_report_object(filing_id, noa_name,
-                                      self.get_general_filename(business_identifier,
-                                                                'Notice of Articles', filing_date, 'pdf'),
-                                      DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value),
-
-            self.create_report_object(filing_id, certificate_name,
-                                      self.get_general_filename(business_identifier,
-                                                                'Certificate', filing_date, 'pdf'),
-                                      DocumentMetaService.ReportType.CERTIFICATE.value)
+            self.create_report_object(
+                'Annual Report',
+                self.get_general_filename('Annual Report')
+            )
         ]
 
-    @staticmethod
-    def create_report_object(filing_id, title, filename, report_type=None):
+    def get_coa_reports(self):
+        """Return change of address meta object(s)."""
+        reports = [
+            self.create_report_object(
+                'Address Change',
+                self.get_general_filename('Address Change')
+            )
+        ]
+
+        # when BCOMP filing is completed, also return NOA
+        if self.is_bcomp() and self.is_completed():
+            reports.append(
+                self.create_report_object(
+                    'Notice of Articles',
+                    self.get_general_filename('Notice of Articles'),
+                    DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
+                )
+            )
+
+        return reports
+
+    def get_cod_reports(self):
+        """Return change of director meta object(s)."""
+        reports = [
+            self.create_report_object(
+                'Director Change',
+                self.get_general_filename('Director Change')
+            )
+        ]
+
+        # when BCOMP filing is completed, also return NOA
+        if self.is_bcomp() and self.is_completed():
+            reports.append(
+                self.create_report_object(
+                    'Notice of Articles',
+                    self.get_general_filename('Notice of Articles'),
+                    DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
+                )
+            )
+
+        return reports
+
+    def get_con_reports(self):
+        """Return change of name object(s)."""
+        reports = [
+            self.create_report_object(
+                'Legal Name Change',
+                self.get_general_filename('Legal Name Change')
+            )
+        ]
+
+        # when BCOMP filing is completed, also return NOA
+        if self.is_bcomp() and self.is_completed():
+            reports.append(
+                self.create_report_object(
+                    'Notice of Articles',
+                    self.get_general_filename('Notice of Articles'),
+                    DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
+                )
+            )
+
+        return reports
+
+    def get_special_resolution_reports(self):
+        """Return special resolution meta object(s)."""
+        reports = []
+
+        if self.is_completed():
+            reports.append(
+                self.create_report_object(
+                    'Special Resolution',
+                    self.get_general_filename('Special Resolution')
+                )
+            )
+
+        return reports
+
+    def get_voluntary_dissolution_reports(self):
+        """Return voluntary dissolution meta object(s)."""
+        reports = []
+
+        if self.is_completed():
+            reports.append(
+                self.create_report_object(
+                    'Voluntary Dissolution',
+                    self.get_general_filename('Voluntary Dissolution')
+                )
+            )
+
+        return reports
+
+    def get_correction_reports(self):  # pylint: disable=no-self-use
+        """Return correction meta object(s)."""
+        # FUTURE: return applicable documents
+        return []
+
+    def get_alteration_reports(self):  # pylint: disable=no-self-use
+        """Return alteration meta object(s)."""
+        # FUTURE: return applicable documents
+        return []
+
+    def get_incorporation_application_reports(self, filing: dict):
+        """Return incorporation application meta object(s)."""
+        # safety check - for now, IA only applies to BCOMPs
+        if not self.is_bcomp():
+            return []
+
+        is_fed = LegislationDatetime.is_future(filing['filing']['header']['effectiveDate'])
+
+        # return FED instead of PAID or COMPLETED
+        if is_fed:
+            return [
+                self.create_report_object(
+                    'Incorporation Application - Future Effective Incorporation',
+                    self.get_general_filename('Incorporation Application (Future Effective)')
+                )
+            ]
+
+        if self.is_paid():
+            return [
+                self.create_report_object(
+                    'Incorporation Application - Pending',
+                    self.get_general_filename('Incorporation Application (Pending)')
+                )
+            ]
+
+        # else status is COMPLETED
+        return [
+            self.create_report_object(
+                'Incorporation Application',
+                self.get_general_filename('Incorporation Application')
+            ),
+            self.create_report_object(
+                'Notice of Articles',
+                self.get_general_filename('Notice of Articles'),
+                DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
+            ),
+
+            self.create_report_object(
+                'Certificate',
+                self.get_general_filename('Certificate'),
+                DocumentMetaService.ReportType.CERTIFICATE.value
+            )
+        ]
+
+    def create_report_object(self, title: str, filename: str, report_type=None):
         """Return a populated document meta object."""
         return {
             'type': DocumentMetaService.DocumentType.REPORT.value,
             'reportType': report_type,
-            'filingId': filing_id,
+            'filingId': self._filing_id,
             'title': title,
             'filename': filename
         }
 
-    @staticmethod
-    def get_general_filename(business_identifier: str, name: str, filing_date: str, file_extension: str):
+    def get_general_filename(self, name: str):
         """Return a general filename string."""
-        filing_date_str = LegislationDatetime.format_as_legislation_date(filing_date)
-        file_name = f'{business_identifier} - {name} - {filing_date_str}.{file_extension}'
+        filing_date_str = LegislationDatetime.format_as_legislation_date(self._filing_date)
+        file_name = f'{self._business_identifier} - {name} - {filing_date_str}.pdf'
         return file_name
+
+    def is_bcomp(self):
+        """Return True if this entity is a BCOMP."""
+        return self._legal_type == Business.LegalTypes.BCOMP.value
+
+    def is_paid(self):
+        """Return True if this filing is PAID."""
+        return self._filing_status == Filing.Status.PAID.value
+
+    def is_completed(self):
+        """Return True if this filing is COMPLETED."""
+        return self._filing_status == Filing.Status.COMPLETED.value
