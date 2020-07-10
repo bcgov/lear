@@ -170,9 +170,10 @@ class Report:  # pylint: disable=too-few-public-methods
             except KeyError:
                 pass
 
-            # set translation list from the alteration filing
+            # set translation list for COA/COD/Alteration filing
             try:
-                self._set_translations(filing)
+                # FUTURE: get current name translations from database
+                filing['listOfTranslations'] = filing['business'].get('nameTranslations', [])
             except KeyError:
                 pass
 
@@ -222,24 +223,6 @@ class Report:  # pylint: disable=too-few-public-methods
             except KeyError:
                 pass
         return directors
-
-    def _set_translations(self, filing):  # pylint: disable=no-self-use
-        # initial (existing) translations, if any
-        name_translations = filing['business'].get('nameTranslations', [])
-
-        if filing.get('alteration'):
-            alter_name_translations = filing['alteration'].get('alterNameTranslations')
-            if alter_name_translations:
-                # remove modified old translations and add modified new translations, if any
-                for modified_translation in alter_name_translations.get('modifiedTranslations', []):
-                    name_translations.remove(modified_translation['oldValue'])
-                    name_translations.append(modified_translation['newValue'])
-
-                # removed ceased translations, if any
-                for ceased_translation in alter_name_translations.get('ceasedTranslations', []):
-                    name_translations.remove(ceased_translation)
-
-        filing['listOfTranslations'] = name_translations
 
     def _set_addresses(self, filing):
         if filing.get('changeOfAddress'):
