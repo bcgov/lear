@@ -22,6 +22,7 @@ from sqlalchemy_continuum import versioning_manager
 
 from legal_api.models import (
     Address,
+    Alias,
     Business,
     Comment,
     Filing,
