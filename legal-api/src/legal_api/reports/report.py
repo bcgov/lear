@@ -170,13 +170,6 @@ class Report:  # pylint: disable=too-few-public-methods
             except KeyError:
                 pass
 
-            # set translation list for COA/COD/Alteration filing
-            try:
-                # FUTURE: get current name translations from database
-                filing['listOfTranslations'] = filing['business'].get('nameTranslations', [])
-            except KeyError:
-                pass
-
             self._set_dates(filing)
 
         self._set_meta_info(filing)
