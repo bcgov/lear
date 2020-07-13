@@ -169,6 +169,7 @@ class Report:  # pylint: disable=too-few-public-methods
                 self._set_directors(filing)
             except KeyError:
                 pass
+
             self._set_dates(filing)
 
         self._set_meta_info(filing)
@@ -262,6 +263,8 @@ class Report:  # pylint: disable=too-few-public-methods
         self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['deliveryAddress'])
         self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
         self._format_directors(filing['incorporationApplication']['parties'])
+        # create helper list for translations
+        filing['listOfTranslations'] = filing['incorporationApplication']['nameTranslations']
 
     def _set_meta_info(self, filing):
         filing['environment'] = f'{self._get_environment()} FILING #{self._filing.id}'.lstrip()
