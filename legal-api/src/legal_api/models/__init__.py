@@ -23,6 +23,7 @@ from .filing import Filing
 from .office import Office, OfficeType
 from .party_role import Party, PartyRole
 from .registration_bootstrap import RegistrationBootstrap
+from .resolution import Resolution
 from .share_class import ShareClass
 from .share_series import ShareSeries
 from .user import User
@@ -30,5 +31,5 @@ from .user import User
 
 __all__ = ('db',
            'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'Filing',
-           'Office', 'OfficeType', 'Party', 'RegistrationBootstrap',
+           'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'Resolution',
            'PartyRole', 'ShareClass', 'ShareSeries', 'User')
