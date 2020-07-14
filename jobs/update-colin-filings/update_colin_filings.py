@@ -75,11 +75,13 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
     clean_none(filing)
 
     filing_type = filing['filing']['header']['name']
-    app.logger.debug(f'Filing {filing_id} in colin for {filing["filing"]["business"]["identifier"]}.')
-    r = requests.post(f'{app.config["COLIN_URL"]}/{filing["filing"]["business"]["identifier"]}/filings/'
-                        f'{filing_type}', json=filing)
+    identifier = filing['filing']['business']['identifier']
+    legal_type = filing['filing']['business']['legalType']
+
+    r = requests.post(f'{app.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}', json=filing)
+
     if not r or r.status_code != 201:
-        app.logger.error(f'Filing {filing_id} not created in colin {filing["filing"]["business"]["identifier"]}.')
+        app.logger.error(f'Filing {filing_id} not created in colin {identifier}.')
         # raise Exception
         return None
     # if it's an AR containing multiple filings it will have multiple colinIds
