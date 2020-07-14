@@ -176,16 +176,15 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
 
             appointed = row['recognition_dts']
             completing_parties[party_name] = {
-                'roleType': 'completing party',
+                'roleType': 'Completing Party',
                 'appointmentDate': appointed
             }
 
         return completing_parties
 
     @classmethod
-    def get_current(cls, cursor, identifier: str = None, role_type: str = 'DIR'):
+    def get_current(cls, cursor, identifier: str = None, role_type: str = 'Director'):
         """Return current corp_parties for given identifier."""
-        # Add business NME to all queries
         query = """
                 select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,
                 start_event_id, end_event_id,  business_nme, party_typ_cd
@@ -193,7 +192,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                 where end_event_id is NULL and corp_num=:identifier
                 """
         if role_type:
-            query += f" and party_typ_cd='{role_type}'"
+            query += f" and party_typ_cd='{Party.role_types[role_type]}'"
 
         if not identifier:
             return None
@@ -217,7 +216,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return parties_list
 
     @classmethod
-    def get_by_event(cls, cursor, identifier: str = None, event_id: int = None, role_type: str = 'DIR'):
+    def get_by_event(cls, cursor, identifier: str = None, event_id: int = None, role_type: str = 'Director'):
         """Get all parties active or deleted during this event."""
         query = """
                 select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,
@@ -229,7 +228,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                 """
 
         if role_type:
-            query += f" and party_typ_cd='{role_type}'"
+            query += f" and party_typ_cd='{Party.role_types[role_type]}'"
 
         if not event_id:
             return None

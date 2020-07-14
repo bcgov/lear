@@ -33,7 +33,7 @@ cod_ids = []
 @oracle_integration
 def test_get_ar_no_results(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0000000/filings/annualReport')
+    rv = client.get('/api/v1/businesses/CP/CP0000000/filings/annualReport')
 
     assert 404 == rv.status_code
 
@@ -49,7 +49,7 @@ def test_post_ar(client):
     fake_filing['filing']['annualReport']['annualGeneralMeetingDate'] = '2018-04-08'
     fake_filing['filing']['annualReport']['annualReportDate'] = '2018-04-08'
 
-    rv = client.post('/api/v1/businesses/CP0001965/filings/annualReport',
+    rv = client.post('/api/v1/businesses/CP/CP0001965/filings/annualReport',
                      data=json.dumps(fake_filing), headers=headers)
 
     assert 201 == rv.status_code
@@ -66,7 +66,7 @@ def test_post_ar(client):
 @oracle_integration
 def test_get_ar(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0001965/filings/annualReport')
+    rv = client.get('/api/v1/businesses/CP/CP0001965/filings/annualReport')
 
     assert 200 == rv.status_code
     is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
@@ -135,7 +135,7 @@ def test_post_ar_with_coa_cod(client):
     fake_filing['filing']['annualReport']['annualGeneralMeetingDate'] = '2019-04-08'
     fake_filing['filing']['annualReport']['annualReportDate'] = '2019-04-08'
 
-    rv = client.post('/api/v1/businesses/CP0001965/filings/annualReport',
+    rv = client.post('/api/v1/businesses/CP/CP0001965/filings/annualReport',
                      data=json.dumps(fake_filing), headers=headers)
 
     assert 201 == rv.status_code
@@ -155,7 +155,7 @@ def test_post_ar_with_coa_cod(client):
 def test_get_ar_by_id(client):
     """Test getting an AR by year."""
     for event_id in ar_ids:
-        rv = client.get(f'/api/v1/businesses/CP0001965/filings/annualReport?eventId={event_id}')
+        rv = client.get(f'/api/v1/businesses/CP/CP0001965/filings/annualReport?eventId={event_id}')
 
         assert 200 == rv.status_code
         assert event_id == str(rv.json['filing']['annualReport']['eventId'])
@@ -171,7 +171,7 @@ def test_get_ar_by_id(client):
 @oracle_integration
 def test_get_ar_by_id_wrong_corp(client):
     """Assert that a coop searching for an ar filing associated with a different coop returns a 404."""
-    rv = client.get(f'/api/v1/businesses/CP0000005/filings/annualReport?eventId={ar_ids[0]}')
+    rv = client.get(f'/api/v1/businesses/CP/CP0000005/filings/annualReport?eventId={ar_ids[0]}')
     assert 404 == rv.status_code
 
 
@@ -181,7 +181,7 @@ def test_get_ar_by_year(client):
     years = ['2018', '2019']
 
     for year in years:
-        rv = client.get(f'/api/v1/businesses/CP0001965/filings/annualReport?year={year}')
+        rv = client.get(f'/api/v1/businesses/CP/CP0001965/filings/annualReport?year={year}')
 
         assert 200 == rv.status_code
         assert f'{year}' == rv.json['filing']['annualReport']['annualGeneralMeetingDate'][:4]
@@ -198,7 +198,7 @@ def test_get_ar_by_year(client):
 @oracle_integration
 def test_get_ar_by_year_invalid(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0001965/filings/annualReport?year=2020')
+    rv = client.get('/api/v1/businesses/CP/CP0001965/filings/annualReport?year=2020')
 
     assert 404 == rv.status_code
 
@@ -223,7 +223,7 @@ def test_post_ar_with_invalid_data(client):
             }
         }
     }
-    rv = client.post('/api/v1/businesses/CP0001965/filings/annualReport',
+    rv = client.post('/api/v1/businesses/CP/CP0001965/filings/annualReport',
                      data=json.dumps(fake_filing), headers=headers)
 
     assert 400 == rv.status_code
@@ -237,7 +237,7 @@ def test_post_ar_with_mismatched_identifer(client):
 
     fake_filing = ANNUAL_REPORT
     fake_filing['filing']['business']['identifier'] = 'CP0001965'
-    rv = client.post('/api/v1/businesses/CP0001966/filings/annualReport',
+    rv = client.post('/api/v1/businesses/CP/CP0001966/filings/annualReport',
                      data=json.dumps(fake_filing), headers=headers)
 
     assert 400 == rv.status_code

@@ -24,7 +24,7 @@ from tests import oracle_integration
 @oracle_integration
 def test_get_business(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0001965')
+    rv = client.get('/api/v1/businesses/CP/CP0001965')
 
     assert 200 == rv.status_code
     is_valid, errors = validate(rv.json, 'business', validate_schema=True)
@@ -39,7 +39,7 @@ def test_get_business(client):
 @oracle_integration
 def test_get_business_no_results(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0000000')
+    rv = client.get('/api/v1/businesses/CP/CP0000000')
 
     assert 404 == rv.status_code
     assert None is not rv.json['message']
@@ -48,6 +48,8 @@ def test_get_business_no_results(client):
 @oracle_integration
 def test_get_business_new_corp(client):
     """Assert that a new corp number can be retrieved from COLIN."""
-    rv = client.get('/api/v1/businesses?legal_type=BC')
+    rv_cp = client.post('/api/v1/businesses/CP')
+    rv_bc = client.post('/api/v1/businesses/BC')
 
-    assert 200 == rv.status_code
+    assert 200 == rv_cp.status_code
+    assert 200 == rv_bc.status_code

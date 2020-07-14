@@ -13,12 +13,7 @@
 # limitations under the License.
 
 """Tests for the share structure end-point."""
-
-import copy
-import json
-
 from registry_schemas import validate
-from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from tests import oracle_integration
 
@@ -26,31 +21,7 @@ from tests import oracle_integration
 @oracle_integration
 def test_get_shares(client):
     """Assert the shares for a company can be retrieved."""
-    headers = {'content-type': 'application/json'}
-    rv = client.get('/api/v1/businesses?legal_type=BC')
-    test_bcomp = f"{rv.json['corpNum']}"
-
-    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = test_bcomp
-    filing['filing']['business'] = {
-            'cacheId': 1,
-            'foundingDate': '2007-04-08T00:00:00+00:00',
-            'identifier': f'{test_bcomp}',
-            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-            'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',
-            'legalName': 'legal name - CP1234567',
-            'legalType': 'BC'
-        }
-
-    filing['filing']['incorporationApplication']['nameRequest']['legalType'] = 'BC'
-
-    rv = client.post(f'/api/v1/businesses/{test_bcomp}/filings/incorporationApplication',
-                     data=json.dumps(filing), headers=headers)
-
-    assert 201 == rv.status_code
-    assert rv.json
-
-    rv2 = client.get(f'/api/v1/businesses/{test_bcomp}/sharestructure')
+    rv2 = client.get('/api/v1/businesses/BC/0870156/sharestructure')
 
     assert 200 == rv2.status_code
     assert rv2.json
@@ -59,4 +30,4 @@ def test_get_shares(client):
     print(errors)
 
     assert is_valid
-    assert list(filter(lambda x: len(x['series']) == 2, rv2.json['shareClasses']))
+    assert list(filter(lambda x: len(x['series']) == 0, rv2.json['shareClasses']))

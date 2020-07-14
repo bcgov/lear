@@ -15,46 +15,91 @@
 
 Currently this only provides API versioning information
 """
-from datetime import datetime
+from __future__ import annotations
+
+import datetime
+from enum import Enum
 
 from flask import current_app
+from legal_api.models import Business as LearBusiness
 
 from colin_api.exceptions import BusinessNotFoundException
+from colin_api.models.corp_name import CorpName
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime, stringify_list
 
 
-class Business:
-    """Class to contain all model-like functions such as getting and setting from database."""
+class Business:  # pylint: disable=too-many-instance-attributes
+    """Class to contain all model-like functions for the corporation and related tables."""
 
-    business = None
+    class TypeCodes(Enum):
+        """Render an Enum of the Corporation Type Codes."""
 
-    def __init__(self):
+        COOP = 'CP'
+        BCOMP = 'BEN'
+        BC_COMP = 'BC'
+        ULC_COMP = 'ULC'
+
+    # temp converter because legal doesn't have codes only class (legal_type)
+    CORP_TYPE_CONVERSION = {
+        LearBusiness.LegalTypes.COOP.value: [
+            TypeCodes.COOP.value
+        ],
+        LearBusiness.LegalTypes.BCOMP.value: [
+            TypeCodes.BCOMP.value,
+            TypeCodes.BC_COMP.value,
+            TypeCodes.ULC_COMP.value
+        ]
+    }
+
+    business_number = None
+    corp_name = None
+    corp_num = None
+    corp_state = None
+    corp_type = None
+    founding_date = None
+    jurisdiction = None
+    last_agm_date = None
+    last_ar_date = None
+    last_ledger_timestamp = None
+    status = None
+
+    def __init__(self) -> Business:
         """Initialize with all values None."""
 
-    def get_corp_num(self):
-        """Get corporation number, aka identifier."""
-        return self.business['identifier']
-
-    def as_dict(self):
+    def as_dict(self) -> dict:
         """Return dict version of self."""
         return {
-            'business': self.business
+            'business': {
+                'businessNumber': self.business_number,
+                'corpState': self.corp_state,
+                'foundingDate': self.founding_date,
+                'identifier': self.corp_num,
+                'jurisdiction': self.jurisdiction,
+                'lastAgmDate': self.last_agm_date,
+                'lastArDate': self.last_ar_date,
+                'lastLedgerTimestamp': self.last_ledger_timestamp,
+                'legalName': self.corp_name,
+                'legalType': self.corp_type,
+                'status': self.status
+            }
         }
 
     @classmethod
-    def _get_bn_15s(cls, cursor, identifiers: list):
+    def _get_bn_15s(cls, cursor, identifiers: list) -> dict:
         """Return a dict of idenifiers mapping to their bn_15 numbers."""
         bn_15s = {}
         if not identifiers:
             return bn_15s
 
         try:
-            cursor.execute(f"""
+            cursor.execute(
+                f"""
                 SELECT corp_num, bn_15
                 FROM corporation
                 WHERE corp_num in ({stringify_list(identifiers)})
-            """)
+                """
+            )
 
             for row in cursor.fetchall():
                 row = dict(zip([x[0].lower() for x in cursor.description], row))
@@ -67,7 +112,7 @@ class Business:
             raise err
 
     @classmethod
-    def _get_last_ar_dates_for_reset(cls, cursor, event_info: list, event_ids: list):
+    def _get_last_ar_dates_for_reset(cls, cursor, event_info: list, event_ids: list) -> list:
         """Get the previous AR/AGM dates."""
         events_by_corp_num = {}
         for info in event_info:
@@ -78,15 +123,16 @@ class Business:
 
         dates_by_corp_num = []
         for corp_num in events_by_corp_num:
-            cursor.execute(f"""
+            cursor.execute(
+                f"""
                 SELECT event.corp_num, event.event_timestmp, filing.period_end_dt, filing.agm_date, filing.filing_typ_cd
                 FROM event
                 JOIN filing on filing.event_id = event.event_id
                 WHERE event.event_id not in ({stringify_list(event_ids)}) AND event.corp_num=:corp_num
                 ORDER BY event.event_timestmp desc
                 """,
-                           corp_num=corp_num
-                           )
+                corp_num=corp_num
+            )
 
             dates = {'corp_num': corp_num}
             for row in cursor.fetchall():
@@ -110,12 +156,9 @@ class Business:
         return dates_by_corp_num
 
     @classmethod
-    def find_by_identifier(cls, identifier: str = None, con=None):  # pylint: disable=too-many-statements;
+    def find_by_identifier(cls, identifier: str, corp_types: list, con=None) -> Business:
         """Return a Business by identifier."""
         business = None
-        if not identifier:
-            return None
-
         try:
             # get record
             if not con:
@@ -123,106 +166,74 @@ class Business:
                 con.begin()
 
             cursor = con.cursor()
-
-            cursor.execute("""
-                select corp.CORP_NUM as identifier, CORP_FROZEN_TYP_CD, corp_typ_cd type,
-                filing.period_end_dt as last_ar_date, LAST_AR_FILED_DT as last_ar_filed_date, LAST_AGM_DATE,
-                corp_op_state.full_desc as state, corp_state.state_typ_cd as corp_state,
-                t_name.corp_nme as legal_name,
-                t_assumed_name.CORP_NME as assumed_name, RECOGNITION_DTS as founding_date,
-                BN_15 as business_number, CAN_JUR_TYP_CD, OTHR_JURIS_DESC
+            cursor.execute(
+                f"""
+                select corp.corp_num, corp_typ_cd, recognition_dts, bn_15, can_jur_typ_cd, othr_juris_desc,
+                    filing.period_end_dt, last_agm_date, corp_op_state.full_desc as state,
+                    corp_state.state_typ_cd as corp_state
                 from CORPORATION corp
-                left join CORP_NAME t_name on t_name.corp_num = corp.corp_num and t_name.CORP_NAME_TYP_CD='CO'
-                AND t_name.END_EVENT_ID is null
-                left join CORP_NAME t_assumed_name on t_assumed_name.corp_num = corp.corp_num
-                and t_assumed_name.CORP_NAME_TYP_CD='AS' AND t_assumed_name.END_EVENT_ID is null
-                join CORP_STATE on CORP_STATE.corp_num = corp.corp_num and CORP_STATE.end_event_id is null
-                join CORP_OP_STATE on CORP_OP_STATE.state_typ_cd = CORP_STATE.state_typ_cd
-                left join JURISDICTION on JURISDICTION.corp_num = corp.corp_num
-                join event on corp.corp_num = event.corp_num
-                left join filing on event.event_id = filing.event_id and filing.filing_typ_cd = 'OTANN'
-                where corp_typ_cd in ('CP', 'BEN')
-                and corp.CORP_NUM=:corp_num
-                order by last_ar_date desc nulls last""", corp_num=identifier)
+                    join CORP_STATE on CORP_STATE.corp_num = corp.corp_num and CORP_STATE.end_event_id is null
+                    join CORP_OP_STATE on CORP_OP_STATE.state_typ_cd = CORP_STATE.state_typ_cd
+                    left join JURISDICTION on JURISDICTION.corp_num = corp.corp_num
+                    join event on corp.corp_num = event.corp_num
+                    left join filing on event.event_id = filing.event_id and filing.filing_typ_cd in ('OTANN', 'ANNBC')
+                where corp_typ_cd in ({stringify_list(corp_types)}) and corp.CORP_NUM=:corp_num
+                order by filing.period_end_dt desc nulls last
+                """,
+                corp_num=identifier
+            )
             business = cursor.fetchone()
-
             if not business:
                 raise BusinessNotFoundException(identifier=identifier)
 
             # add column names to resultset to build out correct json structure and make manipulation below more robust
             # (better than column numbers)
             business = dict(zip([x[0].lower() for x in cursor.description], business))
+            # get all assumed, numbered/corporation, translation names
+            corp_names = CorpName.get_current(cursor=cursor, corp_num=identifier)
+            assumed_name = None
+            corp_name = None
+            for name_obj in corp_names:
+                if name_obj.type_code == CorpName.TypeCodes.ASSUMED.value:
+                    assumed_name = name_obj.corp_name
+                    break
+                elif name_obj.type_code in [CorpName.TypeCodes.CORP.value, CorpName.TypeCodes.NUMBERED_CORP.value]:
+                    corp_name = name_obj.corp_name
 
             # get last ledger date from EVENT table and add to business record
             # note - FILE event type is correct for new filings; CONVOTHER is for events/filings pulled over from COBRS
-            # during initial data import for Coops.
-            cursor.execute("""
-            select max(EVENT_TIMESTMP) as last_ledger_timestamp from EVENT
-            where EVENT_TYP_CD in('FILE', 'CONVOTHER') and CORP_NUM = '{}'""".format(identifier))
+            cursor.execute(
+                """
+                select max(EVENT_TIMESTMP) from EVENT
+                where EVENT_TYP_CD in ('FILE', 'CONVOTHER') and CORP_NUM=:corp_num
+                """,
+                corp_num=identifier
+            )
             last_ledger_timestamp = cursor.fetchone()[0]
             business['last_ledger_timestamp'] = last_ledger_timestamp
-
             # if this is an XPRO, get correct jurisdiction; otherwise, it's BC
-            if business['type'] == 'XCP':
+            if business['corp_typ_cd'] == 'XCP':
                 business['jurisdiction'] = business['can_jur_typ_cd']
                 if business['can_jur_typ_cd'] == 'OT':
                     business['jurisdiction'] = business['othr_juris_desc']
             else:
                 business['jurisdiction'] = 'BC'
 
-            # set name
-            if business['assumed_name']:
-                business['legal_name'] = business['assumed_name']
-
-            # set status - In Good Standing if certain criteria met, otherwise use original value
-            if business['state'] == 'Active' and \
-                    business['last_ar_filed_date'] is not None and \
-                    isinstance(business['last_ar_filed_date'], datetime) and \
-                    business['last_agm_date'] is not None and isinstance(business['last_agm_date'], datetime):
-
-                business['status'] = business['state']
-
-                if business['last_ar_filed_date'] > business['last_agm_date']:
-                    business['status'] = 'In Good Standing'
-
-            else:
-                business['status'] = business['state']
-
-            # convert dates and date-times to correct json format and convert to camel case for schema names
-
-            business['foundingDate'] = convert_to_json_datetime(business['founding_date'])
-            business['lastAgmDate'] = convert_to_json_date(business['last_agm_date'])
-            business['lastArDate'] = convert_to_json_date(business['last_ar_date']) if business['last_ar_date'] \
-                else business['lastAgmDate']
-            business['lastLedgerTimestamp'] = convert_to_json_datetime(business['last_ledger_timestamp'])
-
-            business['businessNumber'] = business['business_number']
-            business['corpState'] = business['corp_state']
-            business['legalName'] = business['legal_name']
-            business['legalType'] = business['type']
-
-            # remove unnecessary fields (
-            del business['can_jur_typ_cd']
-            del business['othr_juris_desc']
-            del business['assumed_name']
-            del business['state']
-            del business['business_number']
-            del business['corp_frozen_typ_cd']
-            del business['corp_state']
-            del business['founding_date']
-            del business['last_agm_date']
-            del business['last_ar_filed_date']
-            del business['last_ledger_timestamp']
-            del business['legal_name']
-            del business['type']
-            del business['last_ar_date']
-
-            # add cache_id todo: set to real value
-            business['cacheId'] = 0
-
             # convert to Business object
             business_obj = Business()
-            business_obj.business = business
+            business_obj.business_number = business['bn_15']
+            business_obj.corp_name = assumed_name if assumed_name else corp_name
+            business_obj.corp_num = business['corp_num']
+            business_obj.corp_state = business['corp_state']
+            business_obj.corp_type = business['corp_typ_cd']
+            business_obj.founding_date = convert_to_json_datetime(business['recognition_dts'])
+            business_obj.jurisdiction = business['jurisdiction']
+            business_obj.last_agm_date = convert_to_json_date(business['last_agm_date'])
+            business_obj.last_ar_date = convert_to_json_date(business['period_end_dt']) if business['period_end_dt'] \
+                else convert_to_json_date(business['last_agm_date'])
+            business_obj.last_ledger_timestamp = convert_to_json_datetime(business['last_ledger_timestamp'])
+            business_obj.status = business['state']
+
             return business_obj
 
         except Exception as err:
@@ -233,89 +244,273 @@ class Business:
             raise err
 
     @classmethod
-    def update_corporation(cls, cursor, corp_num: str = None, date: str = None, annual_report: bool = False):
-        """Update corporation record.
+    def create_corporation(cls, con, filing_info: dict) -> Business:
+        """Insert a new business from an incorporation filing."""
+        try:
+            business = Business()
+            business.corp_name = filing_info['business']['legalName']
+            business.corp_num = filing_info['business']['identifier']
+            business.founding_date = filing_info['header'].get('learEffectiveDate')
 
-        :param cursor: oracle cursor
-        :param corp_num: (str) corporation number
-        :param date: (str) last agm date
-        :param annual_report: (bool) whether or not this was an annual report
-        """
+            # will need to change after legal is updated
+            corp_types = Business.CORP_TYPE_CONVERSION[filing_info['business']['legalType']]
+            if Business.TypeCodes.BCOMP.value in corp_types:
+                business.corp_num = business.corp_num[-7:]
+                business.corp_type = Business.TypeCodes.BCOMP.value
+            else:
+                business.corp_type = Business.TypeCodes.COOP.value
+
+            cursor = con.cursor()
+
+            # Expand query as NR data/ business info becomes more aparent
+            cursor.execute(
+                """
+                insert into CORPORATION (CORP_NUM, CORP_TYP_CD, RECOGNITION_DTS)
+                values (:corp_num, :corp_type, TO_TIMESTAMP_TZ(:recognition_date,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'))
+                """,
+                corp_num=business.corp_num,
+                corp_type=business.corp_type,
+                recognition_date=business.founding_date
+            )
+
+            return business
+
+        except Exception as err:
+            current_app.logger.error('Error inserting business.')
+            raise err
+
+    @classmethod
+    def create_corp_jurisdiction(cls, cursor, corp_num, event_id):
+        """Add record to the JURISDICTION table on incorporation."""
+        try:
+            cursor.execute(
+                """
+                insert into JURISDICTION (CORP_NUM, START_EVENT_ID, STATE_TYP_CD)
+                values (:corp_num, :event_id, 'ACT')
+                """,
+                corp_num=corp_num,
+                event_id=event_id
+            )
+
+        except Exception as err:
+            current_app.logger.error('Error inserting jurisdiction.')
+            raise err
+
+    @classmethod
+    def create_corp_restriction(cls, cursor, event_id: str, corp_num: str, provisions: bool):
+        """Create corp restriction entry for business."""
+        try:
+            value = 'Y' if provisions else 'N'
+            cursor.execute(
+                """
+                insert into corp_restriction (start_event_id, corp_num, restriction_ind)
+                values (:event_id, :corp_num, :value)
+                """,
+                event_id=event_id,
+                corp_num=corp_num,
+                value=value
+            )
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+
+    @classmethod
+    def create_corp_state(cls, cursor, corp_num, event_id):
+        """Add record to the CORP STATE table on incorporation."""
+        try:
+            cursor.execute(
+                """
+                insert into CORP_STATE(CORP_NUM, START_EVENT_ID, STATE_TYP_CD)
+                values (:corp_num, :event_id, 'ACT')
+                """,
+                corp_num=corp_num,
+                event_id=event_id
+            )
+
+        except Exception as err:
+            current_app.logger.error('Error inserting corp state.')
+            raise err
+
+    @classmethod
+    def create_resolution(cls, cursor, corp_num: str, event_id: str, resolution_date: str):
+        """Create a new resolution entry for a company."""
+        try:
+            cursor.execute(
+                """
+                insert into resolution(corp_num, start_event_id, resolution_dt)
+                values (:corp_num, :event_id, TO_DATE(:res_date, 'YYYY-mm-dd'))
+                """,
+                corp_num=corp_num,
+                event_id=event_id,
+                res_date=resolution_date
+            )
+
+        except Exception as err:
+            current_app.logger.error('Error inserting resolution.')
+            raise err
+
+    @classmethod
+    def end_current_corp_restriction(cls, cursor, event_id: str, corp_num: str):
+        """End current corp restriction entry for business."""
+        try:
+            cursor.execute(
+                """
+                UPDATE corp_restriction
+                SET end_event_id = :event_id
+                WHERE corp_num = :corp_num and end_event_id is NULL
+                """,
+                event_id=event_id,
+                corp_num=corp_num
+            )
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+
+    @classmethod
+    def update_corporation(cls, cursor, corp_num: str = None, date: str = None, annual_report: bool = False):
+        """Update corporation record."""
         try:
             if annual_report:
                 if date:
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         UPDATE corporation
-                        SET
-                            LAST_AR_FILED_DT = sysdate,
-                            LAST_AGM_DATE = TO_DATE(:agm_date, 'YYYY-mm-dd'),
+                        SET LAST_AR_FILED_DT = sysdate, LAST_AGM_DATE = TO_DATE(:agm_date, 'YYYY-mm-dd'),
                             LAST_LEDGER_DT = sysdate
                         WHERE corp_num = :corp_num
                         """,
-                                   agm_date=date,
-                                   corp_num=corp_num
-                                   )
+                        agm_date=date,
+                        corp_num=corp_num
+                    )
                 else:
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         UPDATE corporation
-                        SET
-                            LAST_AR_FILED_DT = sysdate,
-                            LAST_LEDGER_DT = sysdate
+                        SET LAST_AR_FILED_DT = sysdate, LAST_LEDGER_DT = sysdate
                         WHERE corp_num = :corp_num
                         """,
-                                   corp_num=corp_num
-                                   )
+                        corp_num=corp_num
+                    )
 
             else:
-                cursor.execute("""
-                                    UPDATE corporation
-                                    SET
-                                        LAST_LEDGER_DT = sysdate
-                                    WHERE corp_num = :corp_num
-                                    """,
-                               corp_num=corp_num
-                               )
+                cursor.execute(
+                    """
+                    UPDATE corporation
+                    SET LAST_LEDGER_DT = sysdate
+                    WHERE corp_num = :corp_num
+                    """,
+                    corp_num=corp_num
+                )
 
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))
             raise err
 
     @classmethod
-    def update_corp_state(cls, cursor, event_id, corp_num, state='ACT'):
-        """Update corporation state.
-
-        End previous corp_state record (end event id) and and create new corp_state record.
-
-        :param cursor: oracle cursor
-        :param event_id: (int) event id for corresponding event
-        :param corp_num: (str) corporation number
-        :param state: (str) state of corporation
-        """
+    def update_corp_state(cls, cursor, event_id: str, corp_num: str, state: str = 'ACT'):
+        """Update corporation state."""
         try:
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE corp_state
                 SET end_event_id = :event_id
                 WHERE corp_num = :corp_num and end_event_id is NULL
                 """,
-                           event_id=event_id,
-                           corp_num=corp_num
-                           )
+                event_id=event_id,
+                corp_num=corp_num
+            )
 
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))
             raise err
         try:
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO corp_state (corp_num, start_event_id, state_typ_cd)
                 VALUES (:corp_num, :event_id, :state)
                 """,
-                           event_id=event_id,
-                           corp_num=corp_num,
-                           state=state
-                           )
+                event_id=event_id,
+                corp_num=corp_num,
+                state=state
+            )
 
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))
+            raise err
+
+    @classmethod
+    def update_corp_type(cls, cursor, corp_num: str, corp_type: str):
+        """Update corp type code in corporations table."""
+        try:
+            if corp_type not in [x.value for x in Business.TypeCodes.__members__.values()]:
+                current_app.logger.error(f'Tried to update {corp_num} with invalid corp type code {corp_type}')
+                raise Exception
+
+            cursor.execute(
+                """
+                UPDATE corporation
+                SET corp_typ_cd = :corp_type
+                WHERE corp_num = :corp_num
+                """,
+                corp_num=corp_num,
+                corp_type=corp_type
+            )
+
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+
+    @classmethod
+    def get_next_corp_num(cls, corp_type, con) -> str:
+        """Retrieve the next available corporation number and advance by one."""
+        try:
+            cursor = con.cursor()
+            cursor.execute(
+                """
+                SELECT id_num
+                FROM system_id
+                WHERE id_typ_cd = :corp_type
+                FOR UPDATE
+                """,
+                corp_type=corp_type
+            )
+            corp_num = cursor.fetchone()
+
+            if corp_num:
+                cursor.execute(
+                    """
+                    UPDATE system_id
+                    SET id_num = :new_num
+                    WHERE id_typ_cd = :corp_type
+                    """,
+                    new_num=corp_num[0]+1,
+                    corp_type=corp_type
+                )
+
+            return '%07d' % corp_num
+        except Exception as err:
+            current_app.logger.error('Error looking up corp_num')
+            raise err
+
+    @classmethod
+    def get_resolutions(cls, cursor, corp_num: str) -> list:
+        """Get all resolution dates for a company."""
+        try:
+            resolution_dates = []
+            cursor.execute(
+                """
+                select resolution_dt from resolution
+                where corp_num = :corp_num and end_event_id is null
+                order by resolution_dt desc
+                """,
+                corp_num=corp_num
+            )
+            resolution_oracle_dates = cursor.fetchall()
+            for date in resolution_oracle_dates:
+                resolution_dates.append(convert_to_json_date(date[0]))
+            return resolution_dates
+        except Exception as err:
+            current_app.logger.error(f'Error looking up resolution dates for {corp_num}')
             raise err
 
     @classmethod
@@ -327,20 +522,17 @@ class Business:
         dates_by_corp_num = cls._get_last_ar_dates_for_reset(cursor=cursor, event_info=event_info, event_ids=event_ids)
         for item in dates_by_corp_num:
             try:
-
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE corporation
-                    SET
-                        LAST_AR_FILED_DT = :ar_filed_date,
-                        LAST_AGM_DATE = :agm_date,
-                        LAST_LEDGER_DT = :event_date
+                    SET LAST_AR_FILED_DT = :ar_filed_date, LAST_AGM_DATE = :agm_date, LAST_LEDGER_DT = :event_date
                     WHERE corp_num = :corp_num
-                """,
-                               agm_date=item['agm_date'] if item['agm_date'] else item['ar_date'],
-                               ar_filed_date=item['ar_filed_date'],
-                               event_date=item['event_date'],
-                               corp_num=item['corp_num']
-                               )
+                    """,
+                    agm_date=item['agm_date'] if item['agm_date'] else item['ar_date'],
+                    ar_filed_date=item['ar_filed_date'],
+                    event_date=item['event_date'],
+                    corp_num=item['corp_num']
+                )
 
             except Exception as err:
                 current_app.logger.error(f'Error in Business: Failed to reset corporation for {item["corp_num"]}')
@@ -354,115 +546,25 @@ class Business:
 
         # delete corp_state rows created on these events
         try:
-            cursor.execute(f"""
+            cursor.execute(
+                f"""
                 DELETE FROM corp_state
                 WHERE start_event_id in ({stringify_list(event_ids)})
-            """)
+                """
+            )
         except Exception as err:
             current_app.logger.error(f'Error in Business: Failed delete corp_state rows for events {event_ids}')
             raise err
 
         # reset corp_state rows ended on these events
         try:
-            cursor.execute(f"""
+            cursor.execute(
+                f"""
                 UPDATE corp_state
                 SET end_event_id = null
                 WHERE end_event_id in ({stringify_list(event_ids)})
-            """)
+                """
+            )
         except Exception as err:
             current_app.logger.error(f'Error in Business: Failed reset ended corp_state rows for events {event_ids}')
-            raise err
-
-    @classmethod
-    def get_next_corp_num(cls, corp_type, con):
-        """Retrieve the next available corporation number and advance by one."""
-        try:
-            cursor = con.cursor()
-            cursor.execute("""
-                SELECT id_num
-                FROM system_id
-                WHERE id_typ_cd = :corp_type
-                FOR UPDATE
-            """, corp_type=corp_type)
-            corp_num = cursor.fetchone()
-
-            if corp_num:
-                cursor.execute("""
-                UPDATE system_id
-                SET id_num = :new_num
-                WHERE id_typ_cd = :corp_type
-            """, new_num=corp_num[0]+1, corp_type=corp_type)
-
-            return '%07d' % corp_num
-        except Exception as err:
-            current_app.logger.error('Error looking up corp_num')
-            raise err
-
-    @classmethod
-    def insert_new_business(cls, con, incorporation, corp_num, recognition_date):
-        """Insert a new business from an incorporation filing."""
-        try:
-            cursor = con.cursor()
-
-            legal_type = incorporation['nameRequest']['legalType']
-            if corp_num[:2] != 'CP':
-                corp_num = corp_num[-7:]
-                legal_type = 'BEN'
-
-            # Expand query as NR data/ business info becomes more aparent
-            cursor.execute("""insert into CORPORATION
-            (CORP_NUM, CORP_TYP_CD, RECOGNITION_DTS)
-            values (:corp_num, :legal_type, TO_TIMESTAMP_TZ(:recognition_date,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'))
-            """, corp_num=corp_num, legal_type=legal_type, recognition_date=recognition_date)
-
-            business = {'identifier': corp_num}
-
-            business_obj = Business()
-            business_obj.business = business
-
-            return business_obj
-
-        except Exception as err:
-            current_app.logger.error('Error inserting business.')
-            raise err
-
-    @classmethod
-    def create_corp_name(cls, cursor, corp_num, corp_name, event_id):
-        """Add record to the CORP NAME table on incorporation."""
-        try:
-            search_name = ''.join(e for e in corp_name if e.isalnum())
-            cursor.execute("""insert into CORP_NAME
-            (CORP_NAME_TYP_CD, CORP_NAME_SEQ_NUM, DD_CORP_NUM, END_EVENT_ID,
-            CORP_NME, CORP_NUM, START_EVENT_ID, SRCH_NME)
-            values ('CO', 0, NULL, NULL, :corp_name, :corp_num, :event_id, :search_name)
-            """, corp_name=corp_name, corp_num=corp_num, event_id=event_id, search_name=search_name.upper())
-
-        except Exception as err:
-            current_app.logger.error('Error inserting corp name.')
-            raise err
-
-    @classmethod
-    def create_corp_state(cls, cursor, corp_num, event_id):
-        """Add record to the CORP STATE table on incorporation."""
-        try:
-            cursor.execute("""insert into CORP_STATE
-            (CORP_NUM, START_EVENT_ID, STATE_TYP_CD)
-            values (:corp_num, :event_id, 'ACT')
-            """, corp_num=corp_num, event_id=event_id)
-
-        except Exception as err:
-            current_app.logger.error('Error inserting corp state.')
-            raise err
-
-    @classmethod
-    def create_corp_jurisdiction(cls, cursor, corp_num, event_id):
-        """Add record to the JURISDICTION table on incorporation."""
-        try:
-            cursor.execute("""insert into JURISDICTION
-            (CORP_NUM, START_EVENT_ID, STATE_TYP_CD)
-            values (:corp_num, :event_id, 'ACT')
-            """, corp_num=corp_num, event_id=event_id)
-
-        except Exception as err:
-            current_app.logger.error('Error inserting jurisdiction.')
             raise err

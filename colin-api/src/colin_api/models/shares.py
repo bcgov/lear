@@ -18,7 +18,7 @@ Currently this only provides API versioning information
 from flask import current_app
 
 from colin_api.resources.db import DB
-from colin_api.utils import delete_from_table_by_event_ids
+from colin_api.utils import delete_from_table_by_event_ids, get_max_value
 
 
 class Share:  # pylint: disable=too-many-instance-attributes;
@@ -46,7 +46,7 @@ class Share:  # pylint: disable=too-many-instance-attributes;
             'hasMaximumShares': self.has_max_shares == 'Y' or False,
             'hasRightsOrRestrictions': self.has_special_rights == 'Y' or False,
             'priority': self.priority
-            }
+        }
 
 
 class ShareClass(Share):  # pylint: disable=too-many-instance-attributes;
@@ -213,37 +213,45 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
         return share_list
 
     @classmethod
-    def create_share_structure(cls, cursor, corp_num, event_id, share_dict):
+    def create_share_structure(cls, cursor, corp_num: str, event_id: str, shares_list: list):
         """Create share structure entry for corporation."""
-        query = """insert into share_struct (corp_num, start_event_id, dd_corp_num)
-                   values (:corp_num, :event_id, :corp_num)
-                """
-        try:
-            cursor.execute(
-                query,
-                corp_num=corp_num, event_id=event_id
-                )
-        except Exception as err:
-            current_app.logger.error(f'Error in Share Structure: Failed to create Share Structure for {corp_num}')
-            raise err
-
-        for share_class in share_dict:
-            cls.create_share_class(cursor, event_id, corp_num, share_class)
-
-    @classmethod
-    def create_share_class(cls, cursor, event_id, corp_num, class_dict):
-        """Create Share Classes for corp."""
-        query = """insert into share_struct_cls (corp_num, share_class_id, start_event_id,
-                    currency_typ_cd, max_share_ind, share_quantity, spec_rights_ind,
-                    par_value_ind, par_value_amt, class_nme) values (
-                    :corp_num, :class_id, :event_id, :currency, :has_max_share,
-                    :qty, :has_spec_rights, :has_par_value, :par_value, :name
-                    )"""
+        query = (
+            """
+            insert into share_struct (corp_num, start_event_id, dd_corp_num)
+            values (:corp_num, :event_id, :corp_num)
+            """
+        )
         try:
             cursor.execute(
                 query,
                 corp_num=corp_num,
-                class_id=class_dict['id'],
+                event_id=event_id
+            )
+        except Exception as err:
+            current_app.logger.error(f'Error in Share Structure: Failed to create Share Structure for {corp_num}')
+            raise err
+
+        for share_class in shares_list:
+            cls.create_share_class(cursor, event_id, corp_num, share_class)
+
+    @classmethod
+    def create_share_class(cls, cursor, event_id: str, corp_num: str, class_dict: dict):
+        """Create Share Classes for corp."""
+        query = (
+            """
+            insert into share_struct_cls (corp_num, share_class_id, start_event_id, currency_typ_cd, max_share_ind,
+                share_quantity, spec_rights_ind, par_value_ind, par_value_amt, class_nme)
+            values (:corp_num, :class_id, :event_id, :currency, :has_max_share, :qty, :has_spec_rights, :has_par_value,
+                :par_value, :name)
+            """
+        )
+        try:
+            max_class_id = get_max_value(cursor, corp_num=corp_num, table='share_struct_cls', column='share_class_id') 
+            class_id = max_class_id + 1 if max_class_id else 0
+            cursor.execute(
+                query,
+                corp_num=corp_num,
+                class_id=class_id,
                 event_id=event_id,
                 currency=class_dict['currency'],
                 has_max_share=class_dict['hasMaximumShares'],
@@ -252,36 +260,58 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
                 has_par_value=class_dict['hasParValue'],
                 par_value=class_dict['parValue'],
                 name=class_dict['name']
-                )
+            )
         except Exception as err:
             current_app.logger.error(f'Error in Share Structure: Failed to create Share Classes for {corp_num}')
             raise err
 
-        for share_series in class_dict['series']:
-            cls.create_share_series(cursor, event_id, corp_num, class_dict['id'], share_series)
+        for share_series in class_dict.get('series', []):
+            cls.create_share_series(cursor, event_id, corp_num, class_id, share_series)
 
     @classmethod
-    def create_share_series(cls, cursor, event_id, corp_num, class_id, series_arr):
+    def create_share_series(cls, cursor, event_id: str, corp_num: str, class_id: str, series_dict: dict):
         # pylint: disable=too-many-arguments
         """Insert Share Series for Share Class and Corp."""
-        query = """insert into share_series (corp_num, share_class_id, series_id, start_event_id,
-                   max_share_ind, share_quantity, spec_right_ind, series_nme) values (:corp_num, :class_id,
-                   :series_id, :event_id, :has_max_share, :qty, :has_spec_rights, :name)"""
-
+        query = (
+            """
+            insert into share_series (corp_num, share_class_id, series_id, start_event_id, max_share_ind,
+                share_quantity, spec_right_ind, series_nme)
+            values (:corp_num, :class_id, :series_id, :event_id, :has_max_share, :qty, :has_spec_rights, :name)
+            """
+        )
+        max_series_id = get_max_value(cursor, corp_num=corp_num, table='share_series', column='series_id')
+        series_id = max_series_id + 1 if max_series_id else 0
         try:
             cursor.execute(
                 query,
                 corp_num=corp_num,
                 class_id=class_id,
-                series_id=series_arr['id'],
+                series_id=series_id,
                 event_id=event_id,
-                has_max_share=series_arr['hasMaximumShares'],
-                qty=series_arr['maxNumberOfShares'],
-                has_spec_rights=series_arr['hasRightsOrRestrictions'],
-                name=series_arr['name']
-                )
+                has_max_share=series_dict['hasMaximumShares'],
+                qty=series_dict['maxNumberOfShares'],
+                has_spec_rights=series_dict['hasRightsOrRestrictions'],
+                name=series_dict['name']
+            )
         except Exception as err:
             current_app.logger.error(f'Error in Share Structure: Failed to create Share Series for {corp_num}')
+            raise err
+
+    @classmethod
+    def end_share_structure(cls, cursor, event_id: str, corp_num: str):
+        """End Share Struct for a corp."""
+        try:
+            cursor.execute(
+                """
+                update share_struct
+                set end_event_id=:event_id
+                where corp_num=:corp_num and end_event_id is null
+                """,
+                corp_num=corp_num,
+                event_id=event_id
+            )
+        except Exception as err:
+            current_app.logger.error(f'Error in Share Structure: Failed to create Share Structure for {corp_num}')
             raise err
 
     @classmethod

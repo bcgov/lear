@@ -15,37 +15,41 @@
 
 Currently this only provides API versioning information
 """
+from http import HTTPStatus
+
 from flask import current_app, jsonify, request
 from flask_restplus import Resource, cors
 
 from colin_api.exceptions import GenericException
-from colin_api.models import Party
+from colin_api.models import Business, Party
 from colin_api.models.filing import DB
 from colin_api.resources.business import API
 from colin_api.utils.util import cors_preflight
 
 
 @cors_preflight('GET')
-@API.route('/<string:identifier>/parties')
+@API.route('/<string:legal_type>/<string:identifier>/parties')
 class PartiesInfo(Resource):
     """Meta information about the overall service."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def get(identifier):
+    def get(legal_type: str, identifier: str):
         """Return the current directors for a business."""
         if not identifier:
-            return jsonify({'message': 'Identifier required'}), 404
+            return jsonify({'message': 'Identifier required'}), HTTPStatus.NOT_FOUND
 
         try:
-            party_type = request.args.get('partyType', 'DIR')
+            if legal_type == Business.TypeCodes.BCOMP.value:
+                identifier = identifier[-7:]
+            party_type = request.args.get('partyType', 'Director')
             cursor = DB.connection.cursor()
             directors = Party.get_current(cursor=cursor, identifier=identifier, role_type=party_type)
             if not directors:
-                return jsonify({'message': f'directors for {identifier} not found'}), 404
+                return jsonify({'message': f'directors for {identifier} not found'}), HTTPStatus.NOT_FOUND
             if len(directors) < 3:
                 current_app.logger.error('Less than 3 directors for {}'.format(identifier))
-            return jsonify({'directors': [x.as_dict() for x in directors]})
+            return jsonify({'directors': [x.as_dict() for x in directors]}), HTTPStatus.OK
 
         except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify(
@@ -55,4 +59,4 @@ class PartiesInfo(Resource):
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
-                {'message': 'Error when trying to retrieve directors from COLIN'}), 500
+                {'message': 'Error when trying to retrieve directors from COLIN'}), HTTPStatus.INTERNAL_SERVER_ERROR

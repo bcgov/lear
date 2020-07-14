@@ -25,7 +25,7 @@ def test_get_historic_filings(client):
     bob_date = '2019-03-08'
     identifier = 'CP0001965'
 
-    rv = client.get(f'/api/v1/businesses/{identifier}/filings/historic')
+    rv = client.get(f'/api/v1/businesses/CP/{identifier}/filings/historic')
 
     assert 200 == rv.status_code
     historic_filings = rv.json

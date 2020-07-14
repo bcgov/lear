@@ -19,20 +19,20 @@ from flask import current_app, jsonify
 from flask_restplus import Resource, cors
 
 from colin_api.exceptions import GenericException
-from colin_api.models import ShareObject
+from colin_api.models import Business, ShareObject
 from colin_api.models.filing import DB
 from colin_api.resources.business import API
 from colin_api.utils.util import cors_preflight
 
 
 @cors_preflight('GET')
-@API.route('/<string:identifier>/sharestructure')
+@API.route('/<string:legal_type>/<string:identifier>/sharestructure')
 class ShareStruct(Resource):
     """Meta information about the overall service."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def get(identifier):
+    def get(legal_type: str, identifier: str):
         """Return the current directors for a business."""
         if not identifier:
             return jsonify({'message': 'Identifier required'}), 404
@@ -40,6 +40,8 @@ class ShareStruct(Resource):
         try:
 
             cursor = DB.connection.cursor()
+            if legal_type == Business.TypeCodes.BCOMP.value:
+                identifier = identifier[-7:]
             shares = ShareObject.get_all(cursor, identifier)
             if not shares:
                 return jsonify({'message': f'share sgructure for {identifier} not found'}), 404

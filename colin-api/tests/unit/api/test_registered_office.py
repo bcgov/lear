@@ -29,7 +29,7 @@ ids = coa_ids
 @oracle_integration
 def test_get_current(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0001965/office')
+    rv = client.get('/api/v1/businesses/CP/CP0001965/office')
 
     assert 200 == rv.status_code
 
@@ -53,7 +53,7 @@ def test_post_coa(client):
         'Canada'
     fake_filing['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = \
         'Canada'
-    rv = client.post('/api/v1/businesses/CP0001965/filings/changeOfAddress',
+    rv = client.post('/api/v1/businesses/CP/CP0001965/filings/changeOfAddress',
                      data=json.dumps(fake_filing), headers=headers)
 
     assert 201 == rv.status_code
@@ -72,7 +72,7 @@ def test_post_coa(client):
 @oracle_integration
 def test_get_coa(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0001965/filings/changeOfAddress')
+    rv = client.get('/api/v1/businesses/CP/CP0001965/filings/changeOfAddress')
 
     assert 200 == rv.status_code
     is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
@@ -89,7 +89,7 @@ def test_get_coa(client):
 def test_get_coa_by_id(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
     for event_id in ids:
-        rv = client.get(f'/api/v1/businesses/CP0001965/filings/changeOfAddress?eventId={event_id}')
+        rv = client.get(f'/api/v1/businesses/CP/CP0001965/filings/changeOfAddress?eventId={event_id}')
 
         assert 200 == rv.status_code
         is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
@@ -106,14 +106,14 @@ def test_get_coa_by_id(client):
 @oracle_integration
 def test_get_coa_by_id_wrong_corp(client):
     """Assert that a coop searching for a coa filing associated with a different coop returns a 404."""
-    rv = client.get(f'/api/v1/businesses/CP0000005/filings/changeOfAddress?eventId={ids[0]}')
+    rv = client.get(f'/api/v1/businesses/CP/CP0000005/filings/changeOfAddress?eventId={ids[0]}')
     assert 404 == rv.status_code
 
 
 @oracle_integration
 def test_get_coa_no_results(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0000000/filings/changeOfAddress')
+    rv = client.get('/api/v1/businesses/CP/CP0000000/filings/changeOfAddress')
 
     assert 404 == rv.status_code
 
@@ -151,7 +151,7 @@ def test_post_coa_with_invalid_data(client):
             }
         }
     }
-    rv = client.post('/api/v1/businesses/CP0001965/filings/changeOfAddress',
+    rv = client.post('/api/v1/businesses/CP/CP0001965/filings/changeOfAddress',
                      data=json.dumps(fake_filing), headers=headers)
 
     assert 400 == rv.status_code
@@ -169,7 +169,7 @@ def test_post_coa_with_mismatched_identifer(client):
     fake_filing['filing']['header']['name'] = 'changeOfAddress'
     fake_filing['filing']['business']['identifier'] = 'CP0001965'
     fake_filing['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
-    rv = client.post('/api/v1/businesses/CP0001966/filings/changeOfAddress',
+    rv = client.post('/api/v1/businesses/CP/CP0001966/filings/changeOfAddress',
                      data=json.dumps(fake_filing), headers=headers)
 
     assert 400 == rv.status_code

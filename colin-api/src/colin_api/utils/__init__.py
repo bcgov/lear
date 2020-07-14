@@ -45,7 +45,7 @@ def convert_to_json_datetime(thedate):
         return None
 
 
-def stringify_list(list_orig: list):
+def stringify_list(list_orig: list) -> str:
     """Stringify the given list for sql query - used when inserting lists for reset query's."""
     list_str = ''
     for item in list_orig:
@@ -66,4 +66,20 @@ def delete_from_table_by_event_ids(cursor, event_ids: list, table: str, column: 
         """)
     except Exception as err:
         current_app.logger.error(f'Error in Reset: Failed to delete rows for events {event_ids} in table: {table}')
+        raise err
+
+
+def get_max_value(cursor, corp_num: str, table: str, column: str):
+    """Get the max value for a column in a table for a business."""
+    try:
+        cursor.execute(
+            f"""
+            select max({column}) from {table} where corp_num=:corp_num
+            """,
+            corp_num=corp_num
+        )
+        return cursor.fetchone()[0]
+
+    except Exception as err:
+        current_app.logger.error(f'Error getting max {column}.')
         raise err

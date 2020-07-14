@@ -15,8 +15,11 @@
 
 Currently this only provides API versioning information
 """
+from http import HTTPStatus
+
 from flask import current_app, jsonify, request
 from flask_restplus import Resource, cors
+from legal_api.models import Business as LearBusiness
 from registry_schemas import validate
 
 from colin_api.exceptions import FilingNotFoundException, GenericException
@@ -27,23 +30,31 @@ from colin_api.utils.util import cors_preflight
 
 
 @cors_preflight('GET, POST')
-@API.route('/<string:identifier>/filings/<string:filing_type>')
+@API.route('/<string:legal_type>/<string:identifier>/filings/<string:filing_type>')
 class FilingInfo(Resource):
     """Meta information about the overall service."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def get(identifier, filing_type):
+    def get(legal_type, identifier, filing_type):
         """Return the complete filing info or historic (pre-bob-date=2019-03-08) filings."""
         try:
+            if legal_type not in [x.value for x in LearBusiness.LegalTypes.__members__.values()]:
+                return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
+
             # get optional parameters (event_id / year)
             event_id = request.args.get('eventId', None)
             year = request.args.get('year', None)
             if year:
                 year = int(year)
 
+            # convert identifier if BC legal_type
+            if legal_type == LearBusiness.LegalTypes.BCOMP.value:
+                identifier = identifier[-7:]
+
             # get business
-            business = Business.find_by_identifier(identifier)
+            corp_types = Business.CORP_TYPE_CONVERSION[legal_type]
+            business = Business.find_by_identifier(identifier, corp_types)
 
             # get filings history from before bob-date
             if filing_type == 'historic':
@@ -62,17 +73,21 @@ class FilingInfo(Resource):
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
-                {'message': 'Error when trying to retrieve business record from COLIN'}), 500
+                {'message': 'Error when trying to retrieve business record from COLIN'}
+            ), HTTPStatus.INTERNAL_SERVER_ERROR
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def post(identifier, **kwargs):
+    def post(legal_type, identifier, **kwargs):
         """Create a new filing."""
         # pylint: disable=unused-argument,too-many-branches; filing_type is only used for the get
         try:
+            if legal_type not in [x.value for x in LearBusiness.LegalTypes.__members__.values()]:
+                return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
+
             json_data = request.get_json()
             if not json_data:
-                return jsonify({'message': 'No input data provided'}), 400
+                return jsonify({'message': 'No input data provided'}), HTTPStatus.BAD_REQUEST
 
             # validate schema
             is_valid, errors = validate(json_data, 'filing', validate_schema=True)
@@ -80,38 +95,42 @@ class FilingInfo(Resource):
                 for err in errors:
                     print(err.message)
                 return jsonify(
-                    {'message': 'Error: Invalid Filing schema'}), 400
+                    {'message': 'Error: Invalid Filing schema'}), HTTPStatus.BAD_REQUEST
 
             json_data = json_data.get('filing', None)
-
-            filing_list = {'changeOfAddress': json_data.get('changeOfAddress', None),
-                           'changeOfDirectors': json_data.get('changeOfDirectors', None),
-                           'annualReport': json_data.get('annualReport', None),
-                           'incorporationApplication': json_data.get('incorporationApplication', None)}
-
-            # Filter out null-values in the filing_list dictionary
-            filing_list = {k: v for k, v in filing_list.items() if filing_list[k]}
 
             # ensure that the business in the AR matches the business in the URL
             if identifier != json_data['business']['identifier']:
                 return jsonify(
-                    {'message': 'Error: Identifier in URL does not match identifier in filing data'}), 400
+                    {'message': 'Error: Identifier in URL does not match identifier in filing data'}
+                ), HTTPStatus.BAD_REQUEST
 
+            # convert identifier if BC legal_type
+            if legal_type == LearBusiness.LegalTypes.BCOMP.value:
+                identifier = identifier[-7:]
+
+            corp_types = Business.CORP_TYPE_CONVERSION[legal_type]
+
+            filing_list = {'changeOfAddress': json_data.get('changeOfAddress', None),
+                           'changeOfDirectors': json_data.get('changeOfDirectors', None),
+                           'annualReport': json_data.get('annualReport', None),
+                           'incorporationApplication': json_data.get('incorporationApplication', None),
+                           'alteration': json_data.get('alteration', None)}
+
+            # Filter out null-values in the filing_list dictionary
+            filing_list = {k: v for k, v in filing_list.items() if filing_list[k]}
             try:
                 # get db connection and start a session, in case we need to roll back
                 con = DB.connection
                 con.begin()
-                filings_added = FilingInfo._add_filings(con, json_data, filing_list, identifier)
+                filings_added = FilingInfo._add_filings(con, json_data, filing_list, identifier, corp_types)
 
                 # return the completed filing data
                 completed_filing = Filing()
                 completed_filing.header = json_data['header']
                 completed_filing.header['colinIds'] = []
-                search_corp_num = json_data['business']['identifier']
-                if search_corp_num[:2] != 'CP':
-                    search_corp_num = search_corp_num[-7:]
                 # get business info again - could have changed since filings were applied
-                completed_filing.business = Business.find_by_identifier(search_corp_num, con)
+                completed_filing.business = Business.find_by_identifier(identifier, corp_types, con)
                 completed_filing.body = {}
                 for filing_info in filings_added:
                     filing = Filing.get_filing(con=con, business=completed_filing.business,
@@ -124,10 +143,10 @@ class FilingInfo(Resource):
 
                 # success! commit the db changes
                 con.commit()
-                return jsonify(completed_filing.as_dict()), 201
+                return jsonify(completed_filing.as_dict()), HTTPStatus.CREATED
 
             except Exception as db_err:
-                current_app.logger.error(db_err.with_traceback(None))
+                current_app.logger.error('failed to file - rolling back partial db changes.')
                 if con:
                     con.rollback()
                 raise db_err
@@ -136,22 +155,23 @@ class FilingInfo(Resource):
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
-                {'message': 'Error when trying to retrieve business record from COLIN'}), 500
+                {'message': f'Error when trying to file for business {identifier}'}
+            ), HTTPStatus.INTERNAL_SERVER_ERROR
 
     @staticmethod
-    def _add_filings(con, json_data, filing_list, identifier):
+    def _add_filings(con, json_data: dict, filing_list: list, identifier: str, corp_types: list) -> list:
+        """Process all parts of the filing."""
         filings_added = []
         for filing_type in filing_list:
             filing = Filing()
-            if filing_type != 'incorporationApplication':
-                filing.business = Business.find_by_identifier(identifier, con)
-            else:
-                filing.business = Business.insert_new_business(
-                    con, filing_list[filing_type], identifier, json_data['header'].get('learEffectiveDate'))
             filing.header = json_data['header']
             filing.filing_type = filing_type
             filing.body = filing_list[filing_type]
-            filing.business.business['legalName'] = json_data['business']['legalName']
+
+            if filing_type != 'incorporationApplication':
+                filing.business = Business.find_by_identifier(identifier, corp_types, con)
+            else:
+                filing.business = Business.create_corporation(con, json_data)
             # add the new filing
             event_id = Filing.add_filing(con, filing)
             filings_added.append({'event_id': event_id, 'filing_type': filing_type})
