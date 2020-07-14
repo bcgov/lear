@@ -1,5 +1,4 @@
 # Copyright © 2019 Province of British Columbia
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,6 +14,7 @@
 
 Currently this only provides API versioning information
 """
+# pylint: disable=too-many-lines
 import datetime
 
 from flask import current_app
@@ -518,7 +518,7 @@ class Filing:
         return filing_obj
 
     @classmethod
-    def _get_alt(cls, cursor, filing_event_info: dict = None):
+    def _get_alt(cls, filing_event_info: dict = None):
         """Get alteration filing."""
         # this currently doesn't do anything except return a basic filing obj for alteration
         filing_obj = Filing()
@@ -739,7 +739,7 @@ class Filing:
                 filing_obj = cls._get_inc(identifier=identifier, filing_event_info=filing_event_info, cursor=cursor)
 
             elif filing_type == 'alteration':
-                filing_obj = cls._get_alt(filing_event_info=filing_event_info, cursor=cursor)
+                filing_obj = cls._get_alt(filing_event_info=filing_event_info)
 
             else:
                 # uncomment to bring in other filings as available on paper only

@@ -17,7 +17,6 @@ Currently this only provides API versioning information
 """
 from __future__ import annotations
 
-import datetime
 from enum import Enum
 
 from flask import current_app

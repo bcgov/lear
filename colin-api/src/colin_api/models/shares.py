@@ -231,11 +231,15 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
             current_app.logger.error(f'Error in Share Structure: Failed to create Share Structure for {corp_num}')
             raise err
 
+        max_class_id = get_max_value(cursor, corp_num=corp_num, table='share_struct_cls', column='share_class_id')
+        class_id = max_class_id + 1 if max_class_id else 0
         for share_class in shares_list:
-            cls.create_share_class(cursor, event_id, corp_num, share_class)
+            cls.create_share_class(cursor, event_id, corp_num, class_id, share_class)
+            class_id = class_id + 1
 
     @classmethod
-    def create_share_class(cls, cursor, event_id: str, corp_num: str, class_dict: dict):
+    def create_share_class(cls, cursor, event_id: str, corp_num: str, class_id: int, class_dict: dict):
+        # pylint: disable=too-many-arguments
         """Create Share Classes for corp."""
         query = (
             """
@@ -246,8 +250,6 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
             """
         )
         try:
-            max_class_id = get_max_value(cursor, corp_num=corp_num, table='share_struct_cls', column='share_class_id') 
-            class_id = max_class_id + 1 if max_class_id else 0
             cursor.execute(
                 query,
                 corp_num=corp_num,
@@ -265,11 +267,14 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
             current_app.logger.error(f'Error in Share Structure: Failed to create Share Classes for {corp_num}')
             raise err
 
+        series_id = 0
         for share_series in class_dict.get('series', []):
-            cls.create_share_series(cursor, event_id, corp_num, class_id, share_series)
+            cls.create_share_series(cursor, event_id, corp_num, class_id, series_id, share_series)
+            series_id = series_id + 1
 
     @classmethod
-    def create_share_series(cls, cursor, event_id: str, corp_num: str, class_id: str, series_dict: dict):
+    def create_share_series(
+            cls, cursor, event_id: str, corp_num: str, class_id: str, series_id: int, series_dict: dict):
         # pylint: disable=too-many-arguments
         """Insert Share Series for Share Class and Corp."""
         query = (
@@ -279,8 +284,6 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
             values (:corp_num, :class_id, :series_id, :event_id, :has_max_share, :qty, :has_spec_rights, :name)
             """
         )
-        max_series_id = get_max_value(cursor, corp_num=corp_num, table='share_series', column='series_id')
-        series_id = max_series_id + 1 if max_series_id else 0
         try:
             cursor.execute(
                 query,

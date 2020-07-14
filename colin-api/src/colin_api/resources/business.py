@@ -128,7 +128,7 @@ class InternalBusinessInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def get(info_type, legal_type=None, identifier=None):
+    def get(info_type, legal_type=None, identifier=None):  # pylint: disable = too-many-return-statements;
         """Return specific business info for businesses."""
         try:
             con = DB.connection
