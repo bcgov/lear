@@ -20,6 +20,14 @@ from legal_api.services import document_meta
 from tests.unit.models import factory_business
 
 
+FILING_DATE = '2020-07-14T11:41:07.230473-07:00'
+COA_TITLE = 'Address Change'
+NOA_TITLE = 'Notice of Articles'
+NOA_FILENAME = 'BC1234567 - Notice of Articles - 2020-07-14.pdf'
+COD_TITLE = 'Director Change'
+CON_TITLE = 'Legal Name Change'
+
+
 def test_business_not_found(session, app):
     """Assert that no documents are returned when the filing's business is not found."""
     factory_business(identifier='BC1234567', entity_type='BC')
@@ -31,7 +39,7 @@ def test_business_not_found(session, app):
                     'status': 'DONT_CARE',
                     'name': 'changeOfAddress',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC7654321'
@@ -55,7 +63,7 @@ def test_wrong_filing_status(session, app):
                     'status': 'NOT_PAID_OR_COMPLETE',
                     'name': 'changeOfAddress',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -79,7 +87,7 @@ def test_available_on_paper_only(session, app):
                     'status': 'COMPLETED',
                     'name': 'changeOfAddress',
                     'availableOnPaperOnly': True,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -100,7 +108,7 @@ def test_coa_paid(session, app):
                     'status': 'PAID',
                     'name': 'changeOfAddress',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -113,7 +121,7 @@ def test_coa_paid(session, app):
         assert documents[0]['type'] == 'REPORT'
         assert documents[0]['reportType'] is None
         assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == 'Address Change'
+        assert documents[0]['title'] == COA_TITLE
         assert documents[0]['filename'] == 'BC1234567 - Address Change - 2020-07-14.pdf'
 
 
@@ -128,7 +136,7 @@ def test_coa_completed_bc(session, app):
                     'status': 'COMPLETED',
                     'name': 'changeOfAddress',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -141,14 +149,14 @@ def test_coa_completed_bc(session, app):
         assert documents[0]['type'] == 'REPORT'
         assert documents[0]['reportType'] is None
         assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == 'Address Change'
+        assert documents[0]['title'] == COA_TITLE
         assert documents[0]['filename'] == 'BC1234567 - Address Change - 2020-07-14.pdf'
 
         assert documents[1]['type'] == 'REPORT'
         assert documents[1]['reportType'] == 'noa'
         assert documents[1]['filingId'] == 12356
-        assert documents[1]['title'] == 'Notice of Articles'
-        assert documents[1]['filename'] == 'BC1234567 - Notice of Articles - 2020-07-14.pdf'
+        assert documents[1]['title'] == NOA_TITLE
+        assert documents[1]['filename'] == NOA_FILENAME
 
 
 def test_coa_completed_cp(session, app):
@@ -162,7 +170,7 @@ def test_coa_completed_cp(session, app):
                     'status': 'COMPLETED',
                     'name': 'changeOfAddress',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'CP1234567'
@@ -175,7 +183,7 @@ def test_coa_completed_cp(session, app):
         assert documents[0]['type'] == 'REPORT'
         assert documents[0]['reportType'] is None
         assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == 'Address Change'
+        assert documents[0]['title'] == COA_TITLE
         assert documents[0]['filename'] == 'CP1234567 - Address Change - 2020-07-14.pdf'
 
 
@@ -190,7 +198,7 @@ def test_ar(session, app):
                     'status': 'COMPLETED',
                     'name': 'annualReport',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -219,7 +227,7 @@ def test_cod_paid(session, app):
                     'status': 'PAID',
                     'name': 'changeOfDirectors',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -233,7 +241,7 @@ def test_cod_paid(session, app):
         assert documents[0]['type'] == 'REPORT'
         assert documents[0]['reportType'] is None
         assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == 'Director Change'
+        assert documents[0]['title'] == COD_TITLE
         assert documents[0]['filename'] == 'BC1234567 - Director Change - 2020-07-14.pdf'
 
 
@@ -248,7 +256,7 @@ def test_cod_completed_bc(session, app):
                     'status': 'COMPLETED',
                     'name': 'changeOfDirectors',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -261,14 +269,14 @@ def test_cod_completed_bc(session, app):
         assert documents[0]['type'] == 'REPORT'
         assert documents[0]['reportType'] is None
         assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == 'Director Change'
+        assert documents[0]['title'] == COD_TITLE
         assert documents[0]['filename'] == 'BC1234567 - Director Change - 2020-07-14.pdf'
 
         assert documents[1]['type'] == 'REPORT'
         assert documents[1]['reportType'] == 'noa'
         assert documents[1]['filingId'] == 12356
-        assert documents[1]['title'] == 'Notice of Articles'
-        assert documents[1]['filename'] == 'BC1234567 - Notice of Articles - 2020-07-14.pdf'
+        assert documents[1]['title'] == NOA_TITLE
+        assert documents[1]['filename'] == NOA_FILENAME
 
 
 def test_cod_completed_cp(session, app):
@@ -282,7 +290,7 @@ def test_cod_completed_cp(session, app):
                     'status': 'COMPLETED',
                     'name': 'changeOfDirectors',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'CP1234567'
@@ -295,7 +303,7 @@ def test_cod_completed_cp(session, app):
         assert documents[0]['type'] == 'REPORT'
         assert documents[0]['reportType'] is None
         assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == 'Director Change'
+        assert documents[0]['title'] == COD_TITLE
         assert documents[0]['filename'] == 'CP1234567 - Director Change - 2020-07-14.pdf'
 
 
@@ -310,7 +318,7 @@ def test_con_paid(session, app):
                     'status': 'PAID',
                     'name': 'changeOfName',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -324,7 +332,7 @@ def test_con_paid(session, app):
         assert documents[0]['type'] == 'REPORT'
         assert documents[0]['reportType'] is None
         assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == 'Legal Name Change'
+        assert documents[0]['title'] == CON_TITLE
         assert documents[0]['filename'] == 'BC1234567 - Legal Name Change - 2020-07-14.pdf'
 
 
@@ -339,7 +347,7 @@ def test_con_completed_bc(session, app):
                     'status': 'COMPLETED',
                     'name': 'changeOfName',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -352,14 +360,14 @@ def test_con_completed_bc(session, app):
         assert documents[0]['type'] == 'REPORT'
         assert documents[0]['reportType'] is None
         assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == 'Legal Name Change'
+        assert documents[0]['title'] == CON_TITLE
         assert documents[0]['filename'] == 'BC1234567 - Legal Name Change - 2020-07-14.pdf'
 
         assert documents[1]['type'] == 'REPORT'
         assert documents[1]['reportType'] == 'noa'
         assert documents[1]['filingId'] == 12356
-        assert documents[1]['title'] == 'Notice of Articles'
-        assert documents[1]['filename'] == 'BC1234567 - Notice of Articles - 2020-07-14.pdf'
+        assert documents[1]['title'] == NOA_TITLE
+        assert documents[1]['filename'] == NOA_FILENAME
 
 
 def test_con_completed_cp(session, app):
@@ -373,7 +381,7 @@ def test_con_completed_cp(session, app):
                     'status': 'COMPLETED',
                     'name': 'changeOfName',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'CP1234567'
@@ -386,7 +394,7 @@ def test_con_completed_cp(session, app):
         assert documents[0]['type'] == 'REPORT'
         assert documents[0]['reportType'] is None
         assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == 'Legal Name Change'
+        assert documents[0]['title'] == CON_TITLE
         assert documents[0]['filename'] == 'CP1234567 - Legal Name Change - 2020-07-14.pdf'
 
 
@@ -401,7 +409,7 @@ def test_special_resolution_paid(session, app):
                     'status': 'PAID',
                     'name': 'specialResolution',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -423,7 +431,7 @@ def test_special_resolution_completed(session, app):
                     'status': 'COMPLETED',
                     'name': 'specialResolution',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -451,7 +459,7 @@ def test_voluntary_dissolution_paid(session, app):
                     'status': 'PAID',
                     'name': 'voluntaryDissolution',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -473,7 +481,7 @@ def test_voluntary_dissolution_completed(session, app):
                     'status': 'COMPLETED',
                     'name': 'voluntaryDissolution',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -501,7 +509,7 @@ def test_correction(session, app):
                     'status': 'COMPLETED',
                     'name': 'correction',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -524,7 +532,7 @@ def test_alteration(session, app):
                     'status': 'COMPLETED',
                     'name': 'alteration',
                     'availableOnPaperOnly': False,
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -550,7 +558,7 @@ def test_ia_fed(session, app):
                     'name': 'incorporationApplication',
                     'availableOnPaperOnly': False,
                     'effectiveDate': LegislationDatetime.tomorrow_midnight().isoformat(),
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -578,8 +586,8 @@ def test_ia_paid(session, app):
                     'status': 'PAID',
                     'name': 'incorporationApplication',
                     'availableOnPaperOnly': False,
-                    'effectiveDate':  '2020-07-14T11:41:07.230473-07:00',
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'effectiveDate':  FILING_DATE,
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -607,8 +615,8 @@ def test_ia_completed(session, app):
                     'status': 'COMPLETED',
                     'name': 'incorporationApplication',
                     'availableOnPaperOnly': False,
-                    'effectiveDate':  '2020-07-14T11:41:07.230473-07:00',
-                    'date': '2020-07-14T11:41:07.230473-07:00'
+                    'effectiveDate':  FILING_DATE,
+                    'date': FILING_DATE
                 },
                 'business': {
                     'identifier': 'BC1234567'
@@ -627,8 +635,8 @@ def test_ia_completed(session, app):
         assert documents[1]['type'] == 'REPORT'
         assert documents[1]['reportType'] == 'noa'
         assert documents[1]['filingId'] == 12356
-        assert documents[1]['title'] == 'Notice of Articles'
-        assert documents[1]['filename'] == 'BC1234567 - Notice of Articles - 2020-07-14.pdf'
+        assert documents[1]['title'] == NOA_TITLE
+        assert documents[1]['filename'] == NOA_FILENAME
 
         assert documents[2]['type'] == 'REPORT'
         assert documents[2]['reportType'] == 'certificate'

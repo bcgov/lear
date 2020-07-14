@@ -22,6 +22,8 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 class DocumentMetaService():
     """Provides service for document meta data."""
 
+    NOTICE_OF_ARTICLES = 'Notice of Articles'
+
     class DocumentType(Enum):
         """Define an enum of document types."""
 
@@ -107,8 +109,8 @@ class DocumentMetaService():
         if self.is_bcomp() and self.is_completed():
             reports.append(
                 self.create_report_object(
-                    'Notice of Articles',
-                    self.get_general_filename('Notice of Articles'),
+                    DocumentMetaService.NOTICE_OF_ARTICLES,
+                    self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
                     DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
                 )
             )
@@ -128,8 +130,8 @@ class DocumentMetaService():
         if self.is_bcomp() and self.is_completed():
             reports.append(
                 self.create_report_object(
-                    'Notice of Articles',
-                    self.get_general_filename('Notice of Articles'),
+                    DocumentMetaService.NOTICE_OF_ARTICLES,
+                    self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
                     DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
                 )
             )
@@ -149,8 +151,8 @@ class DocumentMetaService():
         if self.is_bcomp() and self.is_completed():
             reports.append(
                 self.create_report_object(
-                    'Notice of Articles',
-                    self.get_general_filename('Notice of Articles'),
+                    DocumentMetaService.NOTICE_OF_ARTICLES,
+                    self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
                     DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
                 )
             )
@@ -227,8 +229,8 @@ class DocumentMetaService():
                 self.get_general_filename('Incorporation Application')
             ),
             self.create_report_object(
-                'Notice of Articles',
-                self.get_general_filename('Notice of Articles'),
+                DocumentMetaService.NOTICE_OF_ARTICLES,
+                self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
                 DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
             ),
 
