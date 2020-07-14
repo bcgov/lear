@@ -16,37 +16,13 @@
 
 Test-Suite to ensure that the Document Meta Service is working as expected.
 """
-from legal_api.models import Business
 from legal_api.services import document_meta
-
-
-def factory_business(identifier: str, legal_type: str = ''):
-    """Return a valid Business object stamped with the supplied data."""
-    business = Business(identifier=identifier, legal_type=legal_type)
-    business.save()
-    return business
-
-
-def test_business_factory(session):
-    """Assert that factory_business works correctly."""
-    business = factory_business('BC1234567', 'BC')
-    assert business.id is not None
-    assert business.identifier == 'BC1234567'
-    assert business.legal_type == 'BC'
-
-
-def test_find_by_identifier(session):
-    """Assert that find_by_identifier works correctly."""
-    business = factory_business('BC1234567', 'BC')
-    fbi = business.find_by_identifier('BC1234567')
-    assert fbi is not None
-    assert fbi.identifier == 'BC1234567'
-    assert fbi.legal_type == 'BC'
+from tests.unit.models import factory_business
 
 
 def test_business_not_found(session, app):
     """Assert that no documents are returned when the filing's business is not found."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -63,14 +39,14 @@ def test_business_not_found(session, app):
             }
         }
         assert len(document_meta.get_documents(filing)) == 0
-        # also verify document class properties
+        # also verify document class properties:
         assert document_meta._business_identifier == 'BC7654321'
         assert document_meta._legal_type is None
 
 
 def test_wrong_filing_status(session, app):
     """Assert that no documents are returned for a non- PAID and COMPLETED filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -87,14 +63,14 @@ def test_wrong_filing_status(session, app):
             }
         }
         assert len(document_meta.get_documents(filing)) == 0
-        # also verify document class properties
+        # also verify document class properties:
         assert document_meta._business_identifier == 'BC1234567'
         assert document_meta._legal_type == 'BC'
 
 
 def test_available_on_paper_only(session, app):
     """Assert that no documents are returned for a paper-only filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -115,7 +91,7 @@ def test_available_on_paper_only(session, app):
 
 def test_coa_paid(session, app):
     """Assert that an Address Change document is returned for a PAID COA filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -143,7 +119,7 @@ def test_coa_paid(session, app):
 
 def test_coa_completed_bc(session, app):
     """Assert that Address Change + NOA documents are returned for a COMPLETED BCOMP COA filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -177,7 +153,7 @@ def test_coa_completed_bc(session, app):
 
 def test_coa_completed_cp(session, app):
     """Assert that an Address Change document is returned for a COMPLETED COOP COA filing."""
-    factory_business('CP1234567', 'CP')
+    factory_business(identifier='CP1234567', entity_type='CP')
     with app.app_context():
         filing = {
             'filing': {
@@ -205,7 +181,7 @@ def test_coa_completed_cp(session, app):
 
 def test_ar(session, app):
     """Assert that an Annual Report document is returned for an AR filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -234,7 +210,7 @@ def test_ar(session, app):
 
 def test_cod_paid(session, app):
     """Assert that a Director Change document is returned for a PAID COD filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -263,7 +239,7 @@ def test_cod_paid(session, app):
 
 def test_cod_completed_bc(session, app):
     """Assert that Director Change + NOA documents are returned for a COMPLETED BCOMP COD filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -297,7 +273,7 @@ def test_cod_completed_bc(session, app):
 
 def test_cod_completed_cp(session, app):
     """Assert that a Director Change document is returned for a COMPLETED COOP COD filing."""
-    factory_business('CP1234567', 'CP')
+    factory_business(identifier='CP1234567', entity_type='CP')
     with app.app_context():
         filing = {
             'filing': {
@@ -325,7 +301,7 @@ def test_cod_completed_cp(session, app):
 
 def test_con_paid(session, app):
     """Assert that a Legal Name Change document is returned for a PAID CON filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -354,7 +330,7 @@ def test_con_paid(session, app):
 
 def test_con_completed_bc(session, app):
     """Assert that Legal Name Change + NOA documents are returned for a COMPLETED BCOMP CON filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -388,7 +364,7 @@ def test_con_completed_bc(session, app):
 
 def test_con_completed_cp(session, app):
     """Assert that a Legal Name Change document is returned for a COMPLETED COOP CON filing."""
-    factory_business('CP1234567', 'CP')
+    factory_business(identifier='CP1234567', entity_type='CP')
     with app.app_context():
         filing = {
             'filing': {
@@ -416,7 +392,7 @@ def test_con_completed_cp(session, app):
 
 def test_special_resolution_paid(session, app):
     """Assert that no documents are returned for a PAID Special Resolution filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -438,7 +414,7 @@ def test_special_resolution_paid(session, app):
 
 def test_special_resolution_completed(session, app):
     """Assert that a Special Resolution document is returned for a COMPLETED Special Resolution filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -466,7 +442,7 @@ def test_special_resolution_completed(session, app):
 
 def test_voluntary_dissolution_paid(session, app):
     """Assert that no documents are returned for a PAID Voluntary Dissolution filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -488,7 +464,7 @@ def test_voluntary_dissolution_paid(session, app):
 
 def test_voluntary_dissolution_completed(session, app):
     """Assert that a Voluntary Dissolution document is returned for a COMPLETED Voluntary Dissolution filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -516,7 +492,7 @@ def test_voluntary_dissolution_completed(session, app):
 
 def test_correction(session, app):
     """Assert that no documents are returned for a Correction filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -539,7 +515,7 @@ def test_correction(session, app):
 
 def test_alteration(session, app):
     """Assert that no documents are returned for an Alteration filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -564,7 +540,7 @@ def test_ia_fed(session, app):
     """Assert that an IA - FED document is returned for a future effective IA filing."""
     from legal_api.utils.legislation_datetime import LegislationDatetime
 
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -593,7 +569,7 @@ def test_ia_fed(session, app):
 
 def test_ia_paid(session, app):
     """Assert that an IA - Pending document is returned for a PAID IA filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -622,7 +598,7 @@ def test_ia_paid(session, app):
 
 def test_ia_completed(session, app):
     """Assert that IA + NOA + Certificate documents are returned for a COMPLETED IA filing."""
-    factory_business('BC1234567', 'BC')
+    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
