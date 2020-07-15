@@ -579,8 +579,7 @@ def test_save_filing_with_colin_id(session):
     # setup
     filing = Filing()
     filing.filing_json = ANNUAL_REPORT
-    user = User.create_from_jwt_token({'username': 'coops-updater-job', 'iss': 'test', 'sub': 'test'})
-    filing.submitter_id = user.id
+    filing.source = Filing.Source.COLIN.value
     filing.save()
 
     # test

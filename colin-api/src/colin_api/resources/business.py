@@ -40,7 +40,7 @@ class BusinessInfo(Resource):
     @cors.crossdomain(origin='*')
     def get(legal_type: str, identifier: str):
         """Return the complete business info."""
-        if legal_type not in [x.value for x in LearBusiness.LegalTypes.__members__.values()]:
+        if legal_type not in [x.value for x in LearBusiness.LegalTypes]:
             return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
         try:
@@ -69,7 +69,7 @@ class BusinessInfo(Resource):
     @cors.crossdomain(origin='*')
     def post(legal_type: str):
         """Create and return a new corp number for the given legal type."""
-        if legal_type not in [x.value for x in LearBusiness.LegalTypes.__members__.values()]:
+        if legal_type not in [x.value for x in LearBusiness.LegalTypes]:
             return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
         try:
@@ -97,7 +97,7 @@ class BusinessNamesInfo(Resource):
     @cors.crossdomain(origin='*')
     def get(legal_type, identifier, name_type):
         """Get active names by type code for a business."""
-        if legal_type not in [x.value for x in LearBusiness.LegalTypes.__members__.values()]:
+        if legal_type not in [x.value for x in LearBusiness.LegalTypes]:
             return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
         if name_type not in [x.value for x in CorpName.TypeCodes.__members__.values()]:
@@ -148,7 +148,7 @@ class InternalBusinessInfo(Resource):
                 return jsonify(bn_15s), HTTPStatus.OK
 
             if info_type == 'resolutions':
-                if not legal_type or legal_type not in [x.value for x in LearBusiness.LegalTypes.__members__.values()]:
+                if not legal_type or legal_type not in [x.value for x in LearBusiness.LegalTypes]:
                     return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
                 if not identifier:

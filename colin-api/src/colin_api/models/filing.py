@@ -18,6 +18,7 @@ Currently this only provides API versioning information
 import datetime
 
 from flask import current_app
+from legal_api.models import Filing as LearFiling
 
 from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
 from colin_api.models import Address, Business, CorpName, Office, Party, ShareObject
@@ -753,7 +754,8 @@ class Filing:
                 'date': convert_to_json_date(filing_event_info['event_timestmp']),
                 'effectiveDate': convert_to_json_datetime(filing_obj.effective_date),
                 'email': filing_event_info['email'],
-                'name': filing_type
+                'name': filing_type,
+                'source': LearFiling.Source.COLIN.value
             }
             filing_obj.business = business
 

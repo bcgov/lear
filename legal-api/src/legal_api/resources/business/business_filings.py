@@ -291,7 +291,7 @@ class ListFilingResource(Resource):
         Used for encapsulation of common functionality used in Filing and Business endpoints.
         """
         # if filing is from COLIN, place on queue and return
-        if jwt.validate_roles([COLIN_SVC_ROLE]):
+        if filing.source == Filing.Source.COLIN.value:
             err_msg, err_code = ListFilingResource._process_colin_filing(business.identifier, filing, business)
             return jsonify(err_msg), err_code
 
@@ -431,7 +431,8 @@ class ListFilingResource(Resource):
         try:
             filing.submitter_id = user.id
             filing.filing_json = json_input
-            if user.username == 'coops-updater-job':
+            filing.source = filing.filing_json['filing']['header'].get('source', Filing.Source.LEAR.value)
+            if filing.source == Filing.Source.COLIN.value:
                 try:
                     filing.filing_date = datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['date'])
                     for colin_id in filing.filing_json['filing']['header']['colinIds']:

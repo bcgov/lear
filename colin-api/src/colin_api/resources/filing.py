@@ -39,7 +39,7 @@ class FilingInfo(Resource):
     def get(legal_type, identifier, filing_type):
         """Return the complete filing info or historic (pre-bob-date=2019-03-08) filings."""
         try:
-            if legal_type not in [x.value for x in LearBusiness.LegalTypes.__members__.values()]:
+            if legal_type not in [x.value for x in LearBusiness.LegalTypes]:
                 return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
             # get optional parameters (event_id / year)
@@ -82,7 +82,7 @@ class FilingInfo(Resource):
         """Create a new filing."""
         # pylint: disable=unused-argument,too-many-branches; filing_type is only used for the get
         try:
-            if legal_type not in [x.value for x in LearBusiness.LegalTypes.__members__.values()]:
+            if legal_type not in [x.value for x in LearBusiness.LegalTypes]:
                 return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
             json_data = request.get_json()
