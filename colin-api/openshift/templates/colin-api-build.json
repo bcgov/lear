@@ -27,7 +27,7 @@
                 "runPolicy": "Serial",
                 "source": {
                     "type": "Dockerfile",
-                    "dockerfile": "FROM gl2uos-tools/${SOURCE_IMAGE_NAME}:${SOURCE_IMAGE_TAG}\nCOPY oraclelibs /tmp/.\nUSER root\nRUN id \u0026\u0026 \\\n    chmod 0777 -R /etc/pki/entitlement-host \u0026\u0026 \\\n    chmod 0777 /var/lib/rpm \u0026\u0026 \\\n    yum -y localinstall /tmp/oracle-instantclient*.rpm \u0026\u0026 \\\n    rm -rf /var/cache/yum \u0026\u0026 \\\n    rm -f /tmp/oracle-instantclient*.rpm \u0026\u0026 \\\n    echo /usr/lib/oracle/12.2/client64/lib \u003e /etc/ld.so.conf.d/oracle-instantclient12.2.conf \u0026\u0026 \\\n    ldconfig\n\nUSER 1001",
+                    "dockerfile": "FROM gl2uos-tools/${SOURCE_IMAGE_NAME}:${SOURCE_IMAGE_TAG}\nCOPY oraclelibs /tmp/.\nUSER root\nRUN id \u0026\u0026 \\\n    chmod 0777 /var/lib/rpm \u0026\u0026 \\\n    yum -y localinstall /tmp/oracle-instantclient*.rpm \u0026\u0026 \\\n    rm -rf /var/cache/yum \u0026\u0026 \\\n    rm -f /tmp/oracle-instantclient*.rpm \u0026\u0026 \\\n    echo /usr/lib/oracle/12.2/client64/lib \u003e /etc/ld.so.conf.d/oracle-instantclient12.2.conf \u0026\u0026 \\\n    ldconfig\n\nUSER 1001",
                     "images": [
                         {
                             "from": {
