@@ -15,7 +15,6 @@
 
 Currently this only provides API versioning information
 """
-from __future__ import annotations
 
 from enum import Enum
 
@@ -63,7 +62,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
     last_ledger_timestamp = None
     status = None
 
-    def __init__(self) -> Business:
+    def __init__(self):
         """Initialize with all values None."""
 
     def as_dict(self) -> dict:
@@ -155,7 +154,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
         return dates_by_corp_num
 
     @classmethod
-    def find_by_identifier(cls, identifier: str, corp_types: list, con=None) -> Business:
+    def find_by_identifier(cls, identifier: str, corp_types: list, con=None):
         """Return a Business by identifier."""
         business = None
         try:
@@ -243,7 +242,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             raise err
 
     @classmethod
-    def create_corporation(cls, con, filing_info: dict) -> Business:
+    def create_corporation(cls, con, filing_info: dict):
         """Insert a new business from an incorporation filing."""
         try:
             business = Business()

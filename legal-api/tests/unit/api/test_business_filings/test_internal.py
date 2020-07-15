@@ -27,11 +27,77 @@ import dpath.util
 import pytest
 from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CORRECTION_AR, FILING_HEADER
 
+from legal_api.models import Filing
 from legal_api.services import QueueService
 from legal_api.services.authz import COLIN_SVC_ROLE, STAFF_ROLE
 from tests import integration_nats, integration_payment
 from tests.unit.services.utils import create_header
 from tests.unit.models import factory_business_mailing_address, factory_business, factory_completed_filing, factory_filing, factory_epoch_filing  # noqa:E501,I001
+
+
+def test_post_pre_load_colin_filing(session, client, jwt):
+    """Assert that colin filing can be posted to legal api."""
+    # SETUP
+    # Create business
+    identifier = 'CP7654321'
+    business = factory_business(identifier, founding_date=(datetime.utcnow() - datedelta.YEAR))
+    factory_business_mailing_address(business)
+    # Create Epoch filing to be ahead of AR filing
+    factory_epoch_filing(business, datetime.utcnow() + datedelta.DAY)
+    # Create an AR filing for the business
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['header']['colinIds'] = [1230]
+    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
+    ar['filing']['header']['source'] = Filing.Source.COLIN.value
+    ar['filing']['business']['identifier'] = identifier
+
+    # POST the AR
+    rv = client.post(
+        f'/api/v1/businesses/{identifier}/filings',
+        json=ar,
+        headers=create_header(jwt, [COLIN_SVC_ROLE], 'coops-updater-job')
+    )
+    # Assure that the filing was accepted
+    assert rv.status_code == HTTPStatus.CREATED
+
+    # Check filing
+    filing = Filing.find_by_id(rv.json['filing']['id'])
+    assert filing.source == Filing.Source.COLIN.value
+    assert filing.status == Filing.Status.COMPLETED.value
+
+
+def test_post_colin_filing(session, client, jwt):
+    """Assert that colin filing can be posted to legal api."""
+    # SETUP
+    # Create business
+    identifier = 'CP7654321'
+    business = factory_business(identifier, founding_date=(datetime.utcnow() - datedelta.YEAR))
+    factory_business_mailing_address(business)
+
+    # Create an AR filing for the business
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['header']['colinIds'] = [1230]
+    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
+    ar['filing']['header']['source'] = Filing.Source.COLIN.value
+    ar['filing']['business']['identifier'] = identifier
+
+    # POST the AR
+    rv = client.post(
+        f'/api/v1/businesses/{identifier}/filings',
+        json=ar,
+        headers=create_header(jwt, [COLIN_SVC_ROLE], 'coops-updater-job')
+    )
+    # Assure that the filing was accepted
+    assert rv.status_code == HTTPStatus.CREATED
+
+    # Check filing
+    filing = Filing.find_by_id(rv.json['filing']['id'])
+    assert filing.source == Filing.Source.COLIN.value
+    assert filing.status in [Filing.Status.PAID.value, Filing.Status.COMPLETED.value]
 
 
 @integration_nats
@@ -71,8 +137,7 @@ async def test_colin_filing_failed_to_queue(app_ctx, session, client, jwt, stan_
 @integration_nats
 # @pytest.mark.asyncio
 def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server):
-    """Assert that payment tokens can be retrieved and decoded from the Queue."""
-    import copy
+    """Assert that colin filing is added to the queue."""
     # SETUP
     msgs = []
     filing_ids = []
@@ -139,34 +204,32 @@ def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server):
 def test_update_ar_with_colin_id_set(session, client, jwt):
     """Assert that when a filing with colinId set (as when colin updates legal api) that colin_event_id is set."""
     identifier = 'CP7654321'
-    business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
-                                )
+    business = factory_business(identifier, founding_date=(datetime.utcnow() - datedelta.YEAR))
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
 
-    filings = factory_filing(business, ar)
+    filing = factory_filing(business, ar)
 
     ar['filing']['header']['colinIds'] = [1234]
 
-    rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
-                    json=ar,
-                    headers=create_header(jwt, [STAFF_ROLE], identifier)
-                    )
+    rv = client.put(
+        f'/api/v1/businesses/{identifier}/filings/{filing.id}',
+        json=ar,
+        headers=create_header(jwt, [STAFF_ROLE], identifier)
+    )
 
     assert rv.status_code == HTTPStatus.ACCEPTED
     assert rv.json['filing']['business'] == ar['filing']['business']
     assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
     assert not rv.json['filing']['header'].get('colinIds')
-    assert rv.json['filing']['header']['filingId'] == filings.id
+    assert rv.json['filing']['header']['filingId'] == filing.id
 
 
 def test_get_internal_filings(session, client, jwt):
     """Assert that the internal filings get endpoint returns all completed filings without colin ids."""
-    from legal_api.models import Filing
     from legal_api.models.colin_event_id import ColinEventId
     from tests.unit.models import factory_error_filing, factory_pending_filing
     # setup
@@ -209,7 +272,6 @@ def test_get_internal_filings(session, client, jwt):
 
 def test_patch_internal_filings(session, client, jwt):
     """Assert that the internal filings patch endpoint updates the colin_event_id."""
-    from legal_api.models import Filing
     from legal_api.models.colin_event_id import ColinEventId
     # setup
     identifier = 'CP7654321'
@@ -283,7 +345,6 @@ def test_post_colin_last_update(session, client, jwt):
 def test_future_filing_coa(session, client, jwt):
     """Assert that future effective filings are saved and have the correct status changes."""
     import pytz
-    from legal_api.models import Filing
     from tests.unit.models import factory_pending_filing
     # setup
     identifier = 'CP7654321'

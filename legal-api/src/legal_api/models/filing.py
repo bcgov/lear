@@ -83,7 +83,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
     _status = db.Column('status', db.String(20), default=Status.DRAFT)
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
-    _source = db.Column('source', db.String(15), default=Source.LEAR)
+    _source = db.Column('source', db.String(15), default=Source.LEAR.value)
 
     # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
@@ -175,10 +175,20 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Property containing the filing status."""
         return self._status
 
-    @property
+    @hybrid_property
     def source(self):
-        """Property containing the filing status."""
+        """Property containing the filing source."""
         return self._source
+
+    @source.setter
+    def source(self, source: str):
+        """Property containing the filing source."""
+        if source not in [x.value for x in self.Source]:
+            raise BusinessException(
+                error='Tried to update the filing with an invalid source.',
+                status_code=HTTPStatus.BAD_REQUEST
+            )
+        self._source = source
 
     @hybrid_property
     def filing_json(self):
@@ -474,21 +484,6 @@ def block_filing_delete_listener_function(mapper, connection, target):  # pylint
             error='Deletion not allowed.',
             status_code=HTTPStatus.FORBIDDEN
         )
-
-
-@event.listens_for(Filing, 'before_insert')
-def set_source(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
-    """Set the source of the filing to COLIN if it has a colin event id set."""
-    # imported User here to avoid conflict with filing_submitter relationship.
-    # needed because the relationship hasn't been set yet for this filing.
-    from legal_api.models import User
-    filing = target
-    user = User.find_by_id(filing.submitter_id)
-    # if it is an epoch filing and there is no user then it was applied by the data-loader
-    if (filing.filing_type == 'lear_epoch' and not user) or (user and user.username == 'coops-updater-job'):
-        filing._source = Filing.Source.COLIN.value  # pylint: disable=protected-access
-    else:
-        filing._source = Filing.Source.LEAR.value   # pylint: disable=protected-access
 
 
 @event.listens_for(Filing, 'before_insert')
