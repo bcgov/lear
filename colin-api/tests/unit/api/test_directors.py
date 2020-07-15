@@ -30,7 +30,7 @@ ids = cod_ids
 @oracle_integration
 def test_get_current(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0001965/parties')
+    rv = client.get('/api/v1/businesses/CP/CP0001965/parties')
 
     assert 200 == rv.status_code
     is_valid, errors = validate(rv.json, 'directors', validate_schema=True)
@@ -94,7 +94,7 @@ def test_post_cod(client):
         }
     )
 
-    rv = client.post('/api/v1/businesses/CP0001965/filings/changeOfDirectors',
+    rv = client.post('/api/v1/businesses/CP/CP0001965/filings/changeOfDirectors',
                      data=json.dumps(fake_filing), headers=headers)
 
     assert 201 == rv.status_code
@@ -120,7 +120,7 @@ def test_post_invalid_cod_fail(client):
     fake_filing['filing']['business']['identifier'] = 'CP0001965'
     fake_filing['filing']['changeOfDirectors'] = {}
 
-    rv = client.post('/api/v1/businesses/CP0001965/filings/changeOfDirectors',
+    rv = client.post('/api/v1/businesses/CP/CP0001965/filings/changeOfDirectors',
                      data=json.dumps(fake_filing), headers=headers)
 
     assert 201 != rv.status_code
@@ -129,7 +129,7 @@ def test_post_invalid_cod_fail(client):
 @oracle_integration
 def test_get_cod(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0001965/filings/changeOfDirectors')
+    rv = client.get('/api/v1/businesses/CP/CP0001965/filings/changeOfDirectors')
 
     assert 200 == rv.status_code
     is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
@@ -147,7 +147,7 @@ def test_get_cod(client):
 def test_get_cod_by_id(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
     for event_id in ids:
-        rv = client.get(f'/api/v1/businesses/CP0001965/filings/changeOfDirectors?eventId={event_id}')
+        rv = client.get(f'/api/v1/businesses/CP/CP0001965/filings/changeOfDirectors?eventId={event_id}')
 
         assert 200 == rv.status_code
         is_valid, errors = validate(rv.json, 'filing', validate_schema=True)
@@ -164,14 +164,14 @@ def test_get_cod_by_id(client):
 @oracle_integration
 def test_get_cod_by_id_wrong_corp(client):
     """Assert that a coop searching for a cod filing associated with a different coop returns a 404."""
-    rv = client.get(f'/api/v1/businesses/CP0000005/filings/changeOfDirectors?eventId={ids[0]}')
+    rv = client.get(f'/api/v1/businesses/CP/CP0000005/filings/changeOfDirectors?eventId={ids[0]}')
     assert 404 == rv.status_code
 
 
 @oracle_integration
 def test_get_cod_no_results(client):
     """Assert that the business info for regular (not xpro) business is correct to spec."""
-    rv = client.get('/api/v1/businesses/CP0000000/filings/changeOfDirectors')
+    rv = client.get('/api/v1/businesses/CP/CP0000000/filings/changeOfDirectors')
 
     assert 404 == rv.status_code
 
@@ -224,7 +224,7 @@ def test_special_characters(client):
 
     fake_filing['filing']['changeOfDirectors']['directors'] = [new_director]
 
-    rv = client.post('/api/v1/businesses/CP0001965/filings/changeOfDirectors',
+    rv = client.post('/api/v1/businesses/CP/CP0001965/filings/changeOfDirectors',
                      data=json.dumps(fake_filing), headers=headers)
 
     assert rv.json

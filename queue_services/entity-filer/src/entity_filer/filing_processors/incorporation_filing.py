@@ -30,7 +30,7 @@ from entity_filer.filing_processors import create_office, create_party, create_r
 def get_next_corp_num(business_type: str):
     """Retrieve the next available sequential corp-num from COLIN."""
     try:
-        resp = requests.get(f'{current_app.config["COLIN_API"]}?legal_type={business_type}')
+        resp = requests.get(f'{current_app.config["COLIN_API"]}/{business_type}')
     except requests.exceptions.ConnectionError:
         current_app.logger.error(f'Failed to connect to {current_app.config["COLIN_API"]}')
         return None

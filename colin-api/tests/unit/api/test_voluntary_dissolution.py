@@ -23,7 +23,7 @@ ID = []
 @oracle_integration
 def test_get_vd(client):
     """Assert that the get end point for voluntary dissolution is successful."""
-    rv = client.get('/api/v1/businesses/CP0001697/filings/voluntaryDissolution')
+    rv = client.get('/api/v1/businesses/CP/CP0001697/filings/voluntaryDissolution')
 
     assert 200 == rv.status_code
 
@@ -35,7 +35,7 @@ def test_get_vd(client):
 @oracle_integration
 def test_get_vd_by_id(client):
     """Assert that giving an id gets the corresponding voluntary dissolution."""
-    rv = client.get(f'/api/v1/businesses/CP0001697/filings/voluntaryDissolution?eventId={ID[0]}')
+    rv = client.get(f'/api/v1/businesses/CP/CP0001697/filings/voluntaryDissolution?eventId={ID[0]}')
 
     assert 200 == rv.status_code
 
@@ -46,7 +46,7 @@ def test_get_vd_by_id(client):
 @oracle_integration
 def test_get_vd_by_id_wrong_corp(client):
     """Assert that a coop searching for a vd filing associated with a different coop returns a 404."""
-    rv = client.get(f'/api/v1/businesses/CP0000005/filings/voluntaryDissolution?eventId={ID[0]}')
+    rv = client.get(f'/api/v1/businesses/CP/CP0000005/filings/voluntaryDissolution?eventId={ID[0]}')
     assert 404 == rv.status_code
 
 

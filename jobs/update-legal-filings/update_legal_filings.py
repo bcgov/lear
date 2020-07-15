@@ -119,14 +119,19 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
 
 
 def get_filing(event_info: dict = None, application: Flask = None):
+    """Get filing created by previous event."""
     # call the colin api for the filing
     legal_type = event_info['corp_num'][:2]
     if event_info['filing_typ_cd'] not in Filing.FILING_TYPES[legal_type].keys():
         application.logger.error('Error unknown filing type: {} for event id: {}'.format(
             event_info['filing_type'], event_info['event_id']))
 
-    r = requests.get(f'{application.config["COLIN_URL"]}/{event_info["corp_num"]}/filings/'
-                     f'{Filing.FILING_TYPES[legal_type][event_info["filing_typ_cd"]]}?eventId={event_info["event_id"]}')
+    filing_type = Filing.FILING_TYPES[legal_type][event_info['filing_typ_cd']]
+    identifier = event_info['corp_num']
+    event_id = event_info['event_id']
+    r = requests.get(
+        f'{application.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}?eventId={event_id}'
+    )
     filing = dict(r.json())
     return filing
 

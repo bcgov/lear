@@ -15,30 +15,33 @@
 
 Currently this only provides API versioning information
 """
+from http import HTTPStatus
 
 from flask import current_app, jsonify
 from flask_restplus import Resource, cors
 
 from colin_api.exceptions import GenericException
-from colin_api.models import Office
+from colin_api.models import Business, Office
 from colin_api.models.filing import DB
 from colin_api.resources.business import API
 from colin_api.utils.util import cors_preflight
 
 
 @cors_preflight('GET')
-@API.route('/<string:identifier>/office')
+@API.route('/<string:legal_type>/<string:identifier>/office')
 class OfficeInfo(Resource):
     """Meta information about the overall service."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def get(identifier):
+    def get(legal_type: str, identifier: str):
         """Return the registered and/or records office for a corporation."""
         if not identifier:
-            return jsonify({'message': 'Identifier required'}), 404
+            return jsonify({'message': 'Identifier required'}), HTTPStatus.NOT_FOUND
 
         try:
+            if legal_type == Business.TypeCodes.BCOMP.value:
+                identifier = identifier[-7:]
             cursor = DB.connection.cursor()
             offices = {}
             office_obj_list = Office.get_current(cursor=cursor, identifier=identifier)
@@ -46,8 +49,10 @@ class OfficeInfo(Resource):
                 if office_obj.office_type not in offices.keys():
                     offices.update(office_obj.as_dict())
             if not offices.keys():
-                return jsonify({'message': f'registered/records office for {identifier} not found'}), 404
-            return {**offices}, 200
+                return jsonify(
+                    {'message': f'registered/records office for {identifier} not found'}
+                ), HTTPStatus.NOT_FOUND
+            return {**offices}, HTTPStatus.OK
 
         except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify(
@@ -57,4 +62,5 @@ class OfficeInfo(Resource):
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
-                {'message': 'Error when trying to retrieve registered office from COLIN'}), 500
+                {'message': 'Error when trying to retrieve registered office from COLIN'}
+            ), HTTPStatus.INTERNAL_SERVER_ERROR

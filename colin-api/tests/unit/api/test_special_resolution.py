@@ -23,7 +23,7 @@ ID = []
 @oracle_integration
 def test_get_sr(client):
     """Assert that the get end point for special resolution is successful."""
-    rv = client.get('/api/v1/businesses/CP0002243/filings/specialResolution')
+    rv = client.get('/api/v1/businesses/CP/CP0002243/filings/specialResolution')
 
     assert 200 == rv.status_code
 
@@ -36,7 +36,7 @@ def test_get_sr(client):
 @oracle_integration
 def test_get_sr_by_id(client):
     """Assert that giving an id gets the corresponding special resolution."""
-    rv = client.get(f'/api/v1/businesses/CP0002243/filings/specialResolution?eventId={ID[0]}')
+    rv = client.get(f'/api/v1/businesses/CP/CP0002243/filings/specialResolution?eventId={ID[0]}')
 
     assert 200 == rv.status_code
 
@@ -47,13 +47,13 @@ def test_get_sr_by_id(client):
 @oracle_integration
 def test_get_sr_by_id_wrong_corp(client):
     """Assert that a coop searching for a sr filing associated with a different coop returns a 404."""
-    rv = client.get(f'/api/v1/businesses/CP0000005/filings/specialResolution?eventId={ID[0]}')
+    rv = client.get(f'/api/v1/businesses/CP/CP0000005/filings/specialResolution?eventId={ID[0]}')
     assert 404 == rv.status_code
 
 
 @oracle_integration
 def test_get_sr_no_results(client):
     """Assert that searching for a sr filing on a coop without one returns a 404."""
-    rv = client.get('/api/v1/businesses/CP0000000/filings/specialResolution')
+    rv = client.get('/api/v1/businesses/CP/CP0000000/filings/specialResolution')
 
     assert 404 == rv.status_code

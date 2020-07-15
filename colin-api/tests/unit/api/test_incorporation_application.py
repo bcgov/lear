@@ -17,16 +17,18 @@
 import copy
 import json
 
+import pytest
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from tests import oracle_integration, skip_coop_ia
 
 
 @oracle_integration
+@pytest.mark.skip(reason='oracle-dev pod needs update for this to work')
 def test_incorporate_bcomp(client):
     """Assert that a new BCOMP can be created via incorporation application."""
     headers = {'content-type': 'application/json'}
-    rv = client.get('/api/v1/businesses?legal_type=BC')
+    rv = client.post('/api/v1/businesses/BC')
     test_bcomp = f"{rv.json['corpNum']}"
     legal_name = f'legal name - {test_bcomp}'
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
@@ -44,7 +46,7 @@ def test_incorporate_bcomp(client):
             'legalType': 'BC'
         }
 
-    rv = client.post(f'/api/v1/businesses/{test_bcomp}/filings/incorporationApplication',
+    rv = client.post(f'/api/v1/businesses/BC/{test_bcomp}/filings/incorporationApplication',
                      data=json.dumps(filing), headers=headers)
     # assert rv.json
     assert 201 == rv.status_code
@@ -91,7 +93,7 @@ def test_incorporate_coop(client):
             'legalType': 'CP'
         }
 
-    rv = client.post(f'/api/v1/businesses/{test_coop}/filings/incorporationApplication',
+    rv = client.post(f'/api/v1/businesses/CP/{test_coop}/filings/incorporationApplication',
                      data=json.dumps(filing), headers=headers)
     # assert rv.json
     assert 201 == rv.status_code
