@@ -264,7 +264,7 @@ class Report:  # pylint: disable=too-few-public-methods
         self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
         self._format_directors(filing['incorporationApplication']['parties'])
         # create helper list for translations
-        filing['listOfTranslations'] = filing['incorporationApplication']['nameTranslations']
+        filing['listOfTranslations'] = filing['incorporationApplication'].get('nameTranslations', [])
 
     def _set_meta_info(self, filing):
         filing['environment'] = f'{self._get_environment()} FILING #{self._filing.id}'.lstrip()
