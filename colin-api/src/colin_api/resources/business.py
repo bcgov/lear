@@ -19,7 +19,6 @@ from http import HTTPStatus
 
 from flask import current_app, jsonify, request
 from flask_restplus import Namespace, Resource, cors
-from legal_api.models import Business as LearBusiness
 
 from colin_api.exceptions import GenericException
 from colin_api.models import Business, CorpName
@@ -40,12 +39,12 @@ class BusinessInfo(Resource):
     @cors.crossdomain(origin='*')
     def get(legal_type: str, identifier: str):
         """Return the complete business info."""
-        if legal_type not in [x.value for x in LearBusiness.LegalTypes]:
+        if legal_type not in [x.value for x in Business.LearBusinessTypes]:
             return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
         try:
             # convert identifier if BC legal_type
-            if legal_type == LearBusiness.LegalTypes.BCOMP.value:
+            if legal_type == Business.LearBusinessTypes.BCOMP.value:
                 identifier = identifier[-7:]
 
             # get business
@@ -69,7 +68,7 @@ class BusinessInfo(Resource):
     @cors.crossdomain(origin='*')
     def post(legal_type: str):
         """Create and return a new corp number for the given legal type."""
-        if legal_type not in [x.value for x in LearBusiness.LegalTypes]:
+        if legal_type not in [x.value for x in Business.LearBusinessTypes]:
             return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
         try:
@@ -97,7 +96,7 @@ class BusinessNamesInfo(Resource):
     @cors.crossdomain(origin='*')
     def get(legal_type, identifier, name_type):
         """Get active names by type code for a business."""
-        if legal_type not in [x.value for x in LearBusiness.LegalTypes]:
+        if legal_type not in [x.value for x in Business.LearBusinessTypes]:
             return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
         if name_type not in [x.value for x in CorpName.TypeCodes.__members__.values()]:
@@ -105,7 +104,7 @@ class BusinessNamesInfo(Resource):
 
         try:
             # convert identifier if BC legal_type
-            if legal_type == LearBusiness.LegalTypes.BCOMP.value:
+            if legal_type == Business.LearBusinessTypes.BCOMP.value:
                 identifier = identifier[-7:]
 
             con = DB.connection
@@ -148,7 +147,7 @@ class InternalBusinessInfo(Resource):
                 return jsonify(bn_15s), HTTPStatus.OK
 
             if info_type == 'resolutions':
-                if not legal_type or legal_type not in [x.value for x in LearBusiness.LegalTypes]:
+                if not legal_type or legal_type not in [x.value for x in Business.LearBusinessTypes]:
                     return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
                 if not identifier:
@@ -157,7 +156,7 @@ class InternalBusinessInfo(Resource):
                     ), HTTPStatus.BAD_REQUEST
 
                 # convert identifier if BC legal_type
-                if legal_type == LearBusiness.LegalTypes.BCOMP.value:
+                if legal_type == Business.LearBusinessTypes.BCOMP.value:
                     identifier = identifier[-7:]
 
                 return jsonify(
