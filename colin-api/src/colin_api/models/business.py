@@ -15,20 +15,24 @@
 
 Currently this only provides API versioning information
 """
-
 from enum import Enum
 
 from flask import current_app
-from legal_api.models import Business as LearBusiness
 
 from colin_api.exceptions import BusinessNotFoundException
 from colin_api.models.corp_name import CorpName
 from colin_api.resources.db import DB
-from colin_api.utils import convert_to_json_date, convert_to_json_datetime, stringify_list
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_pacific_time, stringify_list
 
 
 class Business:  # pylint: disable=too-many-instance-attributes
     """Class to contain all model-like functions for the corporation and related tables."""
+
+    class LearBusinessTypes(Enum):
+        """Temp class for lear business types, will be importing these from lear after upgrading python inage to 3.8."""
+
+        COOP = 'CP'
+        BCOMP = 'BC'
 
     class TypeCodes(Enum):
         """Render an Enum of the Corporation Type Codes."""
@@ -40,10 +44,10 @@ class Business:  # pylint: disable=too-many-instance-attributes
 
     # temp converter because legal doesn't have codes only class (legal_type)
     CORP_TYPE_CONVERSION = {
-        LearBusiness.LegalTypes.COOP.value: [
+        LearBusinessTypes.COOP.value: [
             TypeCodes.COOP.value
         ],
-        LearBusiness.LegalTypes.BCOMP.value: [
+        LearBusinessTypes.BCOMP.value: [
             TypeCodes.BCOMP.value,
             TypeCodes.BC_COMP.value,
             TypeCodes.ULC_COMP.value
@@ -248,7 +252,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             business = Business()
             business.corp_name = filing_info['business']['legalName']
             business.corp_num = filing_info['business']['identifier']
-            business.founding_date = filing_info['header'].get('learEffectiveDate')
+            business.founding_date = convert_to_pacific_time(filing_info['header']['learEffectiveDate'])
 
             # will need to change after legal is updated
             corp_types = Business.CORP_TYPE_CONVERSION[filing_info['business']['legalType']]

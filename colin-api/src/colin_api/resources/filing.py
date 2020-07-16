@@ -19,7 +19,6 @@ from http import HTTPStatus
 
 from flask import current_app, jsonify, request
 from flask_restplus import Resource, cors
-from legal_api.models import Business as LearBusiness
 from registry_schemas import validate
 
 from colin_api.exceptions import FilingNotFoundException, GenericException
@@ -39,7 +38,7 @@ class FilingInfo(Resource):
     def get(legal_type, identifier, filing_type):
         """Return the complete filing info or historic (pre-bob-date=2019-03-08) filings."""
         try:
-            if legal_type not in [x.value for x in LearBusiness.LegalTypes]:
+            if legal_type not in [x.value for x in Business.LearBusinessTypes]:
                 return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
             # get optional parameters (event_id / year)
@@ -49,7 +48,7 @@ class FilingInfo(Resource):
                 year = int(year)
 
             # convert identifier if BC legal_type
-            if legal_type == LearBusiness.LegalTypes.BCOMP.value:
+            if legal_type == Business.LearBusinessTypes.BCOMP.value:
                 identifier = identifier[-7:]
 
             # get business
@@ -82,7 +81,7 @@ class FilingInfo(Resource):
         """Create a new filing."""
         # pylint: disable=unused-argument,too-many-branches; filing_type is only used for the get
         try:
-            if legal_type not in [x.value for x in LearBusiness.LegalTypes]:
+            if legal_type not in [x.value for x in Business.LearBusinessTypes]:
                 return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
             json_data = request.get_json()
@@ -106,7 +105,7 @@ class FilingInfo(Resource):
                 ), HTTPStatus.BAD_REQUEST
 
             # convert identifier if BC legal_type
-            if legal_type == LearBusiness.LegalTypes.BCOMP.value:
+            if legal_type == Business.LearBusinessTypes.BCOMP.value:
                 identifier = identifier[-7:]
 
             corp_types = Business.CORP_TYPE_CONVERSION[legal_type]
