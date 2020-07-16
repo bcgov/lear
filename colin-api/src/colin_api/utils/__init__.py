@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Time conversion methods."""
+import datetime
+
 from flask import current_app
+from pytz import timezone
 
 
 def convert_to_json_date(thedate):
@@ -43,6 +46,18 @@ def convert_to_json_datetime(thedate):
     except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
         current_app.logger.debug('Tried to convert {date}, but failed: {error}'.format(date=thedate, error=err))
         return None
+
+
+def convert_to_pacific_time(thedate: str) -> str:
+    """Convert the datetime string to pacific time."""
+    try:
+        datetime_obj = datetime.datetime.strptime(thedate, '%Y-%m-%dT%H:%M:%S.%f+00:00')
+        datetime_utc = datetime_obj.replace(tzinfo=timezone('UTC'))
+        datetime_pst = datetime_utc.astimezone(timezone('US/Pacific'))
+        return datetime_pst.strftime('%Y-%m-%dT%H:%M:%S')
+    except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
+        current_app.logger.error(f'Tried to convert {thedate}, but failed: {err}')
+        raise err
 
 
 def stringify_list(list_orig: list) -> str:

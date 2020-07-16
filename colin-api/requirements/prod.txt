@@ -12,3 +12,4 @@ psycopg2-binary
 sentry-sdk[flask]
 attrs<19.2.0
 werkzeug<1.0
+pytz

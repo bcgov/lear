@@ -23,7 +23,7 @@ from legal_api.models import Filing as LearFiling
 from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
 from colin_api.models import Address, Business, CorpName, Office, Party, ShareObject
 from colin_api.resources.db import DB
-from colin_api.utils import convert_to_json_date, convert_to_json_datetime
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_pacific_time
 
 
 class Filing:
@@ -840,7 +840,8 @@ class Filing:
         try:
             corp_num = filing.business.corp_num
             legal_type = filing.business.corp_type
-
+            # get utc lear effective date and convert to pacific time for insert into oracle
+            effective_date = convert_to_pacific_time(filing.header['learEffectiveDate'])
             user_id = Filing.USERS[legal_type]
             cursor = con.cursor()
 
@@ -855,9 +856,8 @@ class Filing:
                 filing_type_cd = 'OTANN'
                 if legal_type == Business.TypeCodes.BCOMP.value:
                     filing_type_cd = 'ANNBC'
-
                 cls._create_filing(
-                    cursor, event_id, filing.header['learEffectiveDate'], corp_num, ar_date, agm_date, filing_type_cd)
+                    cursor, event_id, effective_date, corp_num, ar_date, agm_date, filing_type_cd)
 
                 # update corporation record
                 Business.update_corporation(cursor, corp_num, agm_date, True)
@@ -882,7 +882,7 @@ class Filing:
                 if legal_type == Business.TypeCodes.BCOMP.value:
                     filing_type_cd = 'NOCAD'
                 cls._create_filing(
-                    cursor, event_id, filing.header['learEffectiveDate'], corp_num, date, None, filing_type_cd)
+                    cursor, event_id, effective_date, corp_num, date, None, filing_type_cd)
 
                 # create new addresses for delivery + mailing, return address ids
 
@@ -898,7 +898,7 @@ class Filing:
                 if legal_type == Business.TypeCodes.BCOMP.value:
                     filing_type_cd = 'NOCDR'
                 cls._create_filing(
-                    cursor, event_id, filing.header['learEffectiveDate'], corp_num, date, None, filing_type_cd)
+                    cursor, event_id, effective_date, corp_num, date, None, filing_type_cd)
 
                 # create, cease, change directors
                 changed_dirs = []
@@ -940,7 +940,7 @@ class Filing:
                     corp_num = corp_num[-7:]
 
                 cls._create_filing(
-                    cursor, event_id, filing.header['learEffectiveDate'], corp_num, date, None, filing_type_cd)
+                    cursor, event_id, effective_date, corp_num, date, None, filing_type_cd)
 
                 # create name
                 corp_name_obj = CorpName()
@@ -966,7 +966,7 @@ class Filing:
             elif filing.filing_type == 'alteration':
                 filing_type_cd = 'NOALE'
                 cls._create_filing(
-                    cursor, event_id, filing.header['learEffectiveDate'], corp_num, None, None, filing_type_cd)
+                    cursor, event_id, effective_date, corp_num, None, None, filing_type_cd)
                 if filing.body.get('alterCorpType'):
                     # HARDCODED alteration type code for now (not sure if the value in the schema will change)
                     Business.update_corp_type(
