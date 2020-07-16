@@ -160,7 +160,7 @@ FAILED_COOPS = []
 NEW_COOPS = []
 LOADED_COOPS_HISTORY = []
 
-with open('coops.csv', 'r') as csvfile:
+with open('corp_nums/coops.csv', 'r') as csvfile:
     reader = csv.DictReader(csvfile)
     with FLASK_APP.app_context():
         for row in reader:
@@ -223,12 +223,16 @@ with open('coops.csv', 'r') as csvfile:
                         add_business_directors(business, directors_json)
                         db.session.add(business)
                         filing = Filing()
-                        # filing.filing_date = datetime.datetime.utcnow
-                        filing.filing_json = {'filing':
-                                              {'header':
-                                               {'name': 'lear_epoch'}
-                                               }}
+                        filing.filing_json = {
+                            'filing': {
+                                'header': {
+                                    'name': 'lear_epoch'
+                                },
+                                'business': business.json()
+                            }
+                        }
                         filing._filing_type = 'lear_epoch'
+                        filing.source = Filing.Source.COLIN.value
                         filing.transaction_id = transaction.id
                         db.session.add(filing)
                         db.session.commit()
