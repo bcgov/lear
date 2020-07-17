@@ -11,7 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+<<<<<<< HEAD
 """This module contains all of the Legal Filing specific component processors.
+=======
+"""This module contains all of the Legal Filing specific processors.
+>>>>>>> alteration changes
 
 Processors hold the business logic for how a filing is interpreted and saved to the legal database.
 """
@@ -22,6 +26,10 @@ from typing import Dict
 import pycountry
 from legal_api.models import Address, Business, Office, Party, PartyRole, ShareClass, ShareSeries
 
+<<<<<<< HEAD
+=======
+from .set_corp_type import set_corp_type
+>>>>>>> alteration changes
 
 JSON_ROLE_CONVERTER = {
     'Director': PartyRole.RoleTypes.DIRECTOR.value,
@@ -153,8 +161,12 @@ def create_share_class(share_class_info: dict) -> ShareClass:
         currency=share_class_info.get('currency', None),
         special_rights_flag=share_class_info['hasRightsOrRestrictions']
     )
+<<<<<<< HEAD
     share_class.series = []
     for series in share_class_info['series']:
+=======
+    for series in share_class.series:
+>>>>>>> alteration changes
         share_series = ShareSeries(
             name=series['name'],
             priority=series['priority'],

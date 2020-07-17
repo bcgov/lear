@@ -19,47 +19,78 @@ from unittest.mock import patch
 
 import pytest
 from legal_api.models import Filing
-from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
+from registry_schemas.example_data import ALTERATION, ALTERATION_FILING_TEMPLATE
 
 from entity_filer.filing_processors import alteration
 from tests.unit import create_filing
 
-ALTERATION = {
-    'provisionsRemoved': False,
-    'business': {
-        'corpType': 'benefitCompany'
-    },
-    'nameRequest': {
-        'nrNumber': 'NR 8798956',
-        'legalName': 'HAULER MEDIA INC.',
-        'legalType': 'BC'
-    },
-    'nameTranslations': {
-        'new': ['MÉDIAS DE TRANSPORT INC.'],
-        'modified': [{
-            'oldValue': 'A1 LTD.',
-            'newValue': 'SOCIÉTÉ GÉNÉRALE'
-        }],
-        'ceased': ['B1', 'B2']
-    },
-    'shareStructure': {
-        'resolutionDates': ['2020-05-23', '2020-06-01'],
-        'shareClasses': [{
-            'name': 'class1',
-            'priority': 1,
-            'maxNumberOfShares': 600,
-            'parValue': 1,
-            'currency': 'CAD',
-            'hasMaximumShares': True,
-            'hasParValue': True,
-            'hasRightsOrRestrictions': False,
-            'series': [{
-                'name': 'series1',
-                'priority': 1,
-                'maxNumberOfShares': 600,
-                'hasMaximumShares': True,
-                'hasRightsOrRestrictions': False
-            }]
-        }]
-    }
-}
+
+def test_incorporation_filing_process_with_nr(app, session):
+    """Assert that the incorporation object is correctly populated to model objects."""
+    # setup
+    next_corp_num = 'BC0001095'
+    with patch.object(incorporation_filing, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
+        filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+        identifier = 'NR 1234567'
+        filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
+        filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
+        create_filing('123', filing)
+
+        effective_date = datetime.utcnow()
+        filing_rec = Filing(effective_date=effective_date, filing_json=filing)
+
+        # test
+        business, filing_rec = alteration.process(None, filing['filing'], filing_rec)
+
+        # Assertions
+        assert business.identifier == next_corp_num
+        assert business.founding_date == effective_date
+        assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
+        assert business.legal_name == filing['filing']['incorporationApplication']['nameRequest']['legalName']
+        assert len(business.share_classes.all()) == 2
+        assert len(business.offices.all()) == 2  # One office is created in create_business method.
+
+    mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+
+
+def test_incorporation_filing_process_no_nr(app, session):
+    """Assert that the incorporation object is correctly populated to model objects."""
+    # setup
+    next_corp_num = 'BC0001095'
+    with patch.object(incorporation_filing, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
+        filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+        create_filing('123', filing)
+
+        effective_date = datetime.utcnow()
+        filing_rec = Filing(effective_date=effective_date, filing_json=filing)
+
+        # test
+        business, filing_rec = incorporation_filing.process(None, filing['filing'], filing_rec)
+
+        # Assertions
+        assert business.identifier == next_corp_num
+        assert business.founding_date == effective_date
+        assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
+        assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
+        assert len(business.share_classes.all()) == 2
+        assert len(business.offices.all()) == 2  # One office is created in create_business method.
+
+    mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+
+
+@pytest.mark.parametrize('test_name,response,expected', [
+    ('short number', '1234', 'BC0001234'),
+    ('full 9 number', '1234567', 'BC1234567'),
+    ('too big number', '12345678', None),
+])
+def test_get_next_corp_num(requests_mock, app, test_name, response, expected):
+    """Assert that the corpnum is the correct format."""
+    from entity_filer.filing_processors.incorporation_filing import get_next_corp_num
+    from flask import current_app
+
+    with app.app_context():
+        requests_mock.get(f'{current_app.config["COLIN_API"]}?legal_type=BC', json={'corpNum': response})
+
+        corp_num = get_next_corp_num('BC')
+
+    assert corp_num == expected
