@@ -56,7 +56,11 @@ def convert_to_json_datetime(thedate):
 def convert_to_pacific_time(thedate: str) -> str:
     """Convert the datetime string to pacific time."""
     try:
-        datetime_obj = datetime.datetime.strptime(thedate, '%Y-%m-%dT%H:%M:%S.%f+00:00')
+        # tries converting two formats before bailing
+        try:
+            datetime_obj = datetime.datetime.strptime(thedate, '%Y-%m-%dT%H:%M:%S.%f+00:00')
+        except Exception:  # pylint: disable=broad-except;
+            datetime_obj = datetime.datetime.strptime(thedate, '%Y-%m-%dT%H:%M:%S+00:00')
         datetime_utc = datetime_obj.replace(tzinfo=timezone('UTC'))
         datetime_pst = datetime_utc.astimezone(timezone('US/Pacific'))
         return datetime_pst.strftime('%Y-%m-%dT%H:%M:%S')

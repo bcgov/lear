@@ -74,11 +74,13 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
     """Post to colin-api with filing."""
     clean_none(filing)
 
-    filing_type = filing['filing']['header']['name']
-    identifier = filing['filing']['business']['identifier']
-    legal_type = filing['filing']['business']['legalType']
+    filing_type = filing['filing']['header'].get('name', None)
+    identifier = filing['filing']['business'].get('identifier', None)
+    legal_type = filing['filing']['business'].get('legalType', None)
 
-    r = requests.post(f'{app.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}', json=filing)
+    r = None
+    if legal_type and identifier and filing_type:
+        r = requests.post(f'{app.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}', json=filing)
 
     if not r or r.status_code != 201:
         app.logger.error(f'Filing {filing_id} not created in colin {identifier}.')
