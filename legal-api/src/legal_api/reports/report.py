@@ -296,15 +296,18 @@ class Report:  # pylint: disable=too-few-public-methods
     def _format_noa_data(self, filing):
         filing['header'] = {}
         filing['header']['filingId'] = self._filing.id
-        filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
+        recognition_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
         effective_date_time = LegislationDatetime.as_legislation_timezone(self._filing.effective_date)
+        filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
         effective_hour = effective_date_time.strftime('%I')
+        recognition_hour = recognition_datetime.strftime('%I')
         filing_hour = filing_datetime.strftime('%I')
         filing['header']['effective_date_time'] = \
             effective_date_time.strftime(f'%B %-d, %Y at {effective_hour}:%M %p Pacific Time')
-        filing['header']['filing_date_time'] = \
+        filing['header']['recognition_date_time'] = \
+            recognition_datetime.strftime(f'%B %-d, %Y at {recognition_hour}:%M %p Pacific Time')
+        filing['filing_date_time'] = \
             filing_datetime.strftime(f'%B %-d, %Y at {filing_hour}:%M %p Pacific Time')
-        filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {filing_hour}:%M %p Pacific Time')
 
     def _set_meta_info(self, filing):
         filing['environment'] = f'{self._get_environment()} FILING #{self._filing.id}'.lstrip()
