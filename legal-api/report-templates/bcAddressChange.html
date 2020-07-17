@@ -1,0 +1,45 @@
+[[macros.html]]
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Address Change</title>
+    <meta charset="UTF-8">
+    <meta name="author" content="BC Registries and Online Services">
+    [[bc-address-change/style.html]]
+  </head>
+  <body>
+    <div class="header">
+      <table class="header-table" role="presentation">
+        <tr>
+          <td>
+            [[logo.html]]
+          </td>
+          <td>
+            <div class="header-right">
+              <div class="report-type">
+                ADDRESS CHANGE
+              </div>
+              <div class="report-type-desc">BC Benefit Company - Business Corporations Act</div>
+            </div>
+          </td>
+        </tr>
+      </table>
+      <div class="business-name-header">
+        <label class="lbl-business-name">
+          {% if business.legalName is defined %}
+          {{business.legalName}}
+          {% else %}
+          Numbered Benefit Company
+          {% endif %}
+        </label>
+      </div>
+    </div>
+    [[bc-address-change/addressChangeDetails.html]]
+    <div class="container">
+      <div class="separator"></div>
+      [[bc-address-change/addresses.html]]
+      <div class="separator"></div>
+      [[certification.html]]
+    </div>
+  </body>
+</html>
