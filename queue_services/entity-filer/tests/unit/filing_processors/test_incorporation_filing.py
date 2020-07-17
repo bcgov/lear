@@ -89,7 +89,7 @@ def test_get_next_corp_num(requests_mock, app, test_name, response, expected):
     from flask import current_app
 
     with app.app_context():
-        requests_mock.get(f'{current_app.config["COLIN_API"]}?legal_type=BC', json={'corpNum': response})
+        requests_mock.post(f'{current_app.config["COLIN_API"]}?legal_type=BC', json={'corpNum': response})
 
         corp_num = get_next_corp_num('BC')
 
