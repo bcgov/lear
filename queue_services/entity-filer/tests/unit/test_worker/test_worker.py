@@ -23,7 +23,7 @@ from legal_api.models import Business, Filing, PartyRole, User
 from legal_api.resources.business import DirectorResource
 from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR
 
-from entity_filer.filing_processors import create_party, create_role
+from entity_filer.filing_processors.domain_services import create_party, create_role
 from entity_filer.worker import process_filing
 from tests.unit import (
     AR_FILING,
