@@ -76,7 +76,10 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
 
     filing_type = filing['filing']['header'].get('name', None)
     identifier = filing['filing']['business'].get('identifier', None)
-    legal_type = filing['filing']['business'].get('legalType', None)
+    if identifier[:2] == 'CP':
+        legal_type = 'CP'
+    else:
+        legal_type = filing['filing']['business'].get('legalType', None)
 
     r = None
     if legal_type and identifier and filing_type:
