@@ -251,7 +251,7 @@
 											"",
 											"pm.test(\"Returns the required fields for business\", () => {",
 											"    var jsonData = pm.response.json()",
-											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
+											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T07:00:00-00:00')",
 											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 											"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -403,7 +403,7 @@
 											"});",
 											"",
 											"pm.test(\"Returns the required fields for business\", () => {",
-											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
+											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T07:00:00-00:00')",
 											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 											"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -581,7 +581,7 @@
 											"});",
 											"",
 											"pm.test(\"Returns the required fields for business\", () => {",
-											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
+											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T07:00:00-00:00')",
 											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 											"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -741,7 +741,7 @@
 											"});",
 											"",
 											"pm.test(\"Returns the required fields for business\", () => {",
-											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
+											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T07:00:00-00:00')",
 											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 											"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -903,7 +903,7 @@
 											"});",
 											"",
 											"pm.test(\"Returns the required fields for business\", () => {",
-											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
+											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T07:00:00-00:00')",
 											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 											"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -1067,7 +1067,7 @@
 											"});",
 											"",
 											"pm.test(\"Returns the required fields for business\", () => {",
-											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2004-04-28T00:00:00-00:00')",
+											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2004-04-28T07:00:00-00:00')",
 											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0001965')",
 											"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -1247,7 +1247,7 @@
 											"});",
 											"",
 											"pm.test(\"Returns the required fields for business\", () => {",
-											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2004-04-28T00:00:00-00:00')",
+											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2004-04-28T07:00:00-00:00')",
 											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0001965')",
 											"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -1401,7 +1401,7 @@
 											"pm.test(\"Returns the required fields for business\", () => {",
 											"    var jsonData = pm.response.json()",
 											"    pm.expect(jsonData.business).to.exist",
-											"    pm.expect(jsonData.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
+											"    pm.expect(jsonData.business.foundingDate).to.eql('2010-10-15T07:00:00-00:00')",
 											"    pm.expect(jsonData.business.identifier).to.eql('CP0002098')",
 											"    pm.expect(jsonData.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.business.corpState).to.eql('ACT')",
@@ -1866,7 +1866,7 @@
 											"});",
 											"",
 											"pm.test(\"Returns the required fields for business\", () => {",
-											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
+											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T07:00:00-00:00')",
 											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 											"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -2215,7 +2215,7 @@
 											"});",
 											"",
 											"pm.test(\"Returns the required fields for business\", () => {",
-											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
+											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T07:00:00-00:00')",
 											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 											"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -2410,7 +2410,7 @@
 											"});",
 											"",
 											"pm.test(\"Returns the required fields for business\", () => {",
-											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
+											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T07:00:00-00:00')",
 											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 											"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -2578,7 +2578,7 @@
 											"});",
 											"",
 											"pm.test(\"Returns the required fields for business\", () => {",
-											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
+											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T07:00:00-00:00')",
 											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 											"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -2915,7 +2915,7 @@
 											"});",
 											"",
 											"pm.test(\"Returns the required fields for business\", () => {",
-											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
+											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T07:00:00-00:00')",
 											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 											"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -3121,7 +3121,7 @@
 											"});",
 											"",
 											"pm.test(\"Returns the required fields for business\", () => {",
-											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
+											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T07:00:00-00:00')",
 											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 											"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -3298,7 +3298,7 @@
 											"});",
 											"",
 											"pm.test(\"Returns the required fields for business\", () => {",
-											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T00:00:00-00:00')",
+											"    pm.expect(jsonData.filing.business.foundingDate).to.eql('2010-10-15T07:00:00-00:00')",
 											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002098')",
 											"    pm.expect(jsonData.filing.business.jurisdiction).to.eql('BC')",
 											"    pm.expect(jsonData.filing.business.corpState).to.eql('ACT')",
@@ -6306,7 +6306,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"identifiers\": [\n        \"0870000\",\n        \"BC0870001\"\n    ]\n}",
+									"raw": "",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -6440,7 +6440,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"identifiers\": [\n        \"0870000\",\n        \"BC0870001\"\n    ]\n}",
+									"raw": "",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -6533,7 +6533,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "548387ec-c132-4e17-80c6-bbaaae94cfbc",
+										"id": "8fc35f78-85ed-4500-ad3b-14187059b6d0",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -6574,7 +6574,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"identifiers\": [\n        \"0870000\",\n        \"BC0870001\"\n    ]\n}",
+									"raw": "",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -6720,7 +6720,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{url}}/api/v1/businesses/internal/BC/0778399/resolutions",
+									"raw": "{{url}}/api/v1/businesses/internal/BC/0877917/resolutions",
 									"host": [
 										"{{url}}"
 									],
@@ -6730,7 +6730,7 @@
 										"businesses",
 										"internal",
 										"BC",
-										"0778399",
+										"0877917",
 										"resolutions"
 									]
 								}

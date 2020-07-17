@@ -16,9 +16,9 @@ Currently this only provides API versioning information
 """
 # pylint: disable=too-many-lines
 import datetime
+from enum import Enum
 
 from flask import current_app
-from legal_api.models import Filing as LearFiling
 
 from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
 from colin_api.models import Address, Business, CorpName, Office, Party, ShareObject
@@ -28,6 +28,12 @@ from colin_api.utils import convert_to_json_date, convert_to_json_datetime, conv
 
 class Filing:
     """Class to contain all model-like functions for filings such as getting and setting from database."""
+
+    class LearSource(Enum):
+        """Temp class until we import from lear containing lear source types."""
+
+        COLIN = 'COLIN'
+        LEAR = 'LEAR'
 
     # coops in order of number filed by coops as of september 2019
     FILING_TYPES = {
@@ -755,7 +761,7 @@ class Filing:
                 'effectiveDate': convert_to_json_datetime(filing_obj.effective_date),
                 'email': filing_event_info['email'],
                 'name': filing_type,
-                'source': LearFiling.Source.COLIN.value
+                'source': cls.LearSource.COLIN.value
             }
             filing_obj.business = business
 

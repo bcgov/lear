@@ -42,6 +42,11 @@ def convert_to_json_datetime(thedate):
     if not thedate:
         return None
     try:
+        # timezone info not in var (they are pacififc times so add timezone)
+        thedate = thedate.astimezone(timezone('US/Pacific'))
+        # convert to utc time
+        thedate = thedate.astimezone(timezone('UTC'))
+        # return as string
         return thedate.strftime('%Y-%m-%dT%H:%M:%S-00:00')
     except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
         current_app.logger.debug('Tried to convert {date}, but failed: {error}'.format(date=thedate, error=err))
