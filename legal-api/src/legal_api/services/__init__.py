@@ -18,6 +18,7 @@ from .document_meta import DocumentMetaService
 from .flags import Flags
 from .namex import NameXService
 from .queue import QueueService
+from .business_details_version import VersionedBusinessDetailsService
 
 
 flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.

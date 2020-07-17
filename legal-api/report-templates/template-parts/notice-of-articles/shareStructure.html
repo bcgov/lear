@@ -1,0 +1,89 @@
+<div class="no-page-break">
+   <div class="section-title">
+      Authorized Share Structure
+   </div>
+   <div class="section-data share-structure-table-container">
+      <table class="share-structure-table" role="presentation">
+         <tr  class="solid-row-separator share-structure-table-header">
+            <td class="top-align"> Name of Share Class or Series</td>
+            <td class="right-align top-align">Max. Number of Shares</td>
+            <td class="right-align top-align">Par Value</td>
+            <td class="top-align">Currency</td>
+            <td class="top-align">Special Rights or Restrictions</td>
+         </tr>
+         {% for share_class in shareClasses %}
+         <tr>
+            <td>{{share_class.name}}</td>
+            <td class="right-align">
+               {% if share_class.hasMaximumShares %}
+               {{ '{0:,}'.format(share_class.maxNumberOfShares | int) }}
+               {% else %}
+               No Maximum
+               {% endif %}
+            </td>
+            <td class="right-align">
+               {% if share_class.hasParValue %}
+               {% if share_class.currency == 'USD' or share_class.currency == 'CAD' %}
+                  $
+               {% endif %}
+               {{ share_class.parValue }}
+               {% else %}
+               No Par Value
+               {% endif %}
+            </td>
+            <td>
+               {% if share_class.hasParValue %}
+               {{ share_class.currency }}
+               {% else %}
+               {% endif %}
+            </td>
+            <td>
+               {% if share_class.hasRightsOrRestrictions %}
+               Yes
+               {% else %}
+               No
+               {% endif %}
+            </td>
+         </tr>
+         {% for series in share_class.series %}
+         <tr class="dashed-row-separator">
+            <td class="series-name">&#8226;&nbsp;{{ series.name }}</td>
+            <td class="right-align">
+               {% if series.hasMaximumShares %}
+                {{ '{0:,}'.format(series.maxNumberOfShares | int) }}
+               {% else %}
+               No Maximum
+               {% endif %}
+            </td>
+            <td class="right-align">
+               {% if series.hasParValue %}
+               {% if series.currency == 'USD' or series.currency == 'CAD' %}
+                  $
+               {% endif %}
+               {{ series.parValue }}
+               {% else %}
+               No Par Value
+               {% endif %}
+            </td>
+            <td>
+               {% if series.hasParValue %}
+               {{ series.currency }}
+               {% else %}
+               {% endif %}
+            </td>
+            <td>
+               {% if series.hasRightsOrRestrictions %}
+               Yes
+               {% else %}
+               No
+               {% endif %}
+            </td>
+         </tr>
+         {% endfor %}
+         <tr class="solid-row-separator">
+            <td colspan="5" style="height:1px"/>
+         </tr>
+         {% endfor %}
+      </table>
+   </div>
+</div>

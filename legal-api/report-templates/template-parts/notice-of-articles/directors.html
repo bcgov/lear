@@ -1,0 +1,51 @@
+<div>
+    <div class="section-title">
+     Director Information
+    </div>
+    {% set ns = namespace(director=0) %}
+    {% for party in parties|sort(attribute='officer.lastName') %}
+    {% if party.role == 'director' %}
+            <div class="section-data">
+              <table class="section-data-table" role="presentation">
+              {% if ns.director > 0 %}
+                <tr class="upper-solid-row-separator">
+              {% else %}
+                <tr>
+              {% endif %}
+                      <td class="director-name">
+                          <div class="section-sub-title">
+                              <span class="capitalize-text">{{ party.officer.lastName }}</span>,
+                              <span class="capitalize-text">{{ party.officer.firstName }}</span>
+                            {% if party.officer.middleName %}
+                              <span class="capitalize-text">{{ party.officer.middleName }}</span>
+                            {% endif %}
+                          </div>
+                      </td>
+                      <td>
+                          <div class="section-sub-title">Mailing Address</div>
+                          <div>{{ party.mailingAddress.streetAddress }}</div>
+                          <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
+                          <div>{{ party.mailingAddress.addressCity }}
+                            {{ party.mailingAddress.addressRegion }}
+                            &nbsp;{{ party.mailingAddress.postalCode }}</div>
+                          <div>{{ party.mailingAddress.addressCountryDescription }}</div>
+                          <div>{{ party.mailingAddress.deliveryInstructions }}</div>
+                      </td>
+                      <td>
+                          <div class="section-sub-title">Delivery Address</div>
+                          <div>{{ party.deliveryAddress.streetAddress }}</div>
+                          <div>{{ party.deliveryAddress.streetAddressAdditional }}</div>
+                          <div>{{ party.deliveryAddress.addressCity }}
+                            {{ party.deliveryAddress.addressRegion }}
+                            &nbsp;{{ party.deliveryAddress.postalCode }}</div>
+                          <div>{{ party.deliveryAddress.addressCountryDescription }}</div>
+                          <div>{{ party.deliveryAddress.deliveryInstructions }}</div>
+                      </td>
+                  </tr>
+              </table>
+            </div>
+    {% set ns.director = ns.director + 1 %}
+    {% endif %}
+    {% endfor %}
+</div>
+
