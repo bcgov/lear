@@ -544,11 +544,10 @@ def test_alteration(session, app):
         assert len(documents) == 0
 
 
-def test_ia_fed(session, app):
+def test_ia_fed(app):
     """Assert that an IA - FED document is returned for a future effective IA filing."""
     from legal_api.utils.legislation_datetime import LegislationDatetime
 
-    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -561,7 +560,12 @@ def test_ia_fed(session, app):
                     'date': FILING_DATE
                 },
                 'business': {
-                    'identifier': 'BC1234567'
+                    'identifier': 'T12345678'
+                },
+                'incorporationApplication': {
+                    'nameRequest': {
+                        'legalType': 'BC'
+                    }
                 }
             }
         }
@@ -572,12 +576,11 @@ def test_ia_fed(session, app):
         assert documents[0]['reportType'] is None
         assert documents[0]['filingId'] == 12356
         assert documents[0]['title'] == 'Incorporation Application - Future Effective Incorporation'
-        assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Future Effective) - 2020-07-14.pdf'
+        assert documents[0]['filename'] == 'T12345678 - Incorporation Application (Future Effective) - 2020-07-14.pdf'
 
 
-def test_ia_paid(session, app):
+def test_ia_paid(app):
     """Assert that an IA - Pending document is returned for a PAID IA filing."""
-    factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {
             'filing': {
@@ -590,7 +593,12 @@ def test_ia_paid(session, app):
                     'date': FILING_DATE
                 },
                 'business': {
-                    'identifier': 'BC1234567'
+                    'identifier': 'T12345678'
+                },
+                'incorporationApplication': {
+                    'nameRequest': {
+                        'legalType': 'BC'
+                    }
                 }
             }
         }
@@ -601,11 +609,56 @@ def test_ia_paid(session, app):
         assert documents[0]['reportType'] is None
         assert documents[0]['filingId'] == 12356
         assert documents[0]['title'] == 'Incorporation Application - Pending'
-        assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Pending) - 2020-07-14.pdf'
+        assert documents[0]['filename'] == 'T12345678 - Incorporation Application (Pending) - 2020-07-14.pdf'
 
 
-def test_ia_completed(session, app):
+def test_ia_completed(app):
     """Assert that IA + NOA + Certificate documents are returned for a COMPLETED IA filing."""
+    with app.app_context():
+        filing = {
+            'filing': {
+                'header': {
+                    'filingId': 12356,
+                    'status': 'COMPLETED',
+                    'name': 'incorporationApplication',
+                    'availableOnPaperOnly': False,
+                    'effectiveDate':  FILING_DATE,
+                    'date': FILING_DATE
+                },
+                'business': {
+                    'identifier': 'T12345678'
+                },
+                'incorporationApplication': {
+                    'nameRequest': {
+                        'legalType': 'BC'
+                    }
+                }
+            }
+        }
+        documents = document_meta.get_documents(filing)
+        assert len(documents) == 3
+
+        assert documents[0]['type'] == 'REPORT'
+        assert documents[0]['reportType'] is None
+        assert documents[0]['filingId'] == 12356
+        assert documents[0]['title'] == 'Incorporation Application'
+        assert documents[0]['filename'] == 'T12345678 - Incorporation Application - 2020-07-14.pdf'
+
+        assert documents[1]['type'] == 'REPORT'
+        assert documents[1]['reportType'] == 'noa'
+        assert documents[1]['filingId'] == 12356
+        assert documents[1]['title'] == 'Notice of Articles'
+        assert documents[1]['filename'] == 'T12345678 - Notice of Articles - 2020-07-14.pdf'
+
+        assert documents[2]['type'] == 'REPORT'
+        assert documents[2]['reportType'] == 'certificate'
+        assert documents[2]['filingId'] == 12356
+        assert documents[2]['title'] == 'Certificate'
+        assert documents[2]['filename'] == 'T12345678 - Certificate - 2020-07-14.pdf'
+
+
+def test_ia_completed_bcomp(session, app):
+    """Assert that IA + NOA + Certificate documents are returned for a COMPLETED IA filing when business is a BCOMP."""
     factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():
         filing = {

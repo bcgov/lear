@@ -48,10 +48,14 @@ class DocumentMetaService():
         """Return an array of document meta for a filing."""
         # look up legal type
         self._business_identifier = filing['filing']['business']['identifier']
-        business = Business.find_by_identifier(self._business_identifier)
-        if not business:
-            return []  # business not found
-        self._legal_type = business.legal_type
+        # if this is a temp registration then there is no business, so get legal type from filing
+        if self._business_identifier.startswith('T'):
+            self._legal_type = filing['filing']['incorporationApplication']['nameRequest']['legalType']
+        else:
+            business = Business.find_by_identifier(self._business_identifier)
+            if not business:
+                return []  # business not found
+            self._legal_type = business.legal_type
 
         self._filing_status = filing['filing']['header']['status']
         is_paper_only = filing['filing']['header']['availableOnPaperOnly']
@@ -59,10 +63,15 @@ class DocumentMetaService():
         if self._filing_status not in (Filing.Status.COMPLETED.value, Filing.Status.PAID.value) or is_paper_only:
             return []  # wrong filing status
 
+        return self.get_documents2(filing)
+
+    def get_documents2(self, filing: dict):
+        """Return an array of document meta for a filing."""
         filing_type = filing['filing']['header']['name']
         self._filing_id = filing['filing']['header']['filingId']
         self._filing_date = filing['filing']['header']['date']
 
+        documents = []
         if filing_type == 'incorporationApplication':
             documents = self.get_incorporation_application_reports(filing)
         elif filing_type == 'annualReport':
@@ -81,8 +90,6 @@ class DocumentMetaService():
             documents = self.get_correction_reports()
         elif filing_type == 'alteration':
             documents = self.get_alteration_reports()
-        else:
-            documents = []
 
         return documents
 
