@@ -213,8 +213,7 @@ def test_business_json(session):
                         identifier='CP1234567',
                         last_modified=EPOCH_DATETIME,
                         last_ar_date=EPOCH_DATETIME,
-                        last_agm_date=EPOCH_DATETIME,
-                        restriction_ind=True
+                        last_agm_date=EPOCH_DATETIME
                         )
     # basic json
     d = {
@@ -226,8 +225,7 @@ def test_business_json(session):
         'lastModified': EPOCH_DATETIME.isoformat(),
         'lastAnnualReport': datetime.date(EPOCH_DATETIME).isoformat(),
         'lastAnnualGeneralMeetingDate': datetime.date(EPOCH_DATETIME).isoformat(),
-        'nextAnnualReport': (EPOCH_DATETIME + datedelta.YEAR).isoformat(),
-        'hasRestrictions': True
+        'nextAnnualReport': (EPOCH_DATETIME + datedelta.YEAR).isoformat()
     }
 
     assert business.json() == d

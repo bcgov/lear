@@ -69,7 +69,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    restriction_ind = db.Column('restriction_ind', db.Boolean, unique=False, default=False)
 
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
@@ -154,8 +153,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
             'legalName': self.legal_name,
-            'legalType': self.legal_type,
-            'hasRestrictions': self.restriction_ind
+            'legalType': self.legal_type
         }
         # if self.last_remote_ledger_timestamp:
         #     # this is not a typo, we want the external facing view object ledger timestamp to be the remote one
