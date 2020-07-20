@@ -21,10 +21,10 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.utils.auth import jwt
-from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.models import Business
 from legal_api.services import VersionedBusinessDetailsService
+from legal_api.utils.auth import jwt
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 class Report:  # pylint: disable=too-few-public-methods
@@ -45,10 +45,10 @@ class Report:  # pylint: disable=too-few-public-methods
         self._report_type = None
 
     def get_pdf(self, report_type=None):
+        """Render a pdf for the report."""
         self._report_type = report_type
         if report_type == 'noa':
             self._business = Business.find_by_internal_id(self._filing.business_id)
-        """Render a pdf for the report."""
         headers = {
             'Authorization': 'Bearer {}'.format(jwt.get_token_auth_header()),
             'Content-Type': 'application/json'
@@ -70,16 +70,14 @@ class Report:  # pylint: disable=too-few-public-methods
         filing_date = str(self._filing.filing_date)[:19]
         if report_type == 'noa':
             legal_entity_number = self._business.identifier
-            filing_description = 'Notice of Articles'
-            return '{}_{}_{}.pdf'.format(legal_entity_number, filing_date, filing_description).replace(' ', '_')
+            description = 'Notice of Articles'
         else:
             legal_entity_number = self._filing.filing_json['filing']['business']['identifier']
             if report_type:
-                filing_description = Report.additional_reports[self._filing.filing_type][report_type]
-                ['filingDescription']
+                description = Report.additional_reports[self._filing.filing_type][report_type]['filingDescription']
             else:
-                filing_description = self._get_primary_filing()['title']
-            return '{}_{}_{}.pdf'.format(legal_entity_number, filing_date, filing_description).replace(' ', '_')
+                description = self._get_primary_filing()['title']
+        return '{}_{}_{}.pdf'.format(legal_entity_number, filing_date, description).replace(' ', '_')
 
     def _get_primary_filing(self):
         filings = self._filing.FILINGS
@@ -169,10 +167,10 @@ class Report:  # pylint: disable=too-few-public-methods
     def _get_template_filename(self, report_type=None):
         if report_type:
             if report_type == 'noa':
-                return '{}.html'.format('noticeOfArticles')
+                file_name = 'noticeOfArticles'
             else:
                 file_name = Report.additional_reports[self._filing.filing_type][report_type]['fileName']
-                return '{}.html'.format(file_name)
+            return '{}.html'.format(file_name)
         return '{}.html'.format(self._filing.filing_type)
 
     def _get_template_data(self, report_type=None):  # pylint: disable=too-many-branches

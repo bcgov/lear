@@ -1,17 +1,33 @@
-import pycountry
+# Copyright © 2020 Province of British Columbia
+#
+# Licensed under the Apache License, Version 2.0 (the 'License');
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an 'AS IS' BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""This provides the service for getting business details as of a filing."""
 from datetime import datetime
 
+import pycountry
 from sqlalchemy import or_
 from sqlalchemy_continuum import version_class
 
-from legal_api.models import Business, Filing, Address, Party, PartyRole, db, ShareClass
+from legal_api.models import Address, Business, Filing, Party, PartyRole, ShareClass, db
 
 
 class VersionedBusinessDetailsService:
+    """Provides service for getting business details as of a filing."""
 
     @staticmethod
     def get_company_details_revision(filing_id, business_id) -> dict:
-        """Returns the company details as of a particular filing"""
+        """Consolidates company details upto the given transaction id of a filing."""
         company_profile_json = {}
         business = Business.find_by_internal_id(business_id)
         filing = Filing.find_by_id(filing_id)
@@ -26,7 +42,7 @@ class VersionedBusinessDetailsService:
 
     @staticmethod
     def get_office_revision(transaction_id, business) -> dict:
-        """Consolidates all office changes upto the given transaction id"""
+        """Consolidates all office changes upto the given transaction id."""
         offices_json = {}
         address_version = version_class(Address)
 
@@ -35,7 +51,7 @@ class VersionedBusinessDetailsService:
             addresses_list = db.session.query(address_version) \
                 .filter(address_version.transaction_id <= transaction_id) \
                 .filter(address_version.office_id == office.id) \
-                .filter(or_(address_version.end_transaction_id == None,
+                .filter(or_(address_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                             address_version.end_transaction_id > transaction_id)) \
                 .order_by(address_version.transaction_id).all()
             for address in addresses_list:
@@ -46,12 +62,12 @@ class VersionedBusinessDetailsService:
 
     @staticmethod
     def get_party_role_revision(transaction_id, business_id) -> dict:
-        """Consolidates all party changes upto the given transaction id"""
+        """Consolidates all party changes upto the given transaction id."""
         party_role_version = version_class(PartyRole)
         party_roles = db.session.query(party_role_version)\
             .filter(party_role_version.transaction_id <= transaction_id) \
             .filter(party_role_version.business_id == business_id) \
-            .filter(or_(party_role_version.end_transaction_id == None,
+            .filter(or_(party_role_version.end_transaction_id == None,   # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_role_version.end_transaction_id > transaction_id)) \
             .order_by(party_role_version.transaction_id).all()
         parties = []
@@ -63,28 +79,29 @@ class VersionedBusinessDetailsService:
 
     @staticmethod
     def get_share_class_revision(transaction_id, business_id) -> dict:
-        """Consolidates all share classes upto the given transaction id"""
+        """Consolidates all share classes upto the given transaction id."""
         share_class_version = version_class(ShareClass)
         share_classes_list = db.session.query(share_class_version) \
             .filter(share_class_version.transaction_id <= transaction_id) \
             .filter(share_class_version.business_id == business_id) \
-            .filter(or_(share_class_version.end_transaction_id == None,
+            .filter(or_(share_class_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                         share_class_version.end_transaction_id > transaction_id)) \
             .order_by(share_class_version.transaction_id).all()
         share_classes = []
         for share_class in share_classes_list:
-                share_class_json = VersionedBusinessDetailsService.share_class_revision_json(share_class)
-                share_classes.append(share_class_json)
+            share_class_json = VersionedBusinessDetailsService.share_class_revision_json(share_class)
+            share_classes.append(share_class_json)
         return share_classes
 
     @staticmethod
     def party_role_revision_json(party_role_revision) -> dict:
         """Return the party member as a json object."""
+        cessation_date = datetime.date(party_role_revision.cessation_date).isoformat()\
+            if party_role_revision.cessation_date else None
         party = {
             **VersionedBusinessDetailsService.party_revision_json(party_role_revision.party),
             'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
-            'cessationDate': datetime.date(party_role_revision.cessation_date).isoformat()
-            if party_role_revision.cessation_date else None,
+            'cessationDate': cessation_date,
             'role': party_role_revision.role
         }
         return party
