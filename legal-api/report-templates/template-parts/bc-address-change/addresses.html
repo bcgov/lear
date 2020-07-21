@@ -1,0 +1,71 @@
+<div class="address-container">
+  {% if bcAddressChange.offices.registeredOffice is defined %}
+  <div class="section-title">
+    Registered Office Information
+  </div>
+  <div class="section-data">
+    <table class="section-data-table" role="presentation">
+      <tr>
+        <td class="delivery-address">
+          <div class="section-sub-title">Delivery Address</div>
+          <div>{{ bcAddressChange.offices.registeredOffice.deliveryAddress.streetAddress }}</div>
+          <div>{{ bcAddressChange.offices.registeredOffice.deliveryAddress.streetAddressAdditional }}</div>
+          <div>{{ bcAddressChange.offices.registeredOffice.deliveryAddress.addressCity }}
+            {{ bcAddressChange.offices.registeredOffice.deliveryAddress.addressRegion }}
+            &nbsp;{{ bcAddressChange.offices.registeredOffice.deliveryAddress.postalCode }}
+          </div>
+          <div>{{ bcAddressChange.offices.registeredOffice.deliveryAddress.addressCountry }}</div>
+          <div>{{ bcAddressChange.offices.registeredOffice.deliveryAddress.deliveryInstructions }}</div>
+        </td>
+        <td>
+          <div class="section-sub-title">Mailing Address</div>
+          <div>{{ bcAddressChange.offices.registeredOffice.mailingAddress.streetAddress }}</div>
+          <div>{{ bcAddressChange.offices.registeredOffice.mailingAddress.streetAddressAdditional }}</div>
+          <div>{{ bcAddressChange.offices.registeredOffice.mailingAddress.addressCity }}
+            {{ bcAddressChange.offices.registeredOffice.mailingAddress.addressRegion }}
+            &nbsp;{{ bcAddressChange.offices.registeredOffice.mailingAddress.postalCode }}
+          </div>
+          <div>{{ bcAddressChange.offices.registeredOffice.mailingAddress.addressCountry }}</div>
+          <div>{{ bcAddressChange.offices.registeredOffice.mailingAddress.deliveryInstructions }}</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div class="separator"></div>
+  {% endif %}
+  {% if bcAddressChange.offices.recordsOffice is defined %}
+  <div class="no-page-break">
+    <div class="section-title">
+      Records Office Information
+    </div>
+    <div class="section-data">
+      <table class="section-data-table" role="presentation">
+        <tr>
+          <td class="delivery-address">
+            <div class="section-sub-title">Delivery Address</div>
+            <div>{{ bcAddressChange.offices.recordsOffice.deliveryAddress.streetAddress }}</div>
+            <div>{{ bcAddressChange.offices.recordsOffice.deliveryAddress.streetAddressAdditional }}</div>
+            <div>{{ bcAddressChange.offices.recordsOffice.deliveryAddress.addressCity }}
+              {{ bcAddressChange.offices.recordsOffice.deliveryAddress.addressRegion }}
+              &nbsp;{{ bcAddressChange.offices.recordsOffice.deliveryAddress.postalCode }}
+            </div>
+            <div>{{ bcAddressChange.offices.recordsOffice.deliveryAddress.addressCountry }}</div>
+            <div>{{ bcAddressChange.offices.recordsOffice.deliveryAddress.deliveryInstructions }}</div>
+          </td>
+          <td>
+            <div class="section-sub-title">Mailing Address</div>
+            <div>{{ bcAddressChange.offices.recordsOffice.mailingAddress.streetAddress }}</div>
+            <div>{{ bcAddressChange.offices.recordsOffice.mailingAddress.streetAddressAdditional }}</div>
+            <div>{{ bcAddressChange.offices.recordsOffice.mailingAddress.addressCity }}
+              {{ bcAddressChange.offices.recordsOffice.mailingAddress.addressRegion }}
+              &nbsp;{{ bcAddressChange.offices.recordsOffice.mailingAddress.postalCode }}
+            </div>
+            <div>{{ bcAddressChange.offices.recordsOffice.mailingAddress.addressCountry }}</div>
+            <div>{{ bcAddressChange.offices.recordsOffice.mailingAddress.deliveryInstructions }}</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
