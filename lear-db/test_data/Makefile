@@ -57,7 +57,6 @@ setup-venv: requirements.txt
 install-dev: venv/bin/activate
 	. venv/bin/activate ; \
 	pip install -Ur requirements/dev.txt; \
-	pip install -e .
 
 .PHONY: activate
 activate: venv/bin/activate
