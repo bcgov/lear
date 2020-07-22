@@ -1,5 +1,5 @@
 <div class="address-container">
-  {% if bcAddressChange.offices.registeredOffice is defined %}
+  {% if  registeredOfficeAddress is defined %}
   <div class="section-title">
     Registered Office Information
   </div>
@@ -7,33 +7,33 @@
     <table class="section-data-table" role="presentation">
       <tr>
         <td class="delivery-address">
-          <div class="section-sub-title">Delivery Address</div>
-          <div>{{ bcAddressChange.offices.registeredOffice.deliveryAddress.streetAddress }}</div>
-          <div>{{ bcAddressChange.offices.registeredOffice.deliveryAddress.streetAddressAdditional }}</div>
-          <div>{{ bcAddressChange.offices.registeredOffice.deliveryAddress.addressCity }}
-            {{ bcAddressChange.offices.registeredOffice.deliveryAddress.addressRegion }}
-            &nbsp;{{ bcAddressChange.offices.registeredOffice.deliveryAddress.postalCode }}
+          <div class="section-sub-title">Delivery Address  {% if 'addressChanged' in registeredOfficeAddress.deliveryAddress.actions %}{{ labelNew() }}{% endif %}</div>
+          <div> {{ registeredOfficeAddress.deliveryAddress.streetAddress }}</div>
+          <div> {{ registeredOfficeAddress.deliveryAddress.streetAddressAdditional }}</div>
+          <div> {{ registeredOfficeAddress.deliveryAddress.addressCity }}
+             {{ registeredOfficeAddress.deliveryAddress.addressRegion }}
+            &nbsp; {{ registeredOfficeAddress.deliveryAddress.postalCode }}
           </div>
-          <div>{{ bcAddressChange.offices.registeredOffice.deliveryAddress.addressCountry }}</div>
-          <div>{{ bcAddressChange.offices.registeredOffice.deliveryAddress.deliveryInstructions }}</div>
+          <div> {{ registeredOfficeAddress.deliveryAddress.addressCountry }}</div>
+          <div> {{ registeredOfficeAddress.deliveryAddress.deliveryInstructions }}</div>
         </td>
         <td>
-          <div class="section-sub-title">Mailing Address</div>
-          <div>{{ bcAddressChange.offices.registeredOffice.mailingAddress.streetAddress }}</div>
-          <div>{{ bcAddressChange.offices.registeredOffice.mailingAddress.streetAddressAdditional }}</div>
-          <div>{{ bcAddressChange.offices.registeredOffice.mailingAddress.addressCity }}
-            {{ bcAddressChange.offices.registeredOffice.mailingAddress.addressRegion }}
-            &nbsp;{{ bcAddressChange.offices.registeredOffice.mailingAddress.postalCode }}
+          <div class="section-sub-title">Mailing Address  {% if 'addressChanged' in registeredOfficeAddress.mailingAddress.actions %}{{ labelNew() }}{% endif %}</div>
+          <div> {{ registeredOfficeAddress.mailingAddress.streetAddress }}</div>
+          <div> {{ registeredOfficeAddress.mailingAddress.streetAddressAdditional }}</div>
+          <div> {{ registeredOfficeAddress.mailingAddress.addressCity }}
+             {{ registeredOfficeAddress.mailingAddress.addressRegion }}
+            &nbsp; {{ registeredOfficeAddress.mailingAddress.postalCode }}
           </div>
-          <div>{{ bcAddressChange.offices.registeredOffice.mailingAddress.addressCountry }}</div>
-          <div>{{ bcAddressChange.offices.registeredOffice.mailingAddress.deliveryInstructions }}</div>
+          <div> {{ registeredOfficeAddress.mailingAddress.addressCountry }}</div>
+          <div> {{ registeredOfficeAddress.mailingAddress.deliveryInstructions }}</div>
         </td>
       </tr>
     </table>
   </div>
   <div class="separator"></div>
   {% endif %}
-  {% if bcAddressChange.offices.recordsOffice is defined %}
+  {% if  recordsOfficeAddress is defined %}
   <div class="no-page-break">
     <div class="section-title">
       Records Office Information
@@ -42,26 +42,26 @@
       <table class="section-data-table" role="presentation">
         <tr>
           <td class="delivery-address">
-            <div class="section-sub-title">Delivery Address</div>
-            <div>{{ bcAddressChange.offices.recordsOffice.deliveryAddress.streetAddress }}</div>
-            <div>{{ bcAddressChange.offices.recordsOffice.deliveryAddress.streetAddressAdditional }}</div>
-            <div>{{ bcAddressChange.offices.recordsOffice.deliveryAddress.addressCity }}
-              {{ bcAddressChange.offices.recordsOffice.deliveryAddress.addressRegion }}
-              &nbsp;{{ bcAddressChange.offices.recordsOffice.deliveryAddress.postalCode }}
+            <div class="section-sub-title">Delivery Address {% if 'addressChanged' in recordsOfficeAddress.deliveryAddress.actions %}{{ labelNew() }}{% endif %}</div>
+            <div> {{ recordsOfficeAddress.deliveryAddress.streetAddress }}</div>
+            <div> {{ recordsOfficeAddress.deliveryAddress.streetAddressAdditional }}</div>
+            <div> {{ recordsOfficeAddress.deliveryAddress.addressCity }}
+               {{ recordsOfficeAddress.deliveryAddress.addressRegion }}
+              &nbsp; {{ recordsOfficeAddress.deliveryAddress.postalCode }}
             </div>
-            <div>{{ bcAddressChange.offices.recordsOffice.deliveryAddress.addressCountry }}</div>
-            <div>{{ bcAddressChange.offices.recordsOffice.deliveryAddress.deliveryInstructions }}</div>
+            <div> {{ recordsOfficeAddress.deliveryAddress.addressCountry }}</div>
+            <div> {{ recordsOfficeAddress.deliveryAddress.deliveryInstructions }}</div>
           </td>
           <td>
-            <div class="section-sub-title">Mailing Address</div>
-            <div>{{ bcAddressChange.offices.recordsOffice.mailingAddress.streetAddress }}</div>
-            <div>{{ bcAddressChange.offices.recordsOffice.mailingAddress.streetAddressAdditional }}</div>
-            <div>{{ bcAddressChange.offices.recordsOffice.mailingAddress.addressCity }}
-              {{ bcAddressChange.offices.recordsOffice.mailingAddress.addressRegion }}
-              &nbsp;{{ bcAddressChange.offices.recordsOffice.mailingAddress.postalCode }}
+            <div class="section-sub-title">Mailing Address  {% if 'addressChanged' in recordsOfficeAddress.mailingAddress.actions %}{{ labelNew() }}{% endif %}</div>
+            <div> {{ recordsOfficeAddress.mailingAddress.streetAddress }}</div>
+            <div> {{ recordsOfficeAddress.mailingAddress.streetAddressAdditional }}</div>
+            <div> {{ recordsOfficeAddress.mailingAddress.addressCity }}
+               {{ recordsOfficeAddress.mailingAddress.addressRegion }}
+              &nbsp; {{ recordsOfficeAddress.mailingAddress.postalCode }}
             </div>
-            <div>{{ bcAddressChange.offices.recordsOffice.mailingAddress.addressCountry }}</div>
-            <div>{{ bcAddressChange.offices.recordsOffice.mailingAddress.deliveryInstructions }}</div>
+            <div> {{ recordsOfficeAddress.mailingAddress.addressCountry }}</div>
+            <div> {{ recordsOfficeAddress.mailingAddress.deliveryInstructions }}</div>
           </td>
         </tr>
       </table>
