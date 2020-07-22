@@ -20,11 +20,12 @@ from http import HTTPStatus
 
 import pycountry
 import requests
+from colin_api.models import CorpName
 from dotenv import find_dotenv, load_dotenv
 from flask import Flask
 from legal_api import db
 from legal_api.config import get_named_config
-from legal_api.models import Address, Business, Filing, Office, Party, PartyRole, User
+from legal_api.models import Address, Business, Filing, Office, Party, PartyRole, ShareClass, ShareSeries, User
 from legal_api.models.colin_event_id import ColinEventId
 from sqlalchemy_continuum import versioning_manager
 
@@ -43,6 +44,41 @@ FAILED_CORPS = []
 NEW_CORPS = []
 LOADED_FILING_HISTORY = []
 FAILED_FILING_HISTORY = []
+
+BUSINESS_MODEL_INFO_TYPES = {
+    Business.LegalTypes.BCOMP.value: [
+        'business',
+        'office',
+        'parties',
+        'sharestructure',
+        'resolutions',
+        'aliases'
+    ],
+    Business.LegalTypes.COOP.value: [
+        'business',
+        'office',
+        'parties'
+    ]
+}
+
+
+def get_oracle_info(corp_num: str, legal_type: str, info_type: str) -> dict:
+    """Get current business info for (business, offices, directors, etc.)."""
+    if info_type == 'business':
+        info_type = ''
+    elif info_type == 'aliases':
+        info_type = f'names/{CorpName.TypeCodes.TRANSLATION.value}'
+
+    url = f'{COLIN_API}/api/v1/businesses/{legal_type}/{corp_num}/{info_type}'
+    if info_type == 'resolutions':
+        url = f'{COLIN_API}/api/v1/businesses/internal/{legal_type}/{corp_num}/{info_type}'
+
+    r = requests.get(url, timeout=TIMEOUT)
+    if r.status_code != HTTPStatus.OK or not r.json():
+        FAILED_CORPS.append(corp_num)
+        print(f'skipping {corp_num} business {info_type} not found')
+        return {'failed': True}
+    return r.json()
 
 
 def create_business(business_json: dict) -> Business:
@@ -87,7 +123,32 @@ def create_office(business: Business, addresses: list, office_type: str):
     business.offices.append(office)
 
 
-def add_business_addresses(business: Business, offices_json: dict):
+def create_share_class(share_class_info: dict) -> ShareClass:
+    """Create a new share class and associated series."""
+    share_class = ShareClass(
+        name=share_class_info['name'],
+        priority=share_class_info['priority'],
+        max_share_flag=share_class_info['hasMaximumShares'],
+        max_shares=share_class_info.get('maxNumberOfShares', None),
+        par_value_flag=share_class_info['hasParValue'],
+        par_value=share_class_info.get('parValue', None),
+        currency=share_class_info.get('currency', None),
+        special_rights_flag=share_class_info['hasRightsOrRestrictions']
+    )
+    for series in share_class.series:
+        share_series = ShareSeries(
+            name=series['name'],
+            priority=series['priority'],
+            max_share_flag=series['hasMaximumShares'],
+            max_shares=series.get('maxNumberOfShares', None),
+            special_rights_flag=series['hasRightsOrRestrictions']
+        )
+        share_class.series.append(share_series)
+
+    return share_class
+
+
+def add_business_offices(business: Business, offices_json: dict):
     """Add office addresses to business."""
     for office_type in offices_json:
         delivery_address = create_address(offices_json[office_type]['deliveryAddress'], Address.DELIVERY)
@@ -106,12 +167,14 @@ def add_business_directors(business: Business, directors_json: dict):
     """Create directors and add them to business."""
     for director in directors_json['directors']:
         delivery_address = create_address(director['deliveryAddress'], Address.DELIVERY)
-
-        # create person/organization get them if they already exist
-        party = Party.find_by_name(
+        mailing_address = create_address(director['mailingAddress'], Address.MAILING)
+        # create person/organization or get them if they already exist for corp
+        party = PartyRole.find_party_by_name(
+            business_id=business.id,
             first_name=director['officer'].get('firstName', '').upper(),
             last_name=director['officer'].get('lastName', '').upper(),
-            organization_name=director.get('organization_name', '').upper()
+            middle_initial=director['officer'].get('middleInitial', '').upper(),
+            org_name=director.get('organization_name', '').upper()
         )
         if not party:
             party = Party(
@@ -124,6 +187,7 @@ def add_business_directors(business: Business, directors_json: dict):
 
         # add addresses to party
         party.delivery_address = delivery_address
+        party.mailing_address = mailing_address
 
         # create party role and link party to it
         party_role = PartyRole(
@@ -136,13 +200,30 @@ def add_business_directors(business: Business, directors_json: dict):
         business.party_roles.append(party_role)
 
 
-def historic_filings_exist(business_id: int):
-    """Check if there are historic filings for this business."""
-    filings = Filing.get_filings_by_status(business_id, [Filing.Status.COMPLETED.value])
+def add_business_shares(business: Business, shares_json: dict):
+    """Create shares and add them to business."""
+    for share_class_info in shares_json:
+        share_class = create_share_class(share_class_info)
+        business.share_classes.append(share_class)
+
+
+def add_business_resolutions(business: Business, resolutions_json: dict):
+    """Create resolutions and add them to business."""
+
+
+def add_business_aliases(business: Business, aliases_json: dict):
+    """Create name translations and add them to business."""
+
+
+def history_needed(business: Business):
+    """Check if there is history to load for this business."""
+    if business.legal_type != Business.LegalTypes.COOP.value:
+        return False
+    filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
     for possible_historic in filings:
         if possible_historic.json['filing']['header']['date'] < '2019-03-08':
-            return True
-    return False
+            return False
+    return True
 
 
 def load_historic_filings(corp_num: str, business: Business):
@@ -207,38 +288,26 @@ def load_corps(csv_filepath: str = 'corp_nums/corps_to_load.csv'):
                 try:
                     business = Business.find_by_identifier(corp_num)
                     if not business:
+                        legal_type = Business.LegalTypes.BCOMP.value
+                        if corp_num[:2] == Business.LegalTypes.COOP.value:
+                            legal_type = Business.LegalTypes.COOP.value
                         try:
-                            # get business info
-                            r = requests.get(
-                                COLIN_API + '/api/v1/businesses/' + corp_num,
-                                timeout=TIMEOUT
-                            )
-                            if r.status_code != HTTPStatus.OK or not r.json():
-                                FAILED_CORPS.append(corp_num)
-                                print(f'skipping {corp_num} business info not found')
-                                continue
-                            business_json = r.json()
+                            # get current company info
+                            business_current_info = {}
+                            for info_type in BUSINESS_MODEL_INFO_TYPES[legal_type]:
+                                if info_type == 'business':
+                                    info_type = ''
+                                elif info_type == 'resolutions':
+                                    info_type = f'names/{CorpName.TypeCodes.TRANSLATION.value}'
 
-                            # get business offices
-                            r = requests.get(
-                                COLIN_API + '/api/v1/businesses/' +
-                                corp_num + '/office',
-                                timeout=TIMEOUT)
-                            if r.status_code != HTTPStatus.OK \
-                                    or not r.json():
-                                FAILED_CORPS.append(corp_num)
-                                print('skipping ' + corp_num + ' business offices not found')
-                                continue
-                            offices_json = r.json()
+                                business_current_info[info_type] = get_oracle_info(
+                                    corp_num=corp_num,
+                                    legal_type=legal_type,
+                                    info_type=info_type
+                                )
+                                if business_current_info[info_type].get('failed', False):
+                                    continue
 
-                            # get business directors
-                            r = requests.get(f'{COLIN_API}/api/v1/businesses/{corp_num}/parties', timeout=TIMEOUT)
-                            if r.status_code != HTTPStatus.OK \
-                                    or not r.json():
-                                FAILED_CORPS.append(corp_num)
-                                print(f'skipping {corp_num} business directors not found')
-                                continue
-                            directors_json = r.json()
                         except requests.exceptions.Timeout:
                             FAILED_CORPS.append(corp_num)
                             print('colin_api request timed out getting corporation details.')
@@ -247,9 +316,14 @@ def load_corps(csv_filepath: str = 'corp_nums/corps_to_load.csv'):
                         uow = versioning_manager.unit_of_work(db.session)
                         transaction = uow.create_transaction(db.session)
                         try:
-                            business = create_business(db, business_json)
-                            add_business_addresses(business, offices_json)
-                            add_business_directors(business, directors_json)
+                            business = create_business(db, business_current_info['business'])
+                            add_business_offices(business, business_current_info['office'])
+                            add_business_directors(business, business_current_info['directors'])
+                            if legal_type == Business.LegalTypes.BCOMP.value:
+                                add_business_shares(business, business_current_info['sharestructure'])
+                                add_business_resolutions(business, business_current_info['resolutions'])
+                                add_business_aliases(business, business_current_info['aliases'])
+
                             db.session.add(business)
                             filing = Filing()
                             filing.filing_json = {
@@ -280,7 +354,7 @@ def load_corps(csv_filepath: str = 'corp_nums/corps_to_load.csv'):
                         added = True
                         print('-> business info already exists -- skipping corp load')
 
-                    if added and not historic_filings_exist(business.id):
+                    if added and history_needed(business=business):
                         load_historic_filings(corp_num=corp_num)
                     else:
                         print('-> historic filings already exist - skipping history load')
