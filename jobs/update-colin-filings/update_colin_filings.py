@@ -107,6 +107,7 @@ def update_colin_id(app: Flask = None, filing_id: str = None, colin_ids: list = 
 
 
 def clean_none(dictionary: dict = None):
+    """Replace all none values with empty string."""
     for key in dictionary.keys():
         if dictionary[key]:
             if isinstance(dictionary[key], dict):
@@ -115,15 +116,13 @@ def clean_none(dictionary: dict = None):
             dictionary[key] = ''
 
 
-def is_bcomp(identifier: str):
-    return 'bc' in identifier.lower()
-
-
 def is_test_coop(identifier: str):
+    """Return true if identifier is associated with a postgres only test coop."""
     return 'CP1' in identifier
 
 
 def run():
+    """Get filings that haven't been synced with colin and send them to the colin-api."""
     application = create_app()
     corps_with_failed_filing = []
     with application.app_context():
@@ -133,7 +132,7 @@ def run():
 
             filings = get_filings(app=application)
             if not filings:
-                application.logger.debug(f'No completed filings to send to colin.')
+                application.logger.debug('No completed filings to send to colin.')
             for filing in filings:
                 filing_id = filing['filingId']
                 identifier = filing['filing']['business']['identifier']
