@@ -120,12 +120,14 @@ class Report:  # pylint: disable=too-few-public-methods
             'certificate-of-incorporation/logo',
             'incorporation-application/addresses',
             'incorporation-application/directors',
-            'incorporation-application/style',
+            'common/style',
             'incorporation-application/incorporator',
             'incorporation-application/completingParty',
             'incorporation-application/incorporationDetails',
             'incorporation-application/shareStructure',
-            'incorporation-application/nameRequest'
+            'incorporation-application/nameRequest',
+            'bc-address-change/addresses',
+            'bc-address-change/addressChangeDetails'
         ]
 
         # substitute template parts - marked up by [[filename]]
@@ -181,7 +183,9 @@ class Report:  # pylint: disable=too-few-public-methods
         filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {hour}:%M %p Pacific Time')
         # Get the effective date
         effective_date = filing_datetime if self._filing.effective_date is None \
-            else self._filing.effective_date
+            else LegislationDatetime.as_legislation_timezone(self._filing.effective_date)
+        effective_hour = effective_date.strftime('%I').lstrip('0')
+        filing['effective_date_time'] = effective_date.strftime(f'%B %d, %Y {effective_hour}:%M %p Pacific Time')
         # TODO: best: custom date/time filters in the report-api. Otherwise: a subclass for filing-specific data.
         if self._filing.filing_type == 'annualReport':
             agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
@@ -221,6 +225,12 @@ class Report:  # pylint: disable=too-few-public-methods
         if filing.get('changeOfAddress'):
             if filing.get('changeOfAddress').get('offices'):
                 filing['registeredOfficeAddress'] = filing['changeOfAddress']['offices']['registeredOffice']
+                if filing['changeOfAddress']['offices'].get('recordsOffice', None):
+                    filing['recordsOfficeAddress'] = filing['changeOfAddress']['offices']['recordsOffice']
+                    filing['recordsOfficeAddress']['deliveryAddress'] =\
+                        self._format_address(filing['recordsOfficeAddress']['deliveryAddress'])
+                    filing['recordsOfficeAddress']['mailingAddress'] =\
+                        self._format_address(filing['recordsOfficeAddress']['mailingAddress'])
             else:
                 filing['registeredOfficeAddress'] = filing['changeOfAddress']
         else:

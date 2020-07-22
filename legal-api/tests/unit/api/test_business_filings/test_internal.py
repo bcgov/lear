@@ -68,6 +68,8 @@ def test_post_pre_load_colin_filing(session, client, jwt):
     assert filing.status == Filing.Status.COMPLETED.value
 
 
+@integration_nats
+@pytest.mark.asyncio
 def test_post_colin_filing(session, client, jwt):
     """Assert that colin filing can be posted to legal api."""
     # SETUP
