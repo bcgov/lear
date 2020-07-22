@@ -120,14 +120,13 @@ class Report:  # pylint: disable=too-few-public-methods
             'certificate-of-incorporation/logo',
             'incorporation-application/addresses',
             'incorporation-application/directors',
-            'incorporation-application/style',
+            'common/style',
             'incorporation-application/incorporator',
             'incorporation-application/completingParty',
             'incorporation-application/incorporationDetails',
             'incorporation-application/shareStructure',
             'incorporation-application/nameRequest',
             'bc-address-change/addresses',
-            'bc-address-change/style',
             'bc-address-change/addressChangeDetails'
         ]
 
