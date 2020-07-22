@@ -117,14 +117,13 @@
                 {{ director.officer.firstName }}
                 {% if director.officer.middleInitial is defined %}{{ director.officer.middleInitial }}{% endif %}
                 {% if 'appointed' in director.actions %}{{ labelNew() }}{% endif %}
-                {% if 'nameChanged' in director.actions %}
-                <span class="director-former-name">
-                  (Formerly {{ director.officer.prevLastName }},
-                  {{ director.officer.prevFirstName }}
-                  {{ director.officer.prevMiddleInitial }})
-                </span>
-                {% endif %}
               </div>
+              {% if 'nameChanged' in director.actions %}
+              <div class="director-former-name">
+                {% set prevName = director.officer.prevLastName + ', ' + director.officer.prevFirstName + ' ' + director.officer.prevMiddleInitial %}
+                (Formerly {{ prevName | trim }})
+              </div>
+              {% endif %}
             </td>
             <td class="mailing-address">
               <div class="section-sub-title">
