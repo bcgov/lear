@@ -155,13 +155,6 @@ class Report:  # pylint: disable=too-few-public-methods
         if self._filing.filing_type == 'incorporationApplication' and report_type:
             file_name = Report.incorporation_filing_reports[report_type]['fileName']
             return '{}.html'.format(file_name)
-
-        # FOR TESTING ONLY -- DO NOT COMMIT !!!
-        elif self._filing.filing_type == 'changeOfAddress':
-            return 'bcAddressChange.html'
-        elif self._filing.filing_type == 'changeOfDirectors':
-            return 'bcDirectorChange.html'
-
         return '{}.html'.format(self._filing.filing_type)
 
     def _get_template_data(self, report_type=None):  # pylint: disable=too-many-branches
