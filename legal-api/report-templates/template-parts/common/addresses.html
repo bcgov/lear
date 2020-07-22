@@ -14,7 +14,11 @@
                   {{ offices.registeredOffice.deliveryAddress.addressRegion }}
                   &nbsp;{{ offices.registeredOffice.deliveryAddress.postalCode }}
                </div>
-               <div>{{ offices.registeredOffice.deliveryAddress.addressCountryDescription }}</div>
+                {% if offices.registeredOffice.deliveryAddress.addressCountryDescription %}
+                  <div>{{ offices.registeredOffice.deliveryAddress.addressCountryDescription }}</div>
+               {% else %}
+                  <div>{{ offices.registeredOffice.deliveryAddress.addressCountry }}</div>
+               {% endif %}
                <div>{{ offices.registeredOffice.deliveryAddress.deliveryInstructions }}</div>
             </td>
             <td>
@@ -25,7 +29,11 @@
                   {{ offices.registeredOffice.mailingAddress.addressRegion }}
                   &nbsp;{{ offices.registeredOffice.mailingAddress.postalCode }}
                </div>
-               <div>{{ offices.registeredOffice.mailingAddress.addressCountryDescription }}</div>
+               {% if offices.registeredOffice.mailingAddress.addressCountryDescription %}
+                  <div>{{ offices.registeredOffice.mailingAddress.addressCountryDescription }}</div>
+               {% else %}
+                  <div>{{ offices.registeredOffice.mailingAddress.addressCountry }}</div>
+               {% endif %}
                <div>{{ offices.registeredOffice.mailingAddress.deliveryInstructions }}</div>
             </td>
          </tr>
@@ -49,7 +57,11 @@
                      {{ offices.recordsOffice.deliveryAddress.addressRegion }}
                      &nbsp;{{ offices.recordsOffice.deliveryAddress.postalCode }}
                   </div>
-                  <div>{{ offices.recordsOffice.deliveryAddress.addressCountryDescription }}</div>
+                  {% if  offices.recordsOffice.deliveryAddress.addressCountryDescription %}
+                     <div>{{ offices.recordsOffice.deliveryAddress.addressCountryDescription }}</div>
+                  {% else %}
+                     <div>{{ offices.recordsOffice.deliveryAddress.addressCountry }}</div>
+                  {% endif %}
                   <div>{{ offices.recordsOffice.deliveryAddress.deliveryInstructions }}</div>
                </td>
                <td>
@@ -60,7 +72,11 @@
                      {{ offices.recordsOffice.mailingAddress.addressRegion }}
                      &nbsp;{{ offices.recordsOffice.mailingAddress.postalCode }}
                   </div>
-                  <div>{{ offices.recordsOffice.mailingAddress.addressCountryDescription }}</div>
+                  {% if offices.recordsOffice.mailingAddress.addressCountryDescription %}
+                     <div>{{ offices.recordsOffice.mailingAddress.addressCountryDescription }}</div>
+                  {% else %}
+                     <div>{{ offices.recordsOffice.mailingAddress.addressCountry }}</div>
+                  {% endif %}
                   <div>{{ offices.recordsOffice.mailingAddress.deliveryInstructions }}</div>
                </td>
             </tr>

@@ -106,21 +106,19 @@ class Report:  # pylint: disable=too-few-public-methods
             'certificate-of-incorporation/seal',
             'certificate-of-incorporation/registrarSignature',
             'certificate-of-incorporation/logo',
-            'incorporation-application/addresses',
-            'incorporation-application/directors',
+            'common/addresses',
             'common/style',
             'incorporation-application/incorporator',
             'incorporation-application/completingParty',
             'incorporation-application/incorporationDetails',
-            'incorporation-application/shareStructure',
+            'incorporation-application/directors',
+            'common/shareStructure',
             'incorporation-application/nameRequest',
             'bc-address-change/addresses',
             'bc-address-change/addressChangeDetails',
-            'notice-of-articles/shareStructure',
-            'notice-of-articles/directors',
-            'notice-of-articles/addresses',
             'notice-of-articles/nameTranslations',
-            'notice-of-articles/headerDetails'
+            'notice-of-articles/headerDetails',
+            'notice-of-articles/directors'
         ]
 
         # substitute template parts - marked up by [[filename]]
@@ -250,8 +248,10 @@ class Report:  # pylint: disable=too-few-public-methods
         self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['deliveryAddress'])
         self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
         self._format_directors(filing['incorporationApplication']['parties'])
-        # create helper list for translations
+        # create helper list
         filing['listOfTranslations'] = filing['incorporationApplication'].get('nameTranslations', [])
+        filing['offices'] = filing['incorporationApplication']['offices']
+        filing['shareClasses'] = filing['incorporationApplication']['shareClasses']
 
     def _format_noa_data(self, filing):
         filing['header'] = {}
