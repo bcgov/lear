@@ -1,0 +1,8 @@
+{% if nameTranslations|length > 0 %}
+   <div class="name-translation-container">
+      <div class="section-sub-title">Translation(s) of Company Name:</div>
+      {% for translation in nameTranslations %}
+        <div>{{translation.alias}}</div>
+      {% endfor %}
+   </div>
+{% endif %}

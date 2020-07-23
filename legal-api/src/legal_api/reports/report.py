@@ -13,6 +13,7 @@ import base64
 import copy
 import json
 import os
+from contextlib import suppress
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
@@ -21,6 +22,8 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
+from legal_api.models import Business
+from legal_api.services import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -29,63 +32,48 @@ class Report:  # pylint: disable=too-few-public-methods
     # TODO review pylint warning and alter as required
     """Service to create report outputs."""
 
-    incorporation_filing_reports = {
-        'certificate': {'filingDescription': 'Certificate of Incorporation', 'fileName': 'certificateOfIncorporation'},
-        'noa': {'filingDescription': 'Notice of Article', 'fileName': 'incorporationApplication'}
-    }
-
     def __init__(self, filing):
         """Create the Report instance."""
         self._filing = filing
+        self._business = None
+        self._report_key = None
 
     def get_pdf(self, report_type=None):
         """Render a pdf for the report."""
+        self._report_key = report_type if report_type else self._filing.filing_type
+        if self._filing.business_id:
+            self._business = Business.find_by_internal_id(self._filing.business_id)
         headers = {
             'Authorization': 'Bearer {}'.format(jwt.get_token_auth_header()),
             'Content-Type': 'application/json'
         }
-
         data = {
-            'reportName': self._get_report_filename(report_type),
-            'template': "'" + base64.b64encode(bytes(self._get_template(report_type), 'utf-8')).decode() + "'",
-            'templateVars': self._get_template_data(report_type)
+            'reportName': self._get_report_filename(),
+            'template': "'" + base64.b64encode(bytes(self._get_template(), 'utf-8')).decode() + "'",
+            'templateVars': self._get_template_data()
         }
         response = requests.post(url=current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
 
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
-
         return response.content, response.status_code
 
-    def _get_report_filename(self, report_type=None):
-        legal_entity_number = self._filing.filing_json['filing']['business']['identifier']
+    def _get_report_filename(self):
         filing_date = str(self._filing.filing_date)[:19]
-        filing_description = self._get_primary_filing()['title']
+        legal_entity_number = self._business.identifier if self._business else\
+            self._filing.filing_json['filing']['business']['identifier']
+        description = ReportMeta.reports[self._report_key]['filingDescription']
+        return '{}_{}_{}.pdf'.format(legal_entity_number, filing_date, description).replace(' ', '_')
 
-        if self._filing.filing_type == 'incorporationApplication' and report_type:
-            filing_description = Report.incorporation_filing_reports[report_type]['filingDescription']
-
-        return '{}_{}_{}.pdf'.format(legal_entity_number, filing_date, filing_description).replace(' ', '_')
-
-    def _get_primary_filing(self):
-        filings = self._filing.FILINGS
-
-        if len(filings) == 1:
-            return next(iter(filings))
-
-        return filings['annualReport']
-
-    def _get_template(self, report_type=None):
+    def _get_template(self):
         try:
             template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
-            template_code = Path(f'{template_path}/{self._get_template_filename(report_type)}').read_text()
-
+            template_code = Path(f'{template_path}/{self._get_template_filename()}').read_text()
             # substitute template parts
             template_code = self._substitute_template_parts(template_code)
         except Exception as err:
             current_app.logger.error(err)
             raise err
-
         return template_code
 
     @staticmethod
@@ -118,16 +106,21 @@ class Report:  # pylint: disable=too-few-public-methods
             'certificate-of-incorporation/seal',
             'certificate-of-incorporation/registrarSignature',
             'certificate-of-incorporation/logo',
-            'incorporation-application/addresses',
-            'incorporation-application/directors',
+            'common/addresses',
             'common/style',
             'incorporation-application/incorporator',
             'incorporation-application/completingParty',
             'incorporation-application/incorporationDetails',
-            'incorporation-application/shareStructure',
+            'incorporation-application/directors',
+            'common/shareStructure',
             'incorporation-application/nameRequest',
             'bc-address-change/addresses',
-            'bc-address-change/addressChangeDetails'
+            'bc-address-change/addressChangeDetails',
+            'notice-of-articles/nameTranslations',
+            'notice-of-articles/headerDetails',
+            'notice-of-articles/directors',
+            'bc-director-change/directorChangeDetails',
+            'bc-director-change/directors'
         ]
 
         # substitute template parts - marked up by [[filename]]
@@ -137,56 +130,55 @@ class Report:  # pylint: disable=too-few-public-methods
 
         return template_code
 
-    @staticmethod
-    def _get_environment():
-        namespace = os.getenv('POD_NAMESPACE', '').lower()
-
-        if namespace.endswith('dev'):
-            return 'DEV'
-
-        if namespace.endswith('test'):
-            return 'TEST'
-
-        return ''
-
-    def _get_template_filename(self, report_type=None):
-        if self._filing.filing_type == 'incorporationApplication' and report_type:
-            file_name = Report.incorporation_filing_reports[report_type]['fileName']
-            return '{}.html'.format(file_name)
-        return '{}.html'.format(self._filing.filing_type)
-
-    def _get_template_data(self, report_type=None):  # pylint: disable=too-many-branches
-        filing = copy.deepcopy(self._filing.filing_json['filing'])
-        if self._filing.filing_type == 'incorporationApplication':
-            self._format_incorporation_data(filing, report_type)
+    def _get_template_filename(self):
+        if ReportMeta.reports[self._report_key].get('hasDifferentTemplates', False):
+            file_name = ReportMeta.reports[self._report_key][self._business.legal_type]['fileName']
         else:
-            # set registered office address from either the COA filing or status quo data in AR filing
-            try:
-                self._set_addresses(filing)
-            except KeyError:
-                pass
+            file_name = ReportMeta.reports[self._report_key]['fileName']
+        return '{}.html'.format(file_name)
 
-            # set director list from either the COD filing or status quo data in AR filing
-            try:
-                self._set_directors(filing)
-            except KeyError:
-                pass
+    def _get_template_data(self):  # pylint: disable=too-many-branches
+        if self._report_key == 'noa':
+            filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
+            self._format_noa_data(filing)
+        else:
+            filing = copy.deepcopy(self._filing.filing_json['filing'])
+            if self._filing.filing_type == 'incorporationApplication':
+                self._format_incorporation_data(filing)
+            else:
+                # set registered office address from either the COA filing or status quo data in AR filing
+                with suppress(KeyError):
+                    self._set_addresses(filing)
+                # set director list from either the COD filing or status quo data in AR filing
+                with suppress(KeyError):
+                    self._set_directors(filing)
 
-            self._set_dates(filing)
-
+        self._set_dates(filing)
+        self._set_description(filing)
         self._set_meta_info(filing)
         return filing
 
+    def _set_description(self, filing):
+        if self._business:
+            filing['entityDescription'] = ReportMeta.entity_description[self._business.legal_type]
+
     def _set_dates(self, filing):
+        # Filing Date
         filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
         hour = filing_datetime.strftime('%I').lstrip('0')
-        filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {hour}:%M %p Pacific Time')
-        # Get the effective date
+        filing['filing_date_time'] = filing_datetime.strftime(f'%B %-d, %Y at {hour}:%M %p Pacific Time')
+        # Effective Date
         effective_date = filing_datetime if self._filing.effective_date is None \
             else LegislationDatetime.as_legislation_timezone(self._filing.effective_date)
         effective_hour = effective_date.strftime('%I').lstrip('0')
-        filing['effective_date_time'] = effective_date.strftime(f'%B %d, %Y {effective_hour}:%M %p Pacific Time')
-        # TODO: best: custom date/time filters in the report-api. Otherwise: a subclass for filing-specific data.
+        filing['effective_date_time'] = effective_date.strftime(f'%B %-d, %Y at {effective_hour}:%M %p Pacific Time')
+        filing['effective_date'] = effective_date.strftime('%B %d, %Y')
+        # Recognition Date
+        recognition_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
+        recognition_hour = recognition_datetime.strftime('%I')
+        filing['recognition_date_time'] = \
+            recognition_datetime.strftime(f'%B %-d, %Y at {recognition_hour}:%M %p Pacific Time')
+        # For Annual Report - Set AGM date as the effective date
         if self._filing.filing_type == 'annualReport':
             agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
             if agm_date_str:
@@ -196,9 +188,6 @@ class Report:  # pylint: disable=too-few-public-methods
                 filing['effective_date'] = agm_date.strftime('%B %d, %Y')
             else:
                 filing['agm_date'] = 'No AGM'
-        elif self._filing.filing_type in ('changeOfAddress', 'changeOfDirectors'):
-            # for standalone filings, the effective date comes from the filing data
-            filing['effective_date'] = effective_date.strftime('%B %d, %Y')
 
     def _set_directors(self, filing):
         if filing.get('changeOfDirectors'):
@@ -214,11 +203,9 @@ class Report:  # pylint: disable=too-few-public-methods
 
     def _format_directors(self, directors):
         for director in directors:
-            try:
+            with suppress(KeyError):
                 self._format_address(director['deliveryAddress'])
                 self._format_address(director['mailingAddress'])
-            except KeyError:
-                pass
         return directors
 
     def _set_addresses(self, filing):
@@ -227,9 +214,9 @@ class Report:  # pylint: disable=too-few-public-methods
                 filing['registeredOfficeAddress'] = filing['changeOfAddress']['offices']['registeredOffice']
                 if filing['changeOfAddress']['offices'].get('recordsOffice', None):
                     filing['recordsOfficeAddress'] = filing['changeOfAddress']['offices']['recordsOffice']
-                    filing['recordsOfficeAddress']['deliveryAddress'] =\
+                    filing['recordsOfficeAddress']['deliveryAddress'] = \
                         self._format_address(filing['recordsOfficeAddress']['deliveryAddress'])
-                    filing['recordsOfficeAddress']['mailingAddress'] =\
+                    filing['recordsOfficeAddress']['mailingAddress'] = \
                         self._format_address(filing['recordsOfficeAddress']['mailingAddress'])
             else:
                 filing['registeredOfficeAddress'] = filing['changeOfAddress']
@@ -256,25 +243,21 @@ class Report:  # pylint: disable=too-few-public-methods
         address['addressCountry'] = country
         return address
 
-    def _format_incorporation_data(self, filing, report_type):
-        filing['header']['reportType'] = report_type
+    def _format_incorporation_data(self, filing):
         filing['header']['filingId'] = self._filing.id
-        filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
-        effective_date_time = LegislationDatetime.as_legislation_timezone(self._filing.effective_date)
-        effective_hour = effective_date_time.strftime('%I')
-        filing_hour = filing_datetime.strftime('%I')
-        filing['header']['effective_date_time'] = \
-            effective_date_time.strftime(f'%B %-d, %Y at {effective_hour}:%M %p Pacific Time')
-        filing['header']['filing_date_time'] = \
-            filing_datetime.strftime(f'%B %-d, %Y at {filing_hour}:%M %p Pacific Time')
-        filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {filing_hour}:%M %p Pacific Time')
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
         self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['deliveryAddress'])
         self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
         self._format_directors(filing['incorporationApplication']['parties'])
-        # create helper list for translations
+        # create helper list
         filing['listOfTranslations'] = filing['incorporationApplication'].get('nameTranslations', [])
+        filing['offices'] = filing['incorporationApplication']['offices']
+        filing['shareClasses'] = filing['incorporationApplication']['shareClasses']
+
+    def _format_noa_data(self, filing):
+        filing['header'] = {}
+        filing['header']['filingId'] = self._filing.id
 
     def _set_meta_info(self, filing):
         filing['environment'] = f'{self._get_environment()} FILING #{self._filing.id}'.lstrip()
@@ -283,8 +266,81 @@ class Report:  # pylint: disable=too-few-public-methods
         # Appears in the Description section of the PDF Document Properties as Title.
         filing['meta_title'] = '{} on {}'.format(
             self._filing.FILINGS[self._filing.filing_type]['title'], filing['filing_date_time'])
+
         # Appears in the Description section of the PDF Document Properties as Subject.
-        legal_name = self._filing.filing_json['filing']['business'].get('legalName', 'NA')
-        filing['meta_subject'] = '{} ({})'.format(
-            legal_name,
-            self._filing.filing_json['filing']['business']['identifier'])
+        if self._report_key == 'noa':
+            filing['meta_subject'] = '{} ({})'.format(self._business.legal_name, self._business.identifier)
+        else:
+            legal_name = self._filing.filing_json['filing']['business'].get('legalName', 'NA')
+            filing['meta_subject'] = '{} ({})'.format(
+                legal_name,
+                self._filing.filing_json['filing']['business']['identifier'])
+
+    @staticmethod
+    def _get_environment():
+        namespace = os.getenv('POD_NAMESPACE', '').lower()
+        if namespace.endswith('dev'):
+            return 'DEV'
+        if namespace.endswith('test'):
+            return 'TEST'
+        return ''
+
+
+class ReportMeta:  # pylint: disable=too-few-public-methods
+    """Helper class to maintain the report meta information."""
+
+    reports = {
+        'certificate': {
+            'filingDescription': 'Certificate of Incorporation',
+            'fileName': 'certificateOfIncorporation'
+        },
+        'incorporationApplication': {
+            'filingDescription': 'Incorporation Application',
+            'fileName': 'incorporationApplication'
+        },
+        'noa': {
+            'filingDescription': 'Notice of Articles',
+            'fileName': 'noticeOfArticles'
+        },
+        'changeOfAddress': {
+            'hasDifferentTemplates': True,
+            'filingDescription': 'Change of Address',
+            'BC': {
+                'fileName': 'bcAddressChange'
+            },
+            'CP': {
+                'fileName': 'changeOfAddress'
+            }
+        },
+        'changeOfDirectors': {
+            'hasDifferentTemplates': True,
+            'filingDescription': 'Change of Directors',
+            'BC': {
+                'fileName': 'bcDirectorChange'
+            },
+            'CP': {
+                'fileName': 'changeOfDirectors'
+            }
+        },
+        'annualReport': {
+            'filingDescription': 'Annual Report',
+            'fileName': 'annualReport'
+        },
+        'changeOfName': {
+            'filingDescription': 'Change of Name',
+            'fileName': 'changeOfName'
+        },
+        'specialResolution': {
+            'filingDescription': 'Special Resolution',
+            'fileName': 'specialResolution'
+        },
+        'voluntaryDissolution': {
+            'filingDescription': 'Voluntary Dissolution',
+            'fileName': 'voluntaryDissolution'
+        }
+    }
+
+    entity_description = {
+        'CP': 'cooperative',
+        'BC': 'Benefit Company'
+    }

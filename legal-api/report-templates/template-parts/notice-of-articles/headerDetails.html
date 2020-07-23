@@ -4,26 +4,22 @@
             <tr>
                <td>
                   <table class="business-info" role="presentation">
-                     {% if header.reportType == 'noa'%}
                      <tr>
                         <td class="section-sub-title">Incorporation Number:</td>
                         <td>{{business.identifier}}</td>
                      </tr>
-                     {% endif %}
                      <tr>
-                        <td class="section-sub-title">Filed Date and Time:</td>
-                        <td>{{filing_date_time}}</td>
+                        <td class="section-sub-title">Issued Date and Time:</td>
+                        <td>{{effective_date_time}}</td>
                      </tr>
                      <tr>
                         <td class="section-sub-title">Recognition Date and Time:</td>
-                        <td>{{effective_date_time}}</td>
+                        <td>{{recognition_date_time}}</td>
                      </tr>
                   </table>
                   <div class="filing-identifier">
                      Filing #{{header.filingId}}
-                     {% if header.reportType == 'noa'%}
                      <span> | Incorporation #{{business.identifier}}</span>
-                     {% endif %}
                   </div>
                </td>
                <td class="registar-certify-section">

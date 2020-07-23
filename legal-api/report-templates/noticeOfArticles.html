@@ -1,0 +1,60 @@
+[[macros.html]]
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <title>Notice of Articles</title>
+      <meta charset="UTF-8">
+      <meta name="author" content="BC Registries and Online Services">
+      [[common/style.html]]
+   </head>
+   <body>
+      <div class="header">
+         <table class="header-table" role="presentation">
+            <tr>
+               <td>
+                  [[logo.html]]
+               </td>
+               <td>
+                  <div class="header-right">
+                     <div class="report-type">
+                         NOTICE OF ARTICLES
+                     </div>
+                     <div class="report-type-desc">BC Benefit Company - Business Corporations Act</div>
+                  </div>
+               </td>
+            </tr>
+         </table>
+         <div class="business-name-header">
+            <label class="lbl-business-name">
+                {{business.legalName}}
+            </label>
+         </div>
+      </div>
+      [[notice-of-articles/headerDetails.html]]
+      <div class="section-header">
+         <div class="section-header-content">NOTICE OF ARTICLES</div>
+      </div>
+      <div class="container">
+         <div class="section-data benefit-company-statement">
+            <div class="section-title">Benefit Company Statement</div>
+            <div class="section-data">
+               <p>This company is a benefit company and, as such, has purposes that include conducting its
+                  business in a responsible and sustainable manner and promoting one or more public benefits.
+               </p>
+               <p><span class="section-sub-title">Name of Company:</span>
+                  {{business.legalName}}
+               </p>
+               [[notice-of-articles/nameTranslations.html]]
+               <div class="separator"></div>
+            </div>
+         </div>
+         [[common/addresses.html]]
+         <div class="separator"></div>
+         [[notice-of-articles/directors.html]]
+         <div class="separator"></div>
+         {% if shareClasses|length > 0 %}
+            [[common/shareStructure.html]]
+         {% endif %}
+      </div>
+   </body>
+</html>
