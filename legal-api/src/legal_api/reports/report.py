@@ -118,7 +118,9 @@ class Report:  # pylint: disable=too-few-public-methods
             'bc-address-change/addressChangeDetails',
             'notice-of-articles/nameTranslations',
             'notice-of-articles/headerDetails',
-            'notice-of-articles/directors'
+            'notice-of-articles/directors',
+            'bc-director-change/directorChangeDetails',
+            'bc-director-change/directors'
         ]
 
         # substitute template parts - marked up by [[filename]]
