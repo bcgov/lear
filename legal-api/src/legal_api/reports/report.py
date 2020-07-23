@@ -316,7 +316,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'hasDifferentTemplates': True,
             'filingDescription': 'Change of Directors',
             'BC': {
-                'fileName': 'changeOfDirectors'
+                'fileName': 'bcDirectorChange'
             },
             'CP': {
                 'fileName': 'changeOfDirectors'
