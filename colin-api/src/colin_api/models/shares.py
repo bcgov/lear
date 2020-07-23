@@ -43,8 +43,8 @@ class Share:  # pylint: disable=too-many-instance-attributes;
             'shareStructureType': 'Series',
             'displayOrder': self.share_id,
             'maxNumberOfShares': self.max_number_shares,
-            'hasMaximumShares': self.has_max_shares == 'Y' or False,
-            'hasRightsOrRestrictions': self.has_special_rights == 'Y' or False,
+            'hasMaximumShares': self.has_max_shares == 'N' or False,
+            'hasRightsOrRestrictions': self.has_special_rights == 'N' or False,
             'priority': self.priority
         }
 
@@ -73,9 +73,9 @@ class ShareClass(Share):  # pylint: disable=too-many-instance-attributes;
             'maxNumberOfShares': self.max_number_shares,
             'parValue': self.par_value_amt,
             'currency': self.currency_type,
-            'hasMaximumShares': self.has_max_shares == 'Y' or False,
+            'hasMaximumShares': self.has_max_shares == 'N' or False,
             'hasParValue': self.has_par_value == 'Y' or False,
-            'hasRightsOrRestrictions': self.has_special_rights == 'Y' or False,
+            'hasRightsOrRestrictions': self.has_special_rights == 'N' or False,
             'series': [
                 x.to_dict() for x in self.series
             ]
@@ -256,10 +256,10 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
                 class_id=class_id,
                 event_id=event_id,
                 currency=class_dict['currency'],
-                has_max_share=class_dict['hasMaximumShares'],
+                has_max_share='N' if class_dict['hasMaximumShares'] else 'Y',
                 qty=class_dict['maxNumberOfShares'],
-                has_spec_rights=class_dict['hasRightsOrRestrictions'],
-                has_par_value=class_dict['hasParValue'],
+                has_spec_rights='N' if class_dict['hasRightsOrRestrictions'] else 'Y',
+                has_par_value='Y' if class_dict['hasParValue'] else 'N',
                 par_value=class_dict['parValue'],
                 name=class_dict['name']
             )
@@ -291,9 +291,9 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
                 class_id=class_id,
                 series_id=series_id,
                 event_id=event_id,
-                has_max_share=series_dict['hasMaximumShares'],
+                has_max_share='N' if series_dict['hasMaximumShares'] else 'Y',
                 qty=series_dict['maxNumberOfShares'],
-                has_spec_rights=series_dict['hasRightsOrRestrictions'],
+                has_spec_rights='N' if series_dict['hasRightsOrRestrictions'] else 'Y',
                 name=series_dict['name']
             )
         except Exception as err:

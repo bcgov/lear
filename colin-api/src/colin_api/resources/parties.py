@@ -40,7 +40,7 @@ class PartiesInfo(Resource):
             return jsonify({'message': 'Identifier required'}), HTTPStatus.NOT_FOUND
 
         try:
-            if legal_type == Business.TypeCodes.BCOMP.value:
+            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
                 identifier = identifier[-7:]
             party_type = request.args.get('partyType', 'Director')
             cursor = DB.connection.cursor()

@@ -44,7 +44,7 @@ class BusinessInfo(Resource):
 
         try:
             # convert identifier if BC legal_type
-            if legal_type == Business.LearBusinessTypes.BCOMP.value:
+            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
                 identifier = identifier[-7:]
 
             # get business
@@ -104,7 +104,7 @@ class BusinessNamesInfo(Resource):
 
         try:
             # convert identifier if BC legal_type
-            if legal_type == Business.LearBusinessTypes.BCOMP.value:
+            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
                 identifier = identifier[-7:]
 
             con = DB.connection
@@ -156,7 +156,7 @@ class InternalBusinessInfo(Resource):
                     ), HTTPStatus.BAD_REQUEST
 
                 # convert identifier if BC legal_type
-                if legal_type == Business.LearBusinessTypes.BCOMP.value:
+                if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
                     identifier = identifier[-7:]
 
                 return jsonify(

@@ -25,9 +25,23 @@ from dotenv import find_dotenv, load_dotenv
 from flask import Flask
 from legal_api import db
 from legal_api.config import get_named_config
-from legal_api.models import Address, Business, Filing, Office, Party, PartyRole, ShareClass, ShareSeries, User
+from legal_api.models import (
+    Address,
+    Alias,
+    Business,
+    Filing,
+    Office,
+    Party,
+    PartyRole,
+    Resolution,
+    ShareClass,
+    ShareSeries,
+    User,
+)
 from legal_api.models.colin_event_id import ColinEventId
+from pytz import timezone
 from sqlalchemy_continuum import versioning_manager
+
 
 load_dotenv(find_dotenv())
 
@@ -64,14 +78,14 @@ BUSINESS_MODEL_INFO_TYPES = {
 
 def get_oracle_info(corp_num: str, legal_type: str, info_type: str) -> dict:
     """Get current business info for (business, offices, directors, etc.)."""
-    if info_type == 'business':
-        info_type = ''
-    elif info_type == 'aliases':
+    if info_type == 'aliases':
         info_type = f'names/{CorpName.TypeCodes.TRANSLATION.value}'
 
     url = f'{COLIN_API}/api/v1/businesses/{legal_type}/{corp_num}/{info_type}'
     if info_type == 'resolutions':
         url = f'{COLIN_API}/api/v1/businesses/internal/{legal_type}/{corp_num}/{info_type}'
+    elif info_type == 'business':
+        url = f'{COLIN_API}/api/v1/businesses/{legal_type}/{corp_num}'
 
     r = requests.get(url, timeout=TIMEOUT)
     if r.status_code != HTTPStatus.OK or not r.json():
@@ -81,19 +95,27 @@ def get_oracle_info(corp_num: str, legal_type: str, info_type: str) -> dict:
     return r.json()
 
 
+def convert_to_datetime(datetime_str: str) -> datetime.datetime:
+    """Convert given datetime string into a datetime obj."""
+    datetime_obj = datetime.datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S-00:00')
+    datetime_utc_tz = datetime_obj.replace(tzinfo=timezone('UTC'))
+    return datetime_utc_tz
+
+
 def create_business(business_json: dict) -> Business:
     """Create a new business in lear via the model."""
-    business = Business()
-    business.identifier = business_json['business']['identifier']
-    business.founding_date = business_json['business']['foundingDate']
-    business.last_ledger_timestamp = business_json['business']['lastLedgerTimestamp']
-    business.legal_name = business_json['business']['legalName']
-    business.founding_date = business_json['business']['foundingDate']
-    business.last_agm_date = datetime.date.fromisoformat(business_json['business']['lastAgmDate']) \
-        if business_json['business']['lastAgmDate'] else None
-    business.last_ar_date = datetime.date.fromisoformat(business_json['business']['lastArDate'])\
-        if business_json['business']['lastArDate'] else business.last_agm_date
-    business.legal_type = business_json['business']['legalType']
+    business = Business(
+        identifier=business_json['business']['identifier'],
+        founding_date=convert_to_datetime(business_json['business']['foundingDate']),
+        last_ledger_timestamp=convert_to_datetime(business_json['business']['lastLedgerTimestamp']),
+        legal_name=business_json['business']['legalName'],
+        legal_type=business_json['business']['legalType'],
+        last_modified=datetime.datetime.utcnow()
+    )
+    business.last_ar_date = datetime.datetime.fromisoformat(business_json['business']['lastArDate']) \
+        if business_json['business']['lastArDate'] else None
+    business.last_agm_date = datetime.datetime.fromisoformat(business_json['business']['lastAgmDate']) \
+        if business_json['business']['lastAgmDate'] else business.last_ar_date
     return business
 
 
@@ -125,6 +147,7 @@ def create_office(business: Business, addresses: list, office_type: str):
 
 def create_share_class(share_class_info: dict) -> ShareClass:
     """Create a new share class and associated series."""
+    print(share_class_info)
     share_class = ShareClass(
         name=share_class_info['name'],
         priority=share_class_info['priority'],
@@ -133,9 +156,10 @@ def create_share_class(share_class_info: dict) -> ShareClass:
         par_value_flag=share_class_info['hasParValue'],
         par_value=share_class_info.get('parValue', None),
         currency=share_class_info.get('currency', None),
-        special_rights_flag=share_class_info['hasRightsOrRestrictions']
+        special_rights_flag=share_class_info['hasRightsOrRestrictions'],
     )
-    for series in share_class.series:
+    print(share_class)
+    for series in share_class_info['series']:
         share_series = ShareSeries(
             name=series['name'],
             priority=series['priority'],
@@ -143,8 +167,8 @@ def create_share_class(share_class_info: dict) -> ShareClass:
             max_shares=series.get('maxNumberOfShares', None),
             special_rights_flag=series['hasRightsOrRestrictions']
         )
+        print(1)
         share_class.series.append(share_series)
-
     return share_class
 
 
@@ -202,17 +226,23 @@ def add_business_directors(business: Business, directors_json: dict):
 
 def add_business_shares(business: Business, shares_json: dict):
     """Create shares and add them to business."""
-    for share_class_info in shares_json:
+    for share_class_info in shares_json['shareClasses']:
         share_class = create_share_class(share_class_info)
         business.share_classes.append(share_class)
 
 
 def add_business_resolutions(business: Business, resolutions_json: dict):
     """Create resolutions and add them to business."""
+    for resolution_date in resolutions_json['resolutionDates']:
+        resolution = Resolution(resolution_date=resolution_date)
+        business.resolutions.append(resolution)
 
 
 def add_business_aliases(business: Business, aliases_json: dict):
     """Create name translations and add them to business."""
+    for name_obj in aliases_json['names']:
+        alias = Alias(alias=name_obj['legalName'])
+        business.aliases.append(alias)
 
 
 def history_needed(business: Business):
@@ -287,7 +317,10 @@ def load_corps(csv_filepath: str = 'corp_nums/corps_to_load.csv'):
                 ROWCOUNT += 1
                 try:
                     business = Business.find_by_identifier(corp_num)
-                    if not business:
+                    if business:
+                        added = True
+                        print('-> business info already exists -- skipping corp load')
+                    else:
                         legal_type = Business.LegalTypes.BCOMP.value
                         if corp_num[:2] == Business.LegalTypes.COOP.value:
                             legal_type = Business.LegalTypes.COOP.value
@@ -295,36 +328,40 @@ def load_corps(csv_filepath: str = 'corp_nums/corps_to_load.csv'):
                             # get current company info
                             business_current_info = {}
                             for info_type in BUSINESS_MODEL_INFO_TYPES[legal_type]:
-                                if info_type == 'business':
-                                    info_type = ''
-                                elif info_type == 'resolutions':
-                                    info_type = f'names/{CorpName.TypeCodes.TRANSLATION.value}'
-
                                 business_current_info[info_type] = get_oracle_info(
                                     corp_num=corp_num,
                                     legal_type=legal_type,
                                     info_type=info_type
                                 )
                                 if business_current_info[info_type].get('failed', False):
-                                    continue
+                                    raise Exception(f'could not load {info_type}')
 
                         except requests.exceptions.Timeout:
                             FAILED_CORPS.append(corp_num)
                             print('colin_api request timed out getting corporation details.')
                             continue
 
+                        except Exception as err:
+                            print(f'exception: {err}')
+                            print(f'skipping load for {corp_num}, exception occurred getting company info')
+                            continue
+
                         uow = versioning_manager.unit_of_work(db.session)
                         transaction = uow.create_transaction(db.session)
                         try:
-                            business = create_business(db, business_current_info['business'])
+                            # add BC prefix to non coop identifiers
+                            if legal_type != Business.LegalTypes.COOP.value:
+                                business_current_info['business']['business']['identifier'] = 'BC' + \
+                                    business_current_info['business']['business']['identifier']
+
+                            # add company to postgres db
+                            business = create_business(business_current_info['business'])
                             add_business_offices(business, business_current_info['office'])
-                            add_business_directors(business, business_current_info['directors'])
+                            add_business_directors(business, business_current_info['parties'])
                             if legal_type == Business.LegalTypes.BCOMP.value:
                                 add_business_shares(business, business_current_info['sharestructure'])
                                 add_business_resolutions(business, business_current_info['resolutions'])
                                 add_business_aliases(business, business_current_info['aliases'])
-
-                            db.session.add(business)
                             filing = Filing()
                             filing.filing_json = {
                                 'filing': {
@@ -337,33 +374,26 @@ def load_corps(csv_filepath: str = 'corp_nums/corps_to_load.csv'):
                             filing._filing_type = 'lear_epoch'
                             filing.source = Filing.Source.COLIN.value
                             filing.transaction_id = transaction.id
-                            db.session.add(filing)
-                            db.session.commit()
-
-                            # assign filing to business (now that business record has been comitted and id exists)
-                            filing.business_id = business.id
-                            db.session.add(filing)
-                            db.session.commit()
+                            business.filings.append(filing)
+                            business.save()
                             added = True
                             NEW_CORPS.append(corp_num)
                         except Exception as err:
                             print(err)
                             print(f'skipping {corp_num} missing info')
                             FAILED_CORPS.append(corp_num)
-                    else:
-                        added = True
-                        print('-> business info already exists -- skipping corp load')
 
                     if added and history_needed(business=business):
                         load_historic_filings(corp_num=corp_num)
                     else:
-                        print('-> historic filings already exist - skipping history load')
+                        print('-> historic filings not needed - skipping history load')
                 except Exception as err:
                     print(err)
                     exit(-1)
 
 
 if __name__ == '__main__':
+    load_corps(csv_filepath='corp_nums/corps_to_load.csv')
     print(f'processed: {ROWCOUNT} rows')
     print(f'Successfully loaded  {len(NEW_CORPS)}')
     print(f'Failed to load {len(FAILED_CORPS)}')
