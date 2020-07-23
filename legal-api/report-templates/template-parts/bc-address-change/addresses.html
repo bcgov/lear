@@ -6,7 +6,7 @@
   <div class="section-data">
     <table class="section-data-table" role="presentation">
       <tr>
-        <td class="delivery-address">
+        <td class="delivery-address-50">
           <div class="section-sub-title">Delivery Address  {% if 'addressChanged' in registeredOfficeAddress.deliveryAddress.actions %}{{ labelNew() }}{% endif %}</div>
           <div>{{ registeredOfficeAddress.deliveryAddress.streetAddress }}</div>
           <div>{{ registeredOfficeAddress.deliveryAddress.streetAddressAdditional }}</div>
@@ -17,7 +17,7 @@
           <div>{{ registeredOfficeAddress.deliveryAddress.addressCountry }}</div>
           <div>{{ registeredOfficeAddress.deliveryAddress.deliveryInstructions }}</div>
         </td>
-        <td>
+        <td class="mailing-address-50">
           <div class="section-sub-title">Mailing Address  {% if 'addressChanged' in registeredOfficeAddress.mailingAddress.actions %}{{ labelNew() }}{% endif %}</div>
           <div>{{ registeredOfficeAddress.mailingAddress.streetAddress }}</div>
           <div>{{ registeredOfficeAddress.mailingAddress.streetAddressAdditional }}</div>
@@ -41,7 +41,7 @@
     <div class="section-data">
       <table class="section-data-table" role="presentation">
         <tr>
-          <td class="delivery-address">
+          <td class="delivery-address-50">
             <div class="section-sub-title">Delivery Address {% if 'addressChanged' in recordsOfficeAddress.deliveryAddress.actions %}{{ labelNew() }}{% endif %}</div>
             <div>{{ recordsOfficeAddress.deliveryAddress.streetAddress }}</div>
             <div>{{ recordsOfficeAddress.deliveryAddress.streetAddressAdditional }}</div>
@@ -52,7 +52,7 @@
             <div>{{ recordsOfficeAddress.deliveryAddress.addressCountry }}</div>
             <div>{{ recordsOfficeAddress.deliveryAddress.deliveryInstructions }}</div>
           </td>
-          <td>
+          <td class="mailing-address-50">
             <div class="section-sub-title">Mailing Address  {% if 'addressChanged' in recordsOfficeAddress.mailingAddress.actions %}{{ labelNew() }}{% endif %}</div>
             <div>{{ recordsOfficeAddress.mailingAddress.streetAddress }}</div>
             <div>{{ recordsOfficeAddress.mailingAddress.streetAddressAdditional }}</div>
