@@ -147,7 +147,6 @@ def create_office(business: Business, addresses: list, office_type: str):
 
 def create_share_class(share_class_info: dict) -> ShareClass:
     """Create a new share class and associated series."""
-    print(share_class_info)
     share_class = ShareClass(
         name=share_class_info['name'],
         priority=share_class_info['priority'],
@@ -158,7 +157,6 @@ def create_share_class(share_class_info: dict) -> ShareClass:
         currency=share_class_info.get('currency', None),
         special_rights_flag=share_class_info['hasRightsOrRestrictions'],
     )
-    print(share_class)
     for series in share_class_info['series']:
         share_series = ShareSeries(
             name=series['name'],
@@ -167,7 +165,6 @@ def create_share_class(share_class_info: dict) -> ShareClass:
             max_shares=series.get('maxNumberOfShares', None),
             special_rights_flag=series['hasRightsOrRestrictions']
         )
-        print(1)
         share_class.series.append(share_series)
     return share_class
 
@@ -384,7 +381,7 @@ def load_corps(csv_filepath: str = 'corp_nums/corps_to_load.csv'):
                             FAILED_CORPS.append(corp_num)
 
                     if added and history_needed(business=business):
-                        load_historic_filings(corp_num=corp_num)
+                        load_historic_filings(corp_num=corp_num, business=business)
                     else:
                         print('-> historic filings not needed - skipping history load')
                 except Exception as err:

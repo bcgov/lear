@@ -36,7 +36,7 @@ db.init_app(FLASK_APP)
 def do_stuff():
     """Iterate all business entries and associate a records office if needed."""
 
-    #thelist = ['53477','53508','53530','53534','7131','53372','53514','156','26988','53529','53475','53533','53527','53516','53385','26998','154']
+    thelist = ['53477','53508','53530','53534','7131','53372','53514','156','26988','53529','53475','53533','53527','53516','53385','26998','154']
     filings = db.session.query(Filing).filter(Filing.id.in_(thelist)).all()
 
     for filing in filings:
