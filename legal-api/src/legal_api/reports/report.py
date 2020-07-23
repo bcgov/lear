@@ -127,9 +127,7 @@ class Report:  # pylint: disable=too-few-public-methods
             'incorporation-application/shareStructure',
             'incorporation-application/nameRequest',
             'bc-address-change/addresses',
-            'bc-address-change/addressChangeDetails',
-            'bc-director-change/directorChangeDetails',
-            'bc-director-change/directors'
+            'bc-address-change/addressChangeDetails'
         ]
 
         # substitute template parts - marked up by [[filename]]
@@ -182,12 +180,12 @@ class Report:  # pylint: disable=too-few-public-methods
     def _set_dates(self, filing):
         filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
         hour = filing_datetime.strftime('%I').lstrip('0')
-        filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y at {hour}:%M %p Pacific Time')
+        filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {hour}:%M %p Pacific Time')
         # Get the effective date
         effective_date = filing_datetime if self._filing.effective_date is None \
             else LegislationDatetime.as_legislation_timezone(self._filing.effective_date)
         effective_hour = effective_date.strftime('%I').lstrip('0')
-        filing['effective_date_time'] = effective_date.strftime(f'%B %d, %Y at {effective_hour}:%M %p Pacific Time')
+        filing['effective_date_time'] = effective_date.strftime(f'%B %d, %Y {effective_hour}:%M %p Pacific Time')
         # TODO: best: custom date/time filters in the report-api. Otherwise: a subclass for filing-specific data.
         if self._filing.filing_type == 'annualReport':
             agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
@@ -269,7 +267,7 @@ class Report:  # pylint: disable=too-few-public-methods
             effective_date_time.strftime(f'%B %-d, %Y at {effective_hour}:%M %p Pacific Time')
         filing['header']['filing_date_time'] = \
             filing_datetime.strftime(f'%B %-d, %Y at {filing_hour}:%M %p Pacific Time')
-        filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y at {filing_hour}:%M %p Pacific Time')
+        filing['filing_date_time'] = filing_datetime.strftime(f'%B %d, %Y {filing_hour}:%M %p Pacific Time')
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
         self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['deliveryAddress'])
