@@ -44,7 +44,7 @@ class Share:  # pylint: disable=too-many-instance-attributes;
             'displayOrder': self.share_id,
             'maxNumberOfShares': self.max_number_shares,
             'hasMaximumShares': self.has_max_shares == 'N' or False,
-            'hasRightsOrRestrictions': self.has_special_rights == 'N' or False,
+            'hasRightsOrRestrictions': self.has_special_rights == 'Y' or False,
             'priority': self.priority
         }
 
@@ -75,7 +75,7 @@ class ShareClass(Share):  # pylint: disable=too-many-instance-attributes;
             'currency': self.currency_type,
             'hasMaximumShares': self.has_max_shares == 'N' or False,
             'hasParValue': self.has_par_value == 'Y' or False,
-            'hasRightsOrRestrictions': self.has_special_rights == 'N' or False,
+            'hasRightsOrRestrictions': self.has_special_rights == 'Y' or False,
             'series': [
                 x.to_dict() for x in self.series
             ]
@@ -258,7 +258,7 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
                 currency=class_dict['currency'],
                 has_max_share='N' if class_dict['hasMaximumShares'] else 'Y',
                 qty=class_dict['maxNumberOfShares'],
-                has_spec_rights='N' if class_dict['hasRightsOrRestrictions'] else 'Y',
+                has_spec_rights='Y' if class_dict['hasRightsOrRestrictions'] else 'N',
                 has_par_value='Y' if class_dict['hasParValue'] else 'N',
                 par_value=class_dict['parValue'],
                 name=class_dict['name']
@@ -293,7 +293,7 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
                 event_id=event_id,
                 has_max_share='N' if series_dict['hasMaximumShares'] else 'Y',
                 qty=series_dict['maxNumberOfShares'],
-                has_spec_rights='N' if series_dict['hasRightsOrRestrictions'] else 'Y',
+                has_spec_rights='Y' if series_dict['hasRightsOrRestrictions'] else 'N',
                 name=series_dict['name']
             )
         except Exception as err:
