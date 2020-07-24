@@ -153,7 +153,8 @@ def create_share_class(share_class_info: dict) -> ShareClass:
         currency=share_class_info.get('currency', None),
         special_rights_flag=share_class_info['hasRightsOrRestrictions']
     )
-    for series in share_class.series:
+    share_class.series = []
+    for series in share_class_info['series']:
         share_series = ShareSeries(
             name=series['name'],
             priority=series['priority'],
