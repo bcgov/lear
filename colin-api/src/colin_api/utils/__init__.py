@@ -18,12 +18,8 @@ from flask import current_app
 from pytz import timezone
 
 
-def convert_to_json_date(thedate):
-    """Convert datetime to string formatted as YYYY-MM-DD, per JSON Schema specs.
-
-    :param thedate: datetime object
-    :return: string
-    """
+def convert_to_json_date(thedate: datetime.datetime) -> str:
+    """Convert datetime to string formatted as YYYY-MM-DD, per JSON Schema specs."""
     if not thedate:
         return None
     try:
@@ -33,12 +29,8 @@ def convert_to_json_date(thedate):
         return None
 
 
-def convert_to_json_datetime(thedate):
-    """Convert datetime to string formatted as YYYY-MM-SSTHH:MM:SS+00:00, per JSON Schema specs.
-
-    :param thedate: datetime object
-    :return: string
-    """
+def convert_to_json_datetime(thedate: datetime.datetime) -> str:
+    """Convert datetime to string formatted as YYYY-MM-SSTHH:MM:SS+00:00, per JSON Schema specs."""
     if not thedate:
         return None
     try:
@@ -54,7 +46,7 @@ def convert_to_json_datetime(thedate):
 
 
 def convert_to_pacific_time(thedate: str) -> str:
-    """Convert the datetime string to pacific time."""
+    """Convert the datetime string to pacific time string."""
     try:
         # tries converting two formats before bailing
         try:

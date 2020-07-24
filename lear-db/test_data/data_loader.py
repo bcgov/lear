@@ -231,14 +231,17 @@ def add_business_shares(business: Business, shares_json: dict):
 def add_business_resolutions(business: Business, resolutions_json: dict):
     """Create resolutions and add them to business."""
     for resolution_date in resolutions_json['resolutionDates']:
-        resolution = Resolution(resolution_date=resolution_date)
+        resolution = Resolution(
+            resolution_date=resolution_date,
+            resolution_type=Resolution.ResolutionType.SPECIAL.value
+        )
         business.resolutions.append(resolution)
 
 
 def add_business_aliases(business: Business, aliases_json: dict):
     """Create name translations and add them to business."""
     for name_obj in aliases_json['names']:
-        alias = Alias(alias=name_obj['legalName'])
+        alias = Alias(alias=name_obj['legalName'], type=Alias.AliasType.TRANSLATION.value)
         business.aliases.append(alias)
 
 
@@ -313,14 +316,15 @@ def load_corps(csv_filepath: str = 'corp_nums/corps_to_load.csv'):
                 added = False
                 ROWCOUNT += 1
                 try:
+                    legal_type = Business.LegalTypes.COOP.value
+                    if corp_num[:2] != Business.LegalTypes.COOP.value:
+                        legal_type = Business.LegalTypes.BCOMP.value
+                        corp_num = 'BC' + corp_num[-7:]
                     business = Business.find_by_identifier(corp_num)
                     if business:
                         added = True
                         print('-> business info already exists -- skipping corp load')
                     else:
-                        legal_type = Business.LegalTypes.BCOMP.value
-                        if corp_num[:2] == Business.LegalTypes.COOP.value:
-                            legal_type = Business.LegalTypes.COOP.value
                         try:
                             # get current company info
                             business_current_info = {}

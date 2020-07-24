@@ -211,8 +211,8 @@ class Filing:
         return event_list
 
     @classmethod
-    def _create_filing(cls, cursor, event_id: str, effective_date: str,  # pylint: disable=too-many-arguments;
-                       corp_num: str, ar_date: str, agm_date: str, filing_type_code: str):
+    def _create_filing(cls, cursor, event_id: str,  # pylint: disable=too-many-arguments;
+                       effective_date: str, corp_num: str, ar_date: str, agm_date: str, filing_type_code: str):
         """Add record to FILING."""
         try:
             insert_stmnt = (
@@ -669,8 +669,7 @@ class Filing:
             raise err
 
     @classmethod
-    def _add_parties_from_filing(cls, cursor,  # pylint: disable=too-many-arguments
-                                 event_id, filing):
+    def _add_parties_from_filing(cls, cursor, event_id: int, filing):
         parties = filing.body['parties']
         business = filing.business.as_dict()
         for party in parties:
