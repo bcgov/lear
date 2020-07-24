@@ -22,7 +22,8 @@ from typing import List
 from flask import current_app
 
 from colin_api.exceptions import PartiesNotFoundException
-from colin_api.models import Address, Business  # pylint: disable=cyclic-import
+from colin_api.models import Address
+from colin_api.models.business import Business
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, delete_from_table_by_event_ids, stringify_list
 
