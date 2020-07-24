@@ -33,19 +33,19 @@
         <!-- Struggling doing this with CSS, because weasyprint isn't laying it out the same as a browser. -->
         <div class="section-data">
           <table class="section-data-table">
-            <tr>
+            <tr class="no-page-break">
               <td class="table-name">Incorporation Number:</td>
               <td class="table-value">{{ business.identifier }}</td>
             </tr>
-            <tr>
+            <tr class="no-page-break">
               <td class="table-name">Business Number:</td>
               <td class="table-value">{{ business.tax_id }}</td>
             </tr>
-            <tr>
+            <tr class="no-page-break">
               <td class="table-name">Filing Date and Time:</td>
               <td class="table-value">{{ filing_date_time }}</td>
             </tr>
-            <tr>
+            <tr class="no-page-break">
               <td class="table-name">Annual General Meeting (AGM) Date:</td>
               <td class="table-value">{{ agm_date }}</td>
             </tr>

@@ -1,75 +1,69 @@
 <div class="no-page-break">
-   <div class="section-title">
-      Completing Party
-   </div>
+   <div class="separator mt-4"></div>
+   <div class="section-title mt-4">Completing Party</div>
    {% set ns = namespace(cp=0) %}
    {% for party in incorporationApplication.parties %}
-   {% for party_role in party.roles %}
-   {% if party_role.roleType == 'Completing Party' %}
-   <div class="section-data">
-      <table class="section-data-table" role="presentation">
-         <tr>
-            <td class="director-name">
-               <div class="section-sub-title">
-                  <span class="capitalize-text">{{ party.officer.lastName }}</span>,
-                  <span class="capitalize-text">{{ party.officer.firstName }}</span>
-                  {% if party.officer.middleName %}
-                  <span class="capitalize-text">{{ party.officer.middleName }}</span>
-                  {% endif %}
-               </div>
-            </td>
-            <td>
-               <div class="section-sub-title">Mailing Address</div>
-               <div>{{ party.mailingAddress.streetAddress }}</div>
-               <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
-               <div>{{ party.mailingAddress.addressCity }}
-                  {{ party.mailingAddress.addressRegion }}
-                  &nbsp;{{ party.mailingAddress.postalCode }}
-               </div>
-               <div>{{ party.mailingAddress.addressCountry }}</div>
-            </td>
-         </tr>
-      </table>
-   </div>
-   {% set ns.cp = party %}
-   {% endif %}
-   {% endfor %}
+      {% for party_role in party.roles %}
+         {% if party_role.roleType == 'Completing Party' %}
+            <table class="section-data section-data-table mt-4" role="presentation">
+               <tr>
+                  <td class="col-33">
+                     <div class="section-sub-title">
+                        <span class="capitalize-text">{{ party.officer.lastName }}</span>,
+                        <span class="capitalize-text">{{ party.officer.firstName }}</span>
+                        {% if party.officer.middleName %}
+                           <span class="capitalize-text">{{ party.officer.middleName }}</span>
+                        {% endif %}
+                     </div>
+                  </td>
+                  <td>
+                     <div class="section-sub-title">Mailing Address</div>
+                     <div class="pt-2">{{ party.mailingAddress.streetAddress }}</div>
+                     <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
+                     <div>
+                        {{ party.mailingAddress.addressCity }}
+                        {{ party.mailingAddress.addressRegion }}
+                        &nbsp;{{ party.mailingAddress.postalCode }}
+                     </div>
+                     <div>{{ party.mailingAddress.addressCountry }}</div>
+                     <div class="delivery-instructions pt-1">{{ party.mailingAddress.deliveryInstructions }}</div>
+                  </td>
+               </tr>
+            </table>
+            {% set ns.cp = party %}
+         {% endif %}
+      {% endfor %}
    {% endfor %}
 </div>
-<div class="separator"></div>
-<div class="cp-statement no-page-break">
-   <div class="section-title">
-      Completing Party Statement
-   </div>
-   <div class="section-data">
+
+<div class="no-page-break">
+   <div class="separator mt-4"></div>
+   <div class="section-title mt-4">Completing Party Statement</div>
+   <div class="section-data mt-4">
       I,
-      <span class="capitalize-text">{{ ns.cp.officer.firstName}}</span>
+      <span class="capitalize-text">{{ ns.cp.officer.firstName }}</span>
       {% if ns.cp.officer.middleName %}
-      <span class="capitalize-text">{{ ns.cp.officer.middleName}}</span>
+         <span class="capitalize-text">{{ ns.cp.officer.middleName }}</span>
       {% endif %}
-      <span class="capitalize-text">{{ ns.cp.officer.lastName}}</span>, the completing party, have examined the articles
-      and the incorporation agreement applicable to the company that is to be incorporated by the filing of the
-      Incorporation Application and confirm that:
-      <div class="certify-statements">
-         <table class="certify-statement-table" role="presentation">
-            <tr>
-               <td>a)</td>
-               <td>the Articles and the Incorporation Agreement both contain a signature line for each person
-                  identified as an incorporator in the Incorporation Application with the name of that person set out
-                  legibly under the signature lines,
-               </td>
-            </tr>
-            <tr>
-               <td>b)</td>
-               <td>an original signature has been placed on each of those signature lines, and</td>
-            </tr>
-            <tr>
-               <td>c)</td>
-               <td>I have no reason to believe that the signature placed on a signature line is not the
-                  signature of the person whose name is set out under that signature line.
-               </td>
-            </tr>
-         </table>
-      </div>
+      <span class="capitalize-text">{{ ns.cp.officer.lastName }}</span>
+      , the completing party, have examined the articles and the incorporation agreement applicable to the
+      company that is to be incorporated by the filing of the Incorporation Application and confirm that:
+      <table class="certify-statement-table" role="presentation">
+         <tr>
+            <td class="pt-2">a)</td>
+            <td class="pt-2">the Articles and the Incorporation Agreement both contain a signature line for each person
+               identified as an incorporator in the Incorporation Application with the name of that person set out
+               legibly under the signature lines,</td>
+         </tr>
+         <tr>
+            <td class="pt-2">b)</td>
+            <td class="pt-2">an original signature has been placed on each of those signature lines, and</td>
+         </tr>
+         <tr>
+            <td class="pt-2">c)</td>
+            <td class="pt-2">I have no reason to believe that the signature placed on a signature line is not the
+               signature of the person whose name is set out under that signature line.</td>
+         </tr>
+      </table>
    </div>
 </div>

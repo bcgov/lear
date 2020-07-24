@@ -10,29 +10,26 @@
    <body>
       <div class="header">
          <table class="header-table" role="presentation">
-            <tr>
+            <tr class="no-page-break">
                <td>
                   [[logo.html]]
                </td>
                <td>
-                  <div class="header-right">
-                     <div class="report-type">
-                        {% if header.reportType == 'noa'%}
-                         NOTICE OF ARTICLES
-                        {% else %}
-                         INCORPORATION APPLICATION
-                        {% endif %}
-                     </div>
-
-                     <div class="report-type-desc">BC Benefit Company - Business Corporations Act</div>
+                  <div class="report-type">
+                     {% if header.reportType == 'noa' %}
+                        NOTICE OF ARTICLES
+                     {% else %}
+                        INCORPORATION APPLICATION
+                     {% endif %}
                   </div>
+                  <div class="report-type-desc">BC Benefit Company - Business Corporations Act</div>
                </td>
             </tr>
          </table>
          <div class="business-name-header">
             <label class="lbl-business-name">
-            {% if not incorporationApplication.nameRequest.nrNumber%}
-               {% if header.reportType == 'noa'%}
+            {% if not incorporationApplication.nameRequest.nrNumber %}
+               {% if header.reportType == 'noa' %}
                   {{business.legalName}}
                {% else %}
                   Numbered Benefit Company
@@ -43,68 +40,21 @@
             </label>
          </div>
       </div>
-      [[incorporation-application/incorporationDetails.html]]
-      {% if header.reportType != 'noa'%}
-      <div class="section-header">
-         <div class="section-header-content">INCORPORATION APPLICATION</div>
-      </div>
-      <div class="container">
-         <div class="application-info">
+      [[incorporation-application/businessDetails.html]]
+      {% if header.reportType != 'noa' %}
+         <div class="section-header mt-5 pt-4">INCORPORATION APPLICATION</div>
+         <div class="container pt-4">
             [[incorporation-application/nameRequest.html]]
-            <div class="separator"></div>
-            <div class="effective-date">
-               <div class="section-title">Incorporation Effective Date</div>
-               <div class="section-data">
-                  {% if header.isFutureEffective %}
-                     {{header.effective_date_time}}
-                  {% else %}
-                     The incorporation is to take effect at the time that this application is filed with the Registrar.
-                  {% endif %}
-               </div>
-            </div>
-            <div class="separator"></div>
+            [[incorporation-application/effectiveDate.html]]
             [[incorporation-application/incorporator.html]]
-            <div class="separator"></div>
             [[incorporation-application/completingParty.html]]
          </div>
-      </div>
       {% endif %}
-      <div class="section-header">
-         <div class="section-header-content">NOTICE OF ARTICLES</div>
-      </div>
-      <div class="container">
-         <div class="section-data benefit-company-statement">
-            <div class="section-title">Benefit Company Statement</div>
-            <div class="section-data">
-               <p>This company is a benefit company and, as such, has purposes that include conducting its
-                  business in a responsible and sustainable manner and promoting one or more public benefits.
-               </p>
-               <p><span class="section-sub-title">Name of Company:</span>
-                  {% if not incorporationApplication.nameRequest.nrNumber%}
-                  {% if header.reportType == 'noa'%}
-                  {{business.legalName}}
-                  {% else %}
-                  A company name using the Incorporation Number will be provided on the Recognition Date and Time.
-                  {% endif %}
-                  {% else %}
-                  <span class="section-sub-title">{{incorporationApplication.nameRequest.legalName}}</span>
-                  {% endif %}
-               </p>
-               {% if listOfTranslations|length > 0 %}
-               <p>
-                  <div class="section-sub-title">Translation(s) of Company Name:</div>
-                  {% for translation in listOfTranslations %}
-                  <div>{{translation}}</div>
-                  {% endfor %}
-               </p>
-               {% endif %}
-            </div>
-         </div>
-         <div class="separator"></div>
+      <div class="section-header mt-7 pt-4">NOTICE OF ARTICLES</div>
+      <div class="container pt-4">
+         [[incorporation-application/benefitCompanyStmt.html]]
          [[common/addresses.html]]
-         <div class="separator"></div>
          [[incorporation-application/directors.html]]
-         <div class="separator"></div>
          [[common/shareStructure.html]]
       </div>
    </body>

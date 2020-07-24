@@ -1,24 +1,24 @@
-<div class="nr-details section-data">
-    <div>
-         <span class="section-sub-title">Name Reservation Number:</span>
-         {% if not incorporationApplication.nameRequest.nrNumber%}
-           N/A
-         {% else %}
-         {{incorporationApplication.nameRequest.nrNumber}}
-         {% endif %}
-    </div>
-    <div>
-        <table class="nr-name-table" role="presentation">
-            <tr>
-                <td class="section-sub-title">Name Reserved: </td>
-                <td>
-                    {% if not incorporationApplication.nameRequest.nrNumber%}
-                    The company is to be incorporated with a name created by adding "B.C. LTD." after the incorporation number.
-                    {% else %}
-                    {{incorporationApplication.nameRequest.legalName}}
-                    {% endif %}
-                </td>
-            </tr>
-        </table>
-    </div>
+<div class="no-page-break">
+    <table class="section-data nr-name-table mt-4" role="presentation">
+        <tr>
+            <td class="bold col-33">Name Reservation Number:</td>
+            <td>
+                {% if not incorporationApplication.nameRequest.nrNumber %}
+                N/A
+                {% else %}
+                {{incorporationApplication.nameRequest.nrNumber}}
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="bold pt-2">Name Reserved:</td>
+            <td class="pt-2">
+                {% if not incorporationApplication.nameRequest.nrNumber %}
+                The company is to be incorporated with a name created by adding "B.C. LTD." after the incorporation number.
+                {% else %}
+                {{incorporationApplication.nameRequest.legalName}}
+                {% endif %}
+            </td>
+        </tr>
+    </table>
 </div>
