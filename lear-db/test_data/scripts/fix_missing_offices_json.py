@@ -11,20 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Fix older filing json that was before the offices structure was used. The payment token is saved off and cleared so
+"""Fix older filing json that was before the offices structure was used.
+
+The payment token is saved off and cleared so
 that the filing can be changed without being "locked".
 
 This was run once, on Feb 6 2020.
 
 """
-from dotenv import load_dotenv, find_dotenv
+import copy
 
+from dotenv import find_dotenv, load_dotenv
 from flask import Flask
 from legal_api import db
 from legal_api.config import get_named_config
 from legal_api.models import Filing
 
-import copy
 
 load_dotenv(find_dotenv())
 
@@ -35,8 +37,7 @@ db.init_app(FLASK_APP)
 
 def do_stuff():
     """Iterate all business entries and associate a records office if needed."""
-
-    #thelist = ['53477','53508','53530','53534','7131','53372','53514','156','26988','53529','53475','53533','53527','53516','53385','26998','154']
+    thelist = []
     filings = db.session.query(Filing).filter(Filing.id.in_(thelist)).all()
 
     for filing in filings:
@@ -48,7 +49,7 @@ def do_stuff():
         filing_json = copy.deepcopy(filing.filing_json)
 
         deliv_addr = filing_json['filing']['changeOfAddress']['deliveryAddress']
-        mail_addr  = filing_json['filing']['changeOfAddress']['mailingAddress']
+        mail_addr = filing_json['filing']['changeOfAddress']['mailingAddress']
 
         filing_json['filing']['changeOfAddress']['offices'] = {
             'registeredOffice': {
@@ -63,6 +64,7 @@ def do_stuff():
         filing._filing_json = None
         filing._filing_json = filing_json
         filing.save()
+
 
 with FLASK_APP.app_context():
     do_stuff()

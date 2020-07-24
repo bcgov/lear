@@ -369,7 +369,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             raise err
 
     @classmethod
-    def update_corporation(cls, cursor, corp_num: str = None, date: str = None, annual_report: bool = False):
+    def update_corporation(cls, cursor, corp_num: str, date: str = None, annual_report: bool = False):
         """Update corporation record."""
         try:
             if annual_report:
@@ -461,6 +461,20 @@ class Business:  # pylint: disable=too-many-instance-attributes
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))
             raise err
+
+    @classmethod
+    def get_founding_date(cls, cursor, corp_num: str) -> str:
+        """Return the founding date of the company."""
+        cursor.execute(
+            """
+            SELECT recognition_dts
+            FROM corporation
+            WHERE corp_num=:corp_num
+            """,
+            corp_num=corp_num
+        )
+        founding_date = cursor.fetchone()[0]
+        return founding_date
 
     @classmethod
     def get_next_corp_num(cls, corp_type, con) -> str:

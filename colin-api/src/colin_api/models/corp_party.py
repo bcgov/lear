@@ -22,7 +22,8 @@ from typing import List
 from flask import current_app
 
 from colin_api.exceptions import PartiesNotFoundException
-from colin_api.models import Address  # pylint: disable=cyclic-import
+from colin_api.models import Address
+from colin_api.models.business import Business
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, delete_from_table_by_event_ids, stringify_list
 
@@ -81,7 +82,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return officer_obj
 
     @classmethod
-    def _build_parties_list(cls, cursor, event_id: int = None):
+    def _build_parties_list(cls, cursor, identifier: str, event_id: int = None):
         parties = cursor.fetchall()
 
         if not parties:
@@ -94,23 +95,21 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             party = Party()
             party.title = ''
             row = dict(zip([x[0].lower() for x in description], row))
-            if row['appointment_dt']:
-                party.officer = cls._get_officer(row)
+            if not row['appointment_dt']:
+                row['appointment_dt'] = Business.get_founding_date(cursor=cursor, corp_num=identifier)
+            party.officer = cls._get_officer(row)
 
-                party.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
-                party.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
-                    if row['mailing_addr_id'] else party.delivery_address
-                party.appointment_date =\
-                    convert_to_json_date(row.get('appointment_dt', None))
-                party.cessation_date = convert_to_json_date(row.get('cessation_dt', None))
-                party.start_event_id = (row.get('start_event_id', '')) or ''
-                party.end_event_id = (row.get('end_event_id', '')) or ''
-                party.role_type = (row.get('party_typ_cd', '')) or ''
-                # this is in case the party was not ceased during this event
-                if event_id and party.end_event_id and party.end_event_id > event_id:
-                    party.cessation_date = None
+            party.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
+            party.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
+                if row['mailing_addr_id'] else party.delivery_address
+            party.appointment_date =\
+                convert_to_json_date(row.get('appointment_dt', None))
+            party.cessation_date = convert_to_json_date(row.get('cessation_dt', None))
+            party.start_event_id = (row.get('start_event_id', '')) or ''
+            party.end_event_id = (row.get('end_event_id', '')) or ''
+            party.role_type = (row.get('party_typ_cd', '')) or ''
 
-                party_list.append(party)
+            party_list.append(party)
         if event_id:
             completing_parties = cls.get_completing_parties(cursor, event_id)
         return cls.group_parties(party_list, completing_parties)
@@ -183,7 +182,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return completing_parties
 
     @classmethod
-    def get_current(cls, cursor, identifier: str = None, role_type: str = 'Director'):
+    def get_current(cls, cursor, identifier: str, role_type: str = 'Director'):
         """Return current corp_parties for given identifier."""
         query = """
                 select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,
@@ -204,7 +203,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                 query,
                 identifier=identifier
             )
-            parties_list = cls._build_parties_list(cursor)
+            parties_list = cls._build_parties_list(cursor, identifier)
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error('error getting current parties info for {}'.format(identifier))
@@ -216,7 +215,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return parties_list
 
     @classmethod
-    def get_by_event(cls, cursor, identifier: str = None, event_id: int = None, role_type: str = 'Director'):
+    def get_by_event(cls, cursor, identifier: str, event_id: int, role_type: str = 'Director'):
         """Get all parties active or deleted during this event."""
         query = """
                 select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,
@@ -230,19 +229,14 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         if role_type:
             query += f" and party_typ_cd='{Party.role_types[role_type]}'"
 
-        if not event_id:
-            return None
-
         try:
-            if not cursor:
-                cursor = DB.connection.cursor()
             cursor.execute(
                 query,
                 event_id=event_id,
                 identifier=identifier
             )
 
-            parties_list = cls._build_parties_list(cursor, event_id)
+            parties_list = cls._build_parties_list(cursor, identifier, event_id)
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error('error getting parties info for event {}'.format(event_id))
@@ -275,14 +269,8 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             raise err
 
     @classmethod
-    def end_director_by_name(cls, cursor, director: dict = None, event_id: int = None, corp_num: str = None):
+    def end_director_by_name(cls, cursor, director: dict, event_id: int, corp_num: str):
         """Set all end_event_ids for given parties."""
-        if not director:
-            current_app.logger.error('Error in director: No director given to end.')
-
-        if not event_id:
-            current_app.logger.error('Error in director: No event id given to end director.')
-
         officer = director['officer']
         first_name = officer['prevFirstName'] if 'nameChanged' in director['actions'] else officer['firstName']
         last_name = officer['prevLastName'] if 'nameChanged' in director['actions'] else officer['lastName']
@@ -314,7 +302,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             raise err
 
     @classmethod
-    def create_new_corp_party(cls, cursor, event_id: int = None, party: dict = None, business: dict = None):
+    def create_new_corp_party(cls, cursor, event_id: int, party: dict, business: dict):
         """Insert new party into the corp_party table."""
         query = """
                 insert into corp_party (corp_party_id, mailing_addr_id, delivery_addr_id, corp_num, party_typ_cd,
@@ -331,11 +319,6 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                 values (:event_id, :mailing_addr_id, :last_nme,
                 :middle_nme, :first_nme, :email)
                 """
-
-        if not event_id:
-            current_app.logger.error('Error in corp_party: No event id given to create party.')
-        if not party:
-            current_app.logger.error('Error in corp_party: No party data given to create party.')
 
         # create new corp party entry
         corp_num = business['business']['identifier']

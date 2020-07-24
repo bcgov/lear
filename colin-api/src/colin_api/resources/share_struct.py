@@ -40,7 +40,7 @@ class ShareStruct(Resource):
         try:
 
             cursor = DB.connection.cursor()
-            if legal_type == Business.TypeCodes.BCOMP.value:
+            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
                 identifier = identifier[-7:]
             shares = ShareObject.get_all(cursor, identifier)
             if not shares:
