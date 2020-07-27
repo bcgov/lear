@@ -119,6 +119,8 @@ class Report:  # pylint: disable=too-few-public-methods
             'notice-of-articles/nameTranslations',
             'notice-of-articles/headerDetails',
             'notice-of-articles/directors',
+            'notice-of-articles/resolutionDates',
+            'notice-of-articles/restrictions',
             'bc-director-change/directorChangeDetails',
             'bc-director-change/directors'
         ]

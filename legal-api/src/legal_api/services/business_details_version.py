@@ -19,7 +19,7 @@ import pycountry
 from sqlalchemy import or_
 from sqlalchemy_continuum import version_class
 
-from legal_api.models import Address, Business, Filing, Party, PartyRole, ShareClass, db
+from legal_api.models import Address, Alias, Business, Filing, Party, PartyRole, Resolution, ShareClass, ShareSeries, db
 
 
 class VersionedBusinessDetailsService:
@@ -31,14 +31,31 @@ class VersionedBusinessDetailsService:
         company_profile_json = {}
         business = Business.find_by_internal_id(business_id)
         filing = Filing.find_by_id(filing_id)
-        company_profile_json['business'] = business.json()
+        company_profile_json['business'] = \
+            VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         company_profile_json['parties'] = \
             VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business_id)
         company_profile_json['offices'] = \
             VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business)
         company_profile_json['shareClasses'] = \
             VersionedBusinessDetailsService.get_share_class_revision(filing.transaction_id, business_id)
+        company_profile_json['nameTranslations'] = \
+            VersionedBusinessDetailsService.get_name_translations_revision(filing.transaction_id, business_id)
+        company_profile_json['resolutions'] = \
+            VersionedBusinessDetailsService.get_resolution_dates_revision(filing.transaction_id, business_id)
         return company_profile_json
+
+    @staticmethod
+    def get_business_revision(transaction_id, business) -> dict:
+        """Gets the business info as of a particular transaction."""
+        business_version = version_class(Business)
+        business_revision = db.session.query(business_version) \
+            .filter(business_version.transaction_id <= transaction_id) \
+            .filter(business_version.id == business.id) \
+            .filter(or_(business_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
+                        business_version.end_transaction_id > transaction_id)) \
+            .order_by(business_version.transaction_id).one_or_none()
+        return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
 
     @staticmethod
     def get_office_revision(transaction_id, business) -> dict:
@@ -90,8 +107,60 @@ class VersionedBusinessDetailsService:
         share_classes = []
         for share_class in share_classes_list:
             share_class_json = VersionedBusinessDetailsService.share_class_revision_json(share_class)
+            share_class_json['series'] = VersionedBusinessDetailsService.get_share_series_revision(transaction_id,
+                                                                                                   share_class.id)
             share_classes.append(share_class_json)
         return share_classes
+
+    @staticmethod
+    def get_share_series_revision(transaction_id, share_class_id) -> dict:
+        """Consolidates all share series under the share class upto the given transaction id."""
+        share_series_version = version_class(ShareSeries)
+        share_series_list = db.session.query(share_series_version) \
+            .filter(share_series_version.transaction_id <= transaction_id) \
+            .filter(share_series_version.share_class_id == share_class_id) \
+            .filter(or_(share_series_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
+                        share_series_version.end_transaction_id > transaction_id)) \
+            .order_by(share_series_version.transaction_id).all()
+        share_series_arr = []
+        for share_series in share_series_list:
+            share_series_json = VersionedBusinessDetailsService.share_series_revision_json(share_series)
+            share_series_arr.append(share_series_json)
+        return share_series_arr
+
+    @staticmethod
+    def get_name_translations_revision(transaction_id, business_id) -> dict:
+        """Consolidates all name translations upto the given transaction id."""
+        name_translations_version = version_class(Alias)
+        name_translations_list = db.session.query(name_translations_version) \
+            .filter(name_translations_version.transaction_id <= transaction_id) \
+            .filter(name_translations_version.business_id == business_id) \
+            .filter(name_translations_version.type == 'TRANSLATION') \
+            .filter(or_(name_translations_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
+                        name_translations_version.end_transaction_id > transaction_id)) \
+            .order_by(name_translations_version.transaction_id).all()
+        name_translations_arr = []
+        for name_translation in name_translations_list:
+            name_translation_json = VersionedBusinessDetailsService.name_translations_json(name_translation)
+            name_translations_arr.append(name_translation_json)
+        return name_translations_arr
+
+    @staticmethod
+    def get_resolution_dates_revision(transaction_id, business_id) -> dict:
+        """Consolidates all resolutions upto the given transaction id."""
+        resolution_version = version_class(Resolution)
+        resolution_list = db.session.query(resolution_version) \
+            .filter(resolution_version.transaction_id <= transaction_id) \
+            .filter(resolution_version.business_id == business_id) \
+            .filter(resolution_version.resolution_type == 'SPECIAL') \
+            .filter(or_(resolution_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
+                        resolution_version.end_transaction_id > transaction_id)) \
+            .order_by(resolution_version.transaction_id).all()
+        resolutions_arr = []
+        for resolution in resolution_list:
+            resolution_json = VersionedBusinessDetailsService.resolution_json(resolution)
+            resolutions_arr.append(resolution_json)
+        return resolutions_arr
 
     @staticmethod
     def party_role_revision_json(party_role_revision) -> dict:
@@ -172,12 +241,6 @@ class VersionedBusinessDetailsService:
             'currency': share_class_revision.currency,
             'hasRightsOrRestrictions': share_class_revision.special_rights_flag
         }
-
-        series = []
-        for share_series in share_class_revision.series:
-            series.append(VersionedBusinessDetailsService.share_class_revision_json(share_series))
-        share_class['series'] = series
-
         return share_class
 
     @staticmethod
@@ -192,3 +255,34 @@ class VersionedBusinessDetailsService:
             'hasRightsOrRestrictions': share_series_revision.special_rights_flag
         }
         return share_series
+
+    @staticmethod
+    def name_translations_json(name_translation_revision) -> dict:
+        """Return the name translation revision as a json object."""
+        name_translation = {
+            'id': name_translation_revision.id,
+            'alias': name_translation_revision.alias,
+            'type': name_translation_revision.type
+        }
+        return name_translation
+
+    @staticmethod
+    def resolution_json(resolution_revision) -> dict:
+        """Return the resolution revision as a json object."""
+        resolution = {
+            'id': resolution_revision.id,
+            'date': resolution_revision.resolution_date.strftime(f'%B %-d, %Y'),
+            'type': resolution_revision.resolution_type
+        }
+        return resolution
+
+    @staticmethod
+    def business_revision_json(business_revision, business_json):
+        business_json['hasRestrictions'] = business_revision.restriction_ind
+        if business_revision.dissolution_date:
+            business_json['dissolutionDate'] = datetime.date(business_revision.dissolution_date).isoformat()
+        else:
+            business_json['dissolutionDate'] = None
+        if business_revision.tax_id:
+            business_json['taxId'] = business_revision.tax_id
+        return business_json

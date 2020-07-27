@@ -70,7 +70,7 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
                 status_code=HTTPStatus.BAD_REQUEST
             )
         if share_series.share_class.max_share_flag:
-            if share_series.max_shares > share_series.share_class.max_shares:
+            if int(share_series.max_shares) > int(share_series.share_class.max_shares):
                 raise BusinessException(
                     error=f'The max share quantity of {share_series.name} must be <= that of share class quantity.',
                     status_code=HTTPStatus.BAD_REQUEST
