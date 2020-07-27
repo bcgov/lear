@@ -972,7 +972,7 @@ class Filing:
                 filing_type_cd = 'NOALE'
                 cls._create_filing(
                     cursor, event_id, effective_date, corp_num, None, None, filing_type_cd)
-                if filing.body.get('alterCorpType'):
+                if filing.body.get('business'):
                     # HARDCODED alteration type code for now (not sure if the value in the schema will change)
                     Business.update_corp_type(
                         cursor=cursor,
@@ -980,10 +980,10 @@ class Filing:
                         corp_type=Business.TypeCodes.BCOMP.value
                     )
 
-                if filing.body.get('alterCorpName'):
+                if filing.body.get('nameRequest'):
                     # end old/create new name
                     corp_name_obj = CorpName()
-                    corp_name_obj.corp_name = filing.body['alterCorpName']['legalName']
+                    corp_name_obj.corp_name = filing.body['nameRequest']['legalName']
                     corp_name_obj.corp_num = corp_num
                     corp_name_obj.event_id = event_id
                     if corp_name_obj.corp_num in corp_name_obj.corp_name:
@@ -993,8 +993,8 @@ class Filing:
                     CorpName.end_current(cursor=cursor, event_id=event_id, corp_num=corp_num)
                     CorpName.create_corp_name(cursor, corp_name_obj)
 
-                if filing.body.get('alterNameTranslations'):
-                    for name in filing.body['alterNameTranslations'].get('newTranslations', []):
+                if filing.body.get('nameTranslations'):
+                    for name in filing.body['nameTranslations'].get('new', []):
                         # create new one for each name
                         corp_name_obj = CorpName()
                         corp_name_obj.corp_name = name
@@ -1003,7 +1003,7 @@ class Filing:
                         corp_name_obj.type_code = CorpName.TypeCodes.TRANSLATION.value
                         CorpName.create_corp_name(cursor, corp_name_obj)
 
-                    for translation in filing.body['alterNameTranslations'].get('modifiedTranslations', []):
+                    for translation in filing.body['nameTranslations'].get('modified', []):
                         # end existing for old name
                         CorpName.end_translation(
                             cursor=cursor,
@@ -1019,7 +1019,7 @@ class Filing:
                         corp_name_obj.type_code = CorpName.TypeCodes.TRANSLATION.value
                         CorpName.create_corp_name(cursor, corp_name_obj)
 
-                    for name in filing.body['alterNameTranslations'].get('ceasedTranslations', []):
+                    for name in filing.body['nameTranslations'].get('ceased', []):
                         CorpName.end_translation(
                             cursor=cursor,
                             event_id=event_id,
@@ -1027,8 +1027,8 @@ class Filing:
                             corp_name=name
                         )
 
-                if filing.body.get('alterShareStructure'):
-                    for date_str in filing.body['alterShareStructure'].get('resolutionDates', []):
+                if filing.body.get('shareStructure'):
+                    for date_str in filing.body['shareStructure'].get('resolutionDates', []):
                         Business.create_resolution(
                             cursor=cursor,
                             corp_num=corp_num,
@@ -1040,7 +1040,7 @@ class Filing:
                         cursor=cursor,
                         corp_num=corp_num,
                         event_id=event_id,
-                        shares_list=filing.body['alterShareStructure']['shareClasses']
+                        shares_list=filing.body['shareStructure']['shareClasses']
                     )
 
                 if filing.body.get('provisionsRemoved'):
