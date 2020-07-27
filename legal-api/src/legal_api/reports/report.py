@@ -177,7 +177,7 @@ class Report:  # pylint: disable=too-few-public-methods
         filing['effective_date'] = effective_date.strftime('%B %d, %Y')
         # Recognition Date
         recognition_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
-        recognition_hour = recognition_datetime.strftime('%I')
+        recognition_hour = recognition_datetime.strftime('%I').lstrip('0')
         filing['recognition_date_time'] = \
             recognition_datetime.strftime(f'%B %-d, %Y at {recognition_hour}:%M %p Pacific Time')
         # For Annual Report - Set AGM date as the effective date
