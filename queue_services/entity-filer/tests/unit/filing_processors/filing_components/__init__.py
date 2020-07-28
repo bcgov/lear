@@ -11,7 +11,4 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This module contains all of the Legal Filing specific processors.
-
-Processors hold the business logic for how a filing is interpreted and saved to the legal database.
-"""
+"""The Unit Tests for the filing component processors."""
