@@ -11,11 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This manages all of the business operations available on a Business."""
+"""Manages the name of the Business."""
 from typing import Dict
 
 from legal_api.models import Business
 
 
-def set_corp_type(business: Business, alteration: Dict):
+def set_corp_name(business: Business, alteration: Dict):
     pass

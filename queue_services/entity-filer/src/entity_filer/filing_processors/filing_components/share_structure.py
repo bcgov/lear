@@ -1,4 +1,4 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2020 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,7 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This module contains all of the Legal Filing specific processors.
+"""Manages the share structure of a Business."""
+from typing import Dict
 
-Processors hold the business logic for how a filing is interpreted and saved to the legal database.
-"""
+from legal_api.models import Business
+
+
+def set_share_structure(business: Business, alteration: Dict):
+    pass
