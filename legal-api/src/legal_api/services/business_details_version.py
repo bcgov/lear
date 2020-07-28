@@ -47,7 +47,7 @@ class VersionedBusinessDetailsService:
 
     @staticmethod
     def get_business_revision(transaction_id, business) -> dict:
-        """Gets the business info as of a particular transaction."""
+        """Consolidates the business info as of a particular transaction."""
         business_version = version_class(Business)
         business_revision = db.session.query(business_version) \
             .filter(business_version.transaction_id <= transaction_id) \
@@ -271,13 +271,14 @@ class VersionedBusinessDetailsService:
         """Return the resolution revision as a json object."""
         resolution = {
             'id': resolution_revision.id,
-            'date': resolution_revision.resolution_date.strftime(f'%B %-d, %Y'),
+            'date': resolution_revision.resolution_date.strftime('%B %-d, %Y'),
             'type': resolution_revision.resolution_type
         }
         return resolution
 
     @staticmethod
     def business_revision_json(business_revision, business_json):
+        """Return the business revision as a json object."""
         business_json['hasRestrictions'] = business_revision.restriction_ind
         if business_revision.dissolution_date:
             business_json['dissolutionDate'] = datetime.date(business_revision.dissolution_date).isoformat()
