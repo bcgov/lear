@@ -1,0 +1,61 @@
+name: Entity Pay DEV CD
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "queue_services/entity-pay/**"
+      - "queue_services/common/**"
+
+env:
+  IMAGE_NAME: entity-pay
+  TAG_NAME: dev
+
+jobs:
+  entity-pay-dev:
+    runs-on: ubuntu-latest
+    if: github.repository == 'bcgov/lear'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install tools
+        run: |
+          ./scripts/install_tools.sh
+          oc version
+          op --version
+      - name: Login Openshift
+        working-directory: ./queue_services/entity-pay
+        run: |
+          oc login ${{ secrets.OPENSHIFT_LOGIN_REGISTRY }} --token=${{ secrets.OPENSHIFT_SA_TOKEN }}
+      - name: Set Deployment Environement Variables
+        working-directory: .
+        run: |
+          vaults='[{ "vault": "shared", "application": ["nats"]}, {"vault": "entity","application": ["postgres-legal", "entity-pay", "sentry"]}]'
+          ./scripts/1pass.sh ${{ secrets.op_parameters }} -m "secret" -e "${TAG_NAME}" -v "${vaults}" -a "${IMAGE_NAME}-${TAG_NAME}" -n ${{ secrets.OPENSHIFT_REPOSITORY_DEV }}
+      - name: Log into registry
+        run: echo "${{ secrets.OPENSHIFT_SA_TOKEN}}" | docker login ${{ secrets.OPENSHIFT_DOCKER_REGISTRY }} -u ${{ secrets.OPENSHIFT_SA_NAME}} --password-stdin
+      - name: Build image
+        working-directory: ./queue_services/entity-pay
+        run: docker build . --file Dockerfile --tag image
+      - name: Push image
+        working-directory: ./queue_services/entity-pay
+        run: |
+          IMAGE_ID=${{ secrets.OPENSHIFT_DOCKER_REGISTRY }}/${{ secrets.OPENSHIFT_REPOSITORY_TOOLS }}/$IMAGE_NAME
+          docker tag image $IMAGE_ID:latest
+          docker push $IMAGE_ID:latest
+          docker image tag $IMAGE_ID:latest $IMAGE_ID:$TAG_NAME
+          docker push $IMAGE_ID:$TAG_NAME
+      - name: Rollout new deployment
+        working-directory: ./queue_services/entity-pay
+        run: |
+          oc rollout status dc/$IMAGE_NAME-${TAG_NAME} -n ${{ secrets.OPENSHIFT_REPOSITORY_DEV }} -w
+      - name: Rocket.Chat Notification
+        uses: RocketChat/Rocket.Chat.GitHub.Action.Notification@master
+        if: failure()
+        with:
+          type: ${{ job.status }}
+          job_name: "*Entity Pay Build and Deploy to ${{env.TAG_NAME}}*"
+          channel: "#registries-bot"
+          url: ${{ secrets.ROCKETCHAT_WEBHOOK }}
+          commit: true
+          token: ${{ secrets.GITHUB_TOKEN }}
