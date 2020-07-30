@@ -39,9 +39,9 @@ def setup_bootstrap_ia_minimal(jwt, session, client, account_id):
                       'name': 'incorporationApplication',
                       'accountId': account_id
                   },
-                  "incorporationApplication": {
-                      "nameRequest": {
-                          "legalType": "BC"
+                  'incorporationApplication': {
+                      'nameRequest': {
+                          'legalType': 'BC'
                       }
                   }
               }

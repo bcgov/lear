@@ -575,19 +575,19 @@ class ListFilingResource(Resource):
 
         if user_jwt.validate_roles([STAFF_ROLE]) or \
                 user_jwt.validate_roles([SYSTEM_ROLE]):
-            accountInfo = {}
+            account_info = {}
             routing_slip_number = get_str(filing.filing_json, 'filing/header/routingSlipNumber')
             if routing_slip_number:
-                accountInfo = {'routingSlip': routing_slip_number}
-            bcolAccountNumber = get_str(filing.filing_json, 'filing/header/bcolAccountNumber')
-            if bcolAccountNumber:
-                accountInfo = {'bcolAccountNumber': bcolAccountNumber}
-            datNumber = get_str(filing.filing_json, 'filing/header/datNumber')
-            if datNumber:
-                accountInfo = {'datNumber': datNumber}
+                account_info = {'routingSlip': routing_slip_number}
+            bcol_account_number = get_str(filing.filing_json, 'filing/header/bcolAccountNumber')
+            if bcol_account_number:
+                account_info = {'bcolAccountNumber': bcol_account_number}
+            dat_number = get_str(filing.filing_json, 'filing/header/datNumber')
+            if dat_number:
+                account_info = {'datNumber': dat_number}
 
-            if accountInfo:
-                payload['accountInfo'] = accountInfo
+            if account_info:
+                payload['accountInfo'] = account_info
         try:
             token = user_jwt.get_token_auth_header()
             headers = {'Authorization': 'Bearer ' + token,
