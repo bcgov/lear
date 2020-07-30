@@ -64,6 +64,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     last_agm_date = db.Column('last_agm_date', db.DateTime(timezone=True))
     legal_name = db.Column('legal_name', db.String(1000), index=True)
     legal_type = db.Column('legal_type', db.String(10))
+    # legal_act = db.Column('legal_act', db.String(10))
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
     _identifier = db.Column('identifier', db.String(10), index=True)
