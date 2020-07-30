@@ -46,7 +46,6 @@ def test_business_not_found(session, app):
                 }
             }
         }
-        doc = document_meta.get_documents(filing)
         assert len(document_meta.get_documents(filing)) == 0
         # also verify document class properties:
         assert document_meta._business_identifier == 'BC7654321'
@@ -590,7 +589,7 @@ def test_ia_paid(app):
                     'status': 'PAID',
                     'name': 'incorporationApplication',
                     'availableOnPaperOnly': False,
-                    'effectiveDate': FILING_DATE,
+                    'effectiveDate':  FILING_DATE,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -623,7 +622,7 @@ def test_ia_completed(app):
                     'status': 'COMPLETED',
                     'name': 'incorporationApplication',
                     'availableOnPaperOnly': False,
-                    'effectiveDate': FILING_DATE,
+                    'effectiveDate':  FILING_DATE,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -669,7 +668,7 @@ def test_ia_completed_bcomp(session, app):
                     'status': 'COMPLETED',
                     'name': 'incorporationApplication',
                     'availableOnPaperOnly': False,
-                    'effectiveDate': FILING_DATE,
+                    'effectiveDate':  FILING_DATE,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -697,3 +696,4 @@ def test_ia_completed_bcomp(session, app):
         assert documents[2]['filingId'] == 12356
         assert documents[2]['title'] == 'Certificate'
         assert documents[2]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
+
