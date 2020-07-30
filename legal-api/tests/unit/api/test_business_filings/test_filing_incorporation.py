@@ -55,7 +55,7 @@ def setup_bootstrap_ia_minimal(jwt, session, client, account_id):
     return identifier, filing_id
 
 
-@ integration_affiliation
+@integration_affiliation
 def test_get_bootstrap_draft_filing(client, jwt, session):
     """Assert that a draft IA filing can be retrieved."""
     account_id = 26
@@ -71,7 +71,7 @@ def test_get_bootstrap_draft_filing(client, jwt, session):
     assert rv.json['filing']['header']['filingId'] == filing_id
 
 
-@ integration_affiliation
+@integration_affiliation
 def test_delete_bootstrap_draft_filing(client, jwt, session):
     """Assert that a draft IA filing can be retrieved."""
     account_id = 26
@@ -87,7 +87,7 @@ def test_delete_bootstrap_draft_filing(client, jwt, session):
     assert not RegistrationBootstrap.find_by_identifier(identifier)
 
 
-@ integration_affiliation
+@integration_affiliation
 def test_get_bootstrap_draft_wrong_filing(client, jwt, session):
     """Assert that an invalid filing cannot be found."""
     account_id = 26
@@ -102,7 +102,7 @@ def test_get_bootstrap_draft_wrong_filing(client, jwt, session):
     assert rv.status_code == HTTPStatus.NOT_FOUND
 
 
-@ integration_affiliation
+@integration_affiliation
 def test_get_bootstrap_draft_filing_iff_one_exists(client, jwt, session):
     """Assert that a draft IA filing can be retrieved, iff there's only one at the filing endpoint.."""
     account_id = 26
@@ -118,8 +118,8 @@ def test_get_bootstrap_draft_filing_iff_one_exists(client, jwt, session):
     assert rv.json['filing']['header']['filingId'] == filing_id
 
 
-@ integration_affiliation
-@ integration_payment
+@integration_affiliation
+@integration_payment
 def test_create_incorporation_success_filing(client, jwt, session):
     """Assert that a valid IA can be posted."""
     account_id = 26
@@ -149,8 +149,8 @@ def test_create_incorporation_success_filing(client, jwt, session):
     assert filing.status == Filing.Status.PENDING.value
 
 
-@ integration_affiliation
-@ integration_payment
+@integration_affiliation
+@integration_payment
 def test_create_incorporation_success_filing_routing_slip(client, jwt, session):
     """Assert that a valid IA can be posted."""
     account_id = 26
@@ -181,8 +181,8 @@ def test_create_incorporation_success_filing_routing_slip(client, jwt, session):
     assert filing.status == Filing.Status.PENDING.value
 
 
-@ integration_affiliation
-@ integration_payment
+@integration_affiliation
+@integration_payment
 def test_create_incorporation_with_bcol_dat(client, jwt, session):
     """Assert that a valid IA can be posted."""
     account_id = 26
