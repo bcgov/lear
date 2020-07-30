@@ -116,6 +116,8 @@ def create_business(business_json: dict) -> Business:
         if business_json['business']['lastArDate'] else None
     business.last_agm_date = datetime.datetime.fromisoformat(business_json['business']['lastAgmDate']) \
         if business_json['business']['lastAgmDate'] else business.last_ar_date
+    if business_json['business'].get('businessNumber', None):
+        business.tax_id = business_json['business'].get('businessNumber')
     return business
 
 
