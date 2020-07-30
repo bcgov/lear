@@ -27,4 +27,4 @@ queue = QueueService()  # pylint: disable=invalid-name; shared variables are low
 
 namex = NameXService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 
-document_meta = DocumentMetaService()  # pylint: disable=invalid-name;
+#  document_meta = DocumentMetaService()  # pylint: disable=invalid-name;
