@@ -35,9 +35,9 @@ from legal_api.services import (
     COLIN_SVC_ROLE,
     STAFF_ROLE,
     SYSTEM_ROLE,
+    DocumentMetaService,
     RegistrationBootstrapService,
     authorized,
-    document_meta,
     namex,
     queue,
 )
@@ -79,7 +79,7 @@ class ListFilingResource(Resource):
                 if rv.filing_type == 'incorporationApplication':
                     return legal_api.reports.get_pdf(rv, None)
             filing_json = rv.json
-            filing_json['filing']['documents'] = document_meta.get_documents(filing_json)
+            filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
             return jsonify(filing_json)
 
         business = Business.find_by_identifier(identifier)
@@ -112,7 +112,7 @@ class ListFilingResource(Resource):
         filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value, Filing.Status.PAID.value])
         for filing in filings:
             filing_json = filing.json
-            filing_json['filing']['documents'] = document_meta.get_documents(filing_json)
+            filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
             rv.append(filing_json)
 
         return jsonify(filings=rv)
