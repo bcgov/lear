@@ -578,13 +578,13 @@ class ListFilingResource(Resource):
             account_info = {}
             routing_slip_number = get_str(filing.filing_json, 'filing/header/routingSlipNumber')
             if routing_slip_number:
-                account_info = {'routingSlip': routing_slip_number}
+                account_info['routingSlip'] = routing_slip_number
             bcol_account_number = get_str(filing.filing_json, 'filing/header/bcolAccountNumber')
             if bcol_account_number:
-                account_info = {'bcolAccountNumber': bcol_account_number}
+                account_info['bcolAccountNumber'] = bcol_account_number
             dat_number = get_str(filing.filing_json, 'filing/header/datNumber')
             if dat_number:
-                account_info = {'datNumber': dat_number}
+                account_info['datNumber'] = dat_number
 
             if account_info:
                 payload['accountInfo'] = account_info
