@@ -696,4 +696,3 @@ def test_ia_completed_bcomp(session, app):
         assert documents[2]['filingId'] == 12356
         assert documents[2]['title'] == 'Certificate'
         assert documents[2]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
-
