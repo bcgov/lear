@@ -11,16 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test Change of Director basic validations.
-
-Rules: (text from the BA rules document)
-    - The effective date of change cannot be in the future.
-    - The effective date cannot be a date prior to their Incorporation Date
-    - The effective date of change cannot be a date that is farther in the past
-        as a previous COD filing(Standalone or AR).
-    - The effective date can be the same effective date as another COD filing(standalone OR AR). If this is the case:
-    - COD filing that was filed most recently as the most current director information.
-"""
+"""Test Change of Director basic validations. See rules in change_of_directors.py."""
 import copy
 
 import datedelta
@@ -35,11 +26,14 @@ from tests.unit.models import factory_completed_filing
 
 def common_setup(identifier: str, now: datetime):
     """Set up the data for COD tests."""
+    founding_date = now - datedelta.YEAR
     filing_date = now - datedelta.DAY
 
+    # create business founded "a year ago"
     business = Business(identifier=identifier,
-                        founding_date=now - datedelta.YEAR)
+                        founding_date=founding_date)
 
+    # create COD filing filed (and effective) "yesterday"
     f = copy.deepcopy(FILING_HEADER)
     f['filing']['header']['date'] = filing_date.isoformat()
     f['filing']['header']['effectiveDate'] = filing_date.isoformat()
@@ -56,26 +50,12 @@ def test_effective_date_sanity_check(session):
     """Assert that a COD with a valid effective date passes validation."""
     # setup
     identifier = 'CP1234567'
-    now = datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc)
-    filing_json = copy.deepcopy(FILING_HEADER)
-    filing_json['filing']['header']['effectiveDate'] = (now - datedelta.MONTH).isoformat()
-    filing_json['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
-
-    business = Business(identifier=identifier,
-                        founding_date=now - datedelta.datedelta(years=4)
-                        )
-    business.save()
-
-    # create a COD
-    factory_completed_filing(business=business,
-                             data_dict=filing_json,
-                             filing_date=(now - datedelta.MONTH))
-
-    # move the COD to now
-    filing_json['filing']['header']['effectiveDate'] = now.isoformat()
+    # assign 'now' with non-zero hour so Founding Date is mid-day
+    now = datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
+    business, filing = common_setup(identifier, now)
 
     with freeze_time(now):
-        err = validate_effective_date(business, filing_json)
+        err = validate_effective_date(business, filing)
     assert not err
 
 
@@ -83,103 +63,140 @@ def test_validate_effective_date_not_in_future(session):
     """Assert that the effective date of change cannot be in the future."""
     # setup
     identifier = 'CP1234567'
-    now = datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc)
-
+    # assign 'now' with non-zero hour so Founding Date is mid-day
+    now = datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
     business, filing = common_setup(identifier, now)
 
-    # The effective date of change cannot be in the future
+    # The effective date _cannot_ be in the future.
+    effective_date = datetime(2001, 8, 6, 0, 0, 0, 0, tzinfo=timezone.utc)
+    filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
+    with freeze_time(now):
+        err = validate_effective_date(business, filing)
+    assert err
+
+    # The effective date _can_ be today.
+    effective_date = datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc)
+    filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
+    with freeze_time(now):
+        err = validate_effective_date(business, filing)
+    assert not err
+
+    # The effective date _can_ be in the past.
+    effective_date = datetime(2001, 8, 4, 0, 0, 0, 0, tzinfo=timezone.utc)
+    filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
         err = validate_effective_date(business, filing)
     assert not err
 
 
 def test_validate_effective_date_not_before_founding(session):
-    """Assert the filing is not before the business was founded.
-
-    Rules:
-        - The effective date cannot be a date prior to their Incorporation Date
-    """
+    """Assert that the effective date cannot be a date prior to their Incorporation Date."""
     # setup
     identifier = 'CP1234567'
-    now = datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc)
-
+    # assign 'now' with non-zero hour so Founding Date is mid-day
+    now = datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
     business, filing = common_setup(identifier, now)
 
-    # The effective date cannot be a date prior to their Incorporation Date
-    effective_date = now - datedelta.DAY
-    business.founding_date = now
+    # The effective date _cannot_ be before their Incorporation Date.
+    effective_date = datetime(2000, 8, 4, 0, 0, 0, 0, tzinfo=timezone.utc)
     filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
-
     with freeze_time(now):
         err = validate_effective_date(business, filing)
     assert err
 
-    business.founding_date = now - datedelta.YEAR
+    # The effective date _can_ be on their Incorporation Date.
+    effective_date = datetime(2000, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc)
+    filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
+    with freeze_time(now):
+        err = validate_effective_date(business, filing)
+    assert not err
+
+    # The effective date _can_ be after their Incorporation Date.
+    effective_date = datetime(2000, 8, 6, 0, 0, 0, 0, tzinfo=timezone.utc)
+    filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
         err = validate_effective_date(business, filing)
     assert not err
 
 
 def test_validate_effective_date_not_before_other_COD(session):  # noqa: N802; COD is an acronym
-    """Assert that the new filing is not before an existing COD.
-
-    Rules:
-       - The effective date of change cannot be a date that
-            is farther in the past as a previous COD filing(Standalone or AR).
-    """
+    """Assert that the effective date of change cannot be before a previous COD filing."""
     # setup
     identifier = 'CP1234567'
-    now = datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2020, 7, 30, 12, 0, 0, 0, tzinfo=timezone.utc)
+    # assign Founding Date with mid-day hour
+    founding_date = datetime(2000, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
+    business = Business(identifier=identifier,
+                        founding_date=founding_date)
+    business.save()
+
+    # create the previous COD filing
     filing_cod = copy.deepcopy(FILING_HEADER)
     filing_cod['filing']['header']['name'] = 'changeOfDirectors'
     filing_cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
-
-    business = Business(identifier=identifier,
-                        founding_date=now - datedelta.datedelta(years=4)
-                        )
-    business.save()
-
-    # create a COD
+    filing_date = datetime(2010, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc)
     factory_completed_filing(business=business,
                              data_dict=filing_cod,
-                             filing_date=now)
+                             filing_date=filing_date)
 
-    # move the COD BACK a MONTH
-    filing_cod['filing']['header']['effectiveDate'] = (now - datedelta.MONTH).isoformat()
-
-    # The effective date of change cannot be before the previous COD
+    # The effective date _cannot_ be before the previous COD.
+    effective_date = datetime(2010, 8, 4, 0, 0, 0, 0, tzinfo=timezone.utc)
+    filing_cod['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
         err = validate_effective_date(business, filing_cod)
     assert err
 
+    # The effective date _can_ be on the same date as the previous COD.
+    effective_date = datetime(2010, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc)
+    filing_cod['filing']['header']['effectiveDate'] = effective_date.isoformat()
+    with freeze_time(now):
+        err = validate_effective_date(business, filing_cod)
+    assert not err
+
+    # The effective date _can_ be after the previous COD.
+    effective_date = datetime(2010, 8, 6, 0, 0, 0, 0, tzinfo=timezone.utc)
+    filing_cod['filing']['header']['effectiveDate'] = effective_date.isoformat()
+    with freeze_time(now):
+        err = validate_effective_date(business, filing_cod)
+    assert not err
+
 
 def test_validate_effective_date_not_before_other_AR_with_COD(session):  # noqa: N802; COD is an acronym
-    """Assert that the filing ordering rules are correct.
-
-    Rules:
-     - The effective date of change cannot be a date that is farther
-            in the past as a previous COD filing(Standalone or AR).
-    """
+    """Assert that the effective date of change cannot be before a previous AR filing."""
     # setup
     identifier = 'CP1234567'
-    now = datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc)
-    filing_ar = copy.deepcopy(ANNUAL_REPORT)
-    filing_ar['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
-
+    now = datetime(2020, 7, 30, 12, 0, 0, 0, tzinfo=timezone.utc)
+    # assign founding_date with mid-day hour
+    founding_date = datetime(2000, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
     business = Business(identifier=identifier,
-                        founding_date=now - datedelta.datedelta(years=4)
-                        )
+                        founding_date=founding_date)
     business.save()
 
-    # create a COD
+    # create the previous AR filing
+    filing_ar = copy.deepcopy(ANNUAL_REPORT)
+    filing_ar['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+    filing_date = datetime(2010, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc)
     factory_completed_filing(business=business,
                              data_dict=filing_ar,
-                             filing_date=now)
+                             filing_date=filing_date)
 
-    # move the COD BACK a MONTH
-    filing_ar['filing']['header']['effectiveDate'] = (now - datedelta.MONTH).isoformat()
-
-    # The effective date of change cannot be before the previous COD
+    # The effective date _cannot_ be before the previous AR.
+    effective_date = datetime(2010, 8, 4, 0, 0, 0, 0, tzinfo=timezone.utc)
+    filing_ar['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
         err = validate_effective_date(business, filing_ar)
     assert err
+
+    # The effective date _can_ be on the same date as the previous AR.
+    effective_date = datetime(2010, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc)
+    filing_ar['filing']['header']['effectiveDate'] = effective_date.isoformat()
+    with freeze_time(now):
+        err = validate_effective_date(business, filing_ar)
+    assert not err
+
+    # The effective date _can_ be after the previous AR.
+    effective_date = datetime(2010, 8, 6, 0, 0, 0, 0, tzinfo=timezone.utc)
+    filing_ar['filing']['header']['effectiveDate'] = effective_date.isoformat()
+    with freeze_time(now):
+        err = validate_effective_date(business, filing_ar)
+    assert not err

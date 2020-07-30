@@ -70,43 +70,40 @@ def validate_directors_addresses(cod: Dict) -> List:
 def validate_effective_date(business: Business, cod: Dict) -> List:
     """Return an error or warning message based on the effective date validation rules.
 
-    Rules:
+    Rules: (text from the BA rules document)
         - The effective date of change cannot be in the future.
-        - The effective date cannot be a date prior to their Incorporation Date
+        - The effective date cannot be a date prior to their Incorporation Date.
         - The effective date of change cannot be a date that is farther in the past
-            as a previous COD filing (Standalone or AR).
+            than a previous COD filing (standalone or AR).
         - The effective date can be the same effective date as another COD filing
-            (standalone OR AR). If this is the case:
-        - COD filing that was filed most recently as the most current director information.
+            (standalone or AR). If this is the case:
+        - COD filing that was filed most recently is the most current director information.
     """
     try:
+        # NB: COD effective date is at 0 hours UTC.
         filing_effective_date = cod['filing']['header']['effectiveDate']
     except KeyError:
-        try:
-            # we'll assume the filing is at 0 hours UTC
-            filing_effective_date = cod['filing']['header']['date'] + 'T00:00:00+00:00'
-        except KeyError:
-            return {'error': babel('No effective_date or filing date provided.')}
+        return {'error': babel('No effective_date provided.')}
 
     try:
         effective_date = datetime.fromisoformat(filing_effective_date)
     except ValueError:
-        return {'error': babel('Invalid ISO format for effective_date or filing date.')}
+        return {'error': babel('Invalid ISO format for effective_date.')}
 
     msg = []
 
-    # The effective date of change cannot be in the future
+    # The effective datetime cannot be in the future.
     if effective_date > datetime.utcnow():
         msg.append({'error': babel('Filing cannot have a future effective date.')})
 
-    # The effective date cannot be a date prior to their Incorporation Date
-    if effective_date < business.founding_date:
-        msg.append({'error': babel('Filing cannot be before a businesses founding date.')})
+    # The effective date cannot be before their Incorporation Date.
+    if effective_date.date() < business.founding_date.date():
+        msg.append({'error': babel('Filing cannot be before businesses founding date.')})
 
-    last_cod_filing = Filing.get_most_recent_legal_filing(business.id,
-                                                          Filing.FILINGS['changeOfDirectors']['name'])
+    # The effective date cannot be before the most recent COD or AR.
+    last_cod_filing = Filing.get_most_recent_legal_filing(business.id, Filing.FILINGS['changeOfDirectors']['name'])
     if last_cod_filing:
-        if effective_date < last_cod_filing.effective_date:
-            msg.append({'error': babel("Filing's effective date cannot be before another Change of Director filing.")})
+        if effective_date.date() < last_cod_filing.effective_date.date():
+            msg.append({'error': babel("Filing cannot be before another Change of Director filing.")})
 
     return msg
