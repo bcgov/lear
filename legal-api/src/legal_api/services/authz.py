@@ -22,6 +22,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 
+SYSTEM_ROLE = 'system'
 STAFF_ROLE = 'staff'
 BASIC_USER = 'basic'
 COLIN_SVC_ROLE = 'colin'
@@ -36,6 +37,7 @@ def authorized(  # pylint: disable=too-many-return-statements
         return False
 
     if jwt.validate_roles([STAFF_ROLE]) \
+            or jwt.validate_roles([SYSTEM_ROLE]) \
             or jwt.validate_roles([COLIN_SVC_ROLE]):
         return True
 

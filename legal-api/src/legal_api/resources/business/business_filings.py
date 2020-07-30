@@ -34,6 +34,7 @@ from legal_api.schemas import rsbc_schemas
 from legal_api.services import (
     COLIN_SVC_ROLE,
     STAFF_ROLE,
+    SYSTEM_ROLE,
     RegistrationBootstrapService,
     authorized,
     document_meta,
@@ -572,10 +573,21 @@ class ListFilingResource(Resource):
         if folio_number:
             payload['filingInfo']['folioNumber'] = folio_number
 
-        if user_jwt.validate_roles([STAFF_ROLE]):
+        if user_jwt.validate_roles([STAFF_ROLE]) or \
+                user_jwt.validate_roles([SYSTEM_ROLE]):
+            account_info = {}
             routing_slip_number = get_str(filing.filing_json, 'filing/header/routingSlipNumber')
             if routing_slip_number:
-                payload['accountInfo'] = {'routingSlip': routing_slip_number}
+                account_info['routingSlip'] = routing_slip_number
+            bcol_account_number = get_str(filing.filing_json, 'filing/header/bcolAccountNumber')
+            if bcol_account_number:
+                account_info['bcolAccountNumber'] = bcol_account_number
+            dat_number = get_str(filing.filing_json, 'filing/header/datNumber')
+            if dat_number:
+                account_info['datNumber'] = dat_number
+
+            if account_info:
+                payload['accountInfo'] = account_info
         try:
             token = user_jwt.get_token_auth_header()
             headers = {'Authorization': 'Bearer ' + token,

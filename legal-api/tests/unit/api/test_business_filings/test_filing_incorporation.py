@@ -22,7 +22,7 @@ from http import HTTPStatus
 from registry_schemas.example_data import FILING_TEMPLATE, INCORPORATION
 
 from legal_api.models import Filing, RegistrationBootstrap
-from legal_api.services.authz import STAFF_ROLE
+from legal_api.services.authz import STAFF_ROLE, SYSTEM_ROLE
 from tests import integration_affiliation, integration_payment
 from tests.unit.services.utils import create_header
 
@@ -38,6 +38,11 @@ def setup_bootstrap_ia_minimal(jwt, session, client, account_id):
                   {
                       'name': 'incorporationApplication',
                       'accountId': account_id
+                  },
+                  'incorporationApplication': {
+                      'nameRequest': {
+                          'legalType': 'BC'
+                      }
                   }
               }
               }
@@ -127,6 +132,37 @@ def test_create_incorporation_success_filing(client, jwt, session):
     filing['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     filing['filing']['header']['name'] = 'incorporationApplication'
     filing['filing']['header']['accountId'] = account_id
+
+    # remove fed
+    filing['filing']['header'].pop('effectiveDate')
+
+    rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filing_id}',
+                    json=filing,
+                    headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.ACCEPTED
+    assert rv.json['filing']['header']['accountId'] == account_id
+    assert rv.json['filing']['header']['name'] == 'incorporationApplication'
+
+    filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
+    assert filing
+    assert filing.status == Filing.Status.PENDING.value
+
+
+@integration_affiliation
+@integration_payment
+def test_create_incorporation_success_filing_routing_slip(client, jwt, session):
+    """Assert that a valid IA can be posted."""
+    account_id = 26
+    identifier, filing_id = setup_bootstrap_ia_minimal(jwt, session, client, account_id)
+
+    filing = copy.deepcopy(FILING_TEMPLATE)
+    filing['filing'].pop('business')
+    filing['filing']['business'] = {}
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+    filing['filing']['header']['name'] = 'incorporationApplication'
+    filing['filing']['header']['accountId'] = account_id
     filing['filing']['header']['routingSlipNumber'] = '111111111'
 
     # remove fed
@@ -135,6 +171,39 @@ def test_create_incorporation_success_filing(client, jwt, session):
     rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filing_id}',
                     json=filing,
                     headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.ACCEPTED
+    assert rv.json['filing']['header']['accountId'] == account_id
+    assert rv.json['filing']['header']['name'] == 'incorporationApplication'
+
+    filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
+    assert filing
+    assert filing.status == Filing.Status.PENDING.value
+
+
+@integration_affiliation
+@integration_payment
+def test_create_incorporation_with_bcol_dat(client, jwt, session):
+    """Assert that a valid IA can be posted."""
+    account_id = 26
+    identifier, filing_id = setup_bootstrap_ia_minimal(jwt, session, client, account_id)
+
+    filing = copy.deepcopy(FILING_TEMPLATE)
+    filing['filing'].pop('business')
+    filing['filing']['business'] = {}
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+    filing['filing']['header']['name'] = 'incorporationApplication'
+    filing['filing']['header']['accountId'] = account_id
+    filing['filing']['header']['bcolAccountNumber'] = '180670'
+    filing['filing']['header']['datNumber'] = 'C234567890'
+
+    # remove fed
+    filing['filing']['header'].pop('effectiveDate')
+
+    rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filing_id}',
+                    json=filing,
+                    headers=create_header(jwt, [SYSTEM_ROLE], None))
 
     assert rv.status_code == HTTPStatus.ACCEPTED
     assert rv.json['filing']['header']['accountId'] == account_id
