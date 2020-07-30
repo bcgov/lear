@@ -1,45 +1,39 @@
-<div class="section-title">
- Incorporator Information
+<div class="no-page-break">
+  <div class="separator mt-4"></div>
+  <div class="section-title mt-4">Incorporator Information</div>
 </div>
-{% set ns = namespace(incorporator=0) %}
-{% for party in incorporationApplication.parties|sort(attribute='officer.lastName') %}
-{% for party_role in party.roles %}
-{% if party_role.roleType == 'Incorporator' %}
-        <div class="section-data">
-          <table class="section-data-table" role="presentation">
-            {% if ns.incorporator > 0 %}
-                <tr class="upper-solid-row-separator">
+<table class="section-data section-data-table mt-4" role="presentation">
+  {% for party in incorporationApplication.parties|sort(attribute='officer.lastName') %}
+    {% for party_role in party.roles %}
+      {% if party_role.roleType == 'Incorporator' %}
+        <tr class="no-page-break">
+          <td class="col-33">
+            <div class="section-sub-title">
+              {% if party.officer.partyType == 'Org' %}
+                <span class="capitalize-text">{{ party.officer.orgName }}</span>
               {% else %}
-                <tr>
+                <span class="capitalize-text">{{ party.officer.lastName }}</span>,
+                <span class="capitalize-text">{{ party.officer.firstName }}</span>
+                {% if party.officer.middleName %}
+                  <span class="capitalize-text">{{ party.officer.middleName }}</span>
+                {% endif %}
               {% endif %}
-                  <td class="director-name">
-                      <div class="section-sub-title">
-                          {% if party.officer.partyType == 'Org' %}
-                              <span class="capitalize-text">{{ party.officer.orgName }}</span>
-                          {% else %}
-                              <span class="capitalize-text">{{ party.officer.lastName }}</span>,
-                              <span class="capitalize-text">{{ party.officer.firstName }}</span>
-                              {% if party.officer.middleName %}
-                                <span class="capitalize-text">{{ party.officer.middleName }}</span>
-                              {% endif %}
-                          {% endif %}
-                      </div>
-                  </td>
-                  <td>
-                      <div class="section-sub-title">Mailing Address</div>
-                      <div>{{ party.mailingAddress.streetAddress }}</div>
-                      <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
-                      <div>{{ party.mailingAddress.addressCity }}
-                        {{ party.mailingAddress.addressRegion }}
-                        &nbsp;{{ party.mailingAddress.postalCode }}</div>
-                      <div>{{ party.mailingAddress.addressCountry }}</div>
-                  </td>
-              </tr>
-          </table>
-        </div>
-{% set ns.incorporator = ns.incorporator + 1 %}
-{% endif %}
-{% endfor %}
-{% endfor %}
-
-
+            </div>
+          </td>
+          <td>
+            <div class="section-sub-title">Mailing Address</div>
+            <div class="pt-2">{{ party.mailingAddress.streetAddress }}</div>
+            <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
+            <div>
+              {{ party.mailingAddress.addressCity }}
+              {{ party.mailingAddress.addressRegion }}
+              &nbsp;{{ party.mailingAddress.postalCode }}
+            </div>
+            <div>{{ party.mailingAddress.addressCountry }}</div>
+            <div class="delivery-instructions pt-1">{{ party.mailingAddress.deliveryInstructions }}</div>
+          </td>
+        </tr>
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+</table>

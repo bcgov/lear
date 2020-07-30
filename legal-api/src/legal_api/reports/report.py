@@ -92,37 +92,39 @@ class Report:  # pylint: disable=too-few-public-methods
         """
         template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
-            'directors',
-            'addresses',
-            'certification',
-            'footer',
-            'logo',
-            'macros',
-            'style',
-            'dissolution',
-            'legalNameChange',
-            'resolution',
-            'certificate-of-incorporation/style',
-            'certificate-of-incorporation/seal',
-            'certificate-of-incorporation/registrarSignature',
-            'certificate-of-incorporation/logo',
-            'common/addresses',
-            'common/style',
-            'incorporation-application/incorporator',
-            'incorporation-application/completingParty',
-            'incorporation-application/incorporationDetails',
-            'incorporation-application/directors',
-            'common/shareStructure',
-            'incorporation-application/nameRequest',
             'bc-address-change/addresses',
-            'bc-address-change/addressChangeDetails',
-            'notice-of-articles/nameTranslations',
-            'notice-of-articles/headerDetails',
+            'bc-address-change/businessDetails',
+            'bc-director-change/businessDetails',
+            'bc-director-change/directors',
+            'certificate-of-incorporation/logo',
+            'certificate-of-incorporation/registrarSignature',
+            'certificate-of-incorporation/seal',
+            'certificate-of-incorporation/style',
+            'common/addresses',
+            'common/shareStructure',
+            'common/style',
+            'incorporation-application/benefitCompanyStmt',
+            'incorporation-application/businessDetails',
+            'incorporation-application/completingParty',
+            'incorporation-application/directors',
+            'incorporation-application/effectiveDate',
+            'incorporation-application/incorporator',
+            'incorporation-application/nameRequest',
+            'notice-of-articles/benefitCompanyStmt',
+            'notice-of-articles/businessDetails',
             'notice-of-articles/directors',
             'notice-of-articles/resolutionDates',
             'notice-of-articles/restrictions',
-            'bc-director-change/directorChangeDetails',
-            'bc-director-change/directors'
+            'addresses',
+            'certification',
+            'directors',
+            'dissolution',
+            'footer',
+            'legalNameChange',
+            'logo',
+            'macros',
+            'resolution',
+            'style'
         ]
 
         # substitute template parts - marked up by [[filename]]
@@ -145,6 +147,7 @@ class Report:  # pylint: disable=too-few-public-methods
             self._format_noa_data(filing)
         else:
             filing = copy.deepcopy(self._filing.filing_json['filing'])
+            filing['header']['filingId'] = self._filing.id
             if self._filing.filing_type == 'incorporationApplication':
                 self._format_incorporation_data(filing)
             else:
@@ -174,7 +177,7 @@ class Report:  # pylint: disable=too-few-public-methods
             else LegislationDatetime.as_legislation_timezone(self._filing.effective_date)
         effective_hour = effective_date.strftime('%I').lstrip('0')
         filing['effective_date_time'] = effective_date.strftime(f'%B %-d, %Y at {effective_hour}:%M %p Pacific Time')
-        filing['effective_date'] = effective_date.strftime('%B %d, %Y')
+        filing['effective_date'] = effective_date.strftime('%B %-d, %Y')
         # Recognition Date
         recognition_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
         recognition_hour = recognition_datetime.strftime('%I').lstrip('0')
@@ -185,9 +188,9 @@ class Report:  # pylint: disable=too-few-public-methods
             agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
             if agm_date_str:
                 agm_date = datetime.fromisoformat(agm_date_str)
-                filing['agm_date'] = agm_date.strftime('%B %d, %Y')
+                filing['agm_date'] = agm_date.strftime('%B %-d, %Y')
                 # for AR, the effective date is the AGM date
-                filing['effective_date'] = agm_date.strftime('%B %d, %Y')
+                filing['effective_date'] = agm_date.strftime('%B %-d, %Y')
             else:
                 filing['agm_date'] = 'No AGM'
 
@@ -246,13 +249,12 @@ class Report:  # pylint: disable=too-few-public-methods
         return address
 
     def _format_incorporation_data(self, filing):
-        filing['header']['filingId'] = self._filing.id
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
         self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['deliveryAddress'])
         self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
         self._format_directors(filing['incorporationApplication']['parties'])
-        # create helper list
+        # create helper lists
         filing['listOfTranslations'] = filing['incorporationApplication'].get('nameTranslations', [])
         filing['offices'] = filing['incorporationApplication']['offices']
         filing['shareClasses'] = filing['incorporationApplication']['shareClasses']
@@ -344,5 +346,5 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
 
     entity_description = {
         'CP': 'cooperative',
-        'BC': 'Benefit Company'
+        'BC': 'BC Benefit Company'
     }

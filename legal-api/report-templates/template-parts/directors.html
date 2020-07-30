@@ -9,7 +9,7 @@
           NEW DIRECTORS APPOINTED OR ELECTED
         </div>
 {% for director in listOfDirectors.directorsAppointed %}
-        <div class="section-data no-page-break">
+        <div class="section-data">
           <div class="title">
             {{ director.officer.lastName }},
             {{ director.officer.firstName }}
@@ -37,7 +37,7 @@
           CEASED DIRECTORS
         </div>
 {% for director in listOfDirectors.directorsCeased %}
-        <div class="section-data no-page-break">
+        <div class="section-data">
           <div class="title">
             {{ director.officer.lastName }},
             {{ director.officer.firstName }}
@@ -68,7 +68,7 @@
         </div>
 {% for director in listOfDirectors.directors %}
 {% if not director.cessationDate %}
-        <div class="section-data no-page-break">
+        <div class="section-data">
           <div class="title">
             {{ director.officer.lastName }},
             {{ director.officer.firstName }}
