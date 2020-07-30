@@ -104,6 +104,6 @@ def validate_effective_date(business: Business, cod: Dict) -> List:
     last_cod_filing = Filing.get_most_recent_legal_filing(business.id, Filing.FILINGS['changeOfDirectors']['name'])
     if last_cod_filing:
         if effective_date.date() < last_cod_filing.effective_date.date():
-            msg.append({'error': babel("Filing cannot be before another Change of Director filing.")})
+            msg.append({'error': babel('Filing cannot be before another Change of Director filing.')})
 
     return msg
