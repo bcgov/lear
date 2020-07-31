@@ -25,9 +25,9 @@ def set_corp_type(business: Business, business_info: Dict) -> Dict:
 
     try:
         legal_type = business_info.get('legalType')
+        if legal_type:
+            business.legal_type = legal_type
     except (IndexError, KeyError, TypeError):
         return {'error': babel('A valid legal type must be provided.')}
-
-    business.legal_type = legal_type
 
     return None

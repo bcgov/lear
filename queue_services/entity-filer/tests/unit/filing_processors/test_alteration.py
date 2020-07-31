@@ -35,7 +35,7 @@ def test_alteration_process_name(app, session):
     alteration_filing['filing']['alteration']['business']['legalType'] = legal_type
 
     # test
-    alteration.process(business, alteration_filing)
+    alteration.process(business, alteration_filing['filing'])
 
     # validate
     assert business.legal_type == legal_type
@@ -53,7 +53,7 @@ def test_alteration_process_name_missing(app, session):
     alteration_filing['filing']['alteration'].pop('business')
 
     # test
-    alteration.process(business, alteration_filing)
+    alteration.process(business, alteration_filing['filing'])
 
     # validate
     assert business.legal_type == orig_legal_type

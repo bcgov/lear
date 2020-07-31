@@ -23,8 +23,7 @@ from entity_filer.filing_processors.filing_components import business_info
 
 def process(business: Business, filing: Dict):
     """Render the Alteration onto the model objects."""
-
     # Alter the corp type
     with suppress(IndexError, KeyError, TypeError):
-        business_json = dpath.util.get(filing, 'filing/alteration/business')
-        err = business_info.set_corp_type(business, business_json)
+        business_json = dpath.util.get(filing, '/alteration/business')
+        business_info.set_corp_type(business, business_json)

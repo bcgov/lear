@@ -18,18 +18,20 @@ from legal_api.models import Business
 from entity_filer.filing_processors.filing_components import business_info
 
 
-@pytest.mark.parametrize('test_name,original_legal_type,new_legal_type,expected_error', [
-    ('valid C -> BC', 'C', 'BC', None),
-    ('valid None -> BC', None, 'BC', None)
+@pytest.mark.parametrize('test_name,original_legal_type,new_legal_type,expected_legal_type,expected_error', [
+    ('valid C -> BC', 'C', 'BC', 'BC', None),
+    ('valid None -> BC', None, 'BC', 'BC', None),
+    ('valid None -> BC', 'C', None, 'C', None)
 ])
-def test_set_corp_type(app, session, test_name, original_legal_type, new_legal_type, expected_error):
+def test_set_corp_type(app, session,
+                       test_name, original_legal_type, new_legal_type, expected_legal_type, expected_error):
     """Assert that the corp type is set correctly."""
     new_data = {
         'legalType': new_legal_type
     }
 
     business = Business(legal_type=original_legal_type)
-    business, err = business_info.set_corp_type(business, new_data)
+    err = business_info.set_corp_type(business, new_data)
 
-    assert business.legal_type == new_legal_type
+    assert business.legal_type == expected_legal_type
     assert err == expected_error

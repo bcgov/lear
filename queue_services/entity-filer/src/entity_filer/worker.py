@@ -93,7 +93,7 @@ async def publish_event(business: Business, filing: Filing):
         logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
 
 
-async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches
+async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches,too-many-statements
     """Render the filings contained in the submission."""
     if not flask_app:
         raise QueueException('Flask App not available.')
