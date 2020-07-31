@@ -24,7 +24,12 @@ from flask import current_app
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.services.bootstrap import AccountService
 
-from entity_filer.filing_processors.domain_services import create_office, create_party, create_role, create_share_class
+from entity_filer.filing_processors.filing_components import (
+    create_office,
+    create_party,
+    create_role,
+    create_share_class,
+)
 
 
 def get_next_corp_num(business_type: str):
@@ -72,7 +77,7 @@ def update_affiliation(business: Business, filing: Filing):
             sentry_sdk.capture_message(
                 f'Queue Error: Unable to affiliate business:{business.identifier} for filing:{filing.id}',
                 level='error'
-                )
+            )
         else:
             # flip the registration
             # recreate the bootstrap, but point to the new business in the name
@@ -94,7 +99,7 @@ def update_affiliation(business: Business, filing: Filing):
         sentry_sdk.capture_message(
             f'Queue Error: Affiliation error for filing:{filing.id}, with err:{err}',
             level='error'
-            )
+        )
 
 
 def consume_nr(business: Business, filing: Filing):

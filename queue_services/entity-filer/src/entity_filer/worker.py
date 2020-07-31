@@ -42,6 +42,7 @@ from sqlalchemy_continuum import versioning_manager
 
 from entity_filer import config
 from entity_filer.filing_processors import (
+    alteration,
     annual_report,
     change_of_address,
     change_of_directors,
@@ -117,6 +118,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             business = Business.find_by_internal_id(filing_submission.business_id)
 
             for filing in legal_filings:
+                if filing.get('alteration'):
+                    alteration.process(business, filing)
+
                 if filing.get('annualReport'):
                     annual_report.process(business, filing)
 

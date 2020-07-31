@@ -93,7 +93,8 @@ def test_update_affiliation_error(mocker):
     incorporation_filing.update_affiliation(None, filing)
 
     sentry_sdk.capture_message.assert_called_once_with(
-        f"Queue Error: Affiliation error for filing:{filing.id}, with err:'NoneType' object has no attribute 'account'", level='error'
+        f"Queue Error: Affiliation error for filing:{filing.id}, with err:'NoneType' object has no attribute 'account'",
+        level='error'
     )
 
 

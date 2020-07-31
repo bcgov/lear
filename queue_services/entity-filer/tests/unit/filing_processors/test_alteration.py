@@ -12,54 +12,71 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the Incorporation filing."""
-
 import copy
-from datetime import datetime
-from unittest.mock import patch
+import random
 
-import pytest
-from legal_api.models import Filing
+from legal_api.models import Business
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
 
 from entity_filer.filing_processors import alteration
-from tests.unit import create_filing
+from entity_filer.worker import process_filing
+from tests.unit import create_business, create_filing
 
-ALTERATION = {
-    'provisionsRemoved': False,
-    'business': {
-        'corpType': 'benefitCompany'
-    },
-    'nameRequest': {
-        'nrNumber': 'NR 8798956',
-        'legalName': 'HAULER MEDIA INC.',
-        'legalType': 'BC'
-    },
-    'nameTranslations': {
-        'new': ['MÉDIAS DE TRANSPORT INC.'],
-        'modified': [{
-            'oldValue': 'A1 LTD.',
-            'newValue': 'SOCIÉTÉ GÉNÉRALE'
-        }],
-        'ceased': ['B1', 'B2']
-    },
-    'shareStructure': {
-        'resolutionDates': ['2020-05-23', '2020-06-01'],
-        'shareClasses': [{
-            'name': 'class1',
-            'priority': 1,
-            'maxNumberOfShares': 600,
-            'parValue': 1,
-            'currency': 'CAD',
-            'hasMaximumShares': True,
-            'hasParValue': True,
-            'hasRightsOrRestrictions': False,
-            'series': [{
-                'name': 'series1',
-                'priority': 1,
-                'maxNumberOfShares': 600,
-                'hasMaximumShares': True,
-                'hasRightsOrRestrictions': False
-            }]
-        }]
-    }
-}
+
+def test_alteration_process_name(app, session):
+    """Assert that the business is altered."""
+    # setup
+    legal_type = 'BC'
+    identifier = 'BC1234567'
+    business = create_business(identifier)
+    business.legal_type = 'ULC'
+
+    alteration_filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    alteration_filing['filing']['alteration']['business']['legalType'] = legal_type
+
+    # test
+    alteration.process(business, alteration_filing)
+
+    # validate
+    assert business.legal_type == legal_type
+
+
+def test_alteration_process_name_missing(app, session):
+    """Assert that the business is altered."""
+    # setup
+    orig_legal_type = 'ULC'
+    identifier = 'BC1234567'
+    business = create_business(identifier)
+    business.legal_type = orig_legal_type
+
+    alteration_filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    alteration_filing['filing']['alteration'].pop('business')
+
+    # test
+    alteration.process(business, alteration_filing)
+
+    # validate
+    assert business.legal_type == orig_legal_type
+
+
+async def test_worker_alteration(app, session):
+    """Assert the worker process calls the alteration correctly."""
+    orig_legal_type = 'ULC'
+    new_legal_type = 'BC'
+    identifier = 'BC1234567'
+    business = create_business(identifier)
+    business.legal_type = orig_legal_type
+    filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    filing['filing']['alteration']['business']['legalType'] = new_legal_type
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
+
+    filing_msg = {'filing': {'id': filing_id}}
+
+    # Test
+    await process_filing(filing_msg, app)
+
+    # Check outcome
+    business = Business.find_by_internal_id(business.id)
+    assert business.legal_type == new_legal_type
