@@ -16,7 +16,7 @@ from typing import Dict
 
 from legal_api.models import Business
 
-from entity_filer.filing_processors import create_address, update_address
+from entity_filer.filing_processors.filing_components import create_address, update_address
 
 
 def process(business: Business, filing: Dict):

@@ -1,4 +1,5 @@
 Flask
+dpath
 jsonschema
 python-dotenv
 sentry-sdk[flask]

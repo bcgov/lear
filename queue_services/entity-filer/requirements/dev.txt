@@ -3,14 +3,13 @@
 
 # Testing
 freezegun
-pytest
+pytest<6
 pytest-aiohttp
 pytest-asyncio
 pytest-mock
 requests
 requests_mock
 pyhamcrest
-dpath
 
 # Lint and code style
 pydocstyle<4

@@ -1,4 +1,5 @@
 Flask==1.1.2
+dpath==1.4.2
 Jinja2==2.11.2
 MarkupSafe==1.1.1
 Werkzeug==0.16.1
@@ -19,6 +20,6 @@ sentry-sdk==0.15.1
 six==1.15.0
 urllib3==1.25.9
 zipp==3.1.0
-git+https://github.com/bcgov/business-schemas.git@2.5.13#egg=registry_schemas
+git+https://github.com/bcgov/business-schemas.git@2.5.18#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
 git+https://github.com/bcgov/lear.git#egg=entity_queue_common&subdirectory=queue_services/common

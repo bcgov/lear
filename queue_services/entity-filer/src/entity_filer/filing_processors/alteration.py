@@ -11,7 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This module contains all of the Legal Filing specific processors.
+"""File processing rules and actions for the Change of Name filing."""
+from contextlib import suppress
+from typing import Dict
 
-Processors hold the business logic for how a filing is interpreted and saved to the legal database.
-"""
+import dpath
+from legal_api.models import Business
+
+from entity_filer.filing_processors.filing_components import business_info
+
+
+def process(business: Business, filing: Dict):
+    """Render the Alteration onto the model objects."""
+    # Alter the corp type
+    with suppress(IndexError, KeyError, TypeError):
+        business_json = dpath.util.get(filing, '/alteration/business')
+        business_info.set_corp_type(business, business_json)
