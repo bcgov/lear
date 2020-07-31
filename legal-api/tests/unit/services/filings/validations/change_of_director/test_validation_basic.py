@@ -31,13 +31,13 @@ from tests.unit.services.filings.validations import lists_are_equal
     'test_name, now, delivery_region_1, delivery_country_1, delivery_region_2, delivery_country_2,'
     'expected_code, expected_msg',
     [
-        ('SUCCESS', datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc),
+        ('SUCCESS', datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc),
          'BC', 'CA', 'BC', 'CA',
          None, None),
-        ('SUCCESS-NON_CA_COUNTRY', datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc),
+        ('SUCCESS-NON_CA_COUNTRY', datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc),
          'AM', 'DE', 'AM', 'DE',
          None, None),
-        ('Director[1] Nonsense Country', datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc),
+        ('Director[1] Nonsense Country', datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc),
          'BC', 'CA', 'BC', 'nonsense',
          HTTPStatus.BAD_REQUEST, [
              {'error': 'Address Country must resolve to a valid ISO-2 country.',
@@ -50,11 +50,15 @@ def test_validate_cod_basic(session, test_name, now,
     # setup
     identifier = 'CP1234567'
     founding_date = now - datedelta.YEAR
-    business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
-    business.founding_date = founding_date
+    business = Business(identifier=identifier,
+                        last_ledger_timestamp=founding_date,
+                        founding_date=founding_date)
 
     f = copy.deepcopy(FILING_HEADER)
     f['filing']['header']['date'] = now.date().isoformat()
+    # set effective date to 0 hour UTC
+    effective_date = datetime(now.year, now.month, now.day, 0, 0, 0, 0, tzinfo=timezone.utc)
+    f['filing']['header']['effectiveDate'] = effective_date.isoformat()
     f['filing']['header']['name'] = 'changeOfDirectors'
     f['filing']['business']['identifier'] = identifier
 
