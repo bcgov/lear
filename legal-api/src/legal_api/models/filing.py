@@ -58,17 +58,19 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         COLIN = 'COLIN'
         LEAR = 'LEAR'
 
-    FILINGS = {'annualReport': {'name': 'annualReport', 'title': 'Annual Report Filing', 'code': 'OTANN'},
-               'changeOfAddress': {'name': 'changeOfAddress', 'title': 'Change of Address Filing', 'code': 'OTADD'},
-               'changeOfDirectors': {'name': 'changeOfDirectors', 'title': 'Change of Directors Filing',
-                                     'code': 'OTCDR'},
-               'changeOfName': {'name': 'changeOfName', 'title': 'Change of Name Filing'},
-               'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution'},
-               'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'},
-               'correction': {'name': 'correction', 'title': 'Correction', 'code': 'CRCTN'},
-               'incorporationApplication': {'name': 'incorporationApplication', 'title': 'Incorporation Application',
-                                            'code': 'BCINC'}
-               }
+    FILINGS = {
+        'alteration': {'name': 'alteration', 'title': 'Notice of Alteration Filing', 'code': 'ALTER'},
+        'annualReport': {'name': 'annualReport', 'title': 'Annual Report Filing', 'code': 'OTANN'},
+        'changeOfAddress': {'name': 'changeOfAddress', 'title': 'Change of Address Filing', 'code': 'OTADD'},
+        'changeOfDirectors': {'name': 'changeOfDirectors', 'title': 'Change of Directors Filing',
+                              'code': 'OTCDR'},
+        'changeOfName': {'name': 'changeOfName', 'title': 'Change of Name Filing'},
+        'correction': {'name': 'correction', 'title': 'Correction', 'code': 'CRCTN'},
+        'incorporationApplication': {'name': 'incorporationApplication', 'title': 'Incorporation Application',
+                                     'code': 'BCINC'},
+        'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution'},
+        'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'}
+    }
 
     __tablename__ = 'filings'
 
