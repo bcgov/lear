@@ -12,38 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the Change of Name filing."""
-from typing import Tuple
+from contextlib import suppress
+from typing import Dict
 
-from entity_queue_common.service_utils import logger
-from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Filing
+import dpath
+from legal_api.models import Business
 
-from entity_filer.filing_processors.filing_components import set_corp_type
+from entity_filer.filing_processors.filing_components import business_info
 
 
-def process(business: Business, filing: Filing) -> Tuple[Business, Filing]:
+def process(business: Business, filing: Dict):
     """Render the Alteration onto the model objects."""
-    logger.debug('processing Alteration: %s', filing.id)
-    # alterCorpType
-    try:
-        corpType = str(filing.filing_json['filing']['alteration']['alterCorpType']['corpType'])
-        set_corp_type(business, corpType)
 
-    except KeyError:
-        pass
-    except BusinessException as be:
-        pass
-
-    # alterCorpName
-    # alterNameTranslations
-    # alterShareStructure
-    return business, filing
-
-
-def post_processing(self, business: Business, filing: Filing):
-    """Finalize the filing and update any remote integrations."""
-    pass
-    # alterCorpType
-    # alterCorpName
-    # alterNameTranslations
-    # alterShareStructure
+    # Alter the corp type
+    with suppress(IndexError, KeyError, TypeError):
+        business_json = dpath.util.get(filing, 'filing/alteration/business')
+        err = business_info.set_corp_type(business, business_json)

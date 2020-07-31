@@ -18,7 +18,7 @@ from typing import Dict
 from entity_queue_common.service_utils import QueueException, logger
 from legal_api.models import Business, PartyRole
 
-from entity_filer.filing_processors.domain_services import create_party, create_role, update_director
+from entity_filer.filing_processors.filing_components import create_party, create_role, update_director
 
 
 def process(business: Business, filing: Dict):  # pylint: disable=too-many-branches;

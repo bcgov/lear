@@ -12,16 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the business filing component processors."""
+import pytest
 from legal_api.models import Business
 
-from entity_filer.filing_processors.filing_components import business
+from entity_filer.filing_processors.filing_components import business_info
 
 
-def test_set_corp_type(app, session):
-    new_info_json = {
-        'business': {
-            'corpType': 'benefitCompany'
-        }}
+@pytest.mark.parametrize('test_name,original_legal_type,new_legal_type,expected_error', [
+    ('valid C -> BC', 'C', 'BC', None),
+    ('valid None -> BC', None, 'BC', None)
+])
+def test_set_corp_type(app, session, test_name, original_legal_type, new_legal_type, expected_error):
+    """Assert that the corp type is set correctly."""
+    new_data = {
+        'legalType': new_legal_type
+    }
 
-    business = Business()
-    business, err = business.set_corp_type(business, new_info_json)
+    business = Business(legal_type=original_legal_type)
+    business, err = business_info.set_corp_type(business, new_data)
+
+    assert business.legal_type == new_legal_type
+    assert err == expected_error
