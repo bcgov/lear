@@ -166,10 +166,6 @@ class Report:  # pylint: disable=too-few-public-methods
         self._set_meta_info(filing)
         return filing
 
-    def _set_description(self, filing):
-        if self._business:
-            filing['entityDescription'] = ReportMeta.entity_description[self._business.legal_type]
-
     def _set_tax_id(self, filing):
         if self._business:
             filing['taxId'] = self._business.tax_id
