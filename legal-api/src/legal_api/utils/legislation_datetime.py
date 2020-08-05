@@ -23,12 +23,12 @@ class LegislationDatetime():
     """Date utility using legislation timezone for reporting and future effective dates."""
 
     @staticmethod
-    def now():
+    def now() -> datetime:
         """Construct a datetime using the legislation timezone."""
         return datetime.datetime.now().astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
 
     @staticmethod
-    def tomorrow_midnight():
+    def tomorrow_midnight() -> datetime:
         """Construct a datetime tomorrow midnight using the legislation timezone."""
         date = datetime.datetime.now().astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
         date += datedelta.datedelta(days=1)
@@ -37,12 +37,17 @@ class LegislationDatetime():
         return date
 
     @staticmethod
-    def as_legislation_timezone(date_time: datetime):
+    def as_legislation_timezone(date_time: datetime) -> datetime:
         """Return a datetime adjusted to the legislation timezone."""
         return date_time.astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
 
     @staticmethod
-    def format_as_legislation_date(date_string: str):
+    def as_utc_timezone(date_time: datetime) -> datetime:
+        """Return a datetime adjusted to the GMT timezone (aka UTC)."""
+        return date_time.astimezone(pytz.timezone('GMT'))
+
+    @staticmethod
+    def format_as_legislation_date(date_string: str) -> str:
         """Return the date in legislation timezone as a string."""
         date_time = datetime.datetime.fromisoformat(date_string)
         return date_time.astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE'))).strftime('%Y-%m-%d')

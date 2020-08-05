@@ -21,6 +21,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 from legal_api.errors import Error
 from legal_api.models import Address, Business, Filing
 from legal_api.utils.datetime import datetime
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from ...utils import get_str
 # noqa: I003; needed as the linter gets confused from the babel override above.
@@ -79,31 +80,38 @@ def validate_effective_date(business: Business, cod: Dict) -> List:
             (standalone or AR). If this is the case:
         - COD filing that was filed most recently is the most current director information.
     """
-    try:
-        # NB: COD effective date is at 0 hours UTC.
-        filing_effective_date = cod['filing']['header']['effectiveDate']
-    except KeyError:
-        return {'error': babel('No effective_date provided.')}
-
-    try:
-        effective_date = datetime.fromisoformat(filing_effective_date)
-    except ValueError:
-        return {'error': babel('Invalid ISO format for effective_date.')}
-
     msg = []
 
-    # The effective datetime cannot be in the future.
-    if effective_date > datetime.utcnow():
+    # get effective datetime string from filing
+    try:
+        effective_datetime_str = cod['filing']['header']['effectiveDate']
+    except KeyError:
+        return {'error': babel('No effective date provided.')}
+
+    # convert string to datetime
+    try:
+        effective_datetime_utc = datetime.fromisoformat(effective_datetime_str)
+    except ValueError:
+        return {'error': babel('Invalid ISO format for effective date.')}
+
+    # check if effective datetime is in the future
+    if effective_datetime_utc > datetime.utcnow():
         msg.append({'error': babel('Filing cannot have a future effective date.')})
 
-    # The effective date cannot be before their Incorporation Date.
-    if effective_date.date() < business.founding_date.date():
-        msg.append({'error': babel('Filing cannot be before businesses founding date.')})
+    # convert to legislation timezone and then get date only
+    effective_date_leg = LegislationDatetime.as_legislation_timezone(effective_datetime_utc).date()
 
-    # The effective date cannot be before the most recent COD or AR.
-    last_cod_filing = Filing.get_most_recent_legal_filing(business.id, Filing.FILINGS['changeOfDirectors']['name'])
+    # check if effective date is before their incorporation date
+    founding_date_leg = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
+    if effective_date_leg < founding_date_leg:
+        msg.append({'error': babel('Effective date cannot be before businesses founding date.')})
+
+    # check if effective date is before their most recent COD or AR date
+    last_cod_filing = Filing.get_most_recent_legal_filing(business.id,
+                                                          Filing.FILINGS['changeOfDirectors']['name'])
     if last_cod_filing:
-        if effective_date.date() < last_cod_filing.effective_date.date():
-            msg.append({'error': babel('Filing cannot be before another Change of Director filing.')})
+        last_cod_date_leg = LegislationDatetime.as_legislation_timezone(last_cod_filing.effective_date).date()
+        if effective_date_leg < last_cod_date_leg:
+            msg.append({'error': babel('Effective date cannot be before another Change of Director filing.')})
 
     return msg

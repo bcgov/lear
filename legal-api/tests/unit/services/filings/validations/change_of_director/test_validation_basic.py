@@ -24,6 +24,7 @@ from registry_schemas.example_data import CHANGE_OF_DIRECTORS, FILING_HEADER
 from legal_api.models import Business
 from legal_api.services.filings import validate
 from legal_api.utils.datetime import datetime, timezone
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests.unit.services.filings.validations import lists_are_equal
 
 
@@ -54,10 +55,13 @@ def test_validate_cod_basic(session, test_name, now,
                         last_ledger_timestamp=founding_date,
                         founding_date=founding_date)
 
+    # convert 'now' to an effective date with 0 time in the legislation timezone, same as the UI does
+    effective_date = LegislationDatetime.as_legislation_timezone(now)
+    effective_date = effective_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    effective_date = LegislationDatetime.as_utc_timezone(effective_date)
+
     f = copy.deepcopy(FILING_HEADER)
     f['filing']['header']['date'] = now.date().isoformat()
-    # set effective date to 0 hour UTC
-    effective_date = datetime(now.year, now.month, now.day, 0, 0, 0, 0, tzinfo=timezone.utc)
     f['filing']['header']['effectiveDate'] = effective_date.isoformat()
     f['filing']['header']['name'] = 'changeOfDirectors'
     f['filing']['business']['identifier'] = identifier
