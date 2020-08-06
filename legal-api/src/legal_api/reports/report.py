@@ -92,6 +92,8 @@ class Report:  # pylint: disable=too-few-public-methods
         """
         template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
+            'bc-annual-report/businessDetails',
+            'bc-annual-report/legalObligations',
             'bc-address-change/addresses',
             'bc-address-change/businessDetails',
             'bc-director-change/businessDetails',
@@ -160,8 +162,13 @@ class Report:  # pylint: disable=too-few-public-methods
 
         self._set_dates(filing)
         self._set_description(filing)
+        self._set_tax_id(filing)
         self._set_meta_info(filing)
         return filing
+
+    def _set_tax_id(self, filing):
+        if self._business:
+            filing['taxId'] = self._business.tax_id
 
     def _set_description(self, filing):
         if self._business:
@@ -328,8 +335,14 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             }
         },
         'annualReport': {
+            'hasDifferentTemplates': True,
             'filingDescription': 'Annual Report',
-            'fileName': 'annualReport'
+            'BC': {
+                'fileName': 'bcAnnualReport'
+            },
+            'CP': {
+                'fileName': 'annualReport'
+            }
         },
         'changeOfName': {
             'filingDescription': 'Change of Name',
