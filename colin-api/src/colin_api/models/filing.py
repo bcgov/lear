@@ -967,6 +967,15 @@ class Filing:
                 # add shares if not coop
                 if legal_type != Business.TypeCodes.COOP.value:
                     ShareObject.create_share_structure(cursor, corp_num, event_id, filing.body['shareClasses'])
+                # add name translations
+                for name in filing.body.get('nameTranslations', []):
+                    # create new one for each name
+                    corp_name_obj = CorpName()
+                    corp_name_obj.corp_name = name
+                    corp_name_obj.corp_num = corp_num
+                    corp_name_obj.event_id = event_id
+                    corp_name_obj.type_code = CorpName.TypeCodes.TRANSLATION.value
+                    CorpName.create_corp_name(cursor, corp_name_obj)
 
             elif filing.filing_type == 'alteration':
                 filing_type_cd = 'NOALE'
