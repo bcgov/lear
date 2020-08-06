@@ -78,7 +78,7 @@ class CorpName:
     def create_corp_name(cls, cursor, corp_name_obj):
         """Add record to the CORP NAME table on incorporation."""
         try:
-            search_name = ''.join(e for e in corp_name_obj.corp_name if e.isalnum())
+            search_name = cursor.callfunc('get_search_name', str, [corp_name_obj.corp_name])
             max_sequence_num = get_max_value(
                 cursor=cursor,
                 corp_num=corp_name_obj.corp_num,
@@ -96,7 +96,7 @@ class CorpName:
                 corp_name=corp_name_obj.corp_name,
                 corp_num=corp_name_obj.corp_num,
                 event_id=corp_name_obj.event_id,
-                search_name=search_name.upper()
+                search_name=search_name
             )
 
         except Exception as err:
