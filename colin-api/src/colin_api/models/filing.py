@@ -352,9 +352,10 @@ class Filing:
             querystring += ' AND extract(year from PERIOD_END_DT)=:year'
 
         querystring += ' order by EVENT_TIMESTMP desc'
-
+        print(querystring)
         try:
             filing_type_cd = filing.get_filing_type_code()
+            print(filing_type_cd)
             if not cursor:
                 cursor = DB.connection.cursor()
             if filing.event_id:
