@@ -186,17 +186,14 @@ def processnotebooks(notebookdirectory):
 
 
 if __name__ == '__main__':
-    start_time = datetime.utcnow()
-    weekno = datetime.now().weekday()
+    start_time = datetime.utcnow()    
 
     # Check if the subfolders for notebooks exist, and create them if they don't    
     for directory in ['daily', 'monthly']:    
         if not os.path.isdir(directory):
             os.mkdir(directory)
-        # We don't need to run 'daily' report on Monday (index is 0) for Sunday's data or Sunday (index is 6)
-        # for Saturday's data
-        if((weekno != 0 and weekno != 6) and directory == 'daily') or directory == 'monthly':   
-            processnotebooks(directory)      
+        
+        processnotebooks(directory)      
     
     end_time = datetime.utcnow()
     logging.info("job - jupyter notebook report completed in: {}".format(end_time - start_time))
