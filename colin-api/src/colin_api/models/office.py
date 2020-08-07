@@ -29,8 +29,10 @@ class Office:
     OFFICE_TYPES_CODES = {
         'RG': 'registeredOffice',
         'RC': 'recordsOffice',
+        'LQ': 'liquidationOffice',
         'registeredOffice': 'RG',
-        'recordsOffice': 'RC'
+        'recordsOffice': 'RC',
+        'liquidationOffice': 'LQ',
     }
 
     delivery_address = None
@@ -69,15 +71,16 @@ class Office:
         for office_item in office_info:
             office = dict(zip([x[0].lower() for x in description], office_item))
             office_obj = Office()
-            office_obj.event_id = office['start_event_id']
-            office_obj.delivery_address = Address.get_by_address_id(cursor, office['delivery_addr_id']).as_dict()
-            office_obj.office_code = office['office_typ_cd']
-            office_obj.office_type = cls.OFFICE_TYPES_CODES[office['office_typ_cd']]
-            if office['mailing_addr_id']:
-                office_obj.mailing_address = Address.get_by_address_id(cursor, office['mailing_addr_id']).as_dict()
-            else:
-                office_obj.mailing_address = office_obj.delivery_address
-            offices.append(office_obj)
+            office_obj.office_type = cls.OFFICE_TYPES_CODES.get(office['office_typ_cd'], None)
+            if office_obj.office_type:
+                office_obj.event_id = office['start_event_id']
+                office_obj.delivery_address = Address.get_by_address_id(cursor, office['delivery_addr_id']).as_dict()
+                office_obj.office_code = office['office_typ_cd']
+                if office['mailing_addr_id']:
+                    office_obj.mailing_address = Address.get_by_address_id(cursor, office['mailing_addr_id']).as_dict()
+                else:
+                    office_obj.mailing_address = office_obj.delivery_address
+                offices.append(office_obj)
 
         return offices
 
