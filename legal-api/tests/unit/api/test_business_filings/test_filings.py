@@ -23,7 +23,13 @@ from http import HTTPStatus
 import datedelta
 from dateutil.parser import parse
 from flask import current_app
-from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CHANGE_OF_DIRECTORS, FILING_HEADER
+from registry_schemas.example_data import (
+    ALTERATION_FILING_TEMPLATE,
+    ANNUAL_REPORT,
+    CHANGE_OF_ADDRESS,
+    CHANGE_OF_DIRECTORS,
+    FILING_HEADER,
+)
 
 from legal_api.resources.business.business_filings import Filing, ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
@@ -762,6 +768,7 @@ def test_get_correct_fee_codes(session):
     import copy
 
     # set filings
+    alt = ALTERATION_FILING_TEMPLATE
     ar = ANNUAL_REPORT
     coa = copy.deepcopy(FILING_HEADER)
     coa['filing']['header']['name'] = 'changeOfAddress'
@@ -780,12 +787,14 @@ def test_get_correct_fee_codes(session):
             director['actions'] = ['nameChanged', 'addressChanged']
 
     # get fee codes
+    alt_fee_code = ListFilingResource._get_filing_types(alt)[0]['filingTypeCode']
     ar_fee_code = ListFilingResource._get_filing_types(ar)[0]['filingTypeCode']
     coa_fee_code = ListFilingResource._get_filing_types(coa)[0]['filingTypeCode']
     cod_fee_code = ListFilingResource._get_filing_types(cod)[0]['filingTypeCode']
     free_cod_fee_code = ListFilingResource._get_filing_types(free_cod)[0]['filingTypeCode']
 
     # test fee codes
+    assert alt_fee_code == Filing.FILINGS['alteration'].get('code')
     assert ar_fee_code == Filing.FILINGS['annualReport'].get('code')
     assert coa_fee_code == Filing.FILINGS['changeOfAddress'].get('code')
     assert cod_fee_code == Filing.FILINGS['changeOfDirectors'].get('code')
