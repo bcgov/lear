@@ -501,7 +501,8 @@ class ListFilingResource(Resource):
                         free = False
                         break
                 filing_types.append({
-                    'filingTypeCode': 'OTFDR' if free else 'BCCDR' if legal_type == 'BC' else Filing.FILINGS[k].get('code'),
+                    'filingTypeCode':
+                        'OTFDR' if free else 'BCCDR' if legal_type == 'BC' else Filing.FILINGS[k].get('code'),
                     'priority': False if filing_type == 'annualReport' else priority_flag,
                     'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
                 })

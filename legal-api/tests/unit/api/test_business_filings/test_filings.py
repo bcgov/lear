@@ -797,7 +797,6 @@ def test_get_correct_fee_codes(session):
     bc_cod['filing']['changeOfDirectors']['directors'][0]['actions'] = ['ceased', 'nameChanged']
     bc_cod['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
 
-
     # get fee codes
     alt_fee_code = ListFilingResource._get_filing_types(alt)[0]['filingTypeCode']
     ar_fee_code = ListFilingResource._get_filing_types(ar)[0]['filingTypeCode']
@@ -806,7 +805,6 @@ def test_get_correct_fee_codes(session):
     free_cod_fee_code = ListFilingResource._get_filing_types(free_cod)[0]['filingTypeCode']
     bc_coa_fee_code = ListFilingResource._get_filing_types(bc_coa)[0]['filingTypeCode']
     bc_cod_fee_code = ListFilingResource._get_filing_types(bc_cod)[0]['filingTypeCode']
-
 
     # test fee codes
     assert alt_fee_code == Filing.FILINGS['alteration'].get('code')
