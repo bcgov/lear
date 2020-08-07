@@ -29,10 +29,10 @@ class Office:
     OFFICE_TYPES_CODES = {
         'RG': 'registeredOffice',
         'RC': 'recordsOffice',
-        'LQ': 'liguidationOffice',
+        'LQ': 'liquidationOffice',
         'registeredOffice': 'RG',
         'recordsOffice': 'RC',
-        'liguidationOffice': 'LQ',
+        'liquidationOffice': 'LQ',
     }
 
     delivery_address = None
