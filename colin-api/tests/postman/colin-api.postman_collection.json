@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "912ddaf3-6d42-4a2d-95db-e2cac618623f",
+		"_postman_id": "2c362c28-0416-40f0-be88-d5afedad74a6",
 		"name": "colin-api",
 		"description": "version=0.108 - This is a Colin API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -15,7 +15,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7ce7690d-6819-4fba-87ac-784c70361574",
+								"id": "88145ea6-62ff-4f5d-968a-f6315fdf0acb",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -63,7 +63,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "0e56def7-bbe5-4c6d-81bb-a062250ea66b",
+								"id": "03ee4287-64b0-4f42-bc75-c45085895114",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -111,7 +111,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "12c2dfd5-c4cc-489b-b268-b03dee909c51",
+								"id": "53de4187-4c7a-4492-9a66-fd88ea412bb7",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -220,7 +220,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "39918856-d825-4811-b710-82c184caac6a",
+										"id": "7dbc52a1-3291-4d54-a3ed-0695751e9e51",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -371,7 +371,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "f812d796-a9f3-4362-b654-da2e3e6afb4d",
+										"id": "d12cdab0-b04e-4084-a83d-293a6518d0be",
 										"exec": [
 											"// set event id variable (used for future tests)",
 											"var jsonData = pm.response.json()",
@@ -426,7 +426,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "c58393c0-3c72-4954-aac1-91bc50380b11",
+										"id": "7c4d2dd6-cd23-41aa-b8b6-ac93254f0c00",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -551,7 +551,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "4fe655f7-7a9b-417d-a121-512daa3c7cd3",
+										"id": "79096a12-7b4f-46f2-955b-25f257a23aa6",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -605,7 +605,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "7f1763ba-0343-494f-9d22-f66789fcc91a",
+										"id": "aed8a9ef-3fc2-4e77-aebc-d976aa7e4113",
 										"exec": [
 											""
 										],
@@ -711,7 +711,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "2d802a74-e055-460c-9914-8b930eca99e5",
+										"id": "29d2e36b-5c27-4727-8a1c-326f0197af50",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -873,7 +873,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "159d7446-1507-4a6e-8ab8-ba6fd1723a07",
+										"id": "444c9ae1-1a9b-4710-9d32-481e5c25739a",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -1035,7 +1035,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "85baff31-b378-4031-aa19-36d7ed013dec",
+										"id": "4c0e7750-e3aa-4cbf-8855-777c2aa8bbb8",
 										"exec": [
 											"// set event id variable (used for future tests)",
 											"var jsonData = pm.response.json()",
@@ -1091,7 +1091,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "98002257-7e04-42d8-a3f5-26810f01fe25",
+										"id": "302953f6-68a5-433a-9afd-9872d4b0b52d",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -1216,7 +1216,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "771f043f-3f31-4dbc-bb27-8c305b27789f",
+										"id": "5d54554a-d2d1-40f8-a6df-27c166ee992c",
 										"exec": [
 											"// set event id variable (used for future tests)",
 											"var jsonData = pm.response.json()",
@@ -1271,7 +1271,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "db6a4a13-466c-47d4-9037-d212be009a4f",
+										"id": "153502c8-8a5b-451b-8c97-526cf45a639b",
 										"exec": [
 											""
 										],
@@ -1384,7 +1384,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "9b50e0cd-4b3e-49d8-82d5-42439e8f671d",
+										"id": "13adfc05-3260-4a84-9279-efeeb85330dd",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1509,7 +1509,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "4344bf52-9b30-4636-8485-d053624b4a7d",
+										"id": "77b88ae9-cc72-4ea0-8765-240bf7014277",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1630,7 +1630,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a33e3fb3-71c2-4fe5-983e-f84bae9d99bd",
+										"id": "6468af4b-12eb-4992-8ac8-730f40f032fe",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1676,7 +1676,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "85d91b2c-480d-4a52-913d-8013d9dc7e57",
+										"id": "38bf1425-42d6-464f-9f27-22aa4b4f00a8",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1726,7 +1726,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "0f12626e-63f0-4b8b-bdd4-eca7e6b25a22",
+										"id": "9da29e83-22a0-4bf6-ab3b-e0a8bf8986d4",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -1890,7 +1890,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "6284d948-85e2-40c5-9038-b9ffa850c364",
+										"id": "cd7da04a-5989-4998-8f6b-f7acfd585e80",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -2022,7 +2022,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "17119144-bf88-409c-ae11-a33134e6f639",
+										"id": "063f22d1-a668-4e2c-87b4-8f758e78427d",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -2163,7 +2163,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "b65c64a2-32de-48e3-9d6d-a71fd49736b8",
+										"id": "479d7719-c8e0-4fd5-aa5d-95ff37dd079f",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.environment.set(\"coaEventId\", jsonData.filing.changeOfAddress.eventId)",
@@ -2240,7 +2240,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "94ec139f-7feb-4e47-9516-0ce76725b959",
+										"id": "dc75c286-f7f6-4887-b60c-3a3e427a8b09",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -2360,7 +2360,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "bfc2fb0b-dde2-400a-b75c-3df2180f001e",
+										"id": "883e6609-e6f3-4c2d-a081-489729755adf",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.test(\"Response time is less than 10000ms\", function () {",
@@ -2529,7 +2529,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "4197600d-08b1-4876-966c-f192fbc948b8",
+										"id": "1dd5da3a-72a9-4255-bd86-483c674a404a",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.test(\"Response time is less than 10000ms\", function () {",
@@ -2716,7 +2716,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "e65e7ce8-4156-41c9-b013-7c50570665ab",
+										"id": "0ba3750b-f047-4fbe-b47f-302f34934599",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -2852,7 +2852,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "fe559082-d89f-4a0e-871a-bf46e2be1e9c",
+										"id": "f6efb1d8-afd4-4f3d-a6ba-d05d5b69ab30",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -2938,7 +2938,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "89b2152f-0221-4fac-9b2c-8b293ad3ac14",
+										"id": "47259cc9-c2ac-40c7-bcaa-71753bf5c192",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -3058,7 +3058,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "21aa0a34-52fd-4a86-88fc-e808e05dfec3",
+										"id": "b6f6b0ee-80fe-4b47-a04f-4d8bf5e5bfbd",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -3240,7 +3240,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "81921d90-3624-4065-9af8-7a0eebce0526",
+										"id": "a0fdd626-aa58-41e4-80d4-c69e6dac687f",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -3430,7 +3430,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "6ff744de-00ad-401e-be89-68ab3fa68f86",
+										"id": "6c15c85b-bf07-49f4-9371-27a227aa7bcb",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -3517,7 +3517,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "bde77c6e-4735-4f9d-89de-4339ccbc2c23",
+										"id": "297df043-ce63-4338-9923-b624fa26ac04",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
@@ -3648,7 +3648,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "3edd2b7a-7487-41c1-8c60-de88477c04de",
+										"id": "94f06e60-b2fe-444a-882f-d4b0df921b21",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -3795,7 +3795,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "5005dce1-1487-4b75-8d48-22f0b60b8441",
+										"id": "ca530707-8abd-4c4e-b1bc-a294342124d8",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -3943,7 +3943,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "4588ac81-f17a-4cb4-9fa3-a1b305ecb8c3",
+										"id": "5d281b2f-ce26-4fd5-85fa-ad9d17ffff31",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4090,7 +4090,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "ab2ba0a7-ab07-431e-ba26-54cab0a80833",
+										"id": "d7678578-4e5c-4a65-915b-b7c5aca09ad2",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -4248,7 +4248,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "8223304c-70cc-43e1-b30d-9936e7f63bf5",
+										"id": "ddc83365-6425-45cb-96c0-ed08f38cbcbd",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4393,7 +4393,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "3c6b2d70-2141-4e8c-abeb-83b9a368d80e",
+										"id": "fb01a228-2c44-4ad5-837b-c49d1b8c753e",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -4431,7 +4431,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "163aff64-4cc1-461d-900c-6588f49a8c61",
+										"id": "3be35f30-ca0e-4627-a620-efbfdd2606f9",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -4521,7 +4521,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "8b09fa8c-b953-4cf6-acea-b50a4221f0df",
+								"id": "681123b1-f307-49b9-b129-ccfa5dade328",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -4531,7 +4531,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9ad257cc-73ca-465c-aa98-16ee7dcaa5d7",
+								"id": "c3fe81b0-5fc1-47cb-8923-8acbd098e1c3",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -4551,7 +4551,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "02303fe2-9a75-435b-b1e8-d53d5bef5e52",
+										"id": "70b55c8c-f325-4887-9dd0-653f5e10008a",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4572,7 +4572,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "08cb4e2d-c95b-4d45-89b8-fde77edc6d1b",
+										"id": "46bb6488-61ee-4802-8204-889440c16895",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -4694,7 +4694,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "4e5892c6-4f88-4486-bc52-93913904375e",
+										"id": "4e0c6064-707b-4cc7-9cc0-16e283353149",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4715,7 +4715,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "6342ffaa-eb23-4e81-a666-48f4dd887d24",
+										"id": "cb05fa9e-6a16-4f09-b508-51172158fa61",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -4837,7 +4837,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "9743e7a9-1cd2-48ab-bd09-acf9f09432cc",
+										"id": "3345e287-9977-499e-8bd4-28997e786a72",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4858,7 +4858,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "95370a5b-1a94-403c-a00e-449a337766e0",
+										"id": "b4a58bc4-f056-4016-a5a7-7f6cd03aa54c",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -4980,7 +4980,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "86d9623c-6b6d-445c-86fa-bdaed1b78065",
+										"id": "8849e650-9f32-4c68-81dc-52a48bda3383",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -5001,7 +5001,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "2ccc5fd7-3c53-427b-a501-b7355b44bba4",
+										"id": "faac082a-4e83-4839-a96e-48d021b611bc",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -5137,7 +5137,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "21a40609-a251-43d6-9c55-d7f8ac4eadc3",
+										"id": "08ead4a7-b6c2-47b4-bc12-c36377c4bbb3",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -5266,7 +5266,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "600acc56-4657-47f7-a88e-26d4102789b9",
+								"id": "14812b38-dcb7-41d2-86ec-05c8224e16de",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -5276,7 +5276,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cbb69634-b69d-41d2-bc9b-da785c64fccc",
+								"id": "2d4ebf14-aebb-43bf-a860-a4b826aac2c1",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -5296,7 +5296,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "60d4a561-4e4b-4012-93e7-473d9d1a174a",
+										"id": "a6af0073-2a84-440b-bec5-3c87cd58aedc",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -5422,7 +5422,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a8e0fa7f-a0a6-41db-8c91-4ee282084991",
+										"id": "36fd09bc-af5f-4833-9386-830d0000fbf0",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -5554,7 +5554,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "8ecb50b9-b41f-4341-9b38-856c0d45a6c3",
+										"id": "32a40882-d8be-4fec-aaca-142a97d6e214",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -5699,7 +5699,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "6f943958-d54b-46ce-a853-5066c8da229a",
+										"id": "f09afa40-e836-42b0-8084-21a5cd477683",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -5851,7 +5851,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "bc279342-3a6b-427f-a6fa-a39776f4b89b",
+										"id": "2c85fa0b-6ffb-427d-8904-b9c67a405865",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -5987,7 +5987,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "8be0db1d-704e-49f6-aa34-88d3ed745e3c",
+										"id": "9ba2d65b-ab9e-4344-8ee3-cf54dfb0c980",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -6130,7 +6130,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "cd48c2c1-471c-4940-8de8-913231039f60",
+										"id": "a0289d99-8fd1-41ff-b041-7943de23977d",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -6194,7 +6194,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "5a1a87e2-e1d0-411a-93d8-612618021808",
+										"id": "c01dccbc-3feb-4065-87b9-21aa86a62abf",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -6265,7 +6265,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "f7055676-b984-4598-84e1-67788b79c958",
+										"id": "bc055b82-9588-4ed6-9925-9813d9978002",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -6399,7 +6399,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "58cabf25-e747-4f5e-b8a6-d0b62bc20f1c",
+										"id": "5ac92df0-c081-45f8-9cc3-2fd67a9d7faa",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -6533,7 +6533,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "66d2855d-78ca-47db-9cd3-bc5cedef837e",
+										"id": "94e09c8f-d6de-43d5-ae75-b837d8289fb8",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -6674,7 +6674,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "d5e3c64e-0294-432c-a8a1-2773a761ae57",
+										"id": "6ac2b293-b806-4798-880a-498e9120d49c",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -6812,7 +6812,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "c81b9872-204d-45a6-9c27-58528860b7c1",
+										"id": "bc861bd7-3980-4562-8ab2-cb5096115be3",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -6851,7 +6851,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "f715ae75-1bbe-430f-b36a-56f3837dcb1b",
+										"id": "e8ce664a-7bd5-4a5a-b67d-21a75291cc67",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -6970,157 +6970,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n\t\t\t\"learEffectiveDate\": \"2020-06-29T17:46:23.315651+00:00\"\n\t\t},\n\t\t\"business\": {\n            \"identifier\": \"{{newCorpNum}}\",\n            \"legalName\": \"legal name - {{newCorpName}}\",\n            \"legalType\": \"BC\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"legalType\": \"BC\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t},\n\t\t\t\t\"recordsOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"parties\": [\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"id\": 1,\n\t\t                \"firstName\": \"Joe\",\n\t\t                \"lastName\": \"Swanson\",\n\t\t                \"middleInitial\": \"P\",\n\t\t                \"orgName\": \"\",\n\t\t                \"partyType\": \"person\",\n\t\t                \"email\": \"comp@party.com\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"deliveryAddress\": {\n\t\t                \"streetAddress\": \"delivery address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"delivery address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t            \"roles\": [\n\t\t                {\n\t\t                    \"roleType\": \"Completing Party\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t\n\t\t                },\n\t\t                {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"id\": 2,\n\t\t                \"firstName\": \"\",\n\t\t                \"lastName\": \"\",\n\t\t                \"middleInitial\": \"\",\n\t\t                \"orgName\": \"Xyz Inc.\",\n\t\t                \"partyType\": \"org\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t           \"roles\": [\n\t\t                {\n\t\t                    \"roleType\": \"Incorporator\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                },\n\t\t                 {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"firstName\": \"Test\",\n\t\t                \"lastName\": \"Director\",\n\t\t                \"middleInitial\": \"\",\n\t\t                \"partyType\": \"person\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t           \"roles\": [\n\t\t                 {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                }\n\t\t            ]\n\t\t        }\n    \t\t], \n    \t\t\"shareClasses\": [\n\t\t        {\n\t\t            \"id\": 1,\n\t\t            \"name\": \"Share Class 1\",\n\t\t            \"priority\": 1,\n\t\t            \"hasMaximumShares\": true,\n\t\t            \"maxNumberOfShares\": 100,\n\t\t            \"hasParValue\": true,\n\t\t            \"parValue\": 10,\n\t\t            \"currency\": \"CAD\",\n\t\t            \"hasRightsOrRestrictions\": false,\n\t\t            \"series\": [\n\t\t                {\n\t\t                    \"id\": 1,\n\t\t                    \"name\": \"Share Series 1\",\n\t\t                    \"priority\": 1,\n\t\t                    \"hasMaximumShares\": true,\n\t\t                    \"maxNumberOfShares\": 50,\n\t\t                    \"hasRightsOrRestrictions\": false\n\t\t                },\n\t\t                {\n\t\t                    \"id\": 2,\n\t\t                    \"name\": \"Share Series 2\",\n\t\t                    \"priority\": 2,\n\t\t                    \"hasMaximumShares\": true,\n\t\t                    \"maxNumberOfShares\": 100,\n\t\t                    \"hasRightsOrRestrictions\": false\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"id\": 2,\n\t\t            \"name\": \"Share Class 2\",\n\t\t            \"priority\": 1,\n\t\t            \"hasMaximumShares\": false,\n\t\t            \"maxNumberOfShares\": null,\n\t\t            \"hasParValue\": false,\n\t\t            \"parValue\": null,\n\t\t            \"currency\": null,\n\t\t            \"hasRightsOrRestrictions\": true,\n\t\t            \"series\": []\n\t\t        }\n\t\t    ],\n\t\t\t\"contactPoint\": {\n\t\t\t\t\"email\": \"contact@point.incorp\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{url}}/api/v1/businesses/BC/{{newCorpNum}}/filings/incorporationApplication",
-									"host": [
-										"{{url}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"businesses",
-										"BC",
-										"{{newCorpNum}}",
-										"filings",
-										"incorporationApplication"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "POST Benefit Incorporation Named CTST Long Name",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"id": "272cce8e-71a9-49f8-bc4b-e4f79726ea18",
-										"exec": [
-											"var jsonData = pm.response.json();",
-											"",
-											"pm.test(\"Status code is 201\", function () {",
-											"    pm.response.to.have.status(201);",
-											"});",
-											"",
-											"pm.test('should return JSON', function () {",
-											"    pm.response.to.have.header('Content-Type', 'application/json');",
-											"});",
-											"",
-											"pm.test(\"Assert new Business record has been created.\", () => {",
-											"    pm.expect(jsonData.filing.incorporationApplication).to.exist;",
-											"    var result = jsonData.filing.incorporationApplication;",
-											"    pm.expect(jsonData.filing.business.identifier).to.eql(pm.environment.get('newCorpNum'));",
-											"});",
-											"",
-											"pm.test(\"Returns the required fields for registered office addresses\", () => {",
-											"    var result = jsonData.filing.incorporationApplication;",
-											"    var registeredOffice = result.offices.registeredOffice;",
-											"    pm.expect(registeredOffice.deliveryAddress.addressCity).to.eql(\"DELIVERY ADDRESS CITY\");",
-											"    pm.expect(registeredOffice.deliveryAddress.addressCountry).to.eql(\"CANADA\");",
-											"    pm.expect(registeredOffice.deliveryAddress.addressId).to.exist;",
-											"    pm.expect(registeredOffice.deliveryAddress.addressRegion).to.eql(\"BC\");",
-											"    pm.expect(registeredOffice.deliveryAddress.deliveryInstructions).to.exist;",
-											"    pm.expect(registeredOffice.deliveryAddress.postalCode).to.eql(\"V8P1A1\");",
-											"    pm.expect(registeredOffice.deliveryAddress.streetAddress).to.eql(\"DELIVERY ADDRESS ADDRESS LINE ONE\");",
-											"    pm.expect(registeredOffice.deliveryAddress.streetAddressAdditional).to.exist;",
-											"    pm.expect(registeredOffice.mailingAddress.addressCity).to.eql(\"MAILING ADDRESS CITY\");",
-											"    pm.expect(registeredOffice.mailingAddress.addressCountry).to.eql(\"CANADA\");",
-											"    pm.expect(registeredOffice.mailingAddress.addressId).to.exist;",
-											"    pm.expect(registeredOffice.mailingAddress.addressRegion).to.eql(\"BC\");",
-											"    pm.expect(registeredOffice.mailingAddress.deliveryInstructions).to.exist;",
-											"    pm.expect(registeredOffice.mailingAddress.postalCode).to.eql(\"V8P1A1\");",
-											"    pm.expect(registeredOffice.mailingAddress.streetAddress).to.eql(\"MAILING ADDRESS ADDRESS LINE ONE\");",
-											"    pm.expect(registeredOffice.mailingAddress.streetAddressAdditional).to.exist;",
-											"});",
-											"",
-											"pm.test(\"Returns the required fields for records office addresses\", () => {",
-											"    var result = jsonData.filing.incorporationApplication;",
-											"    var recordsOffice = result.offices.recordsOffice;",
-											"    pm.expect(recordsOffice.deliveryAddress.addressCity).to.eql(\"DELIVERY ADDRESS CITY\");",
-											"    pm.expect(recordsOffice.deliveryAddress.addressCountry).to.eql(\"CANADA\");",
-											"    pm.expect(recordsOffice.deliveryAddress.addressId).to.exist;",
-											"    pm.expect(recordsOffice.deliveryAddress.addressRegion).to.eql(\"BC\");",
-											"    pm.expect(recordsOffice.deliveryAddress.deliveryInstructions).to.exist;",
-											"    pm.expect(recordsOffice.deliveryAddress.postalCode).to.eql(\"V8P1A1\");",
-											"    pm.expect(recordsOffice.deliveryAddress.streetAddress).to.eql(\"DELIVERY ADDRESS ADDRESS LINE ONE\");",
-											"    pm.expect(recordsOffice.deliveryAddress.streetAddressAdditional).to.exist;",
-											"    pm.expect(recordsOffice.mailingAddress.addressCity).to.eql(\"MAILING ADDRESS CITY\");",
-											"    pm.expect(recordsOffice.mailingAddress.addressCountry).to.eql(\"CANADA\");",
-											"    pm.expect(recordsOffice.mailingAddress.addressId).to.exist;",
-											"    pm.expect(recordsOffice.mailingAddress.addressRegion).to.eql(\"BC\");",
-											"    pm.expect(recordsOffice.mailingAddress.deliveryInstructions).to.exist;",
-											"    pm.expect(recordsOffice.mailingAddress.postalCode).to.eql(\"V8P1A1\");",
-											"    pm.expect(recordsOffice.mailingAddress.streetAddress).to.eql(\"MAILING ADDRESS ADDRESS LINE ONE\");",
-											"    pm.expect(recordsOffice.mailingAddress.streetAddressAdditional).to.exist;",
-											"});",
-											"",
-											"pm.test(\"Returns parties added during incorporation\", () => {",
-											"     var result = jsonData.filing.incorporationApplication;",
-											"     var parties = result.parties;",
-											"     pm.expect(parties.length).to.eql(3);",
-											"     var party1 = result.parties.filter(x=>x.officer.firstName == 'Joe')[0];",
-											"     console.log(party1);",
-											"     var party2 = result.parties.filter(x=> x.officer.orgName == 'Xyz Inc.')[0];",
-											"     console.log(party2);",
-											"     var party3 = result.parties.filter(x=> x.officer.firstName == 'Test')[0];",
-											"     console.log(party3);",
-											"     pm.expect(party1.mailingAddress).to.exist;",
-											"     pm.expect(party1.deliveryAddress).to.exist;",
-											"     pm.expect(party1.officer.firstName).to.eql('Joe');",
-											"     pm.expect(party1.officer.lastName).to.eql('Swanson');",
-											"     pm.expect(party1.officer.middleInitial).to.eql('P');",
-											"     pm.expect(party1.roles).to.exist;",
-											"     pm.expect(party1.roles.filter(x=>x.roleType=='Completing Party')).to.exist;",
-											"     pm.expect(party1.roles.filter(x=>x.roleType=='Director')).to.exist;",
-											"",
-											"     pm.expect(party2.officer.orgName).to.eql('Xyz Inc.');",
-											"     pm.expect(party2.officer.firstName).to.eql('');",
-											"     pm.expect(party2.officer.lastName).to.eql('');",
-											"     pm.expect(party2.roles).to.exist;",
-											"     pm.expect(party2.roles.filter(x=>x.roleType=='Director')).to.exist;",
-											"     pm.expect(party2.roles.filter(x=>x.roleType=='Incorporator')).to.exist;",
-											"     ",
-											"     pm.expect(party3.mailingAddress).to.exist;",
-											"     pm.expect(party3.deliveryAddress).to.exist;",
-											"     pm.expect(party3.officer.firstName).to.eql('Test');",
-											"     pm.expect(party3.officer.lastName).to.eql('Director');",
-											"     pm.expect(party3.roles).to.exist;",
-											"     pm.expect(party3.roles.filter(x=>x.roleType=='Director')).to.exist;",
-											"});",
-											"",
-											"pm.test(\"Returns Shares/Series added during incorporation\", () => {",
-											"    var result = jsonData.filing.incorporationApplication;",
-											"    var shares = result.shareClasses;",
-											"    pm.expect(shares.length).to.eql(2);",
-											"    var share1 = shares.filter(x=>x.series.length > 0)[0];",
-											"    pm.expect(share1).to.exist;",
-											"    pm.expect(share1.series.length).to.eql(2);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n\t\t\t\"learEffectiveDate\": \"2020-06-29T17:46:23.315651+00:00\"\n\t\t},\n\t\t\"business\": {\n            \"identifier\": \"{{newCorpNum}}\",\n            \"legalName\": \" the the the the the the testtesttesttest\",\n            \"legalType\": \"BC\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"legalType\": \"BC\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t},\n\t\t\t\t\"recordsOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"parties\": [\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"id\": 1,\n\t\t                \"firstName\": \"Joe\",\n\t\t                \"lastName\": \"Swanson\",\n\t\t                \"middleInitial\": \"P\",\n\t\t                \"orgName\": \"\",\n\t\t                \"partyType\": \"person\",\n\t\t                \"email\": \"comp@party.com\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"deliveryAddress\": {\n\t\t                \"streetAddress\": \"delivery address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"delivery address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t            \"roles\": [\n\t\t                {\n\t\t                    \"roleType\": \"Completing Party\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t\n\t\t                },\n\t\t                {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"id\": 2,\n\t\t                \"firstName\": \"\",\n\t\t                \"lastName\": \"\",\n\t\t                \"middleInitial\": \"\",\n\t\t                \"orgName\": \"Xyz Inc.\",\n\t\t                \"partyType\": \"org\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t           \"roles\": [\n\t\t                {\n\t\t                    \"roleType\": \"Incorporator\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                },\n\t\t                 {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"firstName\": \"Test\",\n\t\t                \"lastName\": \"Director\",\n\t\t                \"middleInitial\": \"\",\n\t\t                \"partyType\": \"person\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t           \"roles\": [\n\t\t                 {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                }\n\t\t            ]\n\t\t        }\n    \t\t], \n    \t\t\"shareClasses\": [\n\t\t        {\n\t\t            \"id\": 1,\n\t\t            \"name\": \"Share Class 1\",\n\t\t            \"priority\": 1,\n\t\t            \"hasMaximumShares\": true,\n\t\t            \"maxNumberOfShares\": 100,\n\t\t            \"hasParValue\": true,\n\t\t            \"parValue\": 10,\n\t\t            \"currency\": \"CAD\",\n\t\t            \"hasRightsOrRestrictions\": false,\n\t\t            \"series\": [\n\t\t                {\n\t\t                    \"id\": 1,\n\t\t                    \"name\": \"Share Series 1\",\n\t\t                    \"priority\": 1,\n\t\t                    \"hasMaximumShares\": true,\n\t\t                    \"maxNumberOfShares\": 50,\n\t\t                    \"hasRightsOrRestrictions\": false\n\t\t                },\n\t\t                {\n\t\t                    \"id\": 2,\n\t\t                    \"name\": \"Share Series 2\",\n\t\t                    \"priority\": 2,\n\t\t                    \"hasMaximumShares\": true,\n\t\t                    \"maxNumberOfShares\": 100,\n\t\t                    \"hasRightsOrRestrictions\": false\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"id\": 2,\n\t\t            \"name\": \"Share Class 2\",\n\t\t            \"priority\": 1,\n\t\t            \"hasMaximumShares\": false,\n\t\t            \"maxNumberOfShares\": null,\n\t\t            \"hasParValue\": false,\n\t\t            \"parValue\": null,\n\t\t            \"currency\": null,\n\t\t            \"hasRightsOrRestrictions\": true,\n\t\t            \"series\": []\n\t\t        }\n\t\t    ],\n\t\t\t\"contactPoint\": {\n\t\t\t\t\"email\": \"contact@point.incorp\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
+									"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n\t\t\t\"learEffectiveDate\": \"2020-06-29T17:46:23.315651+00:00\"\n\t\t},\n\t\t\"business\": {\n            \"identifier\": \"{{newCorpNum}}\",\n            \"legalName\": \"legal name - {{newCorpName}}\",\n            \"legalType\": \"BC\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"legalType\": \"BC\"\n\t\t\t},\n\t\t\t\"nameTranslations\": [\"{{newCorpName}} translation1\", \"{{newCorpName}} translation2\"],\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t},\n\t\t\t\t\"recordsOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"parties\": [\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"id\": 1,\n\t\t                \"firstName\": \"Joe\",\n\t\t                \"lastName\": \"Swanson\",\n\t\t                \"middleInitial\": \"P\",\n\t\t                \"orgName\": \"\",\n\t\t                \"partyType\": \"person\",\n\t\t                \"email\": \"comp@party.com\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"deliveryAddress\": {\n\t\t                \"streetAddress\": \"delivery address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"delivery address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t            \"roles\": [\n\t\t                {\n\t\t                    \"roleType\": \"Completing Party\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t\n\t\t                },\n\t\t                {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"id\": 2,\n\t\t                \"firstName\": \"\",\n\t\t                \"lastName\": \"\",\n\t\t                \"middleInitial\": \"\",\n\t\t                \"orgName\": \"Xyz Inc.\",\n\t\t                \"partyType\": \"org\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t           \"roles\": [\n\t\t                {\n\t\t                    \"roleType\": \"Incorporator\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                },\n\t\t                 {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"firstName\": \"Test\",\n\t\t                \"lastName\": \"Director\",\n\t\t                \"middleInitial\": \"\",\n\t\t                \"partyType\": \"person\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t           \"roles\": [\n\t\t                 {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                }\n\t\t            ]\n\t\t        }\n    \t\t], \n    \t\t\"shareClasses\": [\n\t\t        {\n\t\t            \"id\": 1,\n\t\t            \"name\": \"Share Class 1\",\n\t\t            \"priority\": 1,\n\t\t            \"hasMaximumShares\": true,\n\t\t            \"maxNumberOfShares\": 100,\n\t\t            \"hasParValue\": true,\n\t\t            \"parValue\": 10,\n\t\t            \"currency\": \"CAD\",\n\t\t            \"hasRightsOrRestrictions\": false,\n\t\t            \"series\": [\n\t\t                {\n\t\t                    \"id\": 1,\n\t\t                    \"name\": \"Share Series 1\",\n\t\t                    \"priority\": 1,\n\t\t                    \"hasMaximumShares\": true,\n\t\t                    \"maxNumberOfShares\": 50,\n\t\t                    \"hasRightsOrRestrictions\": false\n\t\t                },\n\t\t                {\n\t\t                    \"id\": 2,\n\t\t                    \"name\": \"Share Series 2\",\n\t\t                    \"priority\": 2,\n\t\t                    \"hasMaximumShares\": true,\n\t\t                    \"maxNumberOfShares\": 100,\n\t\t                    \"hasRightsOrRestrictions\": false\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"id\": 2,\n\t\t            \"name\": \"Share Class 2\",\n\t\t            \"priority\": 1,\n\t\t            \"hasMaximumShares\": false,\n\t\t            \"maxNumberOfShares\": null,\n\t\t            \"hasParValue\": false,\n\t\t            \"parValue\": null,\n\t\t            \"currency\": null,\n\t\t            \"hasRightsOrRestrictions\": true,\n\t\t            \"series\": []\n\t\t        }\n\t\t    ],\n\t\t\t\"contactPoint\": {\n\t\t\t\t\"email\": \"contact@point.incorp\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -7151,7 +7001,196 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "7e3ed4a4-74e1-4830-a78f-e2e592bf7c51",
+										"id": "fca2f7d8-229d-4092-a188-7a4bc0555660",
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Set the next available Corp Num\", () => {",
+											"    pm.expect(jsonData.corpNum).to.exist;",
+											"    pm.environment.set(\"newCorpNum\", (jsonData.corpNum));",
+											"    pm.environment.set(\"newCorpName\", (jsonData.corpNum.slice(1, 7)));",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/BC",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"BC"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "POST Benefit Incorporation Named CTST Long Name",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "bbb07f60-e5d2-469c-8fdb-cda9918c8526",
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code is 201\", function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"pm.test('should return JSON', function () {",
+											"    pm.response.to.have.header('Content-Type', 'application/json');",
+											"});",
+											"",
+											"pm.test(\"Assert new Business record has been created.\", () => {",
+											"    pm.expect(jsonData.filing.incorporationApplication).to.exist;",
+											"    var result = jsonData.filing.incorporationApplication;",
+											"    pm.expect(jsonData.filing.business.identifier).to.eql(pm.environment.get('newCorpNum'));",
+											"});",
+											"",
+											"pm.test(\"Returns the required fields for registered office addresses\", () => {",
+											"    var result = jsonData.filing.incorporationApplication;",
+											"    var registeredOffice = result.offices.registeredOffice;",
+											"    pm.expect(registeredOffice.deliveryAddress.addressCity).to.eql(\"DELIVERY ADDRESS CITY\");",
+											"    pm.expect(registeredOffice.deliveryAddress.addressCountry).to.eql(\"CANADA\");",
+											"    pm.expect(registeredOffice.deliveryAddress.addressId).to.exist;",
+											"    pm.expect(registeredOffice.deliveryAddress.addressRegion).to.eql(\"BC\");",
+											"    pm.expect(registeredOffice.deliveryAddress.deliveryInstructions).to.exist;",
+											"    pm.expect(registeredOffice.deliveryAddress.postalCode).to.eql(\"V8P1A1\");",
+											"    pm.expect(registeredOffice.deliveryAddress.streetAddress).to.eql(\"DELIVERY ADDRESS ADDRESS LINE ONE\");",
+											"    pm.expect(registeredOffice.deliveryAddress.streetAddressAdditional).to.exist;",
+											"    pm.expect(registeredOffice.mailingAddress.addressCity).to.eql(\"MAILING ADDRESS CITY\");",
+											"    pm.expect(registeredOffice.mailingAddress.addressCountry).to.eql(\"CANADA\");",
+											"    pm.expect(registeredOffice.mailingAddress.addressId).to.exist;",
+											"    pm.expect(registeredOffice.mailingAddress.addressRegion).to.eql(\"BC\");",
+											"    pm.expect(registeredOffice.mailingAddress.deliveryInstructions).to.exist;",
+											"    pm.expect(registeredOffice.mailingAddress.postalCode).to.eql(\"V8P1A1\");",
+											"    pm.expect(registeredOffice.mailingAddress.streetAddress).to.eql(\"MAILING ADDRESS ADDRESS LINE ONE\");",
+											"    pm.expect(registeredOffice.mailingAddress.streetAddressAdditional).to.exist;",
+											"});",
+											"",
+											"pm.test(\"Returns the required fields for records office addresses\", () => {",
+											"    var result = jsonData.filing.incorporationApplication;",
+											"    var recordsOffice = result.offices.recordsOffice;",
+											"    pm.expect(recordsOffice.deliveryAddress.addressCity).to.eql(\"DELIVERY ADDRESS CITY\");",
+											"    pm.expect(recordsOffice.deliveryAddress.addressCountry).to.eql(\"CANADA\");",
+											"    pm.expect(recordsOffice.deliveryAddress.addressId).to.exist;",
+											"    pm.expect(recordsOffice.deliveryAddress.addressRegion).to.eql(\"BC\");",
+											"    pm.expect(recordsOffice.deliveryAddress.deliveryInstructions).to.exist;",
+											"    pm.expect(recordsOffice.deliveryAddress.postalCode).to.eql(\"V8P1A1\");",
+											"    pm.expect(recordsOffice.deliveryAddress.streetAddress).to.eql(\"DELIVERY ADDRESS ADDRESS LINE ONE\");",
+											"    pm.expect(recordsOffice.deliveryAddress.streetAddressAdditional).to.exist;",
+											"    pm.expect(recordsOffice.mailingAddress.addressCity).to.eql(\"MAILING ADDRESS CITY\");",
+											"    pm.expect(recordsOffice.mailingAddress.addressCountry).to.eql(\"CANADA\");",
+											"    pm.expect(recordsOffice.mailingAddress.addressId).to.exist;",
+											"    pm.expect(recordsOffice.mailingAddress.addressRegion).to.eql(\"BC\");",
+											"    pm.expect(recordsOffice.mailingAddress.deliveryInstructions).to.exist;",
+											"    pm.expect(recordsOffice.mailingAddress.postalCode).to.eql(\"V8P1A1\");",
+											"    pm.expect(recordsOffice.mailingAddress.streetAddress).to.eql(\"MAILING ADDRESS ADDRESS LINE ONE\");",
+											"    pm.expect(recordsOffice.mailingAddress.streetAddressAdditional).to.exist;",
+											"});",
+											"",
+											"pm.test(\"Returns parties added during incorporation\", () => {",
+											"     var result = jsonData.filing.incorporationApplication;",
+											"     var parties = result.parties;",
+											"     pm.expect(parties.length).to.eql(3);",
+											"     var party1 = result.parties.filter(x=>x.officer.firstName == 'Joe')[0];",
+											"     console.log(party1);",
+											"     var party2 = result.parties.filter(x=> x.officer.orgName == 'Xyz Inc.')[0];",
+											"     console.log(party2);",
+											"     var party3 = result.parties.filter(x=> x.officer.firstName == 'Test')[0];",
+											"     console.log(party3);",
+											"     pm.expect(party1.mailingAddress).to.exist;",
+											"     pm.expect(party1.deliveryAddress).to.exist;",
+											"     pm.expect(party1.officer.firstName).to.eql('Joe');",
+											"     pm.expect(party1.officer.lastName).to.eql('Swanson');",
+											"     pm.expect(party1.officer.middleInitial).to.eql('P');",
+											"     pm.expect(party1.roles).to.exist;",
+											"     pm.expect(party1.roles.filter(x=>x.roleType=='Completing Party')).to.exist;",
+											"     pm.expect(party1.roles.filter(x=>x.roleType=='Director')).to.exist;",
+											"",
+											"     pm.expect(party2.officer.orgName).to.eql('Xyz Inc.');",
+											"     pm.expect(party2.officer.firstName).to.eql('');",
+											"     pm.expect(party2.officer.lastName).to.eql('');",
+											"     pm.expect(party2.roles).to.exist;",
+											"     pm.expect(party2.roles.filter(x=>x.roleType=='Director')).to.exist;",
+											"     pm.expect(party2.roles.filter(x=>x.roleType=='Incorporator')).to.exist;",
+											"     ",
+											"     pm.expect(party3.mailingAddress).to.exist;",
+											"     pm.expect(party3.deliveryAddress).to.exist;",
+											"     pm.expect(party3.officer.firstName).to.eql('Test');",
+											"     pm.expect(party3.officer.lastName).to.eql('Director');",
+											"     pm.expect(party3.roles).to.exist;",
+											"     pm.expect(party3.roles.filter(x=>x.roleType=='Director')).to.exist;",
+											"});",
+											"",
+											"pm.test(\"Returns Shares/Series added during incorporation\", () => {",
+											"    var result = jsonData.filing.incorporationApplication;",
+											"    var shares = result.shareClasses;",
+											"    pm.expect(shares.length).to.eql(2);",
+											"    var share1 = shares.filter(x=>x.series.length > 0)[0];",
+											"    pm.expect(share1).to.exist;",
+											"    pm.expect(share1.series.length).to.eql(2);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"filing\": {\n\t\t\"header\": {\n\t\t\t\"name\": \"incorporationApplication\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n\t\t\t\"learEffectiveDate\": \"2020-06-29T17:46:23.315651+00:00\"\n\t\t},\n\t\t\"business\": {\n            \"identifier\": \"{{newCorpNum}}\",\n            \"legalName\": \"{{newCorpName}} the the the the the the testtesttesttest\",\n            \"legalType\": \"BC\"\n        },\n\t\t\"incorporationApplication\": {\n\t\t\t\"nameRequest\": {\n\t\t\t\t\"legalType\": \"BC\"\n\t\t\t},\n\t\t\t\"offices\": {\n\t\t\t\t\"registeredOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t},\n\t\t\t\t\"recordsOffice\": {\n\t\t\t\t\t\"deliveryAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"delivery address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"delivery address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t},\n\t\t\t\t\t\"mailingAddress\": {\n\t\t\t\t\t\t\"streetAddress\": \"mailing address address line one\",\n\t\t\t\t\t\t\"addressCity\": \"mailing address city\",\n\t\t\t\t\t\t\"addressCountry\": \"Canada\",\n\t\t\t\t\t\t\"postalCode\": \"V8P1A1\",\n\t\t\t\t\t\t\"addressRegion\": \"BC\",\n\t\t\t\t\t\t\"actions\": []\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"parties\": [\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"id\": 1,\n\t\t                \"firstName\": \"Joe\",\n\t\t                \"lastName\": \"Swanson\",\n\t\t                \"middleInitial\": \"P\",\n\t\t                \"orgName\": \"\",\n\t\t                \"partyType\": \"person\",\n\t\t                \"email\": \"comp@party.com\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"deliveryAddress\": {\n\t\t                \"streetAddress\": \"delivery address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"delivery address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t            \"roles\": [\n\t\t                {\n\t\t                    \"roleType\": \"Completing Party\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t\n\t\t                },\n\t\t                {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"id\": 2,\n\t\t                \"firstName\": \"\",\n\t\t                \"lastName\": \"\",\n\t\t                \"middleInitial\": \"\",\n\t\t                \"orgName\": \"Xyz Inc.\",\n\t\t                \"partyType\": \"org\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t           \"roles\": [\n\t\t                {\n\t\t                    \"roleType\": \"Incorporator\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                },\n\t\t                 {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"officer\": {\n\t\t                \"firstName\": \"Test\",\n\t\t                \"lastName\": \"Director\",\n\t\t                \"middleInitial\": \"\",\n\t\t                \"partyType\": \"person\"\n\t\t            },\n\t\t            \"mailingAddress\": {\n\t\t                \"streetAddress\": \"mailing address address line one\",\n\t\t                \"streetAddressAdditional\": \"\",\n\t\t                \"addressCity\": \"mailing address city\",\n\t\t                \"addressCountry\": \"CA\",\n\t\t                \"postalCode\": \"V8P1A1\",\n\t\t                \"addressRegion\": \"BC\"\n\t\t            },\n\t\t            \"appointmentDate\": \"2018-01-01\",\n\t\t           \"roles\": [\n\t\t                 {\n\t\t                    \"roleType\": \"Director\",\n\t\t                    \"appointmentDate\": \"2018-01-01\"\n\t\t                }\n\t\t            ]\n\t\t        }\n    \t\t], \n    \t\t\"shareClasses\": [\n\t\t        {\n\t\t            \"id\": 1,\n\t\t            \"name\": \"Share Class 1\",\n\t\t            \"priority\": 1,\n\t\t            \"hasMaximumShares\": true,\n\t\t            \"maxNumberOfShares\": 100,\n\t\t            \"hasParValue\": true,\n\t\t            \"parValue\": 10,\n\t\t            \"currency\": \"CAD\",\n\t\t            \"hasRightsOrRestrictions\": false,\n\t\t            \"series\": [\n\t\t                {\n\t\t                    \"id\": 1,\n\t\t                    \"name\": \"Share Series 1\",\n\t\t                    \"priority\": 1,\n\t\t                    \"hasMaximumShares\": true,\n\t\t                    \"maxNumberOfShares\": 50,\n\t\t                    \"hasRightsOrRestrictions\": false\n\t\t                },\n\t\t                {\n\t\t                    \"id\": 2,\n\t\t                    \"name\": \"Share Series 2\",\n\t\t                    \"priority\": 2,\n\t\t                    \"hasMaximumShares\": true,\n\t\t                    \"maxNumberOfShares\": 100,\n\t\t                    \"hasRightsOrRestrictions\": false\n\t\t                }\n\t\t            ]\n\t\t        },\n\t\t        {\n\t\t            \"id\": 2,\n\t\t            \"name\": \"Share Class 2\",\n\t\t            \"priority\": 1,\n\t\t            \"hasMaximumShares\": false,\n\t\t            \"maxNumberOfShares\": null,\n\t\t            \"hasParValue\": false,\n\t\t            \"parValue\": null,\n\t\t            \"currency\": null,\n\t\t            \"hasRightsOrRestrictions\": true,\n\t\t            \"series\": []\n\t\t        }\n\t\t    ],\n\t\t\t\"contactPoint\": {\n\t\t\t\t\"email\": \"contact@point.incorp\",\n\t\t\t\t\"phone\": \"123-456-7890\"\n\t\t\t}\n\t\t}\n\t}\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/BC/{{newCorpNum}}/filings/incorporationApplication",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"BC",
+										"{{newCorpNum}}",
+										"filings",
+										"incorporationApplication"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GET New Corp Number, BC",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "de988d98-946b-4f39-b8f9-3b388748db8a",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -7190,7 +7229,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "f01cb739-a679-45d9-8ce3-82d127ebd5ae",
+										"id": "2a07317f-2f85-4c39-b759-d9ddafc75ce8",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -7347,7 +7386,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "edc49fb4-a5ec-46f9-990a-2fd06316a75b",
+										"id": "89be028d-b1c1-4c3d-bbb6-a2bd1029f739",
 										"exec": [
 											"// set event id variable (used for future tests)",
 											"var jsonData = pm.response.json()",
@@ -7390,7 +7429,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "722706b0-5a46-42cd-939d-bb6c55740d3d",
+										"id": "278a572c-6bea-4f3d-9026-f33afc29bf88",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -7515,7 +7554,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "d920ac5c-1221-4b8d-aa9d-d7c188391939",
+										"id": "8efc11c6-f8be-4954-a2a8-bd830b9cea0b",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -7655,7 +7694,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "32afdfb9-dd79-480b-ad7d-d23ed48f75f4",
+										"id": "ab6b3902-3bf5-4c91-942a-9431f2ce604d",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -7811,7 +7850,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "73d8e413-9e94-4a3f-86f4-84972987c32f",
+										"id": "6b87f9e0-399e-43d3-b787-97577d3b7327",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -7886,7 +7925,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "50455cf5-56f2-46c5-8745-8208e4575fa8",
+										"id": "97c48a49-c216-40e3-97bd-8de455ddf7f9",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -8006,7 +8045,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "ce291ef4-652a-423c-a40b-14eabc861be9",
+										"id": "de78f333-7f68-4bc9-9f59-325d2e75590f",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -8157,7 +8196,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "b430d159-09e0-4516-bfc5-d72b609f5589",
+										"id": "053c7b71-a5c6-49a4-998b-c5691957986f",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -8335,7 +8374,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "104783a4-1915-4d81-bde4-8d681b048e41",
+								"id": "c9d42e44-2fd5-47e0-a9d9-bfb8e6109500",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -8345,7 +8384,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "71d3b74c-7521-40b8-b088-6e39d0ff3fb0",
+								"id": "1e698f3a-2ef3-468b-bbc3-383ab9dc6020",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -8365,7 +8404,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "5c08439e-71d2-4e2a-a157-b8f6e88c8e6f",
+										"id": "b4f4591e-38d9-442d-97da-047296948de7",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.environment.set(\"coaEventId\", jsonData.filing.changeOfAddress.eventId)",
@@ -8420,7 +8459,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "d4c286e8-7d95-4bae-8ae1-f3c53b19d425",
+										"id": "c4dac992-3d6e-426a-b2a9-0281bf4d16e6",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -8540,7 +8579,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "1161a24d-6d24-4f06-92ca-dca9fda1fc6c",
+										"id": "8cfdec29-197d-483d-b500-c7bd5fa3fcf9",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -8690,7 +8729,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "78d6cd94-7ff3-4ed2-a090-21b9f9b27b61",
+										"id": "e41df2dc-7ddc-48a8-ab0d-090d6d1cd2bc",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -8852,7 +8891,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "a67e849b-cd97-4fdc-b4ac-e0d95d3a7f9d",
+								"id": "f5b469e4-09f4-4f7f-a2a9-dfbc0e20521e",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -8862,7 +8901,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "542f5c90-88a4-48f6-95bc-3cc3fd9b5172",
+								"id": "b3592dbf-22ba-423d-9462-803483039c8a",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -8917,7 +8956,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "8e283b5e-0b1f-4837-aadb-e1d23541f80b",
+						"id": "c274d8cb-db2b-472d-9f55-0eb097cca3f5",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -8927,7 +8966,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "649d5c2c-af2e-4b1a-8fe4-42cc7df54b07",
+						"id": "c524bdce-3d74-4695-9eac-9215d8e137bd",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -8942,7 +8981,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "d11ea4b3-b1a4-44f3-87db-7592ffb171c2",
+				"id": "b6424b43-4b08-48df-89bd-c51af39f8f16",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -8952,7 +8991,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "b4f083fb-56df-4334-bcf3-1009a2c04e7c",
+				"id": "96cdf19d-bc9b-4d33-906a-54b771ae6b4b",
 				"type": "text/javascript",
 				"exec": [
 					""
