@@ -196,7 +196,7 @@ def test_create_incorporation_with_bcol_dat(client, jwt, session):
     filing['filing']['header']['name'] = 'incorporationApplication'
     filing['filing']['header']['accountId'] = account_id
     filing['filing']['header']['bcolAccountNumber'] = '180670'
-    filing['filing']['header']['datNumber'] = 'C234567890'
+    filing['filing']['header']['datNumber'] = 'C1234567'
 
     # remove fed
     filing['filing']['header'].pop('effectiveDate')
