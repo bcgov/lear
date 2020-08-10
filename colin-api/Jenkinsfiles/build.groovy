@@ -110,19 +110,7 @@ if (!run_pipeline) {
 }
 
 node {
-    stage("Intermediate Build ${COMPONENT_NAME_INTER}") {
-        script {
-            openshift.withCluster() {
-                openshift.withProject() {
-
-                    echo "Building ${COMPONENT_NAME_INTER} ..."
-                    def build = openshift.selector("bc", "${COMPONENT_NAME_INTER}")
-                    build.startBuild("--wait=true").logs("-f")
-                }
-            }
-        }
-    }
-    stage("Final Build ${COMPONENT_NAME}") {
+    stage("Build ${COMPONENT_NAME}") {
         script {
             openshift.withCluster() {
                 openshift.withProject() {
