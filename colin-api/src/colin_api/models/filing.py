@@ -980,14 +980,9 @@ class Filing:
                         shares_list=filing.body['shareClasses']
                     )
                 # add name translations
-                for name in filing.body.get('nameTranslations', []):
-                    # create new one for each name
-                    corp_name_obj = CorpName()
-                    corp_name_obj.corp_name = name
-                    corp_name_obj.corp_num = corp_num
-                    corp_name_obj.event_id = filing.event_id
-                    corp_name_obj.type_code = CorpName.TypeCodes.TRANSLATION.value
-                    CorpName.create_corp_name(cursor, corp_name_obj)
+                translations = filing.body.get('nameTranslations', [])
+                if translations:
+                    CorpName.create_translations(cursor, corp_num, filing.event_id, translations)
 
             elif filing.filing_type == 'alteration':
                 cls._insert_filing(cursor=cursor, filing=filing, ar_date=None, agm_date=None)
