@@ -770,6 +770,8 @@ def test_get_correct_fee_codes(session):
     # set filings
     alt = ALTERATION_FILING_TEMPLATE
     ar = ANNUAL_REPORT
+    bc_ar = copy.deepcopy(ANNUAL_REPORT)
+    bc_ar['filing']['business']['legalType'] = 'BC'
     coa = copy.deepcopy(FILING_HEADER)
     coa['filing']['header']['name'] = 'changeOfAddress'
     coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
@@ -785,20 +787,37 @@ def test_get_correct_fee_codes(session):
     for director in free_cod['filing']['changeOfDirectors']['directors']:
         if not all(action in ['nameChanged', 'addressChanged'] for action in director.get('actions', [])):
             director['actions'] = ['nameChanged', 'addressChanged']
+    bc_coa = copy.deepcopy(FILING_HEADER)
+    bc_coa['filing']['header']['name'] = 'changeOfAddress'
+    bc_coa['filing']['business']['legalType'] = 'BC'
+    bc_coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+    bc_cod = copy.deepcopy(FILING_HEADER)
+    bc_cod['filing']['header']['name'] = 'changeOfDirectors'
+    bc_cod['filing']['business']['legalType'] = 'BC'
+    bc_cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+    assert len(bc_cod['filing']['changeOfDirectors']['directors']) > 1
+    bc_cod['filing']['changeOfDirectors']['directors'][0]['actions'] = ['ceased', 'nameChanged']
+    bc_cod['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
 
     # get fee codes
     alt_fee_code = ListFilingResource._get_filing_types(alt)[0]['filingTypeCode']
     ar_fee_code = ListFilingResource._get_filing_types(ar)[0]['filingTypeCode']
+    bc_ar_fee_code = ListFilingResource._get_filing_types(bc_ar)[0]['filingTypeCode']
     coa_fee_code = ListFilingResource._get_filing_types(coa)[0]['filingTypeCode']
     cod_fee_code = ListFilingResource._get_filing_types(cod)[0]['filingTypeCode']
     free_cod_fee_code = ListFilingResource._get_filing_types(free_cod)[0]['filingTypeCode']
+    bc_coa_fee_code = ListFilingResource._get_filing_types(bc_coa)[0]['filingTypeCode']
+    bc_cod_fee_code = ListFilingResource._get_filing_types(bc_cod)[0]['filingTypeCode']
 
     # test fee codes
     assert alt_fee_code == Filing.FILINGS['alteration'].get('code')
     assert ar_fee_code == Filing.FILINGS['annualReport'].get('code')
+    assert bc_ar_fee_code == 'BCANN'
     assert coa_fee_code == Filing.FILINGS['changeOfAddress'].get('code')
     assert cod_fee_code == Filing.FILINGS['changeOfDirectors'].get('code')
     assert free_cod_fee_code == 'OTFDR'
+    assert bc_coa_fee_code == 'BCADD'
+    assert bc_cod_fee_code == 'BCCDR'
 
 
 @integration_payment
