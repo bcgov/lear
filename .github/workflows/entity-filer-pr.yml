@@ -7,7 +7,6 @@ on:
       - "queue_services/entity-filer/**"
       - "queue_services/common/**"
 
-
 jobs:
   pr-checks:
     env:
@@ -28,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7,3.8]
+        python-version: [3.8]
 
     services:
       postgres:
@@ -62,6 +61,7 @@ jobs:
         working-directory: ./queue_services/entity-filer
         run: |
           flake8 src tests
+
 #      - name: Test with pytest
 #        working-directory: ./queue_services/entity-filer
 #        run: |
