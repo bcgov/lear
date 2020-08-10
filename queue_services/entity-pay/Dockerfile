@@ -20,6 +20,6 @@ USER 1001
 # Set Python path
 ENV PYTHONPATH=/opt/app-root/src
 
-EXPOSE 8080
+#EXPOSE 8080
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--config", "/opt/app-root/gunicorn_config.py", "wsgi:application"]
+CMD [ "python", "/opt/app-root/pay_filer.py" ]
