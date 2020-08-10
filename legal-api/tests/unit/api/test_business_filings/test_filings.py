@@ -770,7 +770,7 @@ def test_get_correct_fee_codes(session):
     # set filings
     alt = ALTERATION_FILING_TEMPLATE
     ar = ANNUAL_REPORT
-    bc_ar  = copy.deepcopy(ANNUAL_REPORT)
+    bc_ar = copy.deepcopy(ANNUAL_REPORT)
     bc_ar['filing']['business']['legalType'] = 'BC'
     coa = copy.deepcopy(FILING_HEADER)
     coa['filing']['header']['name'] = 'changeOfAddress'
