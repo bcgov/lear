@@ -770,6 +770,8 @@ def test_get_correct_fee_codes(session):
     # set filings
     alt = ALTERATION_FILING_TEMPLATE
     ar = ANNUAL_REPORT
+    bc_ar  = copy.deepcopy(ANNUAL_REPORT)
+    bc_ar['filing']['business']['legalType'] = 'BC'
     coa = copy.deepcopy(FILING_HEADER)
     coa['filing']['header']['name'] = 'changeOfAddress'
     coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
@@ -800,6 +802,7 @@ def test_get_correct_fee_codes(session):
     # get fee codes
     alt_fee_code = ListFilingResource._get_filing_types(alt)[0]['filingTypeCode']
     ar_fee_code = ListFilingResource._get_filing_types(ar)[0]['filingTypeCode']
+    bc_ar_fee_code = ListFilingResource._get_filing_types(bc_ar)[0]['filingTypeCode']
     coa_fee_code = ListFilingResource._get_filing_types(coa)[0]['filingTypeCode']
     cod_fee_code = ListFilingResource._get_filing_types(cod)[0]['filingTypeCode']
     free_cod_fee_code = ListFilingResource._get_filing_types(free_cod)[0]['filingTypeCode']
@@ -809,6 +812,7 @@ def test_get_correct_fee_codes(session):
     # test fee codes
     assert alt_fee_code == Filing.FILINGS['alteration'].get('code')
     assert ar_fee_code == Filing.FILINGS['annualReport'].get('code')
+    assert bc_ar_fee_code == 'BCANN'
     assert coa_fee_code == Filing.FILINGS['changeOfAddress'].get('code')
     assert cod_fee_code == Filing.FILINGS['changeOfDirectors'].get('code')
     assert free_cod_fee_code == 'OTFDR'

@@ -517,6 +517,12 @@ class ListFilingResource(Resource):
                     'filingTypeCode': Filing.FILINGS[k].get('code'),
                     'futureEffective': ListFilingResource._is_future_effective_filing(filing_json)
                 })
+            elif k == 'annualReport' and legal_type == 'BC':
+                filing_types.append({
+                    'filingTypeCode': 'BCANN',
+                    'priority': priority_flag,
+                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+                })
             elif Filing.FILINGS.get(k, None):
                 filing_types.append({
                     'filingTypeCode': Filing.FILINGS[k].get('code'),
