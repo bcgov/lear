@@ -792,7 +792,7 @@ def test_get_correct_fee_codes(session):
     bc_coa['filing']['business']['legalType'] = 'BC'
     bc_coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
     bc_cod = copy.deepcopy(FILING_HEADER)
-    cod['filing']['header']['name'] = 'changeOfDirectors'
+    bc_cod['filing']['header']['name'] = 'changeOfDirectors'
     bc_cod['filing']['business']['legalType'] = 'BC'
     bc_cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
     assert len(bc_cod['filing']['changeOfDirectors']['directors']) > 1
