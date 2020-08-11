@@ -190,4 +190,4 @@ async def test_publish_email_message(app, session, stan_server, event_loop, clie
     assert len(msgs) == 1
     assert get_data_from_msg(msgs[0], 'id') == filing.id
     assert get_data_from_msg(msgs[0], 'type') == filing.filing_type
-    assert get_data_from_msg(msgs[0], 'option') == 'DRAFT'
+    assert get_data_from_msg(msgs[0], 'option') == 'PAID'
