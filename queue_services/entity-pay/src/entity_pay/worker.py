@@ -121,7 +121,7 @@ async def process_payment(payment_token, flask_app):
 
             try:
                 await publish_email_message(
-                    qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'filed')
+                    qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, filing_submission.status)
             except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
                 # mark any failure for human review
                 capture_message(
