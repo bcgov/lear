@@ -107,6 +107,15 @@ async def process_payment(payment_token, flask_app):
             db.session.add(filing_submission)
             db.session.commit()
 
+            try:
+                await publish_email_message(
+                    qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, Filing.Status.PAID.value)
+            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                # mark any failure for human review
+                capture_message(
+                    f'Queue Error: Failed to place email for filing:{filing_submission.id} on Queue with error:{err}',
+                    level='error')
+
             if not filing_submission.effective_date or \
                     filing_submission.effective_date <= \
                     datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc):
@@ -118,15 +127,6 @@ async def process_payment(payment_token, flask_app):
                     capture_message(
                         f'Queue Error: Failed to place filing:{filing_submission.id} on Queue with error:{err}',
                         level='error')
-
-            try:
-                await publish_email_message(
-                    qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, filing_submission.status)
-            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-                # mark any failure for human review
-                capture_message(
-                    f'Queue Error: Failed to place email for filing:{filing_submission.id} on Queue with error:{err}',
-                    level='error')
 
             return
 
