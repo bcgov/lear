@@ -1,4 +1,4 @@
-name: entity-emailer PR CI
+name: Entity Emailer CI
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
       - "queue_services/common/**"
 
 jobs:
-  pr-checks:
+  entity-emailer-ci:
     env:
       DATABASE_TEST_USERNAME: postgres
       DATABASE_TEST_PASSWORD: postgres
