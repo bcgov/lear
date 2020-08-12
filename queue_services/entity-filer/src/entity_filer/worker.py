@@ -159,8 +159,6 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 incorporation_filing.consume_nr(business, filing_submission)
                 try:
                     await publish_email_message(
-                        qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'registered')
-                    await publish_email_message(
                         qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'mras')
                 except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
                     # mark any failure for human review
@@ -169,6 +167,17 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         f'on Queue with error:{err}',
                         level='error'
                     )
+
+            try:
+                await publish_email_message(
+                    qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, filing_submission.status)
+            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                # mark any failure for human review
+                capture_message(
+                    f'Queue Error: Failed to place email for filing:{filing_submission.id}'
+                    f'on Queue with error:{err}',
+                    level='error'
+                )
 
             try:
                 await publish_event(business, filing_submission)
