@@ -19,7 +19,7 @@ from legal_api.models import Business
 from legal_api.services.bootstrap import AccountService
 
 from entity_emailer import worker
-from entity_emailer.email_processors import incorp_notification
+from entity_emailer.email_processors import filing_notification
 from tests.unit import email_prepped_filing
 
 
@@ -44,7 +44,7 @@ def test_process_incorp_email(app, session, option):
     token = '1'
     # test worker
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
-        with patch.object(incorp_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+        with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email(
                     {'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': option}}, app)

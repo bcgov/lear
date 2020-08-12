@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 import pytest
 
-from entity_emailer.email_processors import incorp_notification
+from entity_emailer.email_processors import filing_notification
 from tests.unit import email_prepped_filing
 
 
@@ -30,8 +30,8 @@ def test_incorp_notification(app, session, option):
     filing = email_prepped_filing(session, 'BC1234567', '1', option)
     token = 'token'
     # test processor
-    with patch.object(incorp_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
-        email = incorp_notification.process(
+    with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+        email = filing_notification.process(
             {'filingId': filing.id, 'type': 'incorporationApplication', 'option': option}, token)
         if option == 'filed':
             assert 'comp_party@email.com' in email['recipients']
