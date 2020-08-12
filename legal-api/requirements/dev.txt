@@ -24,7 +24,7 @@ pep8-naming
 pydocstyle<4
 pylint<=2.3.1
 pylint-flask
-isort<5
+isort<5,>=4.2.5
 
 # docker
 lovely-pytest-docker
