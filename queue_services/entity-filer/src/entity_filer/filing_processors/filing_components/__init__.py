@@ -20,6 +20,7 @@ import pycountry
 from legal_api.models import Address, Business, Office, Party, PartyRole, ShareClass, ShareSeries
 
 from . import business_info
+from . import aliases
 
 
 JSON_ROLE_CONVERTER = {

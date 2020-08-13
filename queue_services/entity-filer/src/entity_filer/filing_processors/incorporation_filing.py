@@ -25,6 +25,7 @@ from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.services.bootstrap import AccountService
 
 from entity_filer.filing_processors.filing_components import (
+    aliases,
     create_office,
     create_party,
     create_role,
@@ -142,11 +143,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
     if business:
         raise QueueException(f'Business Already Exist: IA legal_filing:incorporationApplication {filing_rec.id}')
 
-    offices = incorp_filing.get('offices', None)
-    parties = incorp_filing.get('parties', None)
     business_info = incorp_filing.get('nameRequest')
-    share_classes = incorp_filing['shareClasses']
-
     # Reserve the Corp Numper for this entity
     corp_num = get_next_corp_num(business_info['legalType'])
     if not corp_num:
@@ -158,10 +155,12 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
     if not business:
         raise QueueException(f'IA incorporationApplication {filing_rec.id}, Unable to create business.')
 
+    offices = incorp_filing.get('offices', None)
     for office_type, addresses in offices.items():
         office = create_office(business, office_type, addresses)
         business.offices.append(office)
 
+    parties = incorp_filing.get('parties', None)
     if parties:
         for party_info in parties:
             party = create_party(business_id=business.id, party_info=party_info, create=False)
@@ -174,10 +173,14 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
                 party_role = create_role(party=party, role_info=role)
                 business.party_roles.append(party_role)
 
+    share_classes = incorp_filing['shareClasses']
     if share_classes:
         for share_class_info in share_classes:
             share_class = create_share_class(share_class_info)
             business.share_classes.append(share_class)
+
+    if (name_translations := incorp_filing.get('nameTranslations')):
+        aliases.update_aliases(business, name_translations)
 
     ia_json = copy.deepcopy(filing_rec.filing_json)
     ia_json['filing']['business']['identifier'] = business.identifier
