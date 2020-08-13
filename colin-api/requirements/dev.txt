@@ -21,4 +21,5 @@ coverage
 pydocstyle<4.0
 pylint<=2.3.1
 pylint-flask
+isort<5,>=4.2.5
 sqlalchemy
