@@ -19,8 +19,7 @@ from typing import Dict
 import pycountry
 from legal_api.models import Address, Business, Office, Party, PartyRole, ShareClass, ShareSeries
 
-from . import aliases  # noqa:I001
-from . import business_info  # noqa:I001
+from entity_filer.filing_processors.filing_components import aliases, business_info
 
 
 JSON_ROLE_CONVERTER = {
