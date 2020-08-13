@@ -5,9 +5,9 @@
     {% if business.legalName %}
     <!-- try to get legal name from Business object -->
     <td class="value">{{ business.legalName }}</td>
-    {% elif incorporationApplication.nameRequest.legalName %}
+    {% elif filing.nameRequest.legalName %}
     <!-- try to get legal name from Name Request object -->
-    <td class="value">{{ incorporationApplication.nameRequest.legalName }}</td>
+    <td class="value">{{ filing.nameRequest.legalName }}</td>
     {% elif business.legalType == 'BC' %}
     <!-- fallback BC label -->
     <td class="value">Numbered Benefit Company</td>

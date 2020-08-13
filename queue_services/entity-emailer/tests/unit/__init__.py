@@ -14,22 +14,38 @@
 """The Unit Tests and the helper routines."""
 import copy
 
-from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
+from registry_schemas.example_data import (
+    ANNUAL_REPORT,
+    CHANGE_OF_DIRECTORS,
+    CORP_CHANGE_OF_ADDRESS,
+    FILING_TEMPLATE,
+    INCORPORATION_FILING_TEMPLATE,
+)
 from sqlalchemy_continuum import versioning_manager
 
 from tests import EPOCH_DATETIME
 
 
-def create_business(identifier):
+FILING_TYPE_MAPPER = {
+    # annual report structure is different than other 2
+    'annualReport': ANNUAL_REPORT['filing']['annualReport'],
+    'changeOfAddress': CORP_CHANGE_OF_ADDRESS,
+    'changeOfDirectors': CHANGE_OF_DIRECTORS
+}
+
+
+def create_business(identifier, legal_type=None, legal_name=None):
     """Return a test business."""
     from legal_api.models import Business
     business = Business()
     business.identifier = identifier
+    business.legal_type = legal_type
+    business.legal_name = legal_name
     business.save()
     return business
 
 
-def create_filing(token=None, json_filing=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
+def create_filing(token=None, filing_json=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
     """Return a test filing."""
     from legal_api.models import Filing
     filing = Filing()
@@ -37,8 +53,8 @@ def create_filing(token=None, json_filing=None, business_id=None, filing_date=EP
         filing.payment_token = str(token)
     filing.filing_date = filing_date
 
-    if json_filing:
-        filing.filing_json = json_filing
+    if filing_json:
+        filing.filing_json = filing_json
     if business_id:
         filing.business_id = business_id
     if bootstrap_id:
@@ -48,8 +64,8 @@ def create_filing(token=None, json_filing=None, business_id=None, filing_date=EP
     return filing
 
 
-def email_prepped_filing(session, identifier, payment_id, option):
-    """Return a test filing ready for email notification."""
+def prep_incorp_filing(session, identifier, payment_id, option):
+    """Return a new incorp filing prepped for email notification."""
     business = create_business(identifier)
     filing_template = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_template['filing']['business'] = {'identifier': business.identifier}
@@ -58,12 +74,24 @@ def email_prepped_filing(session, identifier, payment_id, option):
             if role['roleType'] == 'Completing Party':
                 party['officer']['email'] = 'comp_party@email.com'
     filing_template['filing']['incorporationApplication']['contactPoint']['email'] = 'test@test.com'
-    filing = create_filing(token=payment_id, json_filing=filing_template, business_id=business.id)
+    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
     filing.payment_completion_date = filing.filing_date
     filing.save()
-    if option in ['registered', 'bn']:
+    if option in ['COMPLETED', 'bn']:
         uow = versioning_manager.unit_of_work(session)
         transaction = uow.create_transaction(session)
         filing.transaction_id = transaction.id
         filing.save()
+    return filing
+
+
+def prep_maintenance_filing(session, identifier, payment_id, status, filing_type):
+    """Return a new maintenance filing prepped for email notification."""
+    business = create_business(identifier, 'BC', 'test business')
+    filing_template = copy.deepcopy(FILING_TEMPLATE)
+    filing_template['filing']['header']['name'] = filing_type
+    filing_template['filing']['business'] = {'identifier': 'BC1234567', 'legalype': 'BC', 'legalName': 'test business'}
+    filing_template['filing'][filing_type] = copy.deepcopy(FILING_TYPE_MAPPER[filing_type])
+    filing = create_filing(token=None, filing_json=filing_template, business_id=business.id)
+    filing.save()
     return filing

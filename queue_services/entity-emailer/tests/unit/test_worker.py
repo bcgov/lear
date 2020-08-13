@@ -19,8 +19,8 @@ from legal_api.models import Business
 from legal_api.services.bootstrap import AccountService
 
 from entity_emailer import worker
-from entity_emailer.email_processors import incorp_notification
-from tests.unit import email_prepped_filing
+from entity_emailer.email_processors import filing_notification
+from tests.unit import prep_incorp_filing
 
 
 def test_process_filing_missing_app(app, session):
@@ -34,17 +34,17 @@ def test_process_filing_missing_app(app, session):
 
 
 @pytest.mark.parametrize('option', [
-    ('filed'),
-    ('registered'),
+    ('PAID'),
+    ('COMPLETED'),
 ])
 def test_process_incorp_email(app, session, option):
     """Assert that an INCORP email msg is processed correctly."""
     # setup filing + business for email
-    filing = email_prepped_filing(session, 'BC1234567', '1', option)
+    filing = prep_incorp_filing(session, 'BC1234567', '1', option)
     token = '1'
     # test worker
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
-        with patch.object(incorp_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+        with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email(
                     {'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': option}}, app)
@@ -54,7 +54,7 @@ def test_process_incorp_email(app, session, option):
                 assert mock_get_pdfs.call_args[0][2] == {'identifier': 'BC1234567'}
                 assert mock_get_pdfs.call_args[0][3] == filing
 
-                if option == 'filed':
+                if option == 'PAID':
                     assert 'comp_party@email.com' in mock_send_email.call_args[0][0]['recipients']
                     assert mock_send_email.call_args[0][0]['content']['subject'] == \
                         'Confirmation of Filing from the Business Registry'
@@ -70,7 +70,7 @@ def test_process_incorp_email(app, session, option):
 def test_process_mras_email(app, session):
     """Assert that an MRAS email msg is processed correctly."""
     # setup filing + business for email
-    filing = email_prepped_filing(session, 'BC1234567', '1', 'mras')
+    filing = prep_incorp_filing(session, 'BC1234567', '1', 'mras')
     token = '1'
     # run worker
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
@@ -90,7 +90,7 @@ def test_process_bn_email(app, session):
     """Assert that a BN email msg is processed correctly."""
     # setup filing + business for email
     identifier = 'BC1234567'
-    filing = email_prepped_filing(session, identifier, '1', 'bn')
+    filing = prep_incorp_filing(session, identifier, '1', 'bn')
     business = Business.find_by_identifier(identifier)
     # sanity check
     assert filing.id

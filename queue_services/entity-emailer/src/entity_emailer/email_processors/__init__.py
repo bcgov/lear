@@ -20,6 +20,8 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
+import requests
+from entity_queue_common.service_utils import logger
 from flask import current_app
 from legal_api.models import Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -43,12 +45,12 @@ def get_filing_info(filing_id: str) -> (Filing, dict, dict, str, str):
     return filing, business, leg_tmz_filing_date, leg_tmz_effective_date
 
 
-def get_recipients(option: str, filing_json: dict) -> str:
+def get_recipients(option: str, filing_json: dict, token: str = None) -> str:
     """Get the recipients for the email output."""
     recipients = ''
     if filing_json['filing'].get('incorporationApplication'):
         recipients = filing_json['filing']['incorporationApplication']['contactPoint']['email']
-        if option in ['filed', 'bn']:
+        if option in [Filing.Status.PAID.value, 'bn']:
             parties = filing_json['filing']['incorporationApplication'].get('parties')
             comp_party_email = None
             for party in parties:
@@ -57,6 +59,23 @@ def get_recipients(option: str, filing_json: dict) -> str:
                         comp_party_email = party['officer']['email']
                         break
             recipients = f'{recipients}, {comp_party_email}'
+    else:
+        headers = {
+            'Accept': 'application/json',
+            'Authorization': f'Bearer {token}'
+        }
+        identifier = filing_json['filing']['business']['identifier']
+        contact_info = requests.get(
+            f'{current_app.config.get("AUTH_URL")}/entities/{identifier}',
+            headers=headers
+        )
+        contacts = contact_info.json()['contacts']
+        if not contacts:
+            logger.error('Queue Error: No email in business profile to send output to.', exc_info=True)
+            raise Exception
+
+        recipients = contacts[0]['email']
+
     return recipients
 
 
