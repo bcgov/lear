@@ -980,7 +980,7 @@ class Filing:
                         shares_list=filing.body['shareClasses']
                     )
                 # add name translations
-                translations = filing.body.get('nameTranslations', [])
+                translations = filing.body.get('nameTranslations', {}).get('new', [])
                 if translations:
                     CorpName.create_translations(cursor, corp_num, filing.event_id, translations)
 
