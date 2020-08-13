@@ -18,12 +18,17 @@ from typing import Dict
 import dpath
 from legal_api.models import Business
 
-from entity_filer.filing_processors.filing_components import business_info
+from entity_filer.filing_processors.filing_components import aliases, business_info
 
 
 def process(business: Business, filing: Dict):
     """Render the Alteration onto the model objects."""
-    # Alter the corp type
+    # Alter the corp type, if any
     with suppress(IndexError, KeyError, TypeError):
         business_json = dpath.util.get(filing, '/alteration/business')
         business_info.set_corp_type(business, business_json)
+
+    # update name translations, if any
+    with suppress(IndexError, KeyError, TypeError):
+        business_json = dpath.util.get(filing, '/alteration/nameTranslations')
+        aliases.update_aliases(business, business_json)
