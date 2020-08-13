@@ -38,6 +38,7 @@ FILING_TYPE_CONVERTER = {
 
 
 def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_date_time: str) -> list:
+    # pylint: disable=too-many-locals, too-many-branches
     """Get the pdfs for the incorporation output."""
     pdfs = []
     headers = {
@@ -138,19 +139,19 @@ def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_da
     return pdfs
 
 
-def process(email_msg: dict, token: str) -> dict:  # pylint: disable=too-many-locals
+def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals
     """Build the email for Business Number notification."""
-    logger.debug('filing_notification: %s', email_msg)
+    logger.debug('filing_notification: %s', email_info)
     # get template and fill in parts
-    filing_type, status = email_msg['email']['type'], email_msg['email']['option']
+    filing_type, status = email_info['type'], email_info['option']
 
     template = Path(
         f'{current_app.config.get("TEMPLATE_PATH")}/BC-{FILING_TYPE_CONVERTER[filing_type]}-{status}.html'
     ).read_text()
     filled_template = substitute_template_parts(template)
     # get template vars from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_msg['filingId'])
-
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
+    filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
     html_out = jnja_template.render(
@@ -160,14 +161,15 @@ def process(email_msg: dict, token: str) -> dict:  # pylint: disable=too-many-lo
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
-        (filing.json)['filing']['business'].get('identifier', '')
+        (filing.json)['filing']['business'].get('identifier', ''),
+        email_header=filing_name.upper()
     )
 
     # get attachments
     pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date)
 
     # get recipients
-    recipients = get_recipients(status, filing.filing_json)
+    recipients = get_recipients(status, filing.filing_json, token)
 
     # assign subject
     if status == Filing.Status.PAID.value:

@@ -23,6 +23,7 @@ async def test_publish_event(app, session, stan_server, event_loop, client_id, e
     """Assert that email event is placed on the queue."""
     # Call back for the subscription
     from entity_queue_common.service import ServiceWorker
+
     from entity_emailer.worker import APP_CONFIG, publish_event, qsm
 
     # email handler callback

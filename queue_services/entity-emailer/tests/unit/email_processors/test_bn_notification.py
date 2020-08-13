@@ -15,14 +15,14 @@
 from legal_api.models import Business
 
 from entity_emailer.email_processors import bn_notification
-from tests.unit import email_prepped_filing
+from tests.unit import prep_incorp_filing
 
 
 def test_bn_notificaton(app, session):
     """Assert that the bn email processor builds the email correctly."""
     # setup filing + business for email
     identifier = 'BC1234567'
-    filing = email_prepped_filing(session, identifier, '1', 'bn')
+    filing = prep_incorp_filing(session, identifier, '1', 'bn')
     business = Business.find_by_identifier(identifier)
     # sanity check
     assert filing.id

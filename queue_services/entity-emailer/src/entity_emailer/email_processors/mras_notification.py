@@ -36,7 +36,7 @@ def process(email_msg: dict) -> dict:
     jnja_template = Template(filled_template, autoescape=True)
     html_out = jnja_template.render(
         business=business,
-        incorporationApplication=(filing.json)['filing']['incorporationApplication'],
+        filing=(filing.json)['filing']['incorporationApplication'],
         header=(filing.json)['filing']['header'],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date

@@ -13,13 +13,13 @@
 # limitations under the License.
 """The Unit Tests for the mras email processor."""
 from entity_emailer.email_processors import mras_notification
-from tests.unit import email_prepped_filing
+from tests.unit import prep_incorp_filing
 
 
 def test_mras_notification(app, session):
     """Assert that the legal name is changed."""
     # setup filing + business for email
-    filing = email_prepped_filing(session, 'BC1234567', '1', 'mras')
+    filing = prep_incorp_filing(session, 'BC1234567', '1', 'mras')
     # run processor
     email = mras_notification.process(
         {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'mras'})
