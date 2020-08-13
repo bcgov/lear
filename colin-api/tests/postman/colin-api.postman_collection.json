@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e7d6bf6f-5575-48c1-a448-29a18e86139d",
+		"_postman_id": "ce2072e5-42f6-4805-b9ac-979cdd424c72",
 		"name": "colin-api",
 		"description": "version=0.108 - This is a Colin API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -15,7 +15,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "88145ea6-62ff-4f5d-968a-f6315fdf0acb",
+								"id": "b879c605-533a-4765-9a0c-d29af7a81c05",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -63,7 +63,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "03ee4287-64b0-4f42-bc75-c45085895114",
+								"id": "2d0c579d-2bae-445f-8b75-87f79c6fec81",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -111,7 +111,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "53de4187-4c7a-4492-9a66-fd88ea412bb7",
+								"id": "49970d5d-ca56-482e-bb8b-3567b880af3c",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -220,7 +220,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "7dbc52a1-3291-4d54-a3ed-0695751e9e51",
+										"id": "b91fa283-f44e-4183-ab28-9931fb4b2ef8",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -371,7 +371,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "d12cdab0-b04e-4084-a83d-293a6518d0be",
+										"id": "d4ae9e25-4894-495e-9f34-5094e991909f",
 										"exec": [
 											"// set event id variable (used for future tests)",
 											"var jsonData = pm.response.json()",
@@ -426,7 +426,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "7c4d2dd6-cd23-41aa-b8b6-ac93254f0c00",
+										"id": "03216264-37de-4b7b-acdd-d556e39cd978",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -551,7 +551,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "79096a12-7b4f-46f2-955b-25f257a23aa6",
+										"id": "b077978e-c1c5-4cdf-a4ad-73485b929fd5",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -605,7 +605,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "aed8a9ef-3fc2-4e77-aebc-d976aa7e4113",
+										"id": "3aabd194-8422-4560-91b3-a9c7ba7a52ff",
 										"exec": [
 											""
 										],
@@ -711,7 +711,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "29d2e36b-5c27-4727-8a1c-326f0197af50",
+										"id": "530d3203-c4be-4548-ba1e-922f5ba573d8",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -873,7 +873,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "444c9ae1-1a9b-4710-9d32-481e5c25739a",
+										"id": "77406a3d-6c5d-4a4c-b952-7a342c9788b1",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -1035,7 +1035,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "4c0e7750-e3aa-4cbf-8855-777c2aa8bbb8",
+										"id": "520e874b-562c-4f36-8a2e-7733faca5a65",
 										"exec": [
 											"// set event id variable (used for future tests)",
 											"var jsonData = pm.response.json()",
@@ -1091,7 +1091,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "302953f6-68a5-433a-9afd-9872d4b0b52d",
+										"id": "686f1807-2ac2-4466-924c-7a27381b59e9",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -1216,7 +1216,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "5d54554a-d2d1-40f8-a6df-27c166ee992c",
+										"id": "ddf7121d-8ac2-44b5-83ff-879a337d16f1",
 										"exec": [
 											"// set event id variable (used for future tests)",
 											"var jsonData = pm.response.json()",
@@ -1271,7 +1271,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "153502c8-8a5b-451b-8c97-526cf45a639b",
+										"id": "df57361b-f0e2-4f93-b37e-3dd677521599",
 										"exec": [
 											""
 										],
@@ -1384,7 +1384,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "13adfc05-3260-4a84-9279-efeeb85330dd",
+										"id": "770cdaf1-c776-422f-b53c-c02572f7dc87",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1509,7 +1509,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "77b88ae9-cc72-4ea0-8765-240bf7014277",
+										"id": "01d7d1e2-d8f2-40de-b3d4-92bd83730af0",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1630,7 +1630,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "6468af4b-12eb-4992-8ac8-730f40f032fe",
+										"id": "e3ed500f-2406-464f-ae52-de9fe7796c2e",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1676,7 +1676,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "38bf1425-42d6-464f-9f27-22aa4b4f00a8",
+										"id": "c3fb02c5-7fdf-4c40-898c-917400d21272",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1726,7 +1726,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "9da29e83-22a0-4bf6-ab3b-e0a8bf8986d4",
+										"id": "01eb597c-41f1-4674-9786-c62f2fac3173",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -1890,7 +1890,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "cd7da04a-5989-4998-8f6b-f7acfd585e80",
+										"id": "6fc342bb-1fab-4d9d-a3b0-454112af74cd",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -2022,7 +2022,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "063f22d1-a668-4e2c-87b4-8f758e78427d",
+										"id": "21d0cebb-6111-4b22-b974-daf91cfb9581",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -2163,7 +2163,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "479d7719-c8e0-4fd5-aa5d-95ff37dd079f",
+										"id": "e60f14ab-64e0-4abf-b4ba-8ea2535f0bfa",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.environment.set(\"coaEventId\", jsonData.filing.changeOfAddress.eventId)",
@@ -2240,7 +2240,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "dc75c286-f7f6-4887-b60c-3a3e427a8b09",
+										"id": "c5bebd4f-b561-40f6-925b-6c841457b4ed",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -2360,7 +2360,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "883e6609-e6f3-4c2d-a081-489729755adf",
+										"id": "797f1fb2-092e-42f6-acf8-8eb5d054e4ac",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.test(\"Response time is less than 10000ms\", function () {",
@@ -2529,7 +2529,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "1dd5da3a-72a9-4255-bd86-483c674a404a",
+										"id": "b35475b1-65f3-43f2-ab3d-ae4986dfd916",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.test(\"Response time is less than 10000ms\", function () {",
@@ -2716,7 +2716,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "0ba3750b-f047-4fbe-b47f-302f34934599",
+										"id": "19fb0952-a4c6-4c70-a691-f3d606c08369",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -2852,7 +2852,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "f6efb1d8-afd4-4f3d-a6ba-d05d5b69ab30",
+										"id": "b559f9ad-1df6-4fb1-be13-9b40836c8ae4",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -2938,7 +2938,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "47259cc9-c2ac-40c7-bcaa-71753bf5c192",
+										"id": "e264f173-fbbf-41c1-88cf-2840ba8d3fd9",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -3058,7 +3058,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "b6f6b0ee-80fe-4b47-a04f-4d8bf5e5bfbd",
+										"id": "0ddddc78-0e0c-40bb-9ef0-2c32cc99ba11",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -3240,7 +3240,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a0fdd626-aa58-41e4-80d4-c69e6dac687f",
+										"id": "0531e9f4-fb38-4d82-b1ee-24764db8ef1a",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -3430,7 +3430,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "6c15c85b-bf07-49f4-9371-27a227aa7bcb",
+										"id": "8983eabe-c536-41fc-8f29-f3f2683a68ed",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -3517,7 +3517,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "297df043-ce63-4338-9923-b624fa26ac04",
+										"id": "e7cf05f0-dede-4853-a337-f62519e51beb",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
@@ -3648,7 +3648,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "94f06e60-b2fe-444a-882f-d4b0df921b21",
+										"id": "cd1bb442-af47-4d16-a8bb-d94c9c5e956f",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -3795,7 +3795,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "ca530707-8abd-4c4e-b1bc-a294342124d8",
+										"id": "0eddb30b-f099-4043-97f5-79148643f970",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -3943,7 +3943,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "5d281b2f-ce26-4fd5-85fa-ad9d17ffff31",
+										"id": "bb1235b2-0058-48d8-856b-2852fa7428a0",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4090,7 +4090,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "d7678578-4e5c-4a65-915b-b7c5aca09ad2",
+										"id": "fb268af3-3f60-46a3-9993-e793528597f9",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -4248,7 +4248,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "ddc83365-6425-45cb-96c0-ed08f38cbcbd",
+										"id": "3c48e5a5-04cf-4f6f-8c1f-2fd83a0f49a2",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4393,7 +4393,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "fb01a228-2c44-4ad5-837b-c49d1b8c753e",
+										"id": "2b51ee01-affc-4bd0-93f8-16aef3211239",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -4431,7 +4431,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "3be35f30-ca0e-4627-a620-efbfdd2606f9",
+										"id": "0d36b6d4-1ade-476f-8ecc-89858a51292e",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -4521,7 +4521,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "681123b1-f307-49b9-b129-ccfa5dade328",
+								"id": "f81e258a-969d-443b-acaa-fc5918f70ac2",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -4531,7 +4531,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c3fe81b0-5fc1-47cb-8923-8acbd098e1c3",
+								"id": "37553d15-2922-498a-99c1-2f475efa365a",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -4551,7 +4551,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "70b55c8c-f325-4887-9dd0-653f5e10008a",
+										"id": "4be31f1a-d300-4fe8-b3e9-28a66aedee51",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4572,7 +4572,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "46bb6488-61ee-4802-8204-889440c16895",
+										"id": "ce6a8e4e-03fb-4746-af91-3a41471bb444",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -4694,7 +4694,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "4e0c6064-707b-4cc7-9cc0-16e283353149",
+										"id": "aa0eddaa-0a9a-4542-ac86-3aa7e4921cb0",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4715,7 +4715,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "cb05fa9e-6a16-4f09-b508-51172158fa61",
+										"id": "1fd590f0-33c3-4474-af86-53b2570d84da",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -4837,7 +4837,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "3345e287-9977-499e-8bd4-28997e786a72",
+										"id": "8a20bac7-bf07-40bd-8bf8-a4d64ea138f8",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4858,7 +4858,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "b4a58bc4-f056-4016-a5a7-7f6cd03aa54c",
+										"id": "89f98430-d3ca-4599-9874-fc8b623ea831",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -4980,7 +4980,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "8849e650-9f32-4c68-81dc-52a48bda3383",
+										"id": "d910ec4e-984b-4e35-92dc-8f0f25438e36",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -5001,7 +5001,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "faac082a-4e83-4839-a96e-48d021b611bc",
+										"id": "03991b79-3421-4a43-b46c-286cc639c969",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -5137,7 +5137,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a6af0073-2a84-440b-bec5-3c87cd58aedc",
+										"id": "dfe9cb5b-2ff6-48d6-b4d6-5e2f9a2a1ca3",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -5263,7 +5263,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "36fd09bc-af5f-4833-9386-830d0000fbf0",
+										"id": "24f82f28-b0d4-424d-9925-d459c0135bc7",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -5395,7 +5395,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "32a40882-d8be-4fec-aaca-142a97d6e214",
+										"id": "36db6586-d971-4cf7-a180-052b4731ee16",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -5540,7 +5540,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "f09afa40-e836-42b0-8084-21a5cd477683",
+										"id": "f8e29b0f-b7d5-4184-825e-b47e84b30f42",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -5692,7 +5692,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "2c85fa0b-6ffb-427d-8904-b9c67a405865",
+										"id": "d4a3b6f8-ab8d-4ff4-a2c2-d24aac761e67",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -5828,7 +5828,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "9ba2d65b-ab9e-4344-8ee3-cf54dfb0c980",
+										"id": "8558894a-c7a8-44b9-a453-1adfee6446c8",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -5971,7 +5971,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a0289d99-8fd1-41ff-b041-7943de23977d",
+										"id": "7c416dae-9b58-4733-a0de-108bfbfbcd27",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -6035,7 +6035,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "c01dccbc-3feb-4065-87b9-21aa86a62abf",
+										"id": "5cffc3ec-26a7-4e77-8575-acffb8d18e13",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -6106,7 +6106,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "bc055b82-9588-4ed6-9925-9813d9978002",
+										"id": "fd3fa204-5317-4939-9bd1-c9477bc72f98",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -6240,7 +6240,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "5ac92df0-c081-45f8-9cc3-2fd67a9d7faa",
+										"id": "78142149-0031-40ef-97fa-299ca47a7e0f",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -6374,7 +6374,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "94e09c8f-d6de-43d5-ae75-b837d8289fb8",
+										"id": "fd1dfae9-70df-4d75-89e9-7f98d86d164b",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -6515,7 +6515,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "6ac2b293-b806-4798-880a-498e9120d49c",
+										"id": "55b6a0b9-ac1d-484b-8733-5d88b021b7c9",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -6653,7 +6653,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "bc861bd7-3980-4562-8ab2-cb5096115be3",
+										"id": "054c1993-7c34-4d9e-874b-6541c1311b7b",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -6692,7 +6692,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "e8ce664a-7bd5-4a5a-b67d-21a75291cc67",
+										"id": "56e9463b-be6f-4b43-ae40-e77498745c9f",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -6842,7 +6842,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "fca2f7d8-229d-4092-a188-7a4bc0555660",
+										"id": "97f23cda-749f-4b1c-856f-c7a5617f5a09",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -6881,7 +6881,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "bbb07f60-e5d2-469c-8fdb-cda9918c8526",
+										"id": "07e864c9-af24-4adc-97f2-0067bed8b56e",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -7031,7 +7031,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "de988d98-946b-4f39-b8f9-3b388748db8a",
+										"id": "7ffe8379-8551-46fb-83e8-79c700eb75b1",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -7070,7 +7070,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "2a07317f-2f85-4c39-b759-d9ddafc75ce8",
+										"id": "cfba20c5-7d88-4d56-8604-a1ba57bf5404",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -7227,7 +7227,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "08ead4a7-b6c2-47b4-bc12-c36377c4bbb3",
+										"id": "0a3d8cbe-cc8a-49c2-bbd8-ce513fb82a8c",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -7357,7 +7357,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "14812b38-dcb7-41d2-86ec-05c8224e16de",
+								"id": "dab3b73f-f4e8-42ea-b78c-5985ce6be83d",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -7367,7 +7367,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2d4ebf14-aebb-43bf-a860-a4b826aac2c1",
+								"id": "e8241690-84cd-4c63-b0f0-17cf9e5b87f4",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -7387,7 +7387,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "89be028d-b1c1-4c3d-bbb6-a2bd1029f739",
+										"id": "4b5e4769-4058-4856-8a8e-53fca0171d2b",
 										"exec": [
 											"// set event id variable (used for future tests)",
 											"var jsonData = pm.response.json()",
@@ -7430,7 +7430,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "278a572c-6bea-4f3d-9026-f33afc29bf88",
+										"id": "30fd8e99-20bd-4de8-976d-2e2f67030548",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -7555,7 +7555,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "8efc11c6-f8be-4954-a2a8-bd830b9cea0b",
+										"id": "4c865a33-00cd-4411-859b-4c4c9047a76f",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -7695,7 +7695,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "ab6b3902-3bf5-4c91-942a-9431f2ce604d",
+										"id": "b4bcd85b-0666-4ad7-b958-048d27a4a1e1",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -7851,7 +7851,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "6b87f9e0-399e-43d3-b787-97577d3b7327",
+										"id": "88946bfa-4b68-4a05-8ebf-c10d9fa77425",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -7926,7 +7926,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "97c48a49-c216-40e3-97bd-8de455ddf7f9",
+										"id": "be7158aa-7f45-48e1-b40c-7a8077f301c7",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -8046,7 +8046,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "de78f333-7f68-4bc9-9f59-325d2e75590f",
+										"id": "e5483c66-80f5-4b18-952b-5882f1288749",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -8197,7 +8197,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "053c7b71-a5c6-49a4-998b-c5691957986f",
+										"id": "e35b406c-1dd0-4aea-a462-b4308f5bc7e1",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -8375,7 +8375,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "c9d42e44-2fd5-47e0-a9d9-bfb8e6109500",
+								"id": "01017b80-74d1-4c30-a4ea-538a05b25408",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -8385,7 +8385,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1e698f3a-2ef3-468b-bbc3-383ab9dc6020",
+								"id": "5e90e2ea-baa2-4a3a-8013-87f03ed42b4d",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -8405,7 +8405,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "b4f4591e-38d9-442d-97da-047296948de7",
+										"id": "809c2571-d0e7-478c-880e-06355195e5ca",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.environment.set(\"coaEventId\", jsonData.filing.changeOfAddress.eventId)",
@@ -8460,7 +8460,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "c4dac992-3d6e-426a-b2a9-0281bf4d16e6",
+										"id": "83e77ce3-dd1f-4814-afc3-77ceae307740",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -8580,7 +8580,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "8cfdec29-197d-483d-b500-c7bd5fa3fcf9",
+										"id": "ea84213c-a9e5-46a9-a52c-a9f625d74132",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -8730,7 +8730,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "e41df2dc-7ddc-48a8-ab0d-090d6d1cd2bc",
+										"id": "d4777afb-4bf8-4b0a-976d-cc687d337caf",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -8892,7 +8892,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "f5b469e4-09f4-4f7f-a2a9-dfbc0e20521e",
+								"id": "29d51985-a2eb-471c-8865-3c7d8b6ff74f",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -8902,7 +8902,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b3592dbf-22ba-423d-9462-803483039c8a",
+								"id": "4ca1c99b-a7f9-4cfb-8c93-beb6499087c9",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -8923,7 +8923,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"alteration\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n\t\t\t\"learEffectiveDate\": \"2020-06-29T17:46:23.315651+00:00\"\n        },\n        \"business\": {\n            \"identifier\": \"BC0877939\",\n            \"legalName\": \"CTST MIGRATION 1 LIMITED\",\n            \"legalType\": \"BC\"\n        },\n        \"alteration\": {\n            \"provisionsRemoved\": false,\n            \"business\": {\n                \"legalType\": \"BC\"\n            },\n            \"nameRequest\": {\n                \"legalName\": \"new name BC877939\",\n                \"nrNumber\": \"NR123567\",\n                \"legalType\": \"BC\"\n            },\n            \"nameTranslations\": {\n                \"new\": [\"Financière de l’Odet BC877939\"],\n                \"modified\": [{\"oldValue\": \"DFASDFAD\", \"newValue\": \"new tr skjvnsrn BC877939\"}]\n            },\n            \"shareStructure\": {\n                \"resolutionDates\": [\"2020-05-23\", \"2020-06-01\"],\n                \"shareClasses\": [{\n                    \"name\": \"class1\",\n                    \"priority\": 1,\n                    \"maxNumberOfShares\": 600,\n                    \"parValue\": 1,\n                    \"currency\": \"CAD\",\n                    \"hasMaximumShares\": true,\n                    \"hasParValue\": true,\n                    \"hasRightsOrRestrictions\": false,\n                    \"series\": [{\n                        \"name\": \"series1\",\n                        \"priority\": 1,\n                        \"maxNumberOfShares\": 600,\n                        \"hasMaximumShares\": true,\n                        \"hasRightsOrRestrictions\": false\n                    }]\n                }]\n            }\n        }\n    }\n}",
+									"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"alteration\",\n\t\t\t\"date\": \"2020-10-12\",\n\t\t\t\"certifiedBy\": \"full name\",\n\t\t\t\"learEffectiveDate\": \"2020-06-29T17:46:23.315651+00:00\"\n        },\n        \"business\": {\n            \"identifier\": \"BC0877939\",\n            \"legalName\": \"CTST MIGRATION 1 LIMITED\",\n            \"legalType\": \"BC\"\n        },\n        \"alteration\": {\n            \"provisionsRemoved\": false,\n            \"business\": {\n                \"legalType\": \"BC\"\n            },\n            \"contactPoint\": {\n                \"email\": \"test@test.ca\"\n            },\n            \"nameRequest\": {\n                \"legalName\": \"new name BC877939\",\n                \"nrNumber\": \"NR123567\",\n                \"legalType\": \"BC\"\n            },\n            \"nameTranslations\": {\n                \"new\": [\"Financière de l’Odet BC877939\"],\n                \"modified\": [{\"oldValue\": \"DFASDFAD\", \"newValue\": \"new tr skjvnsrn BC877939\"}]\n            },\n            \"shareStructure\": {\n                \"resolutionDates\": [\"2020-05-23\", \"2020-06-01\"],\n                \"shareClasses\": [{\n                    \"name\": \"class1\",\n                    \"priority\": 1,\n                    \"maxNumberOfShares\": 600,\n                    \"parValue\": 1,\n                    \"currency\": \"CAD\",\n                    \"hasMaximumShares\": true,\n                    \"hasParValue\": true,\n                    \"hasRightsOrRestrictions\": false,\n                    \"series\": [{\n                        \"name\": \"series1\",\n                        \"priority\": 1,\n                        \"maxNumberOfShares\": 600,\n                        \"hasMaximumShares\": true,\n                        \"hasRightsOrRestrictions\": false\n                    }]\n                }]\n            }\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -8957,7 +8957,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "c274d8cb-db2b-472d-9f55-0eb097cca3f5",
+						"id": "154e5728-36d1-4e19-8177-dfdb76bf23aa",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -8967,7 +8967,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "c524bdce-3d74-4695-9eac-9215d8e137bd",
+						"id": "6fe67136-6e9e-43bb-82c4-42b6d44c06da",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -8982,7 +8982,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "b6424b43-4b08-48df-89bd-c51af39f8f16",
+				"id": "db77d93e-dcaf-464f-9491-5de2d8dc1e99",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -8992,7 +8992,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "96cdf19d-bc9b-4d33-906a-54b771ae6b4b",
+				"id": "247014ef-0f45-475f-8ac9-ef476f2ac95b",
 				"type": "text/javascript",
 				"exec": [
 					""
