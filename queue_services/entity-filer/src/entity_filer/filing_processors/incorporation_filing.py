@@ -179,7 +179,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
             share_class = create_share_class(share_class_info)
             business.share_classes.append(share_class)
 
-    if (name_translations := incorp_filing.get('nameTranslations')):
+    if name_translations := incorp_filing.get('nameTranslations'):
         aliases.update_aliases(business, name_translations)
 
     ia_json = copy.deepcopy(filing_rec.filing_json)

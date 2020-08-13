@@ -12,15 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the Incorporation filing."""
-import copy
-import random
-
-from legal_api.models import Alias, Business
-from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
+from legal_api.models import Alias
 
 from entity_filer.filing_processors.filing_components import aliases
-from entity_filer.worker import process_filing
-from tests.unit import create_business, create_filing
+from tests.unit import create_business
 
 
 def test_new_aliases(app, session):

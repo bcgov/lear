@@ -23,19 +23,21 @@ def update_aliases(business: Business, aliases: Dict) -> Dict:
     if not business:
         return {'error': babel('Business required before alternate names can be set.')}
 
-    if (ceased_aliases := aliases.get('ceased')):
+    if ceased_aliases := aliases.get('ceased'):
         for current_alias in business.aliases.all():
             if current_alias.alias in ceased_aliases:
                 business.aliases.remove(current_alias)
 
-    if (modified_aliases := aliases.get('modified')):
+    if modified_aliases := aliases.get('modified'):
         for current_alias in business.aliases.all():
             for mod_alias in modified_aliases:
                 if current_alias.alias == mod_alias.get('oldValue'):
                     current_alias.alias = str(mod_alias.get('newValue')).upper()
 
-    if (new_aliases := aliases.get('new')):
+    if new_aliases := aliases.get('new'):
         for new_alias in new_aliases:
             alias = Alias(alias=new_alias.upper(),
                           type=Alias.AliasType.TRANSLATION.value)
             business.aliases.append(alias)
+
+    return None
