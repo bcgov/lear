@@ -16,9 +16,10 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from legal_api.models import Business
+import sentry_sdk
+from legal_api.models import Business, Filing
 
-from entity_filer.filing_processors.filing_components import aliases, business_info
+from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile
 
 
 def process(business: Business, filing: Dict):
@@ -32,3 +33,16 @@ def process(business: Business, filing: Dict):
     with suppress(IndexError, KeyError, TypeError):
         business_json = dpath.util.get(filing, '/alteration/nameTranslations')
         aliases.update_aliases(business, business_json)
+
+
+def post_process(business: Business, filing: Filing):
+    """Post processing activities for incorporations.
+
+    THIS SHOULD NOT ALTER THE MODEL
+    """
+    with suppress(IndexError, KeyError, TypeError):
+        err = business_profile.update_business_profile(
+            business,
+            filing.json['filing']['incorporationApplication']['contactPoint']
+        )
+        sentry_sdk.capture_message(f'Queue Error: Update Business for filing:{filing.id},  error:{err}', level='error')
