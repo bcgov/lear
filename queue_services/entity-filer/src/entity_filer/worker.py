@@ -151,12 +151,16 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             db.session.commit()
 
             # post filing changes to other services
+            if any('alteration' in x for x in legal_filings):
+                alteration.post_process(business, filing_submission)
+
             if any('incorporationApplication' in x for x in legal_filings):
                 filing_submission.business_id = business.id
                 db.session.add(filing_submission)
                 db.session.commit()
                 incorporation_filing.update_affiliation(business, filing_submission)
                 incorporation_filing.consume_nr(business, filing_submission)
+                incorporation_filing.post_process(business, filing_submission)
                 try:
                     await publish_email_message(
                         qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'mras')

@@ -14,6 +14,7 @@
 """File processing rules and actions for the incorporation of a business."""
 import copy
 import json
+from contextlib import suppress
 from http import HTTPStatus
 from typing import Dict
 
@@ -26,6 +27,7 @@ from legal_api.services.bootstrap import AccountService
 
 from entity_filer.filing_processors.filing_components import (
     aliases,
+    business_profile,
     create_office,
     create_party,
     create_role,
@@ -187,3 +189,16 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
     ia_json['filing']['business']['foundingDate'] = business.founding_date.isoformat()
     filing_rec._filing_json = ia_json  # pylint: disable=protected-access; bypass to update filing data
     return business, filing_rec
+
+
+def post_process(business: Business, filing: Filing):
+    """Post processing activities for incorporations.
+
+    THIS SHOULD NOT ALTER THE MODEL
+    """
+    with suppress(IndexError, KeyError, TypeError):
+        err = business_profile.update_business_profile(
+            business,
+            filing.json['filing']['incorporationApplication']['contactPoint']
+        )
+        sentry_sdk.capture_message(f'Queue Error: Update Business for filing:{filing.id},  error:{err}', level='error')
