@@ -35,6 +35,7 @@ from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import EmailException, QueueException, logger
 from flask import Flask
 from legal_api import db
+from legal_api.models import Filing
 from legal_api.services.bootstrap import AccountService
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
@@ -92,8 +93,11 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             email = mras_notification.process(email_msg['email'])
             send_email(email, token)
         elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
-            email = filing_notification.process(email_msg['email'], token)
-            send_email(email, token)
+            if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:
+                logger.debug('No email to send for: %s', email_msg)
+            else:
+                email = filing_notification.process(email_msg['email'], token)
+                send_email(email, token)
         else:
             logger.debug('No email to send for: %s', email_msg)
 

@@ -20,7 +20,7 @@ from legal_api.services.bootstrap import AccountService
 
 from entity_emailer import worker
 from entity_emailer.email_processors import filing_notification
-from tests.unit import prep_incorp_filing
+from tests.unit import prep_incorp_filing, prep_maintenance_filing
 
 
 def test_process_filing_missing_app(app, session):
@@ -65,6 +65,68 @@ def test_process_incorp_email(app, session, option):
                 assert mock_send_email.call_args[0][0]['content']['body']
                 assert mock_send_email.call_args[0][0]['content']['attachments'] == []
                 assert mock_send_email.call_args[0][1] == token
+
+
+@pytest.mark.parametrize(['status', 'filing_type'], [
+    ('PAID', 'annualReport'),
+    ('PAID', 'changeOfAddress'),
+    ('PAID', 'changeOfDirectors'),
+    ('COMPLETED', 'changeOfAddress'),
+    ('COMPLETED', 'changeOfDirectors')
+])
+def test_maintenance_notification(app, session, status, filing_type):
+    """Assert that the legal name is changed."""
+    # setup filing + business for email
+    filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type)
+    token = 'token'
+    # test worker
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+            with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
+              as mock_get_recipients:
+                with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                    worker.process_email(
+                        {'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}, app)
+
+                    assert mock_get_pdfs.call_args[0][0] == status
+                    assert mock_get_pdfs.call_args[0][1] == token
+                    assert mock_get_pdfs.call_args[0][2] == \
+                        {'identifier': 'BC1234567', 'legalype': 'BC', 'legalName': 'test business'}
+                    assert mock_get_pdfs.call_args[0][3] == filing
+                    assert mock_get_recipients.call_args[0][0] == status
+                    assert mock_get_recipients.call_args[0][1] == filing.filing_json
+                    assert mock_get_recipients.call_args[0][2] == token
+
+                    assert mock_send_email.call_args[0][0]['content']['subject']
+                    assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
+                    assert mock_send_email.call_args[0][0]['content']['body']
+                    assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+                    assert mock_send_email.call_args[0][1] == token
+
+
+@pytest.mark.parametrize(['status', 'filing_type', 'identifier'], [
+    ('COMPLETED', 'annualReport', 'BC1234567'),
+    ('PAID', 'changeOfAddress', 'CP1234567'),
+    ('PAID', 'changeOfDirectors', 'CP1234567'),
+    ('COMPLETED', 'changeOfAddress', 'CP1234567'),
+    ('COMPLETED', 'changeOfDirectors', 'CP1234567')
+])
+def test_skips_notification(app, session, status, filing_type, identifier):
+    """Assert that the legal name is changed."""
+    # setup filing + business for email
+    filing = prep_maintenance_filing(session, identifier, '1', status, filing_type)
+    token = 'token'
+    # test processor
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(filing_notification, '_get_pdfs', return_value=[]):
+            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                worker.process_email(
+                    {'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}, app)
+
+                if identifier[:2] == 'CP':
+                    assert mock_send_email.call_args[0][0]['recipients'] == ''
+                else:
+                    assert not mock_send_email.call_args
 
 
 def test_process_mras_email(app, session):
