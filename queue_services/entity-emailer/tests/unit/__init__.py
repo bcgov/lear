@@ -90,7 +90,8 @@ def prep_maintenance_filing(session, identifier, payment_id, status, filing_type
     business = create_business(identifier, 'BC', 'test business')
     filing_template = copy.deepcopy(FILING_TEMPLATE)
     filing_template['filing']['header']['name'] = filing_type
-    filing_template['filing']['business'] = {'identifier': 'BC1234567', 'legalype': 'BC', 'legalName': 'test business'}
+    filing_template['filing']['business'] = \
+        {'identifier': f'{identifier}', 'legalype': 'BC', 'legalName': 'test business'}
     filing_template['filing'][filing_type] = copy.deepcopy(FILING_TYPE_MAPPER[filing_type])
     filing = create_filing(token=None, filing_json=filing_template, business_id=business.id)
     filing.save()

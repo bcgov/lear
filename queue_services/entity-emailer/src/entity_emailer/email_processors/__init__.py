@@ -65,16 +65,18 @@ def get_recipients(option: str, filing_json: dict, token: str = None) -> str:
             'Authorization': f'Bearer {token}'
         }
         identifier = filing_json['filing']['business']['identifier']
-        contact_info = requests.get(
-            f'{current_app.config.get("AUTH_URL")}/entities/{identifier}',
-            headers=headers
-        )
-        contacts = contact_info.json()['contacts']
-        if not contacts:
-            logger.error('Queue Error: No email in business profile to send output to.', exc_info=True)
-            raise Exception
+        if not identifier[:2] == 'CP':
+            # only add recipients if not coop
+            contact_info = requests.get(
+                f'{current_app.config.get("AUTH_URL")}/entities/{identifier}',
+                headers=headers
+            )
+            contacts = contact_info.json()['contacts']
+            if not contacts:
+                logger.error('Queue Error: No email in business profile to send output to.', exc_info=True)
+                raise Exception
 
-        recipients = contacts[0]['email']
+            recipients = contacts[0]['email']
 
     return recipients
 
