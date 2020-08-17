@@ -1049,13 +1049,14 @@ class Filing:
                             event_id=filing.event_id,
                             resolution_date=date_str
                         )
-                    ShareObject.end_share_structure(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
-                    ShareObject.create_share_structure(
-                        cursor=cursor,
-                        corp_num=corp_num,
-                        event_id=filing.event_id,
-                        shares_list=filing.body['shareStructure']['shareClasses']
-                    )
+                    if filing.body['shareStructure'].get('shareClasses'):
+                        ShareObject.end_share_structure(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
+                        ShareObject.create_share_structure(
+                            cursor=cursor,
+                            corp_num=corp_num,
+                            event_id=filing.event_id,
+                            shares_list=filing.body['shareStructure']['shareClasses']
+                        )
 
                 if filing.body.get('provisionsRemoved'):
                     Business.end_current_corp_restriction(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
