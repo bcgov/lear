@@ -58,9 +58,12 @@ def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_da
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             file_name = filing.filing_type[0].upper() + \
                 ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
+            if ar_date := filing.filing_json['filing'].get('annualReport', {}).get('annualReportDate'):
+                file_name = f'{ar_date[:4]} {file_name}'
+
             pdfs.append(
                 {
-                    'fileName': f'Notice of {file_name}.pdf',
+                    'fileName': f'{file_name}.pdf',
                     'fileBytes': filing_pdf_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': '1'
