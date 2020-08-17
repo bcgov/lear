@@ -109,7 +109,7 @@ class Filing:
 
     def get_email(self):
         """Get email address."""
-        if self.body.get(self.filing_type).get('contactPoint'):
+        if self.body.get(self.filing_type, {}).get('contactPoint'):
             return self.body[self.filing_type]['contactPoint']['email']
         return self.header.get('email', '')
 
