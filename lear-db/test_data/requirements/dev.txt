@@ -13,3 +13,4 @@ autopep8
 coverage
 pylint
 pylint-flask
+isort<5,>=4.2.5
