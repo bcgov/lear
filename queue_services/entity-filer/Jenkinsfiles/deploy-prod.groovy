@@ -35,7 +35,7 @@ properties([
 stage("deploy ${COMPONENT_NAME}-${TAG_NAME}") {
     script {
         timeout(time: 1, unit: 'DAYS') {
-            input message: "Deploy to PROD?", id: "1234", submitter: 'admin,edit'
+            input message: "Deploy to PROD?", id: "1234", submitter: 'admin,kialj876-admin,rarmitag-admin,pwei1018-admin,thorwolpert-admin,leksmall-edit,cameron-freshworks-edit,severinbeauvais-edit'
         }
         openshift.withCluster() {
             openshift.withProject("${DEPLOY_PIPELINE_LOC}") {
