@@ -144,8 +144,7 @@ def validate_parties_mailing_address(incorporation_json) -> Error:
                 )
                 msg.append({'error': 'Person %s: Mailing address %s %s is invalid' % (
                     item['officer']['id'], k, v
-                ),
-                            'path': err_path})
+                ), 'path': err_path})
 
     if msg:
         return msg
@@ -153,12 +152,20 @@ def validate_parties_mailing_address(incorporation_json) -> Error:
     return None
 
 
-def validate_share_structure(incorporation_json) -> Error:
+def validate_share_structure(incorporation_json) -> Error:  # pylint: disable=too-many-branches
     """Validate the share structure data of the incorporation filing."""
     share_classes = incorporation_json['filing']['incorporationApplication']['shareClasses']
     msg = []
+    memoize_names = []
 
     for index, item in enumerate(share_classes):
+        if item['name'] in memoize_names:
+            err_path = '/filing/incorporationApplication/shareClasses/%s/name/' % index
+            msg.append({'error': 'Share class %s name already used in a share class or series.' % item['name'],
+                        'path': err_path})
+        else:
+            memoize_names.append(item['name'])
+
         if item['hasMaximumShares']:
             if not item.get('maxNumberOfShares', None):
                 err_path = '/filing/incorporationApplication/shareClasses/%s/maxNumberOfShares/' % index
@@ -173,6 +180,12 @@ def validate_share_structure(incorporation_json) -> Error:
                 msg.append({'error': 'Share class %s must specify currency' % item['name'], 'path': err_path})
         for series_index, series in enumerate(item.get('series', [])):
             err_path = '/filing/incorporationApplication/shareClasses/%s/series/%s' % (index, series_index)
+            if series['name'] in memoize_names:
+                msg.append({'error': 'Share series %s name already used in a share class or series.' % series['name'],
+                            'path': err_path})
+            else:
+                memoize_names.append(series['name'])
+
             if series['hasMaximumShares']:
                 if not series.get('maxNumberOfShares', None):
                     msg.append({
