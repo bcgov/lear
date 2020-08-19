@@ -97,7 +97,11 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 logger.debug('No email to send for: %s', email_msg)
             else:
                 email = filing_notification.process(email_msg['email'], token)
-                send_email(email, token)
+                if email:
+                    send_email(email, token)
+                else:
+                    # should only be if this was for a a coops filing
+                    logger.debug('No email to send for: %s', email_msg)
         else:
             logger.debug('No email to send for: %s', email_msg)
 
