@@ -173,6 +173,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     # get recipients
     recipients = get_recipients(status, filing.filing_json, token)
+    if not recipients:
+        return {}
 
     # assign subject
     if status == Filing.Status.PAID.value:
