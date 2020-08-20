@@ -201,8 +201,18 @@ class DocumentMetaService():
 
     def get_alteration_reports(self):  # pylint: disable=no-self-use
         """Return alteration meta object(s)."""
-        # FUTURE: return applicable documents
-        return []
+        reports = []
+
+        if self.is_completed():
+            reports.append(
+                self.create_report_object(
+                    DocumentMetaService.NOTICE_OF_ARTICLES,
+                    self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
+                    DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
+                )
+            )
+
+        return reports
 
     def get_incorporation_application_reports(self, filing: dict):
         """Return incorporation application meta object(s)."""

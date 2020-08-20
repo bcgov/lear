@@ -560,7 +560,7 @@ def test_alteration(session, app):
         }
 
         documents = document_meta.get_documents(filing)
-        assert len(documents) == 0
+        assert len(documents) == 1
 
 
 def test_ia_fed(app):
