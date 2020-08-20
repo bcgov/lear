@@ -58,7 +58,7 @@ def test_validate_cod_basic(session, test_name, now,
     # convert 'now' to an effective date with 0 time in the legislation timezone, same as the UI does
     effective_date = LegislationDatetime.as_legislation_timezone(now)
     effective_date = effective_date.replace(hour=0, minute=0, second=0, microsecond=0)
-    effective_date = LegislationDatetime.as_utc_timezone(effective_date)
+    effective_date = LegislationDatetime.as_gmt_timezone(effective_date)
 
     f = copy.deepcopy(FILING_HEADER)
     f['filing']['header']['date'] = now.date().isoformat()

@@ -42,8 +42,8 @@ class LegislationDatetime():
         return date_time.astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
 
     @staticmethod
-    def as_utc_timezone(date_time: datetime) -> datetime:
-        """Return a datetime adjusted to the GMT timezone (aka UTC)."""
+    def as_gmt_timezone(date_time: datetime) -> datetime:
+        """Return a datetime adjusted to the offset-aware GMT timezone."""
         return date_time.astimezone(pytz.timezone('GMT'))
 
     @staticmethod

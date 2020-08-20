@@ -82,6 +82,19 @@ def validate_effective_date(business: Business, cod: Dict) -> List:
     """
     msg = []
 
+    # get submission datetime string from filing
+    try:
+        submission_datetime_str = cod['filing']['header']['date']
+    except KeyError:
+        return {'error': babel('No submission date provided.')}
+
+    # convert string to datetime
+    try:
+        submission_datetime_utc = datetime.fromisoformat(submission_datetime_str)
+        submission_datetime_gmt = LegislationDatetime.as_gmt_timezone(submission_datetime_utc)
+    except ValueError:
+        return {'error': babel('Invalid ISO format for submission date.')}
+
     # get effective datetime string from filing
     try:
         effective_datetime_str = cod['filing']['header']['effectiveDate']
@@ -101,17 +114,26 @@ def validate_effective_date(business: Business, cod: Dict) -> List:
     # convert to legislation timezone and then get date only
     effective_date_leg = LegislationDatetime.as_legislation_timezone(effective_datetime_utc).date()
 
+    # check if submission date is before their incorporation date
+    if submission_datetime_gmt < business.founding_date:
+        msg.append({'error': babel('Submission date cannot be before businesses founding date.')})
+
     # check if effective date is before their incorporation date
     founding_date_leg = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
     if effective_date_leg < founding_date_leg:
         msg.append({'error': babel('Effective date cannot be before businesses founding date.')})
 
-    # check if effective date is before their most recent COD or AR date
-    last_cod_filing = Filing.get_most_recent_legal_filing(business.id,
-                                                          Filing.FILINGS['changeOfDirectors']['name'])
+    # fetch most recent COD or AR filing
+    last_cod_filing = Filing.get_most_recent_legal_filing(business.id, Filing.FILINGS['changeOfDirectors']['name'])
+
     if last_cod_filing:
-        last_cod_date_leg = LegislationDatetime.as_legislation_timezone(last_cod_filing.effective_date).date()
-        if effective_date_leg < last_cod_date_leg:
+        # check if effective date is before their most recent COD or AR effective date
+        last_cod_effective_date_leg = LegislationDatetime.as_legislation_timezone(last_cod_filing.effective_date).date()
+        if effective_date_leg < last_cod_effective_date_leg:
             msg.append({'error': babel('Effective date cannot be before another Change of Director filing.')})
+
+        # check if submission date is before their most recent COD or AR filing date
+        if submission_datetime_gmt < last_cod_filing.filing_date:
+            msg.append({'error': babel('Submission date cannot be before another Change of Director filing.')})
 
     return msg
