@@ -26,7 +26,7 @@ from entity_emailer.email_processors import get_filing_info, get_recipients, sub
 def process(email_msg: dict) -> dict:
     """Build the email for mras notification."""
     logger.debug('mras_notification: %s', email_msg)
-    filing_type = email_info['type']
+    filing_type = email_msg['type']
     # get template and fill in parts
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-MRAS.html').read_text()
     filled_template = substitute_template_parts(template)
