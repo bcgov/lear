@@ -165,7 +165,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         effective_date_time=leg_tmz_effective_date,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
         (filing.json)['filing']['business'].get('identifier', ''),
-        email_header=filing_name.upper()
+        email_header=filing_name.upper(),
+        filing_type=filing_type
     )
 
     # get attachments
