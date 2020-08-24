@@ -741,6 +741,360 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "post all tables BC1218877",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "61603b75-dcee-4136-8148-aa6c0743f898",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "businesses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/businesses.csv"
+								},
+								{
+									"key": "filings",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/filings.csv"
+								},
+								{
+									"key": "offices",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/offices.csv"
+								},
+								{
+									"key": "addresses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/addresses.csv"
+								},
+								{
+									"key": "parties-addresses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/parties-addresses.csv"
+								},
+								{
+									"key": "parties",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/parties.csv"
+								},
+								{
+									"key": "party_roles",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/party_roles.csv"
+								},
+								{
+									"key": "businesses_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/businesses_version.csv"
+								},
+								{
+									"key": "offices_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/offices_version.csv"
+								},
+								{
+									"key": "addresses_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/addresses_version.csv"
+								},
+								{
+									"key": "parties-addresses_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/parties-addresses_version.csv"
+								},
+								{
+									"key": "parties_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/parties_version.csv"
+								},
+								{
+									"key": "party_roles_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/party_roles_version.csv"
+								},
+								{
+									"key": "share_classes",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/share_classes.csv"
+								},
+								{
+									"key": "share_classes_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/share_classes_version.csv"
+								},
+								{
+									"key": "aliases",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "aliases_version",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "resolutions",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "resolutions_version",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "share_series",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/share_series.csv"
+								},
+								{
+									"key": "share_series_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/share_series_version.csv"
+								},
+								{
+									"key": "transaction",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/transaction.csv"
+								},
+								{
+									"key": "parties_version-addresses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/parties_version-addresses.csv"
+								},
+								{
+									"key": "parties_version-addresses_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218877/parties_version-addresses_version.csv"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/import/BC",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"import",
+								"BC"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post all tables BC1218875",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "26c83acf-cf14-4854-b517-fd4ab56fc8a0",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "businesses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/businesses.csv"
+								},
+								{
+									"key": "filings",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/filings.csv"
+								},
+								{
+									"key": "offices",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/offices.csv"
+								},
+								{
+									"key": "addresses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/addresses.csv"
+								},
+								{
+									"key": "parties-addresses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/parties-addresses.csv"
+								},
+								{
+									"key": "parties",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/parties.csv"
+								},
+								{
+									"key": "party_roles",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/party_roles.csv"
+								},
+								{
+									"key": "businesses_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/businesses_version.csv"
+								},
+								{
+									"key": "offices_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/offices_version.csv"
+								},
+								{
+									"key": "addresses_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/addresses_version.csv"
+								},
+								{
+									"key": "parties-addresses_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/parties-addresses_version.csv"
+								},
+								{
+									"key": "parties_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/parties_version.csv"
+								},
+								{
+									"key": "party_roles_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/party_roles_version.csv"
+								},
+								{
+									"key": "share_classes",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/share_classes.csv"
+								},
+								{
+									"key": "share_classes_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/share_classes_version.csv"
+								},
+								{
+									"key": "aliases",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "aliases_version",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "resolutions",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "resolutions_version",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "share_series",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/share_series.csv"
+								},
+								{
+									"key": "share_series_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/share_series_version.csv"
+								},
+								{
+									"key": "transaction",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/transaction.csv"
+								},
+								{
+									"key": "parties_version-addresses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/parties_version-addresses.csv"
+								},
+								{
+									"key": "parties_version-addresses_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/BC1218875/parties_version-addresses_version.csv"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/fixture/import/BC",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"fixture",
+								"import",
+								"BC"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
