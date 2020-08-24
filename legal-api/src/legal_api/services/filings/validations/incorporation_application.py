@@ -154,7 +154,8 @@ def validate_parties_mailing_address(incorporation_json) -> Error:
 
 def validate_share_structure(incorporation_json) -> Error:  # pylint: disable=too-many-branches
     """Validate the share structure data of the incorporation filing."""
-    share_classes = incorporation_json['filing']['incorporationApplication']['shareClasses']
+    share_classes = incorporation_json['filing']['incorporationApplication'] \
+        .get('shareStructure', {}).get('shareClasses', {})
     msg = []
     memoize_names = []
 

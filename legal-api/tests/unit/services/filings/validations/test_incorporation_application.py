@@ -324,21 +324,25 @@ def test_validate_incorporation_share_classes(session, test_name,
     f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
 
-    f['filing']['incorporationApplication']['shareClasses'][0]['name'] = class_name_1
-    f['filing']['incorporationApplication']['shareClasses'][0]['hasMaximumShares'] = class_has_max_shares
-    f['filing']['incorporationApplication']['shareClasses'][0]['maxNumberOfShares'] = class_max_shares
-    f['filing']['incorporationApplication']['shareClasses'][0]['hasParValue'] = has_par_value
-    f['filing']['incorporationApplication']['shareClasses'][0]['parValue'] = par_value
-    f['filing']['incorporationApplication']['shareClasses'][0]['currency'] = currency
-    f['filing']['incorporationApplication']['shareClasses'][0]['series'][0]['name'] = series_name_1
-    f['filing']['incorporationApplication']['shareClasses'][0]['series'][0]['hasMaximumShares'] = series_has_max_shares
-    f['filing']['incorporationApplication']['shareClasses'][0]['series'][0]['maxNumberOfShares'] = series_max_shares
+    share_structure = f['filing']['incorporationApplication']['shareStructure']
+
+    share_structure['shareClasses'][0]['name'] = class_name_1
+    share_structure['shareClasses'][0]['hasMaximumShares'] = class_has_max_shares
+    share_structure['shareClasses'][0]['maxNumberOfShares'] = class_max_shares
+    share_structure['shareClasses'][0]['hasParValue'] = has_par_value
+    share_structure['shareClasses'][0]['parValue'] = par_value
+    share_structure['shareClasses'][0]['currency'] = currency
+    share_structure['shareClasses'][0]['series'][0]['name'] = series_name_1
+    share_structure['shareClasses'][0]['series'][0]['hasMaximumShares'] = series_has_max_shares
+    share_structure['shareClasses'][0]['series'][0]['maxNumberOfShares'] = series_max_shares
 
     if class_name_2:
-        f['filing']['incorporationApplication']['shareClasses'][1]['name'] = class_name_2
+        # set second shareClass name
+        share_structure['shareClasses'][1]['name'] = class_name_2
 
     if series_name_2:
-        f['filing']['incorporationApplication']['shareClasses'][0]['series'][1]['name'] = series_name_2
+        # set 1st shareClass, 2nd series name
+        share_structure['shareClasses'][0]['series'][1]['name'] = series_name_2
 
     # perform test
     with freeze_time(now):
