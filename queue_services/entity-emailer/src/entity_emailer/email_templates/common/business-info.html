@@ -19,14 +19,12 @@
 
   <tr>
     <td class="name">Incorporation Number:</td>
-    {% if header.status == 'PAID' %}
+    {% if header.status == 'PAID' and filing_type == 'incorporationApplication'
+    %}
     <td class="value">Pending</td>
-    {% elif header.status == 'COMPLETED' %}
+    {% else %}
     <!-- Eg, BC0878529 -->
     <td class="value">{{ business.identifier }}</td>
-    {% else %}
-    <!-- add other cases here -->
-    <td class="value">Unknown</td>
     {% endif %}
   </tr>
 
