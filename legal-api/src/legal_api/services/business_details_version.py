@@ -90,7 +90,7 @@ class VersionedBusinessDetailsService:
         parties = []
         for party_role in party_roles:
             if party_role.cessation_date is None:
-                party_role_json = VersionedBusinessDetailsService.party_role_revision_json(party_role)
+                party_role_json = VersionedBusinessDetailsService.party_role_revision_json(transaction_id, party_role)
                 parties.append(party_role_json)
         return parties
 
@@ -163,12 +163,13 @@ class VersionedBusinessDetailsService:
         return resolutions_arr
 
     @staticmethod
-    def party_role_revision_json(party_role_revision) -> dict:
+    def party_role_revision_json(transaction_id, party_role_revision) -> dict:
         """Return the party member as a json object."""
         cessation_date = datetime.date(party_role_revision.cessation_date).isoformat()\
             if party_role_revision.cessation_date else None
+        party_revision = VersionedBusinessDetailsService.get_party_revision(transaction_id, party_role_revision)
         party = {
-            **VersionedBusinessDetailsService.party_revision_json(party_role_revision.party),
+            **VersionedBusinessDetailsService.party_revision_json(transaction_id, party_revision),
             'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
             'cessationDate': cessation_date,
             'role': party_role_revision.role
@@ -176,7 +177,19 @@ class VersionedBusinessDetailsService:
         return party
 
     @staticmethod
-    def party_revision_json(party_revision) -> dict:
+    def get_party_revision(transaction_id, party_role_revision) -> dict:
+        """Consolidates all party changes upto the given transaction id."""
+        party_version = version_class(Party)
+        party = db.session.query(party_version) \
+            .filter(party_version.transaction_id <= transaction_id) \
+            .filter(party_version.id == party_role_revision.party_id) \
+            .filter(or_(party_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
+                        party_version.end_transaction_id > transaction_id)) \
+            .order_by(party_version.transaction_id).one_or_none()
+        return party
+
+    @staticmethod
+    def party_revision_json(transaction_id, party_revision) -> dict:
         """Return the party member as a json object."""
         if party_revision.party_type == Party.PartyTypes.PERSON.value:
             member = {
@@ -193,14 +206,18 @@ class VersionedBusinessDetailsService:
             member = {
                 'officer': {'organizationName': party_revision.organization_name}
             }
-        if party_revision.delivery_address:
-            member_address = VersionedBusinessDetailsService.address_revision_json(party_revision.delivery_address)
+        if party_revision.delivery_address_id:
+            member_address = VersionedBusinessDetailsService.address_revision_json(
+                VersionedBusinessDetailsService.get_address_revision
+                (transaction_id, party_revision.delivery_address_id))
             if 'addressType' in member_address:
                 del member_address['addressType']
             member['deliveryAddress'] = member_address
-        if party_revision.mailing_address:
+        if party_revision.mailing_address_id:
             member_mailing_address = \
-                VersionedBusinessDetailsService.address_revision_json(party_revision.mailing_address)
+                VersionedBusinessDetailsService.address_revision_json(
+                    VersionedBusinessDetailsService.get_address_revision
+                    (transaction_id, party_revision.mailing_address_id))
             if 'addressType' in member_mailing_address:
                 del member_mailing_address['addressType']
             member['mailingAddress'] = member_mailing_address
@@ -208,6 +225,18 @@ class VersionedBusinessDetailsService:
             if party_revision.delivery_address:
                 member['mailingAddress'] = member['deliveryAddress']
         return member
+
+    @staticmethod
+    def get_address_revision(transaction_id, address_id) -> dict:
+        """Consolidates all party changes upto the given transaction id."""
+        address_version = version_class(Address)
+        address = db.session.query(address_version) \
+            .filter(address_version.transaction_id <= transaction_id) \
+            .filter(address_version.id == address_id) \
+            .filter(or_(address_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
+                        address_version.end_transaction_id > transaction_id)) \
+            .order_by(address_version.transaction_id).one_or_none()
+        return address
 
     @staticmethod
     def address_revision_json(address_revision):
