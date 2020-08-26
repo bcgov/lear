@@ -266,7 +266,10 @@ class Report:  # pylint: disable=too-few-public-methods
         filing['listOfTranslations'] = filing['incorporationApplication'].get('nameTranslations', {})\
             .get('new', [])
         filing['offices'] = filing['incorporationApplication']['offices']
-        filing['shareClasses'] = filing['incorporationApplication']['shareClasses']
+        if filing['incorporationApplication'].get('shareClasses', None):
+            filing['shareClasses'] = filing['incorporationApplication']['shareClasses']
+        else:
+            filing['shareClasses'] = filing['incorporationApplication']['shareStructure']['shareClasses']
 
     def _format_noa_data(self, filing):
         filing['header'] = {}

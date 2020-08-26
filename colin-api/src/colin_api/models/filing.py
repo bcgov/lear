@@ -561,7 +561,9 @@ class Filing:
         filing.body = {
             'offices': offices,
             'eventId': filing_event_info['event_id'],
-            'shareClasses': share_structure.to_dict()['shareClasses'],
+            'shareStructure': {
+                'shareClasses': share_structure.to_dict()['shareClasses']
+            },
             'parties': [x.as_dict() for x in parties]
         }
         filing.filing_type = 'incorporationApplication'
@@ -977,7 +979,7 @@ class Filing:
                         cursor=cursor,
                         corp_num=corp_num,
                         event_id=filing.event_id,
-                        shares_list=filing.body['shareClasses']
+                        shares_list=filing.body.get('shareStructure', {}).get('shareClasses', [])
                     )
                 # add name translations
                 translations = filing.body.get('nameTranslations', {}).get('new', [])
