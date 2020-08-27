@@ -95,6 +95,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
         elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
             if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:
                 logger.debug('No email to send for: %s', email_msg)
+            # Remove this when self serve alteration is implemented.
+            elif etype == 'alteration' and option == Filing.Status.PAID.value:
+                logger.debug('No email to send for: %s', email_msg)
             else:
                 email = filing_notification.process(email_msg['email'], token)
                 if email:

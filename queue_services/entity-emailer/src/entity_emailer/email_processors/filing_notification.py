@@ -33,7 +33,8 @@ FILING_TYPE_CONVERTER = {
     'incorporationApplication': 'IA',
     'annualReport': 'AR',
     'changeOfDirectors': 'COD',
-    'changeOfAddress': 'COA'
+    'changeOfAddress': 'COA',
+    'alteration': 'ALT'
 }
 
 
@@ -190,7 +191,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     elif status == Filing.Status.COMPLETED.value:
         if filing_type == 'incorporationApplication':
             subject = 'Incorporation Documents from the Business Registry'
-        elif filing_type in ['changeOfAddress', 'changeOfDirectors']:
+        elif filing_type in ['changeOfAddress', 'changeOfDirectors', 'alteration']:
             subject = 'Notice of Articles'
 
     if not subject:  # fallback case - should never happen
