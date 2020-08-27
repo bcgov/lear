@@ -1,6 +1,7 @@
 Flask
 dpath
 jsonschema
+python-dateutil
 python-dotenv
 sentry-sdk[flask]
 asyncio-nats-client
