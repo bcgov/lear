@@ -13,13 +13,11 @@
 # limitations under the License.
 """Manages the share structure for a business."""
 from __future__ import annotations
-from contextlib import suppress
-from typing import Dict, List, Optional
-from legal_api.models import business
 
-import pycountry
+from typing import Dict, List, Optional
+
 from dateutil.parser import parse
-from legal_api.models import Address, Business, Office, Party, PartyRole, Resolution, ShareClass, ShareSeries
+from legal_api.models import Business, Resolution, ShareClass, ShareSeries
 
 
 def update_share_structure(business: Business, share_structure: Dict) -> Optional[List]:
@@ -29,7 +27,6 @@ def update_share_structure(business: Business, share_structure: Dict) -> Optiona
 
     Other errors are recorded and will be managed out of band.
     """
-
     if not business or not share_structure:
         # if nothing is passed in, we don't care and it's not an error
         return None
@@ -39,12 +36,12 @@ def update_share_structure(business: Business, share_structure: Dict) -> Optiona
     if resolution_dates := share_structure.get('resolutionDates'):
         for resolution_dt in resolution_dates:
             try:
-                r = Resolution(
+                d = Resolution(
                     resolution_date=parse(resolution_dt).date(),
                     resolution_type=Resolution.ResolutionType.SPECIAL.value
                 )
-                business.resolutions.append(r)
-            except (ValueError, OverflowError, Exception) as error:
+                business.resolutions.append(d)
+            except (ValueError, OverflowError):
                 err.append(
                     {'error_code': 'FILER_INVALID_RESOLUTION_DATE',
                      'error_message': f"Filer: invalid resolution date:'{resolution_dt}'"}
@@ -53,7 +50,7 @@ def update_share_structure(business: Business, share_structure: Dict) -> Optiona
     if share_classes := share_structure.get('shareClasses'):
         try:
             delete_existing_shares(business)
-        except:
+        except:  # noqa:E722 pylint: disable=bare-except; catch all exceptions
             err.append(
                 {'error_code': 'FILER_UNABLE_TO_DELETE_SHARES',
                  'error_message': f"Filer: unable to delete shares for :'{business.identifier}'"}
@@ -75,12 +72,13 @@ def update_share_structure(business: Business, share_structure: Dict) -> Optiona
 
 
 def delete_existing_shares(business: Business):
+    """Delete the existing share classes and series for a business."""
     if existing_shares := business.share_classes.all():
         try:
             for share_class in existing_shares:
                 business.share_classes.remove(share_class)
         except Exception as err:
-            print(err)
+            raise err
 
 
 def create_share_class(share_class_info: dict) -> ShareClass:

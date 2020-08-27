@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the business filing component processors."""
-from legal_api.models import business
 import pytest
 from legal_api.models import Business
 
@@ -24,7 +23,8 @@ from tests import strip_keys_from_dict
     ('valid resolution_dates', [], None),
     ('valid resolution_dates', ['2020-05-23'], None),
     ('valid resolution_dates', ['2020-05-23', '2020-06-01'], None),
-    ('invalid resolution_dates', ['2020-05-23', 'error'], [{'error_code': 'FILER_INVALID_RESOLUTION_DATE', 'error_message': "Filer: invalid resolution date:'error'"}])
+    ('invalid resolution_dates', ['2020-05-23', 'error'],
+     [{'error_code': 'FILER_INVALID_RESOLUTION_DATE', 'error_message': "Filer: invalid resolution date:'error'"}])
 ])
 def test_manage_share_structure__resolution_dates(
         app, session,
@@ -94,6 +94,7 @@ def test_manage_share_structure__share_classes(
 
     stripped_dict = strip_keys_from_dict(check_share_structure, ['id'])
     assert stripped_dict == share_structure
+    assert not err
 
 
 def test_manage_share_structure__delete_shares(app, session):
@@ -112,7 +113,7 @@ def test_manage_share_structure__delete_shares(app, session):
     business_id = business.id
 
     # test
-    err = shares.delete_existing_shares(business)
+    shares.delete_existing_shares(business)
     business.save()
 
     # check

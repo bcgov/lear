@@ -19,12 +19,7 @@ import dpath
 import sentry_sdk
 from legal_api.models import Business, Filing
 
-from entity_filer.filing_processors.filing_components import (
-    aliases,
-    business_info,
-    business_profile,
-    shares,
-)
+from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, shares
 
 
 def process(business: Business, filing: Dict):

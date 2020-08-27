@@ -36,7 +36,7 @@ def add_years(d, years):
 
 
 def strip_keys_from_dict(orig_dict: Dict, keys: List) -> Dict:
-    """Returns a deep copy of the dict with the keys stripped out."""
+    """Return a deep copy of the dict with the keys stripped out."""
     def del_key_in_dict(orig_dict, keys):
         """Remove keys from dictionaires."""
         modified_dict = {}
@@ -65,7 +65,7 @@ def strip_keys_from_dict(orig_dict: Dict, keys: List) -> Dict:
                 try:
                     if item not in keys:
                         modified_list.append(item)
-                except:
+                except:  # noqa: E722
                     modified_list.append(item)
         return modified_list
 
