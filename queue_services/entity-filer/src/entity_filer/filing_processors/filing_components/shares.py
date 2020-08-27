@@ -74,11 +74,8 @@ def update_share_structure(business: Business, share_structure: Dict) -> Optiona
 def delete_existing_shares(business: Business):
     """Delete the existing share classes and series for a business."""
     if existing_shares := business.share_classes.all():
-        try:
-            for share_class in existing_shares:
-                business.share_classes.remove(share_class)
-        except Exception as err:
-            raise err
+        for share_class in existing_shares:
+            business.share_classes.remove(share_class)
 
 
 def create_share_class(share_class_info: dict) -> ShareClass:
