@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Manages the type of Business."""
+"""Manages the  names of a Business."""
 from typing import Dict
 
 from flask_babel import _ as babel  # noqa: N813

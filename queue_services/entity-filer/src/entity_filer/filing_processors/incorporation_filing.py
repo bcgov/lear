@@ -32,6 +32,7 @@ from entity_filer.filing_processors.filing_components import (
     create_party,
     create_role,
     create_share_class,
+    shares,
 )
 
 
@@ -175,11 +176,8 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
                 party_role = create_role(party=party, role_info=role)
                 business.party_roles.append(party_role)
 
-    share_classes = incorp_filing['shareClasses']
-    if share_classes:
-        for share_class_info in share_classes:
-            share_class = create_share_class(share_class_info)
-            business.share_classes.append(share_class)
+    if share_structure := incorp_filing['shareStructure']:
+        err = shares.update_share_structure(business, share_structure)
 
     if name_translations := incorp_filing.get('nameTranslations'):
         aliases.update_aliases(business, name_translations)

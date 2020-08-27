@@ -44,7 +44,9 @@ class ShareClass(db.Model):  # pylint: disable=too-many-instance-attributes
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
 
     # Relationships
-    series = db.relationship('ShareSeries', backref='share_class')
+    series = db.relationship('ShareSeries',
+                             backref='share_class',
+                             cascade='all, delete, delete-orphan')
 
     def save(self):
         """Save the object to the database immediately."""

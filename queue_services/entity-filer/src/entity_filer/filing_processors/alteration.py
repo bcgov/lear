@@ -19,7 +19,12 @@ import dpath
 import sentry_sdk
 from legal_api.models import Business, Filing
 
-from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile
+from entity_filer.filing_processors.filing_components import (
+    aliases,
+    business_info,
+    business_profile,
+    shares,
+)
 
 
 def process(business: Business, filing: Dict):
@@ -33,6 +38,11 @@ def process(business: Business, filing: Dict):
     with suppress(IndexError, KeyError, TypeError):
         business_json = dpath.util.get(filing, '/alteration/nameTranslations')
         aliases.update_aliases(business, business_json)
+
+    # update share structure and resolutions, if any
+    with suppress(IndexError, KeyError, TypeError):
+        share_structure = dpath.util.get(filing, '/alteration/shareStructure')
+        shares.update_share_structure(business, share_structure)
 
 
 def post_process(business: Business, filing: Filing):
