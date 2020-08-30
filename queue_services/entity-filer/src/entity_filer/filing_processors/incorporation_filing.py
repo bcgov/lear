@@ -198,4 +198,6 @@ def post_process(business: Business, filing: Filing):
             business,
             filing.json['filing']['incorporationApplication']['contactPoint']
         ):
-            sentry_sdk.capture_message(f'Queue Error: Update Business for filing:{filing.id},  error:{err}', level='error')
+            sentry_sdk.capture_message(
+                f'Queue Error: Update Business for filing:{filing.id}, error:{err}',
+                level='error')
