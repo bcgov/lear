@@ -31,12 +31,13 @@ PASSWORD
 def run_sql = "echo \"${sql}\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba"
 
 def execute_pod_command(pod, command) {
-    def command = openshift.exec(
+    echo "${pod} executing ${command}..."
+    def command_output = openshift.exec(
         pod,
         '--',
         "bash -c '${command}'"
     ).actions[0].out
-    echo command
+    echo command_output
 }
 
 node {
