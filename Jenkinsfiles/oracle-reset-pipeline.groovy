@@ -101,13 +101,13 @@ node {
                                 echo "${pod}"
                                 sequences = ['noncorp_event_seq', 'noncorp_address_seq', 'noncorp_party_seq']
                                 for (seq in sequences) {
-                                    sql = 'alter sequence C##CDEV.${seq} increment by 50;'
+                                    sql = "alter sequence C##CDEV.${seq} increment by 50;"
                                     execute_pod_command(pod, sql, true)
 
-                                    sql = 'select C##CDEV.${seq}.NEXTVAL from dual;'
+                                    sql = "select C##CDEV.${seq}.NEXTVAL from dual;"
                                     execute_pod_command(pod, sql, true)
 
-                                    sql = 'alter sequence C##CDEV.${seq} increment by 1;'
+                                    sql = "alter sequence C##CDEV.${seq} increment by 1;"
                                     execute_pod_command(pod, sql, true)
                                 }
                                 sql = "UPDATE C##CDEV.system_id SET id_num=${id_num} WHERE id_typ_cd = 'BC';"
