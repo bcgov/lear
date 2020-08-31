@@ -31,7 +31,7 @@ def PASSWORD
 
 def execute_pod_command(pod, command, is_sql) {
     if (is_sql) {
-        def run_sql = "echo \"${command}\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba"
+        def run_sql = "echo \"select id_num from C##CDEV.system_id where id_typ_cd in (||CHR(39)||BC||CHR(39)||);\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba"
         command = run_sql
     }
     echo "${pod} executing ${command}..."
@@ -59,7 +59,7 @@ node {
                     OLD_POD = podSelector.objects()[0].metadata.name
                     echo "OLD_POD: ${OLD_POD}"
 
-                    sql = "\\\"select id_num from C##CDEV.system_id where id_typ_cd in (\\\"||CHR(39)||\\\"BC\\\"||CHR(39)||\\\");\\\""
+                    sql = "select id_num from C##CDEV.system_id where id_typ_cd in (\\\"||CHR(39)||\\\"BC\\\"||CHR(39)||\\\");"
                     execute_pod_command(OLD_POD, sql, true)
 
                     // sql = 'shutdown abort;'
