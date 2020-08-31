@@ -41,8 +41,9 @@ def update_business_profile(business: Business, profile_info: Dict) -> Dict:
              'phoneExtension': ''
              }
         )
+        url = ''.join([account_svc_entity_url, '/', business.identifier, '/contacts'])
         rv = requests.post(
-            url=''.join([account_svc_entity_url, '/', business.identifier]),
+            url=url,
             headers={**AccountService.CONTENT_TYPE_JSON,
                      'Authorization': AccountService.BEARER + token},
             data=data,

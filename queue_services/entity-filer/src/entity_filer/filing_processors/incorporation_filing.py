@@ -194,8 +194,10 @@ def post_process(business: Business, filing: Filing):
     THIS SHOULD NOT ALTER THE MODEL
     """
     with suppress(IndexError, KeyError, TypeError):
-        err = business_profile.update_business_profile(
+        if err := business_profile.update_business_profile(
             business,
             filing.json['filing']['incorporationApplication']['contactPoint']
-        )
-        sentry_sdk.capture_message(f'Queue Error: Update Business for filing:{filing.id},  error:{err}', level='error')
+        ):
+            sentry_sdk.capture_message(
+                f'Queue Error: Update Business for filing:{filing.id}, error:{err}',
+                level='error')
