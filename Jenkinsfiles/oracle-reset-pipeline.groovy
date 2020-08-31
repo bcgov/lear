@@ -45,7 +45,7 @@ def execute_pod_command(pod, command, is_sql) {
 }
 
 node {
-    def id_num
+    def id_num = '123000'
     stage('reset oracle') {
         script {
             echo """
