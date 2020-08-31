@@ -45,7 +45,7 @@ def execute_pod_command(pod, command, is_sql) {
 }
 
 node {
-    def id_num = '123000'
+    def id_num
     stage('reset oracle') {
         script {
             echo """
@@ -65,6 +65,9 @@ node {
                         id_num_output = execute_pod_command(OLD_POD, sql, true)
                         id_num_regex = /\d{7}(?:\d{2})?/
                         id_num = (id_num_output =~ id_num_regex)[0]
+                        if (!id_num) {
+                            id_num = '123000'
+                        }
 
                         sql = 'shutdown abort;'
                         execute_pod_command(OLD_POD, sql, true)
