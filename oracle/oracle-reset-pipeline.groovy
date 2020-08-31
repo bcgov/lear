@@ -29,9 +29,13 @@ def OLD_POD
 def USERNAME
 def PASSWORD
 
-def run_sql = "echo \"${sql}\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba"
+run_sql = "echo \"${sql}\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba"
 
-def execute_pod_command(pod, command) {
+def execute_pod_command(pod, command, is_sql) {
+    if (is_sql) {
+        sql = command
+        command = run_sql
+    }
     echo "${pod} executing ${command}..."
     def command_output = openshift.exec(
         pod,
@@ -58,7 +62,7 @@ node {
                     echo "OLD_POD: ${OLD_POD}"
 
                     sql = 'select id_num from C##CDEV.system_id where id_typ_cd in (\'BC\');'
-                    execute_pod_command(OLD_POD, run_sql)
+                    execute_pod_command(OLD_POD, sql, true)
 
                     // sql = 'shutdown abort;'
                     // execute_pod_command(OLD_POD, run_sql)
