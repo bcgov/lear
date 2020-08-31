@@ -41,11 +41,11 @@ def execute_pod_command(pod, command, is_sql) {
         "bash -c \"${command}\""
     ).actions[0].out
     echo command_output
-    id_num_regex = /\d{7}(?:\d{2})?/
-    return (command_output =~ id_num_regex)[0]
+    return command_output
 }
 
 node {
+    def id_num
     stage('reset oracle') {
         script {
             echo """
@@ -62,63 +62,80 @@ node {
                     echo "OLD_POD: ${OLD_POD}"
 
                     sql = "select id_num from C##CDEV.system_id where id_typ_cd in ('BC');"
-                    echo execute_pod_command(OLD_POD, sql, true)
+                    id_num_output = execute_pod_command(OLD_POD, sql, true)
+                    id_num_regex = /\d{7}(?:\d{2})?/
+                    id_num = (id_num_output =~ id_num_regex)[0]
 
-                    // sql = 'shutdown abort;'
-                    // execute_pod_command(OLD_POD, run_sql)
-                    // execute_pod_command(OLD_POD, 'rm -Rf /ORCL/*')
-                    // try {
-                    //     execute_pod_command(OLD_POD, 'cp -a /ORCL_base/. /ORCL/')
-                    // } catch (Exception e) {
-                    //     echo e.getMessage()
-                    // }
+                    sql = 'shutdown abort;'
+                    execute_pod_command(OLD_POD, run_sql)
+                    execute_pod_command(OLD_POD, 'rm -Rf /ORCL/*')
+                    try {
+                        execute_pod_command(OLD_POD, 'cp -a /ORCL_base/. /ORCL/')
+                    } catch (Exception e) {
+                        echo e.getMessage()
+                    }
                 }
             }
         }
     } // end stage
     stage('deploy oracle') {
-        // script {
-        //     openshift.withCluster() {
-        //         openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
-        //             def deploy = openshift.selector("dc", "${COMPONENT_NAME}-${COMPONENT_TAG}")
-        //             def podSelector = openshift.selector('pod', [ app:"${COMPONENT_NAME}-${COMPONENT_TAG}" ])
+        script {
+            openshift.withCluster() {
+                openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
+                    def deploy = openshift.selector("dc", "${COMPONENT_NAME}-${COMPONENT_TAG}")
+                    def podSelector = openshift.selector('pod', [ app:"${COMPONENT_NAME}-${COMPONENT_TAG}" ])
 
-        //             deploy.rollout().latest()
-        //             def count = 1
-        //             podSelector.untilEach {
-        //                 def pod = it.objects()[0].metadata.name
-        //                 echo "pod: ${pod}"
-        //                 if (pod != OLD_POD && it.objects()[0].status.phase == 'Running' && it.objects()[0].status.containerStatuses[0].ready) {
-        //                     echo "New pod: ${pod}"
-        //                     sleep 80
-        //                     echo "waited ${count*80} seconds"
-        //                     try {
-        //                         echo "${pod}"
-        //                         sequences = ['noncorp_event_seq', 'noncorp_address_seq', 'noncorp_party_seq']
-        //                         for (seq in sequences) {
-        //                             sql = 'alter sequence C##CDEV.${seq} increment by 50;'
-        //                             execute_pod_command(pod, run_sql)
+                    deploy.rollout().latest()
+                    def count = 1
+                    podSelector.untilEach {
+                        def pod = it.objects()[0].metadata.name
+                        echo "pod: ${pod}"
+                        if (pod != OLD_POD && it.objects()[0].status.phase == 'Running' && it.objects()[0].status.containerStatuses[0].ready) {
+                            echo "New pod: ${pod}"
+                            sleep 10
+                            echo "waited ${count*20} seconds"
+                            try {
+                                echo "${pod}"
+                                sequences = ['noncorp_event_seq', 'noncorp_address_seq', 'noncorp_party_seq']
+                                for (seq in sequences) {
+                                    sql = 'alter sequence C##CDEV.${seq} increment by 50;'
+                                    execute_pod_command(pod, sql, true)
 
-        //                             sql = 'select C##CDEV.${seq}.NEXTVAL from dual;'
-        //                             execute_pod_command(pod, run_sql)
+                                    sql = 'select C##CDEV.${seq}.NEXTVAL from dual;'
+                                    execute_pod_command(pod, sql, true)
 
-        //                             sql = 'alter sequence C##CDEV.${seq} increment by 1;'
-        //                             execute_pod_command(pod, run_sql)
-        //                         }
-        //                         return true
-        //                     } catch (Exception e) {
-        //                         echo "${e}"
-        //                         count++
-        //                         return false
-        //                     }
-        //                 } else {
-        //                     return false;
-        //                 }
-        //             }
+                                    sql = 'alter sequence C##CDEV.${seq} increment by 1;'
+                                    execute_pod_command(pod, sql, true)
+                                }
+                                sql = "UPDATE C##CDEV.system_id SET id_num=${id_num} WHERE id_typ_cd = 'BC';"
+                                execute_pod_command(pod, sql, true)
 
-        //         }
-        //     }
-        // }
+                                sql = "INSERT INTO FILING_TYPE_CLASS VALUES('BENCOM','Benefit Company');"
+                                execute_pod_command(pod, sql, true)
+
+                                sql = "INSERT INTO FILING_TYPE VALUES('BEINC','BENCOM','Incorporate a BC Benefit Company','Incorporation Application for a BC Benefit Company');"
+                                execute_pod_command(pod, sql, true)
+
+                                sql = "INSERT INTO FILING_TYPE VALUES('NOALE','BENCOM','Alteration from a BC Company to a Benefit Company','Alteration Application from a BC Company to a Benefit Company');"
+                                execute_pod_command(pod, sql, true)
+
+                                sql = "INSERT INTO CORP_TYPE VALUES('BEN','Y','BC','BENEFIT COMPANY','Benefit Company');"
+                                execute_pod_command(pod, sql, true)
+
+                                return true
+                            } catch (Exception e) {
+                                echo "${e}"
+                                count++
+                                return false
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+
+                }
+            }
+        }
 
     } // end stage
 } // end node
