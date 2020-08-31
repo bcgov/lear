@@ -56,18 +56,19 @@
                   {% endif %}
                </td>
                <td class="right-align">
-                  {% if series.hasParValue %}
-                  {% if series.currency == 'USD' or series.currency == 'CAD' %}
+                  <!-- hasParValue, parValue and currency are in share_class -->
+                  {% if share_class.hasParValue %}
+                  {% if share_class.currency == 'USD' or share_class.currency == 'CAD' %}
                      $
                   {% endif %}
-                  {{ series.parValue }}
+                  {{ share_class.parValue }}
                   {% else %}
                   No Par Value
                   {% endif %}
                </td>
                <td>
-                  {% if series.hasParValue %}
-                  {{ series.currency }}
+                  {% if share_class.hasParValue %}
+                  {{ share_class.currency }}
                   {% else %}
                   {% endif %}
                </td>
