@@ -67,6 +67,7 @@ node {
                         id_num = (id_num_output =~ id_num_regex)[0]
                         if (id_num==null) {
                             id_num = '123000'
+                            echo "Error getting id_num. Setting to default: ${id_num}"
                         }
 
                         sql = 'shutdown abort;'
