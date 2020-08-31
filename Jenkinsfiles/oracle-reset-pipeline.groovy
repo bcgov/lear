@@ -104,7 +104,12 @@ node {
                             try {
                                 echo "${pod}"
                                 sql = "select 'database ready' from dual;"
-                                echo execute_pod_command(pod, sql, true)
+                                ready = execute_pod_command(pod, sql, true)
+                                echo ready
+                                if (ready.contains('ERROR')) {
+                                    echo 'database not ready yet.'
+                                    throw new Exception('database not ready yet.')
+                                }
 
                                 sequences = ['noncorp_event_seq', 'noncorp_address_seq', 'noncorp_party_seq']
                                 for (seq in sequences) {
