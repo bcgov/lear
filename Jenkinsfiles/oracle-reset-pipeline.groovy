@@ -41,7 +41,7 @@ def execute_pod_command(pod, command, is_sql) {
         "bash -c \"${command}\""
     ).actions[0].out
     echo command_output
-    return command_output.replace('SQL>', '').replace('ID_NUM', '').replace('----------', '').replace(' Disconnected from Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production', '')
+    return command_output.replace('SQL>', '').replace(' ', '').replace('\n', '').replace('ID_NUM', '').replace('----------', '').replace(' Disconnected from Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production', '')
 }
 
 node {
