@@ -42,7 +42,7 @@ def execute_pod_command(pod, command, is_sql) {
     ).actions[0].out
     echo command_output
     id_num_regex = /^\d{7}(?:\d{2})?$/
-    return (command_output =~ id_num_regex)[ 0 ]​[ 1 ]
+    return (command_output =~ id_num_regex)[0]
 }
 
 node {
