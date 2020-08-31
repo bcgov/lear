@@ -65,7 +65,7 @@ node {
                         id_num_output = execute_pod_command(OLD_POD, sql, true)
                         id_num_regex = /\d{7}(?:\d{2})?/
                         id_num = (id_num_output =~ id_num_regex)[0]
-                        if (!id_num) {
+                        if (id_num==null) {
                             id_num = '123000'
                         }
 
@@ -102,6 +102,9 @@ node {
                             echo "waited ${count*20} seconds"
                             try {
                                 echo "${pod}"
+                                sql = "select 'database ready' from dual;"
+                                echo execute_pod_command(pod, sql, true)
+
                                 sequences = ['noncorp_event_seq', 'noncorp_address_seq', 'noncorp_party_seq']
                                 for (seq in sequences) {
                                     sql = "alter sequence C##CDEV.${seq} increment by 50;"
@@ -116,16 +119,16 @@ node {
                                 sql = "UPDATE C##CDEV.system_id SET id_num=${id_num} WHERE id_typ_cd = 'BC';"
                                 execute_pod_command(pod, sql, true)
 
-                                sql = "INSERT INTO FILING_TYPE_CLASS VALUES('BENCOM','Benefit Company');"
+                                sql = "INSERT INTO C##CDEV.FILING_TYPE_CLASS VALUES('BENCOM','Benefit Company');"
                                 execute_pod_command(pod, sql, true)
 
-                                sql = "INSERT INTO FILING_TYPE VALUES('BEINC','BENCOM','Incorporate a BC Benefit Company','Incorporation Application for a BC Benefit Company');"
+                                sql = "INSERT INTO C##CDEV.FILING_TYPE VALUES('BEINC','BENCOM','Incorporate a BC Benefit Company','Incorporation Application for a BC Benefit Company');"
                                 execute_pod_command(pod, sql, true)
 
-                                sql = "INSERT INTO FILING_TYPE VALUES('NOALE','BENCOM','Alteration from a BC Company to a Benefit Company','Alteration Application from a BC Company to a Benefit Company');"
+                                sql = "INSERT INTO C##CDEV.FILING_TYPE VALUES('NOALE','BENCOM','Alteration from a BC Company to a Benefit Company','Alteration Application from a BC Company to a Benefit Company');"
                                 execute_pod_command(pod, sql, true)
 
-                                sql = "INSERT INTO CORP_TYPE VALUES('BEN','Y','BC','BENEFIT COMPANY','Benefit Company');"
+                                sql = "INSERT INTO C##CDEV.CORP_TYPE VALUES('BEN','Y','BC','BENEFIT COMPANY','Benefit Company');"
                                 execute_pod_command(pod, sql, true)
 
                                 return true
