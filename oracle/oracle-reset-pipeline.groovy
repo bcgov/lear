@@ -29,11 +29,9 @@ def OLD_POD
 def USERNAME
 def PASSWORD
 
-def run_sql = "echo \"${sql}\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba"
-
 def execute_pod_command(pod, command, is_sql) {
     if (is_sql) {
-        sql = command
+        def run_sql = "echo \"${command}\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba"
         command = run_sql
     }
     echo "${pod} executing ${command}..."
