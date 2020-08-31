@@ -24,9 +24,10 @@ NAMESPACE = namespace
 TAG_NAME = tag
 COMPONENT_NAME = component
 COMPONENT_TAG = component_tag
-OLD_POD
-USERNAME
-PASSWORD
+
+def OLD_POD
+def USERNAME
+def PASSWORD
 
 def run_sql = "echo \"${sql}\"|\"\$ORACLE_HOME/bin/sqlplus\" / as sysdba"
 
