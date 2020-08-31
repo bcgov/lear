@@ -31,7 +31,7 @@ def PASSWORD
 
 def execute_pod_command(pod, command, is_sql) {
     if (is_sql) {
-        def run_sql = "echo \\\"${command}\\\"|\\\"\$ORACLE_HOME/bin/sqlplus\\\" / as sysdba"
+        def run_sql = "echo \\\"${command}\\\"|\\\"\\\$ORACLE_HOME/bin/sqlplus\\\" / as sysdba"
         command = run_sql
     }
     echo "${pod} executing ${command}..."
