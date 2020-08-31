@@ -65,10 +65,6 @@ node {
                         id_num_output = execute_pod_command(OLD_POD, sql, true)
                         id_num_regex = /\d{7}(?:\d{2})?/
                         id_num = (id_num_output =~ id_num_regex)[0]
-                        if (id_num==null) {
-                            id_num = '123000'
-                            echo "Error getting id_num. Setting to default: ${id_num}"
-                        }
 
                         sql = 'shutdown abort;'
                         execute_pod_command(OLD_POD, sql, true)
@@ -121,6 +117,10 @@ node {
 
                                     sql = "alter sequence C##CDEV.${seq} increment by 1;"
                                     execute_pod_command(pod, sql, true)
+                                }
+                                if (id_num==null) {
+                                    id_num = '123000'
+                                    echo "Error getting id_num. Setting to default: ${id_num}"
                                 }
                                 sql = "UPDATE C##CDEV.system_id SET id_num=${id_num} WHERE id_typ_cd = 'BC';"
                                 execute_pod_command(pod, sql, true)
