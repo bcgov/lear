@@ -40,7 +40,7 @@ def execute_pod_command(pod, command, is_sql) {
         '--',
         "bash -c \"${command}\""
     ).actions[0].out
-    echo command_output
+    return command_output
 }
 
 node {
@@ -60,7 +60,7 @@ node {
                     echo "OLD_POD: ${OLD_POD}"
 
                     sql = "select id_num from C##CDEV.system_id where id_typ_cd in ('BC');"
-                    execute_pod_command(OLD_POD, sql, true)
+                    echo execute_pod_command(OLD_POD, sql, true)
 
                     // sql = 'shutdown abort;'
                     // execute_pod_command(OLD_POD, run_sql)
