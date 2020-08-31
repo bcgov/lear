@@ -41,7 +41,8 @@ def execute_pod_command(pod, command, is_sql) {
         "bash -c \"${command}\""
     ).actions[0].out
     echo command_output
-    return command_output.replace('SQL>', '').replace('SQL*Plus: Release 12.2.0.1.0 Production on Mon Aug 31 21:20:33 2020', '').replace('Copyright (c) 1982, 2016, Oracle.  All rights reserved.', '').replace('Connected to:', '').replace('Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production', '').replace('ID_NUM', '').replace('----------', '').replace(' Disconnected from Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production', '').replace('\n', '').replace(' ', '')
+    id_num_regex = /^\d{7}(?:\d{2})?$/
+    return (command_output =~ id_num_regex)[ 0 ]​[ 1 ]
 }
 
 node {
