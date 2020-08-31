@@ -60,17 +60,20 @@ node {
                     def podSelector = openshift.selector('pod', [ app:"${COMPONENT_NAME}-${COMPONENT_TAG}" ])
                     OLD_POD = podSelector.objects()[0].metadata.name
                     echo "OLD_POD: ${OLD_POD}"
-
-                    sql = "select id_num from C##CDEV.system_id where id_typ_cd in ('BC');"
-                    id_num_output = execute_pod_command(OLD_POD, sql, true)
-                    id_num_regex = /\d{7}(?:\d{2})?/
-                    id_num = (id_num_output =~ id_num_regex)[0]
-
-                    sql = 'shutdown abort;'
-                    execute_pod_command(OLD_POD, run_sql)
-                    execute_pod_command(OLD_POD, 'rm -Rf /ORCL/*')
                     try {
-                        execute_pod_command(OLD_POD, 'cp -a /ORCL_base/. /ORCL/')
+                        sql = "select id_num from C##CDEV.system_id where id_typ_cd in ('BC');"
+                        id_num_output = execute_pod_command(OLD_POD, sql, true)
+                        id_num_regex = /\d{7}(?:\d{2})?/
+                        id_num = (id_num_output =~ id_num_regex)[0]
+
+                        sql = 'shutdown abort;'
+                        execute_pod_command(OLD_POD, sql, true)
+                    } catch (Exception e) {
+                        echo e.getMessage()
+                    }
+                    execute_pod_command(OLD_POD, 'rm -Rf /ORCL/*', false)
+                    try {
+                        execute_pod_command(OLD_POD, 'cp -a /ORCL_base/. /ORCL/', false)
                     } catch (Exception e) {
                         echo e.getMessage()
                     }
