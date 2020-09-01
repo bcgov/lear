@@ -147,6 +147,9 @@ node {
                                     sql = "DROP TRIGGER C##CDEV.NAMEX_CORP_NAME_QMSG;"
                                     execute_pod_command(pod, sql, true)
 
+                                    sql = "DROP TRIGGER C##CDEV.NAMEX_CORP_STATE_QMSG;"
+                                    execute_pod_command(pod, sql, true)
+
                                     sql = "@/sql/update-dev-oracle.sql"
                                     execute_pod_command(pod, sql, true)
 
