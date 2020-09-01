@@ -47,7 +47,7 @@ class PartyRole(db.Model):
     party_id = db.Column('party_id', db.Integer, db.ForeignKey('parties.id'))
 
     # relationships
-    party = db.relationship('Party')
+    party = db.relationship('Party', cascade='delete-orphan')
 
     def save(self):
         """Save the object to the database immediately."""
