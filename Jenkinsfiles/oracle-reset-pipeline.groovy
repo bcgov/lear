@@ -148,7 +148,7 @@ node {
                                     sql = "DROP TRIGGER C##CDEV.NAMEX_CORP_NAME_QMSG;"
                                     execute_pod_command(pod, sql, true)
 
-                                    command = "\$ORACLE_HOME/bin/sqlplus C##CDEV/tiger \@/sql/update-dev-oracle.sql"
+                                    command = "\$ORACLE_HOME/bin/sqlplus C##CDEV/tiger @/sql/update-dev-oracle.sql"
                                     execute_pod_command(pod, command, false)
 
                                 } catch (Exception e) {
