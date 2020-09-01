@@ -65,12 +65,12 @@ node {
                         id_num_output = execute_pod_command(OLD_POD, sql, true)
                         id_num_regex = /\d{7}(?:\d{2})?/
                         id_num = (id_num_output =~ id_num_regex)[0]
-
-                        sql = 'shutdown abort;'
-                        execute_pod_command(OLD_POD, sql, true)
                     } catch (Exception e) {
                         echo e.getMessage()
                     }
+                    sql = 'shutdown abort;'
+                    execute_pod_command(OLD_POD, sql, true)
+
                     execute_pod_command(OLD_POD, 'rm -Rf /ORCL/*', false)
                     try {
                         execute_pod_command(OLD_POD, 'cp -a /ORCL_base/. /ORCL/', false)
