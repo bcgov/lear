@@ -29,7 +29,7 @@ def OLD_POD
 def USERNAME
 def PASSWORD
 
-def get_search_name_function = "
+def get_search_name_function = """
 create or replace FUNCTION get_search_name(request_name IN VARCHAR2) RETURN VARCHAR2 IS
     l_message APPLICATION_LOG.LOG_MESSAGE%TYPE;
     l_unit_name VARCHAR2(100);
@@ -120,7 +120,7 @@ create or replace FUNCTION get_search_name(request_name IN VARCHAR2) RETURN VARC
                              l_unit_name || '; ' || l_message || '; SQLERRM: ' || SQLERRM, 4000));
       RAISE;
   END;
-"
+"""
 
 def execute_pod_command(pod, command, is_sql) {
     if (is_sql) {
