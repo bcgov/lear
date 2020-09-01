@@ -102,54 +102,59 @@ node {
                         echo "pod: ${pod}"
                         if (pod != OLD_POD && pod_object.status.phase == 'Running' && pod_object.status.containerStatuses[0].ready) {
                             echo "New pod: ${pod}"
-                            sleep 10
-                            echo "waited ${count*20} seconds"
-                            try {
-                                echo "${pod}"
-                                sql = "select 'database ready' from dual;"
-                                ready = execute_pod_command(pod, sql, true)
-                                echo ready
-                                if (ready.contains('ERROR')) {
-                                    echo 'database not ready yet.'
-                                    throw new Exception('database not ready yet.')
-                                }
+                            def count = 1
+                            while (count < 30) {
+                                sleep 10
+                                echo "waited ${count*20} seconds"
+                                try {
+                                    echo "${pod}"
+                                    sql = "select 'database ready' from dual;"
+                                    ready = execute_pod_command(pod, sql, true)
+                                    echo ready
+                                    if (ready.contains('ERROR')) {
+                                        echo 'database not ready yet.'
+                                        throw new Exception('database not ready yet.')
+                                    }
 
-                                sequences = ['noncorp_event_seq', 'noncorp_address_seq', 'noncorp_party_seq']
-                                for (seq in sequences) {
-                                    sql = "alter sequence C##CDEV.${seq} increment by 50;"
+                                    sequences = ['noncorp_event_seq', 'noncorp_address_seq', 'noncorp_party_seq']
+                                    for (seq in sequences) {
+                                        sql = "alter sequence C##CDEV.${seq} increment by 50;"
+                                        execute_pod_command(pod, sql, true)
+
+                                        sql = "select C##CDEV.${seq}.NEXTVAL from dual;"
+                                        execute_pod_command(pod, sql, true)
+
+                                        sql = "alter sequence C##CDEV.${seq} increment by 1;"
+                                        execute_pod_command(pod, sql, true)
+                                    }
+                                    if (id_num==null) {
+                                        id_num = '123000'
+                                        echo "Error getting id_num. Setting to default: ${id_num}"
+                                    }
+                                    sql = "UPDATE C##CDEV.system_id SET id_num=${id_num} WHERE id_typ_cd = 'BC';"
                                     execute_pod_command(pod, sql, true)
 
-                                    sql = "select C##CDEV.${seq}.NEXTVAL from dual;"
+                                    sql = "INSERT INTO C##CDEV.FILING_TYPE_CLASS VALUES('BENCOM','Benefit Company');"
                                     execute_pod_command(pod, sql, true)
 
-                                    sql = "alter sequence C##CDEV.${seq} increment by 1;"
+                                    sql = "INSERT INTO C##CDEV.FILING_TYPE VALUES('BEINC','BENCOM','Incorporate a BC Benefit Company','Incorporation Application for a BC Benefit Company');"
                                     execute_pod_command(pod, sql, true)
+
+                                    sql = "INSERT INTO C##CDEV.FILING_TYPE VALUES('NOALE','BENCOM','Alteration from a BC Company to a Benefit Company','Alteration Application from a BC Company to a Benefit Company');"
+                                    execute_pod_command(pod, sql, true)
+
+                                    sql = "INSERT INTO C##CDEV.CORP_TYPE VALUES('BEN','Y','BC','BENEFIT COMPANY','Benefit Company');"
+                                    execute_pod_command(pod, sql, true)
+
+                                    return true
+                                } catch (Exception e) {
+                                    echo "${e}"
+                                    count++
                                 }
-                                if (id_num==null) {
-                                    id_num = '123000'
-                                    echo "Error getting id_num. Setting to default: ${id_num}"
-                                }
-                                sql = "UPDATE C##CDEV.system_id SET id_num=${id_num} WHERE id_typ_cd = 'BC';"
-                                execute_pod_command(pod, sql, true)
-
-                                sql = "INSERT INTO C##CDEV.FILING_TYPE_CLASS VALUES('BENCOM','Benefit Company');"
-                                execute_pod_command(pod, sql, true)
-
-                                sql = "INSERT INTO C##CDEV.FILING_TYPE VALUES('BEINC','BENCOM','Incorporate a BC Benefit Company','Incorporation Application for a BC Benefit Company');"
-                                execute_pod_command(pod, sql, true)
-
-                                sql = "INSERT INTO C##CDEV.FILING_TYPE VALUES('NOALE','BENCOM','Alteration from a BC Company to a Benefit Company','Alteration Application from a BC Company to a Benefit Company');"
-                                execute_pod_command(pod, sql, true)
-
-                                sql = "INSERT INTO C##CDEV.CORP_TYPE VALUES('BEN','Y','BC','BENEFIT COMPANY','Benefit Company');"
-                                execute_pod_command(pod, sql, true)
-
-                                return true
-                            } catch (Exception e) {
-                                echo "${e}"
-                                count++
-                                return false
                             }
+                            echo "Pipeline failed to complete final commands."
+                            currentBuild.result = "FAILURE"
+                            return true
                         } else {
                             return false;
                         }
