@@ -29,7 +29,7 @@ def OLD_POD
 def USERNAME
 def PASSWORD
 
-def get_search_name_function = """
+def get_search_name_function = "
 create or replace FUNCTION get_search_name(request_name IN VARCHAR2) RETURN VARCHAR2 IS
     l_message APPLICATION_LOG.LOG_MESSAGE%TYPE;
     l_unit_name VARCHAR2(100);
@@ -47,7 +47,7 @@ create or replace FUNCTION get_search_name(request_name IN VARCHAR2) RETURN VARC
     l_message   := 'Converting to upper case.';
     temp_name   := UPPER(request_name);
  
-    l_message   := 'Removing all instances of "THE " and " THE "; checked with CB, no need to removed " THE".';
+    l_message   := 'Removing all instances of THE and THE; checked with CB, no need to removed THE.';
     IF UPPER( SUBSTR( temp_name, 1, 4 )) = 'THE ' THEN
       temp_name   := REPLACE(temp_name, 'THE ');
     END IF;
@@ -120,7 +120,7 @@ create or replace FUNCTION get_search_name(request_name IN VARCHAR2) RETURN VARC
                              l_unit_name || '; ' || l_message || '; SQLERRM: ' || SQLERRM, 4000));
       RAISE;
   END;
-"""
+"
 
 def execute_pod_command(pod, command, is_sql) {
     if (is_sql) {
