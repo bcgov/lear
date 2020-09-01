@@ -197,7 +197,7 @@ node {
                             def count = 1
                             while (count < 30) {
                                 sleep 10
-                                echo "waited ${count*20} seconds"
+                                echo "waited ${count*10} seconds"
                                 try {
                                     echo "${pod}"
                                     sql = "select 'database ready' from dual;"
@@ -241,11 +241,11 @@ node {
                                     sql = get_search_name_function
                                     execute_pod_command(pod, sql, true)
 
-                                    break
                                 } catch (Exception e) {
                                     echo "${e}"
                                     count++
                                 }
+                                break
                             }
                             if (count > 29) {
                                 echo "Pipeline failed to complete final commands."
