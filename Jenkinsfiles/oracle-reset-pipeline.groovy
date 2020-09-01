@@ -71,7 +71,13 @@ node {
                     sql = 'shutdown abort;'
                     execute_pod_command(OLD_POD, sql, true)
 
-                    execute_pod_command(OLD_POD, 'rm -Rf /ORCL/*', false)
+                    try {
+                        execute_pod_command(OLD_POD, 'rm -Rf /ORCL/*', false)    
+                    } catch (Exception e) {
+                        // try twice -- usually fails once
+                        echo e.getMessage()
+                        execute_pod_command(OLD_POD, 'rm -Rf /ORCL/*', false)
+                    }
                     try {
                         execute_pod_command(OLD_POD, 'cp -a /ORCL_base/. /ORCL/', false)
                     } catch (Exception e) {
