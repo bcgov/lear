@@ -109,7 +109,6 @@ node {
                                     echo "${pod}"
                                     sql = "select 'database ready' from dual;"
                                     ready = execute_pod_command(pod, sql, true)
-                                    echo ready
                                     if (ready.contains('ERROR')) {
                                         echo 'database not ready yet.'
                                         throw new Exception('database not ready yet.')
@@ -148,8 +147,8 @@ node {
                                     sql = "DROP TRIGGER C##CDEV.NAMEX_CORP_NAME_QMSG;"
                                     execute_pod_command(pod, sql, true)
 
-                                    command = "\$ORACLE_HOME/bin/sqlplus C##CDEV/tiger @/sql/update-dev-oracle.sql"
-                                    execute_pod_command(pod, command, false)
+                                    sql = "@/sql/update-dev-oracle.sql"
+                                    execute_pod_command(pod, sql, true)
 
                                 } catch (Exception e) {
                                     echo "${e}"
