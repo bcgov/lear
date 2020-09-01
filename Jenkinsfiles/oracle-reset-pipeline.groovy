@@ -150,9 +150,13 @@ node {
                                     sql = get_search_name_function
                                     execute_pod_command(pod, sql, true)
 
+                                    sql = "DROP TRIGGER C##CDEV.NAMEX_CORP_NAME_QMSG;"
+                                    execute_pod_command(pod, sql, true)
+
                                 } catch (Exception e) {
                                     echo "${e}"
                                     count++
+                                    continue
                                 }
                                 break
                             }
