@@ -91,9 +91,10 @@ node {
                     deploy.rollout().latest()
                     def count = 1
                     podSelector.untilEach {
-                        def pod = it.objects()[0].metadata.name
+                        def pod_object = it.objects()[0]
+                        def pod = pod_object.metadata.name
                         echo "pod: ${pod}"
-                        if (pod != OLD_POD && it.objects()[0].status.phase == 'Running' && it.objects()[0].status.containerStatuses[0].ready) {
+                        if (pod != OLD_POD && pod_object.status.phase == 'Running' && pod_object.status.containerStatuses[0].ready) {
                             echo "New pod: ${pod}"
                             sleep 10
                             echo "waited ${count*20} seconds"
