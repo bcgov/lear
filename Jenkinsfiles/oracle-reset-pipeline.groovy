@@ -30,7 +30,7 @@ def USERNAME
 def PASSWORD
 
 def get_search_name_function = """
-create or replace FUNCTION get_search_name(request_name IN VARCHAR2) RETURN VARCHAR2 IS
+create or replace FUNCTION C##CDEV.get_search_name(request_name IN VARCHAR2) RETURN VARCHAR2 IS
     l_message APPLICATION_LOG.LOG_MESSAGE%TYPE;
     l_unit_name VARCHAR2(100);
     temp_name VARCHAR2(256);
