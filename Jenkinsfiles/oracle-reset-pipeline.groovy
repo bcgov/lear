@@ -95,7 +95,6 @@ node {
                     def podSelector = openshift.selector('pod', [ app:"${COMPONENT_NAME}-${COMPONENT_TAG}" ])
 
                     deploy.rollout().latest()
-                    def count = 1
                     podSelector.untilEach {
                         def pod_object = it.objects()[0]
                         def pod = pod_object.metadata.name
