@@ -145,14 +145,16 @@ node {
                                     sql = "INSERT INTO C##CDEV.CORP_TYPE VALUES('BEN','Y','BC','BENEFIT COMPANY','Benefit Company');"
                                     execute_pod_command(pod, sql, true)
 
-                                    return true
+                                    break
                                 } catch (Exception e) {
                                     echo "${e}"
                                     count++
                                 }
                             }
-                            echo "Pipeline failed to complete final commands."
-                            currentBuild.result = "FAILURE"
+                            if (count > 29) {
+                                echo "Pipeline failed to complete final commands."
+                                currentBuild.result = "FAILURE"
+                            }
                             return true
                         } else {
                             return false;
