@@ -112,7 +112,7 @@ def clean_none(dictionary: dict = None):
         if dictionary[key]:
             if isinstance(dictionary[key], dict):
                 clean_none(dictionary[key])
-        else:
+        elif dictionary[key] is None:
             dictionary[key] = ''
 
 
