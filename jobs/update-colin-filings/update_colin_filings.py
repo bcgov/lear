@@ -72,7 +72,9 @@ def get_filings(app: Flask = None):
 
 def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
     """Post to colin-api with filing."""
+    print(filing['filing']['incorporationApplication']['nameTranslations'])
     clean_none(filing)
+    print(filing['filing']['incorporationApplication']['nameTranslations'])
 
     filing_type = filing['filing']['header'].get('name', None)
     identifier = filing['filing']['business'].get('identifier', None)
@@ -112,7 +114,7 @@ def clean_none(dictionary: dict = None):
         if dictionary[key]:
             if isinstance(dictionary[key], dict):
                 clean_none(dictionary[key])
-        else:
+        elif dictionary[key] is None:
             dictionary[key] = ''
 
 
