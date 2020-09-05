@@ -1063,6 +1063,22 @@ class Filing:
                 if filing.body.get('provisionsRemoved'):
                     Business.end_current_corp_restriction(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
 
+            elif filing.filing_type == 'correction':
+                for change in filing.body.get('diff'):
+                    if change['path'] == f"/filing/{filing.body['correctedFilingType']}/nameRequest/legalName":
+                        # end any existing corp names
+                        CorpName.end_current(
+                            cursor=cursor,
+                            event_id=filing.event_id,
+                            corp_num=corp_num
+                        )
+                        # create new corp name from NR in diff
+                        corp_name_obj = CorpName()
+                        corp_name_obj.corp_name = change['nameRequest']['legalName']
+                        corp_name_obj.corp_num = corp_num
+                        corp_name_obj.event_id = filing.event_id
+                        corp_name_obj.type_code = CorpName.TypeCodes.CORP.value
+                        CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
             else:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
