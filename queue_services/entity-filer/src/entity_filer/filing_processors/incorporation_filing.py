@@ -25,14 +25,9 @@ from flask import current_app
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.services.bootstrap import AccountService
 
-from entity_filer.filing_processors.filing_components import (
-    aliases,
-    business_profile,
-    create_office,
-    create_party,
-    create_role,
-    shares,
-)
+from entity_filer.filing_processors.filing_components import aliases, business_profile, shares
+from entity_filer.filing_processors.filing_components.offices import update_offices
+from entity_filer.filing_processors.filing_components.parties import update_parties
 
 
 def get_next_corp_num(business_type: str):
@@ -157,23 +152,11 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
     if not business:
         raise QueueException(f'IA incorporationApplication {filing_rec.id}, Unable to create business.')
 
-    offices = incorp_filing.get('offices', None)
-    for office_type, addresses in offices.items():
-        office = create_office(business, office_type, addresses)
-        business.offices.append(office)
+    if offices := incorp_filing['offices']:
+        update_offices(business, offices)
 
-    parties = incorp_filing.get('parties', None)
-    if parties:
-        for party_info in parties:
-            party = create_party(business_id=business.id, party_info=party_info, create=False)
-            for role_type in party_info.get('roles'):
-                role = {
-                    'roleType': role_type.get('roleType'),
-                    'appointmentDate': role_type.get('appointmentDate', None),
-                    'cessationDate': role_type.get('cessationDate', None)
-                }
-                party_role = create_role(party=party, role_info=role)
-                business.party_roles.append(party_role)
+    if parties := incorp_filing.get('parties'):
+        update_parties(business, parties)
 
     if share_structure := incorp_filing['shareStructure']:
         shares.update_share_structure(business, share_structure)
