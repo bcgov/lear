@@ -64,7 +64,7 @@ class NameXService():
         nr_response = requests.get(namex_url + 'requests/' + identifier, headers={
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token
-            })
+        })
 
         return nr_response
 
@@ -90,7 +90,7 @@ class NameXService():
         nr_response = requests.put(namex_url + 'requests/' + nr_json['nrNum'], headers={
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token
-            }, json=nr_json)
+        }, json=nr_json)
 
         return nr_response
 
@@ -157,7 +157,7 @@ class NameXService():
             'is_expired': is_expired,
             'consent_required': consent_required,
             'consent_received': consent_received
-            }
+        }
 
     @staticmethod
     def is_date_past_expiration(nr_json, date_time):
@@ -167,3 +167,24 @@ class NameXService():
         if expiration_date < date_time:
             return True
         return False
+
+    @staticmethod
+    def get_approved_name(nr_json) -> str:
+        """Get an approved name from nr json, if any."""
+        nr_name = None
+        state_to_check = None
+        nr_state = nr_json['state']
+
+        if nr_state == NameXService.State.APPROVED.value:
+            state_to_check = nr_state
+        elif nr_state == NameXService.State.CONDITIONAL.value:
+            state_to_check = nr_state
+        else:  # When NR is not approved
+            return ''
+
+        for name in nr_json['names']:
+            if name['state'] == state_to_check:
+                nr_name = name['name']
+                break
+
+        return nr_name

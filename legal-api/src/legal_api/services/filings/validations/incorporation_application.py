@@ -20,7 +20,11 @@ import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
+from legal_api.models import Business
 from legal_api.utils.datetime import datetime as dt
+
+from ... import namex
+from ...utils import get_str
 
 
 def validate(incorporation_json: Dict):
@@ -238,6 +242,52 @@ def validate_incorporation_effective_date(incorporation_json) -> Error:
 
     if effective_date > now_plus_10_days:
         msg.append({'error': babel('Invalid Datetime, effective date must be a maximum of 10 days ahead.')})
+
+    if msg:
+        return msg
+
+    return None
+
+
+def validate_correction_ia(filing: Dict) -> Error:
+    """Validate correction of Incorporation Application."""
+    msg = []
+
+    err = validate_correction_name_request(filing)
+    if err:
+        msg.extend(err)
+
+    if msg:
+        return Error(HTTPStatus.BAD_REQUEST, msg)
+
+    return None
+
+
+def validate_correction_name_request(filing: Dict) -> list:
+    """Validate correction of Name Request."""
+    msg = []
+
+    nr_path = '/filing/incorporationApplication/nameRequest/nrNumber'
+    nr_number = get_str(filing, nr_path)
+    if nr_number:
+        # ensure NR is approved or conditionally approved
+        nr_response = namex.query_nr_number(nr_number)
+        validation_result = namex.validate_nr(nr_response)
+        if not validation_result['is_approved']:
+            msg.append({'error': babel('Correction of Name Request is not approved.'), 'path': nr_path})
+
+        # ensure business type is BCOMP
+        path = '/filing/incorporationApplication/nameRequest/legalType'
+        legal_type = get_str(filing, path)
+        if legal_type != Business.LegalTypes.BCOMP.value:
+            msg.append({'error': babel('Correction of Name Request is not vaild for this type.'), 'path': path})
+
+        # NR request type = change of name
+        path = '/filing/incorporationApplication/nameRequest/legalName'
+        legal_name = get_str(filing, path)
+        nr_name = namex.get_approved_name(nr_response)
+        if legal_name is None or nr_name == legal_name:
+            msg.append({'error': babel('Correction of Name Request does not have change in name.'), 'path': path})
 
     if msg:
         return msg
