@@ -79,9 +79,9 @@ def test_invalid_nr_correction(session):
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
-    f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
+    f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'BC1234568'
     f['filing']['incorporationApplication']['nameRequest']['legalType'] = 'CP'
-    f['filing']['incorporationApplication']['nameRequest']['legalName'] = 'legal_name-BC1234567'
+    f['filing']['incorporationApplication']['nameRequest']['legalName'] = 'legal_name-BC1234568'
 
     nr_response = {
         'state': 'INPROGRESS',
