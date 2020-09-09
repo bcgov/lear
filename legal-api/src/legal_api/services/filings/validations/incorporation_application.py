@@ -286,7 +286,7 @@ def validate_correction_name_request(filing: Dict) -> list:
         path = '/filing/incorporationApplication/nameRequest/legalName'
         legal_name = get_str(filing, path)
         nr_name = namex.get_approved_name(nr_response)
-        if legal_name is None or nr_name == legal_name:
+        if legal_name is None or nr_name is None or nr_name == legal_name:
             msg.append({'error': babel('Correction of Name Request does not have change in name.'), 'path': path})
 
     if msg:

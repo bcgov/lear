@@ -180,7 +180,7 @@ class NameXService():
         elif nr_state == NameXService.State.CONDITIONAL.value:
             state_to_check = nr_state
         else:  # When NR is not approved
-            return ''
+            return None
 
         for name in nr_json['names']:
             if name['state'] == state_to_check:
