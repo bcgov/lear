@@ -116,7 +116,7 @@ class Filing:
 
     def get_filing_type_code(self):
         """Get filing type code."""
-        for filing_type_code in self.FILING_TYPES[self.business.corp_type].keys():
+        for filing_type_code in self.FILING_TYPES[self.business.corp_type]:
             if self.FILING_TYPES[self.business.corp_type][filing_type_code] == self.filing_type:
                 return filing_type_code
         return None
@@ -131,7 +131,7 @@ class Filing:
         }
         legal_type = self.get_corp_type()
         possible_filings = [self.FILING_TYPES[legal_type][key] for key in self.FILING_TYPES[legal_type]]
-        entered_filings = [x for x in self.body.keys() if x in possible_filings]
+        entered_filings = [x for x in self.body if x in possible_filings]
 
         if entered_filings:  # filing object possibly storing multiple filings
             for key in entered_filings:
