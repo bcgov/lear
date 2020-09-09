@@ -19,7 +19,6 @@ from unittest.mock import patch
 
 from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE
 
-
 from legal_api.services import NameXService
 from legal_api.services.filings import validate
 
