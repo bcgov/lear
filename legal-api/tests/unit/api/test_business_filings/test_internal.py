@@ -282,7 +282,7 @@ def test_get_bcomp_corrections(session, client, jwt):
     """Assert that the internal filings get endpoint returns corrections for bcomps."""
     # setup
     identifier = 'BC1234567'
-    b = factory_business(identifier, 'BC')
+    b = factory_business(identifier=identifier, entity_type='BC')
     factory_business_mailing_address(b)
 
     filing = factory_completed_filing(b, CORRECTION_INCORPORATION)
