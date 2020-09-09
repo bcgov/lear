@@ -61,7 +61,8 @@ class Filing:
             'ANNBC': 'annualReport',
             'NOCDR': 'changeOfDirectors',
             'NOCAD': 'changeOfAddress',
-            'NOALE': 'alteration'
+            'NOALE': 'alteration',
+            'CRBIN': 'correction'
         },
         Business.TypeCodes.BC_COMP.value: {
             'NOALE': 'alteration'
@@ -277,7 +278,7 @@ class Filing:
                     effective_dt=filing.effective_date,
                     filing_date=filing.filing_date
                 )
-            elif filing_type_code in ['NOCAD', 'NOALE', 'BEINC']:
+            elif filing_type_code in ['NOCAD', 'NOALE', 'BEINC', 'CRBIN']:
                 insert_stmnt = insert_stmnt + ', arrangement_ind, ods_typ_cd) '
                 values_stmnt = values_stmnt + ", 'N', 'F')"
                 cursor.execute(
@@ -572,16 +573,6 @@ class Filing:
         return filing
 
     @classmethod
-    def _get_alt(cls, filing, filing_event_info: dict):
-        """Get alteration filing."""
-        # this currently doesn't do anything except return a basic filing obj for alteration
-        filing.body = {
-            'eventId': filing_event_info['event_id']
-        }
-        filing.paper_only = True
-        return filing
-
-    @classmethod
     def _get_con(cls, cursor, filing, filing_event_info: dict):
         """Get change of name filing."""
         corp_num = filing.business.corp_num
@@ -674,6 +665,16 @@ class Filing:
         except Exception as err:
             current_app.logger.error(f'error voluntary dissolution filing for corp: {corp_num}')
             raise err
+    
+    @classmethod
+    def _get_placeholder_body(cls, filing, filing_event_info: dict):
+        """Get placeholder filing body."""
+        # this currently doesn't do anything except return a basic filing obj containing the event id
+        filing.body = {
+            'eventId': filing_event_info['event_id']
+        }
+        filing.paper_only = True
+        return filing
 
     @classmethod
     def _get_other(cls, cursor, filing, filing_event_info: dict):
@@ -783,8 +784,8 @@ class Filing:
             elif filing.filing_type == 'incorporationApplication':
                 filing = cls._get_inc(cursor=cursor, filing=filing, filing_event_info=filing_event_info)
 
-            elif filing.filing_type == 'alteration':
-                filing = cls._get_alt(filing=filing, filing_event_info=filing_event_info)
+            elif filing.filing_type in ['alteration', 'correction']:
+                filing = cls._get_placeholder_body(filing=filing, filing_event_info=filing_event_info)
 
             else:
                 # uncomment to bring in other filings as available on paper only
@@ -1065,7 +1066,7 @@ class Filing:
 
             elif filing.filing_type == 'correction':
                 for change in filing.body.get('diff'):
-                    if change['path'] == f"/filing/{filing.body['correctedFilingType']}/nameRequest/legalName":
+                    if f"/filing/{filing.body['correctedFilingType']}/nameRequest" in change['path']:
                         # end any existing corp names
                         CorpName.end_current(
                             cursor=cursor,
