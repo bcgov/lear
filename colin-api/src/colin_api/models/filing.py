@@ -344,7 +344,6 @@ class Filing:
             left join filing_user on event.event_id = filing_user.event_id
             where (filing_typ_cd=:filing_type_cd)
             """)
-
         if filing.business.corp_num:
             querystring += ' AND event.corp_num=:corp_num'
         if filing.event_id:
@@ -665,7 +664,7 @@ class Filing:
         except Exception as err:
             current_app.logger.error(f'error voluntary dissolution filing for corp: {corp_num}')
             raise err
-    
+
     @classmethod
     def _get_placeholder_body(cls, filing, filing_event_info: dict):
         """Get placeholder filing body."""
@@ -753,7 +752,6 @@ class Filing:
                 con = DB.connection
                 con.begin()
             cursor = con.cursor()
-
             # get the filing event info
             filing_event_info = cls._get_filing_event_info(filing=filing, year=year, cursor=cursor)
             if not filing_event_info:
@@ -762,7 +760,6 @@ class Filing:
                     filing_type=filing.filing_type,
                     event_id=filing.event_id
                 )
-
             if filing.filing_type == 'annualReport':
                 filing = cls._get_ar(cursor=cursor, filing=filing, filing_event_info=filing_event_info)
 
@@ -959,13 +956,14 @@ class Filing:
 
                 # create name
                 corp_name_obj = CorpName()
-                corp_name_obj.corp_name = filing.get_corp_name()
                 corp_name_obj.corp_num = corp_num
                 corp_name_obj.event_id = filing.event_id
-                if corp_name_obj.corp_num in corp_name_obj.corp_name:
-                    corp_name_obj.type_code = CorpName.TypeCodes.NUMBERED_CORP.value
-                else:
+                if name := filing.body['nameRequest'].get('legalName', None):
+                    corp_name_obj.corp_name = name
                     corp_name_obj.type_code = CorpName.TypeCodes.CORP.value
+                else:
+                    corp_name_obj.corp_name = f'{corp_num} B.C. LTD.'
+                    corp_name_obj.type_code = CorpName.TypeCodes.NUMBERED_CORP.value
                 CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
 
                 # create corp state
@@ -1000,13 +998,14 @@ class Filing:
                 if filing.body.get('nameRequest'):
                     # end old/create new name
                     corp_name_obj = CorpName()
-                    corp_name_obj.corp_name = filing.body['nameRequest']['legalName']
                     corp_name_obj.corp_num = corp_num
                     corp_name_obj.event_id = filing.event_id
-                    if corp_name_obj.corp_num in corp_name_obj.corp_name:
-                        corp_name_obj.type_code = CorpName.TypeCodes.NUMBERED_CORP.value
-                    else:
+                    if name := filing.body['nameRequest'].get('legalName', None):
+                        corp_name_obj.corp_name = name
                         corp_name_obj.type_code = CorpName.TypeCodes.CORP.value
+                    else:
+                        corp_name_obj.corp_name = f'{corp_num} B.C. LTD.'
+                        corp_name_obj.type_code = CorpName.TypeCodes.NUMBERED_CORP.value
                     CorpName.end_current(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
                     CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
 
@@ -1065,6 +1064,7 @@ class Filing:
                     Business.end_current_corp_restriction(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
 
             elif filing.filing_type == 'correction':
+                cls._insert_filing(cursor=cursor, filing=filing, ar_date=None, agm_date=None)
                 for change in filing.body.get('diff'):
                     if f"/filing/{filing.body['correctedFilingType']}/nameRequest" in change['path']:
                         # end any existing corp names
@@ -1075,10 +1075,14 @@ class Filing:
                         )
                         # create new corp name from NR in diff
                         corp_name_obj = CorpName()
-                        corp_name_obj.corp_name = change['nameRequest']['legalName']
                         corp_name_obj.corp_num = corp_num
                         corp_name_obj.event_id = filing.event_id
-                        corp_name_obj.type_code = CorpName.TypeCodes.CORP.value
+                        if name := change['newValue']['nameRequest'].get('legalName', None):
+                            corp_name_obj.corp_name = name
+                            corp_name_obj.type_code = CorpName.TypeCodes.CORP.value
+                        else:
+                            corp_name_obj.corp_name = f'{corp_num} B.C. LTD.'
+                            corp_name_obj.type_code = CorpName.TypeCodes.NUMBERED_CORP.value
                         CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
             else:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)

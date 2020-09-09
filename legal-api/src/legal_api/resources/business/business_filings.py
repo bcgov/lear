@@ -681,7 +681,9 @@ class InternalFilings(Resource):
             pending_filings = Filing.get_completed_filings_for_colin()
             for filing in pending_filings:
                 filing_json = filing.filing_json
-                if filing_json and filing.filing_type != 'lear_epoch':
+                business = Business.find_by_internal_id(filing.business_id)
+                if filing_json and filing.filing_type != 'lear_epoch' and \
+                        (filing.filing_type != 'correction' or business.legal_type != business.LegalTypes.COOP.value):
                     filing_json['filingId'] = filing.id
                     filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
                     if not filing_json['filing']['business'].get('legalName'):

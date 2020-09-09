@@ -419,7 +419,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(
                 Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
                 Filing._status == Filing.Status.COMPLETED.value,
-                Filing._filing_type != Filing.FILINGS['correction'].get('name'),
                 Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
             ).order_by(Filing.filing_date).all()
         return filings
