@@ -126,7 +126,7 @@ node {
                                         execute_pod_command(pod, sql, true)
                                     }
                                     if (id_num==null) {
-                                        id_num = '123000'
+                                        id_num = '1230000'
                                         echo "Error getting id_num. Setting to default: ${id_num}"
                                     }
                                     sql = "UPDATE C##CDEV.system_id SET id_num=${id_num} WHERE id_typ_cd = 'BC';"
