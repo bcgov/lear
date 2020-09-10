@@ -115,11 +115,14 @@ class FilingInfo(Resource):
 
             corp_types = Business.CORP_TYPE_CONVERSION[legal_type]
 
-            filing_list = {'changeOfAddress': json_data.get('changeOfAddress', None),
-                           'changeOfDirectors': json_data.get('changeOfDirectors', None),
-                           'annualReport': json_data.get('annualReport', None),
-                           'incorporationApplication': json_data.get('incorporationApplication', None),
-                           'alteration': json_data.get('alteration', None)}
+            filing_list = {
+                'changeOfAddress': json_data.get('changeOfAddress', None),
+                'changeOfDirectors': json_data.get('changeOfDirectors', None),
+                'annualReport': json_data.get('annualReport', None),
+                'incorporationApplication': json_data.get('incorporationApplication', None),
+                'alteration': json_data.get('alteration', None),
+                'correction': json_data.get('correction', None)
+            }
 
             # Filter out null-values in the filing_list dictionary
             filing_list = {k: v for k, v in filing_list.items() if filing_list[k]}

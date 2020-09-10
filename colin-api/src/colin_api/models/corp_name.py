@@ -15,6 +15,8 @@
 
 Currently this only provides API versioning information
 """
+from __future__ import annotations
+
 from enum import Enum
 
 from flask import current_app
@@ -75,7 +77,7 @@ class CorpName:
         return corp_name_objs
 
     @classmethod
-    def create_corp_name(cls, cursor, corp_name_obj):
+    def create_corp_name(cls, cursor, corp_name_obj) -> CorpName:
         """Add record to the CORP NAME table on incorporation."""
         try:
             search_name = cursor.callfunc('get_search_name', str, [corp_name_obj.corp_name])
@@ -175,7 +177,7 @@ class CorpName:
             raise err
 
     @classmethod
-    def get_by_event(cls, cursor, corp_num: str = None, event_id: str = None):
+    def get_by_event(cls, cursor, corp_num: str = None, event_id: str = None) -> CorpName:
         """Get the entity name corresponding with the given event id."""
         if not corp_num or not event_id:
             return None

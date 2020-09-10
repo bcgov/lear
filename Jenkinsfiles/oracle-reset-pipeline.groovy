@@ -135,10 +135,16 @@ node {
                                     sql = "INSERT INTO C##CDEV.FILING_TYPE_CLASS VALUES('BENCOM','Benefit Company');"
                                     execute_pod_command(pod, sql, true)
 
+                                    sql = "INSERT INTO C##CDEV.FILING_TYPE_CLASS ('BENCOR', 'Benefit Company Correction');"
+                                    execute_pod_command(pod, sql, true)
+
                                     sql = "INSERT INTO C##CDEV.FILING_TYPE VALUES('BEINC','BENCOM','Incorporate a BC Benefit Company','Incorporation Application for a BC Benefit Company');"
                                     execute_pod_command(pod, sql, true)
 
                                     sql = "INSERT INTO C##CDEV.FILING_TYPE VALUES('NOALE','BENCOM','Alteration from a BC Company to a Benefit Company','Alteration Application from a BC Company to a Benefit Company');"
+                                    execute_pod_command(pod, sql, true)
+
+                                    sql = "INSERT INTO C##CDEV.FILING_TYPE VALUES('CRBIN', 'BENCOR', 'Correction - Incorporate a BC Benefit Company', 'Correction - Incorporate a BC Benefit Company');"
                                     execute_pod_command(pod, sql, true)
 
                                     sql = "INSERT INTO C##CDEV.CORP_TYPE VALUES('BEN','Y','BC','BENEFIT COMPANY','Benefit Company');"
