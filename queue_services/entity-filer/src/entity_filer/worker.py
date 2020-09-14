@@ -141,8 +141,8 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 elif filing.get('incorporationApplication'):
                     business, filing_submission = incorporation_filing.process(business, filing, filing_submission)
 
-                elif filing.get('correction'):
-                    correction.process(filing_submission, filing)
+                if filing.get('correction'):
+                    filing_submission = correction.process(filing_submission, filing)
 
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()
