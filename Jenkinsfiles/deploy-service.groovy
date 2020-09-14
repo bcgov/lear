@@ -65,12 +65,16 @@ node {
             }
             openshift.withCluster() {
                 openshift.withProject() {
+                    echo "Updating ${COMPONENT_NAME}-previous tag..."
+                    def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${TAG_NAME}")
+                    echo "IMAGE_HASH: ${IMAGE_HASH}"
+                    openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${TAG_NAME}-previous")
 
                     echo "Tagging ${COMPONENT_NAME} for deployment to ${TAG_NAME} ..."
 
                     // Don't tag with BUILD_ID so the pruner can do it's job; it won't delete tagged images.
                     // Tag the images for deployment based on the image's hash
-                    def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${SOURCE_TAG}")
+                     IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${SOURCE_TAG}")
                     echo "IMAGE_HASH: ${IMAGE_HASH}"
                     openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${TAG_NAME}")
                 }
@@ -90,9 +94,10 @@ node {
                     }
                     def pod_selector = openshift.selector('pod', [ app:"${COMPONENT_NAME}-${TAG_NAME}" ])
                     pod_selector.untilEach {
-                        deployment = it.objects()[0].metadata.labels.deployment
+                        pod = it.objects()[0]
+                        deployment = pod.metadata.labels.deployment
                         echo deployment
-                        if (deployment ==  "${COMPONENT_NAME}-${TAG_NAME}-${new_version}" && it.objects()[0].status.phase == 'Running' && it.objects()[0].status.containerStatuses[0].ready) {
+                        if (deployment ==  "${COMPONENT_NAME}-${TAG_NAME}-${new_version}" && pod.status.phase == 'Running' && pod.status.containerStatuses[0].ready) {
                             return true
                         } else {
                             echo "Pod for new deployment not ready"
