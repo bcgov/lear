@@ -18,6 +18,7 @@ Currently this only provides API versioning information
 from __future__ import annotations
 
 from enum import Enum
+from typing import Optional
 
 from flask import current_app
 
@@ -177,7 +178,7 @@ class CorpName:
             raise err
 
     @classmethod
-    def get_by_event(cls, cursor, corp_num: str = None, event_id: str = None) -> CorpName:
+    def get_by_event(cls, cursor, corp_num: str = None, event_id: str = None) -> Optional[CorpName]:
         """Get the entity name corresponding with the given event id."""
         if not corp_num or not event_id:
             return None

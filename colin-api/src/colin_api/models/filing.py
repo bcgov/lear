@@ -62,10 +62,12 @@ class Filing:
             'NOCDR': 'changeOfDirectors',
             'NOCAD': 'changeOfAddress',
             'NOALE': 'alteration',
+            'NOALR': 'alteration',
             'CRBIN': 'correction'
         },
         Business.TypeCodes.BC_COMP.value: {
-            'NOALE': 'alteration'
+            'NOALE': 'alteration',
+            'NOALR': 'alteration'
         },
         Business.TypeCodes.ULC_COMP.value: {},
     }
@@ -278,7 +280,7 @@ class Filing:
                     effective_dt=filing.effective_date,
                     filing_date=filing.filing_date
                 )
-            elif filing_type_code in ['NOCAD', 'NOALE', 'BEINC', 'CRBIN']:
+            elif filing_type_code in ['NOCAD', 'NOALE', 'NOALR', 'BEINC', 'CRBIN']:
                 insert_stmnt = insert_stmnt + ', arrangement_ind, ods_typ_cd) '
                 values_stmnt = values_stmnt + ", 'N', 'F')"
                 cursor.execute(
@@ -988,7 +990,7 @@ class Filing:
             elif filing.filing_type == 'alteration':
                 cls._insert_filing(cursor=cursor, filing=filing, ar_date=None, agm_date=None)
                 if filing.body.get('business'):
-                    # HARDCODED alteration type code for now (not sure if the value in the schema will change)
+
                     Business.update_corp_type(
                         cursor=cursor,
                         corp_num=corp_num,
