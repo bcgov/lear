@@ -208,8 +208,7 @@ class Reset:
         for filing_info in reset_obj.get_filings_for_reset():
             events.append(filing_info['event_id'])
             events_info.append(filing_info)
-            legal_type = 'CP' if filing_info['filing_typ_cd'] in Filing.FILING_TYPES['CP'] else 'BC'
-            if Filing.FILING_TYPES[legal_type][filing_info['filing_typ_cd']] == 'annualReport':
+            if filing_info['filing_typ_cd'] in Filing.FILING_TYPES['annual_report']['type_code_list']:
                 annual_report_events.append(filing_info['event_id'])
 
         try:
