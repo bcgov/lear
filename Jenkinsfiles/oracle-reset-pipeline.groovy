@@ -144,6 +144,9 @@ node {
                                     sql = "INSERT INTO C##CDEV.FILING_TYPE VALUES('NOALE','BENCOM','Alteration from a BC Company to a Benefit Company','Alteration Application from a BC Company to a Benefit Company');"
                                     execute_pod_command(pod, sql, true)
 
+                                    sql = "INSERT INTO C##CDEV.FILING_TYPE VALUES('NOALR','BENCOM','Alteration from a Benefit Company to a BC Company','Alteration Application from a Benefit Company to a BC Company');"
+                                    execute_pod_command(pod, sql, true)
+
                                     sql = "INSERT INTO C##CDEV.FILING_TYPE VALUES('CRBIN', 'BENCOR', 'Correction - Incorporate a BC Benefit Company', 'Correction - Incorporate a BC Benefit Company');"
                                     execute_pod_command(pod, sql, true)
 
