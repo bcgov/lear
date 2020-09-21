@@ -110,7 +110,7 @@ class FilingInfo(Resource):
                 ), HTTPStatus.BAD_REQUEST
 
             # convert identifier if BC legal_type
-            if legal_type == Business.LearBusinessTypes.BCOMP.value:
+            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
                 identifier = identifier[-7:]
 
             corp_types = Business.CORP_TYPE_CONVERSION[legal_type]

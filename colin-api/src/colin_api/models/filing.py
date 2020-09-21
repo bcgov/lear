@@ -389,18 +389,19 @@ class Filing:
             from event
             join filing on filing.event_id = event.event_id
             left join filing_user on event.event_id = filing_user.event_id
-            where (filing_typ_cd=:filing_type_cd)
+            where
             """)
+        if filing.event_id:
+            querystring += ' event.event_id=:event_id'
+        else:
+            querystring += ' filing_typ_cd=:filing_type_cd'
         if filing.business.corp_num:
             querystring += ' AND event.corp_num=:corp_num'
-        if filing.event_id:
-            querystring += ' AND event.event_id=:event_id'
         if year:
             querystring += ' AND extract(year from PERIOD_END_DT)=:year'
 
         querystring += ' order by EVENT_TIMESTMP desc'
         try:
-            filing_type_cd = filing.get_filing_type_code()
             if not cursor:
                 cursor = DB.connection.cursor()
             if filing.event_id:
@@ -409,17 +410,16 @@ class Filing:
                         querystring,
                         corp_num=filing.business.corp_num,
                         event_id=filing.event_id,
-                        filing_type_cd=filing_type_cd,
                         year=year
                     )
                 else:
                     cursor.execute(
                         querystring,
                         corp_num=filing.business.corp_num,
-                        event_id=filing.event_id,
-                        filing_type_cd=filing_type_cd
+                        event_id=filing.event_id
                     )
             else:
+                filing_type_cd = filing.get_filing_type_code()
                 if year:
                     cursor.execute(
                         querystring,
@@ -428,7 +428,11 @@ class Filing:
                         year=year
                     )
                 else:
-                    cursor.execute(querystring, corp_num=filing.business.corp_num, filing_type_cd=filing_type_cd)
+                    cursor.execute(
+                        querystring,
+                        corp_num=filing.business.corp_num,
+                        filing_type_cd=filing_type_cd
+                    )
 
             event_info = cursor.fetchone()
 
@@ -1028,8 +1032,7 @@ class Filing:
                         shares_list=filing.body.get('shareStructure', {}).get('shareClasses', [])
                     )
                 # add name translations
-                translations = filing.body.get('nameTranslations', {}).get('new', [])
-                if translations:
+                if translations := filing.body.get('nameTranslations', {}).get('new', []):
                     CorpName.create_translations(cursor, corp_num, filing.event_id, translations)
 
             elif filing.filing_type == 'alteration':
@@ -1038,7 +1041,7 @@ class Filing:
                     Business.update_corp_type(
                         cursor=cursor,
                         corp_num=corp_num,
-                        corp_type=Business.TypeCodes.BCOMP.value
+                        corp_type=alter_corp_type
                     )
 
                 if filing.body.get('nameRequest'):
@@ -1056,14 +1059,8 @@ class Filing:
                     CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
 
                 if filing.body.get('nameTranslations'):
-                    for name in filing.body['nameTranslations'].get('new', []):
-                        # create new one for each name
-                        corp_name_obj = CorpName()
-                        corp_name_obj.corp_name = name
-                        corp_name_obj.corp_num = corp_num
-                        corp_name_obj.event_id = filing.event_id
-                        corp_name_obj.type_code = CorpName.TypeCodes.TRANSLATION.value
-                        CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
+                    if translations := filing.body.get('nameTranslations', {}).get('new', []):
+                        CorpName.create_translations(cursor, corp_num, filing.event_id, translations)
 
                     for translation in filing.body['nameTranslations'].get('modified', []):
                         # end existing for old name
@@ -1074,12 +1071,7 @@ class Filing:
                             corp_name=translation['oldValue']
                         )
                         # create new one for new name
-                        corp_name_obj = CorpName()
-                        corp_name_obj.corp_name = translation['newValue']
-                        corp_name_obj.corp_num = corp_num
-                        corp_name_obj.event_id = filing.event_id
-                        corp_name_obj.type_code = CorpName.TypeCodes.TRANSLATION.value
-                        CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
+                        CorpName.create_translations(cursor, corp_num, filing.event_id, [translation['newValue']])
 
                     for name in filing.body['nameTranslations'].get('ceased', []):
                         CorpName.end_translation(
