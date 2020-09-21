@@ -27,6 +27,7 @@ to be pursued.
 """
 import json
 import os
+import uuid
 from typing import Dict
 
 import nats
@@ -36,6 +37,7 @@ from entity_queue_common.service_utils import FilingException, QueueException, l
 from flask import Flask
 from legal_api import db
 from legal_api.models import Business, Filing
+from legal_api.utils.datetime import datetime
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 from sqlalchemy_continuum import versioning_manager
@@ -78,15 +80,31 @@ def get_filing_types(legal_filings: dict):
 async def publish_event(business: Business, filing: Filing):
     """Publish the filing message onto the NATS filing subject."""
     try:
-        payload = {'filing':
-                   {
-                       'identifier': business.identifier,
-                       'legalName': business.legal_name,
-                       'filingId': filing.id,
-                       'effectiveDate': filing.effective_date.isoformat(),
-                       'legalFilings': get_filing_types(filing.filing_json)
-                   }
-                   }
+        payload = {
+            'specversion': '1.x-wip',
+            'type': 'bc.registry.business.' + filing.filing_type,
+            'source': ''.join([
+                APP_CONFIG.LEGAL_API_URL,
+                '/business/',
+                business.identifier,
+                '/filing/',
+                str(filing.id)]),
+            'id': str(uuid.uuid4()),
+            'time': datetime.utcnow().isoformat(),
+            'datacontenttype': 'application/json',
+            'identifier': business.identifier,
+            'data': {
+                'filing': {
+                    'header': {'filingId': filing.id,
+                               'effectiveDate': filing.effective_date.isoformat()
+                               },
+                    'business': {'identifier': business.identifier},
+                    'legalFilings': get_filing_types(filing.filing_json)
+                }
+            }
+        }
+        if filing.temp_reg:
+            payload['tempidentifier'] = filing.temp_reg
         subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
         await qsm.service.publish(subject, payload)
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
