@@ -92,7 +92,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
     """Process the incoming incorporation filing."""
     # Extract the filing information for incorporation
     incorp_filing = filing.get('incorporationApplication')
-    is_correction = filing.get('correction', None)
+    is_correction = filing_rec.filing_type=='correction'
 
     if not incorp_filing:
         raise QueueException(f'IA legal_filing:incorporationApplication missing from {filing_rec.id}')
