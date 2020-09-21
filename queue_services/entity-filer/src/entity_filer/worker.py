@@ -51,6 +51,7 @@ from entity_filer.filing_processors import (
     incorporation_filing,
     voluntary_dissolution,
 )
+from entity_filer.filing_processors.filing_components import name_request
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
@@ -140,8 +141,8 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 elif filing.get('incorporationApplication'):
                     business, filing_submission = incorporation_filing.process(business, filing, filing_submission)
 
-                elif filing.get('correction'):
-                    correction.process(filing_submission, filing)
+                if filing.get('correction'):
+                    filing_submission = correction.process(filing_submission, filing)
 
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()
@@ -155,22 +156,26 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 alteration.post_process(business, filing_submission)
 
             if any('incorporationApplication' in x for x in legal_filings):
-                filing_submission.business_id = business.id
-                db.session.add(filing_submission)
-                db.session.commit()
-                incorporation_filing.update_affiliation(business, filing_submission)
-                incorporation_filing.consume_nr(business, filing_submission)
-                incorporation_filing.post_process(business, filing_submission)
-                try:
-                    await publish_email_message(
-                        qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'mras')
-                except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-                    # mark any failure for human review
-                    capture_message(
-                        f'Queue Error: Failed to place email for filing:{filing_submission.id}'
-                        f'on Queue with error:{err}',
-                        level='error'
-                    )
+                if any('correction' in x for x in legal_filings):
+                    if name_request.has_new_nr_for_correction(filing_submission.filing_json):
+                        name_request.consume_nr(business, filing_submission)
+                else:
+                    filing_submission.business_id = business.id
+                    db.session.add(filing_submission)
+                    db.session.commit()
+                    incorporation_filing.update_affiliation(business, filing_submission)
+                    name_request.consume_nr(business, filing_submission)
+                    incorporation_filing.post_process(business, filing_submission)
+                    try:
+                        await publish_email_message(
+                            qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'mras')
+                    except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                        # mark any failure for human review
+                        capture_message(
+                            f'Queue Error: Failed to place email for filing:{filing_submission.id}'
+                            f'on Queue with error:{err}',
+                            level='error'
+                        )
 
             try:
                 await publish_email_message(
