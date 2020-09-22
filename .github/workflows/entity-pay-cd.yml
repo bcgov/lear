@@ -33,7 +33,7 @@ jobs:
         with:
           WORKING_DIRECTORY: "./queue_services/entity-pay"
           APP_NAME: "entity-pay"
-          VAULTS: '[{ \"vault\": \"shared\", \"application\": [\"nats\"]}, {\"vault\": \"entity\",\"application\": [\"postgres-legal\", \"entity-pay\", \"sentry\"]}]'
+          VAULTS: '[{ \"vault\": \"shared\", \"application\": [\"nats\"]}, {\"vault\": \"entity\",\"application\": [\"postgres-legal\", \"entity-pay\", \"nats-pay\", \"sentry\"]}]'
           SKIP_OP: "false"
           OP_PARAMETERS: ${{ secrets.OP_PARAMETERS }}
           OPENSHIFT_LOGIN_REGISTRY: ${{ secrets.OPENSHIFT_LOGIN_REGISTRY }}

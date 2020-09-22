@@ -1,0 +1,41 @@
+name: Update Legal Filings Job CI
+
+on:
+  pull_request:
+    types: [assigned, synchronize]
+    paths:
+      - "jobs/update-legal-filings/**"
+
+jobs:
+  update-legal-filings-ci:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        working-directory: ./jobs/update-legal-filings
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements/dev.txt
+      - name: Lint with pylint
+        working-directory: ./jobs/update-legal-filings
+        run: |
+          pylint --rcfile=setup.cfg --load-plugins=pylint_flask update_legal_filings.py
+      - name: Lint with flake8
+        working-directory: ./jobs/update-legal-filings
+        run: |
+          flake8 update_legal_filings.py
+
+#      - name: Test with pytest
+#        working-directory: ./jobs/update-legal-filings
+#        run: |
+#          pip install .
+#          pytest

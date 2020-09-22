@@ -30,54 +30,54 @@
                                     {
                                         "name": "COLIN_URL",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "key": "ROUTE",
-                                                "name": "colin-api-${ENV}-config"
+                                            "secretKeyRef": {
+                                                "key": "COLIN_URL",
+                                                "name": "update-colin-filings-${ENV}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "SENTRY_DSN",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "SENTRY_DSN",
-                                                "name": "updater-jobs-${ENV}-config"
+                                                "name": "update-colin-filings-${ENV}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "LEGAL_URL",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "key": "ROUTE",
-                                                "name": "legal-api-${ENV}-config"
+                                            "secretKeyRef": {
+                                                "key": "LEGAL_URL",
+                                                "name": "update-colin-filings-${ENV}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "ACCOUNT_SVC_AUTH_URL",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "ACCOUNT_SVC_AUTH_URL",
-                                                "name": "updater-jobs-${ENV}-config"
+                                                "name": "update-colin-filings-${ENV}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "ACCOUNT_SVC_CLIENT_ID",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "ACCOUNT_SVC_CLIENT_ID",
-                                                "name": "updater-jobs-${ENV}-config"
+                                                "name": "update-colin-filings-${ENV}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "ACCOUNT_SVC_CLIENT_SECRET",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "ACCOUNT_SVC_CLIENT_SECRET",
-                                                "name": "updater-jobs-${ENV}-config"
+                                                "name": "update-colin-filings-${ENV}-secret"
                                             }
                                         }
                                     }
