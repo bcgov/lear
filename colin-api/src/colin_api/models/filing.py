@@ -29,6 +29,8 @@ from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
 
+# Code smells:
+# Cognitive Complexity acceptable for deep method on filing types
 class Filing:
     """Class to contain all model-like functions for filings such as getting and setting from database."""
 
