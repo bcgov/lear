@@ -211,32 +211,26 @@ class DocumentMetaService():
         if not self.is_bcomp():
             return []
 
-        if self.is_paid():
-            return [
-                self.create_report_object(
-                    'Incorporation Application (Correction Pending)',
-                    self.get_general_filename('Incorporation Application (Correction Pending)')
-                )
-            ]
-
         reports = []
+
         reports.append(self.create_report_object(
             'Incorporation Application (Corrected)',
             self.get_general_filename('Incorporation Application (Corrected)')
         ))
 
-        if NameXService.has_correction_changed_name(filing):
-            reports.append(self.create_report_object(
-                'Certificate (Corrected)',
-                self.get_general_filename('Certificate (Corrected)'),
-                DocumentMetaService.ReportType.CERTIFICATE.value
-            ))
+        if self.is_completed():
+            if NameXService.has_correction_changed_name(filing):
+                reports.append(self.create_report_object(
+                    'Certificate (Corrected)',
+                    self.get_general_filename('Certificate (Corrected)'),
+                    DocumentMetaService.ReportType.CERTIFICATE.value
+                ))
 
-        reports.append(self.create_report_object(
-            DocumentMetaService.NOTICE_OF_ARTICLES,
-            self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
-            DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
-        ))
+            reports.append(self.create_report_object(
+                DocumentMetaService.NOTICE_OF_ARTICLES,
+                self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
+                DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
+            ))
 
         return reports
 
