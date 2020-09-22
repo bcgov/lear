@@ -1,21 +1,25 @@
-# Base image
-FROM python:3.7
+FROM python:3.8.5-buster
 USER root
 
-
 # Create working directory
-RUN mkdir /opt/app && chmod 755 /opt/app
-WORKDIR /opt/app
+RUN mkdir /opt/app-root && chmod 755 /opt/app-root
+WORKDIR /opt/app-root
 
 # Install the requirements
+COPY ./requirements.txt .
+
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Add rest of files
 COPY . .
+
+RUN pip install .
 
 USER 1001
 
-# Run server
-EXPOSE 5000
+# Set Python path
+ENV PYTHONPATH=/opt/app-root/src
 
-CMD ["flask", "run","--host", "0.0.0.0"]
+EXPOSE 8080
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--config", "/opt/app-root/gunicorn_config.py", "wsgi:application"]
