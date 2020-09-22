@@ -15,8 +15,11 @@
 Currently this only provides API versioning information
 """
 # pylint: disable=too-many-lines
+from __future__ import annotations
+
 import datetime
 from enum import Enum
+from typing import Optional
 
 from flask import current_app
 
@@ -26,6 +29,8 @@ from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime
 
 
+# Code smells:
+# Cognitive Complexity acceptable for deep method on filing types
 class Filing:
     """Class to contain all model-like functions for filings such as getting and setting from database."""
 
@@ -35,39 +40,84 @@ class Filing:
         COLIN = 'COLIN'
         LEAR = 'LEAR'
 
-    # coops in order of number filed by coops as of september 2019
     FILING_TYPES = {
-        Business.TypeCodes.COOP.value: {
-            'OTANN': 'annualReport',
-            'OTCDR': 'changeOfDirectors',
-            'OTSPE': 'specialResolution',
-            'OTINC': 'incorporationApplication',
-            'OTAMA': 'amalgamationApplication',
-            'OTADD': 'changeOfAddress',
-            'OTDIS': 'dissolved',
-            'OTCGM': 'amendedAGM',
-            'OTVDS': 'voluntaryDissolution',
-            'OTNCN': 'changeOfName',
-            'OTRES': 'restorationApplication',
-            'OTAMR': 'amendedAnnualReport',
-            'OTADR': 'amendedChangeOfDirectors',
-            'OTVLQ': 'voluntaryLiquidation',
-            'OTNRC': 'appointReceiver',
-            'OTCON': 'continuedOut'
+        'annualReport': {
+            'type_code_list': ['OTANN', 'ANNBC'],
+            Business.TypeCodes.COOP.value: 'OTANN',
+            Business.TypeCodes.BCOMP.value: 'ANNBC'
         },
-        # implemented BCOMP filings
-        Business.TypeCodes.BCOMP.value: {
-            'BEINC': 'incorporationApplication',
-            'ANNBC': 'annualReport',
-            'NOCDR': 'changeOfDirectors',
-            'NOCAD': 'changeOfAddress',
-            'NOALE': 'alteration',
-            'CRBIN': 'correction'
+        'changeOfDirectors': {
+            'type_code_list': ['OTCDR', 'NOCDR'],
+            Business.TypeCodes.COOP.value: 'OTCDR',
+            Business.TypeCodes.BCOMP.value: 'NOCDR'
         },
-        Business.TypeCodes.BC_COMP.value: {
-            'NOALE': 'alteration'
+        'changeOfAddress': {
+            'type_code_list': ['OTADD', 'NOCAD'],
+            Business.TypeCodes.COOP.value: 'OTADD',
+            Business.TypeCodes.BCOMP.value: 'NOCAD'
         },
-        Business.TypeCodes.ULC_COMP.value: {},
+        'incorporationApplication': {
+            'type_code_list': ['OTINC', 'BEINC'],
+            Business.TypeCodes.COOP.value: 'OTINC',
+            Business.TypeCodes.BCOMP.value: 'BEINC'
+        },
+        'alteration': {
+            'type_code_list': ['NOALE', 'NOALR'],
+            Business.TypeCodes.BCOMP.value: 'NOALR',
+            Business.TypeCodes.BC_COMP.value: 'NOALE'
+        },
+        'correction': {
+            'type_code_list': ['CRBIN'],
+            Business.TypeCodes.BCOMP.value: 'CRBIN'
+        },
+        'specialResolution': {
+            'type_code_list': ['OTSPE'],
+            Business.TypeCodes.COOP.value: 'OTSPE',
+        },
+        'amalgamationApplication': {
+            'type_code_list': ['OTAMA'],
+            Business.TypeCodes.COOP.value: 'OTAMA',
+        },
+        'dissolved': {
+            'type_code_list': ['OTDIS'],
+            Business.TypeCodes.COOP.value: 'OTDIS',
+        },
+        'amendedAGM': {
+            'type_code_list': ['OTCGM'],
+            Business.TypeCodes.COOP.value: 'OTCGM',
+        },
+        'voluntaryDissolution': {
+            'type_code_list': ['OTVDS'],
+            Business.TypeCodes.COOP.value: 'OTVDS',
+        },
+        'changeOfName': {
+            'type_code_list': ['OTNCN'],
+            Business.TypeCodes.COOP.value: 'OTNCN',
+        },
+        'restorationApplication': {
+            'type_code_list': ['OTRES'],
+            Business.TypeCodes.COOP.value: 'OTRES',
+        },
+        'amendedAnnualReport': {
+            'type_code_list': ['OTAMR'],
+            Business.TypeCodes.COOP.value: 'OTAMR',
+        },
+        'amendedChangeOfDirectors': {
+            'type_code_list': ['OTADR'],
+            Business.TypeCodes.COOP.value: 'OTADR',
+        },
+        'voluntaryLiquidation': {
+            'type_code_list': ['OTVLQ'],
+            Business.TypeCodes.COOP.value: 'OTVLQ',
+        },
+        'appointReceiver': {
+            'type_code_list': ['OTNRC'],
+            Business.TypeCodes.COOP.value: 'OTNRC',
+        },
+        'continuedOut': {
+            'type_code_list': ['OTCON'],
+            Business.TypeCodes.COOP.value: 'OTCON'
+        }
     }
 
     USERS = {
@@ -92,36 +142,33 @@ class Filing:
     def __init__(self):
         """Initialize with all values None."""
 
-    def get_corp_name(self):
+    def get_corp_name(self) -> str:
         """Get corporation name, aka legal name."""
         return self.business.corp_name
 
-    def get_corp_num(self):
+    def get_corp_num(self) -> str:
         """Get corporation num, aka identifier."""
         return self.business.corp_num
 
-    def get_corp_type(self):
+    def get_corp_type(self) -> str:
         """Get corporation type."""
         return self.business.corp_type
 
-    def get_certified_by(self):
+    def get_certified_by(self) -> str:
         """Get last name; currently is whole name."""
         return self.header['certifiedBy']
 
-    def get_email(self):
+    def get_email(self) -> str:
         """Get email address."""
         if self.body.get(self.filing_type, {}).get('contactPoint'):
             return self.body[self.filing_type]['contactPoint']['email']
         return self.header.get('email', '')
 
-    def get_filing_type_code(self):
+    def get_filing_type_code(self) -> Optional[str]:
         """Get filing type code."""
-        for filing_type_code in self.FILING_TYPES[self.business.corp_type]:
-            if self.FILING_TYPES[self.business.corp_type][filing_type_code] == self.filing_type:
-                return filing_type_code
-        return None
+        return Filing.FILING_TYPES.get(self.filing_type, {}).get(self.business.corp_type, None)
 
-    def as_dict(self):
+    def as_dict(self) -> dict:
         """Return dict of object that can be json serialized and fits schema requirements."""
         filing = {
             'filing': {
@@ -129,9 +176,7 @@ class Filing:
                 **self.business.as_dict()
             }
         }
-        legal_type = self.get_corp_type()
-        possible_filings = [self.FILING_TYPES[legal_type][key] for key in self.FILING_TYPES[legal_type]]
-        entered_filings = [x for x in self.body if x in possible_filings]
+        entered_filings = [x for x in self.body if x in Filing.FILING_TYPES]
 
         if entered_filings:  # filing object possibly storing multiple filings
             for key in entered_filings:
@@ -184,7 +229,7 @@ class Filing:
         return event_id
 
     @classmethod
-    def _get_events(cls, cursor, corp_num: str, filing_type_code: str):
+    def _get_events(cls, cursor, corp_num: str, filing_type_code: str) -> list:
         """Get all event ids of filings for given filing type for this corp."""
         try:
             if not cursor:
@@ -202,15 +247,12 @@ class Filing:
 
             events = cursor.fetchall()
             event_list = []
-            legal_type = Business.TypeCodes.BCOMP.value
-            if corp_num[:2] == 'CP':
-                legal_type = Business.TypeCodes.COOP.value
             for row in events:
                 row = dict(zip([x[0].lower() for x in cursor.description], row))
                 item = {'id': row['event_id'], 'date': row['event_timestmp']}
 
                 # if filing type is an AR include the period_end_dt info
-                if Filing.FILING_TYPES[legal_type][filing_type_code] == 'annualReport':
+                if filing_type_code in cls.FILING_TYPES['annual_report']['type_code_list']:
                     item['annualReportDate'] = row['period_end_dt']
 
                 event_list.append(item)
@@ -220,6 +262,13 @@ class Filing:
             raise err
 
         return event_list
+
+    @classmethod
+    def _get_filing_type(cls, filing_type_code: str) -> Optional[str]:
+        for filing_type in cls.FILING_TYPES:
+            if filing_type_code in cls.FILING_TYPES[filing_type]['type_code_list']:
+                return filing_type
+        return None
 
     @classmethod
     def _insert_filing(cls, cursor, filing, ar_date: str, agm_date: str):
@@ -244,7 +293,7 @@ class Filing:
                 cursor.execute(
                     insert_stmnt + values_stmnt,
                     event_id=filing.event_id,
-                    filing_type_code=filing.get_filing_type_code(),
+                    filing_type_code=filing_type_code,
                     effective_dt=filing.effective_date,
                     period_end_date=ar_date if not agm_date else agm_date,
                     agm_date=agm_date
@@ -255,7 +304,7 @@ class Filing:
                 cursor.execute(
                     insert_stmnt + values_stmnt,
                     event_id=filing.event_id,
-                    filing_type_code=filing.get_filing_type_code(),
+                    filing_type_code=filing_type_code,
                     effective_dt=filing.effective_date
                 )
             elif filing_type_code in ['ANNBC']:
@@ -264,7 +313,7 @@ class Filing:
                 cursor.execute(
                     insert_stmnt + values_stmnt,
                     event_id=filing.event_id,
-                    filing_type_code=filing.get_filing_type_code(),
+                    filing_type_code=filing_type_code,
                     effective_dt=filing.effective_date,
                     period_end_date=ar_date
                 )
@@ -274,17 +323,17 @@ class Filing:
                 cursor.execute(
                     insert_stmnt + values_stmnt,
                     event_id=filing.event_id,
-                    filing_type_code=filing.get_filing_type_code(),
+                    filing_type_code=filing_type_code,
                     effective_dt=filing.effective_date,
                     filing_date=filing.filing_date
                 )
-            elif filing_type_code in ['NOCAD', 'NOALE', 'BEINC', 'CRBIN']:
+            elif filing_type_code in ['NOCAD', 'NOALE', 'NOALR', 'BEINC', 'CRBIN']:
                 insert_stmnt = insert_stmnt + ', arrangement_ind, ods_typ_cd) '
                 values_stmnt = values_stmnt + ", 'N', 'F')"
                 cursor.execute(
                     insert_stmnt + values_stmnt,
                     event_id=filing.event_id,
-                    filing_type_code=filing.get_filing_type_code(),
+                    filing_type_code=filing_type_code,
                     effective_dt=filing.effective_date
                 )
             else:
@@ -315,7 +364,7 @@ class Filing:
             raise err
 
     @classmethod
-    def _add_ledger_text(cls, cursor, filing, text: str):
+    def _insert_ledger_text(cls, cursor, filing, text: str):
         """Add note to ledger test table."""
         try:
             cursor.execute(
@@ -333,7 +382,7 @@ class Filing:
             raise err
 
     @classmethod
-    def _get_filing_event_info(cls, cursor, filing, year: int = None):  # pylint: disable=too-many-branches;
+    def _get_filing_event_info(cls, cursor, filing, year: int = None) -> dict:  # pylint: disable=too-many-branches;
         """Get the basic filing info that we care about for all filings."""
         # build base querystring
         querystring = ("""
@@ -342,18 +391,19 @@ class Filing:
             from event
             join filing on filing.event_id = event.event_id
             left join filing_user on event.event_id = filing_user.event_id
-            where (filing_typ_cd=:filing_type_cd)
+            where
             """)
+        if filing.event_id:
+            querystring += ' event.event_id=:event_id'
+        else:
+            querystring += ' filing_typ_cd=:filing_type_cd'
         if filing.business.corp_num:
             querystring += ' AND event.corp_num=:corp_num'
-        if filing.event_id:
-            querystring += ' AND event.event_id=:event_id'
         if year:
             querystring += ' AND extract(year from PERIOD_END_DT)=:year'
 
         querystring += ' order by EVENT_TIMESTMP desc'
         try:
-            filing_type_cd = filing.get_filing_type_code()
             if not cursor:
                 cursor = DB.connection.cursor()
             if filing.event_id:
@@ -362,17 +412,16 @@ class Filing:
                         querystring,
                         corp_num=filing.business.corp_num,
                         event_id=filing.event_id,
-                        filing_type_cd=filing_type_cd,
                         year=year
                     )
                 else:
                     cursor.execute(
                         querystring,
                         corp_num=filing.business.corp_num,
-                        event_id=filing.event_id,
-                        filing_type_cd=filing_type_cd
+                        event_id=filing.event_id
                     )
             else:
+                filing_type_cd = filing.get_filing_type_code()
                 if year:
                     cursor.execute(
                         querystring,
@@ -381,7 +430,11 @@ class Filing:
                         year=year
                     )
                 else:
-                    cursor.execute(querystring, corp_num=filing.business.corp_num, filing_type_cd=filing_type_cd)
+                    cursor.execute(
+                        querystring,
+                        corp_num=filing.business.corp_num,
+                        filing_type_cd=filing_type_cd
+                    )
 
             event_info = cursor.fetchone()
 
@@ -419,7 +472,7 @@ class Filing:
             raise err
 
     @classmethod
-    def _get_ar(cls, cursor, filing, filing_event_info: dict):
+    def _get_ar(cls, cursor, filing, filing_event_info: dict) -> dict:
         """Return annual report filing."""
         # get directors and registered office as of this filing if coop
         corp_num = filing.business.corp_num
@@ -484,7 +537,7 @@ class Filing:
         return filing
 
     @classmethod
-    def _get_coa(cls, cursor, filing, filing_event_info: dict):
+    def _get_coa(cls, cursor, filing, filing_event_info: dict) -> dict:
         """Get change of address filing for registered and/or records office."""
         corp_num = filing.business.corp_num
         office_obj_list = Office.get_by_event(cursor, filing_event_info['event_id'])
@@ -516,7 +569,7 @@ class Filing:
         return filing
 
     @classmethod
-    def _get_cod(cls, cursor, filing, filing_event_info: dict):
+    def _get_cod(cls, cursor, filing, filing_event_info: dict) -> dict:
         """Get change of directors filing."""
         corp_num = filing.business.corp_num
         director_objs = Party.get_by_event(cursor, corp_num, filing_event_info['event_id'])
@@ -545,7 +598,7 @@ class Filing:
         return filing
 
     @classmethod
-    def _get_inc(cls, cursor, filing, filing_event_info: dict):
+    def _get_inc(cls, cursor, filing, filing_event_info: dict) -> dict:
         """Get incorporation filing."""
         corp_num = filing.business.corp_num
         office_obj_list = Office.get_by_event(cursor, filing_event_info['event_id'])
@@ -572,7 +625,7 @@ class Filing:
         return filing
 
     @classmethod
-    def _get_con(cls, cursor, filing, filing_event_info: dict):
+    def _get_con(cls, cursor, filing, filing_event_info: dict) -> dict:
         """Get change of name filing."""
         corp_num = filing.business.corp_num
         name_obj = CorpName.get_by_event(corp_num=corp_num, event_id=filing_event_info['event_id'], cursor=cursor)
@@ -592,7 +645,7 @@ class Filing:
         return filing
 
     @classmethod
-    def _get_sr(cls, cursor, filing, filing_event_info: dict):
+    def _get_sr(cls, cursor, filing, filing_event_info: dict) -> dict:
         """Get special resolution filing."""
         querystring = (
             """
@@ -630,7 +683,7 @@ class Filing:
             raise err
 
     @classmethod
-    def _get_vd(cls, cursor, filing, filing_event_info: dict):
+    def _get_vd(cls, cursor, filing, filing_event_info: dict) -> dict:
         """Get voluntary dissolution filing."""
         querystring = (
             """
@@ -666,7 +719,7 @@ class Filing:
             raise err
 
     @classmethod
-    def _get_placeholder_body(cls, filing, filing_event_info: dict):
+    def _get_placeholder_body(cls, filing, filing_event_info: dict) -> dict:
         """Get placeholder filing body."""
         # this currently doesn't do anything except return a basic filing obj containing the event id
         filing.body = {
@@ -676,7 +729,7 @@ class Filing:
         return filing
 
     @classmethod
-    def _get_other(cls, cursor, filing, filing_event_info: dict):
+    def _get_other(cls, cursor, filing, filing_event_info: dict) -> dict:
         """Get basic info for a filing we aren't handling yet."""
         querystring = (
             """
@@ -742,10 +795,10 @@ class Filing:
                                  mailing_addr_id, office_code)
         # create new ledger text for address change
         if filing.filing_type != 'incorporationApplication':
-            cls._add_ledger_text(cursor, filing, text % (office_desc))
+            cls._insert_ledger_text(cursor, filing, text % (office_desc))
 
     @classmethod
-    def get_filing(cls, filing, con=None, year: int = None):  # pylint: disable=too-many-branches;
+    def get_filing(cls, filing, con=None, year: int = None) -> dict:  # pylint: disable=too-many-branches;
         """Get a Filing."""
         try:
             if not con:
@@ -812,7 +865,7 @@ class Filing:
             raise err
 
     @classmethod
-    def get_historic_filings(cls, business: Business):
+    def get_historic_filings(cls, business: Business) -> list:
         """Get list all filings from before the bob-date=2019-03-08."""
         try:
             historic_filings = []
@@ -833,7 +886,7 @@ class Filing:
             for filing_info in cursor:
                 filings_info_list.append(dict(zip([x[0].lower() for x in cursor.description], filing_info)))
             for filing_info in filings_info_list:
-                filing_info['filing_type'] = cls.FILING_TYPES[legal_type][filing_info['filing_typ_cd']]
+                filing_info['filing_type'] = cls._get_filing_type(filing_info['filing_typ_cd'])
                 date = convert_to_json_date(filing_info['event_timestmp'])
                 if date < '2019-03-08' or legal_type != Business.TypeCodes.COOP.value:
                     filing = Filing()
@@ -901,7 +954,7 @@ class Filing:
 
                 # create new ledger text for annual report
                 text = agm_date if agm_date else f'NO AGM HELD IN {agm_year}'
-                cls._add_ledger_text(cursor=cursor, filing=filing, text=f'ANNUAL REPORT - {text}')
+                cls._insert_ledger_text(cursor=cursor, filing=filing, text=f'ANNUAL REPORT - {text}')
 
             elif filing.filing_type == 'changeOfAddress':
                 cls._insert_filing(cursor=cursor, filing=filing, ar_date=None, agm_date=None)
@@ -943,7 +996,7 @@ class Filing:
                                                 business=filing.business.as_dict())
 
                 # create new ledger text for address change
-                cls._add_ledger_text(cursor=cursor, filing=filing, text='Director change.')
+                cls._insert_ledger_text(cursor=cursor, filing=filing, text='Director change.')
                 # update corporation record
                 Business.update_corporation(cursor=cursor, corp_num=corp_num)
 
@@ -981,18 +1034,16 @@ class Filing:
                         shares_list=filing.body.get('shareStructure', {}).get('shareClasses', [])
                     )
                 # add name translations
-                translations = filing.body.get('nameTranslations', {}).get('new', [])
-                if translations:
+                if translations := filing.body.get('nameTranslations', {}).get('new', []):
                     CorpName.create_translations(cursor, corp_num, filing.event_id, translations)
 
             elif filing.filing_type == 'alteration':
                 cls._insert_filing(cursor=cursor, filing=filing, ar_date=None, agm_date=None)
-                if filing.body.get('business'):
-                    # HARDCODED alteration type code for now (not sure if the value in the schema will change)
+                if alter_corp_type := filing.body.get('business', {}).get('legalType'):
                     Business.update_corp_type(
                         cursor=cursor,
                         corp_num=corp_num,
-                        corp_type=Business.TypeCodes.BCOMP.value
+                        corp_type=alter_corp_type
                     )
 
                 if filing.body.get('nameRequest'):
@@ -1010,14 +1061,8 @@ class Filing:
                     CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
 
                 if filing.body.get('nameTranslations'):
-                    for name in filing.body['nameTranslations'].get('new', []):
-                        # create new one for each name
-                        corp_name_obj = CorpName()
-                        corp_name_obj.corp_name = name
-                        corp_name_obj.corp_num = corp_num
-                        corp_name_obj.event_id = filing.event_id
-                        corp_name_obj.type_code = CorpName.TypeCodes.TRANSLATION.value
-                        CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
+                    if translations := filing.body.get('nameTranslations', {}).get('new', []):
+                        CorpName.create_translations(cursor, corp_num, filing.event_id, translations)
 
                     for translation in filing.body['nameTranslations'].get('modified', []):
                         # end existing for old name
@@ -1028,12 +1073,7 @@ class Filing:
                             corp_name=translation['oldValue']
                         )
                         # create new one for new name
-                        corp_name_obj = CorpName()
-                        corp_name_obj.corp_name = translation['newValue']
-                        corp_name_obj.corp_num = corp_num
-                        corp_name_obj.event_id = filing.event_id
-                        corp_name_obj.type_code = CorpName.TypeCodes.TRANSLATION.value
-                        CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
+                        CorpName.create_translations(cursor, corp_num, filing.event_id, [translation['newValue']])
 
                     for name in filing.body['nameTranslations'].get('ceased', []):
                         CorpName.end_translation(

@@ -32,7 +32,8 @@ class Business:  # pylint: disable=too-many-instance-attributes
         """Temp class for lear business types, will be importing these from lear after upgrading python inage to 3.8."""
 
         COOP = 'CP'
-        BCOMP = 'BC'
+        BCOMP = 'BEN'
+        BC_COMP = 'BC'
 
     class TypeCodes(Enum):
         """Render an Enum of the Corporation Type Codes."""
@@ -48,6 +49,11 @@ class Business:  # pylint: disable=too-many-instance-attributes
             TypeCodes.COOP.value
         ],
         LearBusinessTypes.BCOMP.value: [
+            TypeCodes.BCOMP.value,
+            TypeCodes.BC_COMP.value,
+            TypeCodes.ULC_COMP.value
+        ],
+        LearBusinessTypes.BC_COMP.value: [
             TypeCodes.BCOMP.value,
             TypeCodes.BC_COMP.value,
             TypeCodes.ULC_COMP.value
@@ -254,9 +260,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             business.corp_num = filing_info['business']['identifier']
             business.founding_date = convert_to_pacific_time(filing_info['header']['learEffectiveDate'])
 
-            # will need to change after legal is updated
-            corp_types = Business.CORP_TYPE_CONVERSION[filing_info['business']['legalType']]
-            if Business.TypeCodes.BCOMP.value in corp_types:
+            if filing_info['business']['legalType'] in cls.CORP_TYPE_CONVERSION[cls.LearBusinessTypes.BCOMP.value]:
                 business.corp_num = business.corp_num[-7:]
                 business.corp_type = Business.TypeCodes.BCOMP.value
             else:
