@@ -1,12 +1,11 @@
-name: Entity Emailer CD
+name: Data Reset Tool CD
 
 on:
   push:
     branches:
       - master
     paths:
-      - "queue_services/entity-emailer/**"
-      - "queue_services/common/**"
+      - "data-reset-tool/**"
   workflow_dispatch:
     inputs:
       environement:
@@ -15,7 +14,7 @@ on:
         default: "dev"
 
 jobs:
-  entity-emailer-cd:
+  data-reset-tool-cd:
     runs-on: ubuntu-latest
     if: github.repository == 'bcgov/lear'
     steps:
@@ -31,9 +30,9 @@ jobs:
 
       - uses: pwei1018/bcrs-cd-action@latest
         with:
-          WORKING_DIRECTORY: "./queue_services/entity-emailer"
-          APP_NAME: "entity-emailer"
-          VAULTS: '[{ \"vault\": \"shared\", \"application\": [\"nats\"]}, {\"vault\": \"entity\",\"application\": [\"postgres-legal\", \"entity-emailer\", \"nats-emailer\", \"entity-service-account\", \"sentry\"]}]'
+          WORKING_DIRECTORY: "./data-reset-tool"
+          APP_NAME: "data-reset-tool"
+          VAULTS: '[{\"vault\": \"entity\",\"application\": [\"postgres-legal\"]}]'
           SKIP_OP: "false"
           OP_PARAMETERS: ${{ secrets.OP_PARAMETERS }}
           OPENSHIFT_LOGIN_REGISTRY: ${{ secrets.OPENSHIFT_LOGIN_REGISTRY }}
@@ -48,7 +47,7 @@ jobs:
         if: failure()
         with:
           type: ${{ job.status }}
-          job_name: "*Entity Emailer Built and Deployed to ${{env.TAG_NAME}}*"
+          job_name: "*Data Reset Tool Built and Deployed to ${{env.TAG_NAME}}*"
           channel: "#registries-bot"
           url: ${{ secrets.ROCKETCHAT_WEBHOOK }}
           commit: true

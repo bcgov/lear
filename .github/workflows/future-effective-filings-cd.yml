@@ -1,12 +1,11 @@
-name: Entity Emailer CD
+name: Future Effective Filings Job CD
 
 on:
   push:
     branches:
       - master
     paths:
-      - "queue_services/entity-emailer/**"
-      - "queue_services/common/**"
+      - "jobs/future-effective-filings/**"
   workflow_dispatch:
     inputs:
       environement:
@@ -15,7 +14,7 @@ on:
         default: "dev"
 
 jobs:
-  entity-emailer-cd:
+  future-effective-filings-cd:
     runs-on: ubuntu-latest
     if: github.repository == 'bcgov/lear'
     steps:
@@ -29,11 +28,11 @@ jobs:
         run: |
           echo "::set-env name=TAG_NAME::dev"
 
-      - uses: pwei1018/bcrs-cd-action@latest
+      - uses: pwei1018/bcrs-cd-action@job
         with:
-          WORKING_DIRECTORY: "./queue_services/entity-emailer"
-          APP_NAME: "entity-emailer"
-          VAULTS: '[{ \"vault\": \"shared\", \"application\": [\"nats\"]}, {\"vault\": \"entity\",\"application\": [\"postgres-legal\", \"entity-emailer\", \"nats-emailer\", \"entity-service-account\", \"sentry\"]}]'
+          WORKING_DIRECTORY: "./jobs/future-effective-filings"
+          APP_NAME: "future-effective-filings"
+          VAULTS: '[{ \"vault\": \"shared\", \"application\": [\"nats\"]}, {\"vault\": \"entity\",\"application\": [\"filings-jobs\", \"nats-filer\", \"entity-service-account\", \"sentry\"]}]'
           SKIP_OP: "false"
           OP_PARAMETERS: ${{ secrets.OP_PARAMETERS }}
           OPENSHIFT_LOGIN_REGISTRY: ${{ secrets.OPENSHIFT_LOGIN_REGISTRY }}
@@ -41,14 +40,13 @@ jobs:
           OPENSHIFT_SA_NAME: ${{ secrets.OPENSHIFT_SA_NAME }}
           OPENSHIFT_SA_TOKEN: ${{ secrets.OPENSHIFT_SA_TOKEN }}
           OPENSHIFT_REPOSITORY: ${{ secrets.OPENSHIFT_REPOSITORY }}
-          OPENSHIFT_REPOSITORY_DEPLOYMENT: ${{ secrets.OPENSHIFT_REPOSITORY }}
 
       - name: Rocket.Chat Notification
         uses: RocketChat/Rocket.Chat.GitHub.Action.Notification@master
         if: failure()
         with:
           type: ${{ job.status }}
-          job_name: "*Entity Emailer Built and Deployed to ${{env.TAG_NAME}}*"
+          job_name: "*Future Effective Filings Job Built and Deployed to ${{env.TAG_NAME}}*"
           channel: "#registries-bot"
           url: ${{ secrets.ROCKETCHAT_WEBHOOK }}
           commit: true
