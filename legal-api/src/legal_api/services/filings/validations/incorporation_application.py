@@ -260,7 +260,7 @@ def validate_correction_ia(filing: Dict) -> Error:
     # original filing has no nrNumber and new filing has nr Number (numbered -> named correction)
     # original filing nrNumber != new filing nrNumber (change of name using NR)
     if (nr_number is None and new_nr_number) or nr_number != new_nr_number:
-        err = validate_correction_name_request(filing, nr_number, nr_path)
+        err = validate_correction_name_request(filing, new_nr_number, nr_path)
         if err:
             msg.extend(err)
 

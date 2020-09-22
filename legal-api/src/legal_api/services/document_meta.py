@@ -18,6 +18,8 @@ from enum import Enum
 from legal_api.models import Business, Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
+from .namex import NameXService
+
 
 class DocumentMetaService():
     """Provides service for document meta data."""
@@ -87,7 +89,7 @@ class DocumentMetaService():
         elif filing_type == 'voluntaryDissolution':
             documents = self.get_voluntary_dissolution_reports()
         elif filing_type == 'correction':
-            documents = self.get_correction_reports()
+            documents = self.get_correction_reports(filing)
         elif filing_type == 'alteration':
             documents = self.get_alteration_reports()
 
@@ -194,10 +196,49 @@ class DocumentMetaService():
 
         return reports
 
-    def get_correction_reports(self):  # pylint: disable=no-self-use
+    def get_correction_reports(self, filing: dict):
         """Return correction meta object(s)."""
-        # FUTURE: return applicable documents
-        return []
+        reports = []
+
+        if Filing.FILINGS['incorporationApplication'].get('name') in filing['filing'].keys():
+            reports = self.get_corrected_ia_reports(filing)
+
+        return reports
+
+    def get_corrected_ia_reports(self, filing: dict):
+        """Return corrected incorporation application meta object(s)."""
+        # safety check - for now, IA only applies to BCOMPs
+        if not self.is_bcomp():
+            return []
+
+        if self.is_paid():
+            return [
+                self.create_report_object(
+                    'Incorporation Application (Correction Pending)',
+                    self.get_general_filename('Incorporation Application (Correction Pending)')
+                )
+            ]
+
+        reports = []
+        reports.append(self.create_report_object(
+            'Incorporation Application (Corrected)',
+            self.get_general_filename('Incorporation Application (Corrected)')
+        ))
+
+        if NameXService.has_correction_changed_name(filing):
+            reports.append(self.create_report_object(
+                'Certificate (Corrected)',
+                self.get_general_filename('Certificate (Corrected)'),
+                DocumentMetaService.ReportType.CERTIFICATE.value
+            ))
+
+        reports.append(self.create_report_object(
+            DocumentMetaService.NOTICE_OF_ARTICLES,
+            self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
+            DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
+        ))
+
+        return reports
 
     def get_alteration_reports(self):  # pylint: disable=no-self-use
         """Return alteration meta object(s)."""
@@ -239,11 +280,17 @@ class DocumentMetaService():
                 )
             ]
 
+        filing_data = Filing.find_by_id(filing['filing']['header']['filingId'])
+        has_corrected = filing_data.parent_filing_id is not None  # Identify whether it is corrected
+        label_original = ' (Original)'
+        if not has_corrected:
+            label_original = ''
+
         # else status is COMPLETED
         return [
             self.create_report_object(
-                'Incorporation Application',
-                self.get_general_filename('Incorporation Application')
+                f'Incorporation Application{label_original}',
+                self.get_general_filename(f'Incorporation Application{label_original}')
             ),
             self.create_report_object(
                 DocumentMetaService.NOTICE_OF_ARTICLES,
@@ -252,8 +299,8 @@ class DocumentMetaService():
             ),
 
             self.create_report_object(
-                'Certificate',
-                self.get_general_filename('Certificate'),
+                f'Certificate{label_original}',
+                self.get_general_filename(f'Certificate{label_original}'),
                 DocumentMetaService.ReportType.CERTIFICATE.value
             )
         ]

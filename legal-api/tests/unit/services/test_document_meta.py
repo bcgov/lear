@@ -16,7 +16,9 @@
 
 Test-Suite to ensure that the Document Meta Service is working as expected.
 """
-from legal_api.services import DocumentMetaService
+from unittest.mock import patch
+
+from legal_api.services import DocumentMetaService, NameXService
 from tests.unit.models import factory_business
 
 
@@ -609,7 +611,7 @@ def test_ia_paid(app):
                     'status': 'PAID',
                     'name': 'incorporationApplication',
                     'availableOnPaperOnly': False,
-                    'effectiveDate':  FILING_DATE,
+                    'effectiveDate': FILING_DATE,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -643,7 +645,7 @@ def test_ia_completed(app):
                     'status': 'COMPLETED',
                     'name': 'incorporationApplication',
                     'availableOnPaperOnly': False,
-                    'effectiveDate':  FILING_DATE,
+                    'effectiveDate': FILING_DATE,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -690,7 +692,7 @@ def test_ia_completed_bcomp(session, app):
                     'status': 'COMPLETED',
                     'name': 'incorporationApplication',
                     'availableOnPaperOnly': False,
-                    'effectiveDate':  FILING_DATE,
+                    'effectiveDate': FILING_DATE,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -718,3 +720,37 @@ def test_ia_completed_bcomp(session, app):
         assert documents[2]['filingId'] == 12356
         assert documents[2]['title'] == 'Certificate'
         assert documents[2]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
+
+
+def test_correction_ia(session, app):
+    """Assert that no documents are returned for a Correction filing."""
+    document_meta = DocumentMetaService()
+    factory_business(identifier='BC1234567', entity_type='BC')
+    with app.app_context():
+        filing = {
+            'filing': {
+                'header': {
+                    'filingId': 12357,
+                    'status': 'COMPLETED',
+                    'name': 'correction',
+                    'availableOnPaperOnly': False,
+                    'date': FILING_DATE
+                },
+                'business': {
+                    'identifier': 'BC1234567'
+                },
+                'correction': {
+                    'correctedFilingId': 12356
+                },
+                'incorporationApplication': {
+                    'nameRequest': {
+                        'legalType': 'BC'
+                    }
+                }
+            }
+        }
+
+        with patch.object(NameXService, 'has_correction_changed_name', return_value=False):
+            documents = document_meta.get_documents(filing)
+
+    assert len(documents) == 2

@@ -21,6 +21,9 @@ import pytz
 import requests
 from flask import current_app
 
+from ..models import Filing
+from .utils import get_str
+
 
 class NameXService():
     """Provides services to use the namex-api."""
@@ -188,3 +191,13 @@ class NameXService():
                 break
 
         return nr_name
+
+    @staticmethod
+    def has_correction_changed_name(filing) -> bool:
+        """Has correction changed the legal name."""
+        corrected_filing = Filing.find_by_id(filing['filing']['correction']['correctedFilingId'])
+        nr_path = '/filing/incorporationApplication/nameRequest/nrNumber'
+        old_nr_number = get_str(corrected_filing.json, nr_path)
+        new_nr_number = get_str(filing, nr_path)
+
+        return old_nr_number != new_nr_number
