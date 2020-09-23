@@ -728,7 +728,7 @@ def test_ia_completed_bcomp(session, app):
 
 
 def test_ia_completed_bcomp_original(session, app):
-    """Assert that IA + NOA + Certificate documents are returned for a COMPLETED IA filing when business is a BCOMP."""
+    """Assert that IA + Certificate documents with (Original) are returned for a COMPLETED IA."""
     document_meta = DocumentMetaService()
     factory_business(identifier='BC1234567', entity_type='BC')
     with app.app_context():

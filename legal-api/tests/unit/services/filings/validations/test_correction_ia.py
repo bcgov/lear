@@ -27,6 +27,27 @@ from tests.unit.models import factory_business, factory_completed_filing
 INCORPORATION_APPLICATION = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 
 
+def test_valid_ia_correction(session):
+    """Test that a valid IA without NR correction passes validation."""
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier)
+
+    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+
+    f = copy.deepcopy(CORRECTION_INCORPORATION)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    err = validate(business, f)
+
+    if err:
+        print(err.msg)
+
+    # check that validation passed
+    assert None is err
+
+
 def test_valid_nr_correction(session):
     """Test that a valid NR correction passes validation."""
     # setup

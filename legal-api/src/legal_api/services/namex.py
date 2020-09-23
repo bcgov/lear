@@ -200,4 +200,4 @@ class NameXService():
         old_nr_number = get_str(corrected_filing.json, nr_path)
         new_nr_number = get_str(filing, nr_path)
 
-        return old_nr_number != new_nr_number
+        return new_nr_number and old_nr_number != new_nr_number
