@@ -117,7 +117,15 @@ def test_invalid_nr_correction(session):
             'consumptionDate': ''
         }]
     }
-    with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
+
+    class MockResponse:
+        def __init__(self, json_data):
+            self.json_data = json_data
+
+        def json(self):
+            return self.json_data
+
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
         err = validate(business, f)
 
     if err:
