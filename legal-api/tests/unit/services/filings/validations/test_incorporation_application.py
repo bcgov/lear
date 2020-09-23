@@ -111,7 +111,7 @@ def test_validate_incorporation_addresses_basic(session, test_name, delivery_reg
 
     f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
-    f['filing']['incorporationApplication']['nameRequest']['legalType'] = 'BC'
+    f['filing']['incorporationApplication']['nameRequest']['legalType'] = Business.LegalTypes.BCOMP.value
     f['filing']['incorporationApplication']['contactPoint']['email'] = 'no_one@never.get'
     f['filing']['incorporationApplication']['contactPoint']['phone'] = '123-456-7890'
 
@@ -162,7 +162,7 @@ def test_validate_incorporation_role(session, test_name, role_1, role_2, role_3,
 
     f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
-    f['filing']['incorporationApplication']['nameRequest']['legalType'] = 'BC'
+    f['filing']['incorporationApplication']['nameRequest']['legalType'] = Business.LegalTypes.BCOMP.value
     f['filing']['incorporationApplication']['contactPoint']['email'] = 'no_one@never.get'
     f['filing']['incorporationApplication']['contactPoint']['phone'] = '123-456-7890'
 
@@ -222,7 +222,7 @@ def test_validate_incorporation_parties_mailing_address(session, test_name, mock
 
     f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
-    f['filing']['incorporationApplication']['nameRequest']['legalType'] = 'BC'
+    f['filing']['incorporationApplication']['nameRequest']['legalType'] = Business.LegalTypes.BCOMP.value
     f['filing']['incorporationApplication']['contactPoint']['email'] = 'no_one@never.get'
     f['filing']['incorporationApplication']['contactPoint']['phone'] = '123-456-7890'
 

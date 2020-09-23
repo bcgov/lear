@@ -25,6 +25,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
+from legal_api.models import Business
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 
@@ -59,15 +60,52 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         LEAR = 'LEAR'
 
     FILINGS = {
-        'alteration': {'name': 'alteration', 'title': 'Notice of Alteration Filing', 'code': 'ALTER'},
-        'annualReport': {'name': 'annualReport', 'title': 'Annual Report Filing', 'code': 'OTANN'},
-        'changeOfAddress': {'name': 'changeOfAddress', 'title': 'Change of Address Filing', 'code': 'OTADD'},
-        'changeOfDirectors': {'name': 'changeOfDirectors', 'title': 'Change of Directors Filing',
-                              'code': 'OTCDR'},
+        'alteration': {
+            'name': 'alteration',
+            'title': 'Notice of Alteration Filing',
+            'codes': {
+                Business.LegalTypes.COMP.value: 'ALTER'
+            }
+        },
+        'annualReport': {
+            'name': 'annualReport',
+            'title': 'Annual Report Filing',
+            'codes': {
+                Business.LegalTypes.COOP.value: 'OTANN',
+                Business.LegalTypes.BCOMP.value: 'BCANN'
+            }
+        },
+        'changeOfAddress': {
+            'name': 'changeOfAddress',
+            'title': 'Change of Address Filing',
+            'codes': {
+                Business.LegalTypes.COOP.value: 'OTADD',
+                Business.LegalTypes.BCOMP.value: 'BCADD'
+            }
+        },
+        'changeOfDirectors': {
+            'name': 'changeOfDirectors',
+            'title': 'Change of Directors Filing',
+            'codes': {
+                Business.LegalTypes.COOP.value: 'OTCDR',
+                Business.LegalTypes.BCOMP.value: 'BCCDR'
+            }
+        },
         'changeOfName': {'name': 'changeOfName', 'title': 'Change of Name Filing'},
-        'correction': {'name': 'correction', 'title': 'Correction', 'code': 'CRCTN'},
-        'incorporationApplication': {'name': 'incorporationApplication', 'title': 'Incorporation Application',
-                                     'code': 'BCINC'},
+        'correction': {
+            'name': 'correction',
+            'title': 'Correction',
+            'codes': {
+                Business.LegalTypes.BCOMP.value: 'CRCTN'
+            }
+        },
+        'incorporationApplication': {
+            'name': 'incorporationApplication',
+            'title': 'Incorporation Application',
+            'codes': {
+                Business.LegalTypes.BCOMP.value: 'BCINC'
+            }
+        },
         'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution'},
         'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'}
     }

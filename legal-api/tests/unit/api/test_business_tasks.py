@@ -21,6 +21,7 @@ from http import HTTPStatus
 
 import datedelta
 
+from legal_api.models import Business
 from legal_api.services.authz import STAFF_ROLE
 from tests import integration_payment
 from tests.unit.models import factory_business, factory_business_mailing_address, factory_filing, factory_pending_filing
@@ -104,7 +105,7 @@ def test_get_tasks_next_year(session, client):
 def test_bcorps_get_tasks_no_filings(session, client):
     """Assert that to-do for the current year is returned when there are no filings."""
     identifier = 'CP7654321'
-    factory_business(identifier, datetime.now(), None, 'BC')
+    factory_business(identifier, datetime.now(), None, Business.LegalTypes.BCOMP.value)
 
     rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
 
@@ -116,7 +117,8 @@ def test_bcorps_get_tasks_no_filings(session, client):
 def test_bcorps_get_tasks_pending_filings(session, client, jwt):
     """Assert the correct number of todo items are returned when there is an AR filing pending."""
     identifier = 'CP7654321'
-    business = factory_business(identifier, datetime.today() - datedelta.datedelta(years=3), None, 'BC')
+    business = factory_business(
+        identifier, datetime.today() - datedelta.datedelta(years=3), None, Business.LegalTypes.BCOMP.value)
     factory_business_mailing_address(business)
     rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
 
@@ -132,7 +134,7 @@ def test_bcorps_get_tasks_pending_filings(session, client, jwt):
     assert rv.status_code == HTTPStatus.BAD_REQUEST
 
     filing['filing']['annualReport']['annualReportDate'] = str((datetime.today() - datedelta.datedelta(years=2)).date())
-    filing['filing']['business']['legalType'] = 'BC'
+    filing['filing']['business']['legalType'] = Business.LegalTypes.BCOMP.value
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)

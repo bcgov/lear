@@ -19,6 +19,7 @@ Test-Suite to ensure that the /businesses../directors endpoint is working as exp
 import datetime
 from http import HTTPStatus
 
+from legal_api.models import Business
 from legal_api.services.authz import STAFF_ROLE
 from tests.unit.models import Address, PartyRole, factory_business, factory_party_role
 from tests.unit.services.utils import create_header
@@ -60,7 +61,7 @@ def test_bcorp_get_business_directors(session, client, jwt):
     """Assert that business directors are returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier, datetime.datetime.now(), None, 'BC')
+    business = factory_business(identifier, datetime.datetime.now(), None, Business.LegalTypes.BCOMP.value)
     director_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
     director_mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
     officer = {
@@ -197,7 +198,7 @@ def test_directors_mailing_address(session, client, jwt):
     """Assert that bcorp directors have a mailing and delivery address."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier, datetime.datetime(2017, 4, 17), None, 'BC')
+    business = factory_business(identifier, datetime.datetime(2017, 4, 17), None, Business.LegalTypes.BCOMP.value)
     delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
     mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
     officer = {

@@ -31,6 +31,7 @@ from registry_schemas.example_data import (
     FILING_HEADER,
 )
 
+from legal_api.models import Business
 from legal_api.resources.business.business_filings import Filing, ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -771,7 +772,7 @@ def test_get_correct_fee_codes(session):
     alt = ALTERATION_FILING_TEMPLATE
     ar = ANNUAL_REPORT
     bc_ar = copy.deepcopy(ANNUAL_REPORT)
-    bc_ar['filing']['business']['legalType'] = 'BC'
+    bc_ar['filing']['business']['legalType'] = Business.LegalTypes.BCOMP.value
     coa = copy.deepcopy(FILING_HEADER)
     coa['filing']['header']['name'] = 'changeOfAddress'
     coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
@@ -789,11 +790,11 @@ def test_get_correct_fee_codes(session):
             director['actions'] = ['nameChanged', 'addressChanged']
     bc_coa = copy.deepcopy(FILING_HEADER)
     bc_coa['filing']['header']['name'] = 'changeOfAddress'
-    bc_coa['filing']['business']['legalType'] = 'BC'
+    bc_coa['filing']['business']['legalType'] = Business.LegalTypes.BCOMP.value
     bc_coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
     bc_cod = copy.deepcopy(FILING_HEADER)
     bc_cod['filing']['header']['name'] = 'changeOfDirectors'
-    bc_cod['filing']['business']['legalType'] = 'BC'
+    bc_cod['filing']['business']['legalType'] = Business.LegalTypes.BCOMP.value
     bc_cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
     assert len(bc_cod['filing']['changeOfDirectors']['directors']) > 1
     bc_cod['filing']['changeOfDirectors']['directors'][0]['actions'] = ['ceased', 'nameChanged']
@@ -810,14 +811,14 @@ def test_get_correct_fee_codes(session):
     bc_cod_fee_code = ListFilingResource._get_filing_types(bc_cod)[0]['filingTypeCode']
 
     # test fee codes
-    assert alt_fee_code == Filing.FILINGS['alteration'].get('code')
-    assert ar_fee_code == Filing.FILINGS['annualReport'].get('code')
-    assert bc_ar_fee_code == 'BCANN'
-    assert coa_fee_code == Filing.FILINGS['changeOfAddress'].get('code')
-    assert cod_fee_code == Filing.FILINGS['changeOfDirectors'].get('code')
+    assert alt_fee_code == Filing.FILINGS['alteration'].get('codes', {}).get(Business.LegalTypes.COOP.value)
+    assert ar_fee_code == Filing.FILINGS['annualReport'].get('codes', {}).get(Business.LegalTypes.COOP.value)
+    assert coa_fee_code == Filing.FILINGS['changeOfAddress'].get('codes', {}).get(Business.LegalTypes.COOP.value)
+    assert cod_fee_code == Filing.FILINGS['changeOfDirectors'].get('codes', {}).get(Business.LegalTypes.COOP.value)
     assert free_cod_fee_code == 'OTFDR'
-    assert bc_coa_fee_code == 'BCADD'
-    assert bc_cod_fee_code == 'BCCDR'
+    assert bc_ar_fee_code == Filing.FILINGS['annualReport'].get('codes', {}).get(Business.LegalTypes.BCOMP.value)
+    assert bc_coa_fee_code == Filing.FILINGS['changeOfAddress'].get('codes', {}).get(Business.LegalTypes.BCOMP.value)
+    assert bc_cod_fee_code == Filing.FILINGS['changeOfDirectors'].get('codes', {}).get(Business.LegalTypes.BCOMP.value)
 
 
 @integration_payment
@@ -839,7 +840,7 @@ def test_coa_future_effective(session, client, jwt):
     # assert 'effectiveDate' not in rv.json['filing']['header']
 
     identifier = 'CP7654321'
-    bc = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'BC')
+    bc = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, Business.LegalTypes.BCOMP.value)
     factory_business_mailing_address(bc)
     coa['filing']['business']['identifier'] = identifier
 

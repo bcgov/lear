@@ -50,7 +50,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         """Render an Enum of the Business Legal Types."""
 
         COOP = 'CP'
-        BCOMP = 'BC'
+        COMP = 'BC'
+        BCOMP = 'BEN'
 
     __versioned__ = {}
     __tablename__ = 'businesses'

@@ -324,6 +324,9 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'BC': {
                 'fileName': 'bcAddressChange'
             },
+            'BEN': {
+                'fileName': 'bcAddressChange'
+            },
             'CP': {
                 'fileName': 'changeOfAddress'
             }
@@ -334,6 +337,9 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'BC': {
                 'fileName': 'bcDirectorChange'
             },
+            'BEN': {
+                'fileName': 'bcDirectorChange'
+            },
             'CP': {
                 'fileName': 'changeOfDirectors'
             }
@@ -342,6 +348,9 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'hasDifferentTemplates': True,
             'filingDescription': 'Annual Report',
             'BC': {
+                'fileName': 'bcAnnualReport'
+            },
+            'BEN': {
                 'fileName': 'bcAnnualReport'
             },
             'CP': {
@@ -364,5 +373,6 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
 
     entity_description = {
         'CP': 'cooperative',
-        'BC': 'BC Benefit Company'
+        'BC': 'BC Company',
+        'BEN': 'BC Benefit Company',
     }
