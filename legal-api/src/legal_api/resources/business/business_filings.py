@@ -488,10 +488,12 @@ class ListFilingResource(Resource):
         filing_types = []
         priority_flag = filing_json['filing']['header'].get('priority', False)
         filing_type = filing_json['filing']['header'].get('name', None)
-        legal_type = (Business.find_by_identifier(filing_json['filing']['business']['identifier'])).legal_type
+        business = Business.find_by_identifier(filing_json['filing']['business']['identifier'])
+        legal_type = business.legal_type
 
         for k in filing_json['filing'].keys():
-            filing_type_code = Filing.FILINGS[k].get('codes', {}).get(legal_type)
+
+            filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
             priority = priority_flag
 
             # check if changeOfDirectors is a free filing
@@ -514,7 +516,7 @@ class ListFilingResource(Resource):
                     'filingTypeCode': filing_type_code,
                     'futureEffective': ListFilingResource._is_future_effective_filing(filing_json)
                 })
-            else:
+            elif filing_type_code:
                 filing_types.append({
                     'filingTypeCode': filing_type_code,
                     'priority': priority,
