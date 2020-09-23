@@ -276,7 +276,7 @@ def validate_correction_name_request(filing: Dict, nr_number: str, nr_path: str)
 
     # ensure NR is approved or conditionally approved
     nr_response = namex.query_nr_number(nr_number)
-    validation_result = namex.validate_nr(nr_response)
+    validation_result = namex.validate_nr(nr_response.json())
     if not validation_result['is_approved']:
         msg.append({'error': babel('Correction of Name Request is not approved.'), 'path': nr_path})
 
@@ -289,7 +289,7 @@ def validate_correction_name_request(filing: Dict, nr_number: str, nr_path: str)
     # ensure NR request has the same legal name
     path = '/filing/incorporationApplication/nameRequest/legalName'
     legal_name = get_str(filing, path)
-    nr_name = namex.get_approved_name(nr_response)
+    nr_name = namex.get_approved_name(nr_response.json())
     if nr_name != legal_name:
         msg.append({'error': babel('Correction of Name Request has a different legal name.'), 'path': path})
 
