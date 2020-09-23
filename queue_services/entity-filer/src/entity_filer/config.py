@@ -117,6 +117,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     # BCRegistry Services
     ACCOUNT_SVC_ENTITY_URL = os.getenv('ACCOUNT_SVC_ENTITY_URL')
     ACCOUNT_SVC_AFFILIATE_URL = os.getenv('ACCOUNT_SVC_AFFILIATE_URL')
+    LEGAL_API_URL = os.getenv('LEGAL_API_URL')
     NAMEX_API = os.getenv('NAMEX_API')
 
     # legislative timezone for future effective dating
