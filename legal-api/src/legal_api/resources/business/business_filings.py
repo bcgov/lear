@@ -488,9 +488,14 @@ class ListFilingResource(Resource):
         filing_types = []
         priority_flag = filing_json['filing']['header'].get('priority', False)
         filing_type = filing_json['filing']['header'].get('name', None)
-        legal_type = filing_json['filing']['business'].get('legalType', None)
+        business = Business.find_by_identifier(filing_json['filing']['business']['identifier'])
+        legal_type = business.legal_type
 
         for k in filing_json['filing'].keys():
+
+            filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
+            priority = priority_flag
+
             # check if changeOfDirectors is a free filing
             if k == 'changeOfDirectors':
                 free = True
@@ -500,33 +505,21 @@ class ListFilingResource(Resource):
                     if not all(change in free_changes for change in director.get('actions', [])):
                         free = False
                         break
+                filing_type_code = 'OTFDR' if free else Filing.FILINGS[k].get('codes', {}).get(legal_type)
+
+            # check if priority handled in parent filing
+            if k in ['changeOfDirectors', 'changeOfAddress']:
+                priority = False if filing_type == 'annualReport' else priority_flag
+
+            if k == 'incorporationApplication':
                 filing_types.append({
-                    'filingTypeCode':
-                        'OTFDR' if free else 'BCCDR' if legal_type == 'BC' else Filing.FILINGS[k].get('code'),
-                    'priority': False if filing_type == 'annualReport' else priority_flag,
-                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
-                })
-            elif k == 'changeOfAddress':
-                filing_types.append({
-                    'filingTypeCode': 'BCADD' if legal_type == 'BC' else Filing.FILINGS[k].get('code'),
-                    'priority': False if filing_type == 'annualReport' else priority_flag,
-                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
-                })
-            elif k == 'incorporationApplication':
-                filing_types.append({
-                    'filingTypeCode': Filing.FILINGS[k].get('code'),
+                    'filingTypeCode': filing_type_code,
                     'futureEffective': ListFilingResource._is_future_effective_filing(filing_json)
                 })
-            elif k == 'annualReport' and legal_type == 'BC':
+            elif filing_type_code:
                 filing_types.append({
-                    'filingTypeCode': 'BCANN',
-                    'priority': priority_flag,
-                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
-                })
-            elif Filing.FILINGS.get(k, None):
-                filing_types.append({
-                    'filingTypeCode': Filing.FILINGS[k].get('code'),
-                    'priority': priority_flag,
+                    'filingTypeCode': filing_type_code,
+                    'priority': priority,
                     'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
                 })
         return filing_types
@@ -550,7 +543,7 @@ class ListFilingResource(Resource):
         if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name'):
             mailing_address = Address.create_address(
                 filing.json['filing']['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
-            corp_type = filing.json['filing']['business'].get('legalType', 'BC')
+            corp_type = filing.json['filing']['business'].get('legalType', Business.LegalTypes.BCOMP.value)
 
             try:
                 business.legal_name = filing.json['filing']['incorporationApplication']['nameRequest']['legalName']

@@ -58,16 +58,54 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         COLIN = 'COLIN'
         LEAR = 'LEAR'
 
+    # TODO: get legal types from defined class once table is made (getting it from Business causes circ import)
     FILINGS = {
-        'alteration': {'name': 'alteration', 'title': 'Notice of Alteration Filing', 'code': 'ALTER'},
-        'annualReport': {'name': 'annualReport', 'title': 'Annual Report Filing', 'code': 'OTANN'},
-        'changeOfAddress': {'name': 'changeOfAddress', 'title': 'Change of Address Filing', 'code': 'OTADD'},
-        'changeOfDirectors': {'name': 'changeOfDirectors', 'title': 'Change of Directors Filing',
-                              'code': 'OTCDR'},
+        'alteration': {
+            'name': 'alteration',
+            'title': 'Notice of Alteration Filing',
+            'codes': {
+                'BC': 'ALTER'
+            }
+        },
+        'annualReport': {
+            'name': 'annualReport',
+            'title': 'Annual Report Filing',
+            'codes': {
+                'CP': 'OTANN',
+                'BEN': 'BCANN'
+            }
+        },
+        'changeOfAddress': {
+            'name': 'changeOfAddress',
+            'title': 'Change of Address Filing',
+            'codes': {
+                'CP': 'OTADD',
+                'BEN': 'BCADD'
+            }
+        },
+        'changeOfDirectors': {
+            'name': 'changeOfDirectors',
+            'title': 'Change of Directors Filing',
+            'codes': {
+                'CP': 'OTCDR',
+                'BEN': 'BCCDR'
+            }
+        },
         'changeOfName': {'name': 'changeOfName', 'title': 'Change of Name Filing'},
-        'correction': {'name': 'correction', 'title': 'Correction', 'code': 'CRCTN'},
-        'incorporationApplication': {'name': 'incorporationApplication', 'title': 'Incorporation Application',
-                                     'code': 'BCINC'},
+        'correction': {
+            'name': 'correction',
+            'title': 'Correction',
+            'codes': {
+                'BEN': 'CRCTN'
+            }
+        },
+        'incorporationApplication': {
+            'name': 'incorporationApplication',
+            'title': 'Incorporation Application',
+            'codes': {
+                'BEN': 'BCINC'
+            }
+        },
         'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution'},
         'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'}
     }
