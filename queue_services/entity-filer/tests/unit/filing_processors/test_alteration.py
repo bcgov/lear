@@ -15,6 +15,7 @@
 import copy
 import random
 
+import pytest
 from legal_api.models import Business
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
 
@@ -28,7 +29,7 @@ from tests.unit import create_business, create_filing
     [
         (Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value),
         (Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value)
-    ]    
+    ]
 )
 def test_alteration_process(app, session, orig_legal_type, new_legal_type):
     """Assert that the business legal type is altered."""
@@ -53,7 +54,7 @@ def test_alteration_process(app, session, orig_legal_type, new_legal_type):
     [
         (Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value),
         (Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value)
-    ]    
+    ]
 )
 async def test_worker_alteration(app, session, orig_legal_type, new_legal_type):
     """Assert the worker process calls the alteration correctly."""

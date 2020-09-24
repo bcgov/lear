@@ -49,7 +49,7 @@ def test_update_business_profile(app, session, requests_mock,
             'email': email_address
         }
     }
-    business = Business(identifier='BC1234567')
+    business = Business(identifier='BC1234567', legal_type='BEN')
 
     with app.app_context():
         # setup
