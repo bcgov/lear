@@ -25,9 +25,9 @@ from legal_api.models import Business
 from legal_api.services.bootstrap import AccountService
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 
-import config
-from utils.logging import setup_logging
-
+import config  # pylint: disable=import-error; false positive in gha only
+from utils.logging import setup_logging  # noqa: I001; pylint: disable=import-error; false positive in gha only
+# noqa: 1005
 setup_logging(os.path.join(
     os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))
 
