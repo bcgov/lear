@@ -730,7 +730,7 @@ def test_ia_completed_bcomp(session, app):
 def test_ia_completed_bcomp_original(session, app):
     """Assert that IA + Certificate documents with (Original) are returned for a COMPLETED IA."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -774,9 +774,9 @@ def test_ia_completed_bcomp_original(session, app):
 
 
 def test_correction_ia(session, app):
-    """Assert that IA + NOA documents are returned for a Correction filing."""
+    """Assert that IA + NOA documents are returned for a Correction filing without name change."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -795,7 +795,7 @@ def test_correction_ia(session, app):
                 },
                 'incorporationApplication': {
                     'nameRequest': {
-                        'legalType': 'BC'
+                        'legalType': Business.LegalTypes.BCOMP.value
                     }
                 }
             }
@@ -820,9 +820,9 @@ def test_correction_ia(session, app):
 
 
 def test_correction_ia_with_cert(session, app):
-    """Assert that IA + NOA + Certificate documents are returned for a Correction filing."""
+    """Assert that IA + NOA + Certificate documents are returned for a Correction filing with name change."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -841,7 +841,7 @@ def test_correction_ia_with_cert(session, app):
                 },
                 'incorporationApplication': {
                     'nameRequest': {
-                        'legalType': 'BC'
+                        'legalType': Business.LegalTypes.BCOMP.value
                     }
                 }
             }
