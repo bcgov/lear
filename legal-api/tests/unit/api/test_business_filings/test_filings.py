@@ -826,7 +826,6 @@ def test_get_correct_fee_codes(session):
     bc_cod['filing']['business']['identifier'] = ben_identifier
     bc_cod['filing']['business']['legalType'] = Business.LegalTypes.BCOMP.value
     bc_cod['filing']['header']['name'] = 'changeOfDirectors'
-    bc_cod['filing']['business']['legalType'] = Business.LegalTypes.BCOMP.value
     bc_cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
     assert len(bc_cod['filing']['changeOfDirectors']['directors']) > 1
     bc_cod['filing']['changeOfDirectors']['directors'][0]['actions'] = ['ceased', 'nameChanged']

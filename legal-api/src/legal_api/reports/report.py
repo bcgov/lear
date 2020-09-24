@@ -372,7 +372,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
     }
 
     entity_description = {
-        'CP': 'cooperative',
-        'BC': 'BC Company',
-        'BEN': 'BC Benefit Company',
+        Business.LegalTypes.COOP.value: 'cooperative',
+        Business.LegalTypes.COMP.value: 'BC Company',
+        Business.LegalTypes.BCOMP.value: 'BC Benefit Company',
     }
