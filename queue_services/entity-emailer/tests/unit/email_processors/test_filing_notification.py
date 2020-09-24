@@ -15,6 +15,7 @@
 from unittest.mock import patch
 
 import pytest
+from legal_api.models import Business
 
 from entity_emailer.email_processors import filing_notification
 from tests.unit import prep_incorp_filing, prep_maintenance_filing
