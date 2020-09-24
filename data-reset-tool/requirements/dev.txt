@@ -16,5 +16,5 @@ flake8-isort
 flake8-quotes
 pep8-naming
 pydocstyle<4
-pylint<=2.3.1
+pylint
 pylint-flask

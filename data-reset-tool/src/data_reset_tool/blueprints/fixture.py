@@ -307,6 +307,7 @@ def _create_csv(cur: psycopg2.extensions.cursor, filename: str, select_stmnt: st
 
 
 def _copy_from_table(cur: psycopg2.extensions.cursor, table: str, business_id: str) -> list:
+    # pylint: disable=too-many-branches
     """Copy db data into csv files for given table."""
     files = []
     select_stmnt = ''
