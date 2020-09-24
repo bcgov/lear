@@ -21,6 +21,7 @@ import os
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 import requests
 from flask import Flask
+from legal_api.models import Business
 from legal_api.services.bootstrap import AccountService
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 
@@ -76,10 +77,10 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
 
     filing_type = filing['filing']['header'].get('name', None)
     identifier = filing['filing']['business'].get('identifier', None)
-    if identifier[:2] == 'CP':
-        legal_type = 'CP'
+    if identifier[:2] == Business.LegalTypes.COOP.value:
+        legal_type = Business.LegalTypes.COOP.value
     else:
-        legal_type = filing['filing']['business'].get('legalType', 'BC')
+        legal_type = filing['filing']['business'].get('legalType', Business.LegalTypes.BCOMP.value)
 
     r = None
     if legal_type and identifier and filing_type:

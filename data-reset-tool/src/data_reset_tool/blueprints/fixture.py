@@ -7,6 +7,7 @@ from zipfile import ZipFile
 import pandas
 import psycopg2
 from flask import Blueprint, current_app, jsonify, request, send_file
+from legal_api.models import Business
 
 
 FIXTURE_BLUEPRINT = Blueprint('fixture', __name__)
@@ -77,7 +78,7 @@ def post(legal_type, table=None):
 
         if table:
             csv_list = [f'{table}']
-        elif legal_type == 'BC':
+        elif legal_type == Business.LegalTypes.BCOMP.value:
             csv_list = copy.deepcopy(ALL_BCOMP_TABLES)
         else:
             csv_list = copy.deepcopy(ALL_COOP_TABLES)

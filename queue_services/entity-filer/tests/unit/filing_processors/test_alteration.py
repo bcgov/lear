@@ -23,50 +23,45 @@ from entity_filer.worker import process_filing
 from tests.unit import create_business, create_filing
 
 
-def test_alteration_process_name(app, session):
-    """Assert that the business is altered."""
+@pytest.mark.parametrize(
+    'orig_legal_type, new_legal_type',
+    [
+        (Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value),
+        (Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value)
+    ]    
+)
+def test_alteration_process(app, session, orig_legal_type, new_legal_type):
+    """Assert that the business legal type is altered."""
     # setup
-    legal_type = 'BC'
-    identifier = 'BC1234567'
-    business = create_business(identifier)
-    business.legal_type = 'ULC'
-
-    alteration_filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
-    alteration_filing['filing']['alteration']['business']['legalType'] = legal_type
-
-    # test
-    alteration.process(business, alteration_filing['filing'])
-
-    # validate
-    assert business.legal_type == legal_type
-
-
-def test_alteration_process_name_missing(app, session):
-    """Assert that the business is altered."""
-    # setup
-    orig_legal_type = 'ULC'
     identifier = 'BC1234567'
     business = create_business(identifier)
     business.legal_type = orig_legal_type
 
     alteration_filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
-    alteration_filing['filing']['alteration'].pop('business')
+    alteration_filing['filing']['business']['legalType'] = orig_legal_type
+    alteration_filing['filing']['alteration']['business']['legalType'] = new_legal_type
 
     # test
     alteration.process(business, alteration_filing['filing'])
 
     # validate
-    assert business.legal_type == orig_legal_type
+    assert business.legal_type == new_legal_type
 
 
-async def test_worker_alteration(app, session):
+@pytest.mark.parametrize(
+    'orig_legal_type, new_legal_type',
+    [
+        (Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value),
+        (Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value)
+    ]    
+)
+async def test_worker_alteration(app, session, orig_legal_type, new_legal_type):
     """Assert the worker process calls the alteration correctly."""
-    orig_legal_type = 'ULC'
-    new_legal_type = 'BC'
     identifier = 'BC1234567'
     business = create_business(identifier)
     business.legal_type = orig_legal_type
     filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    filing['filing']['business']['legalType'] = orig_legal_type
     filing['filing']['alteration']['business']['legalType'] = new_legal_type
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
