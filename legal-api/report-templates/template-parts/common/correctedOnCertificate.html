@@ -1,0 +1,7 @@
+{% if correction is defined %}
+<div class="correction-on">
+    {% autoescape false %}
+        Corrected on {{correction.correctedFilingDate | replace(" at ", "<br/>at ")}}
+    {% endautoescape %}
+</div>
+{% endif %}

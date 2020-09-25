@@ -104,6 +104,7 @@ class Report:  # pylint: disable=too-few-public-methods
             'certificate-of-incorporation/style',
             'common/addresses',
             'common/shareStructure',
+            'common/correctedOnCertificate',
             'common/style',
             'incorporation-application/benefitCompanyStmt',
             'incorporation-application/businessDetails',
@@ -164,7 +165,16 @@ class Report:  # pylint: disable=too-few-public-methods
         self._set_description(filing)
         self._set_tax_id(filing)
         self._set_meta_info(filing)
+        self._set_correction(filing)
         return filing
+
+    def _set_correction(self, filing):
+        correction = filing.get('correction')
+        if correction:
+            filing_date = datetime.fromisoformat(correction['correctedFilingDate'])
+            filing_datetime = LegislationDatetime.as_legislation_timezone(filing_date)
+            hour = filing_datetime.strftime('%I').lstrip('0')
+            correction['correctedFilingDate'] = filing_datetime.strftime(f'%B %-d, %Y at {hour}:%M %p Pacific Time')
 
     def _set_tax_id(self, filing):
         if self._business:
