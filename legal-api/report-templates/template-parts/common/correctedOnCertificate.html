@@ -1,0 +1,7 @@
+{% if correction is defined %}
+<div class="correction-on">
+    {% autoescape false %}
+        Corrected on {{correction.correctedFilingDate}}
+    {% endautoescape %}
+</div>
+{% endif %}

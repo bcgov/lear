@@ -11,7 +11,10 @@
 
   <body>
     <div class="outer-container">
-      <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
+      <div class="outer-container-header">
+        <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
+        [[common/correctedOnCertificate.html]]
+      </div>      
 
       <div class="certificate-statements">
           [[certificate-of-incorporation/logo.html]]
