@@ -168,7 +168,7 @@ class Report:  # pylint: disable=too-few-public-methods
         self._set_correction(filing)
         return filing
 
-    def _set_correction(self, filing): # pylint: disable=no-self-use
+    def _set_correction(self, filing):  # pylint: disable=no-self-use
         correction = filing.get('correction')
         if correction:
             filing_date = datetime.fromisoformat(correction['correctedFilingDate'])
