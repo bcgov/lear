@@ -14,6 +14,7 @@
 """The Unit Tests and the helper routines."""
 import copy
 
+from legal_api.models import Business, Filing
 from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
@@ -36,7 +37,6 @@ FILING_TYPE_MAPPER = {
 
 def create_business(identifier, legal_type=None, legal_name=None):
     """Return a test business."""
-    from legal_api.models import Business
     business = Business()
     business.identifier = identifier
     business.legal_type = legal_type
@@ -47,7 +47,6 @@ def create_business(identifier, legal_type=None, legal_name=None):
 
 def create_filing(token=None, filing_json=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
     """Return a test filing."""
-    from legal_api.models import Filing
     filing = Filing()
     if token:
         filing.payment_token = str(token)
@@ -87,11 +86,11 @@ def prep_incorp_filing(session, identifier, payment_id, option):
 
 def prep_maintenance_filing(session, identifier, payment_id, status, filing_type):
     """Return a new maintenance filing prepped for email notification."""
-    business = create_business(identifier, 'BC', 'test business')
+    business = create_business(identifier, Business.LegalTypes.BCOMP.value, 'test business')
     filing_template = copy.deepcopy(FILING_TEMPLATE)
     filing_template['filing']['header']['name'] = filing_type
     filing_template['filing']['business'] = \
-        {'identifier': f'{identifier}', 'legalype': 'BC', 'legalName': 'test business'}
+        {'identifier': f'{identifier}', 'legalype': Business.LegalTypes.BCOMP.value, 'legalName': 'test business'}
     filing_template['filing'][filing_type] = copy.deepcopy(FILING_TYPE_MAPPER[filing_type])
     filing = create_filing(token=None, filing_json=filing_template, business_id=business.id)
     filing.save()

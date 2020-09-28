@@ -91,7 +91,11 @@ def test_maintenance_notification(app, session, status, filing_type):
                     assert mock_get_pdfs.call_args[0][0] == status
                     assert mock_get_pdfs.call_args[0][1] == token
                     assert mock_get_pdfs.call_args[0][2] == \
-                        {'identifier': 'BC1234567', 'legalype': 'BC', 'legalName': 'test business'}
+                        {
+                            'identifier': 'BC1234567',
+                            'legalype': Business.LegalTypes.BCOMP.value,
+                            'legalName': 'test business'
+                        }
                     assert mock_get_pdfs.call_args[0][3] == filing
                     assert mock_get_recipients.call_args[0][0] == status
                     assert mock_get_recipients.call_args[0][1] == filing.filing_json
@@ -123,10 +127,7 @@ def test_skips_notification(app, session, status, filing_type, identifier):
                 worker.process_email(
                     {'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}, app)
 
-                if identifier[:2] == 'CP':
-                    assert mock_send_email.call_args[0][0]['recipients'] == ''
-                else:
-                    assert not mock_send_email.call_args
+                assert not mock_send_email.call_args
 
 
 def test_process_mras_email(app, session):

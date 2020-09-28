@@ -14,26 +14,26 @@
 
 
 def convert_to_json_date(date):
-    """ Convert datetime to string formatted as YYYY-MM-DD, per JSON Schema specs.
+    """Convert datetime to string formatted as YYYY-MM-DD, per JSON Schema specs.
 
     :param date: datetime object
     :return: string
     """
-
     try:
         return date.strftime('%Y-%m-%d')
-    except:
+    except Exception as err:
+        print(err)
         return None
 
 
 def convert_to_json_datetime(date):
-    """ Convert datetime to string formatted as YYYY-MM-SSTHH:MM:SS+00:00, per JSON Schema specs.
+    """Convert datetime to string formatted as YYYY-MM-SSTHH:MM:SS+00:00, per JSON Schema specs.
 
     :param date: datetime object
     :return: string
     """
-
     try:
         return date.strftime('%Y-%m-%dT%H:%M:%S-00:00')
-    except:
+    except Exception as err:
+        print(err)
         return None
