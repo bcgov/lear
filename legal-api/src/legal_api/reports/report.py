@@ -174,7 +174,7 @@ class Report:  # pylint: disable=too-few-public-methods
             filing_date = datetime.fromisoformat(correction['correctedFilingDate'])
             filing_datetime = LegislationDatetime.as_legislation_timezone(filing_date)
             hour = filing_datetime.strftime('%I').lstrip('0')
-            correction['correctedFilingDate'] = filing_datetime.strftime(f'%B %-d, %Y at {hour}:%M %p Pacific Time')
+            correction['correctedFilingDate'] = filing_datetime.strftime(f'%B %-d, %Y<br/>at {hour}:%M %p Pacific Time')
 
     def _set_tax_id(self, filing):
         if self._business:
