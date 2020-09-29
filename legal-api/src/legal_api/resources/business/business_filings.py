@@ -552,7 +552,10 @@ class ListFilingResource(Resource):
 
         else:
             mailing_address = business.mailing_address.one_or_none()
-            corp_type = business.identifier[:-7]
+            try:
+                corp_type = filing.json['filing']['business']['legalType']
+            except KeyError:
+                corp_type = business.identifier[:-7]
 
         payload = {
             'businessInfo': {
