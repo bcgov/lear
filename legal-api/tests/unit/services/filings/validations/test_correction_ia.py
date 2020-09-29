@@ -17,6 +17,7 @@ import copy
 from http import HTTPStatus
 from unittest.mock import patch
 
+import pytest
 from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE
 
 from legal_api.services import NameXService
@@ -135,3 +136,30 @@ def test_invalid_nr_correction(session):
     assert err
     assert HTTPStatus.BAD_REQUEST == err.code
     assert len(err.msg) == 3
+
+
+@ pytest.mark.parametrize('test_name, json1, json2, expected', [
+    ('no effective date',
+     {},
+     {'filing': {'header': {'effectiveDate': '1970-01-01T00:00:00+00:00'}}},
+     None
+     ),
+    ('same effective date',
+     {'filing': {'header': {'effectiveDate': '1970-01-01T00:00:00+00:00'}}},
+     {'filing': {'header': {'effectiveDate': '1970-01-01T00:00:00+00:00'}}},
+     None
+     ),
+    ('changed effective date',
+     {'filing': {'header': {'effectiveDate': '2020-01-01T00:00:00+00:00'}}},
+     {'filing': {'header': {'effectiveDate': '1970-01-01T00:00:00+00:00'}}},
+     {'error': 'The effective date of a filing cannot be changed in a correction.'}
+     ),
+    # invalid dates should be trapped by the JSONSchema validator
+])
+def test_validate_correction_effective_date(test_name, json1, json2, expected):
+    """Assert that a corrected effective date."""
+    from legal_api.services.filings.validations.incorporation_application import validate_correction_effective_date
+
+    err = validate_correction_effective_date(json1, json2)
+
+    assert err == expected

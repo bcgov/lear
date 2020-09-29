@@ -14,7 +14,7 @@
 """Validation for the Incorporation filing."""
 from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
-from typing import Dict
+from typing import Dict, List, Optional
 
 import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
@@ -249,20 +249,19 @@ def validate_incorporation_effective_date(incorporation_json) -> Error:
     return None
 
 
-def validate_correction_ia(filing: Dict) -> Error:
+def validate_correction_ia(filing: Dict) -> Optional[Error]:
     """Validate correction of Incorporation Application."""
-    msg = []
+    if not (corrected_filing  # pylint: disable=superfluous-parens; needed to pass pylance
+            := Filing.find_by_id(filing['filing']['correction']['correctedFilingId'])):
+        return Error(HTTPStatus.BAD_REQUEST,
+                     [{'error': babel('Missing the id of the filing being corrected.')}])
 
-    corrected_filing = Filing.find_by_id(filing['filing']['correction']['correctedFilingId'])
-    nr_path = '/filing/incorporationApplication/nameRequest/nrNumber'
-    nr_number = get_str(corrected_filing.json, nr_path)
-    new_nr_number = get_str(filing, nr_path)
-    # original filing has no nrNumber and new filing has nr Number (numbered -> named correction)
-    # original filing nrNumber != new filing nrNumber (change of name using NR)
-    if new_nr_number and nr_number != new_nr_number:
-        err = validate_correction_name_request(filing, new_nr_number, nr_path)
-        if err:
-            msg.extend(err)
+    msg = []
+    if err := validate_correction_name_request(filing, corrected_filing):
+        msg.extend(err)
+
+    if err := validate_correction_effective_date(filing, corrected_filing):
+        msg.append(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -270,9 +269,27 @@ def validate_correction_ia(filing: Dict) -> Error:
     return None
 
 
-def validate_correction_name_request(filing: Dict, nr_number: str, nr_path: str) -> list:
+def validate_correction_effective_date(filing: Dict, corrected_filing: Dict) -> Optional[Dict]:
+    """Validate that effective dates follow the rules.
+
+    Currently effective dates cannot be changed.
+    """
+    if new_effective_date := filing.get('filing', {}).get('header', {}).get('effectiveDate'):
+        if new_effective_date != corrected_filing.get('filing', {}).get('header', {}).get('effectiveDate'):
+            return {'error': babel('The effective date of a filing cannot be changed in a correction.')}
+    return None
+
+
+def validate_correction_name_request(filing: Dict, corrected_filing: Dict) -> Optional[List]:
     """Validate correction of Name Request."""
+    nr_path = '/filing/incorporationApplication/nameRequest/nrNumber'
+    nr_number = get_str(corrected_filing.json, nr_path)
+    new_nr_number = get_str(filing, nr_path)
+    # original filing has no nrNumber and new filing has nr Number (numbered -> named correction)
+    # original filing nrNumber != new filing nrNumber (change of name using NR)
     msg = []
+    if nr_number == new_nr_number:
+        return None
 
     # ensure NR is approved or conditionally approved
     nr_response = namex.query_nr_number(nr_number)
