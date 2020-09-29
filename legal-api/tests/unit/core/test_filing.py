@@ -16,16 +16,16 @@
 
 from legal_api.core import Filing
 
-from tests import strip_keys_from_dict
-
 
 def test_filing_raw():
+    """Assert that raw is empty on a new filing."""
     filing = Filing()
 
     assert not filing.raw
 
 
 def test_filing_json():
+    """Assert that the json field gets set correctly."""
     filing = Filing()
     filing_submission = {
         'filing': {
@@ -42,27 +42,7 @@ def test_filing_json():
 
 
 def test_filing_save(session):
-    filing = Filing()
-    filing_submission = {
-        'filing': {
-            'header': {
-                'name': 'specialResolution',
-                'date': '2019-04-08'
-            },
-            'specialResolution': {
-                'resolution': 'Year challenge is hitting oppo for the win.'
-            }}}
-
-    filing.json = filing_submission
-
-    assert not filing.id
-
-    filing.save()
-
-    assert filing.id
-
-
-def test_filing_save(session):
+    """Assert that the core filing is saved to the backing store."""
     filing = Filing()
     filing_submission = {
         'filing': {

@@ -1,19 +1,37 @@
-import json
+# Copyright © 2020 Province of British Columbia
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""The Test Suites to ensure that the diff blocks are created correctly."""
+from __future__ import annotations
+
 from collections import MutableMapping, MutableSequence
-from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 import pytest
 
 
 @dataclass
-class node:
+class Node:
+    """A valid diff element."""
+
     path: List
     old_value: Any
     new_value: Any
 
     @property
     def json(self) -> Dict:
+        """Return the node in a json styled Dict."""
         return {
             'oldValue': self.old_value,
             'newValue': self.new_value,
@@ -21,19 +39,8 @@ class node:
         }
 
 
-def del_keys(data, key: str):
-    leaves = [str, int, bool]
-    keys = key.split('/')
-    keys.remove('')
-    for k in keys:
-        if v := data.get(k):
-            pass
-        else:
-            break
-    return data
-
-
-def diff_dict(json1, json2, path: List[str] = None, ignore_keys: List[str] = None) -> List[node]:
+def diff_dict(json1, json2, path: List[str] = None, ignore_keys: List[str] = None) -> Optional[List[Node]]:
+    """Recursively create a diff record for a dict, based on the corrections JSONSchema definition."""
     diff = []
     path = path or []
     for key, value in json1.items():
@@ -41,7 +48,7 @@ def diff_dict(json1, json2, path: List[str] = None, ignore_keys: List[str] = Non
             continue
 
         if not json2.get(key):
-            diff.append(node(old_value=None,
+            diff.append(Node(old_value=None,
                              new_value=value,
                              path=path + [key]))
 
@@ -54,37 +61,33 @@ def diff_dict(json1, json2, path: List[str] = None, ignore_keys: List[str] = Non
                 diff.extend(d)
 
         elif value != json2.get(key):
-            diff.append(node(old_value=json2.get(key),
+            diff.append(Node(old_value=json2.get(key),
                              new_value=value,
                              path=path + [key]))
 
     for key in (json2.keys() - json1.keys()):
-        diff.append(node(old_value=json2.get(key),
+        diff.append(Node(old_value=json2.get(key),
                          new_value=None,
                          path=path + [key]))
 
     return diff
 
-    def diff_list(json1, json2, path: List[str] = None, ignore_keys: List[str] = None) -> List[node]:
-        """Return the diff of lists."""
-        diff = []
-        for item in json1:
-            if isinstance(item, MutableMapping):
-                if rv := del_key_in_dict(item, keys):
-                    modified_list.append(rv)
-            elif isinstance(item, MutableSequence):
-                if rv := scan_list(item, keys):
-                    modified_list.append(rv)
-            else:
-                try:
-                    if item not in keys:
-                        modified_list.append(item)
-                except:  # noqa: E722
-                    modified_list.append(item)
-        return modified_list
+
+def diff_list(json1, json2, path: List[str] = None, ignore_keys: List[str] = None) -> Optional[List[Node]]:
+    """Return the diff of lists."""
+    diff = []
+    for item in json1:
+        if isinstance(item, MutableMapping):
+            pass
+        elif isinstance(item, MutableSequence):
+            pass
+        else:
+            pass
+    return diff
 
 
 def diff_block(json1, json2, ignore_keys: List[str] = None):
+    """Create the 'diff' block used in a correction filing, based on the JSONSchema for corrections."""
     diff_json = []
     if diff_nodes := diff_dict(json1, json2, ignore_keys):
         for n in diff_nodes:
@@ -96,7 +99,7 @@ def diff_block(json1, json2, ignore_keys: List[str] = None):
 TEST_JSON_DIFF = [
     # equal
     ('equal',  # test_name
-     {"c": "d", "a": "b", "b": {"c": "d", "a": {"c": "d", "a": "b"}}},  # json1
+     {'c': 'd', 'a': 'b', 'b': {'c': 'd', 'a': {'c': 'd', 'a': 'b'}}},  # json1
      {'a': 'b', 'b': {'a': {'a': 'b', 'c': 'd'}, 'c': 'd'}, 'c': 'd'},  # json2
      []  # expected
      ),
@@ -173,22 +176,22 @@ TEST_JSON_DIFF = [
              'path': '/b/bb'},
      ]
      ),
-    ('equal lists',  # test_name
-     {"c": "d", "a": [{'j': 'k'}]},
-     {"c": "d", "a": [{'j': 'k'}]},
-     []  # expected
-     ),
-    ('equal unordered lists',  # test_name
-     {"c": "d", "a": [{'j': 'k'}, {'m': 'n'}]},
-     {"c": "d", "a": [{'m': 'n'}, {'j': 'k'}]},
-     []  # expected
-     ),
+    # ('equal lists',  # test_name
+    #  {'c': 'd', 'a': [{'j': 'k'}]},
+    #  {'c': 'd', 'a': [{'j': 'k'}]},
+    #  []  # expected
+    #  ),
+    # ('equal unordered lists',  # test_name
+    #  {'c': 'd', 'a': [{'j': 'k'}, {'m': 'n'}]},
+    #  {'c': 'd', 'a': [{'m': 'n'}, {'j': 'k'}]},
+    #  []  # expected
+    #  ),
 ]
 
 
 @ pytest.mark.parametrize('test_name, json1, json2, expected', TEST_JSON_DIFF)
 def test_diff_block(test_name, json1, json2, expected):
-
+    """Assert that the diff block gets created correctly."""
     diff = diff_block(json1, json2)
 
     assert expected == diff

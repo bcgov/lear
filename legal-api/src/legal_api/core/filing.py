@@ -14,16 +14,17 @@
 """Filings are legal documents that alter the state of a business."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from legal_api.models import Filing as FilingStorage
-from legal_api.utils.datetime import date, datetime
+from legal_api.utils.datetime import datetime
 
 
 # @dataclass(init=False, repr=False)
 class Filing:
+    """Domain class for Filings."""
 
     class Status(Enum):
         """Render an Enum of the Filing Statuses."""
@@ -38,6 +39,7 @@ class Filing:
         PENDING_CORRECTION = 'PENDING_CORRECTION'
 
     def __init__(self):
+        """Create the Filing."""
         self._storage: Optional[FilingStorage] = None
         self._id: str = ''
         self._raw: Optional[Dict] = None
@@ -52,7 +54,8 @@ class Filing:
         self._paper_only: bool
 
     @property
-    def id(self) -> str:
+    def id(self) -> str:  # pylint: disable=invalid-name; defining the std ID
+        """Return the ID of the filing."""
         if not self._id:
             if self._storage:
                 self._id = self._storage.id
@@ -60,24 +63,29 @@ class Filing:
 
     @property
     def raw(self) -> Optional[Dict]:
+        """Return the raw, submitted and unprocessed version on the filing."""
         if not self._raw:
             return {}
         return self._raw
 
     @property
     def json(self) -> Optional[Dict]:
+        """Return a dict representing the filing json."""
         return self._raw
 
     @json.setter
-    def json(self, filing_submission) -> Optional[Dict]:
+    def json(self, filing_submission):
+        """Add the raw json to the filing."""
         self._raw = filing_submission
-        return None
 
     def save(self):
+        """Save the filing."""
         if not self._storage:
             self._storage = FilingStorage()
         self._storage.filing_json = self._raw
         self._storage.save()
 
-    def validate(self):
-        raise NotImplemented
+    @staticmethod
+    def validate():
+        """Validate the filing."""
+        raise NotImplementedError

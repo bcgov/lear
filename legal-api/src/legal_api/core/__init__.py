@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """This has the core domain used by the application."""
-
 from .filing import Filing
+
 
 __all__ = ('Filing')
