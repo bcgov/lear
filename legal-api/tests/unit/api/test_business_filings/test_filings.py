@@ -783,6 +783,7 @@ def test_calc_annual_report_date(session, client, jwt):
         ('BC1234569', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.BCOMP.value, None, False),
         ('BC1234569', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.BCOMP.value, None, False),
         ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, None, False),
+        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, None, True),
         ('CP1234567', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.COOP.value, None, False),
         ('CP1234567', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.COOP.value, None, False),
         ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, False),
@@ -795,7 +796,7 @@ def test_get_correct_fee_codes(session, identifier, base_filing, filing_name, or
     """Assert fee codes are properly assigned to filings before sending to payment."""
     # setup
     if free:
-        expected_fee_code = 'OTFDR'
+        expected_fee_code = Filing.FILINGS[filing_name].get('free', {}).get('codes', {}).get(orig_legal_type)
     else:
         expected_fee_code = Filing.FILINGS[filing_name].get('codes', {}).get(orig_legal_type)
     if not identifier.startswith('T'):
