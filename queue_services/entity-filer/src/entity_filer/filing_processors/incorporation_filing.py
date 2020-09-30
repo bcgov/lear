@@ -29,9 +29,14 @@ from entity_filer.filing_processors.filing_components.offices import update_offi
 from entity_filer.filing_processors.filing_components.parties import update_parties
 
 
-def get_next_corp_num(business_type: str):
+def get_next_corp_num(legal_type: str):
     """Retrieve the next available sequential corp-num from COLIN."""
     try:
+        # TODO: update this to grab the legal 'class' after legal classes have been defined in lear
+        if legal_type == Business.LegalTypes.BCOMP:
+            business_type = 'BC'
+        else:
+            business_type = legal_type
         resp = requests.post(f'{current_app.config["COLIN_API"]}/{business_type}')
     except requests.exceptions.ConnectionError:
         current_app.logger.error(f'Failed to connect to {current_app.config["COLIN_API"]}')
