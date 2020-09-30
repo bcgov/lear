@@ -33,7 +33,7 @@ def get_next_corp_num(legal_type: str):
     """Retrieve the next available sequential corp-num from COLIN."""
     try:
         # TODO: update this to grab the legal 'class' after legal classes have been defined in lear
-        if legal_type == Business.LegalTypes.BCOMP:
+        if legal_type == Business.LegalTypes.BCOMP.value:
             business_type = 'BC'
         else:
             business_type = legal_type
