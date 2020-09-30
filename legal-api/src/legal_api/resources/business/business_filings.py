@@ -508,7 +508,8 @@ class ListFilingResource(Resource):
                     if not all(change in free_changes for change in director.get('actions', [])):
                         free = False
                         break
-                filing_type_code = 'OTFDR' if free else Filing.FILINGS[k].get('codes', {}).get(legal_type)
+                filing_type_code = Filing.FILINGS[k].get('free', {}).get('codes', {}).get(legal_type)\
+                    if free else Filing.FILINGS[k].get('codes', {}).get(legal_type)
 
             # check if priority handled in parent filing
             if k in ['changeOfDirectors', 'changeOfAddress']:

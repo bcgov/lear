@@ -90,6 +90,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'codes': {
                 'CP': 'OTCDR',
                 'BEN': 'BCCDR'
+            },
+            'free': {
+                'codes': {
+                    'CP': 'OTFDR',
+                    'BEN': 'BCFDR'
+                }
             }
         },
         'changeOfName': {'name': 'changeOfName', 'title': 'Change of Name Filing'},
