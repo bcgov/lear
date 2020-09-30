@@ -488,8 +488,11 @@ class ListFilingResource(Resource):
         filing_types = []
         priority_flag = filing_json['filing']['header'].get('priority', False)
         filing_type = filing_json['filing']['header'].get('name', None)
-        business = Business.find_by_identifier(filing_json['filing']['business']['identifier'])
-        legal_type = business.legal_type
+        if filing_type == 'incorporationApplication':
+            legal_type = filing_json['filing']['business']['legalType']
+        else:
+            business = Business.find_by_identifier(filing_json['filing']['business']['identifier'])
+            legal_type = business.legal_type
 
         for k in filing_json['filing'].keys():
 

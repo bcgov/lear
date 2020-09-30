@@ -30,6 +30,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
     FILING_HEADER,
+    INCORPORATION_FILING_TEMPLATE,
 )
 
 from legal_api.models import Business
@@ -37,8 +38,13 @@ from legal_api.resources.business.business_filings import Filing, ListFilingReso
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import integration_payment
+from tests.unit.models import (  # noqa:E501,I001
+    factory_business,
+    factory_business_mailing_address,
+    factory_completed_filing,
+    factory_filing,
+)
 from tests.unit.services.utils import create_header
-from tests.unit.models import factory_business_mailing_address, factory_business, factory_completed_filing, factory_filing  # noqa:E501,I001
 
 
 def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):
@@ -781,6 +787,8 @@ def test_calc_annual_report_date(session, client, jwt):
         ('CP1234567', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.COOP.value, None, False),
         ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, False),
         ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, True),
+        ('T1234567', INCORPORATION_FILING_TEMPLATE, 'incorporationApplication',
+         Business.LegalTypes.BCOMP.value, None, False)
     ]
 )
 def test_get_correct_fee_codes(session, identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free):
@@ -790,7 +798,8 @@ def test_get_correct_fee_codes(session, identifier, base_filing, filing_name, or
         expected_fee_code = 'OTFDR'
     else:
         expected_fee_code = Filing.FILINGS[filing_name].get('codes', {}).get(orig_legal_type)
-    factory_business(identifier=identifier, entity_type=orig_legal_type)
+    if not identifier.startswith('T'):
+        factory_business(identifier=identifier, entity_type=orig_legal_type)
 
     # set filing
     filing = copy.deepcopy(base_filing)
