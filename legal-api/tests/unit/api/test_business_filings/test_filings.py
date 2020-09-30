@@ -21,6 +21,7 @@ from datetime import datetime
 from http import HTTPStatus
 
 import datedelta
+import pytest
 from dateutil.parser import parse
 from flask import current_app
 from registry_schemas.example_data import (
@@ -766,94 +767,57 @@ def test_calc_annual_report_date(session, client, jwt):
     assert b.next_anniversary.date().isoformat() == datetime.utcnow().date().isoformat()
 
 
-def test_get_correct_fee_codes(session):
+@pytest.mark.parametrize(
+    'identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free',
+    [
+        ('BC1234567', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.COMP.value,
+            Business.LegalTypes.BCOMP.value, False),
+        ('BC1234568', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.BCOMP.value,
+            Business.LegalTypes.COMP.value, False),
+        ('BC1234569', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.BCOMP.value, None, False),
+        ('BC1234569', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.BCOMP.value, None, False),
+        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, None, False),
+        ('CP1234567', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.COOP.value, None, False),
+        ('CP1234567', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.COOP.value, None, False),
+        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, False),
+        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, True),
+    ]
+)
+def test_get_correct_fee_codes(session, identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free):
     """Assert fee codes are properly assigned to filings before sending to payment."""
-    import copy
-
     # setup
-    bc_identifier = 'BC1234567'
-    ben_identifier = 'BC1234568'
-    cp_identifier = 'CP1234567'
-    factory_business(identifier=bc_identifier, entity_type=Business.LegalTypes.COMP.value)
-    factory_business(identifier=ben_identifier, entity_type=Business.LegalTypes.BCOMP.value)
-    factory_business(identifier=cp_identifier, entity_type=Business.LegalTypes.COOP.value)
+    if free:
+        expected_fee_code = 'OTFDR'
+    else:
+        expected_fee_code = Filing.FILINGS[filing_name].get('codes', {}).get(orig_legal_type)
+    factory_business(identifier=identifier, entity_type=orig_legal_type)
 
-    # set filings
-    alt = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
-    alt['filing']['business']['identifier'] = bc_identifier
-    alt['filing']['business']['legalType'] = Business.LegalTypes.COMP.value
-    alt['filing']['alteration']['business']['legalType'] = Business.LegalTypes.BCOMP.value
+    # set filing
+    filing = copy.deepcopy(base_filing)
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['business']['legalType'] = orig_legal_type
+    filing['filing']['header']['name'] = filing_name
 
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['business']['identifier'] = cp_identifier
-    ar['filing']['business']['legalType'] = Business.LegalTypes.COOP.value
+    if filing_name == 'alteration':
+        filing['filing']['alteration']['business']['legalType'] = orig_legal_type
+    elif filing_name == 'changeOfAddress':
+        filing['filing'][filing_name] = CHANGE_OF_ADDRESS
+    elif filing_name == 'changeOfDirectors':
+        filing['filing'][filing_name] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+        if free:
+            for director in filing['filing']['changeOfDirectors']['directors']:
+                if not all(action in ['nameChanged', 'addressChanged'] for action in director.get('actions', [])):
+                    director['actions'] = ['nameChanged', 'addressChanged']
+        else:
+            assert len(filing['filing']['changeOfDirectors']['directors']) > 1
+            filing['filing']['changeOfDirectors']['directors'][0]['actions'] = ['ceased', 'nameChanged']
+            filing['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
 
-    bc_ar = copy.deepcopy(ANNUAL_REPORT)
-    bc_ar['filing']['business']['identifier'] = ben_identifier
-    bc_ar['filing']['business']['legalType'] = Business.LegalTypes.BCOMP.value
+    # get fee code
+    fee_code = ListFilingResource._get_filing_types(filing)[0]['filingTypeCode']
 
-    coa = copy.deepcopy(FILING_HEADER)
-    coa['filing']['business']['identifier'] = cp_identifier
-    coa['filing']['business']['legalType'] = Business.LegalTypes.COOP.value
-    coa['filing']['header']['name'] = 'changeOfAddress'
-    coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
-
-    cod = copy.deepcopy(FILING_HEADER)
-    cod['filing']['business']['identifier'] = cp_identifier
-    cod['filing']['business']['legalType'] = Business.LegalTypes.COOP.value
-    cod['filing']['header']['name'] = 'changeOfDirectors'
-    cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
-    assert len(cod['filing']['changeOfDirectors']['directors']) > 1
-    cod['filing']['changeOfDirectors']['directors'][0]['actions'] = ['ceased', 'nameChanged']
-    cod['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
-
-    free_cod = copy.deepcopy(FILING_HEADER)
-    free_cod['filing']['business']['identifier'] = cp_identifier
-    free_cod['filing']['business']['legalType'] = Business.LegalTypes.COOP.value
-    free_cod['filing']['header']['name'] = 'changeOfDirectors'
-    free_cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
-    for director in free_cod['filing']['changeOfDirectors']['directors']:
-        if not all(action in ['nameChanged', 'addressChanged'] for action in director.get('actions', [])):
-            director['actions'] = ['nameChanged', 'addressChanged']
-
-    bc_coa = copy.deepcopy(FILING_HEADER)
-    bc_coa['filing']['business']['identifier'] = ben_identifier
-    bc_coa['filing']['business']['legalType'] = Business.LegalTypes.BCOMP.value
-    bc_coa['filing']['header']['name'] = 'changeOfAddress'
-    bc_coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
-
-    bc_cod = copy.deepcopy(FILING_HEADER)
-    bc_cod['filing']['business']['identifier'] = ben_identifier
-    bc_cod['filing']['business']['legalType'] = Business.LegalTypes.BCOMP.value
-    bc_cod['filing']['header']['name'] = 'changeOfDirectors'
-    bc_cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
-    assert len(bc_cod['filing']['changeOfDirectors']['directors']) > 1
-    bc_cod['filing']['changeOfDirectors']['directors'][0]['actions'] = ['ceased', 'nameChanged']
-    bc_cod['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
-
-    # get fee codes
-    alt_fee_code = ListFilingResource._get_filing_types(alt)[0]['filingTypeCode']
-    assert alt_fee_code == Filing.FILINGS['alteration'].get('codes', {}).get(Business.LegalTypes.COMP.value)
-    ar_fee_code = ListFilingResource._get_filing_types(ar)[0]['filingTypeCode']
-    bc_ar_fee_code = ListFilingResource._get_filing_types(bc_ar)[0]['filingTypeCode']
-    coa_fee_code = ListFilingResource._get_filing_types(coa)[0]['filingTypeCode']
-    cod_fee_code = ListFilingResource._get_filing_types(cod)[0]['filingTypeCode']
-    free_cod_fee_code = ListFilingResource._get_filing_types(free_cod)[0]['filingTypeCode']
-    bc_coa_fee_code = ListFilingResource._get_filing_types(bc_coa)[0]['filingTypeCode']
-    bc_cod_fee_code = ListFilingResource._get_filing_types(bc_cod)[0]['filingTypeCode']
-
-    # test fee codes
-    assert alt_fee_code == Filing.FILINGS['alteration'].get('codes', {}).get(Business.LegalTypes.COMP.value)
-
-    assert ar_fee_code == Filing.FILINGS['annualReport'].get('codes', {}).get(Business.LegalTypes.COOP.value)
-    assert coa_fee_code == Filing.FILINGS['changeOfAddress'].get('codes', {}).get(Business.LegalTypes.COOP.value)
-    assert cod_fee_code == Filing.FILINGS['changeOfDirectors'].get('codes', {}).get(Business.LegalTypes.COOP.value)
-
-    assert free_cod_fee_code == 'OTFDR'
-
-    assert bc_ar_fee_code == Filing.FILINGS['annualReport'].get('codes', {}).get(Business.LegalTypes.BCOMP.value)
-    assert bc_coa_fee_code == Filing.FILINGS['changeOfAddress'].get('codes', {}).get(Business.LegalTypes.BCOMP.value)
-    assert bc_cod_fee_code == Filing.FILINGS['changeOfDirectors'].get('codes', {}).get(Business.LegalTypes.BCOMP.value)
+    # verify fee code
+    assert fee_code == expected_fee_code
 
 
 @integration_payment
