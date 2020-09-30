@@ -126,6 +126,6 @@ def test_get_next_corp_num(requests_mock, app, test_name, response, expected):
     with app.app_context():
         requests_mock.post(f'{current_app.config["COLIN_API"]}/BC', json={'corpNum': response})
 
-        corp_num = get_next_corp_num('BC')
+        corp_num = get_next_corp_num('BEN')
 
     assert corp_num == expected
