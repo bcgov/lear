@@ -494,38 +494,45 @@ class ListFilingResource(Resource):
             business = Business.find_by_identifier(filing_json['filing']['business']['identifier'])
             legal_type = business.legal_type
 
-        for k in filing_json['filing'].keys():
+        if any('correction' in x for x in filing_json['filing'].keys()):
+            filing_type_code = Filing.FILINGS.get('correction', {}).get('codes', {}).get(legal_type)
+            filing_types.append({
+                'filingTypeCode': filing_type_code,
+                'priority': priority_flag,
+                'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+            })
+        else:
+            for k in filing_json['filing'].keys():
+                filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
+                priority = priority_flag
 
-            filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
-            priority = priority_flag
+                # check if changeOfDirectors is a free filing
+                if k == 'changeOfDirectors':
+                    free = True
+                    free_changes = ['nameChanged', 'addressChanged']
+                    for director in filing_json['filing'][k].get('directors'):
+                        # if changes other than name/address change then this is not a free filing
+                        if not all(change in free_changes for change in director.get('actions', [])):
+                            free = False
+                            break
+                    filing_type_code = Filing.FILINGS[k].get('free', {}).get('codes', {}).get(legal_type)\
+                        if free else Filing.FILINGS[k].get('codes', {}).get(legal_type)
 
-            # check if changeOfDirectors is a free filing
-            if k == 'changeOfDirectors':
-                free = True
-                free_changes = ['nameChanged', 'addressChanged']
-                for director in filing_json['filing'][k].get('directors'):
-                    # if changes other than name/address change then this is not a free filing
-                    if not all(change in free_changes for change in director.get('actions', [])):
-                        free = False
-                        break
-                filing_type_code = Filing.FILINGS[k].get('free', {}).get('codes', {}).get(legal_type)\
-                    if free else Filing.FILINGS[k].get('codes', {}).get(legal_type)
+                # check if priority handled in parent filing
+                if k in ['changeOfDirectors', 'changeOfAddress']:
+                    priority = False if filing_type == 'annualReport' else priority_flag
 
-            # check if priority handled in parent filing
-            if k in ['changeOfDirectors', 'changeOfAddress']:
-                priority = False if filing_type == 'annualReport' else priority_flag
-
-            if k == 'incorporationApplication':
-                filing_types.append({
-                    'filingTypeCode': filing_type_code,
-                    'futureEffective': ListFilingResource._is_future_effective_filing(filing_json)
-                })
-            elif filing_type_code:
-                filing_types.append({
-                    'filingTypeCode': filing_type_code,
-                    'priority': priority,
-                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
-                })
+                if k == 'incorporationApplication':
+                    filing_types.append({
+                        'filingTypeCode': filing_type_code,
+                        'futureEffective': ListFilingResource._is_future_effective_filing(filing_json)
+                    })
+                elif filing_type_code:
+                    filing_types.append({
+                        'filingTypeCode': filing_type_code,
+                        'priority': priority,
+                        'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+                    })
         return filing_types
 
     @staticmethod
