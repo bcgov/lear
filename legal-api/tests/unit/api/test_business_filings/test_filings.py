@@ -29,6 +29,8 @@ from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
+    CORRECTION_AR,
+    CORRECTION_INCORPORATION,
     FILING_HEADER,
     INCORPORATION_FILING_TEMPLATE,
 )
@@ -784,9 +786,11 @@ def test_calc_annual_report_date(session, client, jwt):
         ('BC1234569', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.BCOMP.value, None, False),
         ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, None, False),
         ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, None, True),
+        ('BC1234569', CORRECTION_INCORPORATION, 'correction', Business.LegalTypes.BCOMP.value, None, False),
         ('CP1234567', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.COOP.value, None, False),
         ('CP1234567', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.COOP.value, None, False),
         ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, False),
+        ('CP1234567', CORRECTION_AR, 'correction', Business.LegalTypes.COOP.value, None, False),
         ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, True),
         ('T1234567', INCORPORATION_FILING_TEMPLATE, 'incorporationApplication',
          Business.LegalTypes.BCOMP.value, None, False)
