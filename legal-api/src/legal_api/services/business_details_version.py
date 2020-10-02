@@ -19,7 +19,19 @@ import pycountry
 from sqlalchemy import or_
 from sqlalchemy_continuum import version_class
 
-from legal_api.models import Address, Alias, Business, Filing, Party, PartyRole, Resolution, ShareClass, ShareSeries, db
+from legal_api.models import (
+    Address,
+    Alias,
+    Business,
+    Filing,
+    Office,
+    Party,
+    PartyRole,
+    Resolution,
+    ShareClass,
+    ShareSeries,
+    db,
+)
 
 
 class VersionedBusinessDetailsService:
@@ -36,7 +48,7 @@ class VersionedBusinessDetailsService:
         company_profile_json['parties'] = \
             VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business_id)
         company_profile_json['offices'] = \
-            VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business)
+            VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business_id)
         company_profile_json['shareClasses'] = \
             VersionedBusinessDetailsService.get_share_class_revision(filing.transaction_id, business_id)
         company_profile_json['nameTranslations'] = \
@@ -51,6 +63,7 @@ class VersionedBusinessDetailsService:
         business_version = version_class(Business)
         business_revision = db.session.query(business_version) \
             .filter(business_version.transaction_id <= transaction_id) \
+            .filter(business_version.operation_type != 2) \
             .filter(business_version.id == business.id) \
             .filter(or_(business_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                         business_version.end_transaction_id > transaction_id)) \
@@ -58,15 +71,25 @@ class VersionedBusinessDetailsService:
         return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
 
     @staticmethod
-    def get_office_revision(transaction_id, business) -> dict:
+    def get_office_revision(transaction_id, business_id) -> dict:
         """Consolidates all office changes upto the given transaction id."""
         offices_json = {}
         address_version = version_class(Address)
+        offices_version = version_class(Office)
 
-        for office in business.offices.all():
+        offices = db.session.query(offices_version) \
+            .filter(offices_version.transaction_id <= transaction_id) \
+            .filter(offices_version.operation_type != 2) \
+            .filter(offices_version.business_id == business_id) \
+            .filter(or_(offices_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
+                        offices_version.end_transaction_id > transaction_id)) \
+            .order_by(offices_version.transaction_id).all()
+
+        for office in offices:
             offices_json[office.office_type] = {}
             addresses_list = db.session.query(address_version) \
                 .filter(address_version.transaction_id <= transaction_id) \
+                .filter(address_version.operation_type != 2) \
                 .filter(address_version.office_id == office.id) \
                 .filter(or_(address_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                             address_version.end_transaction_id > transaction_id)) \
@@ -83,6 +106,7 @@ class VersionedBusinessDetailsService:
         party_role_version = version_class(PartyRole)
         party_roles = db.session.query(party_role_version)\
             .filter(party_role_version.transaction_id <= transaction_id) \
+            .filter(party_role_version.operation_type != 2) \
             .filter(party_role_version.business_id == business_id) \
             .filter(or_(party_role_version.end_transaction_id == None,   # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_role_version.end_transaction_id > transaction_id)) \
@@ -100,6 +124,7 @@ class VersionedBusinessDetailsService:
         share_class_version = version_class(ShareClass)
         share_classes_list = db.session.query(share_class_version) \
             .filter(share_class_version.transaction_id <= transaction_id) \
+            .filter(share_class_version.operation_type != 2) \
             .filter(share_class_version.business_id == business_id) \
             .filter(or_(share_class_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                         share_class_version.end_transaction_id > transaction_id)) \
@@ -118,6 +143,7 @@ class VersionedBusinessDetailsService:
         share_series_version = version_class(ShareSeries)
         share_series_list = db.session.query(share_series_version) \
             .filter(share_series_version.transaction_id <= transaction_id) \
+            .filter(share_series_version.operation_type != 2) \
             .filter(share_series_version.share_class_id == share_class_id) \
             .filter(or_(share_series_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                         share_series_version.end_transaction_id > transaction_id)) \
@@ -134,6 +160,7 @@ class VersionedBusinessDetailsService:
         name_translations_version = version_class(Alias)
         name_translations_list = db.session.query(name_translations_version) \
             .filter(name_translations_version.transaction_id <= transaction_id) \
+            .filter(name_translations_version.operation_type != 2) \
             .filter(name_translations_version.business_id == business_id) \
             .filter(name_translations_version.type == 'TRANSLATION') \
             .filter(or_(name_translations_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
@@ -151,6 +178,7 @@ class VersionedBusinessDetailsService:
         resolution_version = version_class(Resolution)
         resolution_list = db.session.query(resolution_version) \
             .filter(resolution_version.transaction_id <= transaction_id) \
+            .filter(resolution_version.operation_type != 2) \
             .filter(resolution_version.business_id == business_id) \
             .filter(resolution_version.resolution_type == 'SPECIAL') \
             .filter(or_(resolution_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
@@ -182,6 +210,7 @@ class VersionedBusinessDetailsService:
         party_version = version_class(Party)
         party = db.session.query(party_version) \
             .filter(party_version.transaction_id <= transaction_id) \
+            .filter(party_version.operation_type != 2) \
             .filter(party_version.id == party_role_revision.party_id) \
             .filter(or_(party_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_version.end_transaction_id > transaction_id)) \
@@ -232,6 +261,7 @@ class VersionedBusinessDetailsService:
         address_version = version_class(Address)
         address = db.session.query(address_version) \
             .filter(address_version.transaction_id <= transaction_id) \
+            .filter(address_version.operation_type != 2) \
             .filter(address_version.id == address_id) \
             .filter(or_(address_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                         address_version.end_transaction_id > transaction_id)) \
