@@ -13,3 +13,4 @@ python-dotenv==0.14.0
 pytz==2020.1
 six==1.15.0
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
+git+https://github.com/bcgov/business-schemas.git@2.9.0#egg=registry_schemas
