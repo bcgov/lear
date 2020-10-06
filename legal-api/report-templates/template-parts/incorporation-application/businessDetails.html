@@ -2,20 +2,22 @@
    <table class="business-details-table" role="presentation">
       <tr>
          <td>
-            {% if header.reportType == 'noa' %}
+            {% if correction %}
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
                <div class="bold pt-2">Recognition Date and Time:</div>
+               <div class="bold pt-2">Correction Date:</div>
             {% else %}
                <div class="bold">Filed Date and Time:</div>
                <div class="bold pt-2">Recognition Date and Time:</div>
             {% endif %}
          </td>
          <td>
-            {% if header.reportType == 'noa' %}
+            {% if correction %}
                <div>{{business.identifier}}</div>
-               <div class="pt-2">{{filing_date_time}}</div>
-               <div class="pt-2">{{effective_date_time}}</div>
+               <div class="pt-2">{{original_filing_date_time}}</div>
+               <div class="pt-2">{{recognition_date_time}}</div>
+               <div class="pt-2">{{effective_date}}</div>
             {% else %}
                <div>{{filing_date_time}}</div>
                <div class="pt-2">{{effective_date_time}}</div>
@@ -37,7 +39,7 @@
 <!-- this block is hidden but is needed for the footer: -->
 <div class="filing-identifier">
    Filing #{{header.filingId}}
-   {% if header.reportType == 'noa' %}
+   {% if correction %}
    <span> | Incorporation #{{business.identifier}}</span>
    {% endif %}
 </div>
