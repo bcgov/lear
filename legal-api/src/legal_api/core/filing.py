@@ -15,12 +15,11 @@
 from __future__ import annotations
 
 # from dataclasses import dataclass, field
-from datetime import date
 from enum import Enum
 from typing import Dict, Optional
 
 from legal_api.models import Business, Filing as FilingStorage, db
-from legal_api.utils.datetime import datetime
+from legal_api.utils.datetime import date, datetime
 
 
 # @dataclass(init=False, repr=False)
@@ -65,9 +64,8 @@ class Filing:
     @property
     def filing_type(self) -> str:
         """Property containing the filing type."""
-        if not self._filing_type:
-            if self._storage:
-                self._filing_type = self._storage.filing_type
+        if not self._filing_type and self._storage:
+            self._filing_type = self._storage.filing_type
         return self._filing_type
 
     @property
@@ -83,10 +81,12 @@ class Filing:
     @property
     def json(self) -> Optional[Dict]:
         """Return a dict representing the filing json."""
-        if self._storage.status == Filing.Status.COMPLETED.value:
-            return self.raw  # Implement versioned domain model
-        else:
-            return self.raw
+        if self._storage:
+            if self._storage.status == Filing.Status.COMPLETED.value:
+                return self.raw  # Implement versioned domain model
+            else:
+                return self.raw
+        return {}
 
     @property
     def storage(self) -> Optional[FilingStorage]:
@@ -116,21 +116,9 @@ class Filing:
         filing = Filing()
         # filing._storage = FilingStorage.find_by_id(filing_id)
         if identifier.startswith('T'):
-            q = db.session.query(FilingStorage). \
-                filter(FilingStorage.temp_reg == identifier)
-
-            if filing_id:
-                q = q.filter(FilingStorage.id == filing_id)
-
-            filing._storage = q.one_or_none()
+            filing._storage = FilingStorage.get_temp_reg_filing(identifier)
         else:
-            q = db.session.query(Business, FilingStorage). \
-                filter(Business.id == FilingStorage.business_id).\
-                filter(Business.identifier == identifier).\
-                filter(FilingStorage.id == filing_id).\
-                one_or_none()
-            if q:
-                filing._storage = q[1]
+            filing._storage = Business.get_filing_by_id(identifier, filing_id)
         return filing
 
     @staticmethod

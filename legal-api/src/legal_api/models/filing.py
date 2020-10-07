@@ -374,12 +374,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing
 
     @staticmethod
-    def get_temp_reg_filing(temp_reg_id: str = None, filing_id: str = None):
+    def get_temp_reg_filing(temp_reg_id: str, filing_id: str = None):
         """Return a Filing by it's payment token."""
-        filing = db.session.query(Filing). \
-            filter(Filing.temp_reg == temp_reg_id). \
-            filter(Filing.id == filing_id). \
-            one_or_none()
+        q = db.session.query(Filing).filter(Filing.temp_reg == temp_reg_id)
+
+        if filing_id:
+            q.filter(Filing.id == filing_id)
+
+        filing = q.one_or_none()
         return filing
 
     @staticmethod
