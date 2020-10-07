@@ -15,10 +15,11 @@
 from __future__ import annotations
 
 # from dataclasses import dataclass, field
+from datetime import date
 from enum import Enum
 from typing import Dict, Optional
 
-from legal_api.models import Filing as FilingStorage
+from legal_api.models import Business, Filing as FilingStorage, db
 from legal_api.utils.datetime import datetime
 
 
@@ -62,16 +63,35 @@ class Filing:
         return self._id
 
     @property
+    def filing_type(self) -> str:
+        """Property containing the filing type."""
+        if not self._filing_type:
+            if self._storage:
+                self._filing_type = self._storage.filing_type
+        return self._filing_type
+
+    @property
     def raw(self) -> Optional[Dict]:
         """Return the raw, submitted and unprocessed version on the filing."""
         if not self._raw:
-            return {}
+            if self._storage:
+                self._raw = self._storage.json
+            else:
+                return {}
         return self._raw
 
     @property
     def json(self) -> Optional[Dict]:
         """Return a dict representing the filing json."""
-        return self._raw
+        if self._storage.status == Filing.Status.COMPLETED.value:
+            return self.raw  # Implement versioned domain model
+        else:
+            return self.raw
+
+    @property
+    def storage(self) -> Optional[FilingStorage]:
+        """Return filing."""
+        self._storage
 
     @json.setter
     def json(self, filing_submission):
@@ -89,3 +109,38 @@ class Filing:
     def validate():
         """Validate the filing."""
         raise NotImplementedError
+
+    @staticmethod
+    def get(identifier, filing_id=None) -> Optional[Filing]:
+        """Return a Filing domain by the id."""
+        filing = Filing()
+        # filing._storage = FilingStorage.find_by_id(filing_id)
+        if identifier.startswith('T'):
+            q = db.session.query(FilingStorage). \
+                filter(FilingStorage.temp_reg == identifier)
+
+            if filing_id:
+                q = q.filter(FilingStorage.id == filing_id)
+
+            filing._storage = q.one_or_none()
+        else:
+            q = db.session.query(Business, FilingStorage). \
+                filter(Business.id == FilingStorage.business_id).\
+                filter(Business.identifier == identifier).\
+                filter(FilingStorage.id == filing_id).\
+                one_or_none()
+            if q:
+                filing._storage = q[1]
+        return filing
+
+    @staticmethod
+    def get_filings_by_status(business_id: int, status: [], after_date: date = None):
+        """Return the filings with statuses in the status array input."""
+        storages = FilingStorage.get_filings_by_status(business_id, status, after_date)
+        filings = []
+        for storage in storages:
+            filing = Filing()
+            filing._storage = storage
+            filings.append(filing)
+
+        return filings

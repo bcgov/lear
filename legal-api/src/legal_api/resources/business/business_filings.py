@@ -27,6 +27,7 @@ from flask_restplus import Resource, cors
 from werkzeug.local import LocalProxy
 
 import legal_api.reports
+from legal_api.core import Filing as CoreFiling
 from legal_api.exceptions import BusinessException
 from legal_api.models import Address, Business, Filing, RegistrationBootstrap, User, db
 from legal_api.models.colin_event_id import ColinEventId
@@ -65,19 +66,13 @@ class ListFilingResource(Resource):
         # fix this while refactoring this whole module
         """Return a JSON object with meta information about the Service."""
         if identifier.startswith('T'):
-            q = db.session.query(Filing). \
-                filter(Filing.temp_reg == identifier)
-
-            if filing_id:
-                q = q.filter(Filing.id == filing_id)
-
-            rv = q.one_or_none()
+            rv = CoreFiling.get(identifier, filing_id)
 
             if not rv:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
             if str(request.accept_mimetypes) == 'application/pdf' and filing_id:
                 if rv.filing_type == 'incorporationApplication':
-                    return legal_api.reports.get_pdf(rv, None)
+                    return legal_api.reports.get_pdf(rv.storage, None)
             filing_json = rv.json
             filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
             return jsonify(filing_json)
@@ -88,20 +83,16 @@ class ListFilingResource(Resource):
             return jsonify(filings=[]), HTTPStatus.NOT_FOUND
 
         if filing_id:
-            rv = db.session.query(Business, Filing). \
-                filter(Business.id == Filing.business_id).\
-                filter(Business.identifier == identifier).\
-                filter(Filing.id == filing_id).\
-                one_or_none()
+            rv = CoreFiling.get(identifier, filing_id)
             if not rv:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
 
             if str(request.accept_mimetypes) == 'application/pdf':
                 report_type = request.args.get('type', None)
-                if rv[1].filing_type == 'incorporationApplication':
-                    ListFilingResource._populate_business_info_to_filing(rv[1], business)
-                return legal_api.reports.get_pdf(rv[1], report_type)
-            return jsonify(rv[1].json)
+                if rv.filing_type == 'incorporationApplication':
+                    ListFilingResource._populate_business_info_to_filing(rv.storage, business)
+                return legal_api.reports.get_pdf(rv.storage, report_type)
+            return jsonify(rv.json)
 
         # Does it make sense to get a PDF of all filings?
         if str(request.accept_mimetypes) == 'application/pdf':
@@ -109,7 +100,8 @@ class ListFilingResource(Resource):
                 HTTPStatus.NOT_ACCEPTABLE
 
         rv = []
-        filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value, Filing.Status.PAID.value])
+        filings = CoreFiling.get_filings_by_status(business.id,
+                                                   [Filing.Status.COMPLETED.value, Filing.Status.PAID.value])
         for filing in filings:
             filing_json = filing.json
             filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
