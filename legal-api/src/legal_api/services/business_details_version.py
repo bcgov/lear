@@ -34,14 +34,20 @@ from legal_api.models import (
 )
 
 
-class VersionedBusinessDetailsService:
+class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-methods
     """Provides service for getting business details as of a filing."""
 
     @staticmethod
     def get_revision(filing_type, filing_id, business_id):
         """Consolidates based on filing type upto the given transaction id of a filing."""
+        business = Business.find_by_internal_id(business_id)
+        filing = Filing.find_by_id(filing_id)
+
+        revision_json = {}
+        revision_json['filing'] = {}
         if filing_type == 'incorporationApplication':
-            return VersionedBusinessDetailsService.get_ia_revision(filing_id, business_id)
+            revision_json['filing'] = \
+                VersionedBusinessDetailsService.get_ia_revision(filing, business)
         elif filing_type == 'changeOfDirectors':
             pass
         elif filing_type == 'changeOfAddress':
@@ -53,35 +59,34 @@ class VersionedBusinessDetailsService:
         elif filing_type == 'alteration':
             pass
 
-        # Temperory
-        filing = Filing.find_by_id(filing_id)
-        return filing.json
+        if not revision_json['filing']:
+            revision_json = filing.json
+
+        return revision_json
 
     @staticmethod
-    def get_ia_revision(filing_id, business_id) -> dict:
+    def get_ia_revision(filing, business) -> dict:
         """Consolidates incorporation application upto the given transaction id of a filing."""
         ia_json = {}
-        business = Business.find_by_internal_id(business_id)
-        filing = Filing.find_by_id(filing_id)
 
         ia_json['header'] = VersionedBusinessDetailsService.get_header_revision(filing)
         ia_json['business'] = \
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         ia_json['incorporationApplication'] = {}
         ia_json['incorporationApplication']['offices'] = \
-            VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business_id)
+            VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business.id)
         ia_json['incorporationApplication']['parties'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business_id)
+            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business.id)
         ia_json['incorporationApplication']['nameRequest'] = \
             VersionedBusinessDetailsService.get_name_request_revision(filing)
         ia_json['incorporationApplication']['contactPoint'] = \
             VersionedBusinessDetailsService.get_contact_point_revision(filing)
         ia_json['incorporationApplication']['shareStructure'] = {}
         ia_json['incorporationApplication']['shareStructure']['shareClasses'] = \
-            VersionedBusinessDetailsService.get_share_class_revision(filing.transaction_id, business_id)
+            VersionedBusinessDetailsService.get_share_class_revision(filing.transaction_id, business.id)
         ia_json['incorporationApplication']['nameTranslations'] = {}
         ia_json['incorporationApplication']['nameTranslations']['new'] = \
-            VersionedBusinessDetailsService.get_name_translations_revision(filing.transaction_id, business_id)
+            VersionedBusinessDetailsService.get_name_translations_revision(filing.transaction_id, business.id)
         ia_json['incorporationApplication']['incorporationAgreement'] = \
             VersionedBusinessDetailsService.get_incorporation_agreement_json(filing)
         return ia_json

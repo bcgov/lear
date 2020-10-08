@@ -82,18 +82,24 @@ class Filing:
     @property
     def json(self) -> Optional[Dict]:
         """Return a dict representing the filing json."""
+        _json = {}
         if self._storage:
             if self._storage.status == Filing.Status.COMPLETED.value:
-                return VersionedBusinessDetailsService. \
+                _json = VersionedBusinessDetailsService. \
                     get_revision(self.filing_type, self.id, self._storage.business_id)
             else:
-                return self.raw
-        return {}
+                _json = self.raw
+        return _json
 
     @property
     def storage(self) -> Optional[FilingStorage]:
         """Return filing."""
-        self._storage
+        return self._storage
+
+    @storage.setter
+    def storage(self, filing):
+        """Set filing storage."""
+        self._storage = filing
 
     @json.setter
     def json(self, filing_submission):
@@ -116,11 +122,10 @@ class Filing:
     def get(identifier, filing_id=None) -> Optional[Filing]:
         """Return a Filing domain by the id."""
         filing = Filing()
-        # filing._storage = FilingStorage.find_by_id(filing_id)
         if identifier.startswith('T'):
-            filing._storage = FilingStorage.get_temp_reg_filing(identifier)
+            filing.storage = FilingStorage.get_temp_reg_filing(identifier)
         else:
-            filing._storage = Business.get_filing_by_id(identifier, filing_id)
+            filing.storage = Business.get_filing_by_id(identifier, filing_id)
         return filing
 
     @staticmethod
@@ -130,7 +135,7 @@ class Filing:
         filings = []
         for storage in storages:
             filing = Filing()
-            filing._storage = storage
+            filing.storage = storage
             filings.append(filing)
 
         return filings
