@@ -18,7 +18,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Dict, Optional
 
-from legal_api.models import Business, Filing as FilingStorage
+from legal_api.models import Business, Filing as FilingStorage  # noqa: I001
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.utils.datetime import date, datetime
 
