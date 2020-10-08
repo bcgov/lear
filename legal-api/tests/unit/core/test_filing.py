@@ -15,6 +15,7 @@
 """Tests to assure the Filing Domain is working as expected."""
 
 import pytest
+
 from legal_api.core import Filing
 
 
