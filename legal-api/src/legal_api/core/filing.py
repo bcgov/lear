@@ -18,7 +18,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import Dict, Optional
 
-from legal_api.models import Business, Filing as FilingStorage, db
+from legal_api.models import Business, Filing as FilingStorage
+from legal_api.services import VersionedBusinessDetailsService
 from legal_api.utils.datetime import date, datetime
 
 
@@ -45,7 +46,7 @@ class Filing:
         self._raw: Optional[Dict] = None
         self._completion_date: datetime
         self._filing_date: datetime
-        self._filing_type: str
+        self._filing_type: str = ''
         self._effective_date: datetime
         self._payment_status_code: str
         self._payment_token: str
@@ -83,7 +84,8 @@ class Filing:
         """Return a dict representing the filing json."""
         if self._storage:
             if self._storage.status == Filing.Status.COMPLETED.value:
-                return self.raw  # Implement versioned domain model
+                return VersionedBusinessDetailsService. \
+                    get_revision(self.filing_type, self.id, self._storage.business_id)
             else:
                 return self.raw
         return {}

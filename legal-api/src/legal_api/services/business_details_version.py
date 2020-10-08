@@ -38,6 +38,60 @@ class VersionedBusinessDetailsService:
     """Provides service for getting business details as of a filing."""
 
     @staticmethod
+    def get_revision(filing_type, filing_id, business_id):
+        """Consolidates based on filing type upto the given transaction id of a filing."""
+        if filing_type == 'incorporationApplication':
+            return VersionedBusinessDetailsService.get_ia_revision(filing_id, business_id)
+        elif filing_type == 'changeOfDirectors':
+            pass
+        elif filing_type == 'changeOfAddress':
+            pass
+        elif filing_type == 'annualReport':
+            pass
+        elif filing_type == 'correction':
+            pass
+        elif filing_type == 'alteration':
+            pass
+
+        # Temperory
+        filing = Filing.find_by_id(filing_id)
+        return filing.json
+
+    @staticmethod
+    def get_ia_revision(filing_id, business_id) -> dict:
+        """Consolidates incorporation application upto the given transaction id of a filing."""
+        ia_json = {}
+        business = Business.find_by_internal_id(business_id)
+        filing = Filing.find_by_id(filing_id)
+
+        ia_json['header'] = VersionedBusinessDetailsService.get_header_revision(filing)
+        ia_json['business'] = \
+            VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+        ia_json['incorporationApplication'] = {}
+        ia_json['incorporationApplication']['offices'] = \
+            VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business_id)
+        ia_json['incorporationApplication']['parties'] = \
+            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business_id)
+        ia_json['incorporationApplication']['nameRequest'] = \
+            VersionedBusinessDetailsService.get_name_request_revision(filing)
+        ia_json['incorporationApplication']['contactPoint'] = \
+            VersionedBusinessDetailsService.get_contact_point_revision(filing)
+        ia_json['incorporationApplication']['shareStructure'] = {}
+        ia_json['incorporationApplication']['shareStructure']['shareClasses'] = \
+            VersionedBusinessDetailsService.get_share_class_revision(filing.transaction_id, business_id)
+        ia_json['incorporationApplication']['nameTranslations'] = {}
+        ia_json['incorporationApplication']['nameTranslations']['new'] = \
+            VersionedBusinessDetailsService.get_name_translations_revision(filing.transaction_id, business_id)
+        ia_json['incorporationApplication']['incorporationAgreement'] = \
+            VersionedBusinessDetailsService.get_incorporation_agreement_json(filing)
+        return ia_json
+
+    @staticmethod
+    def get_header_revision(filing) -> dict:
+        """Retrieve header from filing."""
+        return filing.json['filing']['header']
+
+    @staticmethod
     def get_company_details_revision(filing_id, business_id) -> dict:
         """Consolidates company details upto the given transaction id of a filing."""
         company_profile_json = {}
@@ -346,3 +400,18 @@ class VersionedBusinessDetailsService:
         if business_revision.tax_id:
             business_json['taxId'] = business_revision.tax_id
         return business_json
+
+    @staticmethod
+    def get_incorporation_agreement_json(filing):
+        """Return incorporation agreement from filing json."""
+        return filing.json['filing'].get('incorporationAgreement', {})
+
+    @staticmethod
+    def get_name_request_revision(filing):
+        """Return name request from filing json."""
+        return filing.json['filing'].get('nameRequest', {})
+
+    @staticmethod
+    def get_contact_point_revision(filing):
+        """Return contact point from filing json."""
+        return filing.json['filing'].get('contactPoint', {})
