@@ -1,0 +1,53 @@
+codecov:
+  require_ci_to_pass: true
+  max_report_age: false
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+  status:
+    patch: false
+    project:
+      default: false
+      backend:
+        target: auto
+        flags:
+          - legalapi
+          - entityemailer
+          - entityfiler
+          - entitypay
+
+ignore:
+  - "^/tests/**/*" # ignore test harness code
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: true
+      loop: true
+      method: false
+      macro: false
+
+comment:
+  layout: "diff,flags,tree"
+  behavior: default
+  require_changes: true
+
+flags:
+  legalapi:
+    paths:
+      - legal-api/src/legal_api
+    carryforward: true
+  entityemailer:
+    paths:
+      - queue_services/entity-emailer/src/entity_emailer
+    carryforward: true
+  entityfiler:
+    paths:
+      - queue_services/entity-filer/src/entity_filer
+    carryforward: true
+  entitypay:
+    paths:
+      - queue_services/entity-pay/src/entity_pay
+    carryforward: true

@@ -65,4 +65,12 @@ jobs:
         working-directory: ./legal-api
         run: |
           pip install .
+          export PYTHONPATH=./src/
           pytest
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          file: ./legal-api/coverage.xml
+          flags: legalapi
+          name: codecov-legal-api
+          fail_ci_if_error: true
