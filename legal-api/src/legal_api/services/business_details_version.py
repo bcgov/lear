@@ -49,9 +49,11 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             revision_json['filing'] = \
                 VersionedBusinessDetailsService.get_ia_revision(filing, business)
         elif filing_type == 'changeOfDirectors':
-            pass
+            revision_json['filing'] = \
+                VersionedBusinessDetailsService.get_cod_revision(filing, business)
         elif filing_type == 'changeOfAddress':
-            pass
+            revision_json['filing'] = \
+                VersionedBusinessDetailsService.get_coa_revision(filing, business)
         elif filing_type == 'annualReport':
             pass
         elif filing_type == 'correction':
@@ -90,6 +92,33 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         ia_json['incorporationApplication']['incorporationAgreement'] = \
             VersionedBusinessDetailsService.get_incorporation_agreement_json(filing)
         return ia_json
+
+    @staticmethod
+    def get_cod_revision(filing, business) -> dict:
+        """Consolidates change of directors upto the given transaction id of a filing."""
+        cod_json = {}
+
+        cod_json['header'] = VersionedBusinessDetailsService.get_header_revision(filing)
+        cod_json['business'] = \
+            VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+        cod_json['changeOfDirectors'] = {}
+        cod_json['changeOfDirectors']['directors'] = \
+            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business.id)
+        return cod_json
+
+    @staticmethod
+    def get_coa_revision(filing, business) -> dict:
+        """Consolidates change of address upto the given transaction id of a filing."""
+        coa_json = {}
+
+        coa_json['header'] = VersionedBusinessDetailsService.get_header_revision(filing)
+        coa_json['business'] = \
+            VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+        coa_json['changeOfAddress'] = {}
+        coa_json['changeOfAddress']['offices'] = \
+            VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business.id)
+        coa_json['changeOfAddress']['legalType'] = coa_json['business']['legalType']
+        return coa_json
 
     @staticmethod
     def get_header_revision(filing) -> dict:
