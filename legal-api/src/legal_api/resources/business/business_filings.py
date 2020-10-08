@@ -68,7 +68,7 @@ class ListFilingResource(Resource):
         if identifier.startswith('T'):
             rv = CoreFiling.get(identifier, filing_id)
 
-            if not rv:
+            if not rv.storage:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
             if str(request.accept_mimetypes) == 'application/pdf' and filing_id:
                 if rv.filing_type == 'incorporationApplication':
@@ -84,7 +84,7 @@ class ListFilingResource(Resource):
 
         if filing_id:
             rv = CoreFiling.get(identifier, filing_id)
-            if not rv:
+            if not rv.storage:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
 
             if str(request.accept_mimetypes) == 'application/pdf':
