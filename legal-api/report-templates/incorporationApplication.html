@@ -16,11 +16,10 @@
                </td>
                <td>
                   <div class="report-type">
-                     {% if header.reportType == 'noa' %}
-                        NOTICE OF ARTICLES
-                     {% else %}
-                        INCORPORATION APPLICATION
+                     {% if correction %}
+                        <span>CORRECTION - </span>
                      {% endif %}
+                     INCORPORATION APPLICATION
                   </div>
                   <div class="report-type-desc">BC Benefit Company - Business Corporations Act</div>
                </td>
@@ -29,11 +28,7 @@
          <div class="business-name-header">
             <label class="lbl-business-name">
             {% if not incorporationApplication.nameRequest.nrNumber %}
-               {% if header.reportType == 'noa' %}
-                  {{business.legalName}}
-               {% else %}
-                  Numbered Benefit Company
-               {% endif %}
+               Numbered Benefit Company
             {% else %}
                {{incorporationApplication.nameRequest.legalName}}
             {% endif %}
@@ -41,15 +36,18 @@
          </div>
       </div>
       [[incorporation-application/businessDetails.html]]
-      {% if header.reportType != 'noa' %}
-         <div class="section-header mt-5 pt-4">INCORPORATION APPLICATION</div>
-         <div class="container pt-4">
-            [[incorporation-application/nameRequest.html]]
-            [[incorporation-application/effectiveDate.html]]
-            [[incorporation-application/incorporator.html]]
-            [[incorporation-application/completingParty.html]]
+      {% if correction %}
+         <div class="section-statement">
+            This replaces the Incorporation Application filed on {{ original_filing_date_time }}
          </div>
       {% endif %}
+      <div class="section-header mt-5 pt-4">INCORPORATION APPLICATION</div>
+      <div class="container pt-4">
+         [[incorporation-application/nameRequest.html]]
+         [[incorporation-application/effectiveDate.html]]
+         [[incorporation-application/incorporator.html]]
+         [[incorporation-application/completingParty.html]]
+      </div>
       <div class="section-header mt-7 pt-4">NOTICE OF ARTICLES</div>
       <div class="container pt-4">
          [[incorporation-application/benefitCompanyStmt.html]]
