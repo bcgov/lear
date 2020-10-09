@@ -72,11 +72,8 @@ class Filing:
     @property
     def raw(self) -> Optional[Dict]:
         """Return the raw, submitted and unprocessed version on the filing."""
-        if not self._raw:
-            if self._storage:
-                self._raw = self._storage.json
-            else:
-                return {}
+        if not self._raw and self._storage:
+            self._raw = self._storage.json
         return self._raw
 
     @property
@@ -85,10 +82,9 @@ class Filing:
         _json = {}
         if self._storage:
             if self._storage.status == Filing.Status.COMPLETED.value:
-                _json = VersionedBusinessDetailsService. \
-                    get_revision(self.filing_type, self.id, self._storage.business_id)
+                _json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
             else:
-                _json = self.raw
+                return self.raw
         return _json
 
     @property

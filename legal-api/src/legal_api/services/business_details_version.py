@@ -38,29 +38,27 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     """Provides service for getting business details as of a filing."""
 
     @staticmethod
-    def get_revision(filing_type, filing_id, business_id):
+    def get_revision(filing_id, business_id):
         """Consolidates based on filing type upto the given transaction id of a filing."""
         business = Business.find_by_internal_id(business_id)
         filing = Filing.find_by_id(filing_id)
 
         revision_json = {}
         revision_json['filing'] = {}
-        if filing_type == 'incorporationApplication':
+        if filing.filing_type == 'incorporationApplication':
             revision_json['filing'] = \
                 VersionedBusinessDetailsService.get_ia_revision(filing, business)
-        elif filing_type == 'changeOfDirectors':
+        elif filing.filing_type == 'changeOfDirectors':
             revision_json['filing'] = \
                 VersionedBusinessDetailsService.get_cod_revision(filing, business)
-        elif filing_type == 'changeOfAddress':
+        elif filing.filing_type == 'changeOfAddress':
             revision_json['filing'] = \
                 VersionedBusinessDetailsService.get_coa_revision(filing, business)
-        elif filing_type == 'annualReport':
-            pass
-        elif filing_type == 'correction':
-            pass
-        elif filing_type == 'alteration':
-            pass
+        elif filing.filing_type == 'annualReport':
+            revision_json['filing'] = \
+                VersionedBusinessDetailsService.get_ar_revision(filing, business)
 
+        # filing_type's yet to be handled correction, alteration, changeOfName, specialResolution, voluntaryDissolution
         if not revision_json['filing']:
             revision_json = filing.json
 
@@ -103,7 +101,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         cod_json['changeOfDirectors'] = {}
         cod_json['changeOfDirectors']['directors'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business.id)
+            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business.id, 'director')
         return cod_json
 
     @staticmethod
@@ -121,9 +119,48 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return coa_json
 
     @staticmethod
+    def get_ar_revision(filing, business) -> dict:
+        """Consolidates annual report upto the given transaction id of a filing."""
+        ar_json = {}
+
+        ar_json['header'] = VersionedBusinessDetailsService.get_header_revision(filing)
+        ar_json['business'] = \
+            VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+
+        ar_json['annualReport'] = {}
+        ar_json['annualReport']['annualReportDate'] = business.last_ar_date.date().isoformat()
+        if business.last_agm_date:
+            ar_json['annualReport']['annualGeneralMeetingDate'] = business.last_agm_date.date().isoformat()
+
+        if 'didNotHoldAgm' in filing.json['filing']['annualReport']:
+            ar_json['annualReport']['didNotHoldAgm'] = filing.json['filing']['annualReport']['didNotHoldAgm']
+
+        if 'nextARDate' in filing.json['filing']['annualReport']:
+            ar_json['annualReport']['nextARDate'] = filing.json['filing']['annualReport']['nextARDate']
+
+        ar_json['annualReport']['directors'] = \
+            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business.id, 'director')
+        ar_json['annualReport']['offices'] = \
+            VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business.id)
+
+        # legal_type CP may need changeOfDirectors/changeOfAddress
+        if 'changeOfDirectors' in filing.json['filing']:
+            ar_json['changeOfDirectors'] = {}
+            ar_json['changeOfDirectors']['directors'] = ar_json['annualReport']['directors']
+
+        if 'changeOfAddress' in filing.json['filing']:
+            ar_json['changeOfAddress'] = {}
+            ar_json['changeOfAddress']['offices'] = ar_json['annualReport']['offices']
+            ar_json['changeOfAddress']['legalType'] = ar_json['business']['legalType']
+
+        return ar_json
+
+    @staticmethod
     def get_header_revision(filing) -> dict:
         """Retrieve header from filing."""
-        return filing.json['filing']['header']
+        _header = filing.json['filing']['header']
+        _header['date'] = filing.filing_date.date().isoformat()
+        return _header
 
     @staticmethod
     def get_company_details_revision(filing_id, business_id) -> dict:
@@ -189,7 +226,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return offices_json
 
     @staticmethod
-    def get_party_role_revision(transaction_id, business_id) -> dict:
+    def get_party_role_revision(transaction_id, business_id, role=None) -> dict:
         """Consolidates all party changes upto the given transaction id."""
         party_role_version = version_class(PartyRole)
         party_roles = db.session.query(party_role_version)\
@@ -201,7 +238,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .order_by(party_role_version.transaction_id).all()
         parties = []
         for party_role in party_roles:
-            if party_role.cessation_date is None:
+            if party_role.cessation_date is None and (role is None or party_role.role == role):
                 party_role_json = VersionedBusinessDetailsService.party_role_revision_json(transaction_id, party_role)
                 parties.append(party_role_json)
         return parties
@@ -438,14 +475,14 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_incorporation_agreement_json(filing):
         """Return incorporation agreement from filing json."""
-        return filing.json['filing'].get('incorporationAgreement', {})
+        return filing.json['filing']['incorporationApplication'].get('incorporationAgreement', {})
 
     @staticmethod
     def get_name_request_revision(filing):
         """Return name request from filing json."""
-        return filing.json['filing'].get('nameRequest', {})
+        return filing.json['filing']['incorporationApplication'].get('nameRequest', {})
 
     @staticmethod
     def get_contact_point_revision(filing):
         """Return contact point from filing json."""
-        return filing.json['filing'].get('contactPoint', {})
+        return filing.json['filing']['incorporationApplication'].get('contactPoint', {})
