@@ -32,7 +32,7 @@ jobs:
         with:
           WORKING_DIRECTORY: "./legal-api"
           APP_NAME: "legal-api"
-          VAULTS: '[{ \"vault\": \"shared\", \"application\": [\"jwt\", \"nats\"]}, {\"vault\": \"entity\",\"application\": [\"postgres-legal\", \"legal-api\", \"nats-filer\", \"entity-service-account\", \"launchdarkly\", \"sentry\"]}]'
+          VAULTS: '[{ \"vault\": \"shared\", \"application\": [\"nats\"]}, {\"vault\": \"entity\",\"application\": [\"jwt\", \"postgres-legal\", \"legal-api\", \"nats-filer\", \"entity-service-account\", \"launchdarkly\", \"sentry\"]}]'
           SKIP_OP: "false"
           OP_PARAMETERS: ${{ secrets.OP_PARAMETERS }}
           OPENSHIFT_LOGIN_REGISTRY: ${{ secrets.OPENSHIFT_LOGIN_REGISTRY }}
