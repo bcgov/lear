@@ -33,7 +33,7 @@ def test_filing_type(session):
     factory_completed_filing(business, ANNUAL_REPORT)
 
     filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value, Filing.Status.COMPLETED.value])
-    assert filings[0].filing_type
+    assert filings[0].filing_type == 'annualReport'
 
 
 def test_filing_json_draft(session):
@@ -53,7 +53,6 @@ def test_filing_json_draft(session):
     filing.save()
 
     assert filing.json == filing_submission
-    assert filing.json['filing']['header']['status'] == Filing.Status.DRAFT.value
 
 
 def test_filing_json_completed(session):
