@@ -26,6 +26,16 @@ def test_filing_raw():
     assert not filing.raw
 
 
+def test_filing_type(session):
+    """Assert that filing_type is empty on a new filing."""
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    factory_completed_filing(business, ANNUAL_REPORT)
+
+    filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value, Filing.Status.COMPLETED.value])
+    assert filings[0].filing_type
+
+
 def test_filing_json_draft(session):
     """Assert that the json field gets the draft filing correctly."""
     filing = Filing()
@@ -43,7 +53,7 @@ def test_filing_json_draft(session):
     filing.save()
 
     assert filing.json == filing_submission
-    assert filing.storage.status == Filing.Status.DRAFT.value
+    assert filing.json['filing']['header']['status'] == Filing.Status.DRAFT.value
 
 
 def test_filing_json_completed(session):
@@ -52,7 +62,7 @@ def test_filing_json_completed(session):
     business = factory_business(identifier)
     factory_completed_filing(business, ANNUAL_REPORT)
 
-    filings = Filing().get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
+    filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
     filing = filings[0]
 
     assert filing.json

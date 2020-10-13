@@ -46,7 +46,7 @@ class Filing:
         self._raw: Optional[Dict] = None
         self._completion_date: datetime
         self._filing_date: datetime
-        self._filing_type: str = ''
+        self._filing_type: Optional[str] = None
         self._effective_date: datetime
         self._payment_status_code: str
         self._payment_token: str
@@ -89,7 +89,11 @@ class Filing:
 
     @property
     def storage(self) -> Optional[FilingStorage]:
-        """Return filing."""
+        """
+        (Deprecated) Return filing model.
+
+        Model is exposed to generate pdf. Used in GET api `/<string:identifier>/filings/<int:filing_id>`
+        """
         return self._storage
 
     @storage.setter
