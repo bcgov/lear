@@ -128,7 +128,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
 
         ar_json['annualReport'] = {}
-        ar_json['annualReport']['annualReportDate'] = business.last_ar_date.date().isoformat()
+        if business.last_ar_date:
+            ar_json['annualReport']['annualReportDate'] = business.last_ar_date.date().isoformat()
         if business.last_agm_date:
             ar_json['annualReport']['annualGeneralMeetingDate'] = business.last_agm_date.date().isoformat()
 

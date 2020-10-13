@@ -13,10 +13,10 @@
 # limitations under the License.
 
 """Tests to assure the Filing Domain is working as expected."""
-
-import pytest
+from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.core import Filing
+from tests.unit.models import factory_business, factory_completed_filing
 
 
 def test_filing_raw():
@@ -26,9 +26,8 @@ def test_filing_raw():
     assert not filing.raw
 
 
-@pytest.mark.skip(reason='logic has to be changed')
-def test_filing_json():
-    """Assert that the json field gets set correctly."""
+def test_filing_json_draft(session):
+    """Assert that the json field gets the draft filing correctly."""
     filing = Filing()
     filing_submission = {
         'filing': {
@@ -41,7 +40,26 @@ def test_filing_json():
             }}}
 
     filing.json = filing_submission
+    filing.save()
+
     assert filing.json == filing_submission
+    assert filing.storage.status == Filing.Status.DRAFT.value
+
+
+def test_filing_json_completed(session):
+    """Assert that the json field gets the completed filing correctly."""
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    factory_completed_filing(business, ANNUAL_REPORT)
+
+    filings = Filing().get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
+    filing = filings[0]
+
+    assert filing.json
+    assert filing.json['filing']['header']['status'] == Filing.Status.COMPLETED.value
+    assert filing.json['filing']['annualReport']
+    assert 'directors' in filing.json['filing']['annualReport']
+    assert 'offices' in filing.json['filing']['annualReport']
 
 
 def test_filing_save(session):
