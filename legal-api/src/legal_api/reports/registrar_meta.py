@@ -9,8 +9,9 @@
 # an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 """Holds the registrar meta data."""
-import datetime
 import base64
+import datetime
+
 from flask import current_app
 
 
@@ -58,6 +59,6 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
         """Return the encoded registrar signature."""
         template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         image_path = f'{template_path}/registrar_signatures/{signature_image}'
-        with open(image_path, "rb") as image_file:
+        with open(image_path, 'rb') as image_file:
             encoded_string = base64.b64encode(image_file.read())
             return encoded_string.decode('utf-8')
