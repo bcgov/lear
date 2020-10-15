@@ -23,6 +23,7 @@ import requests
 from flask import current_app, jsonify
 
 from legal_api.models import Business, Filing
+from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -167,7 +168,11 @@ class Report:  # pylint: disable=too-few-public-methods
         self._set_description(filing)
         self._set_tax_id(filing)
         self._set_meta_info(filing)
+        self._set_registrar_info(filing)
         return filing
+
+    def _set_registrar_info(self, filing):
+        filing['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
 
     def _set_tax_id(self, filing):
         if self._business:
