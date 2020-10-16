@@ -197,7 +197,9 @@ class NameXService():
         """Has correction changed the legal name."""
         corrected_filing = Filing.find_by_id(filing['filing']['correction']['correctedFilingId'])
         nr_path = '/filing/incorporationApplication/nameRequest/nrNumber'
+        legal_name_path = '/filing/incorporationApplication/nameRequest/legalName'
         old_nr_number = get_str(corrected_filing.json, nr_path)
         new_nr_number = get_str(filing, nr_path)
-
-        return new_nr_number and old_nr_number != new_nr_number
+        old_legal_name = get_str(corrected_filing.json, legal_name_path)
+        new_legal_name = get_str(filing, legal_name_path)
+        return old_nr_number != new_nr_number or old_legal_name != new_legal_name

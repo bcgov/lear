@@ -345,4 +345,6 @@ class VersionedBusinessDetailsService:
             business_json['dissolutionDate'] = None
         if business_revision.tax_id:
             business_json['taxId'] = business_revision.tax_id
+        business_json['legalName'] = business_revision.legal_name
+        business_json['legalType'] = business_revision.legal_type
         return business_json

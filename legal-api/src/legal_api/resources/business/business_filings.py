@@ -98,8 +98,6 @@ class ListFilingResource(Resource):
 
             if str(request.accept_mimetypes) == 'application/pdf':
                 report_type = request.args.get('type', None)
-                if rv[1].filing_type == 'incorporationApplication':
-                    ListFilingResource._populate_business_info_to_filing(rv[1], business)
                 return legal_api.reports.get_pdf(rv[1], report_type)
             return jsonify(rv[1].json)
 
@@ -655,17 +653,6 @@ class ListFilingResource(Resource):
         if effective_date:
             is_future_effective = effective_date > datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
         return is_future_effective
-
-    @staticmethod
-    def _populate_business_info_to_filing(filing: Filing, business: Business):
-        founding_datetime = LegislationDatetime.as_legislation_timezone(business.founding_date)
-        hour = founding_datetime.strftime('%I')
-        business_json = business.json()
-        business_json['formatted_founding_date_time'] = \
-            founding_datetime.strftime(f'%B %-d, %Y at {hour}:%M %p Pacific Time')
-        business_json['formatted_founding_date'] = founding_datetime.strftime('%B %-d, %Y')
-        filing.filing_json['filing']['business'] = business_json
-        filing.filing_json['filing']['header']['filingId'] = filing.id
 
 
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')
