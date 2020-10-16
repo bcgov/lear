@@ -44,6 +44,7 @@ def test_modified_aliases(app, session):
     new_value = 'SOCIÉTÉ GÉNÉRALE'
     business = create_business(identifier)
     business.aliases.append(Alias(alias=old_value, type=Alias.AliasType.TRANSLATION.value))
+    business.aliases.append(Alias(alias='mixedCASE', type=Alias.AliasType.TRANSLATION.value))
     business.save()
     component = {'nameTranslations': {
         'modified': [{
@@ -52,6 +53,9 @@ def test_modified_aliases(app, session):
         }, {
             'oldValue': 'missing',
             'newValue': 'missing'
+        }, {
+            'oldValue': 'mixedcase',
+            'newValue': 'replaceMixed'
         }]
     }}
 
@@ -60,7 +64,7 @@ def test_modified_aliases(app, session):
 
     # validate
     business_aliases = business.aliases.all()
-    assert 1 == len(business_aliases)
+    assert 2 == len(business_aliases)
     assert new_value == business_aliases[0].alias
 
 

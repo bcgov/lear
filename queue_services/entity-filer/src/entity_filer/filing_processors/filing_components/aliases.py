@@ -31,7 +31,7 @@ def update_aliases(business: Business, aliases: Dict) -> Dict:
     if modified_aliases := aliases.get('modified'):
         for current_alias in business.aliases.all():
             for mod_alias in modified_aliases:
-                if current_alias.alias == mod_alias.get('oldValue'):
+                if current_alias.alias.upper() == str(mod_alias.get('oldValue')).upper():
                     current_alias.alias = str(mod_alias.get('newValue')).upper()
 
     if new_aliases := aliases.get('new'):
