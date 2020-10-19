@@ -111,6 +111,24 @@ def test_get_one_business_filing_by_id(session, client, jwt):
     assert rv.json['filing']['business'] == ar['filing']['business']
 
 
+def test_get_one_business_filing_by_id_raw_json(session, client, jwt):
+    """Assert that the business info cannot be received in a valid JSONSchema format."""
+    import copy
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    filings = factory_filing(b, ANNUAL_REPORT)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['header']['filingId'] = filings.id
+    ar['filing']['header']['colinIds'] = []
+
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings.id}?original=true',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
+    assert rv.json['filing']['business'] == ar['filing']['business']
+
+
 def test_get_404_when_business_invalid_filing_id(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     identifier = 'CP7654321'

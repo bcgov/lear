@@ -65,6 +65,7 @@ class ListFilingResource(Resource):
     def get(identifier, filing_id=None):  # pylint: disable=too-many-return-statements;
         # fix this while refactoring this whole module
         """Return a JSON object with meta information about the Service."""
+        original_filing = str(request.args.get('original', None)).lower() == 'true'
         if identifier.startswith('T'):
             rv = CoreFiling.get(identifier, filing_id)
 
@@ -73,7 +74,7 @@ class ListFilingResource(Resource):
             if str(request.accept_mimetypes) == 'application/pdf' and filing_id:
                 if rv.filing_type == 'incorporationApplication':
                     return legal_api.reports.get_pdf(rv.storage, None)
-            filing_json = rv.json
+            filing_json = rv.raw if original_filing else rv.json
             filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
             return jsonify(filing_json)
 
@@ -92,7 +93,7 @@ class ListFilingResource(Resource):
                 if rv.filing_type == 'incorporationApplication':
                     ListFilingResource._populate_business_info_to_filing(rv.storage, business)
                 return legal_api.reports.get_pdf(rv.storage, report_type)
-            return jsonify(rv.json)
+            return jsonify(rv.raw if original_filing else rv.json)
 
         # Does it make sense to get a PDF of all filings?
         if str(request.accept_mimetypes) == 'application/pdf':
