@@ -46,6 +46,7 @@ class Report:  # pylint: disable=too-few-public-methods
             self._report_key = self._filing.filing_json['filing']['correction']['correctedFilingType']
         if self._filing.business_id:
             self._business = Business.find_by_internal_id(self._filing.business_id)
+            Report._populate_business_info_to_filing(self._filing, self._business)
         headers = {
             'Authorization': 'Bearer {}'.format(jwt.get_token_auth_header()),
             'Content-Type': 'application/json'
@@ -269,6 +270,17 @@ class Report:  # pylint: disable=too-few-public-methods
         country = pycountry.countries.search_fuzzy(country)[0].name
         address['addressCountry'] = country
         return address
+
+    @staticmethod
+    def _populate_business_info_to_filing(filing: Filing, business: Business):
+        founding_datetime = LegislationDatetime.as_legislation_timezone(business.founding_date)
+        hour = founding_datetime.strftime('%I')
+        business_json = VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+        business_json['formatted_founding_date_time'] = \
+            founding_datetime.strftime(f'%B %-d, %Y at {hour}:%M %p Pacific Time')
+        business_json['formatted_founding_date'] = founding_datetime.strftime('%B %-d, %Y')
+        filing.filing_json['filing']['business'] = business_json
+        filing.filing_json['filing']['header']['filingId'] = filing.id
 
     def _format_incorporation_data(self, filing):
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
