@@ -4,7 +4,7 @@
 </div>
 <table class="section-data section-data-table mt-4" role="presentation">
   {% for party in parties|sort(attribute='officer.lastName') %}
-    {% if party.role == 'director' %}
+    {% for role in party.roles if role.roleType == 'Director' %}
       <tr class="no-page-break">
         <td class="col-33">
           <div class="section-sub-title">
@@ -40,6 +40,6 @@
           <div class="delivery-instructions pt-1">{{ party.deliveryAddress.deliveryInstructions }}</div>
         </td>
       </tr>
-    {% endif %}
+    {% endfor %}
   {% endfor %}
 </table>
