@@ -207,10 +207,6 @@ class DocumentMetaService():
 
     def get_corrected_ia_reports(self, filing: dict):
         """Return corrected incorporation application meta object(s)."""
-        # safety check - for now, IA only applies to BCOMPs
-        if not self.is_bcomp():
-            return []
-
         reports = []
 
         reports.append(self.create_report_object(
@@ -251,10 +247,6 @@ class DocumentMetaService():
 
     def get_incorporation_application_reports(self, filing: dict):
         """Return incorporation application meta object(s)."""
-        # safety check - for now, IA only applies to BCOMPs
-        if not self.is_bcomp():
-            return []
-
         is_fed = LegislationDatetime.is_future(filing['filing']['header']['effectiveDate'])
 
         # return FED instead of PAID or COMPLETED
@@ -276,9 +268,9 @@ class DocumentMetaService():
 
         filing_data = Filing.find_by_id(filing['filing']['header']['filingId'])
         has_corrected = filing_data.parent_filing_id is not None  # Identify whether it is corrected
-        label_original = ' (Original)'
-        if not has_corrected:
-            label_original = ''
+        label_original = ' (Original)' if has_corrected else ''
+        label_certificate_original = ' (Original)' if has_corrected and NameXService.\
+            has_correction_changed_name(Filing.find_by_id(filing_data.parent_filing_id).json) else ''
 
         # else status is COMPLETED
         return [
@@ -293,8 +285,8 @@ class DocumentMetaService():
             ),
 
             self.create_report_object(
-                f'Certificate{label_original}',
-                self.get_general_filename(f'Certificate{label_original}'),
+                f'Certificate{label_certificate_original}',
+                self.get_general_filename(f'Certificate{label_certificate_original}'),
                 DocumentMetaService.ReportType.CERTIFICATE.value
             )
         ]
