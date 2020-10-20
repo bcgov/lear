@@ -1,7 +1,8 @@
 {% if correction is defined %}
 <div class="correction-on">
     {% autoescape false %}
-        Corrected on {{correction.correctedFilingDate}}
+        {% set date, time = effective_date_time.split(' at ') %}
+        Corrected on {{date}}<br/>at {{time}}
     {% endautoescape %}
 </div>
 {% endif %}
