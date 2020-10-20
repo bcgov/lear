@@ -18,8 +18,9 @@ from __future__ import annotations
 from enum import Enum
 from typing import Dict, Optional
 
-from legal_api.models import Filing as FilingStorage
-from legal_api.utils.datetime import datetime
+from legal_api.models import Business, Filing as FilingStorage  # noqa: I001
+from legal_api.services import VersionedBusinessDetailsService
+from legal_api.utils.datetime import date, datetime
 
 
 # @dataclass(init=False, repr=False)
@@ -45,7 +46,7 @@ class Filing:
         self._raw: Optional[Dict] = None
         self._completion_date: datetime
         self._filing_date: datetime
-        self._filing_type: str
+        self._filing_type: Optional[str] = None
         self._effective_date: datetime
         self._payment_status_code: str
         self._payment_token: str
@@ -62,16 +63,43 @@ class Filing:
         return self._id
 
     @property
+    def filing_type(self) -> str:
+        """Property containing the filing type."""
+        if not self._filing_type and self._storage:
+            self._filing_type = self._storage.filing_type
+        return self._filing_type
+
+    @property
     def raw(self) -> Optional[Dict]:
         """Return the raw, submitted and unprocessed version on the filing."""
-        if not self._raw:
-            return {}
+        if not self._raw and self._storage:
+            self._raw = self._storage.json
         return self._raw
 
     @property
     def json(self) -> Optional[Dict]:
         """Return a dict representing the filing json."""
-        return self._raw
+        _json = {}
+        if self._storage:
+            if self._storage.status == Filing.Status.COMPLETED.value:
+                _json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
+            else:
+                return self.raw
+        return _json
+
+    @property
+    def storage(self) -> Optional[FilingStorage]:
+        """
+        (Deprecated) Return filing model.
+
+        Model is exposed to generate pdf. Used in GET api `/<string:identifier>/filings/<int:filing_id>`
+        """
+        return self._storage
+
+    @storage.setter
+    def storage(self, filing):
+        """Set filing storage."""
+        self._storage = filing
 
     @json.setter
     def json(self, filing_submission):
@@ -89,3 +117,25 @@ class Filing:
     def validate():
         """Validate the filing."""
         raise NotImplementedError
+
+    @staticmethod
+    def get(identifier, filing_id=None) -> Optional[Filing]:
+        """Return a Filing domain by the id."""
+        filing = Filing()
+        if identifier.startswith('T'):
+            filing.storage = FilingStorage.get_temp_reg_filing(identifier)
+        else:
+            filing.storage = Business.get_filing_by_id(identifier, filing_id)
+        return filing
+
+    @staticmethod
+    def get_filings_by_status(business_id: int, status: [], after_date: date = None):
+        """Return the filings with statuses in the status array input."""
+        storages = FilingStorage.get_filings_by_status(business_id, status, after_date)
+        filings = []
+        for storage in storages:
+            filing = Filing()
+            filing.storage = storage
+            filings.append(filing)
+
+        return filings
