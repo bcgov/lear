@@ -76,7 +76,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         ia_json['incorporationApplication']['offices'] = \
             VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business.id)
         ia_json['incorporationApplication']['parties'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business.id)
+            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business.id, is_ia=True)
         ia_json['incorporationApplication']['nameRequest'] = \
             VersionedBusinessDetailsService.get_name_request_revision(filing)
         ia_json['incorporationApplication']['contactPoint'] = \
@@ -101,7 +101,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         cod_json['changeOfDirectors'] = {}
         cod_json['changeOfDirectors']['directors'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business.id, 'director')
+            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id,
+                                                                    business.id, role='director')
         return cod_json
 
     @staticmethod
@@ -140,7 +141,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             ar_json['annualReport']['nextARDate'] = filing.json['filing']['annualReport']['nextARDate']
 
         ar_json['annualReport']['directors'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business.id, 'director')
+            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id,
+                                                                    business.id, role='director')
         ar_json['annualReport']['offices'] = \
             VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business.id)
 
@@ -227,7 +229,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return offices_json
 
     @staticmethod
-    def get_party_role_revision(transaction_id, business_id, role=None) -> dict:
+    def get_party_role_revision(transaction_id, business_id, is_ia=False, role=None) -> dict:
         """Consolidates all party changes upto the given transaction id."""
         party_role_version = version_class(PartyRole)
         party_roles = db.session.query(party_role_version)\
@@ -245,6 +247,14 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                     party['roles'].extend(party_role_json['roles'])
                 else:
                     parties.append(party_role_json)
+
+                if is_ia:
+                    del party_role_json['role']
+                    del party_role_json['appointmentDate']
+                    del party_role_json['cessationDate']
+                else:
+                    del party['roles']
+
         return parties
 
     @staticmethod
