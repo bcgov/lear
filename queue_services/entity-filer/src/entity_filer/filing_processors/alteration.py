@@ -16,14 +16,40 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from legal_api.models import Business
+import sentry_sdk
+from legal_api.models import Business, Filing
 
-from entity_filer.filing_processors.filing_components import business_info
+from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, shares
 
 
 def process(business: Business, filing: Dict):
     """Render the Alteration onto the model objects."""
-    # Alter the corp type
+    # Alter the corp type, if any
     with suppress(IndexError, KeyError, TypeError):
         business_json = dpath.util.get(filing, '/alteration/business')
         business_info.set_corp_type(business, business_json)
+
+    # update name translations, if any
+    with suppress(IndexError, KeyError, TypeError):
+        business_json = dpath.util.get(filing, '/alteration/nameTranslations')
+        aliases.update_aliases(business, business_json)
+
+    # update share structure and resolutions, if any
+    with suppress(IndexError, KeyError, TypeError):
+        share_structure = dpath.util.get(filing, '/alteration/shareStructure')
+        shares.update_share_structure(business, share_structure)
+
+
+def post_process(business: Business, filing: Filing):
+    """Post processing activities for incorporations.
+
+    THIS SHOULD NOT ALTER THE MODEL
+    """
+    with suppress(IndexError, KeyError, TypeError):
+        if err := business_profile.update_business_profile(
+            business,
+            filing.json['filing']['alteration']['contactPoint']
+        ):
+            sentry_sdk.capture_message(
+                f'Queue Error: Update Business for filing:{filing.id},error:{err}',
+                level='error')

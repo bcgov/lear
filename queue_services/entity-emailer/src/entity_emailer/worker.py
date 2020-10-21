@@ -35,12 +35,13 @@ from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import EmailException, QueueException, logger
 from flask import Flask
 from legal_api import db
+from legal_api.models import Filing
 from legal_api.services.bootstrap import AccountService
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
 from entity_emailer import config
-from entity_emailer.email_processors import bn_notification, incorp_notification, mras_notification
+from entity_emailer.email_processors import bn_notification, filing_notification, mras_notification
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
@@ -84,16 +85,26 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
         logger.debug('Attempting to process email: %s', email_msg)
 
         token = AccountService.get_bearer_token()
-
-        if email_msg['email']['type'] == 'businessNumber':
+        etype, option = email_msg['email']['type'], email_msg['email']['option']
+        if etype == 'businessNumber':
             email = bn_notification.process(email_msg['email'])
             send_email(email, token)
-        elif email_msg['email']['type'] == 'incorporationApplication':
-            if email_msg['email']['option'] == 'mras':
-                email = mras_notification.process(email_msg['email'])
-            else:
-                email = incorp_notification.process(email_msg['email'], token)
+        elif etype == 'incorporationApplication' and option == 'mras':
+            email = mras_notification.process(email_msg['email'])
             send_email(email, token)
+        elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
+            if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:
+                logger.debug('No email to send for: %s', email_msg)
+            # Remove this when self serve alteration is implemented.
+            elif etype == 'alteration' and option == Filing.Status.PAID.value:
+                logger.debug('No email to send for: %s', email_msg)
+            else:
+                email = filing_notification.process(email_msg['email'], token)
+                if email:
+                    send_email(email, token)
+                else:
+                    # should only be if this was for a a coops filing
+                    logger.debug('No email to send for: %s', email_msg)
         else:
             logger.debug('No email to send for: %s', email_msg)
 

@@ -44,7 +44,7 @@ setup: clean setup-venv install-dev
 
 venv/bin/activate: requirements/prod.txt requirements/dev.txt
 	rm -rf venv/
-	test -f venv/bin/activate || python3 -m venv  $(current_abs_dir)/venv
+	test -f venv/bin/activate || python3.8 -m venv  $(current_abs_dir)/venv
 	. venv/bin/activate ;\
 	pip install --upgrade pip ;\
 	pip install -Ur requirements/prod.txt ;\
@@ -56,22 +56,19 @@ venv/bin/activate: requirements/prod.txt requirements/dev.txt
 
 setup-venv: requirements.txt
 	rm -rf venv/
-	test -f venv/bin/activate || python3 -m venv  $(current_abs_dir)/venv
+	test -f venv/bin/activate || python3.8 -m venv  $(current_abs_dir)/venv
 	. venv/bin/activate ;\
 	pip install --upgrade pip ;\
-	pip install -Ur requirements.txt
+	pip install -Ur requirements.txt \
+	pip install -e .
 
 dev-setup: requirements.txt requirements/dev.txt
 	rm -rf venv/
-	test -f venv/bin/activate || python3 -m venv  $(current_abs_dir)/venv
+	test -f venv/bin/activate || python3.8 -m venv  $(current_abs_dir)/venv
 	. venv/bin/activate ;\
 	pip install --upgrade pip ;\
 	pip install -Ur requirements.txt ; \
-	pip install -Ur requirements/dev.txt
-
-.PHONY: install-dev
-install-dev: venv/bin/activate
-	. venv/bin/activate ; \
+	pip install -Ur requirements/dev.txt \
 	pip install -e .
 
 .PHONY: activate

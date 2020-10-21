@@ -15,7 +15,10 @@
 
 Currently this only provides API versioning information
 """
+from __future__ import annotations
+
 from enum import Enum
+from typing import Optional
 
 from flask import current_app
 
@@ -75,7 +78,7 @@ class CorpName:
         return corp_name_objs
 
     @classmethod
-    def create_corp_name(cls, cursor, corp_name_obj):
+    def create_corp_name(cls, cursor, corp_name_obj) -> CorpName:
         """Add record to the CORP NAME table on incorporation."""
         try:
             search_name = cursor.callfunc('get_search_name', str, [corp_name_obj.corp_name])
@@ -101,6 +104,40 @@ class CorpName:
 
         except Exception as err:
             current_app.logger.error(f'Error inserting corp name {corp_name_obj.corp_name}.')
+            raise err
+
+    @classmethod
+    def create_translations(cls, cursor, corp_num, event_id, translations):
+        """Add records to the CORP NAME table for corp name translations."""
+        try:
+            curr_corp_name = ''
+            max_sequence_num = get_max_value(
+                cursor=cursor,
+                corp_num=corp_num,
+                table='corp_name',
+                column='corp_name_seq_num'
+            )
+            sequence_number = max_sequence_num + 1 if max_sequence_num else 0
+            for name in translations:
+                curr_corp_name = name
+                search_name = cursor.callfunc('get_search_name', str, [name])
+                cursor.execute(
+                    """
+                    insert into CORP_NAME (CORP_NAME_TYP_CD, CORP_NAME_SEQ_NUM, DD_CORP_NUM, END_EVENT_ID, CORP_NME,
+                        CORP_NUM, START_EVENT_ID, SRCH_NME)
+                    values (:type_code, :sequence_num, NULL, NULL, :corp_name, :corp_num, :event_id, :search_name)
+                    """,
+                    type_code=CorpName.TypeCodes.TRANSLATION.value,
+                    sequence_num=sequence_number,
+                    corp_name=name,
+                    corp_num=corp_num,
+                    event_id=event_id,
+                    search_name=search_name
+                )
+                sequence_number = sequence_number + 1
+
+        except Exception as err:
+            current_app.logger.error(f'Error inserting corp name {curr_corp_name}.')
             raise err
 
     @classmethod
@@ -141,7 +178,7 @@ class CorpName:
             raise err
 
     @classmethod
-    def get_by_event(cls, cursor, corp_num: str = None, event_id: str = None):
+    def get_by_event(cls, cursor, corp_num: str = None, event_id: str = None) -> Optional[CorpName]:
         """Get the entity name corresponding with the given event id."""
         if not corp_num or not event_id:
             return None

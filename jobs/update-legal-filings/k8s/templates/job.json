@@ -24,96 +24,96 @@
                                 "args": [
                                     "/bin/sh",
                                     "-c",
-                                    "cd /opt/app-root/src; ./run.sh"
+                                    "cd /opt/app-root; ./run.sh"
                                 ],
                                 "env": [
                                     {
                                         "name": "COLIN_URL",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "key": "ROUTE",
-                                                "name": "colin-api-${ENV}-config"
+                                            "secretKeyRef": {
+                                                "key": "COLIN_URL",
+                                                "name": "update-legal-filings-${ENV}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "SENTRY_DSN",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "SENTRY_DSN",
-                                                "name": "updater-jobs-${ENV}-config"
+                                                "name": "update-legal-filings-${ENV}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "LEGAL_URL",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "key": "ROUTE",
-                                                "name": "legal-api-${ENV}-config"
+                                            "secretKeyRef": {
+                                                "key": "LEGAL_URL",
+                                                "name": "update-legal-filings-${ENV}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "ACCOUNT_SVC_AUTH_URL",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "ACCOUNT_SVC_AUTH_URL",
-                                                "name": "updater-jobs-${ENV}-config"
+                                                "name": "update-legal-filings-${ENV}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "ACCOUNT_SVC_CLIENT_ID",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "ACCOUNT_SVC_CLIENT_ID",
-                                                "name": "updater-jobs-${ENV}-config"
+                                                "name": "update-legal-filings-${ENV}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "ACCOUNT_SVC_CLIENT_SECRET",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "ACCOUNT_SVC_CLIENT_SECRET",
-                                                "name": "updater-jobs-${ENV}-config"
+                                                "name": "update-legal-filings-${ENV}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "NATS_SERVERS",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "NATS_SERVERS",
-                                                "name": "updater-jobs-${ENV}-config"
+                                                "name": "update-legal-filings-${ENV}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "NATS_CLUSTER_ID",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "NATS_CLUSTER_ID",
-                                                "name": "updater-jobs-${ENV}-config"
+                                                "name": "update-legal-filings-${ENV}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "NATS_CLIENT_NAME",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "NATS_CLIENT_NAME",
-                                                "name": "updater-jobs-${ENV}-config"
+                                                "name": "update-legal-filings-${ENV}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "NATS_EMAILER_SUBJECT",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "NATS_EMAILER_SUBJECT",
-                                                "name": "updater-jobs-${ENV}-config"
+                                                "name": "update-legal-filings-${ENV}-secret"
                                             }
                                         }
                                     }

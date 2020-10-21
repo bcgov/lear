@@ -60,14 +60,19 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
+    # monitoring
     SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+    # urls
+    DASHBOARD_URL = os.getenv('DASHBOARD_URL', None)
     NOTIFY_API_URL = os.getenv('NOTIFY_API_URL', None)
-    ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL', None)
-    ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID', None)
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET', None)
     LEGAL_API_URL = os.getenv('LEGAL_API_URL', None)
     PAY_API_URL = os.getenv('PAY_API_URL', None)
-    DASHBOARD_URL = os.getenv('DASHBOARD_URL', None)
+    AUTH_URL = os.getenv('AUTH_URL', None)
+    ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL', None)
+    # secrets
+    ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID', None)
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET', None)
+    # variables
     LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
     TEMPLATE_PATH = os.getenv('TEMPLATE_PATH', None)
 

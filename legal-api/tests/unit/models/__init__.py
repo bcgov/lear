@@ -112,7 +112,8 @@ AR_FILING = {
 }
 
 
-def factory_business(identifier, founding_date=EPOCH_DATETIME, last_ar_date=None, entity_type='CP'):
+def factory_business(identifier, founding_date=EPOCH_DATETIME, last_ar_date=None,
+                     entity_type=Business.LegalTypes.COOP.value):
     """Create a business entity."""
     business = Business(legal_name=f'legal_name-{identifier}',
                         founding_date=founding_date,

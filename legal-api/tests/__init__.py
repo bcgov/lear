@@ -13,6 +13,8 @@
 # limitations under the License.
 """The Test Suites to ensure that the service is built and operating correctly."""
 import datetime
+from collections import MutableMapping, MutableSequence
+from typing import Dict, List
 
 from .pytest_marks import (
     integration_affiliation,
@@ -43,3 +45,41 @@ def add_years(d, years):
         return d.replace(year=d.year + years)
     except ValueError:
         return d + (datetime.date(d.year + years, 3, 1) - datetime.date(d.year, 3, 1))
+
+
+def strip_keys_from_dict(orig_dict: Dict, keys: List) -> Dict:
+    """Return a deep copy of the dict with the keys stripped out."""
+    def del_key_in_dict(orig_dict, keys):
+        """Remove keys from dictionaires."""
+        modified_dict = {}
+        for key, value in orig_dict.items():
+            if key not in keys:
+                if isinstance(value, MutableMapping):  # or
+                    modified_dict[key] = del_key_in_dict(value, keys)
+                elif isinstance(value, MutableSequence):
+                    if rv := scan_list(value, keys):
+                        modified_dict[key] = rv
+                else:
+                    modified_dict[key] = value  # or copy.deepcopy(value) if a copy is desired for non-dicts.
+        return modified_dict
+
+    def scan_list(orig_list, keys):
+        """Remove keys from lists."""
+        modified_list = []
+        for item in orig_list:
+            if isinstance(item, MutableMapping):
+                if rv := del_key_in_dict(item, keys):
+                    modified_list.append(rv)
+            elif isinstance(item, MutableSequence):
+                if rv := scan_list(item, keys):
+                    modified_list.append(rv)
+            else:
+                try:
+                    if item not in keys:
+                        modified_list.append(item)
+                except:  # noqa: E722
+                    modified_list.append(item)
+        return modified_list
+
+    key_set = set(keys)
+    return del_key_in_dict(orig_dict, key_set)

@@ -5,10 +5,12 @@ Werkzeug==0.16.1
 click==7.1.2
 gunicorn==20.0.4
 itsdangerous==1.1.0
-numpy==1.18.4
-pandas==1.0.3
+numpy==1.19.1
+pandas==1.1.1
 psycopg2-binary==2.8.5
 python-dateutil==2.8.1
-python-dotenv==0.13.0
+python-dotenv==0.14.0
 pytz==2020.1
-six==1.14.0
+six==1.15.0
+git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
+git+https://github.com/bcgov/business-schemas.git@2.9.0#egg=registry_schemas

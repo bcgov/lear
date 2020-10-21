@@ -86,7 +86,7 @@
                                         "name": "DATABASE_USERNAME",
                                         "valueFrom": {
                                             "secretKeyRef": {
-                                                "name": "postgresql-${TAG_NAME}",
+                                                "name": "data-reset-tool-${TAG_NAME}-secret",
                                                 "key": "database-user"
                                             }
                                         }
@@ -95,7 +95,7 @@
                                         "name": "DATABASE_PASSWORD",
                                         "valueFrom": {
                                             "secretKeyRef": {
-                                                "name": "postgresql-${TAG_NAME}",
+                                                "name": "data-reset-tool-${TAG_NAME}-secret",
                                                 "key": "database-password"
                                             }
                                         }
@@ -103,8 +103,8 @@
                                     {
                                         "name": "DATABASE_NAME",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "name": "${NAME}-${TAG_NAME}-config",
+                                            "secretKeyRef": {
+                                                "name": "data-reset-tool-${TAG_NAME}-secret",
                                                 "key": "DATABASE_NAME"
                                             }
                                         }
@@ -112,8 +112,8 @@
                                     {
                                         "name": "DATABASE_HOST",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "name": "${NAME}-${TAG_NAME}-config",
+                                            "secretKeyRef": {
+                                                "name": "data-reset-tool-${TAG_NAME}-secret",
                                                 "key": "DATABASE_HOST"
                                             }
                                         }
@@ -121,8 +121,8 @@
                                     {
                                         "name": "DB_PORT",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
-                                                "name": "${NAME}-${TAG_NAME}-config",
+                                            "secretKeyRef": {
+                                                "name": "data-reset-tool-${TAG_NAME}-secret",
                                                 "key": "DB_PORT"
                                             }
                                         }
@@ -130,18 +130,18 @@
                                     {
                                         "name": "DATABASE_TEST_NAME",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "DATABASE_TEST_NAME",
-                                                "name": "${NAME}-${TAG_NAME}-config"
+                                                "name": "data-reset-tool-${TAG_NAME}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "DATABASE_TEST_HOST",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "DATABASE_TEST_HOST",
-                                                "name": "${NAME}-${TAG_NAME}-config"
+                                                "name": "data-reset-tool-${TAG_NAME}-secret"
                                             }
                                         }
                                     },
@@ -150,7 +150,7 @@
                                         "valueFrom": {
                                             "secretKeyRef": {
                                                 "key": "database-user",
-                                                "name": "postgresql-${TAG_NAME}"
+                                                "name": "data-reset-tool-${TAG_NAME}-secret"
                                             }
                                         }
                                     },
@@ -159,16 +159,16 @@
                                         "valueFrom": {
                                             "secretKeyRef": {
                                                 "key": "database-password",
-                                                "name": "postgresql-${TAG_NAME}"
+                                                "name": "data-reset-tool-${TAG_NAME}-secret"
                                             }
                                         }
                                     },
                                     {
                                         "name": "DATABASE_TEST_PORT",
                                         "valueFrom": {
-                                            "configMapKeyRef": {
+                                            "secretKeyRef": {
                                                 "key": "DATABASE_TEST_PORT",
-                                                "name": "${NAME}-${TAG_NAME}-config"
+                                                "name": "data-reset-tool-${TAG_NAME}-secret"
                                             }
                                         }
                                     }
@@ -179,7 +179,7 @@
                                 "imagePullPolicy": "Always"
                             }
                         ],
-                        "restartPolicy": "Always",
+                        "resetartPolicy": "Always",
                         "terminationGracePeriodSeconds": 30,
                         "dnsPolicy": "ClusterFirst",
                         "securityContext": {},
@@ -192,17 +192,17 @@
             "kind": "ConfigMap",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${NAME}-${TAG_NAME}-config",
+                "name": "data-reset-tool-${TAG_NAME}-secret",
                 "labels": {
                     "app": "${NAME}-${TAG_NAME}",
                     "app-group": "${APP_GROUP}-${TAG_NAME}"
                 }
             },
             "data": {
-                "DATABASE_HOST": "postgresql-${TAG_NAME}",
+                "DATABASE_HOST": "data-reset-tool-${TAG_NAME}-secret",
                 "DATABASE_NAME": "${DATABASE_NAME}",
                 "DB_PORT": "${DB_PORT}",
-                "DATABASE_TEST_HOST": "postgresql-${TAG_NAME}",
+                "DATABASE_TEST_HOST": "data-reset-tool-${TAG_NAME}-secret",
                 "DATABASE_TEST_NAME": "${DATABASE_NAME}_testdb",
                 "DATABASE_TEST_PASSWORD": "",
                 "DATABASE_TEST_PORT": "${DB_PORT}",

@@ -5,10 +5,10 @@
     {% if business.legalName %}
     <!-- try to get legal name from Business object -->
     <td class="value">{{ business.legalName }}</td>
-    {% elif incorporationApplication.nameRequest.legalName %}
+    {% elif filing.nameRequest.legalName %}
     <!-- try to get legal name from Name Request object -->
-    <td class="value">{{ incorporationApplication.nameRequest.legalName }}</td>
-    {% elif business.legalType == 'BC' %}
+    <td class="value">{{ filing.nameRequest.legalName }}</td>
+    {% elif business.legalType == 'BEN' %}
     <!-- fallback BC label -->
     <td class="value">Numbered Benefit Company</td>
     {% else %}
@@ -19,14 +19,12 @@
 
   <tr>
     <td class="name">Incorporation Number:</td>
-    {% if header.status == 'PAID' %}
+    {% if header.status == 'PAID' and filing_type == 'incorporationApplication'
+    %}
     <td class="value">Pending</td>
-    {% elif header.status == 'COMPLETED' %}
+    {% else %}
     <!-- Eg, BC0878529 -->
     <td class="value">{{ business.identifier }}</td>
-    {% else %}
-    <!-- add other cases here -->
-    <td class="value">Unknown</td>
     {% endif %}
   </tr>
 

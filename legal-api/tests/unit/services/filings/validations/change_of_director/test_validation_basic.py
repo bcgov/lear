@@ -24,6 +24,7 @@ from registry_schemas.example_data import CHANGE_OF_DIRECTORS, FILING_HEADER
 from legal_api.models import Business
 from legal_api.services.filings import validate
 from legal_api.utils.datetime import datetime, timezone
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests.unit.services.filings.validations import lists_are_equal
 
 
@@ -31,13 +32,13 @@ from tests.unit.services.filings.validations import lists_are_equal
     'test_name, now, delivery_region_1, delivery_country_1, delivery_region_2, delivery_country_2,'
     'expected_code, expected_msg',
     [
-        ('SUCCESS', datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc),
+        ('SUCCESS', datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc),
          'BC', 'CA', 'BC', 'CA',
          None, None),
-        ('SUCCESS-NON_CA_COUNTRY', datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc),
+        ('SUCCESS-NON_CA_COUNTRY', datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc),
          'AM', 'DE', 'AM', 'DE',
          None, None),
-        ('Director[1] Nonsense Country', datetime(2001, 8, 5, 0, 0, 0, 0, tzinfo=timezone.utc),
+        ('Director[1] Nonsense Country', datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc),
          'BC', 'CA', 'BC', 'nonsense',
          HTTPStatus.BAD_REQUEST, [
              {'error': 'Address Country must resolve to a valid ISO-2 country.',
@@ -50,11 +51,18 @@ def test_validate_cod_basic(session, test_name, now,
     # setup
     identifier = 'CP1234567'
     founding_date = now - datedelta.YEAR
-    business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
-    business.founding_date = founding_date
+    business = Business(identifier=identifier,
+                        last_ledger_timestamp=founding_date,
+                        founding_date=founding_date)
+
+    # convert 'now' to an effective date with 0 time in the legislation timezone, same as the UI does
+    effective_date = LegislationDatetime.as_legislation_timezone(now)
+    effective_date = effective_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    effective_date = LegislationDatetime.as_utc_timezone(effective_date)
 
     f = copy.deepcopy(FILING_HEADER)
     f['filing']['header']['date'] = now.date().isoformat()
+    f['filing']['header']['effectiveDate'] = effective_date.isoformat()
     f['filing']['header']['name'] = 'changeOfDirectors'
     f['filing']['business']['identifier'] = identifier
 

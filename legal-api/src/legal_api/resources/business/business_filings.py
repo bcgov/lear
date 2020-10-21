@@ -27,6 +27,7 @@ from flask_restplus import Resource, cors
 from werkzeug.local import LocalProxy
 
 import legal_api.reports
+from legal_api.core import Filing as CoreFiling
 from legal_api.exceptions import BusinessException
 from legal_api.models import Address, Business, Filing, RegistrationBootstrap, User, db
 from legal_api.models.colin_event_id import ColinEventId
@@ -65,19 +66,13 @@ class ListFilingResource(Resource):
         # fix this while refactoring this whole module
         """Return a JSON object with meta information about the Service."""
         if identifier.startswith('T'):
-            q = db.session.query(Filing). \
-                filter(Filing.temp_reg == identifier)
+            rv = CoreFiling.get(identifier, filing_id)
 
-            if filing_id:
-                q = q.filter(Filing.id == filing_id)
-
-            rv = q.one_or_none()
-
-            if not rv:
+            if not rv.storage:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
             if str(request.accept_mimetypes) == 'application/pdf' and filing_id:
                 if rv.filing_type == 'incorporationApplication':
-                    return legal_api.reports.get_pdf(rv, None)
+                    return legal_api.reports.get_pdf(rv.storage, None)
             filing_json = rv.json
             filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
             return jsonify(filing_json)
@@ -88,20 +83,14 @@ class ListFilingResource(Resource):
             return jsonify(filings=[]), HTTPStatus.NOT_FOUND
 
         if filing_id:
-            rv = db.session.query(Business, Filing). \
-                filter(Business.id == Filing.business_id).\
-                filter(Business.identifier == identifier).\
-                filter(Filing.id == filing_id).\
-                one_or_none()
-            if not rv:
+            rv = CoreFiling.get(identifier, filing_id)
+            if not rv.storage:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
 
             if str(request.accept_mimetypes) == 'application/pdf':
                 report_type = request.args.get('type', None)
-                if rv[1].filing_type == 'incorporationApplication':
-                    ListFilingResource._populate_business_info_to_filing(rv[1], business)
-                return legal_api.reports.get_pdf(rv[1], report_type)
-            return jsonify(rv[1].json)
+                return legal_api.reports.get_pdf(rv.storage, report_type)
+            return jsonify(rv.json)
 
         # Does it make sense to get a PDF of all filings?
         if str(request.accept_mimetypes) == 'application/pdf':
@@ -109,7 +98,8 @@ class ListFilingResource(Resource):
                 HTTPStatus.NOT_ACCEPTABLE
 
         rv = []
-        filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value, Filing.Status.PAID.value])
+        filings = CoreFiling.get_filings_by_status(business.id,
+                                                   [Filing.Status.COMPLETED.value, Filing.Status.PAID.value])
         for filing in filings:
             filing_json = filing.json
             filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
@@ -488,39 +478,51 @@ class ListFilingResource(Resource):
         filing_types = []
         priority_flag = filing_json['filing']['header'].get('priority', False)
         filing_type = filing_json['filing']['header'].get('name', None)
+        if filing_type == 'incorporationApplication':
+            legal_type = filing_json['filing']['business']['legalType']
+        else:
+            business = Business.find_by_identifier(filing_json['filing']['business']['identifier'])
+            legal_type = business.legal_type
 
-        for k in filing_json['filing'].keys():
-            # check if changeOfDirectors is a free filing
-            if k == 'changeOfDirectors':
-                free = True
-                free_changes = ['nameChanged', 'addressChanged']
-                for director in filing_json['filing'][k].get('directors'):
-                    # if changes other than name/address change then this is not a free filing
-                    if not all(change in free_changes for change in director.get('actions', [])):
-                        free = False
-                        break
-                filing_types.append({
-                    'filingTypeCode': 'OTFDR' if free else Filing.FILINGS[k].get('code'),
-                    'priority': False if filing_type == 'annualReport' else priority_flag,
-                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
-                })
-            elif k == 'changeOfAddress':
-                filing_types.append({
-                    'filingTypeCode': Filing.FILINGS[k].get('code'),
-                    'priority': False if filing_type == 'annualReport' else priority_flag,
-                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
-                })
-            elif k == 'incorporationApplication':
-                filing_types.append({
-                    'filingTypeCode': Filing.FILINGS[k].get('code'),
-                    'futureEffective': ListFilingResource._is_future_effective_filing(filing_json)
-                })
-            elif Filing.FILINGS.get(k, None):
-                filing_types.append({
-                    'filingTypeCode': Filing.FILINGS[k].get('code'),
-                    'priority': priority_flag,
-                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
-                })
+        if any('correction' in x for x in filing_json['filing'].keys()):
+            filing_type_code = Filing.FILINGS.get('correction', {}).get('codes', {}).get(legal_type)
+            filing_types.append({
+                'filingTypeCode': filing_type_code,
+                'priority': priority_flag,
+                'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+            })
+        else:
+            for k in filing_json['filing'].keys():
+                filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
+                priority = priority_flag
+
+                # check if changeOfDirectors is a free filing
+                if k == 'changeOfDirectors':
+                    free = True
+                    free_changes = ['nameChanged', 'addressChanged']
+                    for director in filing_json['filing'][k].get('directors'):
+                        # if changes other than name/address change then this is not a free filing
+                        if not all(change in free_changes for change in director.get('actions', [])):
+                            free = False
+                            break
+                    filing_type_code = Filing.FILINGS[k].get('free', {}).get('codes', {}).get(legal_type)\
+                        if free else Filing.FILINGS[k].get('codes', {}).get(legal_type)
+
+                # check if priority handled in parent filing
+                if k in ['changeOfDirectors', 'changeOfAddress']:
+                    priority = False if filing_type == 'annualReport' else priority_flag
+
+                if k == 'incorporationApplication':
+                    filing_types.append({
+                        'filingTypeCode': filing_type_code,
+                        'futureEffective': ListFilingResource._is_future_effective_filing(filing_json)
+                    })
+                elif filing_type_code:
+                    filing_types.append({
+                        'filingTypeCode': filing_type_code,
+                        'priority': priority,
+                        'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+                    })
         return filing_types
 
     @staticmethod
@@ -542,7 +544,7 @@ class ListFilingResource(Resource):
         if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name'):
             mailing_address = Address.create_address(
                 filing.json['filing']['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
-            corp_type = filing.json['filing']['business'].get('legalType', 'BC')
+            corp_type = filing.json['filing']['business'].get('legalType', Business.LegalTypes.BCOMP.value)
 
             try:
                 business.legal_name = filing.json['filing']['incorporationApplication']['nameRequest']['legalName']
@@ -551,7 +553,8 @@ class ListFilingResource(Resource):
 
         else:
             mailing_address = business.mailing_address.one_or_none()
-            corp_type = business.identifier[:-7]
+            corp_type = business.legal_type if business.legal_type else \
+                filing.json['filing']['business'].get('legalType')
 
         payload = {
             'businessInfo': {
@@ -643,17 +646,6 @@ class ListFilingResource(Resource):
             is_future_effective = effective_date > datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
         return is_future_effective
 
-    @staticmethod
-    def _populate_business_info_to_filing(filing: Filing, business: Business):
-        founding_datetime = LegislationDatetime.as_legislation_timezone(business.founding_date)
-        hour = founding_datetime.strftime('%I')
-        business_json = business.json()
-        business_json['formatted_founding_date_time'] = \
-            founding_datetime.strftime(f'%B %-d, %Y at {hour}:%M %p Pacific Time')
-        business_json['formatted_founding_date'] = founding_datetime.strftime('%B %-d, %Y')
-        filing.filing_json['filing']['business'] = business_json
-        filing.filing_json['filing']['header']['filingId'] = filing.id
-
 
 @cors_preflight('GET, POST, PUT, PATCH, DELETE')
 @API.route('/internal/filings', methods=['GET', 'OPTIONS'])
@@ -673,7 +665,9 @@ class InternalFilings(Resource):
             pending_filings = Filing.get_completed_filings_for_colin()
             for filing in pending_filings:
                 filing_json = filing.filing_json
-                if filing_json and filing.filing_type != 'lear_epoch':
+                business = Business.find_by_internal_id(filing.business_id)
+                if filing_json and filing.filing_type != 'lear_epoch' and \
+                        (filing.filing_type != 'correction' or business.legal_type != business.LegalTypes.COOP.value):
                     filing_json['filingId'] = filing.id
                     filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
                     if not filing_json['filing']['business'].get('legalName'):

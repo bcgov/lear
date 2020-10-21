@@ -8,7 +8,7 @@ BC Registries Names Examination, research and approval system API
 
 ## Technology Stack Used
 * Python, Flask
-* Postgres -  SQLAlchemy, psycopg2-binary & alembic 
+* Postgres -  SQLAlchemy, psycopg2-binary & alembic
 
 ## Third-Party Products/Libraries used and the the License they are covert by
 
@@ -29,8 +29,8 @@ Current - JWT hack
 
 ```
 docs/           - Project Documentation
-└── images        
-└── icons         
+└── images
+└── icons
 
 openshift/      - OpenShift-specific files
 ├── scripts     - helper scripts
@@ -54,7 +54,7 @@ To report bugs/issues/feature requests, please file an [issue](../../issues).
 
 If you would like to contribute, please see our [CONTRIBUTING](./CONTRIBUTING.md) guidelines.
 
-Please note that this project is released with a [Contributor Code of Conduct](./CODE_OF_CONDUCT.md). 
+Please note that this project is released with a [Contributor Code of Conduct](./CODE_OF_CONDUCT.md).
 By participating in this project you agree to abide by its terms.
 
 ## License
@@ -72,3 +72,4 @@ By participating in this project you agree to abide by its terms.
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
+

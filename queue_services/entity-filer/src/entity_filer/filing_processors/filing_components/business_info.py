@@ -15,7 +15,7 @@
 from typing import Dict
 
 from flask_babel import _ as babel  # noqa: N813
-from legal_api.models import Business
+from legal_api.models import Business, Filing
 
 
 def set_corp_type(business: Business, business_info: Dict) -> Dict:
@@ -30,4 +30,21 @@ def set_corp_type(business: Business, business_info: Dict) -> Dict:
     except (IndexError, KeyError, TypeError):
         return {'error': babel('A valid legal type must be provided.')}
 
+    return None
+
+
+def set_legal_name(corp_num: str, business: Business, business_info: Dict):
+    """Set the legal_name in the business object."""
+    legal_name = business_info.get('legalName', None)
+    business.legal_name = legal_name if legal_name else corp_num[2:] + ' B.C. LTD.'
+
+
+def update_business_info(corp_num: str, business: Business, business_info: Dict, filing: Filing):
+    """Format and update the business entity from incorporation filing."""
+    if corp_num and business and business_info and filing:
+        set_legal_name(corp_num, business, business_info)
+        business.identifier = corp_num
+        business.legal_type = business_info.get('legalType', None)
+        business.founding_date = filing.effective_date
+        return business
     return None

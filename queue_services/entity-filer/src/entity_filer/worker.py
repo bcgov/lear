@@ -27,6 +27,7 @@ to be pursued.
 """
 import json
 import os
+import uuid
 from typing import Dict
 
 import nats
@@ -36,6 +37,7 @@ from entity_queue_common.service_utils import FilingException, QueueException, l
 from flask import Flask
 from legal_api import db
 from legal_api.models import Business, Filing
+from legal_api.utils.datetime import datetime
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 from sqlalchemy_continuum import versioning_manager
@@ -51,6 +53,7 @@ from entity_filer.filing_processors import (
     incorporation_filing,
     voluntary_dissolution,
 )
+from entity_filer.filing_processors.filing_components import name_request
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
@@ -77,15 +80,31 @@ def get_filing_types(legal_filings: dict):
 async def publish_event(business: Business, filing: Filing):
     """Publish the filing message onto the NATS filing subject."""
     try:
-        payload = {'filing':
-                   {
-                       'identifier': business.identifier,
-                       'legalName': business.legal_name,
-                       'filingId': filing.id,
-                       'effectiveDate': filing.effective_date.isoformat(),
-                       'legalFilings': get_filing_types(filing.filing_json)
-                   }
-                   }
+        payload = {
+            'specversion': '1.x-wip',
+            'type': 'bc.registry.business.' + filing.filing_type,
+            'source': ''.join([
+                APP_CONFIG.LEGAL_API_URL,
+                '/business/',
+                business.identifier,
+                '/filing/',
+                str(filing.id)]),
+            'id': str(uuid.uuid4()),
+            'time': datetime.utcnow().isoformat(),
+            'datacontenttype': 'application/json',
+            'identifier': business.identifier,
+            'data': {
+                'filing': {
+                    'header': {'filingId': filing.id,
+                               'effectiveDate': filing.effective_date.isoformat()
+                               },
+                    'business': {'identifier': business.identifier},
+                    'legalFilings': get_filing_types(filing.filing_json)
+                }
+            }
+        }
+        if filing.temp_reg:
+            payload['tempidentifier'] = filing.temp_reg
         subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
         await qsm.service.publish(subject, payload)
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
@@ -140,8 +159,8 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 elif filing.get('incorporationApplication'):
                     business, filing_submission = incorporation_filing.process(business, filing, filing_submission)
 
-                elif filing.get('correction'):
-                    correction.process(filing_submission, filing)
+                if filing.get('correction'):
+                    filing_submission = correction.process(filing_submission, filing)
 
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()
@@ -151,24 +170,41 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             db.session.commit()
 
             # post filing changes to other services
+            if any('alteration' in x for x in legal_filings):
+                alteration.post_process(business, filing_submission)
+
             if any('incorporationApplication' in x for x in legal_filings):
-                filing_submission.business_id = business.id
-                db.session.add(filing_submission)
-                db.session.commit()
-                incorporation_filing.update_affiliation(business, filing_submission)
-                incorporation_filing.consume_nr(business, filing_submission)
-                try:
-                    await publish_email_message(
-                        qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'registered')
-                    await publish_email_message(
-                        qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'mras')
-                except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-                    # mark any failure for human review
-                    capture_message(
-                        f'Queue Error: Failed to place email for filing:{filing_submission.id}'
-                        f'on Queue with error:{err}',
-                        level='error'
-                    )
+                if any('correction' in x for x in legal_filings):
+                    if name_request.has_new_nr_for_correction(filing_submission.filing_json):
+                        name_request.consume_nr(business, filing_submission)
+                else:
+                    filing_submission.business_id = business.id
+                    db.session.add(filing_submission)
+                    db.session.commit()
+                    incorporation_filing.update_affiliation(business, filing_submission)
+                    name_request.consume_nr(business, filing_submission)
+                    incorporation_filing.post_process(business, filing_submission)
+                    try:
+                        await publish_email_message(
+                            qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'mras')
+                    except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                        # mark any failure for human review
+                        capture_message(
+                            f'Queue Error: Failed to place email for filing:{filing_submission.id}'
+                            f'on Queue with error:{err}',
+                            level='error'
+                        )
+
+            try:
+                await publish_email_message(
+                    qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, filing_submission.status)
+            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                # mark any failure for human review
+                capture_message(
+                    f'Queue Error: Failed to place email for filing:{filing_submission.id}'
+                    f'on Queue with error:{err}',
+                    level='error'
+                )
 
             try:
                 await publish_event(business, filing_submission)

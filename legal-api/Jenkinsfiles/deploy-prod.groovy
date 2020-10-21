@@ -23,79 +23,33 @@ def NAMESPACE = 'gl2uos'
 def COMPONENT_NAME = 'legal-api'
 def TAG_NAME = 'prod'
 def SOURCE_TAG = 'test'
+def DEPLOY_PIPELINE = 'deploy-service'
+def DEPLOY_PIPELINE_LOC = 'gl2uos-tools'
 
-// define groovy functions
-import groovy.json.JsonOutput
 
-// Get an image's hash tag
-String getImageTagHash(String imageName, String tag = "") {
-
-  if(!tag?.trim()) {
-    tag = "latest"
-  }
-
-  def istag = openshift.raw("get istag ${imageName}:${tag} -o template --template='{{.image.dockerImageReference}}'")
-  return istag.out.tokenize('@')[1].trim()
-}
-
-// pipeline
 // define job properties - keep 10 builds only
 properties([
-    [$class: 'BuildDiscarderProperty', strategy: [$class: 'LogRotator', artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '10'
+    [$class: 'BuildDiscarderProperty', strategy: [$class: 'LogRotator', artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '2'
         ]
     ]
 ])
 
-node {
-    def old_version
-    stage("Tag ${COMPONENT_NAME}:${TAG_NAME}") {
-        script {
-            openshift.withCluster() {
-                openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
-                    old_version = openshift.selector('dc', "${COMPONENT_NAME}-${TAG_NAME}").object().status.latestVersion
-                }
-            }
-            openshift.withCluster() {
-                openshift.withProject() {
-                    echo "Tagging ${COMPONENT_NAME}:${TAG_NAME}-previous"
-                    def IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${TAG_NAME}")
-                    echo "IMAGE_HASH: ${IMAGE_HASH}"
-                    openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${TAG_NAME}-previous")
-
-                    echo "Tagging ${COMPONENT_NAME} for deployment to ${TAG_NAME} ..."
-                    // Don't tag with BUILD_ID so the pruner can do it's job; it won't delete tagged images.
-                    // Tag the images for deployment based on the image's hash
-                    IMAGE_HASH = getImageTagHash("${COMPONENT_NAME}", "${SOURCE_TAG}")
-                    echo "IMAGE_HASH: ${IMAGE_HASH}"
-                    openshift.tag("${COMPONENT_NAME}@${IMAGE_HASH}", "${COMPONENT_NAME}:${TAG_NAME}")
-                }
+stage("deploy ${COMPONENT_NAME}-${TAG_NAME}") {
+    script {
+        timeout(time: 1, unit: 'DAYS') {
+            input message: "Deploy to PROD?", id: "1234", submitter: 'admin,kialj876-admin,rarmitag-admin,pwei1018-admin,thorwolpert-admin,leksmall-edit,cameron-freshworks-edit,severinbeauvais-edit'
+        }
+        openshift.withCluster() {
+            openshift.withProject("${DEPLOY_PIPELINE_LOC}") {
+                def deploy_pipeline = openshift.selector('bc', "${DEPLOY_PIPELINE}")
+                deploy_pipeline.startBuild(
+                    '--wait=true', 
+                    "-e=NAMESPACE=${NAMESPACE}",
+                    "-e=COMPONENT_NAME=${COMPONENT_NAME}",
+                    "-e=TAG_NAME=${TAG_NAME}",
+                    "-e=SOURCE_TAG=${SOURCE_TAG}"
+                ).logs('-f')
             }
         }
     }
-    stage("Verify deployment") {
-        sleep 10
-        script {
-            openshift.withCluster() {
-                openshift.withProject("${NAMESPACE}-${TAG_NAME}") {
-                    def new_version = openshift.selector('dc', "${COMPONENT_NAME}-${TAG_NAME}").object().status.latestVersion
-                    if (new_version == old_version) {
-                        echo "New deployment was not triggered."
-                        currentBuild.result = "FAILURE"
-                    }
-                    def pod_selector = openshift.selector('pod', [ app:"${COMPONENT_NAME}-${TAG_NAME}" ])
-                    pod_selector.untilEach {
-                        deployment = it.objects()[0].metadata.labels.deployment
-                        echo deployment
-                        if (deployment ==  "${COMPONENT_NAME}-${TAG_NAME}-${new_version}" && it.objects()[0].status.phase == 'Running' && it.objects()[0].status.containerStatuses[0].ready) {
-                            return true
-                        } else {
-                            echo "Pod for new deployment not ready"
-                            sleep 5
-                            return false
-                        }
-                    }
-                }
-            }
-        }
-    }
-}//end node
+}

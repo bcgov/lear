@@ -21,7 +21,7 @@ from http import HTTPStatus
 
 from registry_schemas.example_data import FILING_TEMPLATE, INCORPORATION
 
-from legal_api.models import Filing, RegistrationBootstrap
+from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.services.authz import STAFF_ROLE, SYSTEM_ROLE
 from tests import integration_affiliation, integration_payment
 from tests.unit.services.utils import create_header
@@ -41,7 +41,7 @@ def setup_bootstrap_ia_minimal(jwt, session, client, account_id):
                   },
                   'incorporationApplication': {
                       'nameRequest': {
-                          'legalType': 'BC'
+                          'legalType': Business.LegalTypes.BCOMP.value
                       }
                   }
               }
@@ -196,7 +196,7 @@ def test_create_incorporation_with_bcol_dat(client, jwt, session):
     filing['filing']['header']['name'] = 'incorporationApplication'
     filing['filing']['header']['accountId'] = account_id
     filing['filing']['header']['bcolAccountNumber'] = '180670'
-    filing['filing']['header']['datNumber'] = 'C234567890'
+    filing['filing']['header']['datNumber'] = 'C1234567'
 
     # remove fed
     filing['filing']['header'].pop('effectiveDate')

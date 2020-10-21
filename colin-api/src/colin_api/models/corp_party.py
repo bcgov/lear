@@ -81,7 +81,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return officer_obj
 
     @classmethod
-    def _build_parties_list(cls, cursor, identifier: str, event_id: int = None):
+    def _build_parties_list(cls, cursor, corp_num: str, event_id: int = None):
         parties = cursor.fetchall()
 
         if not parties:
@@ -95,20 +95,24 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             party.title = ''
             row = dict(zip([x[0].lower() for x in description], row))
             if not row['appointment_dt']:
-                row['appointment_dt'] = Business.get_founding_date(cursor=cursor, corp_num=identifier)
+                row['appointment_dt'] = Business.get_founding_date(cursor=cursor, corp_num=corp_num)
             party.officer = cls._get_officer(row)
+            if not row['delivery_addr_id']:
+                current_app.logger.error(
+                    f"Bad director data for {party.officer.get('firstName')} {party.officer.get('lastName')} {corp_num}"
+                )
+            else:
+                party.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
+                party.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
+                    if row['mailing_addr_id'] else party.delivery_address
+                party.appointment_date =\
+                    convert_to_json_date(row.get('appointment_dt', None))
+                party.cessation_date = convert_to_json_date(row.get('cessation_dt', None))
+                party.start_event_id = (row.get('start_event_id', '')) or ''
+                party.end_event_id = (row.get('end_event_id', '')) or ''
+                party.role_type = (row.get('party_typ_cd', '')) or ''
 
-            party.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
-            party.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
-                if row['mailing_addr_id'] else party.delivery_address
-            party.appointment_date =\
-                convert_to_json_date(row.get('appointment_dt', None))
-            party.cessation_date = convert_to_json_date(row.get('cessation_dt', None))
-            party.start_event_id = (row.get('start_event_id', '')) or ''
-            party.end_event_id = (row.get('end_event_id', '')) or ''
-            party.role_type = (row.get('party_typ_cd', '')) or ''
-
-            party_list.append(party)
+                party_list.append(party)
         if event_id:
             completing_parties = cls.get_completing_parties(cursor, event_id)
         return cls.group_parties(party_list, completing_parties)
@@ -270,30 +274,46 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
     @classmethod
     def end_director_by_name(cls, cursor, director: dict, event_id: int, corp_num: str):
         """Set all end_event_ids for given parties."""
-        officer = director['officer']
-        first_name = officer['prevFirstName'] if 'nameChanged' in director['actions'] else officer['firstName']
-        last_name = officer['prevLastName'] if 'nameChanged' in director['actions'] else officer['lastName']
-        middle_initial = officer.get('prevMiddleInitial', '') if 'nameChanged' in director['actions'] \
-            else officer.get('middleInitial', '')
-
+        query = (
+            """
+            update corp_party
+            set end_event_id=:event_id, cessation_dt=TO_DATE(:cessation_date, 'YYYY-mm-dd')
+            where corp_num=:corp_num
+            """
+        )
         try:
-            cursor.execute(
-                """
-                update corp_party set end_event_id=:event_id, cessation_dt=TO_DATE(:cessation_date, 'YYYY-mm-dd') where
-                corp_num=:corp_num and upper(trim(first_nme))=upper(:first_name) and
-                upper(trim(last_nme))=upper(:last_name) and (upper(trim(middle_nme))=upper(:middle_initial) or
-                middle_nme is null)
-                """,
-                event_id=event_id,
-                cessation_date=director.get('cessationDate', ''),
-                corp_num=corp_num,
-                first_name=first_name.strip(),
-                last_name=last_name.strip(),
-                middle_initial=middle_initial.strip()
-            )
+            officer = director['officer']
+            if officer.get('orgName'):
+                query = query + ' and upper(trim(business_nme))=upper(:business_name)'
+                cursor.execute(
+                    query,
+                    event_id=event_id,
+                    cessation_date=director.get('cessationDate', ''),
+                    corp_num=corp_num,
+                    business_name=officer['orgName']
+                )
+            else:
+                query = query + \
+                    """
+                    and upper(trim(first_nme))=upper(:first_name) and upper(trim(last_nme))=upper(:last_name)
+                    and (upper(trim(middle_nme))=upper(:middle_initial) or middle_nme is null)
+                    """
+                first_name = officer['prevFirstName'] if 'nameChanged' in director['actions'] else officer['firstName']
+                last_name = officer['prevLastName'] if 'nameChanged' in director['actions'] else officer['lastName']
+                middle_initial = officer.get('prevMiddleInitial', '') if 'nameChanged' in director['actions'] \
+                    else officer.get('middleInitial', '')
+
+                cursor.execute(
+                    query,
+                    event_id=event_id,
+                    cessation_date=director.get('cessationDate', ''),
+                    corp_num=corp_num,
+                    first_name=first_name.strip(),
+                    last_name=last_name.strip(),
+                    middle_initial=middle_initial.strip()
+                )
             if cursor.rowcount < 1:
-                current_app.logger.error(f'Director name: {first_name} {middle_initial} {last_name}'
-                                         f' did not match any current parties in COLIN')
+                current_app.logger.error(f'Could not find director {officer}')
                 raise PartiesNotFoundException(identifier=corp_num)
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors

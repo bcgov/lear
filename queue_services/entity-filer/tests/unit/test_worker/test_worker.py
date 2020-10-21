@@ -15,13 +15,14 @@
 import copy
 import datetime
 import random
+from unittest.mock import patch
 
 import pytest
 import pytz
 from freezegun import freeze_time
 from legal_api.models import Business, Filing, PartyRole, User
 from legal_api.resources.business import DirectorResource
-from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR
+from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, INCORPORATION_FILING_TEMPLATE
 
 from entity_filer.filing_processors.filing_components import create_party, create_role
 from entity_filer.worker import process_filing
@@ -530,3 +531,50 @@ async def test_correction_filing(app, session):
     assert f'This filing was corrected on {correction_filing_date.date().isoformat()}.' == \
            original_filing.comments.all()[-1].comment
     assert staff_user.id == original_filing.comments.all()[-1].staff.id
+
+
+async def test_publish_event():
+    """Assert that publish_event is called with the correct struct."""
+    import uuid
+    from unittest.mock import AsyncMock
+    from entity_filer.worker import APP_CONFIG, get_filing_types, publish_event, qsm
+    from legal_api.utils.datetime import datetime
+
+    mock_publish = AsyncMock()
+    qsm.service = mock_publish
+    with freeze_time(datetime.utcnow()), \
+            patch.object(uuid, 'uuid4', return_value=1):
+
+        business = Business(identifier='BC1234567')
+        filing = Filing(id=1,
+                        effective_date=datetime.utcnow(),
+                        _filing_type='incorporationApplication',
+                        _filing_json=INCORPORATION_FILING_TEMPLATE)
+
+        await publish_event(business, filing)
+
+        payload = {
+            'specversion': '1.x-wip',
+            'type': 'bc.registry.business.' + filing.filing_type,
+            'source': ''.join(
+                [APP_CONFIG.LEGAL_API_URL,
+                 '/business/',
+                 business.identifier,
+                 '/filing/',
+                 str(filing.id)]),
+            'id': str(uuid.uuid4()),
+            'time': datetime.utcnow().isoformat(),
+            'datacontenttype': 'application/json',
+            'identifier': business.identifier,
+            'data': {
+                'filing': {
+                    'header': {'filingId': filing.id,
+                               'effectiveDate': filing.effective_date.isoformat()
+                               },
+                    'business': {'identifier': business.identifier},
+                    'legalFilings': get_filing_types(filing.filing_json)
+                }
+            }
+        }
+
+    mock_publish.publish.assert_called_with('entity.events', payload)

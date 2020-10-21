@@ -21,10 +21,11 @@ from flask import current_app, jsonify, request
 from flask_restplus import Resource, cors
 from registry_schemas import validate
 
-from colin_api.exceptions import FilingNotFoundException, GenericException
+from colin_api.exceptions import GenericException
 from colin_api.models import Business
 from colin_api.models.filing import DB, Filing
 from colin_api.resources.business import API
+from colin_api.utils import convert_to_pacific_time
 from colin_api.utils.util import cors_preflight
 
 
@@ -61,7 +62,11 @@ class FilingInfo(Resource):
                 return jsonify(historic_filings_info)
 
             # else get filing
-            filing = Filing.get_filing(business=business, event_id=event_id, filing_type=filing_type, year=year)
+            filing = Filing()
+            filing.business = business
+            filing.filing_type = filing_type
+            filing.event_id = event_id
+            filing = Filing.get_filing(filing=filing, year=year)
             return jsonify(filing.as_dict())
 
         except GenericException as err:  # pylint: disable=duplicate-code
@@ -105,16 +110,19 @@ class FilingInfo(Resource):
                 ), HTTPStatus.BAD_REQUEST
 
             # convert identifier if BC legal_type
-            if legal_type == Business.LearBusinessTypes.BCOMP.value:
+            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
                 identifier = identifier[-7:]
 
             corp_types = Business.CORP_TYPE_CONVERSION[legal_type]
 
-            filing_list = {'changeOfAddress': json_data.get('changeOfAddress', None),
-                           'changeOfDirectors': json_data.get('changeOfDirectors', None),
-                           'annualReport': json_data.get('annualReport', None),
-                           'incorporationApplication': json_data.get('incorporationApplication', None),
-                           'alteration': json_data.get('alteration', None)}
+            filing_list = {
+                'changeOfAddress': json_data.get('changeOfAddress', None),
+                'changeOfDirectors': json_data.get('changeOfDirectors', None),
+                'annualReport': json_data.get('annualReport', None),
+                'incorporationApplication': json_data.get('incorporationApplication', None),
+                'alteration': json_data.get('alteration', None),
+                'correction': json_data.get('correction', None)
+            }
 
             # Filter out null-values in the filing_list dictionary
             filing_list = {k: v for k, v in filing_list.items() if filing_list[k]}
@@ -126,19 +134,24 @@ class FilingInfo(Resource):
 
                 # return the completed filing data
                 completed_filing = Filing()
-                completed_filing.header = json_data['header']
-                completed_filing.header['colinIds'] = []
                 # get business info again - could have changed since filings were applied
                 completed_filing.business = Business.find_by_identifier(identifier, corp_types, con)
                 completed_filing.body = {}
                 for filing_info in filings_added:
-                    filing = Filing.get_filing(con=con, business=completed_filing.business,
-                                               event_id=filing_info['event_id'], filing_type=filing_info['filing_type'])
-                    if not filing:
-                        raise FilingNotFoundException(identifier=identifier, filing_type=filing_info['filing_type'],
-                                                      event_id=filing_info['event_id'])
-                    completed_filing.body.update({filing_info['filing_type']: filing.body})
-                    completed_filing.header['colinIds'].append(filing_info['event_id'])
+                    sub_filing = Filing()
+                    sub_filing.business = completed_filing.business
+                    sub_filing.filing_type = filing_info['filing_type']
+                    sub_filing.event_id = filing_info['event_id']
+                    sub_filing = Filing.get_filing(filing=sub_filing, con=con)
+
+                    if completed_filing.header:
+                        completed_filing.header['colinIds'].append(sub_filing.event_id)
+                        # annual report is the only filing with sub filings underneath it
+                        if sub_filing.filing_type == 'annualReport':
+                            completed_filing.header['name'] = 'annualReport'
+                    else:
+                        completed_filing.header = sub_filing.header
+                    completed_filing.body.update({sub_filing.filing_type: sub_filing.body})
 
                 # success! commit the db changes
                 con.commit()
@@ -164,8 +177,11 @@ class FilingInfo(Resource):
         for filing_type in filing_list:
             filing = Filing()
             filing.header = json_data['header']
+            filing.filing_date = filing.header['date']
             filing.filing_type = filing_type
             filing.body = filing_list[filing_type]
+            # get utc lear effective date and convert to pacific time for insert into oracle
+            filing.effective_date = convert_to_pacific_time(filing.header['learEffectiveDate'])
 
             if filing_type != 'incorporationApplication':
                 filing.business = Business.find_by_identifier(identifier, corp_types, con)

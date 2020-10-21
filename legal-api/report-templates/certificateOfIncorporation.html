@@ -11,7 +11,10 @@
 
   <body>
     <div class="outer-container">
-      <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
+      <div class="outer-container-header">
+        <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
+        [[common/correctedOnCertificate.html]]
+      </div>      
 
       <div class="certificate-statements">
           [[certificate-of-incorporation/logo.html]]
@@ -45,8 +48,8 @@
             <td class="registrar-info-container">
               <div class="registrar-info">
                 <div>
-                  <div class="registrar-name">CAROL PREST</div>
-                  <div class="registrar-title">Registrar of Companies</div>
+                  <div class="registrar-name">{{ registrarInfo.name }}</div>
+                  <div class="registrar-title">{{ registrarInfo.title }}</div>
                 </div>
                 <div>[[certificate-of-incorporation/registrarSignature.html]]</div>
                 <div class="province-country-info">

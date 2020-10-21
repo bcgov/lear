@@ -58,16 +58,62 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         COLIN = 'COLIN'
         LEAR = 'LEAR'
 
+    # TODO: get legal types from defined class once table is made (getting it from Business causes circ import)
     FILINGS = {
-        'alteration': {'name': 'alteration', 'title': 'Notice of Alteration Filing', 'code': 'ALTER'},
-        'annualReport': {'name': 'annualReport', 'title': 'Annual Report Filing', 'code': 'OTANN'},
-        'changeOfAddress': {'name': 'changeOfAddress', 'title': 'Change of Address Filing', 'code': 'OTADD'},
-        'changeOfDirectors': {'name': 'changeOfDirectors', 'title': 'Change of Directors Filing',
-                              'code': 'OTCDR'},
+        'alteration': {
+            'name': 'alteration',
+            'title': 'Notice of Alteration Filing',
+            'codes': {
+                'BC': 'ALTER',
+                'BEN': 'ALTER'
+            }
+        },
+        'annualReport': {
+            'name': 'annualReport',
+            'title': 'Annual Report Filing',
+            'codes': {
+                'CP': 'OTANN',
+                'BEN': 'BCANN'
+            }
+        },
+        'changeOfAddress': {
+            'name': 'changeOfAddress',
+            'title': 'Change of Address Filing',
+            'codes': {
+                'CP': 'OTADD',
+                'BEN': 'BCADD'
+            }
+        },
+        'changeOfDirectors': {
+            'name': 'changeOfDirectors',
+            'title': 'Change of Directors Filing',
+            'codes': {
+                'CP': 'OTCDR',
+                'BEN': 'BCCDR'
+            },
+            'free': {
+                'codes': {
+                    'CP': 'OTFDR',
+                    'BEN': 'BCFDR'
+                }
+            }
+        },
         'changeOfName': {'name': 'changeOfName', 'title': 'Change of Name Filing'},
-        'correction': {'name': 'correction', 'title': 'Correction', 'code': 'CRCTN'},
-        'incorporationApplication': {'name': 'incorporationApplication', 'title': 'Incorporation Application',
-                                     'code': 'BCINC'},
+        'correction': {
+            'name': 'correction',
+            'title': 'Correction',
+            'codes': {
+                'BEN': 'CRCTN',
+                'CP': 'CRCTN'
+            }
+        },
+        'incorporationApplication': {
+            'name': 'incorporationApplication',
+            'title': 'Incorporation Application',
+            'codes': {
+                'BEN': 'BCINC'
+            }
+        },
         'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution'},
         'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'}
     }
@@ -328,12 +374,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing
 
     @staticmethod
-    def get_temp_reg_filing(temp_reg_id: str = None, filing_id: str = None):
+    def get_temp_reg_filing(temp_reg_id: str, filing_id: str = None):
         """Return a Filing by it's payment token."""
-        filing = db.session.query(Filing). \
-            filter(Filing.temp_reg == temp_reg_id). \
-            filter(Filing.id == filing_id). \
-            one_or_none()
+        q = db.session.query(Filing).filter(Filing.temp_reg == temp_reg_id)
+
+        if filing_id:
+            q.filter(Filing.id == filing_id)
+
+        filing = q.one_or_none()
         return filing
 
     @staticmethod
@@ -419,7 +467,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(
                 Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
                 Filing._status == Filing.Status.COMPLETED.value,
-                Filing._filing_type != Filing.FILINGS['correction'].get('name'),
                 Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
             ).order_by(Filing.filing_date).all()
         return filings

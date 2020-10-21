@@ -25,9 +25,15 @@ from http import HTTPStatus
 import datedelta
 import dpath.util
 import pytest
-from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, CORRECTION_AR, FILING_HEADER
+from registry_schemas.example_data import (
+    ANNUAL_REPORT,
+    CHANGE_OF_ADDRESS,
+    CORRECTION_AR,
+    CORRECTION_INCORPORATION,
+    FILING_HEADER,
+)
 
-from legal_api.models import Filing
+from legal_api.models import Business, Filing
 from legal_api.services import QueueService
 from legal_api.services.authz import COLIN_SVC_ROLE, STAFF_ROLE
 from tests import integration_nats, integration_payment
@@ -272,6 +278,25 @@ def test_get_internal_filings(session, client, jwt):
     assert rv.json[0]['filingId'] == filing1.id
 
 
+def test_get_bcomp_corrections(session, client, jwt):
+    """Assert that the internal filings get endpoint returns corrections for bcomps."""
+    # setup
+    identifier = 'BC1234567'
+    b = factory_business(identifier=identifier, entity_type=Business.LegalTypes.BCOMP.value)
+    factory_business_mailing_address(b)
+
+    filing = factory_completed_filing(b, CORRECTION_INCORPORATION)
+
+    assert filing.status == Filing.Status.COMPLETED.value
+
+    # test endpoint returns filing
+    rv = client.get('/api/v1/businesses/internal/filings')
+    assert rv.status_code == HTTPStatus.OK
+    assert len(rv.json) == 1
+
+    assert rv.json[0]['filingId'] == filing.id
+
+
 def test_patch_internal_filings(session, client, jwt):
     """Assert that the internal filings patch endpoint updates the colin_event_id."""
     from legal_api.models.colin_event_id import ColinEventId
@@ -350,7 +375,7 @@ def test_future_filing_coa(session, client, jwt):
     from tests.unit.models import factory_pending_filing
     # setup
     identifier = 'CP7654321'
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'BC')
+    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, Business.LegalTypes.BCOMP.value)
     factory_business_mailing_address(b)
     coa = copy.deepcopy(FILING_HEADER)
     coa['filing']['header']['name'] = 'changeOfAddress'

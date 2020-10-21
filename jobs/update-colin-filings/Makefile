@@ -5,6 +5,8 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 current_abs_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
+project_name := update_colin_filings.py
+
 #################################################################################
 # COMMANDS                                                                      #
 #################################################################################
@@ -36,7 +38,7 @@ setup: clean setup-venv install-dev
 
 venv/bin/activate: requirements/prod.txt requirements/dev.txt
 	rm -rf venv/
-	test -f venv/bin/activate || python3 -m venv  $(current_abs_dir)/venv
+	test -f venv/bin/activate || python3.8 -m venv  $(current_abs_dir)/venv
 	. venv/bin/activate ;\
 	pip install --upgrade pip ;\
 	pip install -Ur requirements/prod.txt ;\
@@ -48,7 +50,7 @@ venv/bin/activate: requirements/prod.txt requirements/dev.txt
 
 setup-venv: requirements.txt
 	rm -rf venv/
-	test -f venv/bin/activate || python3 -m venv  $(current_abs_dir)/venv
+	test -f venv/bin/activate || python3.8 -m venv  $(current_abs_dir)/venv
 	. venv/bin/activate ;\
 	pip install --upgrade pip ;\
 	pip install -Ur requirements.txt
@@ -56,10 +58,18 @@ setup-venv: requirements.txt
 .PHONY: install-dev
 install-dev: venv/bin/activate
 	. venv/bin/activate ; \
-	pip install -Ur requirements/dev.txt; \
-	pip install -e .
+	pip install -Ur requirements/dev.txt;
 
 .PHONY: activate
 activate: venv/bin/activate
 	. venv/bin/activate
 
+## run pylint on the package and tests
+pylint:
+	pylint --rcfile=setup.cfg \
+	 --load-plugins=pylint_flask \
+	 $(project_name)
+
+## run flake8 on the package and tests
+flake8:
+	flake8 $(project_name)

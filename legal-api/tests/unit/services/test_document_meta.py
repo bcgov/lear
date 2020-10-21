@@ -16,8 +16,13 @@
 
 Test-Suite to ensure that the Document Meta Service is working as expected.
 """
+from unittest.mock import patch
+
+from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE
+
+from legal_api.models import Business, Filing
 from legal_api.services import DocumentMetaService
-from tests.unit.models import factory_business
+from tests.unit.models import factory_business, factory_filing
 
 
 FILING_DATE = '2020-07-14T11:41:07.230473-07:00'
@@ -31,7 +36,7 @@ CON_TITLE = 'Legal Name Change'
 def test_business_not_found(session, app):
     """Assert that no documents are returned when the filing's business is not found."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -56,7 +61,7 @@ def test_business_not_found(session, app):
 def test_wrong_filing_status(session, app):
     """Assert that no documents are returned for a non- PAID and COMPLETED filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -75,13 +80,13 @@ def test_wrong_filing_status(session, app):
         assert len(document_meta.get_documents(filing)) == 0
         # also verify document class properties:
         assert document_meta._business_identifier == 'BC1234567'
-        assert document_meta._legal_type == 'BC'
+        assert document_meta._legal_type == Business.LegalTypes.BCOMP.value
 
 
 def test_available_on_paper_only(session, app):
     """Assert that no documents are returned for a paper-only filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -103,7 +108,7 @@ def test_available_on_paper_only(session, app):
 def test_coa_paid(session, app):
     """Assert that an Address Change document is returned for a PAID COA filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -132,7 +137,7 @@ def test_coa_paid(session, app):
 def test_coa_completed_bc(session, app):
     """Assert that Address Change + NOA documents are returned for a COMPLETED BCOMP COA filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -196,7 +201,7 @@ def test_coa_completed_cp(session, app):
 def test_ar(session, app):
     """Assert that an Annual Report document is returned for an AR filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -226,7 +231,7 @@ def test_ar(session, app):
 def test_cod_paid(session, app):
     """Assert that a Director Change document is returned for a PAID COD filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -256,7 +261,7 @@ def test_cod_paid(session, app):
 def test_cod_completed_bc(session, app):
     """Assert that Director Change + NOA documents are returned for a COMPLETED BCOMP COD filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -320,7 +325,7 @@ def test_cod_completed_cp(session, app):
 def test_con_paid(session, app):
     """Assert that a Legal Name Change document is returned for a PAID CON filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -350,7 +355,7 @@ def test_con_paid(session, app):
 def test_con_completed_bc(session, app):
     """Assert that Legal Name Change + NOA documents are returned for a COMPLETED BCOMP CON filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -414,7 +419,7 @@ def test_con_completed_cp(session, app):
 def test_special_resolution_paid(session, app):
     """Assert that no documents are returned for a PAID Special Resolution filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -437,7 +442,7 @@ def test_special_resolution_paid(session, app):
 def test_special_resolution_completed(session, app):
     """Assert that a Special Resolution document is returned for a COMPLETED Special Resolution filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -466,7 +471,7 @@ def test_special_resolution_completed(session, app):
 def test_voluntary_dissolution_paid(session, app):
     """Assert that no documents are returned for a PAID Voluntary Dissolution filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -489,7 +494,7 @@ def test_voluntary_dissolution_paid(session, app):
 def test_voluntary_dissolution_completed(session, app):
     """Assert that a Voluntary Dissolution document is returned for a COMPLETED Voluntary Dissolution filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -518,7 +523,7 @@ def test_voluntary_dissolution_completed(session, app):
 def test_correction(session, app):
     """Assert that no documents are returned for a Correction filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -542,7 +547,7 @@ def test_correction(session, app):
 def test_alteration(session, app):
     """Assert that no documents are returned for an Alteration filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -560,7 +565,7 @@ def test_alteration(session, app):
         }
 
         documents = document_meta.get_documents(filing)
-        assert len(documents) == 0
+        assert len(documents) == 1
 
 
 def test_ia_fed(app):
@@ -583,7 +588,7 @@ def test_ia_fed(app):
                 },
                 'incorporationApplication': {
                     'nameRequest': {
-                        'legalType': 'BC'
+                        'legalType': Business.LegalTypes.BCOMP.value
                     }
                 }
             }
@@ -609,7 +614,7 @@ def test_ia_paid(app):
                     'status': 'PAID',
                     'name': 'incorporationApplication',
                     'availableOnPaperOnly': False,
-                    'effectiveDate':  FILING_DATE,
+                    'effectiveDate': FILING_DATE,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -617,7 +622,7 @@ def test_ia_paid(app):
                 },
                 'incorporationApplication': {
                     'nameRequest': {
-                        'legalType': 'BC'
+                        'legalType': Business.LegalTypes.BCOMP.value
                     }
                 }
             }
@@ -632,7 +637,7 @@ def test_ia_paid(app):
         assert documents[0]['filename'] == 'T12345678 - Incorporation Application (Pending) - 2020-07-14.pdf'
 
 
-def test_ia_completed(app):
+def test_ia_completed(session, app):
     """Assert that IA + NOA + Certificate documents are returned for a COMPLETED IA filing."""
     document_meta = DocumentMetaService()
     with app.app_context():
@@ -643,7 +648,7 @@ def test_ia_completed(app):
                     'status': 'COMPLETED',
                     'name': 'incorporationApplication',
                     'availableOnPaperOnly': False,
-                    'effectiveDate':  FILING_DATE,
+                    'effectiveDate': FILING_DATE,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -651,37 +656,39 @@ def test_ia_completed(app):
                 },
                 'incorporationApplication': {
                     'nameRequest': {
-                        'legalType': 'BC'
+                        'legalType': Business.LegalTypes.BCOMP.value
                     }
                 }
             }
         }
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 3
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == 'Incorporation Application'
-        assert documents[0]['filename'] == 'T12345678 - Incorporation Application - 2020-07-14.pdf'
+        with patch.object(Filing, 'find_by_id', return_value=Filing()):
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 3
 
-        assert documents[1]['type'] == 'REPORT'
-        assert documents[1]['reportType'] == 'noa'
-        assert documents[1]['filingId'] == 12356
-        assert documents[1]['title'] == 'Notice of Articles'
-        assert documents[1]['filename'] == 'T12345678 - Notice of Articles - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == 'Incorporation Application'
+            assert documents[0]['filename'] == 'T12345678 - Incorporation Application - 2020-07-14.pdf'
 
-        assert documents[2]['type'] == 'REPORT'
-        assert documents[2]['reportType'] == 'certificate'
-        assert documents[2]['filingId'] == 12356
-        assert documents[2]['title'] == 'Certificate'
-        assert documents[2]['filename'] == 'T12345678 - Certificate - 2020-07-14.pdf'
+            assert documents[1]['type'] == 'REPORT'
+            assert documents[1]['reportType'] == 'noa'
+            assert documents[1]['filingId'] == 12356
+            assert documents[1]['title'] == 'Notice of Articles'
+            assert documents[1]['filename'] == 'T12345678 - Notice of Articles - 2020-07-14.pdf'
+
+            assert documents[2]['type'] == 'REPORT'
+            assert documents[2]['reportType'] == 'certificate'
+            assert documents[2]['filingId'] == 12356
+            assert documents[2]['title'] == 'Certificate'
+            assert documents[2]['filename'] == 'T12345678 - Certificate - 2020-07-14.pdf'
 
 
 def test_ia_completed_bcomp(session, app):
     """Assert that IA + NOA + Certificate documents are returned for a COMPLETED IA filing when business is a BCOMP."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type='BC')
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -690,7 +697,7 @@ def test_ia_completed_bcomp(session, app):
                     'status': 'COMPLETED',
                     'name': 'incorporationApplication',
                     'availableOnPaperOnly': False,
-                    'effectiveDate':  FILING_DATE,
+                    'effectiveDate': FILING_DATE,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -698,23 +705,279 @@ def test_ia_completed_bcomp(session, app):
                 }
             }
         }
+
+        with patch.object(Filing, 'find_by_id', return_value=Filing()):
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 3
+
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == 'Incorporation Application'
+            assert documents[0]['filename'] == 'BC1234567 - Incorporation Application - 2020-07-14.pdf'
+
+            assert documents[1]['type'] == 'REPORT'
+            assert documents[1]['reportType'] == 'noa'
+            assert documents[1]['filingId'] == 12356
+            assert documents[1]['title'] == NOA_TITLE
+            assert documents[1]['filename'] == NOA_FILENAME
+
+            assert documents[2]['type'] == 'REPORT'
+            assert documents[2]['reportType'] == 'certificate'
+            assert documents[2]['filingId'] == 12356
+            assert documents[2]['title'] == 'Certificate'
+            assert documents[2]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
+
+
+def test_ia_completed_bcomp_original(session, app):
+    """Assert that IA + Certificate documents with (Original) are returned for a COMPLETED IA."""
+    document_meta = DocumentMetaService()
+    b = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    with app.app_context():
+        original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
+        CORRECTION_INCORPORATION['filing']['correction']['correctedFilingId'] = original_filing.id
+        corrected_filing = factory_filing(b, CORRECTION_INCORPORATION)
+        filing = {
+            'filing': {
+                'header': {
+                    'filingId': original_filing.id,
+                    'status': 'COMPLETED',
+                    'name': 'incorporationApplication',
+                    'availableOnPaperOnly': False,
+                    'effectiveDate': FILING_DATE,
+                    'date': FILING_DATE
+                },
+                'business': {
+                    'identifier': 'BC1234567'
+                }
+            }
+        }
+        original_filing.parent_filing_id = corrected_filing.id
+        original_filing.save()
         documents = document_meta.get_documents(filing)
         assert len(documents) == 3
 
         assert documents[0]['type'] == 'REPORT'
         assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == 'Incorporation Application'
-        assert documents[0]['filename'] == 'BC1234567 - Incorporation Application - 2020-07-14.pdf'
+        assert documents[0]['filingId'] == original_filing.id
+        assert documents[0]['title'] == 'Incorporation Application (Original)'
+        assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Original) - 2020-07-14.pdf'
 
         assert documents[1]['type'] == 'REPORT'
         assert documents[1]['reportType'] == 'noa'
-        assert documents[1]['filingId'] == 12356
+        assert documents[1]['filingId'] == original_filing.id
         assert documents[1]['title'] == NOA_TITLE
         assert documents[1]['filename'] == NOA_FILENAME
 
         assert documents[2]['type'] == 'REPORT'
         assert documents[2]['reportType'] == 'certificate'
-        assert documents[2]['filingId'] == 12356
-        assert documents[2]['title'] == 'Certificate'
-        assert documents[2]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
+        assert documents[2]['filingId'] == original_filing.id
+        assert documents[2]['title'] == 'Certificate (Original)'
+        assert documents[2]['filename'] == 'BC1234567 - Certificate (Original) - 2020-07-14.pdf'
+
+
+def test_correction_ia(session, app):
+    """Assert that IA + NOA documents are returned for a Correction filing without name change."""
+    document_meta = DocumentMetaService()
+    b = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    with app.app_context():
+        original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
+        filing = {
+            'filing': {
+                'header': {
+                    'filingId': 12357,
+                    'status': 'COMPLETED',
+                    'name': 'correction',
+                    'availableOnPaperOnly': False,
+                    'date': FILING_DATE
+                },
+                'business': {
+                    'identifier': 'BC1234567'
+                },
+                'correction': {
+                    'correctedFilingId': original_filing.id
+                },
+                'incorporationApplication': {
+                    'nameRequest': {
+                        'legalType': Business.LegalTypes.BCOMP.value
+                    }
+                }
+            }
+        }
+
+        documents = document_meta.get_documents(filing)
+
+        assert len(documents) == 2
+
+        assert documents[0]['type'] == 'REPORT'
+        assert documents[0]['reportType'] is None
+        assert documents[0]['filingId'] == 12357
+        assert documents[0]['title'] == 'Incorporation Application (Corrected)'
+        assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Corrected) - 2020-07-14.pdf'
+
+        assert documents[1]['type'] == 'REPORT'
+        assert documents[1]['reportType'] == 'noa'
+        assert documents[1]['filingId'] == 12357
+        assert documents[1]['title'] == NOA_TITLE
+        assert documents[1]['filename'] == NOA_FILENAME
+
+
+def test_correction_ia_with_cert_nr_change(session, app):
+    """Assert that IA + NOA + Certificate documents are returned for a Correction filing with name change."""
+    document_meta = DocumentMetaService()
+    b = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
+    with app.app_context():
+        filing = {
+            'filing': {
+                'header': {
+                    'filingId': 12357,
+                    'status': 'COMPLETED',
+                    'name': 'correction',
+                    'availableOnPaperOnly': False,
+                    'date': FILING_DATE
+                },
+                'business': {
+                    'identifier': 'BC1234567'
+                },
+                'correction': {
+                    'correctedFilingId': original_filing.id
+                },
+                'incorporationApplication': {
+                    'nameRequest': {
+                        'legalType': Business.LegalTypes.BCOMP.value,
+                        'nrNumber': 'NR 3456789'
+                    }
+                }
+            }
+        }
+        documents = document_meta.get_documents(filing)
+
+        assert len(documents) == 3
+
+        assert documents[0]['type'] == 'REPORT'
+        assert documents[0]['reportType'] is None
+        assert documents[0]['filingId'] == 12357
+        assert documents[0]['title'] == 'Incorporation Application (Corrected)'
+        assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Corrected) - 2020-07-14.pdf'
+
+        assert documents[1]['type'] == 'REPORT'
+        assert documents[1]['reportType'] == 'certificate'
+        assert documents[1]['filingId'] == 12357
+        assert documents[1]['title'] == 'Certificate (Corrected)'
+        assert documents[1]['filename'] == 'BC1234567 - Certificate (Corrected) - 2020-07-14.pdf'
+
+        assert documents[2]['type'] == 'REPORT'
+        assert documents[2]['reportType'] == 'noa'
+        assert documents[2]['filingId'] == 12357
+        assert documents[2]['title'] == NOA_TITLE
+        assert documents[2]['filename'] == NOA_FILENAME
+
+
+def test_correction_ia_with_cert_name_correction(session, app):
+    """Assert that IA + NOA + Certificate documents are returned for a Correction filing with name change."""
+    document_meta = DocumentMetaService()
+    b = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['nameRequest']['legalName'] = 'abc'
+    original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
+    with app.app_context():
+        filing = {
+            'filing': {
+                'header': {
+                    'filingId': 12357,
+                    'status': 'COMPLETED',
+                    'name': 'correction',
+                    'availableOnPaperOnly': False,
+                    'date': FILING_DATE
+                },
+                'business': {
+                    'identifier': 'BC1234567'
+                },
+                'correction': {
+                    'correctedFilingId': original_filing.id
+                },
+                'incorporationApplication': {
+                    'nameRequest': {
+                        'legalType': Business.LegalTypes.BCOMP.value,
+                        'nrNumber': 'NR 1234567',
+                        'legalName': 'abc.'
+                    }
+                }
+            }
+        }
+        documents = document_meta.get_documents(filing)
+
+        assert len(documents) == 3
+
+        assert documents[0]['type'] == 'REPORT'
+        assert documents[0]['reportType'] is None
+        assert documents[0]['filingId'] == 12357
+        assert documents[0]['title'] == 'Incorporation Application (Corrected)'
+        assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Corrected) - 2020-07-14.pdf'
+
+        assert documents[1]['type'] == 'REPORT'
+        assert documents[1]['reportType'] == 'certificate'
+        assert documents[1]['filingId'] == 12357
+        assert documents[1]['title'] == 'Certificate (Corrected)'
+        assert documents[1]['filename'] == 'BC1234567 - Certificate (Corrected) - 2020-07-14.pdf'
+
+        assert documents[2]['type'] == 'REPORT'
+        assert documents[2]['reportType'] == 'noa'
+        assert documents[2]['filingId'] == 12357
+        assert documents[2]['title'] == NOA_TITLE
+        assert documents[2]['filename'] == NOA_FILENAME
+
+
+def test_correction_ia_with_named_to_numbered(session, app):
+    """Assert that IA + NOA + Certificate documents are returned for a Correction filing with name change."""
+    document_meta = DocumentMetaService()
+    b = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['nameRequest']['legalName'] = 'abc'
+    original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
+    with app.app_context():
+        filing = {
+            'filing': {
+                'header': {
+                    'filingId': 12357,
+                    'status': 'COMPLETED',
+                    'name': 'correction',
+                    'availableOnPaperOnly': False,
+                    'date': FILING_DATE
+                },
+                'business': {
+                    'identifier': 'BC1234567'
+                },
+                'correction': {
+                    'correctedFilingId': original_filing.id
+                },
+                'incorporationApplication': {
+                    'nameRequest': {
+                        'legalType': Business.LegalTypes.BCOMP.value
+                    }
+                }
+            }
+        }
+        documents = document_meta.get_documents(filing)
+
+        assert len(documents) == 3
+
+        assert documents[0]['type'] == 'REPORT'
+        assert documents[0]['reportType'] is None
+        assert documents[0]['filingId'] == 12357
+        assert documents[0]['title'] == 'Incorporation Application (Corrected)'
+        assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Corrected) - 2020-07-14.pdf'
+
+        assert documents[1]['type'] == 'REPORT'
+        assert documents[1]['reportType'] == 'certificate'
+        assert documents[1]['filingId'] == 12357
+        assert documents[1]['title'] == 'Certificate (Corrected)'
+        assert documents[1]['filename'] == 'BC1234567 - Certificate (Corrected) - 2020-07-14.pdf'
+
+        assert documents[2]['type'] == 'REPORT'
+        assert documents[2]['reportType'] == 'noa'
+        assert documents[2]['filingId'] == 12357
+        assert documents[2]['title'] == NOA_TITLE
+        assert documents[2]['filename'] == NOA_FILENAME

@@ -258,11 +258,11 @@ def history_needed(business: Business):
     return True
 
 
-def load_historic_filings(corp_num: str, business: Business):
+def load_historic_filings(corp_num: str, business: Business, legal_type: str):
     """Load historic filings for a business."""
     try:
         # get historic filings
-        r = requests.get(f'{COLIN_API}/api/v1/businesses/{corp_num}/filings/historic', timeout=TIMEOUT)
+        r = requests.get(f'{COLIN_API}/api/v1/businesses/{legal_type}/{corp_num}/filings/historic', timeout=TIMEOUT)
         if r.status_code != HTTPStatus.OK or not r.json():
             print(f'skipping history for {corp_num} historic filings not found')
 
@@ -387,7 +387,7 @@ def load_corps(csv_filepath: str = 'corp_nums/corps_to_load.csv'):
                             FAILED_CORPS.append(corp_num)
 
                     if added and history_needed(business=business):
-                        load_historic_filings(corp_num=corp_num, business=business)
+                        load_historic_filings(corp_num=corp_num, business=business, legal_type=legal_type)
                     else:
                         print('-> historic filings not needed - skipping history load')
                 except Exception as err:

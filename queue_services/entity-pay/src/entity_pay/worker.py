@@ -107,6 +107,15 @@ async def process_payment(payment_token, flask_app):
             db.session.add(filing_submission)
             db.session.commit()
 
+            try:
+                await publish_email_message(
+                    qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, Filing.Status.PAID.value)
+            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                # mark any failure for human review
+                capture_message(
+                    f'Queue Error: Failed to place email for filing:{filing_submission.id} on Queue with error:{err}',
+                    level='error')
+
             if not filing_submission.effective_date or \
                     filing_submission.effective_date <= \
                     datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc):
@@ -118,15 +127,6 @@ async def process_payment(payment_token, flask_app):
                     capture_message(
                         f'Queue Error: Failed to place filing:{filing_submission.id} on Queue with error:{err}',
                         level='error')
-
-            try:
-                await publish_email_message(
-                    qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'filed')
-            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-                # mark any failure for human review
-                capture_message(
-                    f'Queue Error: Failed to place email for filing:{filing_submission.id} on Queue with error:{err}',
-                    level='error')
 
             return
 
@@ -148,8 +148,9 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         raise err  # We don't want to handle the error, as a DB down would drain the queue
     except FilingException:
         # log to sentry and absorb the error, ie: do NOT raise it, otherwise the message would be put back on the queue
-        capture_message('Queue Error: cannot find filing: %s' % json.dumps(payment_token), level='error')
-        logger.error('Queue Error - cannot find filing: %s', json.dumps(payment_token), exc_info=True)
+        if APP_CONFIG.ENVIRONMENT == 'prod':
+            capture_message('Queue Error: cannot find filing: %s' % json.dumps(payment_token), level='error')
+            logger.error('Queue Error - cannot find filing: %s', json.dumps(payment_token), exc_info=True)
     except (QueueException, Exception):  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
         capture_message('Queue Error:' + json.dumps(payment_token), level='error')
