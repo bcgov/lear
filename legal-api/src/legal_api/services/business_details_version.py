@@ -236,24 +236,20 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(party_role_version.transaction_id <= transaction_id) \
             .filter(party_role_version.operation_type != 2) \
             .filter(party_role_version.business_id == business_id) \
+            .filter(or_(role == None, party_role_version.role == role)) \
             .filter(or_(party_role_version.end_transaction_id == None,   # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_role_version.end_transaction_id > transaction_id)) \
             .order_by(party_role_version.transaction_id).all()
         parties = []
         for party_role in party_roles:
-            if party_role.cessation_date is None and (role is None or party_role.role == role):
-                party_role_json = VersionedBusinessDetailsService.party_role_revision_json(transaction_id, party_role)
+            if party_role.cessation_date is None:
+                party_role_json = VersionedBusinessDetailsService.party_role_revision_json(transaction_id,
+                                                                                           party_role, is_ia)
                 if party := next((x for x in parties if x['id'] == party_role_json['id']), None):
-                    party['roles'].extend(party_role_json['roles']) if 'roles' in party else None
+                    if 'roles' in party:
+                        party['roles'].extend(party_role_json['roles'])
                 else:
                     parties.append(party_role_json)
-
-                if is_ia:
-                    del party_role_json['role']
-                    del party_role_json['appointmentDate']
-                    del party_role_json['cessationDate']
-                else:
-                    del party_role_json['roles']
 
         return parties
 
@@ -332,21 +328,26 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return resolutions_arr
 
     @staticmethod
-    def party_role_revision_json(transaction_id, party_role_revision) -> dict:
+    def party_role_revision_json(transaction_id, party_role_revision, is_ia) -> dict:
         """Return the party member as a json object."""
         cessation_date = datetime.date(party_role_revision.cessation_date).isoformat()\
             if party_role_revision.cessation_date else None
         party_revision = VersionedBusinessDetailsService.get_party_revision(transaction_id, party_role_revision)
-        party = {
-            **VersionedBusinessDetailsService.party_revision_json(transaction_id, party_revision),
-            'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
-            'cessationDate': cessation_date,
-            'role': party_role_revision.role,
-            'roles': [{
+        party = VersionedBusinessDetailsService.party_revision_json(transaction_id, party_revision)
+
+        if is_ia:
+            party['roles'] = [{
                 'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
+                'cessationDate': cessation_date,
                 'roleType': ' '.join(r.capitalize() for r in party_role_revision.role.split('_'))
-            }]  # for IA
-        }
+            }]
+        else:
+            party.update({
+                'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
+                'cessationDate': cessation_date,
+                'role': party_role_revision.role
+            })
+
         return party
 
     @staticmethod
