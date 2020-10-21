@@ -244,7 +244,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             if party_role.cessation_date is None and (role is None or party_role.role == role):
                 party_role_json = VersionedBusinessDetailsService.party_role_revision_json(transaction_id, party_role)
                 if party := next((x for x in parties if x['id'] == party_role_json['id']), None):
-                    party['roles'].extend(party_role_json['roles'])
+                    party['roles'].extend(party_role_json['roles']) if 'roles' in party else None
                 else:
                     parties.append(party_role_json)
 
@@ -253,7 +253,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                     del party_role_json['appointmentDate']
                     del party_role_json['cessationDate']
                 else:
-                    del party['roles']
+                    del party_role_json['roles']
 
         return parties
 
