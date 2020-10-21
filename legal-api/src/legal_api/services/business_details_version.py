@@ -241,7 +241,10 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         for party_role in party_roles:
             if party_role.cessation_date is None and (role is None or party_role.role == role):
                 party_role_json = VersionedBusinessDetailsService.party_role_revision_json(transaction_id, party_role)
-                parties.append(party_role_json)
+                if party := next((x for x in parties if x['id'] == party_role_json['id']), None):
+                    party['roles'].extend(party_role_json['roles'])
+                else:
+                    parties.append(party_role_json)
         return parties
 
     @staticmethod
@@ -260,6 +263,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             share_class_json = VersionedBusinessDetailsService.share_class_revision_json(share_class)
             share_class_json['series'] = VersionedBusinessDetailsService.get_share_series_revision(transaction_id,
                                                                                                    share_class.id)
+            share_class_json['type'] = 'Class'
             share_classes.append(share_class_json)
         return share_classes
 
@@ -277,6 +281,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         share_series_arr = []
         for share_series in share_series_list:
             share_series_json = VersionedBusinessDetailsService.share_series_revision_json(share_series)
+            share_series_json['type'] = 'Series'
             share_series_arr.append(share_series_json)
         return share_series_arr
 
@@ -295,7 +300,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         name_translations_arr = []
         for name_translation in name_translations_list:
             name_translation_json = VersionedBusinessDetailsService.name_translations_json(name_translation)
-            name_translations_arr.append(name_translation_json)
+            name_translations_arr.append(name_translation_json['alias'])
         return name_translations_arr
 
     @staticmethod
@@ -326,7 +331,11 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             **VersionedBusinessDetailsService.party_revision_json(transaction_id, party_revision),
             'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
             'cessationDate': cessation_date,
-            'role': party_role_revision.role
+            'role': party_role_revision.role,
+            'roles': [{
+                'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
+                'roleType': ' '.join(r.capitalize() for r in party_role_revision.role.split('_'))
+            }]  # for IA
         }
         return party
 
@@ -350,16 +359,20 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             member = {
                 'officer': {
                     'firstName': party_revision.first_name,
-                    'lastName': party_revision.last_name
+                    'lastName': party_revision.last_name,
+                    'partyType': 'Person'
                 }
             }
             if party_revision.title:
                 member['title'] = party_revision.title
             if party_revision.middle_initial:
-                member['officer']['middleInitial'] = party_revision.middle_initial
+                member['officer']['middleName'] = party_revision.middle_initial
         else:
             member = {
-                'officer': {'organizationName': party_revision.organization_name}
+                'officer': {
+                    'organizationName': party_revision.organization_name,
+                    'partyType': 'Organization'
+                }
             }
         if party_revision.delivery_address_id:
             member_address = VersionedBusinessDetailsService.address_revision_json(
@@ -379,6 +392,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         else:
             if party_revision.delivery_address:
                 member['mailingAddress'] = member['deliveryAddress']
+
+        member['id'] = party_revision.id
         return member
 
     @staticmethod
@@ -409,7 +424,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             'addressCountry': address_revision.country,
             'addressCountryDescription': country_description,
             'postalCode': address_revision.postal_code,
-            'deliveryInstructions': address_revision.delivery_instructions
+            'deliveryInstructions': address_revision.delivery_instructions or ''
         }
 
     @staticmethod
