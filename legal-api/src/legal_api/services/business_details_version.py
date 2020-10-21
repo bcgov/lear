@@ -329,11 +329,13 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         party_revision = VersionedBusinessDetailsService.get_party_revision(transaction_id, party_role_revision)
         party = {
             **VersionedBusinessDetailsService.party_revision_json(transaction_id, party_revision),
+            'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
             'cessationDate': cessation_date,
+            'role': party_role_revision.role,
             'roles': [{
                 'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
                 'roleType': ' '.join(r.capitalize() for r in party_role_revision.role.split('_'))
-            }]
+            }]  # for IA
         }
         return party
 
@@ -422,7 +424,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             'addressCountry': address_revision.country,
             'addressCountryDescription': country_description,
             'postalCode': address_revision.postal_code,
-            'deliveryInstructions': address_revision.delivery_instructions
+            'deliveryInstructions': address_revision.delivery_instructions or ''
         }
 
     @staticmethod
