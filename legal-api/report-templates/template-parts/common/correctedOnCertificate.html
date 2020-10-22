@@ -1,8 +1,21 @@
 {% if correction is defined %}
 <div class="correction-on">
-    {% autoescape false %}
-        {% set date, time = effective_date_time.split(' at ') %}
-        Corrected on {{date}}<br/>at {{time}}
-    {% endautoescape %}
+   <div>
+      {% autoescape false %}
+      {% set date, time = effective_date_time.split(' at ') %}
+      Corrected on {{date}}<br/>at {{time}}
+      {% endautoescape %}
+      {% if currentRegistrarInfo %}
+          <div class="current-registrar-name">{{ currentRegistrarInfo.name }}</div>
+          <div class="current-registrar-title">{{ currentRegistrarInfo.title }}</div>
+          <div class="current-registrar-signature">
+             <img alt="signature" src={{currentRegistrarInfo.signature}}>
+          </div>
+          <div class="current-registrar-province-country-info">
+             <div>Province of British Columbia</div>
+             <div>CANADA</div>
+          </div>
+      {% endif %}
+   </div>
 </div>
 {% endif %}

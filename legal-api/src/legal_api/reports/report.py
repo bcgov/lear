@@ -173,7 +173,15 @@ class Report:  # pylint: disable=too-few-public-methods
         return filing
 
     def _set_registrar_info(self, filing):
-        filing['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
+        if filing.get('correction'):
+            original_filing = Filing.find_by_id(filing.get('correction').get('correctedFilingId'))
+            original_registrar = {**RegistrarInfo.get_registrar_info(original_filing.effective_date)}
+            filing['registrarInfo'] = original_registrar
+            current_registrar = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
+            if original_registrar['name'] != current_registrar['name']:
+                filing['currentRegistrarInfo'] = current_registrar
+        else:
+            filing['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
 
     def _set_tax_id(self, filing):
         if self._business:
