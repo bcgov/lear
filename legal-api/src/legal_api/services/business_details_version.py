@@ -76,7 +76,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         ia_json['incorporationApplication']['offices'] = \
             VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business.id)
         ia_json['incorporationApplication']['parties'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business.id, is_ia=True)
+            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id,
+                                                                    business.id, is_ia_or_after=True)
         ia_json['incorporationApplication']['nameRequest'] = \
             VersionedBusinessDetailsService.get_name_request_revision(filing)
         ia_json['incorporationApplication']['contactPoint'] = \
@@ -229,7 +230,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return offices_json
 
     @staticmethod
-    def get_party_role_revision(transaction_id, business_id, is_ia=False, role=None) -> dict:
+    def get_party_role_revision(transaction_id, business_id, is_ia_or_after=False, role=None) -> dict:
         """Consolidates all party changes upto the given transaction id."""
         party_role_version = version_class(PartyRole)
         party_roles = db.session.query(party_role_version)\
@@ -245,10 +246,10 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         for party_role in party_roles:
             if party_role.cessation_date is None:
                 party_role_json = VersionedBusinessDetailsService.party_role_revision_json(transaction_id,
-                                                                                           party_role, is_ia)
-                if party := next((x for x in parties if x['id'] == party_role_json['id']), None):
-                    if 'roles' in party:
-                        party['roles'].extend(party_role_json['roles'])
+                                                                                           party_role, is_ia_or_after)
+                if 'roles' in party_role_json and (party := next((x for x in parties if x['officer']['id']
+                                                                  == party_role_json['officer']['id']), None)):
+                    party['roles'].extend(party_role_json['roles'])
                 else:
                     parties.append(party_role_json)
 
@@ -329,17 +330,16 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return resolutions_arr
 
     @staticmethod
-    def party_role_revision_json(transaction_id, party_role_revision, is_ia) -> dict:
+    def party_role_revision_json(transaction_id, party_role_revision, is_ia_or_after) -> dict:
         """Return the party member as a json object."""
         cessation_date = datetime.date(party_role_revision.cessation_date).isoformat()\
             if party_role_revision.cessation_date else None
         party_revision = VersionedBusinessDetailsService.get_party_revision(transaction_id, party_role_revision)
-        party = VersionedBusinessDetailsService.party_revision_json(transaction_id, party_revision)
+        party = VersionedBusinessDetailsService.party_revision_json(transaction_id, party_revision, is_ia_or_after)
 
-        if is_ia:
+        if is_ia_or_after:
             party['roles'] = [{
                 'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
-                'cessationDate': cessation_date,
                 'roleType': ' '.join(r.capitalize() for r in party_role_revision.role.split('_'))
             }]
         else:
@@ -365,7 +365,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return party
 
     @staticmethod
-    def party_revision_json(transaction_id, party_revision) -> dict:
+    def party_revision_json(transaction_id, party_revision, is_ia_or_after) -> dict:
         """Return the party member as a json object."""
         if party_revision.party_type == Party.PartyTypes.PERSON.value:
             member = {
@@ -378,7 +378,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             if party_revision.title:
                 member['title'] = party_revision.title
             if party_revision.middle_initial:
-                member['officer']['middleName'] = party_revision.middle_initial
+                member['officer']['middleName' if is_ia_or_after else 'middleInitial'] = party_revision.middle_initial
         else:
             member = {
                 'officer': {
@@ -405,7 +405,11 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             if party_revision.delivery_address:
                 member['mailingAddress'] = member['deliveryAddress']
 
-        member['id'] = party_revision.id
+        if is_ia_or_after:
+            member['officer']['id'] = party_revision.id
+        else:
+            member['id'] = party_revision.id
+
         return member
 
     @staticmethod
