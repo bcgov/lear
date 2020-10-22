@@ -365,8 +365,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return party
 
     @staticmethod
-    def party_revision_json(transaction_id, party_revision, is_ia_or_after) -> dict:
-        """Return the party member as a json object."""
+    def party_revision_type_json(party_revision, is_ia_or_after) -> dict:
+        """Return the party member by type as a json object."""
+        member = {}
         if party_revision.party_type == Party.PartyTypes.PERSON.value:
             member = {
                 'officer': {
@@ -386,6 +387,13 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                     'partyType': 'Organization'
                 }
             }
+
+        return member
+
+    @staticmethod
+    def party_revision_json(transaction_id, party_revision, is_ia_or_after) -> dict:
+        """Return the party member as a json object."""
+        member = VersionedBusinessDetailsService.party_revision_type_json(party_revision, is_ia_or_after)
         if party_revision.delivery_address_id:
             member_address = VersionedBusinessDetailsService.address_revision_json(
                 VersionedBusinessDetailsService.get_address_revision
@@ -406,9 +414,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                 member['mailingAddress'] = member['deliveryAddress']
 
         if is_ia_or_after:
-            member['officer']['id'] = party_revision.id
+            member['officer']['id'] = str(party_revision.id)
         else:
-            member['id'] = party_revision.id
+            member['id'] = str(party_revision.id)
 
         return member
 
