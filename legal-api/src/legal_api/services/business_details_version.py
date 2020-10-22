@@ -272,6 +272,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             share_class_json['series'] = VersionedBusinessDetailsService.get_share_series_revision(transaction_id,
                                                                                                    share_class.id)
             share_class_json['type'] = 'Class'
+            share_class_json['id'] = str(share_class_json['id'])
             share_classes.append(share_class_json)
         return share_classes
 
@@ -290,6 +291,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         for share_series in share_series_list:
             share_series_json = VersionedBusinessDetailsService.share_series_revision_json(share_series)
             share_series_json['type'] = 'Series'
+            share_series_json['id'] = str(share_series_json['id'])
             share_series_arr.append(share_series_json)
         return share_series_arr
 
