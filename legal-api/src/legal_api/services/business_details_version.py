@@ -76,7 +76,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         ia_json['incorporationApplication']['offices'] = \
             VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business.id)
         ia_json['incorporationApplication']['parties'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business.id)
+            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id,
+                                                                    business.id, is_ia_or_after=True)
         ia_json['incorporationApplication']['nameRequest'] = \
             VersionedBusinessDetailsService.get_name_request_revision(filing)
         ia_json['incorporationApplication']['contactPoint'] = \
@@ -101,7 +102,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         cod_json['changeOfDirectors'] = {}
         cod_json['changeOfDirectors']['directors'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business.id, 'director')
+            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id,
+                                                                    business.id, role='director')
         return cod_json
 
     @staticmethod
@@ -140,7 +142,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             ar_json['annualReport']['nextARDate'] = filing.json['filing']['annualReport']['nextARDate']
 
         ar_json['annualReport']['directors'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business.id, 'director')
+            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id,
+                                                                    business.id, role='director')
         ar_json['annualReport']['offices'] = \
             VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business.id)
 
@@ -227,21 +230,29 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return offices_json
 
     @staticmethod
-    def get_party_role_revision(transaction_id, business_id, role=None) -> dict:
+    def get_party_role_revision(transaction_id, business_id, is_ia_or_after=False, role=None) -> dict:
         """Consolidates all party changes upto the given transaction id."""
         party_role_version = version_class(PartyRole)
         party_roles = db.session.query(party_role_version)\
             .filter(party_role_version.transaction_id <= transaction_id) \
             .filter(party_role_version.operation_type != 2) \
             .filter(party_role_version.business_id == business_id) \
+            .filter(or_(role == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
+                        party_role_version.role == role)) \
             .filter(or_(party_role_version.end_transaction_id == None,   # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_role_version.end_transaction_id > transaction_id)) \
             .order_by(party_role_version.transaction_id).all()
         parties = []
         for party_role in party_roles:
-            if party_role.cessation_date is None and (role is None or party_role.role == role):
-                party_role_json = VersionedBusinessDetailsService.party_role_revision_json(transaction_id, party_role)
-                parties.append(party_role_json)
+            if party_role.cessation_date is None:
+                party_role_json = VersionedBusinessDetailsService.party_role_revision_json(transaction_id,
+                                                                                           party_role, is_ia_or_after)
+                if 'roles' in party_role_json and (party := next((x for x in parties if x['officer']['id']
+                                                                  == party_role_json['officer']['id']), None)):
+                    party['roles'].extend(party_role_json['roles'])
+                else:
+                    parties.append(party_role_json)
+
         return parties
 
     @staticmethod
@@ -260,6 +271,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             share_class_json = VersionedBusinessDetailsService.share_class_revision_json(share_class)
             share_class_json['series'] = VersionedBusinessDetailsService.get_share_series_revision(transaction_id,
                                                                                                    share_class.id)
+            share_class_json['type'] = 'Class'
+            share_class_json['id'] = str(share_class_json['id'])
             share_classes.append(share_class_json)
         return share_classes
 
@@ -277,6 +290,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         share_series_arr = []
         for share_series in share_series_list:
             share_series_json = VersionedBusinessDetailsService.share_series_revision_json(share_series)
+            share_series_json['type'] = 'Series'
+            share_series_json['id'] = str(share_series_json['id'])
             share_series_arr.append(share_series_json)
         return share_series_arr
 
@@ -295,7 +310,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         name_translations_arr = []
         for name_translation in name_translations_list:
             name_translation_json = VersionedBusinessDetailsService.name_translations_json(name_translation)
-            name_translations_arr.append(name_translation_json)
+            name_translations_arr.append(name_translation_json['alias'])
         return name_translations_arr
 
     @staticmethod
@@ -317,17 +332,25 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return resolutions_arr
 
     @staticmethod
-    def party_role_revision_json(transaction_id, party_role_revision) -> dict:
+    def party_role_revision_json(transaction_id, party_role_revision, is_ia_or_after) -> dict:
         """Return the party member as a json object."""
         cessation_date = datetime.date(party_role_revision.cessation_date).isoformat()\
             if party_role_revision.cessation_date else None
         party_revision = VersionedBusinessDetailsService.get_party_revision(transaction_id, party_role_revision)
-        party = {
-            **VersionedBusinessDetailsService.party_revision_json(transaction_id, party_revision),
-            'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
-            'cessationDate': cessation_date,
-            'role': party_role_revision.role
-        }
+        party = VersionedBusinessDetailsService.party_revision_json(transaction_id, party_revision, is_ia_or_after)
+
+        if is_ia_or_after:
+            party['roles'] = [{
+                'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
+                'roleType': ' '.join(r.capitalize() for r in party_role_revision.role.split('_'))
+            }]
+        else:
+            party.update({
+                'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
+                'cessationDate': cessation_date,
+                'role': party_role_revision.role
+            })
+
         return party
 
     @staticmethod
@@ -344,23 +367,35 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return party
 
     @staticmethod
-    def party_revision_json(transaction_id, party_revision) -> dict:
-        """Return the party member as a json object."""
+    def party_revision_type_json(party_revision, is_ia_or_after) -> dict:
+        """Return the party member by type as a json object."""
+        member = {}
         if party_revision.party_type == Party.PartyTypes.PERSON.value:
             member = {
                 'officer': {
                     'firstName': party_revision.first_name,
-                    'lastName': party_revision.last_name
+                    'lastName': party_revision.last_name,
+                    'partyType': 'Person'
                 }
             }
             if party_revision.title:
                 member['title'] = party_revision.title
             if party_revision.middle_initial:
-                member['officer']['middleInitial'] = party_revision.middle_initial
+                member['officer']['middleName' if is_ia_or_after else 'middleInitial'] = party_revision.middle_initial
         else:
             member = {
-                'officer': {'organizationName': party_revision.organization_name}
+                'officer': {
+                    'organizationName': party_revision.organization_name,
+                    'partyType': 'Organization'
+                }
             }
+
+        return member
+
+    @staticmethod
+    def party_revision_json(transaction_id, party_revision, is_ia_or_after) -> dict:
+        """Return the party member as a json object."""
+        member = VersionedBusinessDetailsService.party_revision_type_json(party_revision, is_ia_or_after)
         if party_revision.delivery_address_id:
             member_address = VersionedBusinessDetailsService.address_revision_json(
                 VersionedBusinessDetailsService.get_address_revision
@@ -379,6 +414,12 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         else:
             if party_revision.delivery_address:
                 member['mailingAddress'] = member['deliveryAddress']
+
+        if is_ia_or_after:
+            member['officer']['id'] = str(party_revision.id)
+        else:
+            member['id'] = str(party_revision.id)
+
         return member
 
     @staticmethod
@@ -409,7 +450,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             'addressCountry': address_revision.country,
             'addressCountryDescription': country_description,
             'postalCode': address_revision.postal_code,
-            'deliveryInstructions': address_revision.delivery_instructions
+            'deliveryInstructions': address_revision.delivery_instructions or ''
         }
 
     @staticmethod

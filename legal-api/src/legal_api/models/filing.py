@@ -114,7 +114,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BEN': 'BCINC'
             }
         },
-        'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution'},
+        'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution',
+                              'codes': {
+                                  'CP': 'RES'}},
         'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'}
     }
 
@@ -131,6 +133,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
     _status = db.Column('status', db.String(20), default=Status.DRAFT)
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
+    payment_account = db.Column('payment_account', db.String(30))
     _source = db.Column('source', db.String(15), default=Source.LEAR.value)
 
     # # relationships
@@ -347,6 +350,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 json_submission['filing']['header']['paymentToken'] = self.payment_token
             if self.submitter_id:
                 json_submission['filing']['header']['submitter'] = self.filing_submitter.username
+            if self.payment_account:
+                json_submission['filing']['header']['paymentAccount'] = self.payment_account
 
             # add colin_event_ids
             json_submission['filing']['header']['colinIds'] = ColinEventId.get_by_filing_id(self.id)
