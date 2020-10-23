@@ -16,7 +16,7 @@ import copy
 import datetime
 import random
 
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, PartyRole
 from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE
 
 from entity_filer.worker import process_filing
@@ -52,8 +52,10 @@ async def test_transition_filing(app, session, account):
     assert business.legal_type == filing['filing']['business']['legalType']
     assert business.legal_name == filing['filing']['business']['legalName']
     assert business.restriction_ind is False
-    assert len(business.share_classes.all()) == len(filing_json['filing']['transition']['shareClasses'])
+    assert len(business.share_classes.all()) == len(filing_json['filing']['transition']['shareStructure']
+                                                    ['shareClasses'])
     assert len(business.offices.all()) == len(filing_json['filing']['transition']['offices'])
-    assert len(business.aliases.all()) == 3
-    assert len(business.resolutions.all()) == 2
-    assert len(business.party_roles.all()) == 2
+    assert len(business.aliases.all()) == len(filing_json['filing']['transition']['nameTranslations']['new'])
+    assert len(business.resolutions.all()) == len(filing_json['filing']['transition']['shareStructure']
+                                                  ['resolutionDates'])
+    assert len(PartyRole.get_parties_by_role(business.id, 'director')) == 2

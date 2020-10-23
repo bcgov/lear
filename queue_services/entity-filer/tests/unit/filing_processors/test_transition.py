@@ -41,8 +41,8 @@ def test_transition_filing_process(app, session):
     assert business.legal_type == filing['filing']['business']['legalType']
     assert business.legal_name == filing['filing']['business']['legalName']
     assert business.restriction_ind is False
-    assert len(business.share_classes.all()) == 2
-    assert len(business.offices.all()) == 2  # One office is created in create_business method.
-    assert len(business.aliases.all()) == 3
-    assert len(business.resolutions.all()) == 2
+    assert len(business.share_classes.all()) == len(filing['filing']['transition']['shareStructure']['shareClasses'])
+    assert len(business.offices.all()) == len(filing['filing']['transition']['offices'])
+    assert len(business.aliases.all()) == len(filing['filing']['transition']['nameTranslations']['new'])
+    assert len(business.resolutions.all()) == len(filing['filing']['transition']['shareStructure']['resolutionDates'])
     assert len(business.party_roles.all()) == 2
