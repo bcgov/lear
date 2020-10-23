@@ -24,7 +24,6 @@ from legal_api.models import (
     Address,
     Alias,
     Business,
-    ColinEventId,
     Comment,
     Filing,
     Office,
@@ -35,6 +34,7 @@ from legal_api.models import (
     User,
     db,
 )
+from legal_api.models.colin_event_id import ColinEventId
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
