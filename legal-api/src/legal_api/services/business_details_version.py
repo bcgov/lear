@@ -62,6 +62,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         if not revision_json['filing']:
             revision_json = filing.json
 
+        revision_json['filing']['header'] = VersionedBusinessDetailsService.get_header_revision(filing)
+
         return revision_json
 
     @staticmethod
@@ -69,7 +71,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         """Consolidates incorporation application upto the given transaction id of a filing."""
         ia_json = {}
 
-        ia_json['header'] = VersionedBusinessDetailsService.get_header_revision(filing)
         ia_json['business'] = \
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         ia_json['incorporationApplication'] = {}
@@ -97,7 +98,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         """Consolidates change of directors upto the given transaction id of a filing."""
         cod_json = {}
 
-        cod_json['header'] = VersionedBusinessDetailsService.get_header_revision(filing)
         cod_json['business'] = \
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         cod_json['changeOfDirectors'] = {}
@@ -111,7 +111,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         """Consolidates change of address upto the given transaction id of a filing."""
         coa_json = {}
 
-        coa_json['header'] = VersionedBusinessDetailsService.get_header_revision(filing)
         coa_json['business'] = \
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         coa_json['changeOfAddress'] = {}
@@ -125,7 +124,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         """Consolidates annual report upto the given transaction id of a filing."""
         ar_json = {}
 
-        ar_json['header'] = VersionedBusinessDetailsService.get_header_revision(filing)
         ar_json['business'] = \
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
 
@@ -163,7 +161,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def get_header_revision(filing) -> dict:
         """Retrieve header from filing."""
         _header = filing.json['filing']['header']
-        _header['date'] = filing.filing_date.date().isoformat()
         return _header
 
     @staticmethod
