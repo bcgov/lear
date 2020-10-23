@@ -31,7 +31,7 @@ from registry_schemas.example_data import (
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
     FILING_HEADER,
-    INCORPORATION_FILING_TEMPLATE
+    INCORPORATION_FILING_TEMPLATE,
 )
 
 from legal_api.models import Business, Filing

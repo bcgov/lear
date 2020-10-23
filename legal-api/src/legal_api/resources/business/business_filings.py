@@ -28,7 +28,7 @@ from werkzeug.local import LocalProxy
 
 import legal_api.reports
 from legal_api.exceptions import BusinessException
-from legal_api.models import Address, Business, ColinEventId, Filing, RegistrationBootstrap, User, db
+from legal_api.models import Address, Business, Filing, RegistrationBootstrap, User, db
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import (
