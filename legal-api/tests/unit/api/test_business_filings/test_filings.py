@@ -113,7 +113,7 @@ def test_get_one_business_filing_by_id(session, client, jwt):
 
 
 def test_get_one_business_filing_by_id_raw_json(session, client, jwt):
-    """Assert that the business info cannot be received in a valid JSONSchema format."""
+    """Assert that the raw json originally submitted is returned."""
     import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)

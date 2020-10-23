@@ -74,8 +74,13 @@ class ListFilingResource(Resource):
             if str(request.accept_mimetypes) == 'application/pdf' and filing_id:
                 if rv.filing_type == 'incorporationApplication':
                     return legal_api.reports.get_pdf(rv.storage, None)
-            filing_json = rv.raw if original_filing else rv.json
-            filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
+
+            if original_filing:
+                filing_json = rv.raw
+            else:
+                filing_json = rv.json
+                filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
+
             return jsonify(filing_json)
 
         business = Business.find_by_identifier(identifier)
