@@ -117,7 +117,7 @@ class ListFilingResource(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def put(identifier, filing_id):  # pylint: disable=too-many-return-statements
+    def put(identifier, filing_id):  # pylint: disable=too-many-return-statements,too-many-locals
         """Modify an incomplete filing for the business."""
         # basic checks
         err_msg, err_code = ListFilingResource._put_basic_checks(identifier, filing_id, request)
@@ -136,6 +136,9 @@ class ListFilingResource(Resource):
             if request.args.get('draft', None) else False
         only_validate = (request.args.get('only_validate', None).lower() == 'true') \
             if request.args.get('only_validate', None) else False
+
+        # get header params
+        payment_account_id = request.headers.get('accountId', None)
 
         # validate filing
         if not draft and not ListFilingResource._is_before_epoch_filing(json_input,
@@ -165,7 +168,7 @@ class ListFilingResource(Resource):
             print(err)
 
         # complete filing
-        response, response_code = ListFilingResource.complete_filing(business, filing, draft)
+        response, response_code = ListFilingResource.complete_filing(business, filing, draft, payment_account_id)
         if response:
             return response, response_code
 
@@ -276,7 +279,7 @@ class ListFilingResource(Resource):
                     namex.update_nr_as_future_effective(nr_response.json(), effective_date)
 
     @staticmethod
-    def complete_filing(business, filing, draft) -> Tuple[dict, int]:
+    def complete_filing(business, filing, draft, payment_account_id) -> Tuple[dict, int]:
         """Complete the filing, either to COLIN or by getting an invoice.
 
         Used for encapsulation of common functionality used in Filing and Business endpoints.
@@ -291,8 +294,12 @@ class ListFilingResource(Resource):
             # Check if this is an nr and update as needed
             ListFilingResource._check_and_update_nr(filing)
 
-            filing_types = ListFilingResource._get_filing_types(filing.filing_json)
-            err_msg, err_code = ListFilingResource._create_invoice(business, filing, filing_types, jwt)
+            filing_types = ListFilingResource._get_filing_types(business, filing.filing_json)
+            err_msg, err_code = ListFilingResource._create_invoice(business,
+                                                                   filing,
+                                                                   filing_types,
+                                                                   jwt,
+                                                                   payment_account_id)
             if err_code:
                 reply = filing.json
                 reply['errors'] = [err_msg, ]
@@ -468,7 +475,7 @@ class ListFilingResource(Resource):
         return errors, HTTPStatus.BAD_REQUEST
 
     @staticmethod
-    def _get_filing_types(filing_json: dict):
+    def _get_filing_types(business: Business, filing_json: dict):
         """Get the filing type fee codes for the filing.
 
         Returns: {
@@ -481,7 +488,7 @@ class ListFilingResource(Resource):
         if filing_type == 'incorporationApplication':
             legal_type = filing_json['filing']['business']['legalType']
         else:
-            business = Business.find_by_identifier(filing_json['filing']['business']['identifier'])
+            # business = Business.find_by_identifier(filing_json['filing']['business']['identifier'])
             legal_type = business.legal_type
 
         if any('correction' in x for x in filing_json['filing'].keys()):
@@ -529,7 +536,8 @@ class ListFilingResource(Resource):
     def _create_invoice(business: Business,  # pylint: disable=too-many-locals
                         filing: Filing,
                         filing_types: list,
-                        user_jwt: JwtManager) \
+                        user_jwt: JwtManager,
+                        payment_account_id: str = None) \
             -> Tuple[int, dict, int]:
         """Create the invoice for the filing submission.
 
@@ -607,6 +615,7 @@ class ListFilingResource(Resource):
             pid = rv.json().get('id')
             filing.payment_token = pid
             filing.payment_status_code = rv.json().get('statusCode', '')
+            filing.payment_account = payment_account_id
             filing.save()
             return None, None
 

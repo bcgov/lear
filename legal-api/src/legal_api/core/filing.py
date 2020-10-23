@@ -53,6 +53,7 @@ class Filing:
         self._payment_completion_date: datetime
         self._status: str
         self._paper_only: bool
+        self._payment_account: Optional[str] = None
 
     @property
     def id(self) -> str:  # pylint: disable=invalid-name; defining the std ID
@@ -77,6 +78,19 @@ class Filing:
         return self._raw
 
     @property
+    def payment_account(self) -> Optional[str]:
+        """Return the account identifier of this filings payer."""
+        if not self._payment_account and self._storage:
+            self._payment_account = self._storage.payment_account
+        return self._payment_account
+
+    @payment_account.setter
+    def payment_account(self, account_identifier):
+        """Set the account identifier of this filings payer."""
+        self._payment_account = account_identifier
+        self.storage.payment_account = self._payment_account
+
+    @property
     def json(self) -> Optional[Dict]:
         """Return a dict representing the filing json."""
         _json = {}
@@ -94,10 +108,12 @@ class Filing:
 
         Model is exposed to generate pdf. Used in GET api `/<string:identifier>/filings/<int:filing_id>`
         """
+        if not self._storage:
+            self._storage = FilingStorage()
         return self._storage
 
     @storage.setter
-    def storage(self, filing):
+    def storage(self, filing: FilingStorage):
         """Set filing storage."""
         self._storage = filing
 
@@ -108,9 +124,7 @@ class Filing:
 
     def save(self):
         """Save the filing."""
-        if not self._storage:
-            self._storage = FilingStorage()
-        self._storage.filing_json = self._raw
+        self.storage.filing_json = self._raw
         self._storage.save()
 
     @staticmethod
