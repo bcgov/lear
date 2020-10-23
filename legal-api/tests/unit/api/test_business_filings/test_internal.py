@@ -289,7 +289,7 @@ def test_get_bcomp_corrections(session, client, jwt, identifier, base_filing, co
     b = factory_business(identifier=identifier, entity_type=Business.LegalTypes.BCOMP.value)
     factory_business_mailing_address(b)
 
-    incorp_filing = factory_completed_filing(b, corrected_filing, colin_id)
+    incorp_filing = factory_completed_filing(business=b, data_dict=corrected_filing, colin_id=colin_id)
     correction_filing = copy.deepcopy(base_filing)
     correction_filing['filing']['correction']['correctedFilingId'] = incorp_filing.id
     filing = factory_completed_filing(b, correction_filing)
