@@ -33,6 +33,7 @@ from registry_schemas.example_data import (
     CORRECTION_INCORPORATION,
     FILING_HEADER,
     INCORPORATION_FILING_TEMPLATE,
+    SPECIAL_RESOLUTION,
 )
 
 from legal_api.models import Business
@@ -349,7 +350,6 @@ def test_post_valid_ar(session, client, jwt):
                      json=ar,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
-
     # check return
     assert rv.status_code == HTTPStatus.CREATED
     assert not rv.json.get('errors')
@@ -361,6 +361,35 @@ def test_post_valid_ar(session, client, jwt):
     filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
     assert filing
     assert filing.status == Filing.Status.PENDING.value
+
+
+@integration_payment
+def test_payment_header(session, client, jwt):
+    """Assert that a filing can be completed up to payment."""
+    from legal_api.models import Filing
+    identifier = 'CP7654321'
+    payment_account = '12345'
+    business = factory_business(identifier,
+                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    data = copy.deepcopy(FILING_HEADER)
+    data['filing']['header']['name'] = 'specialResolution'
+    data['filing']['specialResolution'] = SPECIAL_RESOLUTION
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=data,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier, **{'accountID': payment_account})
+                     )
+    # check return
+    assert rv.status_code == HTTPStatus.CREATED
+    assert not rv.json.get('errors')
+    assert rv.json['filing']['header']['filingId']
+
+    # check stored filing
+    filing = Filing.find_by_id(rv.json['filing']['header']['filingId'])
+    assert filing
+    assert filing.payment_account == payment_account
 
 
 @integration_payment
