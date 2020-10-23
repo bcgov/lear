@@ -297,11 +297,11 @@ def test_get_bcomp_corrections(session, client, jwt, identifier, base_filing, co
     # test endpoint returns filing
     rv = client.get('/api/v1/businesses/internal/filings')
     assert rv.status_code == HTTPStatus.OK
+    assert len(rv.json) == 1
     if colin_id:
-        assert len(rv.json) == 1
         assert rv.json[0]['filingId'] == filing.id
     else:
-        assert len(rv.json) == 0
+        assert rv.json[0]['filingId'] == incorp_filing.id
 
 
 def test_patch_internal_filings(session, client, jwt):
