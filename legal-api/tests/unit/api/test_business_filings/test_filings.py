@@ -96,7 +96,6 @@ def test_get_all_business_filings_multi_in_ledger(session, client, jwt):
 
 def test_get_one_business_filing_by_id(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
-    import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)
     filings = factory_filing(b, ANNUAL_REPORT)
@@ -111,7 +110,6 @@ def test_get_one_business_filing_by_id(session, client, jwt):
 
 def test_get_one_business_filing_by_id_raw_json(session, client, jwt):
     """Assert that the raw json originally submitted is returned."""
-    import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)
     filings = factory_filing(b, ANNUAL_REPORT)
