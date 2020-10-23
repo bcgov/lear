@@ -15,6 +15,10 @@
 
 Currently this only provides API versioning information
 """
+from __future__ import annotations
+
+from typing import List, Optional
+
 from flask import current_app
 
 from colin_api.resources.db import DB
@@ -86,6 +90,8 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
     """Share Object for Share Structure, contains factory/helper methods."""
 
     # pylint: disable=too-few-public-methods
+    start_event_id = None
+    end_event_id = None
     share_classes = None
 
     def __init__(self):
@@ -100,17 +106,17 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
         }
 
     @classmethod
-    def _build_shares_list(cls, cursor, corp_num):
+    def _build_shares_list(cls, cursor, corp_num: str) -> List:
         """Build and format the share structure for corp."""
-        to_return = ShareObject()
-        to_return.share_classes = []
+        to_return = []
 
-        share_struct = cursor.fetchall()
-
-        for row in share_struct:
-            classes = cls._get_share_classes(cursor, row[0], corp_num)
-            for item in classes:
-                to_return.share_classes.append(item)
+        share_structs = cursor.fetchall()
+        for row in share_structs:
+            share_structure = ShareObject()
+            share_structure.start_event_id = row[0]
+            share_structure.end_event_id = row[1]
+            share_structure.share_classes = cls._get_share_classes(cursor, share_structure.start_event_id, corp_num)
+            to_return.append(share_structure)
 
         return to_return
 
@@ -185,30 +191,33 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
         return share_series
 
     @classmethod
-    def get_all(cls, cursor, identifier: str = None, event_id: str = None):
-        """Return all share structure entries for this business."""
+    def get_all(cls, cursor, corp_num: str, event_id: str = None) -> Optional(List, ShareObject):
+        """Return all share structure entries for this business (Optional: return all for specific share structure)."""
         # Add business NME to all queries
-        query = """select start_event_id from share_struct where corp_num=:identifier
-                   and end_event_id is null"""
+        query = 'select start_event_id, end_event_id from share_struct where corp_num=:corp_num'
 
         if event_id:
             query += f' and start_event_id={event_id}'
-
+        else:
+            query += ' and end_event_id is null'
         try:
             if not cursor:
                 cursor = DB.connection.cursor()
             cursor.execute(
                 query,
-                identifier=identifier
+                corp_num=corp_num
             )
-            share_list = cls._build_shares_list(cursor, identifier)
+            share_list = cls._build_shares_list(cursor, corp_num)
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
-            current_app.logger.error('error getting share structure for {}'.format(identifier))
+            current_app.logger.error(f'error getting share structure for {corp_num}')
             raise err
 
-        if not share_list:
-            return None
+        if event_id:
+            if len(share_list) > 1:
+                current_app.logger.error(
+                    f'More than 1 active share structure for {corp_num}. This will cause unknown consequences.')
+            return share_list[0]
 
         return share_list
 

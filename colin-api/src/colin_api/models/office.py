@@ -15,6 +15,8 @@
 
 Currently this only provides API versioning information
 """
+from typing import Dict, List
+
 from flask import current_app
 
 from colin_api.exceptions import OfficeNotFoundException
@@ -38,6 +40,7 @@ class Office:
     delivery_address = None
     mailing_address = None
     event_id = None
+    end_event_id = None
     office_type = None
     office_code = None
 
@@ -54,7 +57,7 @@ class Office:
         }
 
     @classmethod
-    def _build_offices_list(cls, cursor, querystring: str = None, identifier: str = None, event_id: str = None):
+    def _build_offices_list(cls, cursor, querystring: str, identifier: str = None, event_id: str = None) -> List:
         """Return the office objects for the given query."""
         if not cursor:
             cursor = DB.connection.cursor()
@@ -74,6 +77,7 @@ class Office:
             office_obj.office_type = cls.OFFICE_TYPES_CODES.get(office['office_typ_cd'], None)
             if office_obj.office_type:
                 office_obj.event_id = office['start_event_id']
+                office_obj.end_event_id = office['end_event_id']
                 office_obj.delivery_address = Address.get_by_address_id(cursor, office['delivery_addr_id']).as_dict()
                 office_obj.office_code = office['office_typ_cd']
                 if office['mailing_addr_id']:
@@ -99,13 +103,34 @@ class Office:
         return offices_dict
 
     @classmethod
+    # pylint: disable=too-many-arguments; one extra
+    def create_new_office(cls, cursor, addresses: Dict, event_id: str, corp_num: str, office_type: str):
+        """Create row for new office and end old one.
+
+        addresses.keys() = ['deliveryAddress', 'mailingAddress']
+        """
+        delivery_addr_id = Address.create_new_address(cursor, addresses['deliveryAddress'], corp_num=corp_num)
+        mailing_addr_id = Address.create_new_address(cursor, addresses['mailingAddress'], corp_num=corp_num)
+        office_code = Office.OFFICE_TYPES_CODES[office_type]
+
+        # update office table to include new addresses and end old office
+        update_dict = {
+            'new_event_id': event_id,
+            'corp_num': corp_num,
+            'new_delivery_addr_id': delivery_addr_id,
+            'new_mailing_addr_id': mailing_addr_id,
+            'office_code': office_code
+        }
+        Office.update_office(cursor=cursor, office_info=update_dict)
+
+    @classmethod
     def get_current(cls, cursor, identifier: str = None):
         """Return current registered and/or records office addresses."""
         if not identifier:
             return None
 
         querystring = ("""
-            select start_event_id, mailing_addr_id, delivery_addr_id, office_typ_cd
+            select start_event_id, end_event_id, mailing_addr_id, delivery_addr_id, office_typ_cd
             from office
             where corp_num=:identifier and end_event_id is null
             """)
@@ -119,12 +144,12 @@ class Office:
 
     @classmethod
     def get_by_event(cls, cursor, event_id: str = None):
-        """Return current registered and/or office address."""
+        """Return current registered and/or records office address."""
         if not event_id:
             return None
 
         querystring = ("""
-            select start_event_id, mailing_addr_id, delivery_addr_id, office_typ_cd
+            select start_event_id, end_event_id, mailing_addr_id, delivery_addr_id, office_typ_cd
             from office
             where start_event_id=:event_id
             """)
@@ -139,36 +164,40 @@ class Office:
             raise err
 
     @classmethod
-    def update_office(cls, cursor, event_id, corp_num,  # pylint: disable=too-many-arguments; need all args
-                      delivery_addr_id, mailing_addr_id, office_typ_cd):
-        """Update old office end event id and insert new row into office table."""
+    def update_office(cls, cursor, office_info: Dict):
+        """Update old office end event id and insert new row into office table.
+
+        office_info.keys() = ['new_event_id', 'corp_num', 'new_delivery_addr_id', 'new_mailing_addr_id', 'office_code']
+        """
         try:
-            cursor.execute("""
-                        UPDATE office
-                        SET end_event_id = :event_id
-                        WHERE corp_num = :corp_num and office_typ_cd = :office_typ_cd and end_event_id is null
-                        """,
-                           event_id=event_id,
-                           corp_num=corp_num,
-                           office_typ_cd=office_typ_cd
-                           )
+            cursor.execute(
+                """
+                UPDATE office
+                SET end_event_id = :event_id
+                WHERE corp_num = :corp_num and office_typ_cd = :office_typ_cd and end_event_id is null
+                """,
+                event_id=office_info['new_event_id'],
+                corp_num=office_info['corp_num'],
+                office_typ_cd=office_info['office_code']
+            )
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errs
             current_app.logger.error('Error updating office table')
             raise err
 
         try:
-            cursor.execute("""
-                        INSERT INTO office (corp_num, office_typ_cd, start_event_id, end_event_id, mailing_addr_id,
-                         delivery_addr_id)
-                        VALUES (:corp_num, :office_typ_cd, :start_event_id, null, :mailing_addr_id, :delivery_addr_id)
-                        """,
-                           corp_num=corp_num,
-                           office_typ_cd=office_typ_cd,
-                           start_event_id=event_id,
-                           mailing_addr_id=mailing_addr_id,
-                           delivery_addr_id=delivery_addr_id
-                           )
+            cursor.execute(
+                """
+                INSERT INTO office (corp_num, office_typ_cd, start_event_id, end_event_id, mailing_addr_id,
+                    delivery_addr_id)
+                VALUES (:corp_num, :office_typ_cd, :start_event_id, null, :mailing_addr_id, :delivery_addr_id)
+                """,
+                corp_num=office_info['corp_num'],
+                office_typ_cd=office_info['office_code'],
+                start_event_id=office_info['new_event_id'],
+                mailing_addr_id=office_info['new_mailing_addr_id'],
+                delivery_addr_id=office_info['new_delivery_addr_id']
+            )
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errs
             current_app.logger.error('Error inserting into office table')

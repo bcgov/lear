@@ -28,7 +28,7 @@ from werkzeug.local import LocalProxy
 
 import legal_api.reports
 from legal_api.exceptions import BusinessException
-from legal_api.models import Address, Business, Filing, RegistrationBootstrap, User, db
+from legal_api.models import Address, Business, ColinEventId, Filing, RegistrationBootstrap, User, db
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import (
@@ -694,6 +694,12 @@ class InternalFilings(Resource):
                     if not filing_json['filing']['business'].get('legalName'):
                         business = Business.find_by_internal_id(filing.business_id)
                         filing_json['filing']['business']['legalName'] = business.legal_name
+                    if filing.filing_type == 'correction':
+                        colin_ids = \
+                            ColinEventId.get_by_filing_id(filing_json['filing']['correction']['correctedFilingId'])
+                        if not colin_ids:
+                            continue
+                        filing_json['filing']['correction']['correctedFilingColinId'] = colin_ids[0]  # should only be 1
                     filings.append(filing_json)
             return jsonify(filings), HTTPStatus.OK
 

@@ -44,7 +44,7 @@ class PartiesInfo(Resource):
                 identifier = identifier[-7:]
             party_type = request.args.get('partyType', 'Director')
             cursor = DB.connection.cursor()
-            directors = Party.get_current(cursor=cursor, identifier=identifier, role_type=party_type)
+            directors = Party.get_current(cursor=cursor, corp_num=identifier, role_type=party_type)
             if not directors:
                 return jsonify({'message': f'directors for {identifier} not found'}), HTTPStatus.NOT_FOUND
             if len(directors) < 3:
