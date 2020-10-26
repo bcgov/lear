@@ -90,7 +90,7 @@ class ListFilingResource(Resource):
 
         if filing_id:
             rv = CoreFiling.get(identifier, filing_id)
-            if not rv.storage:
+            if not rv:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
 
             if str(request.accept_mimetypes) == 'application/pdf':

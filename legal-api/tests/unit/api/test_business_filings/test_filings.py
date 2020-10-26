@@ -344,7 +344,7 @@ def test_post_validate_ar_valid_routing_slip(session, client, jwt):
 
 
 @integration_payment
-def test_post_valid_ar(session, client, jwt):
+def tpost_valid_ar(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
     from legal_api.models import Filing
     identifier = 'CP7654321'
@@ -842,8 +842,10 @@ def test_get_correct_fee_codes(session, identifier, base_filing, filing_name, or
         expected_fee_code = Filing.FILINGS[filing_name].get('free', {}).get('codes', {}).get(orig_legal_type)
     else:
         expected_fee_code = Filing.FILINGS[filing_name].get('codes', {}).get(orig_legal_type)
-    if not identifier.startswith('T'):
-        factory_business(identifier=identifier, entity_type=orig_legal_type)
+    if identifier.startswith('T'):
+        business = None
+    else:
+        business = factory_business(identifier=identifier, entity_type=orig_legal_type)
 
     # set filing
     filing = copy.deepcopy(base_filing)
@@ -867,7 +869,7 @@ def test_get_correct_fee_codes(session, identifier, base_filing, filing_name, or
             filing['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
 
     # get fee code
-    fee_code = ListFilingResource._get_filing_types(filing)[0]['filingTypeCode']
+    fee_code = ListFilingResource._get_filing_types(business, filing)[0]['filingTypeCode']
 
     # verify fee code
     assert fee_code == expected_fee_code

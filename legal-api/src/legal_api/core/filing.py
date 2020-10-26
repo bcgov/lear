@@ -135,12 +135,17 @@ class Filing:
     @staticmethod
     def get(identifier, filing_id=None) -> Optional[Filing]:
         """Return a Filing domain by the id."""
-        filing = Filing()
         if identifier.startswith('T'):
-            filing.storage = FilingStorage.get_temp_reg_filing(identifier)
+            storage = FilingStorage.get_temp_reg_filing(identifier)
         else:
-            filing.storage = Business.get_filing_by_id(identifier, filing_id)
-        return filing
+            storage = Business.get_filing_by_id(identifier, filing_id)
+
+        if storage:
+            filing = Filing()
+            filing._storage = storage  # pylint: disable=protected-access
+            return filing
+
+        return None
 
     @staticmethod
     def get_filings_by_status(business_id: int, status: [], after_date: date = None):
