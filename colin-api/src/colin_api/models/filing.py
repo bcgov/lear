@@ -1005,7 +1005,7 @@ class Filing:
                         if not found_match:
                             raise GenericException(
                                 error=f'Director does not exist in COLIN: {director["officer"]}',
-                                status=HTTPStatus.NOT_FOUND
+                                status_code=HTTPStatus.NOT_FOUND
                             )
 
                 # add back changed directors as new row - if ceased director with changes this will add them with
@@ -1174,7 +1174,8 @@ class Filing:
                         for old_translation in old_translations:
                             if old_translation.end_event_id:
                                 raise GenericException(
-                                    error=f'Manual intervention needed for correction due to name translation:{corp_num}',
+                                    error='Manual intervention needed for correction due to name translation:'
+                                    f'{corp_num}',
                                     status_code=HTTPStatus.NOT_IMPLEMENTED
                                 )
                             CorpName.end_name(
@@ -1230,7 +1231,8 @@ class Filing:
                                 if Party.compare_parties(party=old_party, officer_json=change['oldValue']['officer']):
                                     if old_party.end_event_id:
                                         raise GenericException(
-                                            error=f'Manual intervention needed for correction due to party member:{corp_num}',
+                                            error='Manual intervention needed for correction due to party member:'
+                                            f'{corp_num}',
                                             status_code=HTTPStatus.NOT_IMPLEMENTED
                                         )
                                     if change.get('newValue'):
