@@ -26,9 +26,7 @@ def process(business: Business, filing_rec: Filing, filing: Dict):
     # pylint: disable=too-many-locals; 1 extra
     """Process the incoming transition filing."""
     # Extract the filing information for transition application
-    transition_filing = filing.get('transition')
-
-    if not transition_filing:
+    if not (transition_filing := filing.get('transition')):  # pylint: disable=superfluous-parens;
         raise QueueException(f'legal_filing:transition data missing from {filing_rec.id}')
     if not business:
         raise QueueException(f'Business does not exist: legal_filing:transitionApplication {filing_rec.id}')
