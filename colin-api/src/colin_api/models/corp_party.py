@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import datetime
 import itertools
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from flask import current_app
 
@@ -84,7 +84,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return officer_obj
 
     @classmethod
-    def _build_parties_list(cls, cursor, corp_num: str, event_id: int = None) -> List:
+    def _build_parties_list(cls, cursor, corp_num: str, event_id: int = None) -> Optional[List]:
         parties = cursor.fetchall()
 
         if not parties:
@@ -158,7 +158,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return grouped_list
 
     @classmethod
-    def get_completing_parties(cls, cursor, event_id: int) -> List:
+    def get_completing_parties(cls, cursor, event_id: int) -> Dict:
         """Retrieve the completing parties for an event."""
         query = f"""
                 select first_nme, middle_nme, last_nme, corp.recognition_dts from
@@ -406,6 +406,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                         email=party['officer']['email']
                     )
             else:
+                date_format = '%Y-%m-%d'
                 if party.get('prev_id'):
                     cursor.execute(
                         query,
@@ -416,8 +417,8 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                         party_typ_cd=role_type,
                         start_event_id=event_id,
                         end_event_id=event_id if party.get('cessationDate', '') else None,
-                        appointment_dt=str(datetime.datetime.strptime(party['appointmentDate'], '%Y-%m-%d'))[:10],
-                        cessation_dt=str(datetime.datetime.strptime(party['cessationDate'], '%Y-%m-%d'))[:10]
+                        appointment_dt=str(datetime.datetime.strptime(party['appointmentDate'], date_format))[:10],
+                        cessation_dt=str(datetime.datetime.strptime(party['cessationDate'], date_format))[:10]
                         if party.get('cessationDate', None) else None,
                         last_nme=party['officer']['lastName'],
                         middle_nme=party['officer'].get('middleInitial', ''),
@@ -437,8 +438,8 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                         party_typ_cd=role_type,
                         start_event_id=event_id,
                         end_event_id=event_id if party.get('cessationDate', '') else None,
-                        appointment_dt=str(datetime.datetime.strptime(party['appointmentDate'], '%Y-%m-%d'))[:10],
-                        cessation_dt=str(datetime.datetime.strptime(party['cessationDate'], '%Y-%m-%d'))[:10]
+                        appointment_dt=str(datetime.datetime.strptime(party['appointmentDate'], date_format))[:10],
+                        cessation_dt=str(datetime.datetime.strptime(party['cessationDate'], date_format))[:10]
                         if party.get('cessationDate', None) else None,
                         last_nme=party['officer']['lastName'],
                         middle_nme=party['officer'].get('middleInitial', ''),

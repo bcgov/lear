@@ -19,11 +19,12 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
+from http import HTTPStatus
 from typing import Dict, Optional
 
 from flask import current_app
 
-from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
+from colin_api.exceptions import FilingNotFoundException, GenericException, InvalidFilingTypeException
 from colin_api.models import Business, CorpName, Office, Party, ShareObject
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime
@@ -1002,7 +1003,10 @@ class Filing:
                                 )
                                 found_match = True
                         if not found_match:
-                            raise Exception(f'Director does not exist in COLIN: {director["officer"]}')
+                            raise GenericException(
+                                error=f'Director does not exist in COLIN: {director["officer"]}',
+                                status=HTTPStatus.NOT_FOUND
+                            )
 
                 # add back changed directors as new row - if ceased director with changes this will add them with
                 # cessation date + end event id filled
@@ -1135,7 +1139,10 @@ class Filing:
                             event_id=corrected_event_id
                         )[0]
                         if old_corp_name.end_event_id:
-                            raise Exception(f'Manual intervention needed for correction due to comp name:{corp_num}')
+                            raise GenericException(
+                                error=f'Manual intervention needed for correction due to comp name:{corp_num}',
+                                status_code=HTTPStatus.NOT_IMPLEMENTED
+                            )
                         # end old corp name
                         CorpName.end_name(
                             cursor=cursor,
@@ -1166,8 +1173,10 @@ class Filing:
                         # whole list will be ended and re added with new values
                         for old_translation in old_translations:
                             if old_translation.end_event_id:
-                                raise Exception(
-                                    f'Manual intervention needed for correction due to name translation:{corp_num}')
+                                raise GenericException(
+                                    error=f'Manual intervention needed for correction due to name translation:{corp_num}',
+                                    status_code=HTTPStatus.NOT_IMPLEMENTED
+                                )
                             CorpName.end_name(
                                 cursor=cursor,
                                 event_id=filing.event_id,
@@ -1188,8 +1197,10 @@ class Filing:
                         for office in old_offices:
                             if office.office_type in change['path']:
                                 if office.end_event_id:
-                                    raise Exception(
-                                        f'Manual intervention needed for correction due to office:{corp_num}')
+                                    raise GenericException(
+                                        error=f'Manual intervention needed for correction due to office:{corp_num}',
+                                        status_code=HTTPStatus.NOT_IMPLEMENTED
+                                    )
                                 Office.create_new_office(
                                     cursor=cursor,
                                     addresses=change['newValue'],
@@ -1218,8 +1229,10 @@ class Filing:
                             for old_party in old_parties:
                                 if Party.compare_parties(party=old_party, officer_json=change['oldValue']['officer']):
                                     if old_party.end_event_id:
-                                        raise Exception(
-                                            f'Manual intervention needed for correction due to party member:{corp_num}')
+                                        raise GenericException(
+                                            error=f'Manual intervention needed for correction due to party member:{corp_num}',
+                                            status_code=HTTPStatus.NOT_IMPLEMENTED
+                                        )
                                     if change.get('newValue'):
                                         change['newValue']['prev_id'] = old_party.corp_party_id
                                     Party.end_director_by_name(
@@ -1244,8 +1257,10 @@ class Filing:
                             event_id=corrected_event_id
                         )
                         if old_share_structure.end_event_id:
-                            raise Exception(
-                                f'Manual intervention needed for correction due to share structure:{corp_num}')
+                            raise GenericException(
+                                error=f'Manual intervention needed for correction due to share structure:{corp_num}',
+                                status_code=HTTPStatus.NOT_IMPLEMENTED
+                            )
                         ShareObject.end_share_structure(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
                         ShareObject.create_share_structure(
                             cursor=cursor,

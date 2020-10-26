@@ -191,7 +191,7 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
         return share_series
 
     @classmethod
-    def get_all(cls, cursor, corp_num: str, event_id: str = None) -> Optional(List, ShareObject):
+    def get_all(cls, cursor, corp_num: str, event_id: str = None) -> Optional[List, ShareObject]:
         """Return all share structure entries for this business (Optional: return all for specific share structure)."""
         # Add business NME to all queries
         query = 'select start_event_id, end_event_id from share_struct where corp_num=:corp_num'
