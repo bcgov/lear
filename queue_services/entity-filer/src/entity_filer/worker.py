@@ -51,6 +51,7 @@ from entity_filer.filing_processors import (
     change_of_name,
     correction,
     incorporation_filing,
+    transition,
     voluntary_dissolution,
 )
 from entity_filer.filing_processors.filing_components import name_request
@@ -161,6 +162,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 if filing.get('correction'):
                     filing_submission = correction.process(filing_submission, filing)
+
+                if filing.get('transition'):
+                    filing_submission = transition.process(business, filing_submission, filing)
 
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()
