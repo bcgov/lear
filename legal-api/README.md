@@ -1,6 +1,6 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-
+[![codecov](https://codecov.io/gh/bcgov/lear/branch/master/graph/badge.svg?flag=legalapi)](https://codecov.io/gh/bcgov/lear/tree/master/legal-api)
 
 # Application Name
 

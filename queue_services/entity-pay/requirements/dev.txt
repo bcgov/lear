@@ -24,6 +24,7 @@ coverage
 pylint
 pylint-flask
 isort<5,>=4.2.5
+pytest-cov
 
 # docker
 lovely-pytest-docker

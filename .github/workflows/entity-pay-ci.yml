@@ -60,9 +60,15 @@ jobs:
         working-directory: ./queue_services/entity-pay
         run: |
           flake8 src tests
-
-#      - name: Test with pytest
-#        working-directory: ./queue_services/entity-pay
-#        run: |
-#          pip install .
-#          pytest
+      #- name: Test with pytest
+      #  working-directory: ./queue_services/entity-pay
+      #  run: |
+      #    pip install .
+      #    pytest
+      #- name: Upload coverage to Codecov
+      #  uses: codecov/codecov-action@v1
+      #  with:
+      #    file: ./queue_services/entity-pay/coverage.xml
+      #    flags: entitypay
+      #    name: codecov-entity-pay
+      #    fail_ci_if_error: true
