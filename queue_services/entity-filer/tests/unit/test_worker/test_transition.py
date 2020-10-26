@@ -13,26 +13,23 @@
 # limitations under the License.
 """The Test Suites to ensure that the worker is operating correctly."""
 import copy
-import datetime
 import random
 
 from legal_api.models import Business, Filing, PartyRole
 from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE
 
 from entity_filer.worker import process_filing
-from tests.pytest_marks import integration_affiliation
-from tests.unit import create_filing
+from tests.unit import create_business, create_filing
 
 
-@integration_affiliation
-async def test_transition_filing(app, session, account):
+async def test_transition_filing(app, session):
     """Assert we can create a business based on transition filing."""
-    filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
+    filing_data = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
+
+    business = create_business(filing_data['filing']['business']['identifier'])
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing = (create_filing(payment_id, filing))
-    filing.payment_account = account
-    filing.save()
+    filing = (create_filing(payment_id, filing_data, business.id))
 
     filing_msg = {'filing': {'id': filing.id}}
 
@@ -47,10 +44,6 @@ async def test_transition_filing(app, session, account):
     assert business
     assert filing
     assert filing.status == Filing.Status.COMPLETED.value
-    assert business.identifier == filing_json['filing']['business']['identifier']
-    assert business.founding_date == datetime.datetime.fromisoformat(filing['filing']['business']['foundingDate'])
-    assert business.legal_type == filing['filing']['business']['legalType']
-    assert business.legal_name == filing['filing']['business']['legalName']
     assert business.restriction_ind is False
     assert len(business.share_classes.all()) == len(filing_json['filing']['transition']['shareStructure']
                                                     ['shareClasses'])

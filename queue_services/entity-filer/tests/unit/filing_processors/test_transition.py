@@ -20,26 +20,24 @@ from legal_api.models import Filing
 from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE
 
 from entity_filer.filing_processors import transition
-from tests.unit import create_filing
+from tests.unit import create_business, create_filing
 
 
 def test_transition_filing_process(app, session):
     """Assert that the transition object is correctly populated to model objects."""
     # setup
     filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
+
+    business = create_business(filing['filing']['business']['identifier'])
     create_filing('123', filing)
 
     effective_date = datetime.datetime.utcnow()
     filing_rec = Filing(effective_date=effective_date, filing_json=filing)
 
     # test
-    business, filing_rec = transition.process(None, filing['filing'], filing_rec)
+    transition.process(business, filing_rec, filing['filing'])
 
     # Assertions
-    assert business.identifier == filing['filing']['business']['identifier']
-    assert business.founding_date == datetime.datetime.fromisoformat(filing['filing']['business']['foundingDate'])
-    assert business.legal_type == filing['filing']['business']['legalType']
-    assert business.legal_name == filing['filing']['business']['legalName']
     assert business.restriction_ind is False
     assert len(business.share_classes.all()) == len(filing['filing']['transition']['shareStructure']['shareClasses'])
     assert len(business.offices.all()) == len(filing['filing']['transition']['offices'])

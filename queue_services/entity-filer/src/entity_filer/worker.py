@@ -164,7 +164,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     filing_submission = correction.process(filing_submission, filing)
 
                 if filing.get('transition'):
-                    business, filing_submission = transition.process(business, filing_submission, filing)
+                    filing_submission = transition.process(business, filing_submission, filing)
 
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()
@@ -198,12 +198,6 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                             f'on Queue with error:{err}',
                             level='error'
                         )
-
-            if any('transition' in x for x in legal_filings):
-                filing_submission.business_id = business.id
-                db.session.add(filing_submission)
-                db.session.commit()
-                transition.create_affiliation(business, filing_submission)
 
             try:
                 await publish_email_message(

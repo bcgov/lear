@@ -117,7 +117,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution',
                               'codes': {
                                   'CP': 'RES'}},
-        'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'}
+        'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'},
+        'transition': {'name': 'transition',  'title': 'Transition'}
     }
 
     __tablename__ = 'filings'
