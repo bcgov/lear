@@ -941,7 +941,7 @@ class Filing:
             # create new filing
             if filing.filing_type == 'annualReport':
                 ar_date = filing.body['annualReportDate']
-                agm_date = filing.body['annualGeneralMeetingDate']
+                agm_date = filing.body.get('annualGeneralMeetingDate', None)
                 cls._insert_filing(cursor=cursor, filing=filing, ar_date=ar_date, agm_date=agm_date)
 
                 # update corporation record
