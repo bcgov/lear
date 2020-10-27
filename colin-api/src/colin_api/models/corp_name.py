@@ -18,7 +18,7 @@ Currently this only provides API versioning information
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from flask import current_app
 
@@ -39,7 +39,7 @@ class CorpName:
 
     NAME_QUERY = (
         """
-        select start_event_id, corp_nme, corp_name_typ_cd, corp_num
+        select start_event_id, corp_nme, corp_name_typ_cd, corp_num, end_event_id
         from corp_name
         where corp_num=:corp_num
         """
@@ -48,6 +48,7 @@ class CorpName:
     corp_num = None
     corp_name = None
     event_id = None
+    end_event_id = None
     type_code = None
 
     def __init__(self):
@@ -61,7 +62,7 @@ class CorpName:
         }
 
     @classmethod
-    def _create_name_objs(cls, cursor) -> list:
+    def _create_name_objs(cls, cursor) -> List:
         """Return a CorpName obj by parsing cursor."""
         corp_names = cursor.fetchall()
 
@@ -73,6 +74,7 @@ class CorpName:
             name_obj.corp_num = corp_name_info['corp_num']
             name_obj.type_code = corp_name_info['corp_name_typ_cd']
             name_obj.event_id = corp_name_info['start_event_id']
+            name_obj.end_event_id = corp_name_info['end_event_id']
             corp_name_objs.append(name_obj)
 
         return corp_name_objs
@@ -159,18 +161,23 @@ class CorpName:
             raise err
 
     @classmethod
-    def end_translation(cls, cursor, event_id: str, corp_num: str, corp_name: str):
-        """End specific tranlsation type name."""
+    # pylint: disable=too-many-arguments; one extra
+    def end_name(cls, cursor, event_id: str, corp_num: str, corp_name: str, type_code: str):
+        """End specific name."""
         try:
             cursor.execute(
                 """
                 update corp_name
                 set end_event_id=:event_id
-                where corp_num=:corp_num and corp_name_typ_cd='TR' and end_event_id is null and corp_nme=:corp_name
+                where corp_num=:corp_num
+                  and corp_name_typ_cd=:type_code
+                  and end_event_id is null
+                  and corp_nme=:corp_name
                 """,
                 event_id=event_id,
                 corp_name=corp_name,
-                corp_num=corp_num
+                corp_num=corp_num,
+                type_code=type_code
             )
 
         except Exception as err:
@@ -178,24 +185,29 @@ class CorpName:
             raise err
 
     @classmethod
-    def get_by_event(cls, cursor, corp_num: str = None, event_id: str = None) -> Optional[CorpName]:
+    def get_by_event(cls, cursor, corp_num: str, event_id: str, type_code: str = None) -> Optional[CorpName]:
         """Get the entity name corresponding with the given event id."""
-        if not corp_num or not event_id:
-            return None
         try:
             if not cursor:
                 cursor = DB.connection.cursor()
-            querystring = cls.NAME_QUERY + ' and start_event_id=:event_id'
-            cursor.execute(querystring, corp_num=corp_num, event_id=event_id)
+            if not type_code:
+                condition = " and start_event_id=:event_id and corp_name_typ_cd!='TR'"
+            else:
+                condition = ' and start_event_id=:event_id and corp_name_typ_cd=:type_code'
+            querystring = cls.NAME_QUERY + condition
+            if type_code:
+                cursor.execute(querystring, corp_num=corp_num, event_id=event_id, type_code=type_code)
+            else:
+                cursor.execute(querystring, corp_num=corp_num, event_id=event_id)
 
-            return (cls._create_name_objs(cursor=cursor))[0]
+            return cls._create_name_objs(cursor=cursor)
 
         except Exception as err:
             current_app.logger.error(f'error getting corp name for {corp_num} by event {event_id}')
             raise err
 
     @classmethod
-    def get_current(cls, cursor, corp_num: str) -> list:
+    def get_current(cls, cursor, corp_num: str) -> List:
         """Get current entity names."""
         try:
             querystring = cls.NAME_QUERY + ' and end_event_id is null'
@@ -208,7 +220,7 @@ class CorpName:
             raise err
 
     @classmethod
-    def get_current_by_type(cls, cursor, corp_num: str, type_code: str) -> list:
+    def get_current_by_type(cls, cursor, corp_num: str, type_code: str) -> List:
         """Get current entity names by type code."""
         try:
             querystring = cls.NAME_QUERY + ' and corp_name_typ_cd=:type_code and end_event_id is null'

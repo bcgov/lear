@@ -688,6 +688,12 @@ class InternalFilings(Resource):
                     if not filing_json['filing']['business'].get('legalName'):
                         business = Business.find_by_internal_id(filing.business_id)
                         filing_json['filing']['business']['legalName'] = business.legal_name
+                    if filing.filing_type == 'correction':
+                        colin_ids = \
+                            ColinEventId.get_by_filing_id(filing_json['filing']['correction']['correctedFilingId'])
+                        if not colin_ids:
+                            continue
+                        filing_json['filing']['correction']['correctedFilingColinId'] = colin_ids[0]  # should only be 1
                     filings.append(filing_json)
             return jsonify(filings), HTTPStatus.OK
 
