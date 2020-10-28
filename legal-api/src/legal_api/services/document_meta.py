@@ -236,13 +236,14 @@ class DocumentMetaService():
         """Return transition meta object(s)."""
         reports = []
 
-        if self.is_completed():
-            reports.append(
-                self.create_report_object(
-                    'Transition Application',
-                    self.get_general_filename('Transition Application')
-                )
+        reports.append(
+            self.create_report_object(
+                'Transition Application',
+                self.get_general_filename('Transition Application')
             )
+        )
+
+        if self.is_completed():
             reports.append(
                 self.create_report_object(
                     DocumentMetaService.NOTICE_OF_ARTICLES,

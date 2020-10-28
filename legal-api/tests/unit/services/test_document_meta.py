@@ -986,7 +986,27 @@ def test_correction_ia_with_named_to_numbered(session, app):
         assert documents[2]['filename'] == NOA_FILENAME
 
 
-def test_transition_bcomp(session, app):
+def test_transition_bcomp_paid(session, app):
+    """Assert that Transition Application document is returned for a filing."""
+    document_meta = DocumentMetaService()
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    with app.app_context():
+        filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
+        filing['filing']['header']['date'] = '2020-07-14'
+        filing['filing']['header']['status'] = 'PAID'
+        filing['filing']['header']['availableOnPaperOnly'] = False
+        documents = document_meta.get_documents(filing)
+
+        assert len(documents) == 1
+
+        assert documents[0]['type'] == 'REPORT'
+        assert documents[0]['reportType'] is None
+        assert documents[0]['filingId'] == 1
+        assert documents[0]['title'] == 'Transition Application'
+        assert documents[0]['filename'] == 'BC1234567 - Transition Application - 2020-07-14.pdf'
+
+
+def test_transition_bcomp_completed(session, app):
     """Assert that Transition Application + NOA documents are returned for a filing."""
     document_meta = DocumentMetaService()
     factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
