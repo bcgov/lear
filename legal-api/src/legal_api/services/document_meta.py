@@ -236,12 +236,20 @@ class DocumentMetaService():
         """Return transition meta object(s)."""
         reports = []
 
-        reports.append(
-            self.create_report_object(
-                'Transition Application',
-                self.get_general_filename('Transition Application')
+        if self.is_paid():
+            reports.append(
+                self.create_report_object(
+                    'Transition Application - Pending',
+                    self.get_general_filename('Transition Application (Pending)')
+                )
             )
-        )
+        else:
+            reports.append(
+                self.create_report_object(
+                    'Transition Application',
+                    self.get_general_filename('Transition Application')
+                )
+            )
 
         if self.is_completed():
             reports.append(

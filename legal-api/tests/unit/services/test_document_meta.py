@@ -1004,8 +1004,8 @@ def test_transition_bcomp_paid(session, app):
         assert documents[0]['type'] == 'REPORT'
         assert documents[0]['reportType'] is None
         assert documents[0]['filingId'] == 1
-        assert documents[0]['title'] == 'Transition Application'
-        assert documents[0]['filename'] == 'BC1234567 - Transition Application - 2020-07-14.pdf'
+        assert documents[0]['title'] == 'Transition Application - Pending'
+        assert documents[0]['filename'] == 'BC1234567 - Transition Application (Pending) - 2020-07-14.pdf'
 
 
 def test_transition_bcomp_completed(session, app):
