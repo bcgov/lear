@@ -994,7 +994,7 @@ def test_transition_bcomp_paid(session, app):
     factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
-        filing['filing']['header']['date'] = '2020-07-14'
+        filing['filing']['header']['date'] = FILING_DATE
         filing['filing']['header']['status'] = 'PAID'
         filing['filing']['header']['availableOnPaperOnly'] = False
         documents = document_meta.get_documents(filing)
@@ -1014,7 +1014,7 @@ def test_transition_bcomp_completed(session, app):
     factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
-        filing['filing']['header']['date'] = '2020-07-14'
+        filing['filing']['header']['date'] = FILING_DATE
         filing['filing']['header']['status'] = 'COMPLETED'
         filing['filing']['header']['availableOnPaperOnly'] = False
         documents = document_meta.get_documents(filing)
