@@ -31,6 +31,7 @@ from registry_schemas.example_data import (
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
     FILING_HEADER,
+    INCORPORATION_FILING_TEMPLATE,
 )
 
 from legal_api.models import Business, Filing
@@ -278,23 +279,29 @@ def test_get_internal_filings(session, client, jwt):
     assert rv.json[0]['filingId'] == filing1.id
 
 
-def test_get_bcomp_corrections(session, client, jwt):
+@pytest.mark.parametrize('identifier, base_filing, corrected_filing, colin_id', [
+        ('BC1234567', CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE, 1234),
+        ('BC1234568', CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE, None),
+    ])
+def test_get_bcomp_corrections(session, client, jwt, identifier, base_filing, corrected_filing, colin_id):
     """Assert that the internal filings get endpoint returns corrections for bcomps."""
     # setup
-    identifier = 'BC1234567'
     b = factory_business(identifier=identifier, entity_type=Business.LegalTypes.BCOMP.value)
     factory_business_mailing_address(b)
 
-    filing = factory_completed_filing(b, CORRECTION_INCORPORATION)
-
-    assert filing.status == Filing.Status.COMPLETED.value
+    incorp_filing = factory_completed_filing(business=b, data_dict=corrected_filing, colin_id=colin_id)
+    correction_filing = copy.deepcopy(base_filing)
+    correction_filing['filing']['correction']['correctedFilingId'] = incorp_filing.id
+    filing = factory_completed_filing(b, correction_filing)
 
     # test endpoint returns filing
     rv = client.get('/api/v1/businesses/internal/filings')
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json) == 1
-
-    assert rv.json[0]['filingId'] == filing.id
+    if colin_id:
+        assert rv.json[0]['filingId'] == filing.id
+    else:
+        assert rv.json[0]['filingId'] == incorp_filing.id
 
 
 def test_patch_internal_filings(session, client, jwt):

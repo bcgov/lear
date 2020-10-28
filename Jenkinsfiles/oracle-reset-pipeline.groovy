@@ -135,7 +135,7 @@ node {
                                     sql = "INSERT INTO C##CDEV.FILING_TYPE_CLASS VALUES('BENCOM','Benefit Company');"
                                     execute_pod_command(pod, sql, true)
 
-                                    sql = "INSERT INTO C##CDEV.FILING_TYPE_CLASS ('BENCOR', 'Benefit Company Correction');"
+                                    sql = "INSERT INTO C##CDEV.FILING_TYPE_CLASS VALUES('BENCOR', 'Benefit Company Correction');"
                                     execute_pod_command(pod, sql, true)
 
                                     sql = "INSERT INTO C##CDEV.FILING_TYPE VALUES('BEINC','BENCOM','Incorporate a BC Benefit Company','Incorporation Application for a BC Benefit Company');"
@@ -160,6 +160,9 @@ node {
                                     execute_pod_command(pod, sql, true)
 
                                     sql = "@/sql/update-dev-oracle.sql"
+                                    execute_pod_command(pod, sql, true)
+
+                                    sql = "ALTER USER C##CDEV IDENTIFIED BY tiger;"
                                     execute_pod_command(pod, sql, true)
 
                                 } catch (Exception e) {
