@@ -19,9 +19,11 @@ Test-Suite to ensure that the Document Meta Service is working as expected.
 import copy
 from unittest.mock import patch
 
-from registry_schemas.example_data import (CORRECTION_INCORPORATION,
-                                           INCORPORATION_FILING_TEMPLATE,
-                                           TRANSITION_FILING_TEMPLATE)
+from registry_schemas.example_data import (
+    CORRECTION_INCORPORATION,
+    INCORPORATION_FILING_TEMPLATE,
+    TRANSITION_FILING_TEMPLATE,
+)
 
 from legal_api.models import Business, Filing
 from legal_api.services import DocumentMetaService
