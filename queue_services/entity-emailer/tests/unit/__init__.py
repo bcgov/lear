@@ -19,6 +19,7 @@ from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
     CORP_CHANGE_OF_ADDRESS,
+    CORRECTION_INCORPORATION,
     FILING_TEMPLATE,
     INCORPORATION_FILING_TEMPLATE,
 )
@@ -94,4 +95,31 @@ def prep_maintenance_filing(session, identifier, payment_id, status, filing_type
     filing_template['filing'][filing_type] = copy.deepcopy(FILING_TYPE_MAPPER[filing_type])
     filing = create_filing(token=None, filing_json=filing_template, business_id=business.id)
     filing.save()
+    return filing
+
+
+def prep_incorporation_correction_filing(session, business, original_filing_id, payment_id, option,
+                                         name_change_with_new_nr):
+    """Return a new incorporation correction filing prepped for email notification."""
+    filing_template = copy.deepcopy(CORRECTION_INCORPORATION)
+    filing_template['filing']['business'] = {'identifier': business.identifier}
+    for party in filing_template['filing']['incorporationApplication']['parties']:
+        for role in party['roles']:
+            if role['roleType'] == 'Completing Party':
+                party['officer']['email'] = 'comp_party@email.com'
+    filing_template['filing']['incorporationApplication']['contactPoint'] = {}
+    filing_template['filing']['incorporationApplication']['contactPoint']['email'] = 'test@test.com'
+    filing_template['filing']['correction']['correctedFilingId'] = original_filing_id
+    if not name_change_with_new_nr:
+        del filing_template['filing']['incorporationApplication']['nameRequest']['legalName']
+    else:
+        filing_template['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+    filing.save()
+    if option in ['COMPLETED', 'bn']:
+        uow = versioning_manager.unit_of_work(session)
+        transaction = uow.create_transaction(session)
+        filing.transaction_id = transaction.id
+        filing.save()
     return filing
