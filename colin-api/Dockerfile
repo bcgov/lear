@@ -1,4 +1,4 @@
-FROM python:3.8.5-buster
+FROM python:3.8.6-buster
 USER root
 
 
@@ -6,8 +6,11 @@ USER root
 WORKDIR    /opt/oracle
 RUN        apt-get update && apt-get install -y libaio1 wget unzip \
     && wget https://download.oracle.com/otn_software/linux/instantclient/instantclient-basiclite-linuxx64.zip \
+    && wget https://download.oracle.com/otn_software/linux/instantclient/instantclient-sqlplus-linuxx64.zip \
     && unzip instantclient-basiclite-linuxx64.zip \
     && rm -f instantclient-basiclite-linuxx64.zip \
+    && unzip instantclient-sqlplus-linuxx64.zip \
+    && rm -f instantclient-sqlplus-linuxx64.zip \
     && cd /opt/oracle/instantclient* \
     && rm -f *jdbc* *occi* *mysql* *README *jar uidrvci genezi adrci \
     && echo /opt/oracle/instantclient* > /etc/ld.so.conf.d/oracle-instantclient.conf \
