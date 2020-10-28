@@ -165,6 +165,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
     if filing_type == 'correction':
         original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
+        if original_filing_type != 'incorporationApplication':
+            return None
         original_filing_name = original_filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*',
                                                                                      original_filing_type[1:]))
         filing_name = f'Correction of {original_filing_name}'
