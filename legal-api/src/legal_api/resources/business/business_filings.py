@@ -107,7 +107,7 @@ class ListFilingResource(Resource):
         filings = CoreFiling.get_filings_by_status(business.id,
                                                    [Filing.Status.COMPLETED.value, Filing.Status.PAID.value])
         for filing in filings:
-            filing_json = filing.json
+            filing_json = filing.raw
             filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
             rv.append(filing_json)
 
