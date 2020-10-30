@@ -122,6 +122,7 @@ class Report:  # pylint: disable=too-few-public-methods
             'notice-of-articles/directors',
             'notice-of-articles/resolutionDates',
             'notice-of-articles/restrictions',
+            'transition/businessDetails',
             'addresses',
             'certification',
             'directors',
@@ -351,6 +352,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'noa': {
             'filingDescription': 'Notice of Articles',
             'fileName': 'noticeOfArticles'
+        },
+        'transition': {
+            'filingDescription': 'Transition Application',
+            'fileName': 'transitionApplication'
         },
         'changeOfAddress': {
             'hasDifferentTemplates': True,

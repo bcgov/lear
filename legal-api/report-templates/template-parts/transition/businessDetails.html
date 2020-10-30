@@ -1,0 +1,31 @@
+<div class="business-details-container">
+   <table class="business-details-table" role="presentation">
+      <tr>
+         <td>
+            <div class="bold">Incorporation Number:</div>
+            <div class="bold pt-2">Filed Date and Time:</div>
+            <div class="bold pt-2">Transition Date and Time:</div>
+         </td>
+         <td>
+            <div>{{business.identifier}}</div>
+            <div class="pt-2">{{filing_date_time}}</div>
+            <div class="pt-2">{{effective_date_time}}</div>
+         </td>
+         <td class="registar-certify-section">
+            <div class="certified-copy-text">CERTIFIED COPY</div>
+            <div class="doc-description">of a document filed with the</div>
+            <div class="doc-description">Province of British Columbia</div>
+            <div class="registrar-title">Registrar of Companies</div>
+            <div class="registrar-signature">
+               <img alt="signature" src={{registrarInfo.signature}}>
+            </div>
+            <div class="registrar-name">{{ registrarInfo.name }}</div>
+         </td>
+      </tr>
+   </table>
+</div>
+<!-- this block is hidden but is needed for the footer: -->
+<div class="filing-identifier">
+   Filing #{{header.filingId}}
+   <span> | Incorporation #{{business.identifier}}</span>
+</div>
