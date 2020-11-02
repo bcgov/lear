@@ -24,6 +24,7 @@ from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from legal_api.models import Filing
+from legal_api.services import NameXService
 from sentry_sdk import capture_message
 
 from entity_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
@@ -34,7 +35,8 @@ FILING_TYPE_CONVERTER = {
     'annualReport': 'AR',
     'changeOfDirectors': 'COD',
     'changeOfAddress': 'COA',
-    'alteration': 'ALT'
+    'alteration': 'ALT',
+    'correction': 'CRCTN'
 }
 
 
@@ -46,6 +48,8 @@ def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_da
         'Accept': 'application/pdf',
         'Authorization': f'Bearer {token}'
     }
+    if filing.filing_type == 'correction':
+        original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
     if status == Filing.Status.PAID.value:
         # add filing pdf
         filing_pdf = requests.get(
@@ -57,10 +61,15 @@ def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_da
             capture_message(f'Email Queue: filing id={filing.id}, error=pdf generation', level='error')
         else:
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
-            file_name = filing.filing_type[0].upper() + \
-                ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
-            if ar_date := filing.filing_json['filing'].get('annualReport', {}).get('annualReportDate'):
-                file_name = f'{ar_date[:4]} {file_name}'
+            if filing.filing_type == 'correction':
+                file_name = original_filing_type[0].upper() + \
+                            ' '.join(re.findall('[a-zA-Z][^A-Z]*', original_filing_type[1:]))
+                file_name = f'{file_name} (Corrected)'
+            else:
+                file_name = filing.filing_type[0].upper() + \
+                    ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
+                if ar_date := filing.filing_json['filing'].get('annualReport', {}).get('annualReportDate'):
+                    file_name = f'{ar_date[:4]} {file_name}'
 
             pdfs.append(
                 {
@@ -71,7 +80,8 @@ def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_da
                 }
             )
         # add receipt pdf
-        if filing.filing_type == 'incorporationApplication':
+        if filing.filing_type == 'incorporationApplication' or (filing.filing_type == 'correction' and
+                                                                original_filing_type == 'incorporationApplication'):
             corp_name = filing.filing_json['filing']['incorporationApplication']['nameRequest'].get(
                 'legalName', 'Numbered Company')
         else:
@@ -119,7 +129,9 @@ def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_da
                 }
             )
 
-        if filing.filing_type == 'incorporationApplication':
+        if filing.filing_type == 'incorporationApplication' or (filing.filing_type == 'correction' and
+                                                                original_filing_type == 'incorporationApplication' and
+                                                                get_additional_info(filing).get('nameChange', False)):
             # add certificate
             certificate = requests.get(
                 f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
@@ -131,43 +143,61 @@ def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_da
                 capture_message(f'Email Queue: filing id={filing.id}, error=certificate generation', level='error')
             else:
                 certificate_encoded = base64.b64encode(certificate.content)
+                file_name = 'Incorporation Certificate (Corrected).pdf' if filing.filing_type == 'correction' \
+                    else 'Incorporation Certificate.pdf'
                 pdfs.append(
                     {
-                        'fileName': 'Incorporation Certificate.pdf',
+                        'fileName': file_name,
                         'fileBytes': certificate_encoded.decode('utf-8'),
                         'fileUrl': '',
                         'attachOrder': '2'
                     }
                 )
-
     return pdfs
 
 
-def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals
+def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Business Number notification."""
     logger.debug('filing_notification: %s', email_info)
     # get template and fill in parts
     filing_type, status = email_info['type'], email_info['option']
-
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/BC-{FILING_TYPE_CONVERTER[filing_type]}-{status}.html'
-    ).read_text()
-    filled_template = substitute_template_parts(template)
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
-    filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
+    if filing_type == 'correction':
+        original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
+        if original_filing_type != 'incorporationApplication':
+            return None
+        original_filing_name = original_filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*',
+                                                                                     original_filing_type[1:]))
+        filing_name = f'Correction of {original_filing_name}'
+    else:
+        filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
+
+    if filing_type == 'correction':
+        template = Path(
+            f'{current_app.config.get("TEMPLATE_PATH")}/BC-{FILING_TYPE_CONVERTER[filing_type]}-'
+            f'{FILING_TYPE_CONVERTER[original_filing_type]}-{status}.html'
+        ).read_text()
+    else:
+        template = Path(
+            f'{current_app.config.get("TEMPLATE_PATH")}/BC-{FILING_TYPE_CONVERTER[filing_type]}-{status}.html'
+        ).read_text()
+    filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
+    filing_data = (filing.json)['filing'][f'{original_filing_type}'] if filing_type == 'correction' \
+        else (filing.json)['filing'][f'{filing_type}']
     html_out = jnja_template.render(
         business=business,
-        filing=(filing.json)['filing'][f'{filing_type}'],
+        filing=filing_data,
         header=(filing.json)['filing']['header'],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
         (filing.json)['filing']['business'].get('identifier', ''),
         email_header=filing_name.upper(),
-        filing_type=filing_type
+        filing_type=filing_type,
+        additional_info=get_additional_info(filing)
     )
 
     # get attachments
@@ -182,6 +212,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     if status == Filing.Status.PAID.value:
         if filing_type == 'incorporationApplication':
             subject = 'Confirmation of Filing from the Business Registry'
+        elif filing_type == 'correction':
+            subject = f'Confirmation of Correction of {original_filing_name}'
         elif filing_type in ['changeOfAddress', 'changeOfDirectors']:
             address_director = [x for x in ['Address', 'Director'] if x in filing_type][0]
             subject = f'Confirmation of {address_director} Change'
@@ -191,7 +223,9 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     elif status == Filing.Status.COMPLETED.value:
         if filing_type == 'incorporationApplication':
             subject = 'Incorporation Documents from the Business Registry'
-        elif filing_type in ['changeOfAddress', 'changeOfDirectors', 'alteration']:
+        if filing_type == 'correction':
+            subject = f'{original_filing_name} Correction Documents from the Business Registry'
+        elif filing_type in ['changeOfAddress', 'changeOfDirectors', 'alteration', 'correction']:
             subject = 'Notice of Articles'
 
     if not subject:  # fallback case - should never happen
@@ -214,3 +248,13 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
             'attachments': pdfs
         }
     }
+
+
+def get_additional_info(filing: Filing) -> dict:
+    """Populate any additional info required for a filing type."""
+    additional_info = {}
+    if filing.filing_type == 'correction':
+        original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
+        if original_filing_type == 'incorporationApplication':
+            additional_info['nameChange'] = NameXService.has_correction_changed_name(filing.filing_json)
+    return additional_info
