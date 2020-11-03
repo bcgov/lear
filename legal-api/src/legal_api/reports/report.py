@@ -283,7 +283,10 @@ class Report:  # pylint: disable=too-few-public-methods
     def _populate_business_info_to_filing(filing: Filing, business: Business):
         founding_datetime = LegislationDatetime.as_legislation_timezone(business.founding_date)
         hour = founding_datetime.strftime('%I')
-        business_json = VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+        if filing.transaction_id:
+            business_json = VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+        else:
+            business_json = business.json()
         business_json['formatted_founding_date_time'] = \
             founding_datetime.strftime(f'%B %-d, %Y at {hour}:%M %p Pacific Time')
         business_json['formatted_founding_date'] = founding_datetime.strftime('%B %-d, %Y')
