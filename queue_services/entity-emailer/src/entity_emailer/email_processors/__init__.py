@@ -50,7 +50,8 @@ def get_recipients(option: str, filing_json: dict, token: str = None) -> str:
     recipients = ''
     if filing_json['filing'].get('incorporationApplication'):
         recipients = filing_json['filing']['incorporationApplication']['contactPoint']['email']
-        if option in [Filing.Status.PAID.value, 'bn']:
+        if option in [Filing.Status.PAID.value, 'bn'] and \
+                filing_json['filing']['header']['name'] == 'incorporationApplication':
             parties = filing_json['filing']['incorporationApplication'].get('parties')
             comp_party_email = None
             for party in parties:
