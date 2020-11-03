@@ -92,6 +92,8 @@ class DocumentMetaService():
             documents = self.get_correction_reports(filing)
         elif filing_type == 'alteration':
             documents = self.get_alteration_reports()
+        elif filing_type == 'transition':
+            documents = self.get_transition_reports()
 
         return documents
 
@@ -227,6 +229,36 @@ class DocumentMetaService():
                 self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
                 DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
             ))
+
+        return reports
+
+    def get_transition_reports(self):  # pylint: disable=no-self-use
+        """Return transition meta object(s)."""
+        reports = []
+
+        if self.is_paid():
+            reports.append(
+                self.create_report_object(
+                    'Transition Application - Pending',
+                    self.get_general_filename('Transition Application (Pending)')
+                )
+            )
+        else:
+            reports.append(
+                self.create_report_object(
+                    'Transition Application',
+                    self.get_general_filename('Transition Application')
+                )
+            )
+
+        if self.is_completed():
+            reports.append(
+                self.create_report_object(
+                    DocumentMetaService.NOTICE_OF_ARTICLES,
+                    self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
+                    DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
+                )
+            )
 
         return reports
 
