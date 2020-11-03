@@ -96,7 +96,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         party_email = ''
         for party in filing.json['filing']['incorporationApplication']['parties']:
             if next((x for x in party['roles'] if x['roleType'] == 'Completing Party'), None):
-                party_email = party['officer']['email']
+                party_email = party.get('officer', {}).get('email', None)
                 break
 
         for party in ia_json['incorporationApplication']['parties']:
