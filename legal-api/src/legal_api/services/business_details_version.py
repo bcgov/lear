@@ -91,6 +91,19 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             VersionedBusinessDetailsService.get_name_translations_revision(filing.transaction_id, business.id)
         ia_json['incorporationApplication']['incorporationAgreement'] = \
             VersionedBusinessDetailsService.get_incorporation_agreement_json(filing)
+
+        # setting completing party email from filing json
+        party_email = ''
+        for party in filing.json['filing']['incorporationApplication']['parties']:
+            if next((x for x in party['roles'] if x['roleType'] == 'Completing Party'), None):
+                party_email = party.get('officer', {}).get('email', None)
+                break
+
+        for party in ia_json['incorporationApplication']['parties']:
+            if next((x for x in party['roles'] if x['roleType'] == 'Completing Party'), None):
+                party['officer']['email'] = party_email
+                break
+
         return ia_json
 
     @staticmethod
