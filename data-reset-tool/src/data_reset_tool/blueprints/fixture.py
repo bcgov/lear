@@ -338,21 +338,21 @@ def _copy_from_table(cur: psycopg2.extensions.cursor, table: str, business_id: s
         )
         if id_list:
             # get address ids from parties table
+            addr_id_list = ''
             deliv_addr_id_list = _get_id_list(
                 cur=cur, column='delivery_address_id', table='parties', table_val='id', val=id_list)
-            # create address csv for party delivery addresses
-            if deliv_addr_id_list:
-                addresses_stmnt = f'select * from addresses where id in {deliv_addr_id_list}'
-                addresses_version_stmnt = f'select * from addresses_version where id in {deliv_addr_id_list}'
-                files.append(_create_csv(cur=cur, filename=f'{table}-addresses', select_stmnt=addresses_stmnt))
-                files.append(
-                    _create_csv(cur=cur, filename=f'{table}-addresses_version', select_stmnt=addresses_version_stmnt))
+            addr_id_list = str(deliv_addr_id_list).replace('(', '').replace(')', '')
+            addr_id_list = addr_id_list + ',' if addr_id_list else addr_id_list
+
             mail_addr_id_list = _get_id_list(
                 cur=cur, column='mailing_address_id', table='parties', table_val='id', val=id_list)
+            addr_id_list += str(mail_addr_id_list).replace('(', '').replace(')', '')
+
             # create address csv for party mailing addresses
-            if mail_addr_id_list:
-                addresses_stmnt = f'select * from addresses where id in {mail_addr_id_list}'
-                addresses_version_stmnt = f'select * from addresses_version where id in {mail_addr_id_list}'
+            if addr_id_list:
+                addr_id_list = '(' + addr_id_list + ')'
+                addresses_stmnt = f'select * from addresses where id in {addr_id_list}'
+                addresses_version_stmnt = f'select * from addresses_version where id in {addr_id_list}'
                 files.append(_create_csv(cur=cur, filename=f'{table}-addresses', select_stmnt=addresses_stmnt))
                 files.append(
                     _create_csv(cur=cur, filename=f'{table}-addresses_version', select_stmnt=addresses_version_stmnt))
