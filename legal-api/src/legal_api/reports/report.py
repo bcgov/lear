@@ -96,11 +96,8 @@ class Report:  # pylint: disable=too-few-public-methods
         """
         template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
-            'bc-annual-report/businessDetails',
             'bc-annual-report/legalObligations',
             'bc-address-change/addresses',
-            'bc-address-change/businessDetails',
-            'bc-director-change/businessDetails',
             'bc-director-change/directors',
             'certificate-of-incorporation/logo',
             'certificate-of-incorporation/registrarSignature',
@@ -110,15 +107,14 @@ class Report:  # pylint: disable=too-few-public-methods
             'common/shareStructure',
             'common/correctedOnCertificate',
             'common/style',
+            'common/businessDetails',
             'incorporation-application/benefitCompanyStmt',
-            'incorporation-application/businessDetails',
             'incorporation-application/completingParty',
             'incorporation-application/directors',
             'incorporation-application/effectiveDate',
             'incorporation-application/incorporator',
             'incorporation-application/nameRequest',
             'notice-of-articles/benefitCompanyStmt',
-            'notice-of-articles/businessDetails',
             'notice-of-articles/directors',
             'notice-of-articles/resolutionDates',
             'notice-of-articles/restrictions',
@@ -165,6 +161,7 @@ class Report:  # pylint: disable=too-few-public-methods
                 with suppress(KeyError):
                     self._set_directors(filing)
 
+        filing['header']['reportType'] = self._report_key
         self._set_dates(filing)
         self._set_description(filing)
         self._set_tax_id(filing)
@@ -354,6 +351,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'noa': {
             'filingDescription': 'Notice of Articles',
             'fileName': 'noticeOfArticles'
+        },
+        'transition': {
+            'filingDescription': 'Transition Application',
+            'fileName': 'transitionApplication'
         },
         'changeOfAddress': {
             'hasDifferentTemplates': True,

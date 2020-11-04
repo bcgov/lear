@@ -10,11 +10,7 @@
     <div class="section-data mt-4">
         <span class="bold">Name of Company:</span>
         {% if not incorporationApplication.nameRequest.nrNumber%}
-            {% if header.reportType == 'noa'%}
-                {{business.legalName}}
-            {% else %}
-                A company name using the Incorporation Number will be provided on the Recognition Date and Time.
-            {% endif %}
+            A company name using the Incorporation Number will be provided on the Recognition Date and Time.
         {% else %}
             <span class="bold">{{incorporationApplication.nameRequest.legalName}}</span>
         {% endif %}

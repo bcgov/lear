@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
    <head>
-      <title>Notice of Articles</title>
+      <title>Transition Application</title>
       <meta charset="UTF-8">
       <meta name="author" content="BC Registries and Online Services">
       [[common/style.html]]
@@ -15,8 +15,8 @@
                   [[logo.html]]
                </td>
                <td>
-                  <div class="report-type">NOTICE OF ARTICLES</div>
-                  <div class="report-type-desc">BC Benefit Company - Business Corporations Act</div>
+                  <div class="report-type">TRANSITION APPLICATION</div>
+                  <div class="report-type-desc">BC Limited Company - Business Corporations Act</div>
                </td>
             </tr>
          </table>
@@ -25,6 +25,24 @@
          </div>
       </div>
       [[common/businessDetails.html]]
+      <div class="no-page-break">
+         <div class="section-header mt-5 pt-4">TRANSITION APPLICATION</div>
+         <div class="container pt-4">
+            This confirms there has been filed with the registrar all records necessary to ensure that the
+            information in the corporate registry respecting the directors of the company is, immediately
+            before the transition application is submitted to the registrar for filing, correct.         
+         </div>
+
+         <div class="section-data mt-4">
+            <span class="bold">Name of Company:</span>
+            {{business.legalName}}
+         </div>
+         <div class="section-data mt-4">
+            <span class="bold">Incorporation Number:</span>
+            {{business.identifier}}
+         </div>
+      </div>
+        
       <div class="section-header mt-5 pt-4">NOTICE OF ARTICLES</div>
       <div class="container pt-4">
          [[notice-of-articles/benefitCompanyStmt.html]]
