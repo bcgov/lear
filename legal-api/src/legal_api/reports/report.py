@@ -108,9 +108,9 @@ class Report:  # pylint: disable=too-few-public-methods
             'common/correctedOnCertificate',
             'common/style',
             'common/businessDetails',
+            'common/directors',
             'incorporation-application/benefitCompanyStmt',
             'incorporation-application/completingParty',
-            'incorporation-application/directors',
             'incorporation-application/effectiveDate',
             'incorporation-application/incorporator',
             'incorporation-application/nameRequest',
@@ -160,6 +160,9 @@ class Report:  # pylint: disable=too-few-public-methods
                 # set director list from either the COD filing or status quo data in AR filing
                 with suppress(KeyError):
                     self._set_directors(filing)
+
+            if self._report_key == 'transition':
+                self._format_transition_data(filing)
 
         filing['header']['reportType'] = self._report_key
         self._set_dates(filing)
@@ -290,6 +293,12 @@ class Report:  # pylint: disable=too-few-public-methods
         filing.filing_json['filing']['business'] = business_json
         filing.filing_json['filing']['header']['filingId'] = filing.id
 
+    def _format_transition_data(self, filing):
+        filing.update(filing['transition'])
+        self._format_directors(filing['parties'])
+        if filing.get('shareStructure', {}).get('shareClasses', None):
+            filing['shareClasses'] = filing['shareStructure']['shareClasses']
+
     def _format_incorporation_data(self, filing):
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
@@ -300,6 +309,7 @@ class Report:  # pylint: disable=too-few-public-methods
         filing['listOfTranslations'] = filing['incorporationApplication'].get('nameTranslations', {})\
             .get('new', [])
         filing['offices'] = filing['incorporationApplication']['offices']
+        filing['parties'] = filing['incorporationApplication']['parties']
         if filing['incorporationApplication'].get('shareClasses', None):
             filing['shareClasses'] = filing['incorporationApplication']['shareClasses']
         else:
