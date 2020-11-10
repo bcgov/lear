@@ -5,8 +5,6 @@ USER root
 RUN mkdir /opt/app-root && chmod 755 /opt/app-root
 WORKDIR /opt/app-root
 
-RUN chmod 777 /opt/app-root/exports
-
 # Install the requirements
 COPY ./requirements.txt .
 
@@ -16,6 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 RUN pip install .
+
+RUN chmod 777 exports
 
 USER 1001
 
