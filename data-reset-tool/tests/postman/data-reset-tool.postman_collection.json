@@ -37,12 +37,10 @@
 							"file": {}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/fixture/export/BC1219957",
-							"protocol": "http",
+							"raw": "{{url}}/api/fixture/export/BC1219957",
 							"host": [
-								"localhost"
+								"{{url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"fixture",
@@ -82,12 +80,10 @@
 							"file": {}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/fixture/export/BC1218877",
-							"protocol": "http",
+							"raw": "{{url}}/api/fixture/export/BC1218877",
 							"host": [
-								"localhost"
+								"{{url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"fixture",
@@ -127,12 +123,10 @@
 							"file": {}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/fixture/export/BC1218875",
-							"protocol": "http",
+							"raw": "{{url}}/api/fixture/export/BC1218875",
 							"host": [
-								"localhost"
+								"{{url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"fixture",
@@ -144,7 +138,7 @@
 					"response": []
 				},
 				{
-					"name": "get CP1000001",
+					"name": "get CP0001405",
 					"event": [
 						{
 							"listen": "test",
@@ -172,24 +166,22 @@
 							"file": {}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/fixture/export/CP1000001",
-							"protocol": "http",
+							"raw": "{{url}}/api/fixture/export/CP0001405",
 							"host": [
-								"localhost"
+								"{{url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"fixture",
 								"export",
-								"CP1000001"
+								"CP0001405"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "get CP1000001 businesses",
+					"name": "get CP0001405 businesses",
 					"event": [
 						{
 							"listen": "test",
@@ -217,17 +209,15 @@
 							"file": {}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/fixture/export/CP1000001/businesses",
-							"protocol": "http",
+							"raw": "{{url}}/api/fixture/export/CP0001405/businesses",
 							"host": [
-								"localhost"
+								"{{url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"fixture",
 								"export",
-								"CP1000001",
+								"CP0001405",
 								"businesses"
 							]
 						}
@@ -235,7 +225,7 @@
 					"response": []
 				},
 				{
-					"name": "get CP1000001 filings",
+					"name": "get CP0001405 filings",
 					"event": [
 						{
 							"listen": "test",
@@ -263,17 +253,15 @@
 							"file": {}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/fixture/export/CP1000001/filings",
-							"protocol": "http",
+							"raw": "{{url}}/api/fixture/export/CP0001405/filings",
 							"host": [
-								"localhost"
+								"{{url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"fixture",
 								"export",
-								"CP1000001",
+								"CP0001405",
 								"filings"
 							]
 						}
@@ -281,7 +269,7 @@
 					"response": []
 				},
 				{
-					"name": "get CP1000001 offices",
+					"name": "get CP0001405 offices",
 					"event": [
 						{
 							"listen": "test",
@@ -309,17 +297,15 @@
 							"file": {}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/fixture/export/CP1000001/offices",
-							"protocol": "http",
+							"raw": "{{url}}/api/fixture/export/CP0001405/offices",
 							"host": [
-								"localhost"
+								"{{url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"fixture",
 								"export",
-								"CP1000001",
+								"CP0001405",
 								"offices"
 							]
 						}
@@ -327,7 +313,7 @@
 					"response": []
 				},
 				{
-					"name": "get CP1000001 addresses",
+					"name": "get CP0001405 addresses",
 					"event": [
 						{
 							"listen": "test",
@@ -355,17 +341,15 @@
 							"file": {}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/fixture/export/CP1000001/addresses",
-							"protocol": "http",
+							"raw": "{{url}}/api/fixture/export/CP0001405/addresses",
 							"host": [
-								"localhost"
+								"{{url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"fixture",
 								"export",
-								"CP1000001",
+								"CP0001405",
 								"addresses"
 							]
 						}
@@ -373,7 +357,7 @@
 					"response": []
 				},
 				{
-					"name": "get CP1000001 party roles",
+					"name": "get CP0001405 party roles",
 					"event": [
 						{
 							"listen": "test",
@@ -401,17 +385,15 @@
 							"file": {}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/fixture/export/CP1000001/party_roles",
-							"protocol": "http",
+							"raw": "{{url}}/api/fixture/export/CP0001405/party_roles",
 							"host": [
-								"localhost"
+								"{{url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"fixture",
 								"export",
-								"CP1000001",
+								"CP0001405",
 								"party_roles"
 							]
 						}
@@ -419,7 +401,7 @@
 					"response": []
 				},
 				{
-					"name": "get CP1000001 parties",
+					"name": "get CP0001405 parties",
 					"event": [
 						{
 							"listen": "test",
@@ -447,17 +429,15 @@
 							"file": {}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/fixture/export/CP1000001/parties",
-							"protocol": "http",
+							"raw": "{{url}}/api/fixture/export/CP0001405/parties",
 							"host": [
-								"localhost"
+								"{{url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"fixture",
 								"export",
-								"CP1000001",
+								"CP0001405",
 								"parties"
 							]
 						}
@@ -498,7 +478,7 @@
 					"response": []
 				},
 				{
-					"name": "delete CP1000001",
+					"name": "delete CP0001405",
 					"request": {
 						"method": "DELETE",
 						"header": [
@@ -510,46 +490,15 @@
 							}
 						],
 						"url": {
-							"raw": "http://localhost:5000/api/fixture/delete/CP1000001",
-							"protocol": "http",
+							"raw": "{{url}}/api/fixture/delete/CP0001405",
 							"host": [
-								"localhost"
+								"{{url}}"
 							],
-							"port": "5000",
 							"path": [
 								"api",
 								"fixture",
 								"delete",
-								"CP1000001"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "delete CP1000002",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "multipart/form-data"
-							}
-						],
-						"url": {
-							"raw": "http://localhost:5000/api/fixture/delete/CP1000002",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"fixture",
-								"delete",
-								"CP1000002"
+								"CP0001405"
 							]
 						}
 					},
@@ -1089,6 +1038,185 @@
 								"fixture",
 								"import",
 								"BEN"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post all tables CP0001405",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "237e1caa-ac8e-421f-b3c4-18ae3cf184da",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "businesses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/businesses.csv"
+								},
+								{
+									"key": "filings",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/filings.csv"
+								},
+								{
+									"key": "offices",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/offices.csv"
+								},
+								{
+									"key": "addresses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/addresses.csv"
+								},
+								{
+									"key": "parties-addresses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/parties-addresses.csv"
+								},
+								{
+									"key": "parties",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/parties.csv"
+								},
+								{
+									"key": "party_roles",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/party_roles.csv"
+								},
+								{
+									"key": "businesses_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/businesses_version.csv"
+								},
+								{
+									"key": "offices_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/offices_version.csv"
+								},
+								{
+									"key": "addresses_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/addresses_version.csv"
+								},
+								{
+									"key": "parties-addresses_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/parties-addresses_version.csv"
+								},
+								{
+									"key": "parties_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/parties_version.csv"
+								},
+								{
+									"key": "party_roles_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/party_roles_version.csv"
+								},
+								{
+									"key": "share_classes",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "share_classes_version",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "aliases",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "aliases_version",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "resolutions",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "resolutions_version",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "share_series",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "share_series_version",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "transaction",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/transaction.csv"
+								},
+								{
+									"key": "parties_version-addresses",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/parties_version-addresses.csv"
+								},
+								{
+									"key": "parties_version-addresses_version",
+									"type": "file",
+									"src": "/Users/kjinnah/work/lear/data-reset-tool/imports/CP0001405/parties_version-addresses_version.csv"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/api/fixture/import/CP",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"fixture",
+								"import",
+								"CP"
 							]
 						}
 					},
