@@ -127,6 +127,12 @@ class Filing:
         self.storage.filing_json = self._raw
         self._storage.save()
 
+    def diff(self):
+        """Return the diff block for the filing this one corrects, if any."""
+        if not(self.json and self.json.get('correction')):
+            return None
+        return None
+
     @staticmethod
     def validate():
         """Validate the filing."""
