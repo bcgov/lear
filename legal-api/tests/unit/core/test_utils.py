@@ -19,7 +19,7 @@ import pytest
 
 def test_node_json():
     """Assert that the node to managed diffs is working as designed."""
-    from legal_api.core import Node
+    from legal_api.core.utils import Node
     node = Node(old_value=2, new_value='ten', path=['a', 'b'])
     assert node.json == {
         'oldValue': 2,
@@ -114,12 +114,37 @@ TEST_JSON_DIFF = [
 @ pytest.mark.parametrize('test_name, json1, json2, expected', TEST_JSON_DIFF)
 def test_diff_block(test_name, json1, json2, expected):
     """Assert that the diff block gets created correctly."""
-    from legal_api.core import diff_dict
+    from legal_api.core.utils import diff_dict
     diff = diff_dict(json1, json2)
 
     ld = [d.json for d in diff]
 
     assert expected == ld
+
+
+def test_diff_block_ignore_keys():
+    """Assert that the edge stop cases work."""
+    from legal_api.core.utils import diff_dict
+    json1 = {'a': 'b', 'c': {'a1', 'b1'}}
+    json2 = {'a': 'b', 'c': {'a1', 'b2'}}
+    ignore_keys = ['c']
+    expected = []
+
+    diff = diff_dict(json1, json2, ignore_keys=ignore_keys)
+
+    assert diff == expected
+
+
+def test_diff_list_missing_diff_list_func():
+    """Assert that the list is skipped if no diff_list function provided."""
+    from legal_api.core.utils import diff_dict
+    json1 = {'a': 'b', 'c': [{'a1', 'b1'}]}
+    json2 = {'a': 'b', 'c': [{'a1', 'b2'}]}
+    expected = []
+
+    diff = diff_dict(json1, json2)
+
+    assert diff == expected
 
 
 TEST_JSON_DIFF = [
@@ -258,12 +283,58 @@ TEST_JSON_DIFF = [
 @ pytest.mark.parametrize('test_name, json1, json2, expected', TEST_JSON_DIFF)
 def test_diff_block_list_with_ids(test_name, json1, json2, expected):
     """Assert that the diff block gets created correctly."""
-    from legal_api.core import diff_dict, diff_list_with_id
+    from legal_api.core.utils import diff_dict, diff_list_with_id
     try:
         diff = diff_dict(json1, json2, diff_list=diff_list_with_id)
     except Exception as err:
         print(err)
 
     ld = [d.json for d in diff]
+
+    assert expected == ld
+
+
+@ pytest.mark.parametrize('test_name, json1, json2, expected', [
+    (
+        'no lists', {}, {}, None
+    ),
+    (
+        'no json2', [{'id': 1, 'j': 'k'}], {},
+        [
+            {'oldValue': None,
+             'newValue': [{'id': 1, 'j': 'k'}],
+             'path': '/'},
+        ]
+    ),
+    (
+        'no json1', {}, [{'id': 1, 'j': 'k'}],
+        [
+            {'oldValue': {'id': 1, 'j': 'k'},
+             'newValue': None,
+             'path': '/'},
+        ]
+    ),
+    (
+        'json1 no row ID', [{'j': 'k'}], [{'j': 'k'}], None
+    ),
+    (
+        'json2 no row ID', {}, [{'id': 1, 'j': 'k'}, {'j': 'k'}],
+        [
+            {'oldValue': {'id': 1, 'j': 'k'},
+             'newValue': None,
+             'path': '/'},
+        ]
+    ),
+])
+def test_diff_list_missing_lists(test_name, json1, json2, expected):
+    """Assert that the diff block gets created correctly."""
+    from legal_api.core.utils import diff_list_with_id
+
+    try:
+        diff = diff_list_with_id(json1, json2)
+    except Exception as err:
+        print(err)
+
+    ld = [d.json for d in diff] if diff else None
 
     assert expected == ld

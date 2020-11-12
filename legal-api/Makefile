@@ -87,8 +87,13 @@ coverage-report: local-coverage
 	coverage html
 
 ## Run the coverage report and display in a browser window
-mac-cov:	install-dev coverage-report
+mac-cov:
+	coverage run -m pytest ; \
+	coverage report ; \
+	coverage html ; \
 	open -a "Google Chrome" htmlcov/index.html
+
+
 
 ## run pylint on the package and tests
 pylint:
