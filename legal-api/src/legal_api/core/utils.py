@@ -36,8 +36,12 @@ class Node:
         }
 
 
-def diff_dict(json1, json2, path: List[str] = None, ignore_keys: List[str] = None,
-              diff_list: Callable[[dict, dict, List, List], Optional[List]] = None) -> Optional[List[Node]]:
+def diff_dict(json1,
+              json2,
+              path: List[str] = None,
+              ignore_keys: List[str] = None,
+              diff_list: Callable[[dict, dict, List, List], Optional[List]] = None) \
+        -> Optional[List[Node]]:
     """Recursively create a diff record for a dict, based on the corrections JSONSchema definition."""
     diff = []
     path = path or []
@@ -72,7 +76,11 @@ def diff_dict(json1, json2, path: List[str] = None, ignore_keys: List[str] = Non
     return diff
 
 
-def diff_list_with_id(json1, json2, path: List[str] = None, ignore_keys: List[str] = None) -> Optional[List[Node]]:
+def diff_list_with_id(json1,  # pylint: disable=too-many-branches; linter balking on := walrus
+                      json2,
+                      path: List[str] = None,
+                      ignore_keys: List[str] = None) \
+        -> Optional[List[Node]]:
     """Return the differences nodes between json1 & json2, being a list of dicts.
 
     Every dict is assumed to have a ID that is unique at the list level.

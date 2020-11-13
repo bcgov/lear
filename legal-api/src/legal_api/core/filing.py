@@ -40,7 +40,7 @@ class Filing:
         PAPER_ONLY = 'PAPER_ONLY'
         PENDING_CORRECTION = 'PENDING_CORRECTION'
 
-    class FILING_TYPES(Enum):
+    class FilingTypes(Enum):
         """Render an Enum of all Filing Types."""
 
         ALTERATION = 'alteration'
@@ -125,19 +125,19 @@ class Filing:
     @property
     def json(self) -> Optional[Dict]:
         """Return a dict representing the filing json."""
-        _json = {}
-        if self._storage:
-            if self._storage.status == Filing.Status.COMPLETED.value:
-                _json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
+        if not self._storage or (self._storage and self._storage.status not in [Filing.Status.COMPLETED.value,
+                                                                                Filing.Status.PAID.value,
+                                                                                Filing.Status.PENDING.value,
+                                                                                ]):
+            return self.raw
 
-                if self.filing_type == Filing.FILING_TYPES.CORRECTION.value:
+        filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
+        if self.filing_type == Filing.FilingTypes.CORRECTION.value:
+            if correction_id := filing_json.get('filing', {}).get('correction', {}).get('correctedFilingId'):
+                if diff := self._diff(filing_json, correction_id):
+                    filing_json['filing']['correction']['diff'] = diff
 
-                    if diff := self.diff():
-                        _json['filing']['correction']['diff'] = diff
-
-            else:
-                return self.raw
-        return _json
+        return filing_json
 
     @json.setter
     def json(self, filing_submission):
@@ -161,17 +161,37 @@ class Filing:
         self._storage = filing
 
     def save(self):
-        """Save the filing."""
-        raise NotImplementedError
+        """Save the filing.
 
-    def diff(self):
+        This needs to be changed to fully implement the filing save rules currently in the storage class.
+        """
+        if self.storage:
+            self._storage.filing_json = self._raw
+            # self._storage.completion_date = self._completion_date TBD
+            # self._storage.filing_date = self._filing_date
+            # self._storage.filing_type = self._filing_type
+            # self._storage.effective_date = self._effective_date
+            # self._storage.payment_status_code = self._payment_status_code
+            # self._storage.payment_token = self._payment_token
+            # self._storage.payment_completion_date = self._payment_completion_date
+            # self._storage.status = self._status
+            # self._storage.paper_only = self._paper_only
+            self._storage.payment_account = self._payment_account
+            self.storage.save()
+
+    def _diff(self, filing_json, correction_id):
         """Return the diff block for the filing this one corrects, if any."""
-        if self.json and self.status == Filing.Status.COMPLETED.value:
-            if correction_id := self.json.get('correction'):
-                if corrected_filing := Filing.find_by_id(correction_id):
-                    if diff_nodes := diff_dict(self.json, corrected_filing.json, ignore_keys=['header', 'business', 'correction'], diff_list=diff_list_with_id):
-                        diff_json = [d.json for d in diff_nodes]
-                        return diff_json
+        if filing_json and correction_id and self._storage and self.status in [Filing.Status.COMPLETED.value,
+                                                                               Filing.Status.PAID.value,
+                                                                               Filing.Status.PENDING.value,
+                                                                               ]:
+            if corrected_filing := Filing.find_by_id(correction_id):
+                if diff_nodes := diff_dict(filing_json,
+                                           corrected_filing.json,
+                                           ignore_keys=['header', 'business', 'correction'],
+                                           diff_list=diff_list_with_id):
+                    diff_json = [d.json for d in diff_nodes]
+                    return diff_json
         return None
 
     @staticmethod
@@ -197,9 +217,10 @@ class Filing:
     @staticmethod
     def find_by_id(filing_id) -> Optional[Filing]:
         """Return a Filing domain by the id."""
+        # TODO sleuth out the decorator issue
         if storage := FilingStorage.find_by_id(filing_id):
             filing = Filing()
-            filing.storage(storage)
+            filing._storage = storage  # pylint: disable=protected-access; setter/getter decorators issue
             return filing
         return None
 

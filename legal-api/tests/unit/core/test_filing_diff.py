@@ -13,25 +13,16 @@
 # limitations under the License.
 """Tests to assure the Filing Diff is working as expected."""
 import copy
-from legal_api.utils.datetime import datetime, date
 
 import datedelta
+
 from legal_api.core import Filing
+from legal_api.utils.datetime import datetime
 from tests.unit.models import (  # noqa:E501,I001
     factory_business,
     factory_business_mailing_address,
     factory_completed_filing,
-    factory_filing,
 )
-
-
-def test_no_filing_diff():
-    """Assert that the filing diff works correctly."""
-    filing = Filing()
-
-    diff = filing.diff()
-
-    assert not diff
 
 
 MINIMAL_FILING_JSON = {'filing': {
@@ -74,9 +65,13 @@ CORRECTION_FILING_JSON = {'filing': {
 
 
 def test_filing_json_diff():
+    """Assert the diff works on a sample filing structure."""
     from legal_api.core.utils import diff_dict, diff_list_with_id
 
-    diff = diff_dict(CORRECTION_FILING_JSON, MINIMAL_FILING_JSON, ignore_keys=['header', 'business', 'correction'], diff_list=diff_list_with_id)
+    diff = diff_dict(CORRECTION_FILING_JSON,
+                     MINIMAL_FILING_JSON,
+                     ignore_keys=['header', 'business', 'correction'],
+                     diff_list=diff_list_with_id)
 
     ld = [d.json for d in diff] if diff else None
 
@@ -86,9 +81,8 @@ def test_filing_json_diff():
         'path': '/filing/specialResolution/resolution'}]
 
 
-def test_no_filing_diff():
+def test_diff_of_stored_completed_filings(session):
     """Assert that the filing diff works correctly."""
-    import copy
     identifier = 'CP1234567'
     business = factory_business(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR)
@@ -97,16 +91,17 @@ def test_no_filing_diff():
     json1 = copy.deepcopy(MINIMAL_FILING_JSON)
     original_filing = factory_completed_filing(business, json1)
 
-    try:
-        json1 = copy.deepcopy(MINIMAL_FILING_JSON)
-        filing = Filing()
-        filing.storage
-        filing._json = json1
-        filing._status = Filing.Status.COMPLETED.value
-        filing.save()
-    except Exception as err:
-        print(err)
+    json2 = copy.deepcopy(CORRECTION_FILING_JSON)
+    json2['filing']['correction']['correctedFilingId'] = str(original_filing.id)
+    correction_filing = factory_completed_filing(business, json2)
 
-    diff = filing.diff()
+    filing = Filing.find_by_id(correction_filing.id)
+    filing_json = filing.json
 
-    assert not diff
+    assert filing_json
+    assert filing_json['filing']['correction']['diff'] == [
+        {
+            'newValue': 'Be it resolved, and now it is.',
+            'oldValue': 'Be it resolved, that it is resolved to be resolved.',
+            'path': '/filing/specialResolution/resolution'
+        }]
