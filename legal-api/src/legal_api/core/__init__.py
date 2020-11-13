@@ -11,8 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """This has the core domain used by the application."""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, MutableMapping, MutableSequence, Optional
+
 from .filing import Filing
 
 
