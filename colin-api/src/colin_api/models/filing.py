@@ -997,6 +997,7 @@ class Filing:
             raise err
 
     @classmethod
+    # pylint: disable=too-many-arguments;
     def _process_ar(cls, cursor, filing, corp_num, ar_date, agm_date) -> int:
         """Process specific to annual report."""
         if filing.filing_type == 'annualReport':
@@ -1148,6 +1149,7 @@ class Filing:
                 )
 
     @classmethod
+    # pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks;
     def _process_correction(cls, cursor, business, filing, corp_num):
         """Process correction."""
         corrected_event_id = filing.body['correctedFilingColinId']
