@@ -131,7 +131,18 @@ class Filing:
                                                                                 ]):
             return self.raw
 
-        filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
+        # this will return the raw filing instead of the versioned filing until
+        # payment and processing are complete.
+        # This ASSUMES that the JSONSchemas remain valid for that period of time
+        # which fits with the N-1 approach to versioning, and
+        # that handling of filings stuck in PENDING are handled appropriately.
+        if self._storage.status in [Filing.Status.PAID.value,
+                                    Filing.Status.PENDING.value,
+                                    ]:
+            filing_json = self.raw
+        else:  # Filing.Status.COMPLETED.value
+            filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
+
         if self.filing_type == Filing.FilingTypes.CORRECTION.value:
             if correction_id := filing_json.get('filing', {}).get('correction', {}).get('correctedFilingId'):
                 if diff := self._diff(filing_json, correction_id):
@@ -139,12 +150,12 @@ class Filing:
 
         return filing_json
 
-    @json.setter
+    @ json.setter
     def json(self, filing_submission):
         """Add the raw json to the filing."""
         self._raw = filing_submission
 
-    @property
+    @ property
     def storage(self) -> Optional[FilingStorage]:
         """
         (Deprecated) Return filing model.
@@ -155,7 +166,7 @@ class Filing:
             self._storage = FilingStorage()
         return self._storage
 
-    @storage.setter
+    @ storage.setter
     def storage(self, filing: FilingStorage):
         """Set filing storage."""
         self._storage = filing
