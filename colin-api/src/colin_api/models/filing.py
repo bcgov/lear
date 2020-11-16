@@ -23,11 +23,12 @@ from http import HTTPStatus
 from typing import Dict, Optional
 
 from flask import current_app
+from registry_schemas.utils import get_schema
 
 from colin_api.exceptions import FilingNotFoundException, GenericException, InvalidFilingTypeException
 from colin_api.models import Business, CorpName, Office, Party, ShareObject
 from colin_api.resources.db import DB
-from colin_api.utils import convert_to_json_date, convert_to_json_datetime
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_snake
 
 
 # Code smells:
@@ -442,8 +443,7 @@ class Filing:
             if not event_info:
                 raise FilingNotFoundException(
                     identifier=filing.business.corp_num,
-                    filing_type=filing.filing_type,
-                    event_id=filing.event_id
+                    filing_type=filing.filing_type
                 )
 
             event_info = dict(zip([x[0].lower() for x in cursor.description], event_info))
@@ -545,8 +545,7 @@ class Filing:
         if not office_obj_list:
             raise FilingNotFoundException(
                 identifier=corp_num,
-                filing_type='change_of_address',
-                event_id=filing_event_info['event_id']
+                filing_type=''
             )
 
         offices = Office.convert_obj_list(office_obj_list)
@@ -607,8 +606,7 @@ class Filing:
         parties = Party.get_by_event(cursor, corp_num, filing_event_info['event_id'], None)
 
         if not office_obj_list:
-            raise FilingNotFoundException(identifier=corp_num, filing_type='change_of_address',
-                                          event_id=filing_event_info['event_id'])
+            raise FilingNotFoundException(identifier=corp_num, filing_type='')
 
         offices = Office.convert_obj_list(office_obj_list)
 
@@ -631,11 +629,7 @@ class Filing:
         corp_num = filing.business.corp_num
         name_obj = CorpName.get_by_event(corp_num=corp_num, event_id=filing_event_info['event_id'], cursor=cursor)[0]
         if not name_obj:
-            raise FilingNotFoundException(
-                identifier=corp_num,
-                filing_type='change_of_name',
-                event_id=filing_event_info['event_id']
-            )
+            raise FilingNotFoundException(identifier=corp_num, filing_type=filing.filing_type)
 
         filing.body = {
             **name_obj.as_dict()
@@ -664,8 +658,7 @@ class Filing:
             if not sr_info:
                 raise FilingNotFoundException(
                     identifier=corp_num,
-                    filing_type=filing.filing_type,
-                    event_id=filing_event_info['event_id']
+                    filing_type=filing.filing_type
                 )
 
             sr_info = dict(zip([x[0].lower() for x in cursor.description], sr_info))
@@ -701,8 +694,7 @@ class Filing:
             if not vd_info:
                 raise FilingNotFoundException(
                     identifier=corp_num,
-                    filing_type=filing.filing_type,
-                    event_id=filing_event_info['event_id']
+                    filing_type=filing.filing_type
                 )
 
             vd_info = dict(zip([x[0].lower() for x in cursor.description], vd_info))
@@ -748,8 +740,7 @@ class Filing:
             if not filing_info:
                 raise FilingNotFoundException(
                     identifier=corp_num,
-                    filing_type=filing.filing_type,
-                    event_id=filing_event_info['event_id']
+                    filing_type=filing.filing_type
                 )
 
             filing_info = dict(zip([x[0].lower() for x in cursor.description], filing_info))
@@ -810,17 +801,43 @@ class Filing:
                 con = DB.connection
                 con.begin()
             cursor = con.cursor()
+
             # get the filing event info
             filing_event_info = cls._get_filing_event_info(filing=filing, year=year, cursor=cursor)
             if not filing_event_info:
                 raise FilingNotFoundException(
                     identifier=filing.business.corp_num,
-                    filing_type=filing.filing_type,
-                    event_id=filing.event_id
+                    filing_type=filing.filing_type
                 )
+            filing.paper_only = False
+            filing.effective_date = filing_event_info['event_timestmp']
+            filing.body = {
+                'eventId': filing_event_info['event_id']
+            }
+
+            schema_name = convert_to_snake(filing.filing_type)
+            schema = get_schema(f'{schema_name.replace("_application", "")}.json')
+            print(schema)
+            print(schema['properties'][filing.filing_type]['properties'].keys())
+
+            components = schema.get('properties').keys()
+            if filing.filing_type in components:
+                components = schema['properties'][filing.filing_type].get('properties').keys()
+
+            # if annualReportDate in components...
+            if 'annualReportDate' in components:
+                filing.body['annualReportDate'] = convert_to_json_date(filing_event_info.get('agm_date', None))
+            if 'annualGeneralMeetingDate' in components:
+                filing.body['annualGeneralMeetingDate'] = convert_to_json_date(filing_event_info['period_end_dt'])
+            # if offices in components...
+            # if directors in components...
+            # if parties in components...
+            # if shareStructure in components...
+            # if nameTranslations in components...
+            # if nameRequest in components...
+            
             if filing.filing_type == 'annualReport':
                 filing = cls._get_ar(cursor=cursor, filing=filing, filing_event_info=filing_event_info)
-
             elif filing.filing_type == 'changeOfAddress':
                 filing = cls._get_coa(cursor=cursor, filing=filing, filing_event_info=filing_event_info)
 

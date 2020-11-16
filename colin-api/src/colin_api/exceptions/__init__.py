@@ -44,17 +44,10 @@ class BusinessNotFoundException(GenericException):
 class FilingNotFoundException(GenericException):
     """Exception with defined error code and messaging."""
 
-    def __init__(self, *args, identifier=None, filing_type=None, event_id=None, **kwargs):
+    def __init__(self, *args, identifier: str, filing_type: str, **kwargs):
         """Return a valid FilingNotFoundException."""
         super(FilingNotFoundException, self).__init__(None, None, *args, **kwargs)
-        if identifier and filing_type and event_id:
-            self.error = f'{filing_type} not found for {identifier} at event {event_id}'
-        elif identifier and filing_type:
-            self.error = f'{filing_type} not found for {identifier}'
-        elif event_id and filing_type:
-            self.error = f'{filing_type} not found for event {event_id}'
-        else:
-            self.error = 'Filing not found'
+        self.error = f'{filing_type} not found for {identifier}'
         self.status_code = 404
 
 
