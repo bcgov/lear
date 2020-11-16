@@ -18,8 +18,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from flask import Flask, g, current_app
 from config import Config
-from legal_api.utils.logging import setup_logging
-from legal_api.models import db
+from util.logging import setup_logging
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
@@ -33,7 +32,7 @@ snapshotDir = 'snapshots'
 def create_app(config=Config):
     app = Flask(__name__)
     app.config.from_object(config)
-    db.init_app(app)
+    # db.init_app(app)
     app.app_context().push()
     current_app.logger.debug('created the Flask App and pushed the App Context')
 
