@@ -797,7 +797,8 @@ class Filing:
                     office_type=office_type
                 )
                 # create new ledger text for address change
-                if filing.filing_type != 'incorporationApplication':
+                if filing.filing_type != 'incorporationApplication' and \
+                        filing.business.corp_type != Business.LearBusinessTypes.BCOMP:
                     office_desc = (office_type.replace('O', ' O')).title()
                     cls._insert_ledger_text(cursor, filing, text % (office_desc))
 
@@ -960,7 +961,8 @@ class Filing:
 
                 cls._process_directors(cursor, filing, business, corp_num)
 
-                cls._create_corp_name(cursor, filing, corp_num)
+                if filing.body.get('nameRequest'):
+                    cls._create_corp_name(cursor, filing, corp_num)
 
                 # create new addresses for delivery + mailing, return address ids
                 cls._add_office_from_filing(cursor=cursor, filing=filing)
