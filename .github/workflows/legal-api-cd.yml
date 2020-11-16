@@ -21,12 +21,12 @@ jobs:
       - uses: actions/checkout@v2
       - name: Set env by input
         run: |
-          echo "::set-env name=TAG_NAME::${{ github.event.inputs.environement }}"
+          echo "TAG_NAME=${{ github.event.inputs.environement }}" >> $GITHUB_ENV
 
       - name: Set env by master branch
         if: env.TAG_NAME == '' && github.ref == 'refs/heads/master'
         run: |
-          echo "::set-env name=TAG_NAME::dev"
+          echo "TAG_NAME=dev" >> $GITHUB_ENV
 
       - uses: pwei1018/bcrs-cd-action@latest
         with:

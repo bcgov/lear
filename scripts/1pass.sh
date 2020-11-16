@@ -176,7 +176,7 @@ for env_name in "${envs[@]}"; do
             env)
               echo "Setting environment variable $(_envvars '.t')"
               echo ::add-mask::$(_envvars '.v')
-              echo ::set-env name=$(_envvars '.t')::$(_envvars '.v')
+              echo ::echo "$(_envvars '.t')=$(_envvars '.v')" >> $GITHUB_ENV
               ;;
             compare)
               #read the vault's key to a txt file
@@ -200,19 +200,21 @@ case  ${METHOD}  in
     result2=$(comm -23 <(sort t2.txt) <(sort t1.txt))
     if [[ -z ${result} ]]; then
       if [[ -z ${result2} ]]; then
-        echo ::set-env name=approval::true
-        echo ::set-env name=message::The vault items between ${envs[0]} and ${envs[1]}  are matched.
+        echo ::echo "approval=true" >> $GITHUB_ENV
+        echo ::echo "message=The vault items between ${envs[0]} and ${envs[1]}  are matched." >> $GITHUB_ENV
       else
-        echo ::set-env name=approval::false
-        echo ::set-env name=message::The following vault items between ${envs[1]} and ${envs[0]} does not match. ${result2}
+        echo ::echo "approval=false" >> $GITHUB_ENV
+        echo ::echo "message=The following vault items between ${envs[1]} and ${envs[0]} does not match. ${result2}" >> $GITHUB_ENV
       fi
     else
-      echo ::set-env name=approval::false
-      echo ::set-env name=message::The following vault items between ${envs[0]} and ${envs[1]} does not match. ${result}
+      echo ::echo "approval=false" >> $GITHUB_ENV
+      echo ::echo "message=The following vault items between ${envs[0]} and ${envs[1]} does not match. ${result}"  >> $GITHUB_ENV
     fi
 
     rm t*.txt
     ;;
 esac
+
+
 
 
