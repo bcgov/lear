@@ -147,7 +147,7 @@ def test_diff_list_missing_diff_list_func():
     assert diff == expected
 
 
-TEST_JSON_DIFF = [
+TEST_LIST_DIFF = [
     ('equal lists',  # test_name
      {'c': 'd', 'a': [{'id': 1, 'j': 'k'}]},
      {'c': 'd', 'a': [{'id': 1, 'j': 'k'}]},
@@ -280,7 +280,7 @@ TEST_JSON_DIFF = [
 ]
 
 
-@ pytest.mark.parametrize('test_name, json1, json2, expected', TEST_JSON_DIFF)
+@ pytest.mark.parametrize('test_name, json1, json2, expected', TEST_LIST_DIFF)
 def test_diff_block_list_with_ids(test_name, json1, json2, expected):
     """Assert that the diff block gets created correctly."""
     from legal_api.core.utils import diff_dict, diff_list_with_id
