@@ -123,14 +123,18 @@ def diff_list_with_id(json1,  # pylint: disable=too-many-branches; linter balkin
             ))
         memoize.append(row1_id)
 
-    if len(memoize) < len(json2):
+    json2_rows = [x.get('id') for x in json2]
+    print('json_rows', json2_rows)
+    print('diff', diff)
+
+    if deleted_rows := set(json2_rows).difference(memoize):
         for row in json2:
-            if row_id := row.get('id', None):
-                if row_id not in memoize:
-                    diff.append(Node(
-                        old_value=row,
-                        new_value=None,
-                        path=[''] if not path else path
-                    ))
+            if row.get('id', '') in deleted_rows:
+                diff.append(Node(
+                    old_value=row,
+                    new_value=None,
+                    path=[''] if not path else path
+                ))
+    print('diff', diff)
 
     return diff
