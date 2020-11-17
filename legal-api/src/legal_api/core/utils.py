@@ -55,7 +55,11 @@ def diff_dict(json1,
                              path=path + [key]))
 
         elif isinstance(value, MutableMapping):
-            if d := diff_dict(json1[key], json2[key], path + [key], ignore_keys):
+            if d := diff_dict(json1=json1[key],
+                              json2=json2[key],
+                              path=path + [key],
+                              ignore_keys=ignore_keys,
+                              diff_list=diff_list):
                 diff.extend(d)
 
         elif isinstance(value, MutableSequence):
