@@ -81,7 +81,7 @@ to setup your local development environment.
 
 3. Create cron
 
-   ```sh      
+   ```sh
    oc process -f cron-notebook-report.yml \
         -p ENV_TAG=dev \
     | oc apply -f -
