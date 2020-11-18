@@ -1,0 +1,41 @@
+name: Filings Notebook Report Job CI
+
+on:
+  pull_request:
+    types: [assigned, synchronize]
+    paths:
+      - "jobs/filings-notebook-report/**"
+
+jobs:
+  filings-notebook-report-ci:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        working-directory: ./jobs/filings-notebook-report
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements/dev.txt
+      - name: Lint with pylint
+        working-directory: ./jobs/filings-notebook-report
+        run: |
+          pylint --rcfile=setup.cfg --load-plugins=pylint_flask notebookreport.py
+      - name: Lint with flake8
+        working-directory: ./jobs/filings-notebook-report
+        run: |
+          flake8 notebookreport.py
+
+#      - name: Test with pytest
+#        working-directory: ./jobs/filings-notebook-report
+#        run: |
+#          pip install .
+#          pytest
