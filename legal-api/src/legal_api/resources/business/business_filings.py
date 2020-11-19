@@ -62,7 +62,7 @@ class ListFilingResource(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def get(identifier, filing_id=None):  # pylint: disable=too-many-return-statements;
+    def get(identifier, filing_id=None):  # pylint: disable=too-many-return-statements,too-many-branches;
         # fix this while refactoring this whole module
         """Return a JSON object with meta information about the Service."""
         original_filing = str(request.args.get('original', None)).lower() == 'true'
@@ -98,7 +98,7 @@ class ListFilingResource(Resource):
 
                 if rv.filing_type == CoreFiling.FilingTypes.CORRECTION.value:
                     # This is temporarily required until #5302 ticket implements
-                    rv.storage._filing_json['filing']['correction']['diff'] = rv.json['filing']['correction']['diff']
+                    rv.storage._filing_json['filing']['correction']['diff'] = rv.json['filing']['correction']['diff']  # pylint: disable=protected-access; # noqa: E501;
 
                 return legal_api.reports.get_pdf(rv.storage, report_type)
             return jsonify(rv.raw if original_filing else rv.json)

@@ -320,7 +320,7 @@ class Report:  # pylint: disable=too-few-public-methods
         else:
             filing['shareClasses'] = filing['incorporationApplication']['shareStructure']['shareClasses']
 
-    def _has_change(self, old_value, new_value):
+    def _has_change(self, old_value, new_value):  # pylint: disable=no-self-use;
         """Check to fix the hole in diff.
 
         example:
@@ -344,10 +344,10 @@ class Report:  # pylint: disable=too-few-public-methods
             self._format_party_with_diff_data(incorporation_application, diff)
             self._format_share_structure_with_diff_data(incorporation_application, diff)
 
-    def _format_name_translations_with_diff_data(self, filing, diff):
+    def _format_name_translations_with_diff_data(self, filing, diff):  # pylint: disable=no-self-use;
         name_translations = \
             [x for x in diff if x['path'].startswith('/filing/incorporationApplication/nameTranslations/')
-                and x.get('newValue')]
+             and x.get('newValue')]
         filing['hasNameTranslationsCorrected'] = len(name_translations) > 0
         if translations := filing.get('listOfTranslations', None):
             modified_name_translations = \
@@ -357,19 +357,23 @@ class Report:  # pylint: disable=too-few-public-methods
                 translations.append(modified_nt['newValue'])
 
     def _format_office_with_diff_data(self, incorporation_application, diff):
-        reg_mailing_address = [x for x in diff if x['path'].startswith(
-            '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/')
-            and self._has_change(x.get('oldValue'), x.get('newValue'))]
-        reg_delivery_address = [x for x in diff if x['path'].startswith(
-            '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/')
-            and self._has_change(x.get('oldValue'), x.get('newValue'))]
+        reg_mailing_address = \
+            [x for x in diff if x['path']
+             .startswith('/filing/incorporationApplication/offices/registeredOffice/mailingAddress/')
+             and self._has_change(x.get('oldValue'), x.get('newValue'))]
+        reg_delivery_address = \
+            [x for x in diff if x['path']
+             .startswith('/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/')
+             and self._has_change(x.get('oldValue'), x.get('newValue'))]
 
-        rec_mailing_address = [x for x in diff if x['path'].startswith(
-            '/filing/incorporationApplication/offices/recordsOffice/mailingAddress/')
-            and self._has_change(x.get('oldValue'), x.get('newValue'))]
-        rec_delivery_address = [x for x in diff if x['path'].startswith(
-            '/filing/incorporationApplication/offices/recordsOffice/deliveryAddress/')
-            and self._has_change(x.get('oldValue'), x.get('newValue'))]
+        rec_mailing_address = \
+            [x for x in diff if x['path']
+             .startswith('/filing/incorporationApplication/offices/recordsOffice/mailingAddress/')
+             and self._has_change(x.get('oldValue'), x.get('newValue'))]
+        rec_delivery_address = \
+            [x for x in diff if x['path']
+             .startswith('/filing/incorporationApplication/offices/recordsOffice/deliveryAddress/')
+             and self._has_change(x.get('oldValue'), x.get('newValue'))]
 
         offices = incorporation_application['offices']
         offices['registeredOffice']['mailingAddress']['hasCorrected'] = len(reg_mailing_address) > 0
@@ -379,13 +383,13 @@ class Report:  # pylint: disable=too-few-public-methods
 
     def _format_party_with_diff_data(self, incorporation_application, diff):
         parties_corrected = \
-            set([re.search(r'\/parties\/([\w\-]+)', x['path'])[1] for x in diff if
+            set([re.search(r'\/parties\/([\w\-]+)', x['path'])[1] for x in diff if  # pylint: disable=consider-using-set-comprehension; # noqa: E501;
                  x['path'].startswith('/filing/incorporationApplication/parties/')
                  and self._has_change(x.get('oldValue'), x.get('newValue'))])
 
         parties_removed = \
             [x for x in diff if x['path'] == '/filing/incorporationApplication/parties'
-                and not x.get('newValue') and x.get('oldValue')]
+             and not x.get('newValue') and x.get('oldValue')]
 
         parties = incorporation_application['parties']
         for party_id in parties_corrected:
@@ -397,14 +401,14 @@ class Report:  # pylint: disable=too-few-public-methods
             party['hasRemoved'] = True
             parties.append(party)
 
-    def _format_share_structure_with_diff_data(self, incorporation_application, diff):
+    def _format_share_structure_with_diff_data(self, incorporation_application, diff):  # pylint: disable=too-many-locals,no-self-use; # noqa: E501;
         share_classes_corrected = \
-            set([re.search(r'\/shareClasses\/([\w\-]+)', x['path'])[1] for x in diff if
+            set([re.search(r'\/shareClasses\/([\w\-]+)', x['path'])[1] for x in diff if  # pylint: disable=consider-using-set-comprehension; # noqa: E501
                  x['path'].startswith('/filing/incorporationApplication/shareStructure/shareClasses/')
                  and '/series' not in x['path']])
         share_classes_removed = \
             [x for x in diff if x['path'] == '/filing/incorporationApplication/shareStructure/shareClasses'
-                and not x.get('newValue') and x.get('oldValue')]
+             and not x.get('newValue') and x.get('oldValue')]
 
         share_classes = incorporation_application.get('shareStructure', {}).get('shareClasses', [])
         for share_class_id in share_classes_corrected:
@@ -425,9 +429,9 @@ class Report:  # pylint: disable=too-few-public-methods
                   x['path'].endswith('/hasRightsOrRestrictions'))]
         share_series_removed = \
             [x for x in diff if
-                x['path'].startswith('/filing/incorporationApplication/shareStructure/shareClasses/')
-                and x['path'].endswith('/series')
-                and not x.get('newValue') and x.get('oldValue')]
+             x['path'].startswith('/filing/incorporationApplication/shareStructure/shareClasses/')
+             and x['path'].endswith('/series')
+             and not x.get('newValue') and x.get('oldValue')]
 
         for series_corrected in share_series_corrected:
             share_class_id = series_corrected[1]
