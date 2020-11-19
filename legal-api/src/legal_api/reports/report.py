@@ -13,6 +13,7 @@ import base64
 import copy
 import json
 import os
+import re
 from contextlib import suppress
 from datetime import datetime
 from http import HTTPStatus
@@ -163,6 +164,10 @@ class Report:  # pylint: disable=too-few-public-methods
 
             if self._report_key == 'transition':
                 self._format_transition_data(filing)
+
+            # since we reset _report_key with correction type
+            if filing['header']['name'] == 'correction':
+                self._format_with_diff_data(filing)
 
         filing['header']['reportType'] = self._report_key
         self._set_dates(filing)
@@ -315,6 +320,132 @@ class Report:  # pylint: disable=too-few-public-methods
         else:
             filing['shareClasses'] = filing['incorporationApplication']['shareStructure']['shareClasses']
 
+    def _has_change(self, old_value, new_value):
+        """Check to fix the hole in diff.
+
+        example:
+            old_value: None and new_value: ''
+            In reality there is no change but diff track it as a change
+        """
+        has_change = True  # assume that in all other cases diff has a valid change
+        if isinstance(old_value, str) and new_value is None:
+            has_change = old_value != ''
+        elif isinstance(new_value, str) and old_value is None:
+            has_change = new_value != ''
+
+        return has_change
+
+    def _format_with_diff_data(self, filing):
+        if incorporation_application := filing['incorporationApplication']:
+            diff = filing.get('correction', {}).get('diff', [])
+
+            self._format_name_translations_with_diff_data(filing, diff)
+            self._format_office_with_diff_data(incorporation_application, diff)
+            self._format_party_with_diff_data(incorporation_application, diff)
+            self._format_share_structure_with_diff_data(incorporation_application, diff)
+
+    def _format_name_translations_with_diff_data(self, filing, diff):
+        name_translations = \
+            [x for x in diff if x['path'].startswith('/filing/incorporationApplication/nameTranslations/')
+                and x.get('newValue')]
+        filing['hasNameTranslationsCorrected'] = len(name_translations) > 0
+        if translations := filing.get('listOfTranslations', None):
+            modified_name_translations = \
+                next(iter([x['newValue'] for x in diff if x['path']
+                           .startswith('/filing/incorporationApplication/nameTranslations/modified')]), [])
+            for modified_nt in modified_name_translations:
+                translations.append(modified_nt['newValue'])
+
+    def _format_office_with_diff_data(self, incorporation_application, diff):
+        reg_mailing_address = [x for x in diff if x['path'].startswith(
+            '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/')
+            and self._has_change(x.get('oldValue'), x.get('newValue'))]
+        reg_delivery_address = [x for x in diff if x['path'].startswith(
+            '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/')
+            and self._has_change(x.get('oldValue'), x.get('newValue'))]
+
+        rec_mailing_address = [x for x in diff if x['path'].startswith(
+            '/filing/incorporationApplication/offices/recordsOffice/mailingAddress/')
+            and self._has_change(x.get('oldValue'), x.get('newValue'))]
+        rec_delivery_address = [x for x in diff if x['path'].startswith(
+            '/filing/incorporationApplication/offices/recordsOffice/deliveryAddress/')
+            and self._has_change(x.get('oldValue'), x.get('newValue'))]
+
+        offices = incorporation_application['offices']
+        offices['registeredOffice']['mailingAddress']['hasCorrected'] = len(reg_mailing_address) > 0
+        offices['registeredOffice']['deliveryAddress']['hasCorrected'] = len(reg_delivery_address) > 0
+        offices['recordsOffice']['mailingAddress']['hasCorrected'] = len(rec_mailing_address) > 0
+        offices['recordsOffice']['deliveryAddress']['hasCorrected'] = len(rec_delivery_address) > 0
+
+    def _format_party_with_diff_data(self, incorporation_application, diff):
+        parties_corrected = \
+            set([re.search(r'\/parties\/([\w\-]+)', x['path'])[1] for x in diff if
+                 x['path'].startswith('/filing/incorporationApplication/parties/')
+                 and self._has_change(x.get('oldValue'), x.get('newValue'))])
+
+        parties_removed = \
+            [x for x in diff if x['path'] == '/filing/incorporationApplication/parties'
+                and not x.get('newValue') and x.get('oldValue')]
+
+        parties = incorporation_application['parties']
+        for party_id in parties_corrected:
+            if party := next((x for x in parties if x['officer']['id'] == party_id), None):
+                party['hasCorrected'] = True
+
+        for party_removed in parties_removed:
+            party = party_removed.get('oldValue')
+            party['hasRemoved'] = True
+            parties.append(party)
+
+    def _format_share_structure_with_diff_data(self, incorporation_application, diff):
+        share_classes_corrected = \
+            set([re.search(r'\/shareClasses\/([\w\-]+)', x['path'])[1] for x in diff if
+                 x['path'].startswith('/filing/incorporationApplication/shareStructure/shareClasses/')
+                 and '/series' not in x['path']])
+        share_classes_removed = \
+            [x for x in diff if x['path'] == '/filing/incorporationApplication/shareStructure/shareClasses'
+                and not x.get('newValue') and x.get('oldValue')]
+
+        share_classes = incorporation_application.get('shareStructure', {}).get('shareClasses', [])
+        for share_class_id in share_classes_corrected:
+            if share_class := next((x for x in share_classes if x['id'] == share_class_id), None):
+                share_class['hasCorrected'] = True
+
+        for share_class_removed in share_classes_removed:
+            share_class = share_class_removed.get('oldValue')
+            share_class['hasRemoved'] = True
+            share_classes.append(share_class)
+
+        share_series_corrected = \
+            [re.search(r'\/shareClasses\/([\w\-]+)\/series\/([\w\-]+)', x['path']) for x in diff if
+             x['path'].startswith('/filing/incorporationApplication/shareStructure/shareClasses/')
+             and '/series/' in x['path']
+             and (x['path'].endswith('/name') or
+                  x['path'].endswith('/maxNumberOfShares') or
+                  x['path'].endswith('/hasRightsOrRestrictions'))]
+        share_series_removed = \
+            [x for x in diff if
+                x['path'].startswith('/filing/incorporationApplication/shareStructure/shareClasses/')
+                and x['path'].endswith('/series')
+                and not x.get('newValue') and x.get('oldValue')]
+
+        for series_corrected in share_series_corrected:
+            share_class_id = series_corrected[1]
+            share_series_id = series_corrected[2]
+            share_class = next((x for x in share_classes if x['id'] == share_class_id), {})
+            if share_series := next((x for x in share_class.get('series', []) if x['id'] == share_series_id), None):
+                share_series['hasCorrected'] = True
+
+        for series_removed in share_series_removed:
+            share_class_id = re.search(r'\/shareClasses\/([\w\-]+)', series_removed['path'])[1]
+            if share_class := next((x for x in share_classes if x['id'] == share_class_id), None):
+                share_series = series_removed.get('oldValue')
+                share_series['hasRemoved'] = True
+                if series := share_class.get('series', None):
+                    series.append(share_series)
+                else:
+                    share_class['series'] = [share_series]
+
     def _format_noa_data(self, filing):
         filing['header'] = {}
         filing['header']['filingId'] = self._filing.id
@@ -336,7 +467,7 @@ class Report:  # pylint: disable=too-few-public-methods
                 legal_name,
                 self._filing.filing_json['filing']['business']['identifier'])
 
-    @staticmethod
+    @ staticmethod
     def _get_environment():
         namespace = os.getenv('POD_NAMESPACE', '').lower()
         if namespace.endswith('dev'):

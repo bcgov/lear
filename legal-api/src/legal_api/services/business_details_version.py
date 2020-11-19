@@ -57,8 +57,14 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         elif filing.filing_type == 'annualReport':
             revision_json['filing'] = \
                 VersionedBusinessDetailsService.get_ar_revision(filing, business)
+        elif filing.filing_type == 'correction':
+            revision_json = filing.json
 
-        # filing_type's yet to be handled correction, alteration, changeOfName, specialResolution, voluntaryDissolution
+            # This is required to find diff for report
+            for party in revision_json.get('filing', {}).get('incorporationApplication', {}).get('parties', []):
+                party['id'] = party.get('officer', {}).get('id', None)
+
+        # filing_type's yet to be handled alteration, changeOfName, specialResolution, voluntaryDissolution
         if not revision_json['filing']:
             revision_json = filing.json
 
@@ -427,8 +433,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
         if is_ia_or_after:
             member['officer']['id'] = str(party_revision.id)
-        else:
-            member['id'] = str(party_revision.id)
+
+        member['id'] = str(party_revision.id)  # This is required to find diff for report
 
         return member
 

@@ -13,7 +13,14 @@
       </tr>
       {% for share_class in shareClasses %}
          <tr class="no-page-break">
-            <td class="share-name">{{share_class.name}}</td>
+            <td>
+               <div class="share-name">{{share_class.name}}</div>
+               {% if share_class.hasCorrected %}
+                  <span class="chip">CORRECTED</span>
+               {% elif share_class.hasRemoved %}
+                  <span class="chip">REMOVED</span>
+               {% endif %}
+            </td>
             <td class="right-align">
                {% if share_class.hasMaximumShares %}
                {{ '{0:,}'.format(share_class.maxNumberOfShares | int) }}
@@ -47,7 +54,14 @@
          </tr>
          {% for series in share_class.series %}
             <tr class="dashed-row-separator no-page-break">
-               <td class="series-name">&bull;&nbsp;{{ series.name }}</td>
+               <td>
+                  <div class="series-name">&bull;&nbsp;{{ series.name }}</div>
+                  {% if series.hasCorrected %}
+                     <span class="chip">CORRECTED</span>
+                  {% elif series.hasRemoved %}
+                     <span class="chip">REMOVED</span>
+                  {% endif %}
+               </td>
                <td class="right-align">
                   {% if series.hasMaximumShares %}
                      {{ '{0:,}'.format(series.maxNumberOfShares | int) }}

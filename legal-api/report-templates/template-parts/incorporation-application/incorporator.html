@@ -19,6 +19,11 @@
                 {% endif %}
               {% endif %}
             </div>
+            {% if party.hasCorrected %}
+              <span class="chip">CORRECTED</span>
+            {% elif party.hasRemoved %}
+              <span class="chip">REMOVED</span>
+            {% endif %}
           </td>
           <td>
             <div class="section-sub-title">Mailing Address</div>
