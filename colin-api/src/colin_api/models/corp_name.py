@@ -191,9 +191,9 @@ class CorpName:
             if not cursor:
                 cursor = DB.connection.cursor()
             if not type_code:
-                condition = " and start_event_id=:event_id and corp_name_typ_cd!='TR'"
+                condition = " and (start_event_id=:event_id or end_event_id=:event_id) and corp_name_typ_cd!='TR'"
             else:
-                condition = ' and start_event_id=:event_id and corp_name_typ_cd=:type_code'
+                condition = ' and (start_event_id=:event_id or end_event_id=:event_id) and corp_name_typ_cd=:type_code'
             querystring = cls.NAME_QUERY + condition
             if type_code:
                 cursor.execute(querystring, corp_num=corp_num, event_id=event_id, type_code=type_code)

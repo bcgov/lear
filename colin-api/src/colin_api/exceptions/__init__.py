@@ -54,15 +54,11 @@ class FilingNotFoundException(GenericException):
 class OfficeNotFoundException(GenericException):
     """Exception with defined error code and messaging."""
 
-    def __init__(self, *args, identifier=None, event_id=None, **kwargs):
+    def __init__(self, *args, identifier: str = None, **kwargs):
         """Return a valid AddressNotFoundException."""
         super(OfficeNotFoundException, self).__init__(None, None, *args, **kwargs)
-        if identifier and event_id:
-            self.error = f'Office not found for {identifier} at event {event_id}'
-        elif identifier:
+        if identifier:
             self.error = f'Office not found for {identifier}'
-        elif event_id:
-            self.error = f'Office not found for event {event_id}'
         else:
             self.error = 'Office not found'
         self.status_code = 404
@@ -84,17 +80,26 @@ class AddressNotFoundException(GenericException):
 class PartiesNotFoundException(GenericException):
     """Exception with defined error code and messaging."""
 
-    def __init__(self, *args, identifier=None, event_id=None, **kwargs):
+    def __init__(self, *args, identifier: str = None, **kwargs):
         """Return a valid PartiesNotFoundException."""
         super(PartiesNotFoundException, self).__init__(None, None, *args, **kwargs)
-        if identifier and event_id:
-            self.error = f'Parties not found for {identifier} at event {event_id}'
-        elif identifier:
+        if identifier:
             self.error = f'Parties not found for {identifier}'
-        elif event_id:
-            self.error = f'Parties not found for event {event_id}'
         else:
             self.error = 'Parties not found'
+        self.status_code = 404
+
+
+class NamesNotFoundException(GenericException):
+    """Exception with defined error code and messaging."""
+
+    def __init__(self, *args, identifier: str = None, **kwargs):
+        """Return a valid PartiesNotFoundException."""
+        super(NamesNotFoundException, self).__init__(None, None, *args, **kwargs)
+        if identifier:
+            self.error = f'Corp names not found for {identifier}'
+        else:
+            self.error = 'Corp names not found'
         self.status_code = 404
 
 

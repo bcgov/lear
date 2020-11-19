@@ -15,11 +15,10 @@
 
 Currently this only provides API versioning information
 """
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from flask import current_app
 
-from colin_api.exceptions import OfficeNotFoundException
 from colin_api.models import Address  # pylint: disable=cyclic-import
 from colin_api.resources.db import DB
 from colin_api.utils import delete_from_table_by_event_ids, stringify_list
@@ -57,7 +56,8 @@ class Office:
         }
 
     @classmethod
-    def _build_offices_list(cls, cursor, querystring: str, identifier: str = None, event_id: str = None) -> List:
+    def _build_offices_list(
+            cls, cursor, querystring: str, identifier: str = None, event_id: str = None) -> Optional[List]:
         """Return the office objects for the given query."""
         if not cursor:
             cursor = DB.connection.cursor()
@@ -68,7 +68,7 @@ class Office:
         office_info = cursor.fetchall()
         offices = []
         if not office_info:
-            raise OfficeNotFoundException()
+            return None
 
         description = cursor.description
         for office_item in office_info:

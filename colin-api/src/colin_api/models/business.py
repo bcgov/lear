@@ -356,6 +356,26 @@ class Business:  # pylint: disable=too-many-instance-attributes
             raise err
 
     @classmethod
+    def get_corp_restriction(cls, cursor, event_id: str, corp_num: str) -> bool:
+        """Get provisions removed flag for this event."""
+        try:
+            cursor.execute(
+                """
+                SELECT *
+                FROM corp_restriction
+                WHERE corp_num=:corp_num and end_event_id=:event_id
+                """,
+                event_id=event_id,
+                corp_num=corp_num
+            )
+            if cursor.fetchall():
+                return True
+            return False
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+
+    @classmethod
     def end_current_corp_restriction(cls, cursor, event_id: str, corp_num: str):
         """End current corp restriction entry for business."""
         try:

@@ -208,6 +208,8 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
                 corp_num=corp_num
             )
             share_list = cls._build_shares_list(cursor, corp_num)
+            if not share_list:
+                return None
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error(f'error getting share structure for {corp_num}')
