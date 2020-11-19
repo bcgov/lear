@@ -360,28 +360,28 @@ class Report:  # pylint: disable=too-few-public-methods
     def _format_office_with_diff_data(self, incorporation_application, diff):
         office_path = '/filing/incorporationApplication/offices/'
         reg_mailing_address = \
-            [x for x in diff if x['path']
-             .startswith(office_path + 'registeredOffice/mailingAddress/')
-             and self._has_change(x.get('oldValue'), x.get('newValue'))]
+            next(x for x in diff if x['path']
+                 .startswith(office_path + 'registeredOffice/mailingAddress/')
+                 and self._has_change(x.get('oldValue'), x.get('newValue')))
         reg_delivery_address = \
-            [x for x in diff if x['path']
-             .startswith(office_path + 'registeredOffice/deliveryAddress/')
-             and self._has_change(x.get('oldValue'), x.get('newValue'))]
+            next(x for x in diff if x['path']
+                 .startswith(office_path + 'registeredOffice/deliveryAddress/')
+                 and self._has_change(x.get('oldValue'), x.get('newValue')))
 
         rec_mailing_address = \
-            [x for x in diff if x['path']
-             .startswith(office_path + 'recordsOffice/mailingAddress/')
-             and self._has_change(x.get('oldValue'), x.get('newValue'))]
+            next(x for x in diff if x['path']
+                 .startswith(office_path + 'recordsOffice/mailingAddress/')
+                 and self._has_change(x.get('oldValue'), x.get('newValue')))
         rec_delivery_address = \
-            [x for x in diff if x['path']
-             .startswith(office_path + 'recordsOffice/deliveryAddress/')
-             and self._has_change(x.get('oldValue'), x.get('newValue'))]
+            next(x for x in diff if x['path']
+                 .startswith(office_path + 'recordsOffice/deliveryAddress/')
+                 and self._has_change(x.get('oldValue'), x.get('newValue')))
 
         offices = incorporation_application['offices']
-        offices['registeredOffice']['mailingAddress']['hasCorrected'] = len(reg_mailing_address) > 0
-        offices['registeredOffice']['deliveryAddress']['hasCorrected'] = len(reg_delivery_address) > 0
-        offices['recordsOffice']['mailingAddress']['hasCorrected'] = len(rec_mailing_address) > 0
-        offices['recordsOffice']['deliveryAddress']['hasCorrected'] = len(rec_delivery_address) > 0
+        offices['registeredOffice']['mailingAddress']['hasCorrected'] = reg_mailing_address is not None
+        offices['registeredOffice']['deliveryAddress']['hasCorrected'] = reg_delivery_address is not None
+        offices['recordsOffice']['mailingAddress']['hasCorrected'] = rec_mailing_address is not None
+        offices['recordsOffice']['deliveryAddress']['hasCorrected'] = rec_delivery_address is not None
 
     def _format_party_with_diff_data(self, incorporation_application, diff):
         party_path = '/filing/incorporationApplication/parties/'
