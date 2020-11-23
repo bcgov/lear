@@ -48,7 +48,7 @@ class Alias(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return a dict of this object, with keys in JSON format."""
         alias = {
             'id': self.id,
-            'alias': self.alias,
+            'name': self.alias,
             'type': self.type
         }
         return alias
