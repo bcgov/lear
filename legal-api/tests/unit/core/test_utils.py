@@ -111,7 +111,7 @@ TEST_JSON_DIFF = [
 ]
 
 
-@ pytest.mark.parametrize('test_name, json1, json2, expected', TEST_JSON_DIFF)
+@pytest.mark.parametrize('test_name, json1, json2, expected', TEST_JSON_DIFF)
 def test_diff_block(test_name, json1, json2, expected):
     """Assert that the diff block gets created correctly."""
     from legal_api.core.utils import diff_dict
@@ -153,11 +153,6 @@ TEST_LIST_DIFF = [
      {'c': 'd', 'a': [{'id': 1, 'j': 'k'}]},
      []  # expected
      ),
-    ('same list',  # test_name
-     {'c': 'd', 'a': [{'id': 1, 'j': 'k'}]},
-     {'c': 'd', 'a': [{'id': 1, 'j': 'k'}]},
-     []  # expected
-     ),
     ('add list',  # test_name
      {'c': 'd', 'a': [{'id': 1, 'j': 'k'}]},
      {'c': 'd'},
@@ -165,6 +160,27 @@ TEST_LIST_DIFF = [
          {'oldValue': None,
           'newValue': [{'id': 1, 'j': 'k'}],
           'path': '/a'},
+     ]  # expected
+     ),
+    ('add list - no id',  # test_name
+     {'c': 'd', 'a': [{'j': 'k'}]},
+     {'c': 'd'},
+     [
+         {'oldValue': None,
+          'newValue': [{'j': 'k'}],
+          'path': '/a'},
+     ]  # expected
+     ),
+    ('add nested list - mixed ids',  # test_name
+     {'a': [{'id': 1, 'n': [{'id': 1, 'o': 'p'}, {'id': 2, 'p': 'q'}, {'r': 's'}]}, {'id': 4, 'm': 'o'}]},
+     {'a': [{'id': 1, 'n': [{'id': 1, 'o': 'p'}]}, {'id': 4, 'm': 'o'}]},
+     [
+         {'oldValue': None,
+          'newValue': {'id': 2, 'p': 'q'},
+          'path': '/a/1/n'},
+         {'oldValue': None,
+          'newValue': {'r': 's'},
+          'path': '/a/1/n'},
      ]  # expected
      ),
     ('different list',  # test_name
@@ -280,12 +296,12 @@ TEST_LIST_DIFF = [
 ]
 
 
-@ pytest.mark.parametrize('test_name, json1, json2, expected', TEST_LIST_DIFF)
-def test_diff_block_list_with_ids(test_name, json1, json2, expected):
+@pytest.mark.parametrize('test_name, json1, json2, expected', TEST_LIST_DIFF)
+def test_diff_block_lists(test_name, json1, json2, expected):
     """Assert that the diff block gets created correctly."""
-    from legal_api.core.utils import diff_dict, diff_list_with_id
+    from legal_api.core.utils import diff_dict, diff_list
     try:
-        diff = diff_dict(json1, json2, diff_list=diff_list_with_id)
+        diff = diff_dict(json1, json2, diff_list_callback=diff_list)
     except Exception as err:
         print(err)
 
@@ -294,7 +310,7 @@ def test_diff_block_list_with_ids(test_name, json1, json2, expected):
     assert expected == ld
 
 
-@ pytest.mark.parametrize('test_name, json1, json2, expected', [
+@pytest.mark.parametrize('test_name, json1, json2, expected', [
     (
         'no lists', {}, {}, None
     ),
@@ -315,7 +331,12 @@ def test_diff_block_list_with_ids(test_name, json1, json2, expected):
         ]
     ),
     (
-        'json1 no row ID', [{'j': 'k'}], [{'j': 'k'}], None
+        'json1 no row ID', [{'j': 'k'}], [{'j': 'k'}],
+        [
+            {'oldValue': None,
+             'newValue': {'j': 'k'},
+             'path': '/'},
+        ]
     ),
     (
         'json2 no row ID', {}, [{'id': 1, 'j': 'k'}, {'j': 'k'}],
@@ -328,10 +349,10 @@ def test_diff_block_list_with_ids(test_name, json1, json2, expected):
 ])
 def test_diff_list_missing_lists(test_name, json1, json2, expected):
     """Assert that the diff block gets created correctly."""
-    from legal_api.core.utils import diff_list_with_id
+    from legal_api.core.utils import diff_list
 
     try:
-        diff = diff_list_with_id(json1, json2)
+        diff = diff_list(json1, json2)
     except Exception as err:
         print(err)
 

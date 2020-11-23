@@ -18,7 +18,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Dict, Optional
 
-from legal_api.core.utils import diff_dict, diff_list_with_id
+from legal_api.core.utils import diff_dict, diff_list
 from legal_api.models import Business, Filing as FilingStorage  # noqa: I001
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.utils.datetime import date, datetime
@@ -200,7 +200,7 @@ class Filing:
                 if diff_nodes := diff_dict(filing_json,
                                            corrected_filing.json,
                                            ignore_keys=['header', 'business', 'correction'],
-                                           diff_list=diff_list_with_id):
+                                           diff_list_callback=diff_list):
                     diff_json = [d.json for d in diff_nodes]
                     return diff_json
         return None
