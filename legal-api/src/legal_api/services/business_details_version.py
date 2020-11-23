@@ -86,8 +86,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         ia_json['incorporationApplication']['shareStructure'] = {}
         ia_json['incorporationApplication']['shareStructure']['shareClasses'] = \
             VersionedBusinessDetailsService.get_share_class_revision(filing.transaction_id, business.id)
-        ia_json['incorporationApplication']['nameTranslations'] = {}
-        ia_json['incorporationApplication']['nameTranslations']['new'] = \
+        ia_json['incorporationApplication']['nameTranslations'] = \
             VersionedBusinessDetailsService.get_name_translations_revision(filing.transaction_id, business.id)
         ia_json['incorporationApplication']['incorporationAgreement'] = \
             VersionedBusinessDetailsService.get_incorporation_agreement_json(filing)
@@ -320,7 +319,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         name_translations_arr = []
         for name_translation in name_translations_list:
             name_translation_json = VersionedBusinessDetailsService.name_translations_json(name_translation)
-            name_translations_arr.append(name_translation_json['alias'])
+            name_translations_arr.append(name_translation_json)
         return name_translations_arr
 
     @staticmethod
@@ -497,7 +496,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         """Return the name translation revision as a json object."""
         name_translation = {
             'id': name_translation_revision.id,
-            'alias': name_translation_revision.alias,
+            'name': name_translation_revision.alias,
             'type': name_translation_revision.type
         }
         return name_translation
