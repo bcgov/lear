@@ -15,7 +15,10 @@
 
 Currently this only provides API versioning information
 """
+from __future__ import annotations
+
 from enum import Enum
+from typing import Dict, List, Optional
 
 from flask import current_app
 
@@ -75,7 +78,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
     def __init__(self):
         """Initialize with all values None."""
 
-    def as_dict(self) -> dict:
+    def as_dict(self) -> Dict:
         """Return dict version of self."""
         return {
             'business': {
@@ -94,7 +97,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
         }
 
     @classmethod
-    def _get_bn_15s(cls, cursor, identifiers: list) -> dict:
+    def _get_bn_15s(cls, cursor, identifiers: List) -> Dict:
         """Return a dict of idenifiers mapping to their bn_15 numbers."""
         bn_15s = {}
         if not identifiers:
@@ -120,7 +123,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             raise err
 
     @classmethod
-    def _get_last_ar_dates_for_reset(cls, cursor, event_info: list, event_ids: list) -> list:
+    def _get_last_ar_dates_for_reset(cls, cursor, event_info: List, event_ids: List) -> List:
         """Get the previous AR/AGM dates."""
         events_by_corp_num = {}
         for info in event_info:
@@ -164,7 +167,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
         return dates_by_corp_num
 
     @classmethod
-    def find_by_identifier(cls, identifier: str, corp_types: list, con=None):
+    def find_by_identifier(cls, identifier: str, corp_types: List, con=None) -> Business:
         """Return a Business by identifier."""
         business = None
         try:
@@ -252,7 +255,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             raise err
 
     @classmethod
-    def create_corporation(cls, con, filing_info: dict):
+    def create_corporation(cls, con, filing_info: Dict):
         """Insert a new business from an incorporation filing."""
         try:
             business = Business()
@@ -286,7 +289,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             raise err
 
     @classmethod
-    def create_corp_jurisdiction(cls, cursor, corp_num, event_id):
+    def create_corp_jurisdiction(cls, cursor, corp_num: str, event_id: str):
         """Add record to the JURISDICTION table on incorporation."""
         try:
             cursor.execute(
@@ -356,20 +359,32 @@ class Business:  # pylint: disable=too-many-instance-attributes
             raise err
 
     @classmethod
-    def get_corp_restriction(cls, cursor, event_id: str, corp_num: str) -> bool:
+    def get_corp_restriction(cls, cursor, corp_num: str, event_id: str = None) -> Optional[bool, str]:
         """Get provisions removed flag for this event."""
         try:
-            cursor.execute(
-                """
-                SELECT *
-                FROM corp_restriction
-                WHERE corp_num=:corp_num and end_event_id=:event_id
-                """,
-                event_id=event_id,
-                corp_num=corp_num
-            )
-            if cursor.fetchall():
-                return True
+            if not event_id:
+                cursor.execute(
+                    """
+                    SELECT *
+                    FROM corp_restriction
+                    WHERE corp_num=:corp_num and end_event_id is null
+                    """,
+                    corp_num=corp_num
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT *
+                    FROM corp_restriction
+                    WHERE corp_num=:corp_num and start_event_id>=:event_id
+                      and (end_event_id<=:event_id or end_event_id is null)
+                    """,
+                    event_id=event_id,
+                    corp_num=corp_num
+                )
+            if restrictions := cursor.fetchall():
+                description = cursor.description
+                return dict(zip([x[0].lower() for x in description], restrictions[0]))
             return False
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))
@@ -501,7 +516,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
         return founding_date
 
     @classmethod
-    def get_next_corp_num(cls, corp_type, con) -> str:
+    def get_next_corp_num(cls, con, corp_type: str) -> str:
         """Retrieve the next available corporation number and advance by one."""
         try:
             cursor = con.cursor()
@@ -533,7 +548,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             raise err
 
     @classmethod
-    def get_resolutions(cls, cursor, corp_num: str) -> list:
+    def get_resolutions(cls, cursor, corp_num: str) -> List:
         """Get all resolution dates for a company."""
         try:
             resolution_dates = []
@@ -554,7 +569,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             raise err
 
     @classmethod
-    def reset_corporations(cls, cursor, event_info: list, event_ids: list):
+    def reset_corporations(cls, cursor, event_info: List, event_ids: List):
         """Reset the corporations to what they were before the given events."""
         if not event_info:
             return
@@ -579,7 +594,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
                 raise err
 
     @classmethod
-    def reset_corp_states(cls, cursor, event_ids: list):
+    def reset_corp_states(cls, cursor, event_ids: List):
         """Reset the corp states to what they were before the given events."""
         if not event_ids:
             return

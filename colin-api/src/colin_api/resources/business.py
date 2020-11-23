@@ -74,7 +74,7 @@ class BusinessInfo(Resource):
         try:
             con = DB.connection
             con.begin()
-            corp_num = Business.get_next_corp_num(legal_type, con)
+            corp_num = Business.get_next_corp_num(con=con, corp_type=legal_type)
             con.commit()
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error(err.with_traceback(None))

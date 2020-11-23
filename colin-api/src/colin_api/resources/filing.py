@@ -122,7 +122,8 @@ class FilingInfo(Resource):
                     'changeOfDirectors': json_data.get('changeOfDirectors', None),
                     'annualReport': json_data.get('annualReport', None),
                     'incorporationApplication': json_data.get('incorporationApplication', None),
-                    'alteration': json_data.get('alteration', None)
+                    'alteration': json_data.get('alteration', None),
+                    'transition': json_data.get('transition', None)
                 }
 
             # Filter out null-values in the filing_list dictionary
