@@ -18,26 +18,20 @@ from flask_babel import _ as babel  # noqa: N813
 from legal_api.models import Alias, Business
 
 
-def update_aliases(business: Business, aliases: Dict) -> Dict:
-    """Set the legal type of the business."""
+def update_aliases(business: Business, aliases) -> Dict:
+    """Update the aliases of the business."""
     if not business:
         return {'error': babel('Business required before alternate names can be set.')}
 
-    if ceased_aliases := aliases.get('ceased'):
-        for current_alias in business.aliases.all():
-            if current_alias.alias in ceased_aliases:
-                business.aliases.remove(current_alias)
+    for alias in aliases:
+        if alias_id := alias.get('id'):
+            existing_alias = next((x for x in business.aliases.all() if str(x.id) == alias_id), None)
+            existing_alias.alias = alias['name'].upper()
+        else:
+            new_alias = Alias(alias=alias['name'].upper(), type=Alias.AliasType.TRANSLATION.value)
+            business.aliases.append(new_alias)
 
-    if modified_aliases := aliases.get('modified'):
-        for current_alias in business.aliases.all():
-            for mod_alias in modified_aliases:
-                if current_alias.alias.upper() == str(mod_alias.get('oldValue')).upper():
-                    current_alias.alias = str(mod_alias.get('newValue')).upper()
-
-    if new_aliases := aliases.get('new'):
-        for new_alias in new_aliases:
-            alias = Alias(alias=new_alias.upper(),
-                          type=Alias.AliasType.TRANSLATION.value)
-            business.aliases.append(alias)
-
+    for current_alias in business.aliases.all():
+        if not next((x for x in aliases if x['name'].upper() == current_alias.alias.upper()), None):
+            business.aliases.remove(current_alias)
     return None
