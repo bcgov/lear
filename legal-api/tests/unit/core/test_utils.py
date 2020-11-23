@@ -301,7 +301,7 @@ def test_diff_block_lists(test_name, json1, json2, expected):
     """Assert that the diff block gets created correctly."""
     from legal_api.core.utils import diff_dict, diff_list
     try:
-        diff = diff_dict(json1, json2, diff_list=diff_list)
+        diff = diff_dict(json1, json2, diff_list_callback=diff_list)
     except Exception as err:
         print(err)
 

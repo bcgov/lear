@@ -71,7 +71,7 @@ def test_filing_json_diff():
     diff = diff_dict(CORRECTION_FILING_JSON,
                      MINIMAL_FILING_JSON,
                      ignore_keys=['header', 'business', 'correction'],
-                     diff_list=diff_list)
+                     diff_list_callback=diff_list)
 
     ld = [d.json for d in diff] if diff else None
 

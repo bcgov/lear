@@ -200,7 +200,7 @@ class Filing:
                 if diff_nodes := diff_dict(filing_json,
                                            corrected_filing.json,
                                            ignore_keys=['header', 'business', 'correction'],
-                                           diff_list=diff_list):
+                                           diff_list_callback=diff_list):
                     diff_json = [d.json for d in diff_nodes]
                     return diff_json
         return None

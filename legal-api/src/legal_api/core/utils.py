@@ -40,7 +40,7 @@ def diff_dict(json1,
               json2,
               path: List[str] = None,
               ignore_keys: List[str] = None,
-              diff_list: Callable[[dict, dict, List, List], Optional[List]] = None) \
+              diff_list_callback: Callable[[dict, dict, List, List], Optional[List]] = None) \
         -> Optional[List[Node]]:
     """Recursively create a diff record for a dict, based on the corrections JSONSchema definition."""
     diff = []
@@ -59,12 +59,12 @@ def diff_dict(json1,
                               json2=json2[key],
                               path=path + [key],
                               ignore_keys=ignore_keys,
-                              diff_list=diff_list):
+                              diff_list_callback=diff_list):
                 diff.extend(d)
 
         elif isinstance(value, MutableSequence):
-            if diff_list:
-                if d := diff_list(json1[key], json2[key], path + [key], ignore_keys):
+            if diff_list_callback:
+                if d := diff_list_callback(json1[key], json2[key], path + [key], ignore_keys):
                     diff.extend(d)
 
         elif value != json2.get(key):
@@ -81,9 +81,9 @@ def diff_dict(json1,
 
 
 def diff_list(json1,  # pylint: disable=too-many-branches; linter balking on := walrus
-                      json2,
-                      path: List[str] = None,
-                      ignore_keys: List[str] = None) \
+              json2,
+              path: List[str] = None,
+              ignore_keys: List[str] = None) \
         -> Optional[List[Node]]:
     """Return the differences nodes between json1 & json2, being a list of dicts.
 
@@ -108,7 +108,7 @@ def diff_list(json1,  # pylint: disable=too-many-branches; linter balking on := 
         if row1_id := row1.get('id'):
             for row2 in json2:
                 if row1_id == row2.get('id'):
-                    if d := diff_dict(row1, row2, path + [str(row1_id)], ignore_keys, diff_list=diff_list):  # could get the fn_name with inspect too.
+                    if d := diff_dict(row1, row2, path + [str(row1_id)], ignore_keys, diff_list_callback=diff_list):
                         diff.extend(d)
                     memoize.append(row1_id)
                     add_row = False
