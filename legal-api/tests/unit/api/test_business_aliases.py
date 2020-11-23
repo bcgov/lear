@@ -89,7 +89,7 @@ def test_get_business_alias_by_id(session, client, jwt):
                     )
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert rv.json['alias']['alias'] == 'ABC Ltd.'
+    assert rv.json['alias']['name'] == 'ABC Ltd.'
 
 
 def test_get_business_alias_by_invalid_id(session, client, jwt):
@@ -136,7 +136,7 @@ def test_get_business_alias_by_type(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
     assert 'aliases' in rv.json
     assert len(rv.json['aliases']) == 1
-    assert rv.json['aliases'][0]['alias'] == 'DEF Ltd.'
+    assert rv.json['aliases'][0]['name'] == 'DEF Ltd.'
 
 
 def test_get_business_alias_by_invalid_type(session, client, jwt):
