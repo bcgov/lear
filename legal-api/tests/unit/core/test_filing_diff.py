@@ -66,12 +66,12 @@ CORRECTION_FILING_JSON = {'filing': {
 
 def test_filing_json_diff():
     """Assert the diff works on a sample filing structure."""
-    from legal_api.core.utils import diff_dict, diff_list_with_id
+    from legal_api.core.utils import diff_dict, diff_list
 
     diff = diff_dict(CORRECTION_FILING_JSON,
                      MINIMAL_FILING_JSON,
                      ignore_keys=['header', 'business', 'correction'],
-                     diff_list=diff_list_with_id)
+                     diff_list=diff_list)
 
     ld = [d.json for d in diff] if diff else None
 
