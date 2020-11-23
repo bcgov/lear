@@ -311,8 +311,7 @@ class Report:  # pylint: disable=too-few-public-methods
         self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
         self._format_directors(filing['incorporationApplication']['parties'])
         # create helper lists
-        filing['listOfTranslations'] = filing['incorporationApplication'].get('nameTranslations', {})\
-            .get('new', [])
+        filing['listOfTranslations'] = filing['incorporationApplication'].get('nameTranslations', [])
         filing['offices'] = filing['incorporationApplication']['offices']
         filing['parties'] = filing['incorporationApplication']['parties']
         if filing['incorporationApplication'].get('shareClasses', None):

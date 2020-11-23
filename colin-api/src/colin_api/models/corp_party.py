@@ -247,7 +247,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             raise err
 
         if not parties_list:
-            raise PartiesNotFoundException(event_id=event_id)
+            raise PartiesNotFoundException(identifier=corp_num)
 
         return parties_list
 
