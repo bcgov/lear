@@ -39,6 +39,7 @@ def test_alteration_process(app, session, orig_legal_type, new_legal_type):
     business.legal_type = orig_legal_type
 
     alteration_filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    alteration_filing['filing']['alteration']['nameTranslations'] = [{'name': 'A5 Ltd.'}]
     alteration_filing['filing']['business']['legalType'] = orig_legal_type
     alteration_filing['filing']['alteration']['business']['legalType'] = new_legal_type
 
@@ -64,6 +65,7 @@ async def test_worker_alteration(app, session, orig_legal_type, new_legal_type):
     filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     filing['filing']['business']['legalType'] = orig_legal_type
     filing['filing']['alteration']['business']['legalType'] = new_legal_type
+    filing['filing']['alteration']['nameTranslations'] = [{'name': 'A5 Ltd.'}]
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
