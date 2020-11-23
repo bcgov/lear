@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Unit Tests for the Incorporation filing."""
+"""The Unit Tests for the aliases processor."""
 from legal_api.models import Alias
 
 from entity_filer.filing_processors.filing_components import aliases
@@ -19,45 +19,105 @@ from tests.unit import create_business
 
 
 def test_new_aliases(app, session):
-    """Assert that the business is altered."""
+    """Assert that the new aliases are created."""
     # setup
     identifier = 'BC1234567'
     business = create_business(identifier)
-    component = {'nameTranslations': {
-        'new': ['MÉDIAS DE TRANSPORT INC.', 'CLUDIANT MEDIA INC.']
-    }}
+    component = {'nameTranslations': [{'name': 'MÉDIAS DE TRANSPORT INC.'}, {'name': 'CLUDIANT MEDIA INC.'}]}
 
     # test
     aliases.update_aliases(business, component.get('nameTranslations'))
 
     # validate
     new_aliases = business.aliases.all()
-    assert len(component['nameTranslations']['new']) == len(new_aliases)
-    assert set(component['nameTranslations']['new']) == set([n.alias for n in new_aliases])
+    assert len(component['nameTranslations']) == len(new_aliases)
 
 
 def test_modified_aliases(app, session):
-    """Assert that the business is altered."""
+    """Assert that aliases are altered."""
     # setup
     identifier = 'BC1234567'
-    old_value = 'A1 LTD.'
-    new_value = 'SOCIÉTÉ GÉNÉRALE'
+    old_value_1 = 'A1 LTD.'
+    new_value_1 = 'SOCIÉTÉ GÉNÉRALE'
+    old_value_2 = 'B1 LTD.'
+    new_value_2 = 'B2 LTD.'
     business = create_business(identifier)
-    business.aliases.append(Alias(alias=old_value, type=Alias.AliasType.TRANSLATION.value))
-    business.aliases.append(Alias(alias='mixedCASE', type=Alias.AliasType.TRANSLATION.value))
+    business.aliases.append(Alias(alias=old_value_1, type=Alias.AliasType.TRANSLATION.value))
+    business.aliases.append(Alias(alias=old_value_2, type=Alias.AliasType.TRANSLATION.value))
     business.save()
-    component = {'nameTranslations': {
-        'modified': [{
-            'oldValue': old_value,
-            'newValue': new_value
-        }, {
-            'oldValue': 'missing',
-            'newValue': 'missing'
-        }, {
-            'oldValue': 'mixedcase',
-            'newValue': 'replaceMixed'
-        }]
-    }}
+    business_aliases = business.aliases.all()
+    assert len(business_aliases) == 2
+    component = {'nameTranslations': [
+        {
+            'id': str(business_aliases[0].id),
+            'name': new_value_1
+        },
+        {
+            'id': str(business_aliases[1].id),
+            'name': new_value_2
+        }
+    ]}
+
+    # test
+    aliases.update_aliases(business, component.get('nameTranslations'))
+
+    # validate
+    business_aliases = business.aliases.all()
+    assert len(business_aliases) == 2
+    for alias in component['nameTranslations']:
+        business_alias = next((x for x in business_aliases if str(x.id) == alias['id']), None)
+        assert business_alias.alias == alias['name'].upper()
+
+
+def test_cease_aliases(app, session):
+    """Assert that aliases are removed."""
+    # setup
+    identifier = 'BC1234567'
+    alias_1 = 'A1 LTD.'
+    alias_2 = 'A2 LTD.'
+    alias_3 = 'A3 LTD.'
+    business = create_business(identifier)
+    business.aliases.append(Alias(alias=alias_1, type=Alias.AliasType.TRANSLATION.value))
+    business.aliases.append(Alias(alias=alias_2, type=Alias.AliasType.TRANSLATION.value))
+    business.save()
+    assert len(business.aliases.all()) == 2
+
+    component = {'nameTranslations': [
+        {'name': alias_3}
+    ]}
+
+    # test
+    aliases.update_aliases(business, component.get('nameTranslations'))
+
+    # validate
+    business_aliases = business.aliases.all()
+    assert 1 == len(business_aliases)
+    assert business_aliases[0].alias == alias_3.upper()
+
+
+def test_all_aliases(app, session):
+    """Assert that aliases are altered correctly."""
+    # setup
+    identifier = 'BC1234567'
+    alias_1 = 'A1 LTD.'
+    alias_2 = 'A2 LTD.'
+    alias_3 = 'A3 LTD.'
+    alias_4 = 'A4 LTD.'
+    business = create_business(identifier)
+    business.aliases.append(Alias(alias=alias_1, type=Alias.AliasType.TRANSLATION.value))
+    business.aliases.append(Alias(alias=alias_2, type=Alias.AliasType.TRANSLATION.value))
+    business.save()
+    business_aliases = business.aliases.all()
+    assert len(business_aliases) == 2
+    component = {'nameTranslations':  [
+        {
+            'id': str(business_aliases[0].id),
+            'name': alias_3
+        },
+        {
+            'name': alias_4
+        }
+    ]}
 
     # test
     aliases.update_aliases(business, component.get('nameTranslations'))
@@ -65,54 +125,8 @@ def test_modified_aliases(app, session):
     # validate
     business_aliases = business.aliases.all()
     assert 2 == len(business_aliases)
-    assert new_value == business_aliases[0].alias
-
-
-def test_cease_aliases(app, session):
-    """Assert that the business is altered."""
-    # setup
-    identifier = 'BC1234567'
-    old_value = 'A1 LTD.'
-    business = create_business(identifier)
-    business.aliases.append(Alias(alias=old_value, type=Alias.AliasType.TRANSLATION.value))
-    business.save()
-    component = {'nameTranslations': {
-        'ceased': ['A1 LTD.', 'B2']
-    }}
-
-    # test
-    aliases.update_aliases(business, component.get('nameTranslations'))
-
-    # validate
-    business_aliases = business.aliases.all()
-    assert 0 == len(business_aliases)
-
-
-def test_all_aliases(app, session):
-    """Assert that the business is altered."""
-    # setup
-    identifier = 'BC1234567'
-    old_value = 'A1 LTD.'
-    new_value = 'SOCIÉTÉ GÉNÉRALE'
-    business = create_business(identifier)
-    business.aliases.append(Alias(alias=old_value, type=Alias.AliasType.TRANSLATION.value))
-    business.aliases.append(Alias(alias='B1', type=Alias.AliasType.TRANSLATION.value))
-    business.save()
-    component = {'nameTranslations': {
-        'new': ['MÉDIAS DE TRANSPORT INC.', 'CLUDIANT MEDIA INC.'],
-        'modified': [{
-            'oldValue': old_value,
-            'newValue': new_value
-        }],
-        'ceased': ['B1', 'B2']
-    }}
-
-    # test
-    aliases.update_aliases(business, component.get('nameTranslations'))
-
-    expected = ['SOCIÉTÉ GÉNÉRALE', 'MÉDIAS DE TRANSPORT INC.', 'CLUDIANT MEDIA INC.']
-
-    # validate
-    business_aliases = business.aliases.all()
-    assert 3 == len(business_aliases)
-    assert set(expected) == set([b.alias for b in business_aliases])
+    assert next((x for x in business_aliases if
+                 str(x.id) == component['nameTranslations'][0]['id']), None).alias == alias_3.upper()
+    assert next((x for x in business_aliases if x.alias == component['nameTranslations'][1]['name'].upper()), None)
+    assert not next((x for x in business_aliases if x.alias == alias_1.upper()), None)
+    assert not next((x for x in business_aliases if x.alias == alias_2.upper()), None)
