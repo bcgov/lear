@@ -14,7 +14,7 @@ on:
         default: "dev"
 
 jobs:
-  filings-notebook-report-cd:
+  filings-notebook-report-cd:   `
     runs-on: ubuntu-latest
     if: github.repository == 'bcgov/lear'
     steps:
@@ -28,12 +28,12 @@ jobs:
         run: |
           echo "TAG_NAME=dev" >> $GITHUB_ENV
 
-      - uses: stevenc987/bcrs-cd-action@job
+      - uses: pwei1018/bcrs-cd-action@job
         with:
           WORKING_DIRECTORY: "./jobs/filings-notebook-report"
           APP_NAME: "filings-notebook-report"
-          VAULTS: '[{ \"vault\": \"shared\", \"application\": [\"nats\"]}, {\"vault\": \"entity\",\"application\": [\"filings-jobs\", \"nats-filer\", \"entity-service-account\", \"sentry\"]}]'
-          SKIP_OP: "false"
+          VAULTS: ''
+          SKIP_OP: "ture"
           OP_PARAMETERS: ${{ secrets.OP_PARAMETERS }}
           OPENSHIFT_LOGIN_REGISTRY: ${{ secrets.OPENSHIFT_LOGIN_REGISTRY }}
           OPENSHIFT_DOCKER_REGISTRY: ${{ secrets.OPENSHIFT_DOCKER_REGISTRY }}
