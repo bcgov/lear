@@ -65,7 +65,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'title': 'Notice of Alteration Filing',
             'codes': {
                 'BC': 'ALTER',
-                'BEN': 'ALTER'
+                'BEN': 'ALTER',
+                'ULC': 'ALTER'
             }
         },
         'annualReport': {
@@ -118,7 +119,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                               'codes': {
                                   'CP': 'RES'}},
         'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'},
-        'transition': {'name': 'transition', 'title': 'Transition'}
+        'transition': {
+            'name': 'transition',
+            'title': 'Transition',
+            'codes': {
+                'BC': 'TRANS',
+                'BEN': 'TRANS'
+            }
+        }
     }
 
     __tablename__ = 'filings'
