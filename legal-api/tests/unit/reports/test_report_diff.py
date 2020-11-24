@@ -71,7 +71,6 @@ def test_format_with_diff_data(session):
     Report(filing)._format_with_diff_data(filing)
 
     assert filing['hasNameTranslationsCorrected']
-    assert 'TEST_C' in filing['listOfTranslations']
 
     offices = filing['offices']
     assert offices['registeredOffice']['mailingAddress']['hasCorrected']
