@@ -65,8 +65,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'title': 'Notice of Alteration Filing',
             'codes': {
                 'BC': 'ALTER',
-                'BEN': 'ALTER',
-                'ULC': 'ALTER'
+                'BEN': 'ALTER'
             }
         },
         'annualReport': {
