@@ -331,6 +331,10 @@ class Report:  # pylint: disable=too-few-public-methods
             has_change = old_value != ''
         elif isinstance(new_value, str) and old_value is None:
             has_change = new_value != ''
+        elif isinstance(old_value, bool) and new_value is None:
+            has_change = old_value is True
+        elif isinstance(new_value, bool) and old_value is None:
+            has_change = new_value is True
 
         return has_change
 
@@ -344,37 +348,32 @@ class Report:  # pylint: disable=too-few-public-methods
             self._format_share_class_with_diff_data(incorporation_application, diff)
 
     def _format_name_translations_with_diff_data(self, filing, diff):  # pylint: disable=no-self-use;
-        name_translations_path = '/filing/incorporationApplication/nameTranslations/'
-        name_translations = \
-            [x for x in diff if x['path'].startswith(name_translations_path)
-             and x.get('newValue')]
-        filing['hasNameTranslationsCorrected'] = len(name_translations) > 0
-        if translations := filing.get('listOfTranslations', None):
-            modified_name_translations = \
-                next(iter([x['newValue'] for x in diff if x['path']
-                           .startswith(name_translations_path + 'modified')]), [])
-            for modified_nt in modified_name_translations:
-                translations.append(modified_nt['newValue'])
+        name_translations_path = '/filing/incorporationApplication/nameTranslations'
+        name_translations = next((x for x in diff if x['path']
+                                  .startswith(name_translations_path)
+                                  and (x['path'].endswith('/name') or
+                                       x['path'].endswith('/nameTranslations'))), None)
+        filing['hasNameTranslationsCorrected'] = name_translations is not None
 
     def _format_office_with_diff_data(self, incorporation_application, diff):
         office_path = '/filing/incorporationApplication/offices/'
         reg_mailing_address = \
-            next(x for x in diff if x['path']
-                 .startswith(office_path + 'registeredOffice/mailingAddress/')
-                 and self._has_change(x.get('oldValue'), x.get('newValue')))
+            next((x for x in diff if x['path']
+                  .startswith(office_path + 'registeredOffice/mailingAddress/')
+                  and self._has_change(x.get('oldValue'), x.get('newValue'))), None)
         reg_delivery_address = \
-            next(x for x in diff if x['path']
-                 .startswith(office_path + 'registeredOffice/deliveryAddress/')
-                 and self._has_change(x.get('oldValue'), x.get('newValue')))
+            next((x for x in diff if x['path']
+                  .startswith(office_path + 'registeredOffice/deliveryAddress/')
+                  and self._has_change(x.get('oldValue'), x.get('newValue'))), None)
 
         rec_mailing_address = \
-            next(x for x in diff if x['path']
-                 .startswith(office_path + 'recordsOffice/mailingAddress/')
-                 and self._has_change(x.get('oldValue'), x.get('newValue')))
+            next((x for x in diff if x['path']
+                  .startswith(office_path + 'recordsOffice/mailingAddress/')
+                  and self._has_change(x.get('oldValue'), x.get('newValue'))), None)
         rec_delivery_address = \
-            next(x for x in diff if x['path']
-                 .startswith(office_path + 'recordsOffice/deliveryAddress/')
-                 and self._has_change(x.get('oldValue'), x.get('newValue')))
+            next((x for x in diff if x['path']
+                  .startswith(office_path + 'recordsOffice/deliveryAddress/')
+                  and self._has_change(x.get('oldValue'), x.get('newValue'))), None)
 
         offices = incorporation_application['offices']
         offices['registeredOffice']['mailingAddress']['hasCorrected'] = reg_mailing_address is not None
@@ -409,7 +408,8 @@ class Report:  # pylint: disable=too-few-public-methods
         share_classes_corrected = \
             set([re.search(r'\/shareClasses\/([\w\-]+)', x['path'])[1] for x in diff if  # pylint: disable=consider-using-set-comprehension; # noqa: E501
                  x['path'].startswith(share_classes_path)
-                 and '/series' not in x['path']])
+                 and '/series' not in x['path']
+                 and self._has_change(x.get('oldValue'), x.get('newValue'))])
         share_classes_removed = \
             [x for x in diff if x['path'] == share_classes_path[:-1]  # remove last slash
              and not x.get('newValue') and x.get('oldValue')]

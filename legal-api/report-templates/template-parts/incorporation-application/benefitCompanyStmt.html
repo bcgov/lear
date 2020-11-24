@@ -30,7 +30,7 @@
                 {% for translation in listOfTranslations %}
                     <tr>
                         <td class="pt-2">&bull;</td>
-                        <td class="pt-2">{{translation.name}}</td>
+                        <td class="pt-2">{{translation.name|upper}}</td>
                     </tr>
                 {% endfor %}
             </table>
