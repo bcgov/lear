@@ -109,7 +109,8 @@ class CorpName:
             raise err
 
     @classmethod
-    def create_translations(cls, cursor, corp_num, event_id, translations):
+    def create_translations(cls, cursor, corp_num, event_id, translations, old_translations):
+        # noqa: E501 # pylint: disable=too-many-arguments
         """Add records to the CORP NAME table for corp name translations."""
         try:
             curr_corp_name = ''
@@ -120,23 +121,25 @@ class CorpName:
                 column='corp_name_seq_num'
             )
             sequence_number = max_sequence_num + 1 if max_sequence_num else 0
-            for name in translations:
-                curr_corp_name = name
-                search_name = cursor.callfunc('get_search_name', str, [name])
-                cursor.execute(
-                    """
-                    insert into CORP_NAME (CORP_NAME_TYP_CD, CORP_NAME_SEQ_NUM, DD_CORP_NUM, END_EVENT_ID, CORP_NME,
-                        CORP_NUM, START_EVENT_ID, SRCH_NME)
-                    values (:type_code, :sequence_num, NULL, NULL, :corp_name, :corp_num, :event_id, :search_name)
-                    """,
-                    type_code=CorpName.TypeCodes.TRANSLATION.value,
-                    sequence_num=sequence_number,
-                    corp_name=name,
-                    corp_num=corp_num,
-                    event_id=event_id,
-                    search_name=search_name
-                )
-                sequence_number = sequence_number + 1
+            for translation in translations:
+                curr_corp_name = translation.get('name')
+                is_translation_existing = next((x for x in old_translations if x.corp_name == curr_corp_name), None)
+                if not is_translation_existing:
+                    search_name = cursor.callfunc('get_search_name', str, [curr_corp_name])
+                    cursor.execute(
+                        """
+                        insert into CORP_NAME (CORP_NAME_TYP_CD, CORP_NAME_SEQ_NUM, DD_CORP_NUM, END_EVENT_ID, CORP_NME,
+                            CORP_NUM, START_EVENT_ID, SRCH_NME)
+                        values (:type_code, :sequence_num, NULL, NULL, :corp_name, :corp_num, :event_id, :search_name)
+                        """,
+                        type_code=CorpName.TypeCodes.TRANSLATION.value,
+                        sequence_num=sequence_number,
+                        corp_name=curr_corp_name,
+                        corp_num=corp_num,
+                        event_id=event_id,
+                        search_name=search_name
+                    )
+                    sequence_number = sequence_number + 1
 
         except Exception as err:
             current_app.logger.error(f'Error inserting corp name {curr_corp_name}.')

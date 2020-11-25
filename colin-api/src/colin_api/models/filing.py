@@ -613,16 +613,12 @@ class Filing:
                     event_id=filing_event_info['event_id'],
                     type_code='TR'
                 )
-                filing.body['nameTranslations'] = {'new': [], 'ceased': []}
+                filing.body['nameTranslations'] = []
                 for translation in translations:
                     if translation.event_id == filing_event_info['event_id']:
-                        filing.body['nameTranslations']['new'].append(translation.corp_name)
+                        filing.body['nameTranslations'].append({'name': translation.corp_name, 'new': True})
                     elif translation.end_event_id == filing_event_info['event_id']:
-                        filing.body['nameTranslations']['ceased'].append(translation.corp_name)
-                if not filing.body['nameTranslations']['new']:
-                    del filing.body['nameTranslations']['new']
-                if not filing.body['nameTranslations']['ceased']:
-                    del filing.body['nameTranslations']['ceased']
+                        filing.body['nameTranslations'].append({'name': translation.corp_name, 'ceased': True})
                 if not filing.body['nameTranslations']:
                     del filing.body['nameTranslations']
 
@@ -1003,30 +999,23 @@ class Filing:
     @classmethod
     def _process_name_translations(cls, cursor, filing: Filing, corp_num: str):
         """Process name translations."""
-        if name_translations := filing.body.get('nameTranslations', None):
-            if translations := name_translations.get('new', []):
-                CorpName.create_translations(cursor, corp_num, filing.event_id, translations)
-
-            for translation in name_translations.get('modified', []):
-                # end existing for old name
-                CorpName.end_name(
-                    cursor=cursor,
-                    event_id=filing.event_id,
-                    corp_num=corp_num,
-                    corp_name=translation['oldValue'],
-                    type_code=CorpName.TypeCodes.TRANSLATION.value
-                )
-                # create new one for new name
-                CorpName.create_translations(cursor, corp_num, filing.event_id, [translation['newValue']])
-
-            for name in name_translations.get('ceased', []):
-                CorpName.end_name(
-                    cursor=cursor,
-                    event_id=filing.event_id,
-                    corp_num=corp_num,
-                    corp_name=name,
-                    type_code=CorpName.TypeCodes.TRANSLATION.value
-                )
+        old_translations = CorpName.get_current_by_type(
+            cursor=cursor,
+            corp_num=corp_num,
+            type_code=CorpName.TypeCodes.TRANSLATION.value
+        )
+        if name_translations := filing.body.get('nameTranslations', []):
+            CorpName.create_translations(cursor, corp_num, filing.event_id, name_translations, old_translations)
+            #  End translations in db that are not present in the incoming filing json.
+            for old_translation in old_translations:
+                if not next((x for x in name_translations if x['name'] == old_translation.corp_name), None):
+                    CorpName.end_name(
+                        cursor=cursor,
+                        event_id=filing.event_id,
+                        corp_num=corp_num,
+                        corp_name=old_translation.corp_name,
+                        type_code=CorpName.TypeCodes.TRANSLATION.value
+                    )
 
     @classmethod
     # pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks;
@@ -1081,13 +1070,8 @@ class Filing:
                         corp_name=old_translation.corp_name,
                         type_code=old_translation.type_code
                     )
-                if change['newValue']:
-                    CorpName.create_translations(
-                        cursor=cursor,
-                        corp_num=corp_num,
-                        event_id=filing.event_id,
-                        translations=change['newValue']['new']
-                    )
+                name_translations = filing.body['correctedFilingType']['nameTranslations']
+                CorpName.create_translations(cursor, corp_num, filing.event_id, name_translations, [])
 
             elif f"/filing/{filing.body['correctedFilingType']}/offices" in change['path']:
                 old_offices = Office.get_by_event(cursor=cursor, event_id=corrected_event_id)
