@@ -21,7 +21,7 @@ objects:
           spec:
             containers:
             - name: "filings-notebook-report"
-              image: "docker-registry.default.svc:5000/gl2uos-tools/filings-notebook-report-runtime:${ENV_TAG}"
+              image: "docker-registry.default.svc:5000/gl2uos-tools/filings-notebook-report"
               imagePullPolicy: Always
               args:
               - /bin/sh
