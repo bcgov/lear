@@ -30,6 +30,8 @@ Werkzeug==0.16.1
 certifi==2020.4.5.1
 urllib3==1.25.9
 idna==2.9
+pylint
+pylint-flask
 git+https://github.com/bcgov/business-schemas.git@2.5.0#egg=registry_schemas
 
 
