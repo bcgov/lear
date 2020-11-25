@@ -22,7 +22,6 @@ from legal_api.models import Business
 from legal_api.services.filings.validations.change_of_name import validate
 
 
-# from tests.unit.models import factory_business, factory_business_mailing_address, factory_filing
 @pytest.mark.parametrize(
     'test_name, resolution, identifier, expected_code, expected_msg',
     [
