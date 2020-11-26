@@ -175,10 +175,10 @@ class CorpName:
                 where corp_num=:corp_num
                   and corp_name_typ_cd=:type_code
                   and end_event_id is null
-                  and corp_nme=:corp_name
+                  and upper(corp_nme)=:corp_name
                 """,
                 event_id=event_id,
-                corp_name=corp_name,
+                corp_name=corp_name.upper(),
                 corp_num=corp_num,
                 type_code=type_code
             )

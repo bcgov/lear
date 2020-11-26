@@ -18,6 +18,7 @@ Currently this only provides API versioning information
 from __future__ import annotations
 
 import datetime
+import fnmatch
 from enum import Enum
 from http import HTTPStatus
 from typing import Dict, List, Optional
@@ -1048,31 +1049,24 @@ class Filing:
                 name = change['newValue']['nameRequest'].get('legalName', None)
                 cls._create_corp_name(cursor, filing, corp_num, name)
 
-            elif f"/filing/{filing.body['correctedFilingType']}/nameTranslations" in change['path']:
-                old_translations = CorpName.get_by_event(
-                    cursor=cursor,
-                    corp_num=corp_num,
-                    event_id=corrected_event_id,
-                    type_code=CorpName.TypeCodes.TRANSLATION.value
-                )
-                # whole list will be ended and re added with new values
-                for old_translation in old_translations:
-                    if old_translation.end_event_id:
-                        raise GenericException(
-                            error='Manual intervention needed for correction due to name translation:'
-                            f'{corp_num}',
-                            status_code=HTTPStatus.NOT_IMPLEMENTED
-                        )
+            elif fnmatch.fnmatch(change['path'],
+                                 f"/filing/{filing.body['correctedFilingType']}/nameTranslations/*/name"):
+                if change['oldValue']:
                     CorpName.end_name(
                         cursor=cursor,
                         event_id=filing.event_id,
                         corp_num=corp_num,
-                        corp_name=old_translation.corp_name,
-                        type_code=old_translation.type_code
+                        corp_name=change['oldValue'],
+                        type_code=CorpName.TypeCodes.TRANSLATION.value
                     )
-                name_translations = filing.body['correctedFilingType']['nameTranslations']
-                CorpName.create_translations(cursor, corp_num, filing.event_id, name_translations, [])
-
+                if change['newValue']:
+                    CorpName.create_translations(
+                        cursor=cursor,
+                        corp_num=corp_num,
+                        event_id=filing.event_id,
+                        translations=[change['newValue']],
+                        old_translations=[]
+                    )
             elif f"/filing/{filing.body['correctedFilingType']}/offices" in change['path']:
                 old_offices = Office.get_by_event(cursor=cursor, event_id=corrected_event_id)
                 for office in old_offices:
