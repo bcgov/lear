@@ -1052,6 +1052,19 @@ class Filing:
             elif fnmatch.fnmatch(change['path'],
                                  f"/filing/{filing.body['correctedFilingType']}/nameTranslations/*/name"):
                 if change['oldValue']:
+                    old_translations = CorpName.get_by_event(
+                        cursor=cursor,
+                        corp_num=corp_num,
+                        event_id=corrected_event_id,
+                        type_code=CorpName.TypeCodes.TRANSLATION.value
+                    )
+                    for old_translation in old_translations:
+                        if change['oldValue'].upper() == old_translation.upper() and old_translation.end_event_id:
+                            raise GenericException(
+                                error='Manual intervention needed for correction due to name translation:'
+                                f'{corp_num}',
+                                status_code=HTTPStatus.NOT_IMPLEMENTED
+                            )
                     CorpName.end_name(
                         cursor=cursor,
                         event_id=filing.event_id,
