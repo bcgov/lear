@@ -1059,7 +1059,8 @@ class Filing:
                         type_code=CorpName.TypeCodes.TRANSLATION.value
                     )
                     for old_translation in old_translations:
-                        if change['oldValue'].upper() == old_translation.upper() and old_translation.end_event_id:
+                        if change['oldValue'].upper() == old_translation.corp_name.upper() and \
+                                old_translation.end_event_id:
                             raise GenericException(
                                 error='Manual intervention needed for correction due to name translation:'
                                 f'{corp_num}',
