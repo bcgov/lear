@@ -14,7 +14,7 @@ on:
         default: "dev"
 
 jobs:
-  filings-notebook-report-cd:   `
+  filings-notebook-report-cd:
     runs-on: ubuntu-latest
     if: github.repository == 'bcgov/lear'
     steps:
