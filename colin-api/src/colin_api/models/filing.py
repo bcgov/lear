@@ -1078,7 +1078,7 @@ class Filing:
                         cursor=cursor,
                         corp_num=corp_num,
                         event_id=filing.event_id,
-                        translations=[change['newValue']],
+                        translations=[{'name': change['newValue']}],
                         old_translations=[]
                     )
             elif f"/filing/{filing.body['correctedFilingType']}/offices" in change['path']:
