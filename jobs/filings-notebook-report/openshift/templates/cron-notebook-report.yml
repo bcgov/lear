@@ -26,7 +26,7 @@ objects:
               args:
               - /bin/sh
               - -c
-              - cd /opt/app-root/src; ./run.sh
+              - cd /opt/app-root; ./run.sh
               env:
                   - name: PG_USER
                     valueFrom:
