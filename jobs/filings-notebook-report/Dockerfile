@@ -2,7 +2,7 @@ FROM python:3.8.5-buster
 USER root
 
 # Create working directory
-RUN mkdir /opt/app-root && chmod 755 /opt/app-root
+RUN mkdir /opt/app-root && chmod 777 /opt/app-root
 WORKDIR /opt/app-root
 
 # Install the requirements
