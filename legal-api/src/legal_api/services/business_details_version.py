@@ -57,8 +57,16 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         elif filing.filing_type == 'annualReport':
             revision_json['filing'] = \
                 VersionedBusinessDetailsService.get_ar_revision(filing, business)
+        elif filing.filing_type == 'correction':
+            revision_json = filing.json
 
-        # filing_type's yet to be handled correction, alteration, changeOfName, specialResolution, voluntaryDissolution
+            # This is required to find diff
+            for party in revision_json.get('filing', {}).get('incorporationApplication', {}).get('parties', []):
+                party['id'] = party.get('officer', {}).get('id', None)
+                for party_role in party['roles']:
+                    party_role['id'] = party_role['roleType']
+
+        # filing_type's yet to be handled alteration, changeOfName, specialResolution, voluntaryDissolution
         if not revision_json['filing']:
             revision_json = filing.json
 
@@ -351,7 +359,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         if is_ia_or_after:
             party['roles'] = [{
                 'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
-                'roleType': ' '.join(r.capitalize() for r in party_role_revision.role.split('_'))
+                'roleType': ' '.join(r.capitalize() for r in party_role_revision.role.split('_')),
+                # This id is required to find diff
+                'id': ' '.join(r.capitalize() for r in party_role_revision.role.split('_'))
             }]
         else:
             party.update({
@@ -426,8 +436,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
         if is_ia_or_after:
             member['officer']['id'] = str(party_revision.id)
-        else:
-            member['id'] = str(party_revision.id)
+
+        member['id'] = str(party_revision.id)  # This is required to find diff
 
         return member
 
@@ -495,7 +505,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def name_translations_json(name_translation_revision) -> dict:
         """Return the name translation revision as a json object."""
         name_translation = {
-            'id': name_translation_revision.id,
+            'id': str(name_translation_revision.id),
             'name': name_translation_revision.alias,
             'type': name_translation_revision.type
         }

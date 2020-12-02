@@ -45,7 +45,7 @@ def test_alias_json(session):
     )
     alias.save()
     alias_json = {
-        'id': alias.id,
+        'id': str(alias.id),
         'name': alias.alias,
         'type': alias.type
     }

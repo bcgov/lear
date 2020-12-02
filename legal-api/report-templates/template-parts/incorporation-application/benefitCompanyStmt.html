@@ -20,12 +20,17 @@
 <div class="no-page-break">
     {% if listOfTranslations|length > 0 %}
         <div class="section-data mt-4">
-            <div class="bold">Translation(s) of Company Name:</div>
+            <div>
+                <span class="bold">Translation(s) of Company Name:</span>
+                {% if hasNameTranslationsCorrected %}
+                    <span class="chip">CORRECTED</span>
+                {% endif %}
+            </div>
             <table class="name-translation-table" role="presentation">
                 {% for translation in listOfTranslations %}
                     <tr>
                         <td class="pt-2">&bull;</td>
-                        <td class="pt-2">{{translation.name}}</td>
+                        <td class="pt-2">{{translation.name|upper}}</td>
                     </tr>
                 {% endfor %}
             </table>
