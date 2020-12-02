@@ -136,9 +136,9 @@ def processnotebooks(notebookdirectory):
             note_book = os.path.basename(file)
             for attempt in range(retry_times):
                 try:
-                    pm.execute_notebook(file, 'temp.ipynb', parameters=None)
+                    pm.execute_notebook(file, '/tmp/temp.ipynb', parameters=None)
                     send_email(note_book, '', '')
-                    os.remove('temp.ipynb')
+                    os.remove('/tmp/temp.ipynb')
                     status = True
                     break
                 except Exception:
