@@ -129,20 +129,43 @@ if( run_pipeline ) {
             }
         }
 		
+		if (build_ok) {
+			stage("Build ${APP_NAME_RUNTIME}") {
+				try {
+					echo "Building ${APP_NAME_RUNTIME}..."
+					openshiftBuild bldCfg: APP_NAME_RUNTIME, verbose: 'false', showBuildLogs: 'true'
+
+					sleep 5
+
+					// openshiftVerifyBuild bldCfg: BUILDCFG_NAME
+					echo ">>> Get Image Hash"
+					IMAGE_HASH = sh (
+						script: """oc get istag ${APP_NAME_RUNTIME}:latest -o template --template=\"{{.image.dockerImageReference}}\"|awk -F \":\" \'{print \$3}\'""",
+							returnStdout: true).trim()
+					echo ">> IMAGE_HASH: ${IMAGE_HASH}"
+					echo ">>>> Build Complete"
+				} catch (Exception e) {
+					echo e.getMessage()
+					build_ok = false
+				}
+			}//end stage
+		}
+				
+
 
         if (build_ok) {		
-			stage("Tag ${APP_NAME}:${DESTINATION_TAG}") {				
+			stage("Tag ${APP_NAME_RUNTIME}:${DESTINATION_TAG}") {				
 			  script {
 				openshift.withCluster() {
 				  openshift.withProject() {
 					try{
-						echo "Tagging ${APP_NAME} for deployment to ${DESTINATION_TAG} ..."
+						echo "Tagging ${APP_NAME_RUNTIME} for deployment to ${DESTINATION_TAG} ..."
 
 						// Don't tag with BUILD_ID so the pruner can do it's job; it won't delete tagged images.
 						// Tag the images for deployment based on the image's hash
-						def IMAGE_HASH = getImageTagHash("${APP_NAME}")
+						def IMAGE_HASH = getImageTagHash("${APP_NAME_RUNTIME}")
 						echo "IMAGE_HASH: ${IMAGE_HASH}"
-						openshift.tag("${APP_NAME}@${IMAGE_HASH}", "${APP_NAME}:${DESTINATION_TAG}")
+						openshift.tag("${APP_NAME_RUNTIME}@${IMAGE_HASH}", "${APP_NAME_RUNTIME}:${DESTINATION_TAG}")
 					} catch (Exception e) {
 						echo e.getMessage()
 						build_ok = false
