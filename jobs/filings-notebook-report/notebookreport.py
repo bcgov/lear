@@ -4,7 +4,6 @@ import ast
 import fnmatch
 import logging
 import os
-import shutil
 import smtplib
 import sys
 import time
@@ -28,8 +27,6 @@ setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.
 # ---------------------------------------
 # This script helps with the automated processing of Jupyter Notebooks via
 # papermill (https://github.com/nteract/papermill/)
-
-SNAPSHOTDIR = 'snapshots'
 
 
 def create_app(config=Config):
@@ -134,19 +131,14 @@ def processnotebooks(notebookdirectory):
         num_files = len(os.listdir(notebookdirectory))
         file_processed = 0
 
-        # Each time a notebook is processed a snapshot is saved to a snapshot sub-directory
-        # This checks the sub-directory exists and creates it if not
-        snapshotdir = os.path.join(notebookdirectory, SNAPSHOTDIR)
-        if not os.path.isdir(snapshotdir):
-            os.mkdir(snapshotdir)
-
         for file in findfiles(notebookdirectory, '*.ipynb'):
             file_processed += 1
             note_book = os.path.basename(file)
             for attempt in range(retry_times):
                 try:
-                    pm.execute_notebook(file, os.path.join(snapshotdir, note_book), parameters=None)
+                    pm.execute_notebook(file, '/tmp/temp.ipynb', parameters=None)
                     send_email(note_book, '', '')
+                    os.remove('/tmp/temp.ipynb')
                     status = True
                     break
                 except Exception:
@@ -165,8 +157,6 @@ def processnotebooks(notebookdirectory):
                         continue
             if not status and num_files == file_processed:
                 break
-
-        shutil.rmtree(snapshotdir, ignore_errors=True)
 
 
 if __name__ == '__main__':
