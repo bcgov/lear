@@ -8,7 +8,12 @@ on:
 
 jobs:
   future-effective-filings-ci:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./jobs/future-effective-filings
+
     strategy:
       matrix:
         python-version: [3.8]
@@ -20,22 +25,24 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        working-directory: ./jobs/future-effective-filings
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements/dev.txt
+          make setup
       - name: Lint with pylint
-        working-directory: ./jobs/future-effective-filings
         run: |
-          pylint --rcfile=setup.cfg --load-plugins=pylint_flask file_future_effective.py
+          make lint
       - name: Lint with flake8
-        working-directory: ./jobs/future-effective-filings
         run: |
-          flake8 file_future_effective.py
-
-#      - name: Test with pytest
-#        working-directory: ./jobs/future-effective-filings
-#        run: |
-#          pip install .
-#          pytest
+          make flake8
+      #- name: Test with pytest
+      #  run: |
+      #    make test
+      #- name: Upload coverage to Codecov
+      #  uses: codecov/codecov-action@v1
+      #  with:
+      #    file: ./queue_services/entity-pay/coverage.xml
+      #    flags: entitypay
+      #    name: codecov-entity-pay
+      #    fail_ci_if_error: true
+      - name: build to check strictness
+        run: |
+          make build-nc

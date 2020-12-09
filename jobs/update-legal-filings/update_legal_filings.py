@@ -28,8 +28,9 @@ from legal_api.services.queue import QueueService
 from sentry_sdk import capture_message
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 
-import config
-from utils.logging import setup_logging
+import config  # pylint: disable=import-error
+from utils.logging import setup_logging  # pylint: disable=import-error
+
 # noqa: I003
 
 setup_logging(
@@ -66,26 +67,29 @@ def register_shellcontext(app):
     app.shell_context_processor(shell_context)
 
 
-def check_for_manual_filings(application: Flask = None, token: dict = None):
+def check_for_manual_filings(application: Flask = None, token: dict = None):  # pylint: disable=redefined-outer-name
     """Check for colin filings in oracle."""
     id_list = []
+    legal_url = application.config['LEGAL_URL']
+    colin_url = application.config['COLIN_URL']
 
     # get max colin event_id from legal
-    r = requests.get(f'{application.config["LEGAL_URL"]}/internal/filings/colin_id')
-    if r.status_code not in [200, 404]:
-        application.logger.error(f'Error getting last updated colin id from legal: {r.status_code} {r.json()}')
+    response = requests.get(f'{legal_url}/internal/filings/colin_id')
+    if response.status_code not in [200, 404]:
+        application.logger.error(f'Error getting last updated colin id from \
+            legal: {response.status_code} {response.json()}')
     else:
-        if r.status_code == 404:
+        if response.status_code == 404:
             last_event_id = 'earliest'
         else:
-            last_event_id = dict(r.json())['maxId']
+            last_event_id = dict(response.json())['maxId']
         if last_event_id:
             last_event_id = str(last_event_id)
             # get all cp event_ids greater than above
             try:
                 # call colin api for ids + filing types list
-                r = requests.get(f'{application.config["COLIN_URL"]}/event/CP/{last_event_id}')
-                colin_events = dict(r.json())
+                response = requests.get(f'{colin_url}/event/CP/{last_event_id}')
+                colin_events = dict(response.json())
 
                 # for bringing in a specific filing
                 # global SET_EVENTS_MANUALLY
@@ -101,16 +105,17 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
             # for each event_id: if not in legal db table then add event_id to list
             for info in colin_events['events']:
                 # check that event is associated with one of the coops loaded into legal db
-                r = requests.get(
-                    f'{application.config["LEGAL_URL"]}/{info["corp_num"]}',
+                response = requests.get(
+                    f'{legal_url}/{info["corp_num"]}',
                     headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
                 )
-                if r.status_code == 200:
+                if response.status_code == 200:
                     # check legal table
-                    r = requests.get(f'{application.config["LEGAL_URL"]}/internal/filings/colin_id/{info["event_id"]}')
-                    if r.status_code == 404:
+
+                    response = requests.get(f'{legal_url}/internal/filings/colin_id/{info["event_id"]}')
+                    if response.status_code == 404:
                         id_list.append(info)
-                    elif r.status_code != 200:
+                    elif response.status_code != 200:
                         application.logger.error(f'Error checking for colin id {info["event_id"]} in legal')
 
         else:
@@ -119,7 +124,7 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
     return id_list
 
 
-def get_filing(event_info: dict = None, application: Flask = None):
+def get_filing(event_info: dict = None, application: Flask = None):  # pylint: disable=redefined-outer-name
     """Get filing created by previous event."""
     # call the colin api for the filing
     legal_type = event_info['corp_num'][:2]
@@ -130,21 +135,21 @@ def get_filing(event_info: dict = None, application: Flask = None):
     filing_type = Filing.FILING_TYPES[legal_type][event_info['filing_typ_cd']]
     identifier = event_info['corp_num']
     event_id = event_info['event_id']
-    r = requests.get(
+    response = requests.get(
         f'{application.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}?eventId={event_id}'
     )
-    filing = dict(r.json())
+    filing = dict(response.json())
     return filing
 
 
-def update_filings(application):
+def update_filings(application):  # pylint: disable=redefined-outer-name, too-many-branches
     """Get filings in colin that are not in lear and send them to lear."""
     successful_filings = 0
     failed_filing_events = []
     corps_with_failed_filing = []
     skipped_filings = []
     first_failed_id = None
-    try:
+    try:  # pylint: disable=too-many-nested-blocks
         # get updater-job token
         token = AccountService.get_bearer_token()
 
@@ -161,12 +166,12 @@ def update_filings(application):
 
                     # call legal api with filing
                     application.logger.debug(f'sending filing with event info: {event_info} to legal api.')
-                    r = requests.post(
+                    response = requests.post(
                         f'{application.config["LEGAL_URL"]}/{event_info["corp_num"]}/filings',
                         json=filing,
                         headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
                     )
-                    if r.status_code != 201:
+                    if response.status_code != 201:
                         if not first_failed_id:
                             first_failed_id = event_info['event_id']
                         failed_filing_events.append(event_info)
@@ -198,16 +203,16 @@ def update_filings(application):
         if max_event_id > 0:
             # update max_event_id in legal_db
             application.logger.debug('setting last_event_id in legal_db to {}'.format(max_event_id))
-            r = requests.post(
+            response = requests.post(
                 f'{application.config["LEGAL_URL"]}/internal/filings/colin_id/{max_event_id}',
                 headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
             )
-            if r.status_code != 201:
+            if response.status_code != 201:
                 application.logger.error(
-                    f'Error adding {max_event_id} colin_last_update table in legal db {r.status_code}'
+                    f'Error adding {max_event_id} colin_last_update table in legal db {response.status_code}'
                 )
             else:
-                if dict(r.json())['maxId'] != max_event_id:
+                if dict(response.json())['maxId'] != max_event_id:
                     application.logger.error('Updated colin id is not max colin id in legal db.')
                 else:
                     application.logger.debug('Successfully updated colin id in legal db.')
@@ -219,7 +224,7 @@ def update_filings(application):
         application.logger.error(err)
 
 
-async def send_emails(tax_ids: dict, application: Flask):
+async def send_emails(tax_ids: dict, application: Flask):  # pylint: disable=redefined-outer-name
     """Put bn email messages on the queue for all businesses with new tax ids."""
     for identifier in tax_ids.keys():
         try:
@@ -235,7 +240,7 @@ async def send_emails(tax_ids: dict, application: Flask):
             )
 
 
-async def update_business_nos(application):
+async def update_business_nos(application):  # pylint: disable=redefined-outer-name
     """Update the tax_ids for corps with new bn_15s."""
     try:
         # get updater-job token
@@ -243,36 +248,36 @@ async def update_business_nos(application):
 
         # get identifiers with outstanding tax_ids
         application.logger.debug('Getting businesses with outstanding tax ids from legal api...')
-        r = requests.get(
+        response = requests.get(
             application.config['LEGAL_URL'] + '/internal/tax_ids',
             headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
         )
-        if r.status_code != 200:
+        if response.status_code != 200:
             application.logger.error('legal-updater failed to get identifiers from legal-api.')
             raise Exception
-        identifiers = r.json()
+        identifiers = response.json()
 
         if identifiers['identifiers']:
             # get tax ids that exist for above entities
             application.logger.debug(f'Getting tax ids for {identifiers["identifiers"]} from colin api...')
-            r = requests.get(
+            response = requests.get(
                 application.config['COLIN_URL'] + '/internal/tax_ids',
                 json=identifiers,
                 headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
             )
-            if r.status_code != 200:
+            if response.status_code != 200:
                 application.logger.error('legal-updater failed to get tax_ids from colin-api.')
                 raise Exception
-            tax_ids = r.json()
+            tax_ids = response.json()
             if tax_ids.keys():
                 # update lear with new tax ids from colin
                 application.logger.debug(f'Updating tax ids for {tax_ids.keys()} in lear...')
-                r = requests.post(
+                response = requests.post(
                     application.config['LEGAL_URL'] + '/internal/tax_ids',
                     json=tax_ids,
                     headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
                 )
-                if r.status_code != 201:
+                if response.status_code != 201:
                     application.logger.error('legal-updater failed to update tax_ids in lear.')
                     raise Exception
 

@@ -15,7 +15,7 @@ on:
 
 jobs:
   filings-notebook-report-cd:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.repository == 'bcgov/lear'
     steps:
       - uses: actions/checkout@v2
@@ -32,7 +32,7 @@ jobs:
         with:
           WORKING_DIRECTORY: "./jobs/filings-notebook-report"
           APP_NAME: "filings-notebook-report"
-          VAULTS: ''
+          VAULTS: ""
           SKIP_OP: "ture"
           OP_PARAMETERS: ${{ secrets.OP_PARAMETERS }}
           OPENSHIFT_LOGIN_REGISTRY: ${{ secrets.OPENSHIFT_LOGIN_REGISTRY }}

@@ -1,176 +1,100 @@
 .PHONY: license
-.PHONY: setup build-req clean clean-build clean-pyc clean-test
+.PHONY: setup
+.PHONY: ci cd
+.PHONY: run
 
-.PHONY: docker-setup network build start qa style safety test test-travis flake8 \
-isort isort-save stop docker-clean logs
-.PHONY: mac-cov pylint flake8
+MKFILE_PATH:=$(abspath $(lastword $(MAKEFILE_LIST)))
+CURRENT_ABS_DIR:=$(patsubst %/,%,$(dir $(MKFILE_PATH)))
 
-project_name := legal_api
-
-SHELL:=/bin/bash
-mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
-current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
-current_abs_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
+PROJECT_NAME:=legal_api
 
 #################################################################################
-# COMMANDS                                                                      #
+# COMMANDS -- Setup                                                             #
 #################################################################################
-clean: clean-build clean-pyc clean-test
+setup: install install-dev ## Setup the project
+
+clean: clean-build clean-pyc clean-test ## Clean the project
 	rm -rf venv/
 
-clean-build:
+clean-build: ## Clean build files
 	rm -fr build/
 	rm -fr dist/
 	rm -fr .eggs/
 	find . -name '*.egg-info' -exec rm -fr {} +
-	find . -name '*.egg' -exec rm -f {} +
+	find . -name '*.egg' -exec rm -fr {} +
 
-clean-pyc:
+clean-pyc: ## Clean cache files
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '*~' -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -fr {} +
 
-clean-test:
+clean-test: ## clean test files
 	find . -name '.pytest_cache' -exec rm -fr {} +
 	rm -fr .tox/
 	rm -f .coverage
 	rm -fr htmlcov/
 
-build-req: clean venv/bin/activate
-
-setup: clean setup-venv install-dev
-
-venv/bin/activate: requirements/prod.txt requirements/dev.txt
-	rm -rf venv/
-	test -f venv/bin/activate || python3.8 -m venv  $(current_abs_dir)/venv
+build-req: clean ## Upgrade requirements
+	test -f venv/bin/activate || python3.8 -m venv  $(CURRENT_ABS_DIR)/venv ;\
 	. venv/bin/activate ;\
 	pip install --upgrade pip ;\
 	pip install -Ur requirements/prod.txt ;\
 	pip freeze | sort > requirements.txt ;\
 	cat requirements/bcregistry-libraries.txt >> requirements.txt ;\
-	pip install -Ur requirements/bcregistry-libraries.txt ;\
-	pip install -Ur requirements/dev.txt
-	touch venv/bin/activate  # update so it's as new as requirements/prod.txt
+	pip install -Ur requirements/bcregistry-libraries.txt
 
-setup-venv: requirements.txt
-	rm -rf venv/
-	test -f venv/bin/activate || python3.8 -m venv  $(current_abs_dir)/venv
+install: clean ## Install python virtrual environment
+	test -f venv/bin/activate || python3.8 -m venv  $(CURRENT_ABS_DIR)/venv ;\
 	. venv/bin/activate ;\
 	pip install --upgrade pip ;\
 	pip install -Ur requirements.txt
 
-.PHONY: install-dev
-install-dev: venv/bin/activate
+install-dev: ## Install local application
 	. venv/bin/activate ; \
 	pip install -Ur requirements/dev.txt; \
 	pip install -e .
 
-.PHONY: activate
-activate: venv/bin/activate
-	. venv/bin/activate
+#################################################################################
+# COMMANDS - CI                                                                 #
+#################################################################################
+ci: lint flake8 test ## CI flow
 
-.PHONY: local-test
-local-test: venv/bin/activate
-	. venv/bin/activate ; \
-	pytest
+lint: ## Linting with pylint
+	. venv/bin/activate && pylint --rcfile=setup.cfg  --load-plugins=pylint_flask src/$(PROJECT_NAME)
 
-.PHONY: local-coverage
-local-coverage: venv/bin/activate
-	. venv/bin/activate ; \
-	coverage run -m pytest
+flake8: ## Linting with flake8
+	. venv/bin/activate && flake8 src/$(PROJECT_NAME) tests
 
-.PHONY: coverage-report
-coverage-report: local-coverage
-	. venv/bin/activate ; \
-	coverage report ; \
-	coverage html
+test: ## Unit testing
+	. venv/bin/activate && pytest
 
-## Run the coverage report and display in a browser window
-mac-cov:
-	coverage run -m pytest ; \
-	coverage report ; \
-	coverage html ; \
-	open -a "Google Chrome" htmlcov/index.html
+mac-cov: test ## Run the coverage report and display in a browser window (mac)
+	@open -a "Google Chrome" htmlcov/index.html
 
+#################################################################################
+# COMMANDS - CD                                                               #
+#################################################################################
+cd: build ## CD flow
 
+build: ## Build the docker container
+	docker build -t $(PROJECT_NAME) .
 
-## run pylint on the package and tests
-pylint:
-	pylint --rcfile=setup.cfg \
-	 --load-plugins=pylint_flask \
-	 src/$(project_name)
+build-nc: ## Build the docker container without caching
+	docker build --no-cache -t $(PROJECT_NAME) .
 
-## run flake8 on the package and tests
-flake8:
-	flake8 src/$(project_name) tests
-
-## Verify source code license headers.
-license:
-	./scripts/verify_license_headers.sh src/$(project_name) tests
-
-.PHONY: test-ratio
-test-ratio:
-	./scripts/test_ratio.sh
-
+#################################################################################
+# COMMANDS - Local                                                              #
+#################################################################################
+run: ## Run the project in local
+	. venv/bin/activate && python -m flask run -p 5000
 
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################
+.PHONY: help
 
-.DEFAULT_GOAL := show-help
+.DEFAULT_GOAL := help
 
-# Inspired by <http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html>
-# sed script explained:
-# /^##/:
-# 	* save line in hold space
-# 	* purge line
-# 	* Loop:
-# 		* append newline + line to hold space
-# 		* go to next line
-# 		* if line starts with doc comment, strip comment character off and loop
-# 	* remove target prerequisites
-# 	* append hold space (+ newline) to line
-# 	* replace newline plus comments by `---`
-# 	* print line
-# Separate expressions are necessary because labels cannot be delimited by
-# semicolon; see <http://stackoverflow.com/a/11799865/1968>
-.PHONY: show-help
-show-help:
-	@echo "$$(tput bold)Available rules:$$(tput sgr0)"
-	@echo
-	@sed -n -e "/^## / { \
-		h; \
-		s/.*//; \
-		:doc" \
-		-e "H; \
-		n; \
-		s/^## //; \
-		t doc" \
-		-e "s/:.*//; \
-		G; \
-		s/\\n## /---/; \
-		s/\\n/ /g; \
-		p; \
-	}" ${MAKEFILE_LIST} \
-	| LC_ALL='C' sort --ignore-case \
-	| awk -F '---' \
-		-v ncol=$$(tput cols) \
-		-v indent=19 \
-		-v col_on="$$(tput setaf 6)" \
-		-v col_off="$$(tput sgr0)" \
-	'{ \
-		printf "%s%*s%s ", col_on, -indent, $$1, col_off; \
-		n = split($$2, words, " "); \
-		line_length = ncol - indent; \
-		for (i = 1; i <= n; i++) { \
-			line_length -= length(words[i]) + 1; \
-			if (line_length <= 0) { \
-				line_length = ncol - indent - length(words[i]) - 1; \
-				printf "\n%*s ", -indent, " "; \
-			} \
-			printf "%s ", words[i]; \
-		} \
-		printf "\n"; \
-	}' \
-	| more $(shell test $(shell uname) = Darwin && echo '--no-init --raw-control-chars')
+help:
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

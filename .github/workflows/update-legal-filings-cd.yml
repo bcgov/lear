@@ -15,7 +15,7 @@ on:
 
 jobs:
   update-legal-filings-cd:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.repository == 'bcgov/lear'
     steps:
       - uses: actions/checkout@v2

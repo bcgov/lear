@@ -15,7 +15,7 @@ on:
 
 jobs:
   data-reset-tool-cd:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.repository == 'bcgov/lear'
     steps:
       - uses: actions/checkout@v2
@@ -28,12 +28,13 @@ jobs:
         run: |
           echo "TAG_NAME=dev" >> $GITHUB_ENV
 
-      - uses: pwei1018/bcrs-cd-action@latest
+      - uses: pwei1018/bcrs-cd-action@versioning
         with:
           WORKING_DIRECTORY: "./data-reset-tool"
           APP_NAME: "data-reset-tool"
           VAULTS: '[{\"vault\": \"entity\",\"application\": [\"postgres-legal\"]}]'
           SKIP_OP: "false"
+          DEPLOYMENT: "true"
           OP_PARAMETERS: ${{ secrets.OP_PARAMETERS }}
           OPENSHIFT_LOGIN_REGISTRY: ${{ secrets.OPENSHIFT_LOGIN_REGISTRY }}
           OPENSHIFT_DOCKER_REGISTRY: ${{ secrets.OPENSHIFT_DOCKER_REGISTRY }}

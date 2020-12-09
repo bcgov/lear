@@ -16,7 +16,7 @@ on:
 
 jobs:
   entity-filer-cd:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.repository == 'bcgov/lear'
     steps:
       - uses: actions/checkout@v2
@@ -29,12 +29,13 @@ jobs:
         run: |
           echo "TAG_NAME=dev" >> $GITHUB_ENV
 
-      - uses: pwei1018/bcrs-cd-action@latest
+      - uses: pwei1018/bcrs-cd-action@versioning
         with:
           WORKING_DIRECTORY: "./queue_services/entity-filer"
           APP_NAME: "entity-filer"
           VAULTS: '[{ \"vault\": \"shared\", \"application\": [\"nats\"]}, {\"vault\": \"entity\",\"application\": [\"postgres-legal\", \"entity-filer\", \"nats-filer\", \"entity-service-account\", \"sentry\"]}]'
           SKIP_OP: "false"
+          DEPLOYMENT: "true"
           OP_PARAMETERS: ${{ secrets.OP_PARAMETERS }}
           OPENSHIFT_LOGIN_REGISTRY: ${{ secrets.OPENSHIFT_LOGIN_REGISTRY }}
           OPENSHIFT_DOCKER_REGISTRY: ${{ secrets.OPENSHIFT_DOCKER_REGISTRY }}
