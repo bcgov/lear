@@ -23,7 +23,6 @@ import groovy.json.*
 
 // define constants - values sent in as env vars from whatever calls this pipeline
 def APP_NAME = 'filings-notebook-report'
-def APP_NAME_RUNTIME ='filings-notebook-report-runtime'
 def SOURCE_TAG = 'test'
 def DESTINATION_TAG = 'prod'
 def TOOLS_TAG = 'tools'
@@ -60,18 +59,18 @@ node {
     def build_ok = true
     def old_version
 
-	stage("Tag ${APP_NAME_RUNTIME}:${DESTINATION_TAG}") {				
+	stage("Tag ${APP_NAME}:${DESTINATION_TAG}") {				
 	  script {
 		openshift.withCluster() {
 		  openshift.withProject() {
 			try{
-				echo "Tagging ${APP_NAME_RUNTIME} for deployment to ${DESTINATION_TAG} ..."
+				echo "Tagging ${APP_NAME} for deployment to ${DESTINATION_TAG} ..."
 
 				// Don't tag with BUILD_ID so the pruner can do it's job; it won't delete tagged images.
 				// Tag the images for deployment based on the image's hash
-				def IMAGE_HASH = getImageTagHash("${APP_NAME_RUNTIME}")
+				def IMAGE_HASH = getImageTagHash("${APP_NAME}")
 				echo "IMAGE_HASH: ${IMAGE_HASH}"
-				openshift.tag("${APP_NAME_RUNTIME}@${IMAGE_HASH}", "${APP_NAME_RUNTIME}:${DESTINATION_TAG}")
+				openshift.tag("${APP_NAME}@${IMAGE_HASH}", "${APP_NAME}:${DESTINATION_TAG}")
 			} catch (Exception e) {
 				echo e.getMessage()
 				build_ok = false

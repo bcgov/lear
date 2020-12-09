@@ -81,7 +81,7 @@ def send_email(note_book, emailtype, errormessage):
         message.attach(MIMEText('Please see attached.', 'plain'))
 
         # Open file in binary mode
-        with open(filename, 'rb') as attachment:
+        with open('/opt/app-root/data/'+filename, 'rb') as attachment:
             # Add file as application/octet-stream
             # Email client can usually download this automatically as attachment
             part = MIMEBase('application', 'octet-stream')
@@ -105,8 +105,6 @@ def send_email(note_book, emailtype, errormessage):
     logging.info('Email recipients list is: %s', email_list)
     server.sendmail(os.getenv('SENDER_EMAIL', ''), email_list, message.as_string())
     logging.info("Email with subject \'%s\' has been sent successfully!", subject)
-    if not emailtype == 'ERROR':
-        os.remove(filename)
     server.quit()
 
 
