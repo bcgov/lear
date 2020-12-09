@@ -36,7 +36,7 @@ to setup your local development environment.
    oc project gl2uos-tools
    ```
 
-3. Create build image
+3. Create build image with a tag 'latest'.
 
    ```sh
    cd */lear/jobs/filings-notebook-report/openshift/templates
@@ -46,15 +46,10 @@ to setup your local development environment.
     | oc apply -f -
    ```
 
-4. Create runtime image
-
-   ```sh
-   oc create imagestream filings-notebook-report-runtime
-   oc process -f filings-notebook-report-runtime-bc-template.json \
-    | oc apply -f -
-   ```
-  
-5. Create pipeline and need to start pipeline manually
+4. Create pipeline and need to start pipeline manually.
+   It will build image as a tag 'latest' and then tag it to 'dev'
+   or tag it from 'dev' to 'test'
+   or tag it from 'test' to 'prod'
 
    ```sh
    oc process -f filings-notebook-report-pipeline.json \

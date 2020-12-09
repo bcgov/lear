@@ -3,6 +3,7 @@ USER root
 
 # Create working directory
 RUN mkdir /opt/app-root && chmod 755 /opt/app-root
+RUN mkdir /opt/app-root/data && chmod 777 /opt/app-root/data
 WORKDIR /opt/app-root
 
 # Install the requirements
