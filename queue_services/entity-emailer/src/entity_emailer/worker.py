@@ -85,7 +85,7 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
         logger.debug('Attempting to process email: %s', email_msg)
         token = AccountService.get_bearer_token()
         etype = email_msg['email']['type']
-        if etype == 'bc.registry.namex.request':
+        if etype == 'bc.registry.names.request':
             email = name_request.process(email_msg)
             send_email(email, token)
         else:
