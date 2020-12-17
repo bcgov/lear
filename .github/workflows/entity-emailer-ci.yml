@@ -23,7 +23,12 @@ jobs:
       NATS_QUEUE: entity-email-worker
       JWT_OIDC_JWKS_CACHE_TIMEOUT: 300
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./queue_services/entity-emailer
+
     strategy:
       matrix:
         python-version: [3.8]
@@ -47,24 +52,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        working-directory: ./queue_services/entity-emailer
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements/dev.txt
+          make setup
       - name: Lint with pylint
-        working-directory: ./queue_services/entity-emailer
         run: |
-          pylint --rcfile=setup.cfg --load-plugins=pylint_flask src
+          make lint
       - name: Lint with flake8
-        working-directory: ./queue_services/entity-emailer
         run: |
-          flake8 src tests
+          make flake8
       #- name: Test with pytest
-      #  working-directory: ./queue_services/entity-emailer
       #  run: |
-      #    pip install .
-      #    pytest
+      #    make test
       #- name: Upload coverage to Codecov
       #  uses: codecov/codecov-action@v1
       #  with:
@@ -72,3 +70,6 @@ jobs:
       #    flags: entityemailer
       #    name: codecov-entity-emailer
       #    fail_ci_if_error: true
+      - name: build to check strictness
+        run: |
+          make build-nc

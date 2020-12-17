@@ -4,6 +4,7 @@
 # Testing
 pytest<4.1
 pytest-mock
+pytest-cov
 requests
 pyhamcrest
 sqlalchemy

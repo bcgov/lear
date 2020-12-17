@@ -8,7 +8,12 @@ on:
 
 jobs:
   data-reset-tool-ci:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./data-reset-tool
+
     strategy:
       matrix:
         python-version: [3.8]
@@ -20,22 +25,24 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        working-directory: ./data-reset-tool
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements/dev.txt
+          make setup
       - name: Lint with pylint
-        working-directory: ./data-reset-tool
         run: |
-          pylint --rcfile=setup.cfg --load-plugins=pylint_flask src
+          make lint
       - name: Lint with flake8
-        working-directory: ./data-reset-tool
         run: |
-          flake8 src
-
-#      - name: Test with pytest
-#        working-directory: ./data-reset-tool
-#        run: |
-#          pip install .
-#          pytest
+          make flake8
+      #- name: Test with pytest
+      #  run: |
+      #    make test
+      #- name: Upload coverage to Codecov
+      #  uses: codecov/codecov-action@v1
+      #  with:
+      #    file: ./auth-api/coverage.xml
+      #    flags: authapi
+      #    name: codecov-auth-api
+      #    fail_ci_if_error: true
+      - name: build to check strictness
+        run: |
+          make build-nc
