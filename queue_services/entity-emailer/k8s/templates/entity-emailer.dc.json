@@ -293,6 +293,42 @@
                                         }
                                     },
                                     {
+                                        "name": "NAMEX_AUTH_SVC_URL",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NAMEX_AUTH_SVC_URL"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NAMEX_SVC_URL",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NAMEX_SVC_URL"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NAMEX_SERVICE_CLIENT_USERNAME",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NAMEX_SERVICE_CLIENT_USERNAME"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "NAMEX_SERVICE_CLIENT_SECRET",
+                                        "valueFrom": {
+                                            "configMapKeyRef": {
+                                                "name": "${NAME}-${TAG_NAME}-config",
+                                                "key": "NAMEX_SERVICE_CLIENT_SECRET"
+                                            }
+                                        }
+                                    },
+                                    {
                                         "name": "TEMPLATE_PATH",
                                         "valueFrom": {
                                             "configMapKeyRef": {
