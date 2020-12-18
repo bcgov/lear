@@ -84,11 +84,12 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
     with flask_app.app_context():
         logger.debug('Attempting to process email: %s', email_msg)
         token = AccountService.get_bearer_token()
-        etype = email_msg['email']['type']
-        if etype == 'bc.registry.names.request':
+        etype = email_msg.get('type', None)
+        if etype and etype == 'bc.registry.names.request':
             email = name_request.process(email_msg)
             send_email(email, token)
         else:
+            etype = email_msg['email']['type']
             option = email_msg['email']['option']
             if etype == 'businessNumber':
                 email = bn_notification.process(email_msg['email'])

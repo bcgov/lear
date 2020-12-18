@@ -1,4 +1,4 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2020 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,13 +40,20 @@ def process(email_info: dict) -> dict:
         identifier=nr_number
     )
 
+    nr_response = NameXService.query_nr_number(nr_number)
+    if nr_response.status_code != HTTPStatus.OK:
+        logger.error('Failed to get nr info for name request: %s', nr_number)
+        capture_message(f'Email Queue: nr_id={nr_number}, error=receipt generation', level='error')
+        return {}
+
+    nr_data = nr_response.json()
     # get attachments
-    pdfs = _get_pdfs(nr_number)
+    pdfs = _get_pdfs(nr_data)
     if not pdfs:
         return {}
 
     # get recipients
-    recipients = email_info['applicants']['emailAddress']
+    recipients = nr_data['applicants']['emailAddress']
     if not recipients:
         return {}
 
@@ -63,51 +70,46 @@ def process(email_info: dict) -> dict:
     }
 
 
-def _get_pdfs(nr_number: str) -> list:
+def _get_pdfs(nr_data: dict) -> list:
     """Get the receipt for the name request application."""
     pdfs = []
-    nr_data = NameXService.query_nr_number(nr_number)
-    if nr_data.status_code != HTTPStatus.OK:
-        logger.error('Failed to get nr info for name request: %s', nr_number)
-        capture_message(f'Email Queue: nr_id={nr_number}, error=receipt generation', level='error')
-    else:
-        token = get_nr_bearer_token()
-        if token:
-            nr_id = nr_data['id']
-            payment_info = requests.get(
-                f'{current_app.config.get("NAMEX_SVC_URL")}payments/{nr_id}',
+    token = get_nr_bearer_token()
+    if token:
+        nr_id = nr_data['id']
+        payment_info = requests.get(
+            f'{current_app.config.get("NAMEX_SVC_URL")}payments/{nr_id}',
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            }
+        )
+        if payment_info.status_code != HTTPStatus.OK:
+            logger.error('Failed to get payment info for name request: %s', nr_id)
+            capture_message(f'Email Queue: nr_id={nr_id}, error=receipt generation', level='error')
+        else:
+            payment_info = payment_info.json()
+            payment_id = payment_info[0]['payment']['id']
+            receipt = requests.post(
+                f'{current_app.config.get("NAMEX_SVC_URL")}payments/{payment_id}/receipt',
+                json={},
                 headers={
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
+                    'Accept': 'application/pdf',
+                    'Authorization': f'Bearer {token}'
                 }
             )
-            if payment_info.status_code != HTTPStatus.OK:
-                logger.error('Failed to get payment info for name request: %s', nr_id)
+            if receipt.status_code != HTTPStatus.OK:
+                logger.error('Failed to get receipt pdf for name request: %s', nr_id)
                 capture_message(f'Email Queue: nr_id={nr_id}, error=receipt generation', level='error')
             else:
-                payment_id = payment_info[0]['payment']['id']
-
-                receipt = requests.post(
-                    f'{current_app.config.get("NAMEX_SVC_URL")}payments/{payment_id}/receipt',
-                    json={},
-                    headers={
-                        'Accept': 'application/pdf',
-                        'Authorization': f'Bearer {token}'
+                receipt_encoded = base64.b64encode(receipt.content)
+                pdfs.append(
+                    {
+                        'fileName': 'Receipt.pdf',
+                        'fileBytes': receipt_encoded.decode('utf-8'),
+                        'fileUrl': '',
+                        'attachOrder': '1'
                     }
                 )
-                if receipt.status_code != HTTPStatus.CREATED:
-                    logger.error('Failed to get receipt pdf for name request: %s', nr_id)
-                    capture_message(f'Email Queue: nr_id={nr_id}, error=receipt generation', level='error')
-                else:
-                    receipt_encoded = base64.b64encode(receipt.content)
-                    pdfs.append(
-                        {
-                            'fileName': 'Receipt.pdf',
-                            'fileBytes': receipt_encoded.decode('utf-8'),
-                            'fileUrl': '',
-                            'attachOrder': '1'
-                        }
-                    )
     return pdfs
 
 
@@ -118,7 +120,6 @@ def get_nr_bearer_token():
     client_secret = current_app.config.get('NAMEX_SERVICE_CLIENT_SECRET')
 
     data = 'grant_type=client_credentials'
-
     # get service account token
     res = requests.post(url=token_url,
                         data=data,
