@@ -41,7 +41,7 @@ from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
 from entity_emailer import config
-from entity_emailer.email_processors import bn_notification, filing_notification, mras_notification
+from entity_emailer.email_processors import bn_notification, filing_notification, mras_notification, name_request
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
@@ -83,30 +83,35 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
 
     with flask_app.app_context():
         logger.debug('Attempting to process email: %s', email_msg)
-
         token = AccountService.get_bearer_token()
-        etype, option = email_msg['email']['type'], email_msg['email']['option']
-        if etype == 'businessNumber':
-            email = bn_notification.process(email_msg['email'])
+        etype = email_msg.get('type', None)
+        if etype and etype == 'bc.registry.names.request':
+            email = name_request.process(email_msg)
             send_email(email, token)
-        elif etype == 'incorporationApplication' and option == 'mras':
-            email = mras_notification.process(email_msg['email'])
-            send_email(email, token)
-        elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
-            if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:
-                logger.debug('No email to send for: %s', email_msg)
-            # Remove this when self serve alteration is implemented.
-            elif etype == 'alteration' and option == Filing.Status.PAID.value:
-                logger.debug('No email to send for: %s', email_msg)
-            else:
-                email = filing_notification.process(email_msg['email'], token)
-                if email:
-                    send_email(email, token)
-                else:
-                    # should only be if this was for a a coops filing
-                    logger.debug('No email to send for: %s', email_msg)
         else:
-            logger.debug('No email to send for: %s', email_msg)
+            etype = email_msg['email']['type']
+            option = email_msg['email']['option']
+            if etype == 'businessNumber':
+                email = bn_notification.process(email_msg['email'])
+                send_email(email, token)
+            elif etype == 'incorporationApplication' and option == 'mras':
+                email = mras_notification.process(email_msg['email'])
+                send_email(email, token)
+            elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
+                if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:
+                    logger.debug('No email to send for: %s', email_msg)
+                # Remove this when self serve alteration is implemented.
+                elif etype == 'alteration' and option == Filing.Status.PAID.value:
+                    logger.debug('No email to send for: %s', email_msg)
+                else:
+                    email = filing_notification.process(email_msg['email'], token)
+                    if email:
+                        send_email(email, token)
+                    else:
+                        # should only be if this was for a a coops filing
+                        logger.debug('No email to send for: %s', email_msg)
+            else:
+                logger.debug('No email to send for: %s', email_msg)
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
