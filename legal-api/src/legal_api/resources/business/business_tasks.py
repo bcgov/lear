@@ -21,9 +21,9 @@ from http import HTTPStatus
 
 import datedelta
 import requests
+from requests import exceptions  # noqa I001
 from flask import current_app, jsonify
 from flask_restplus import Resource, cors
-from requests import exceptions
 
 from legal_api.models import Business, Filing
 from legal_api.services import namex
@@ -91,8 +91,10 @@ class TaskListResource(Resource):
                         except (exceptions.ConnectionError, exceptions.Timeout) as err:
                             current_app.logger.error(
                                 f'Payment connection failure for {business.identifier} task list. ', err)
-                            return {'message': 'unable to get payment details for pending filing.'},
-                            HTTPStatus.SERVICE_UNAVAILABLE
+                            return (
+                                {'message': 'unable to get payment details for pending filing.'},
+                                HTTPStatus.SERVICE_UNAVAILABLE
+                            )
 
         return jsonify(tasks=rv)
 
