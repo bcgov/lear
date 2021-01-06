@@ -215,7 +215,7 @@ def test_get_tasks_error_filings(session, client, jwt):
     # test endpoint returned filing in tasks call
     rv = client.get(f'/api/v1/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
     assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json['tasks']) == 2
+    assert len(rv.json['tasks']) == 3
     assert rv.json['tasks'][0]['task']['filing']['header']['filingId'] == filing.id
 
 
