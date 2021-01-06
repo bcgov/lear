@@ -75,7 +75,7 @@ AR_FILING_PREVIOUS_YEAR = {
 }
 
 
-def test_get_tasks_no_filings(session, client):
+def test_get_tasks_no_filings(session, client, jwt):
     """Assert that to-do for the year after incorporation is returned when there are no filings."""
     identifier = 'CP7654321'
     factory_business(identifier, founding_date='2017-02-01 00:00:00-00')  # incorporation in 2017
@@ -84,12 +84,12 @@ def test_get_tasks_no_filings(session, client):
     this_year = datetime.now().year
     num_filings_owed = this_year - 2017
 
-    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+    rv = client.get(f'/api/v1/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
     assert rv.status_code == HTTPStatus.OK
     assert num_filings_owed == len(rv.json.get('tasks'))
 
 
-def test_get_tasks_next_year(session, client):
+def test_get_tasks_next_year(session, client, jwt):
     """Assert that one todo item is returned in the calendar year following incorporation."""
     identifier = 'CP7654321'
     founding_date = datetime.today() + datedelta.datedelta(days=1) - datedelta.datedelta(years=1)
@@ -97,17 +97,17 @@ def test_get_tasks_next_year(session, client):
 
     # To-do are all years from the year after incorporation until this year
 
-    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+    rv = client.get(f'/api/v1/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
     assert rv.status_code == HTTPStatus.OK
     assert 1 == len(rv.json.get('tasks'))
 
 
-def test_bcorps_get_tasks_no_filings(session, client):
+def test_bcorps_get_tasks_no_filings(session, client, jwt):
     """Assert that to-do for the current year is returned when there are no filings."""
     identifier = 'CP7654321'
     factory_business(identifier, datetime.now(), None, Business.LegalTypes.BCOMP.value)
 
-    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+    rv = client.get(f'/api/v1/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('tasks')) == 0  # To-do for the current year
@@ -142,12 +142,13 @@ def test_bcorps_get_tasks_pending_filings(session, client, jwt):
 
     assert rv.status_code == HTTPStatus.CREATED
 
-    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+    rv = client.get(f'/api/v1/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
     assert len(rv.json.get('tasks')) == 3
     assert rv.json['tasks'][0]['task']['filing']['header']['status'] == 'PENDING'
+    assert rv.json['header']['paymentMethod']
 
 
-def test_get_tasks_current_year_filing_exists(session, client):
+def test_get_tasks_current_year_filing_exists(session, client, jwt):
     """Assert that only the filing for the current year is returned when only current year filing exists."""
     identifier = 'CP7654321'
     b = factory_business(identifier=identifier, last_ar_date='2019-08-13')
@@ -155,13 +156,13 @@ def test_get_tasks_current_year_filing_exists(session, client):
 
     print('test_get_all_business_filings - filing:', filings)
 
-    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+    rv = client.get(f'/api/v1/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('tasks')) == 1  # Current year incomplete filing only
 
 
-def test_get_tasks_prev_year_incomplete_filing_exists(session, client):
+def test_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt):
     """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""
     identifier = 'CP7654321'
     b = factory_business(identifier, last_ar_date='2018-03-03')
@@ -169,30 +170,30 @@ def test_get_tasks_prev_year_incomplete_filing_exists(session, client):
 
     print('test_get_all_business_filings - filing:', filings)
 
-    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+    rv = client.get(f'/api/v1/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.status_code == HTTPStatus.OK
     # assert len(rv.json.get('tasks')) == 2  # Previous year filing and a disabled to-do for current year.
 
 
-def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client):
+def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt):
     """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""
     identifier = 'CP7654321'
     b = factory_business(identifier, datetime.now() - datedelta.datedelta(years=2), last_ar_date='2018-03-03')
     filings = factory_filing(b, AR_FILING_PREVIOUS_YEAR, datetime(2018, 8, 5, 7, 7, 58, 272362))
     print('test_get_all_business_filings - filing:', filings)
 
-    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+    rv = client.get(f'/api/v1/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.status_code == HTTPStatus.OK
     # assert len(rv.json.get('tasks')) == 2  # Previous year filing and a disabled to-do for current year.
 
 
-def test_get_empty_tasks_with_invalid_business(session, client):
+def test_get_empty_tasks_with_invalid_business(session, client, jwt):
     """Assert that an empty filings array is returned when business does not exist."""
     identifier = 'CP7654321'
 
-    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+    rv = client.get(f'/api/v1/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.status_code == HTTPStatus.OK
     print('rv json', rv.json)
@@ -212,7 +213,7 @@ def test_get_tasks_error_filings(session, client, jwt):
     assert filing.status == Filing.Status.PENDING.value
 
     # test endpoint returned filing in tasks call
-    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+    rv = client.get(f'/api/v1/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json['tasks']) == 2
     assert rv.json['tasks'][0]['task']['filing']['header']['filingId'] == filing.id
@@ -237,7 +238,7 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
     # freeze time so we get the same number of tasks in the to-do list regardless of when this test is run
     with freeze_time(FROZEN_2018_DATETIME):
         # test endpoint returned filing in tasks call
-        rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+        rv = client.get(f'/api/v1/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
         assert rv.status_code == HTTPStatus.OK
         assert len(rv.json['tasks']) == 3
         assert rv.json['tasks'][0]['task']['filing']['header']['filingId'] == filing.id
