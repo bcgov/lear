@@ -632,7 +632,7 @@ class ListFilingResource(Resource):
             filing.payment_status_code = rv.json().get('statusCode', '')
             filing.payment_account = payment_account_id
             filing.save()
-            return {'isPaymentActionRequired': rv.json().get('isPaymentActionRequired')}, HTTPStatus.CREATED
+            return {'isPaymentActionRequired': rv.json().get('isPaymentActionRequired', False)}, HTTPStatus.CREATED
 
         if rv.status_code == HTTPStatus.BAD_REQUEST:
             # Set payment error type used to retrieve error messages from pay-api
