@@ -154,7 +154,7 @@ class TaskListResource(Resource):
         # Retrieve all previous annual report filings. If there are existing AR filings, determine
         # the latest date of filing
         annual_report_filings = Filing.get_filings_by_type(business.id, 'annualReport')
-        if Filing.get_filings_by_type(business.id, 'annualReport'):
+        if annual_report_filings:
             # get last AR date from annualReportDate; if not present in json, try annualGeneralMeetingDate and
             # finally filing date
             last_ar_date = \

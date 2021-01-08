@@ -301,7 +301,6 @@ class ListFilingResource(Resource):
         # if filing is from COLIN, place on queue and return
         if filing.source == Filing.Source.COLIN.value:
             err_msg, err_code = ListFilingResource._process_colin_filing(business.identifier, filing, business)
-            print(1)
             return jsonify(err_msg), err_code
 
         # create invoice
