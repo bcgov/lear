@@ -20,12 +20,15 @@ from datetime import datetime
 from http import HTTPStatus
 
 import datedelta
-from flask import jsonify
+import requests
+from requests import exceptions  # noqa I001
+from flask import current_app, jsonify
 from flask_restplus import Resource, cors
 
 from legal_api.models import Business, Filing
 from legal_api.services import namex
 from legal_api.services.filings import validations
+from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
@@ -38,6 +41,7 @@ class TaskListResource(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @jwt.requires_auth
     def get(identifier):
         """Return a JSON object with meta information about the Service."""
         business = Business.find_by_identifier(identifier)
@@ -72,6 +76,25 @@ class TaskListResource(Resource):
                 # Append NR todo if there are no tasks and PAID or COMPLETED filings
                 if not paid_completed_filings:
                     rv.append(TaskListResource.create_incorporate_nr_todo(nr_response.json(), 1, True))
+            elif rv:
+                for item in rv:
+                    if item['task'].get('filing', {}).get('header', {}).get('paymentStatusCode', {}) == 'CREATED':
+                        payment_id = item['task']['filing']['header']['paymentToken']
+                        try:
+                            token = jwt.get_token_auth_header()
+                            headers = {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}
+                            payment_svc_url = current_app.config.get('PAYMENT_SVC_URL')
+                            pay_details = requests.get(url=f'{payment_svc_url}/{payment_id}', headers=headers)
+                            payment_method = pay_details.json().get('paymentMethod', '')
+                            return {'header': {'paymentMethod': payment_method}, 'tasks': rv}, HTTPStatus.OK
+
+                        except (exceptions.ConnectionError, exceptions.Timeout) as err:
+                            current_app.logger.error(
+                                f'Payment connection failure for {business.identifier} task list. ', err)
+                            return (
+                                {'message': 'unable to get payment details for pending filing.'},
+                                HTTPStatus.SERVICE_UNAVAILABLE
+                            )
 
         return jsonify(tasks=rv)
 
