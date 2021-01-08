@@ -57,7 +57,7 @@ objects:
                   - name: ERROR_EMAIL_RECIPIENTS
                     value: '[sbc_itoperationssupport@gov.bc.ca, steven.chen@gov.bc.ca]'
                   - name: INCORPORATION_FILINGS_DAILY_REPORT_RECIPIENTS
-                    value: '[Kaine.Sparks@gov.bc.ca, Linda.McClung@gov.bc.ca, Sinead.OCallaghan@gov.bc.ca, Olisa.Ezeh@gov.bc.ca, steven.chen@gov.bc.ca]'  
+                    value: '[Kaine.Sparks@gov.bc.ca, Linda.McClung@gov.bc.ca, Sinead.OCallaghan@gov.bc.ca, Olisa.Ezeh@gov.bc.ca, Cameron.Wulff@gov.bc.ca, steven.chen@gov.bc.ca]'  
                   - name: COOP_FILINGS_MONTHLY_REPORT_RECIPIENTS
                     value: '[Trish.Reimer@gov.bc.ca, Olisa.Ezeh@gov.bc.ca, steven.chen@gov.bc.ca]'
                   - name: COOPERATIVE_MONTHLY_REPORT_RECIPIENTS
@@ -72,6 +72,8 @@ objects:
                     value: '600'                      
                   - name: ENVIRONMENT
                     value: '${ENV_TAG}'  
+                  - name: DATA_DIR
+                    value: '/opt/app-root/data/'    
             restartPolicy: "Never"
             concurrencyPolicy: "Forbid"
 parameters: [
