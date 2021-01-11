@@ -81,7 +81,7 @@ def send_email(note_book, emailtype, errormessage):
         message.attach(MIMEText('Please see attached.', 'plain'))
 
         # Open file in binary mode
-        with open('/opt/app-root/data/'+filename, 'rb') as attachment:
+        with open(os.getenv('DATA_DIR', '')+filename, 'rb') as attachment:
             # Add file as application/octet-stream
             # Email client can usually download this automatically as attachment
             part = MIMEBase('application', 'octet-stream')
@@ -106,13 +106,13 @@ def send_email(note_book, emailtype, errormessage):
     server.sendmail(os.getenv('SENDER_EMAIL', ''), email_list, message.as_string())
     logging.info("Email with subject \'%s\' has been sent successfully!", subject)
     server.quit()
-
+    os.remove(os.getenv('DATA_DIR', '')+filename)
 
 def processnotebooks(notebookdirectory):
     """Process Notebook."""
     status = False
     now = datetime.now()
-
+    
     try:
         retry_times = int(os.getenv('RETRY_TIMES', '1'))
         retry_interval = int(os.getenv('RETRY_INTERVAL', '60'))
@@ -121,23 +121,24 @@ def processnotebooks(notebookdirectory):
     except Exception:
         logging.exception('Error processing notebook for %s', notebookdirectory)
         send_email(notebookdirectory, 'ERROR', traceback.format_exc())
-
+        return status
+    
     # For monthly tasks, we only run on the specified days
-    if notebookdirectory == 'daily' or (notebookdirectory == 'monthly' and now.day in days):
+    if notebookdirectory == 'daily' or (notebookdirectory == 'monthly' and now.day in days):        
         logging.info('Processing: %s', notebookdirectory)
-
+        
         num_files = len(os.listdir(notebookdirectory))
         file_processed = 0
-
+        
         for file in findfiles(notebookdirectory, '*.ipynb'):
             file_processed += 1
             note_book = os.path.basename(file)
             for attempt in range(retry_times):
-                try:
-                    pm.execute_notebook(file, '/tmp/temp.ipynb', parameters=None)
+                try:                    
+                    pm.execute_notebook(file, os.getenv('DATA_DIR', '')+'temp.ipynb', parameters=None)
                     send_email(note_book, '', '')
-                    os.remove('/tmp/temp.ipynb')
-                    status = True
+                    os.remove(os.getenv('DATA_DIR', '')+'temp.ipynb')                    
+                    status = True                    
                     break
                 except Exception:
                     if attempt + 1 == retry_times:
@@ -155,7 +156,7 @@ def processnotebooks(notebookdirectory):
                         continue
             if not status and num_files == file_processed:
                 break
-
+    return status
 
 if __name__ == '__main__':
     start_time = datetime.utcnow()
