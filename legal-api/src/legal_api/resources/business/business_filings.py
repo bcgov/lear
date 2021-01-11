@@ -180,11 +180,14 @@ class ListFilingResource(Resource):
 
         # complete filing
         response, response_code = ListFilingResource.complete_filing(business, filing, draft, payment_account_id)
-        if response:
+        if response and (response_code != HTTPStatus.CREATED or filing.source == Filing.Source.COLIN.value):
             return response, response_code
 
         # all done
-        return jsonify(filing.json),\
+        filing_json = filing.json
+        if response:
+            filing_json['filing']['header'].update(response)
+        return jsonify(filing_json),\
             (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
 
     @staticmethod
@@ -306,16 +309,17 @@ class ListFilingResource(Resource):
             ListFilingResource._check_and_update_nr(filing)
 
             filing_types = ListFilingResource._get_filing_types(business, filing.filing_json)
-            err_msg, err_code = ListFilingResource._create_invoice(business,
+            pay_msg, pay_code = ListFilingResource._create_invoice(business,
                                                                    filing,
                                                                    filing_types,
                                                                    jwt,
                                                                    payment_account_id)
-            if err_code:
+            if pay_msg and pay_code != HTTPStatus.CREATED:
                 reply = filing.json
-                reply['errors'] = [err_msg, ]
-                return jsonify(reply), err_code
+                reply['errors'] = [pay_msg, ]
+                return jsonify(reply), pay_code
             ListFilingResource._set_effective_date(business, filing)
+            return pay_msg, pay_code
 
         return None, None
 
@@ -628,10 +632,7 @@ class ListFilingResource(Resource):
             filing.payment_status_code = rv.json().get('statusCode', '')
             filing.payment_account = payment_account_id
             filing.save()
-            return {
-                'header': {
-                    'isPaymentActionRequired': rv.json().get('isPaymentActionRequired')
-                }}, HTTPStatus.CREATED
+            return {'isPaymentActionRequired': rv.json().get('isPaymentActionRequired', False)}, HTTPStatus.CREATED
 
         if rv.status_code == HTTPStatus.BAD_REQUEST:
             # Set payment error type used to retrieve error messages from pay-api

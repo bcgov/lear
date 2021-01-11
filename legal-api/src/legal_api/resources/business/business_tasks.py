@@ -76,30 +76,15 @@ class TaskListResource(Resource):
                 # Append NR todo if there are no tasks and PAID or COMPLETED filings
                 if not paid_completed_filings:
                     rv.append(TaskListResource.create_incorporate_nr_todo(nr_response.json(), 1, True))
-            elif rv:
-                for item in rv:
-                    if item['task'].get('filing', {}).get('header', {}).get('paymentStatusCode', {}) == 'CREATED':
-                        payment_id = item['task']['filing']['header']['paymentToken']
-                        try:
-                            token = jwt.get_token_auth_header()
-                            headers = {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}
-                            payment_svc_url = current_app.config.get('PAYMENT_SVC_URL')
-                            pay_details = requests.get(url=f'{payment_svc_url}/{payment_id}', headers=headers)
-                            payment_method = pay_details.json().get('paymentMethod', '')
-                            return {'header': {'paymentMethod': payment_method}, 'tasks': rv}, HTTPStatus.OK
-
-                        except (exceptions.ConnectionError, exceptions.Timeout) as err:
-                            current_app.logger.error(
-                                f'Payment connection failure for {business.identifier} task list. ', err)
-                            return (
-                                {'message': 'unable to get payment details for pending filing.'},
-                                HTTPStatus.SERVICE_UNAVAILABLE
-                            )
+            elif rv == 'pay_connection_error':
+                return {
+                    'message': 'Failed to get payment details for a filing. Please try again later.'
+                }, HTTPStatus.SERVICE_UNAVAILABLE
 
         return jsonify(tasks=rv)
 
     @staticmethod
-    def construct_task_list(business):
+    def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 extra
         """
         Return all current pending tasks to do.
 
@@ -128,7 +113,30 @@ class TaskListResource(Resource):
                                                                      Filing.Status.ERROR.value])
         # Create a todo item for each pending filing
         for filing in pending_filings:
-            task = {'task': filing.json, 'order': order, 'enabled': True}
+            filing_json = filing.json
+            if filing.payment_status_code == 'CREATED' and filing.payment_token:
+                # get current pay details from pay-api
+                try:
+                    headers = {
+                        'Authorization': f'Bearer {jwt.get_token_auth_header()}',
+                        'Content-Type': 'application/json'
+                    }
+                    pay_response = requests.get(
+                        url=f'{current_app.config.get("PAYMENT_SVC_URL")}/{filing.payment_token}',
+                        headers=headers
+                    )
+                    pay_details = {
+                        'isPaymentActionRequired': pay_response.json().get('isPaymentActionRequired', False),
+                        'paymentMethod': pay_response.json().get('paymentMethod', '')
+                    }
+                    filing_json['filing']['header'].update(pay_details)
+
+                except (exceptions.ConnectionError, exceptions.Timeout) as err:
+                    current_app.logger.error(
+                        f'Payment connection failure for {business.identifier} task list. ', err)
+                    return 'pay_connection_error'
+
+            task = {'task': filing_json, 'order': order, 'enabled': True}
             tasks.append(task)
             order += 1
 
