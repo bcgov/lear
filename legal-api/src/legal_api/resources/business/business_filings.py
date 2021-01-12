@@ -81,6 +81,27 @@ class ListFilingResource(Resource):
                 filing_json = rv.json
                 filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
 
+            if filing_json['filing']['header']['status'] == Filing.Status.PENDING.value:
+                try:
+                    headers = {
+                        'Authorization': f'Bearer {jwt.get_token_auth_header()}',
+                        'Content-Type': 'application/json'
+                    }
+                    payment_svc_url = current_app.config.get('PAYMENT_SVC_URL')
+                    pay_response = requests.get(
+                        url=f'{payment_svc_url}/{filing_json["filing"]["header"]["paymentToken"]}',
+                        headers=headers
+                    )
+                    pay_details = {
+                        'isPaymentActionRequired': pay_response.json().get('isPaymentActionRequired', False),
+                        'paymentMethod': pay_response.json().get('paymentMethod', '')
+                    }
+                    filing_json['filing']['header'].update(pay_details)
+
+                except (exceptions.ConnectionError, exceptions.Timeout) as err:
+                    current_app.logger.error(
+                        f'Payment connection failure for getting {identifier} filing payment details. ', err)
+
             return jsonify(filing_json)
 
         business = Business.find_by_identifier(identifier)
