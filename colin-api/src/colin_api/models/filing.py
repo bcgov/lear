@@ -682,6 +682,10 @@ class Filing:
             if 'legalType' in components:
                 filing.body['legalType'] = filing.business.corp_type
 
+            if filing.filing_type == 'incorporationApplication' and \
+                    filing.business.corp_type == Business.TypeCodes.COOP.value:
+                filing.paper_only = True
+
             filing.header = {
                 'availableOnPaperOnly': filing.paper_only,
                 'certifiedBy': filing_event_info['certifiedBy'],
