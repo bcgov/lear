@@ -9,7 +9,7 @@ attrs==20.3.0
 blinker==1.4
 certifi==2020.12.5
 click==7.1.2
-dpath==2.0.1
+dpath==1.4.2
 itsdangerous==1.1.0
 jsonschema==3.2.0
 protobuf==3.14.0
