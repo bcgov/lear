@@ -1,5 +1,5 @@
 Flask
-dpath
+dpath==1.4.2
 jsonschema
 python-dateutil
 python-dotenv
