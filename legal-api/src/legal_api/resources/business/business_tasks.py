@@ -183,7 +183,7 @@ class TaskListResource(Resource):
         return ar_min_date, ar_max_date
 
     @staticmethod
-    def create_todo(business, todo_year, ar_min_date, ar_max_date, order, enabled):  # pylint: disable=too-many-arguments
+    def create_todo(business, ar_year, ar_min_date, ar_max_date, order, enabled):  # pylint: disable=too-many-arguments
         """Return a to-do JSON object."""
         todo = {
             'task': {
@@ -191,7 +191,7 @@ class TaskListResource(Resource):
                     'business': business.json(),
                     'header': {
                         'name': 'annualReport',
-                        'ARFilingYear': todo_year,
+                        'ARFilingYear': ar_year,
                         'status': 'NEW',
                         'arMinDate': ar_min_date,
                         'arMaxDate': ar_max_date
