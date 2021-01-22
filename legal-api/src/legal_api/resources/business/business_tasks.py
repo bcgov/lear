@@ -163,8 +163,7 @@ class TaskListResource(Resource):
 
     @staticmethod
     def get_ar_dates(check_agm, start_date, next_ar_year):
-        """Get ar min and max date for the specific year"""
-
+        """Get ar min and max date for the specific year."""
         ar_min_date = datetime(next_ar_year, 1, 1).date()
 
         # Make sure min date is greater than or equal to last_ar_date or founding_date
@@ -173,7 +172,7 @@ class TaskListResource(Resource):
 
         ar_max_date = datetime(next_ar_year, 12, 31).date()
 
-        if check_agm: # If this is a CO-OP
+        if check_agm:  # If this is a CO-OP
             if next_ar_year == 2020:
                 # For year 2020, set the max date as October 31th next year (COVID extension).
                 ar_max_date = datetime(next_ar_year + 1, 10, 31).date()
@@ -184,7 +183,7 @@ class TaskListResource(Resource):
         return ar_min_date, ar_max_date
 
     @staticmethod
-    def create_todo(business, todo_year, ar_min_date, ar_max_date, order, enabled): # pylint: disable=too-many-arguments
+    def create_todo(business, todo_year, ar_min_date, ar_max_date, order, enabled):  # pylint: disable=too-many-arguments
         """Return a to-do JSON object."""
         todo = {
             'task': {
