@@ -39,5 +39,5 @@ def process(business: Business, filing: Dict):
         business.last_ar_date = agm_date
     else:
         business.last_ar_date = ar_date
-    
-    business.last_ar_year += 1 
+
+    business.last_ar_year += 1
