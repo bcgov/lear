@@ -19,7 +19,6 @@ Provides all the search and retrieval from the business filings datastore.
 from datetime import datetime
 from http import HTTPStatus
 
-import datedelta
 from flask import jsonify
 from flask_restplus import Resource, cors
 
@@ -118,7 +117,7 @@ class TaskListResource(Resource):
             start_date = datetime(next_ar_year, 1, 1).date()
 
         ar_min_date, ar_max_date = TaskListResource.get_ar_dates(check_agm, start_date, next_ar_year)
-        
+
         start_year = next_ar_year
         while ar_min_date <= datetime.utcnow().date():
             enabled = not pending_filings and ar_min_date.year == start_year
@@ -154,7 +153,7 @@ class TaskListResource(Resource):
         return ar_min_date, ar_max_date
 
     @staticmethod
-    def create_todo(business, todo_year, ar_min_date, ar_max_date, order, enabled):
+    def create_todo(business, todo_year, ar_min_date, ar_max_date, order, enabled): # pylint: disable=too-many-arguments
         """Return a to-do JSON object."""
         todo = {
             'task': {
