@@ -99,3 +99,8 @@ def get_max_value(cursor, corp_num: str, table: str, column: str):
     except Exception as err:
         current_app.logger.error(f'Error getting max {column}.')
         raise err
+
+
+def convert_to_snake(inputstring: str):
+    """Convert inputstring from camel case to snake case."""
+    return ''.join('_' + char.lower() if char.isupper() else char for char in inputstring).lstrip('_')

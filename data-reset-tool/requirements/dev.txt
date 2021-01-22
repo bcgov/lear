@@ -5,6 +5,7 @@
 attrs<=19.1.0
 coverage
 pytest<=4.0.2
+pytest-cov
 
 # Lint and code style
 autopep8

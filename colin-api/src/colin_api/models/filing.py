@@ -18,15 +18,24 @@ Currently this only provides API versioning information
 from __future__ import annotations
 
 import datetime
+import fnmatch
 from enum import Enum
-from typing import Optional
+from http import HTTPStatus
+from typing import Dict, List, Optional
 
 from flask import current_app
+from registry_schemas.utils import get_schema
 
-from colin_api.exceptions import FilingNotFoundException, InvalidFilingTypeException
-from colin_api.models import Address, Business, CorpName, Office, Party, ShareObject
+from colin_api.exceptions import (  # noqa: I001
+    FilingNotFoundException,  # noqa: I001
+    GenericException,  # noqa: I001
+    InvalidFilingTypeException,  # noqa: I001
+    OfficeNotFoundException,  # noqa: I001
+    PartiesNotFoundException,  # noqa: I001
+)  # noqa: I001
+from colin_api.models import Business, CorpName, Office, Party, ShareObject
 from colin_api.resources.db import DB
-from colin_api.utils import convert_to_json_date, convert_to_json_datetime
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_snake
 
 
 # Code smells:
@@ -117,6 +126,10 @@ class Filing:
         'continuedOut': {
             'type_code_list': ['OTCON'],
             Business.TypeCodes.COOP.value: 'OTCON'
+        },
+        'transition': {
+            'type_code_list': ['TRANS'],
+            Business.TypeCodes.BC_COMP.value: 'TRANS'
         }
     }
 
@@ -160,15 +173,15 @@ class Filing:
 
     def get_email(self) -> str:
         """Get email address."""
-        if self.body.get(self.filing_type, {}).get('contactPoint'):
-            return self.body[self.filing_type]['contactPoint']['email']
+        if self.body.get('contactPoint'):
+            return self.body['contactPoint']['email']
         return self.header.get('email', '')
 
     def get_filing_type_code(self) -> Optional[str]:
         """Get filing type code."""
         return Filing.FILING_TYPES.get(self.filing_type, {}).get(self.business.corp_type, None)
 
-    def as_dict(self) -> dict:
+    def as_dict(self) -> Dict:
         """Return dict of object that can be json serialized and fits schema requirements."""
         filing = {
             'filing': {
@@ -213,7 +226,7 @@ class Filing:
                         UPDATE system_id
                         SET id_num = :new_num
                         WHERE id_typ_cd = 'EV'
-                    """, new_num=event_id+1)
+                    """, new_num=event_id + 1)
             cursor.execute(
                 """
                 INSERT INTO event (event_id, corp_num, event_typ_cd, event_timestmp, trigger_dts)
@@ -229,7 +242,7 @@ class Filing:
         return event_id
 
     @classmethod
-    def _get_events(cls, cursor, corp_num: str, filing_type_code: str) -> list:
+    def _get_events(cls, cursor, corp_num: str, filing_type_code: str) -> List:
         """Get all event ids of filings for given filing type for this corp."""
         try:
             if not cursor:
@@ -252,7 +265,7 @@ class Filing:
                 item = {'id': row['event_id'], 'date': row['event_timestmp']}
 
                 # if filing type is an AR include the period_end_dt info
-                if filing_type_code in cls.FILING_TYPES['annual_report']['type_code_list']:
+                if filing_type_code in cls.FILING_TYPES['annualReport']['type_code_list']:
                     item['annualReportDate'] = row['period_end_dt']
 
                 event_list.append(item)
@@ -327,7 +340,7 @@ class Filing:
                     effective_dt=filing.effective_date,
                     filing_date=filing.filing_date
                 )
-            elif filing_type_code in ['NOCAD', 'NOALE', 'NOALR', 'BEINC', 'CRBIN']:
+            elif filing_type_code in ['NOCAD', 'NOALE', 'NOALR', 'BEINC', 'CRBIN', 'TRANS']:
                 insert_stmnt = insert_stmnt + ', arrangement_ind, ods_typ_cd) '
                 values_stmnt = values_stmnt + ", 'N', 'F')"
                 cursor.execute(
@@ -382,12 +395,13 @@ class Filing:
             raise err
 
     @classmethod
-    def _get_filing_event_info(cls, cursor, filing, year: int = None) -> dict:  # pylint: disable=too-many-branches;
+    # pylint: disable=too-many-branches;
+    def _get_filing_event_info(cls, cursor, filing: Filing, year: int = None) -> Dict:
         """Get the basic filing info that we care about for all filings."""
         # build base querystring
         querystring = ("""
             select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt,
-            agm_date, effective_dt, event.corp_num, user_id
+            agm_date, effective_dt, event.corp_num, user_id, filing_typ_cd
             from event
             join filing on filing.event_id = event.event_id
             left join filing_user on event.event_id = filing_user.event_id
@@ -435,18 +449,14 @@ class Filing:
                         corp_num=filing.business.corp_num,
                         filing_type_cd=filing_type_cd
                     )
-
             event_info = cursor.fetchone()
 
             if not event_info:
                 raise FilingNotFoundException(
                     identifier=filing.business.corp_num,
-                    filing_type=filing.filing_type,
-                    event_id=filing.event_id
+                    filing_type=filing.filing_type
                 )
-
             event_info = dict(zip([x[0].lower() for x in cursor.description], event_info))
-
             # build filing user name from first, middle, last name
             filing_user_name = ' '.join(
                 filter(None, [event_info['first_nme'], event_info['middle_nme'], event_info['last_nme']]))
@@ -457,390 +467,224 @@ class Filing:
 
             # if email is blank, set as empty tring
             if not filing_email:
-                filing_email = 'xxxx@xxxx.xxx'
+                filing_email = ''
 
             event_info['certifiedBy'] = filing_user_name
             event_info['email'] = filing_email
-            event_info['filing_type_code'] = filing.get_filing_type_code()
+            event_info['filing_type_code'] = event_info['filing_typ_cd']
             return event_info
 
         except Exception as err:
             if filing.business.corp_num:
                 current_app.logger.error(f'error getting filing event info for corp {filing.business.corp_num}')
             else:
-                current_app.logger.error(f'error getting filing event info for event {filing.event_id}')
+                current_app.logger.error('error getting filing event info')
             raise err
 
     @classmethod
-    def _get_ar(cls, cursor, filing, filing_event_info: dict) -> dict:
-        """Return annual report filing."""
-        # get directors and registered office as of this filing if coop
-        corp_num = filing.business.corp_num
-        filing.body = {
-            'annualGeneralMeetingDate': convert_to_json_date(filing_event_info.get('agm_date', None)),
-            'annualReportDate': convert_to_json_date(filing_event_info['period_end_dt']),
-            'eventId': filing_event_info['event_id']
-        }
-        recreated_dirs_and_office = True
-        if filing.business.corp_type == Business.TypeCodes.COOP.value:
-            corp_num = filing.business.corp_num
-            director_events = cls._get_events(corp_num=corp_num, filing_type_code='OTCDR', cursor=cursor)
-            office_events = cls._get_events(corp_num=corp_num, filing_type_code='OTADD', cursor=cursor)
-            director_event_id = None
-            office_event_id = None
-
-            tmp_timestamp = datetime.datetime.fromtimestamp(0)
-            for event in director_events:
-                if filing_event_info['event_timestmp'] >= event['date'] > tmp_timestamp:
-                    director_event_id = event['id']
-                    tmp_timestamp = event['date']
-            tmp_timestamp = datetime.datetime.fromtimestamp(0)
-            for event in office_events:
-                if filing_event_info['event_timestmp'] >= event['date'] > tmp_timestamp:
-                    office_event_id = event['id']
-                    tmp_timestamp = event['date']
-
-            if director_event_id:
-                try:
-                    directors = Party.get_by_event(identifier=corp_num, event_id=director_event_id, cursor=cursor)
-                except:  # noqa B901; pylint: disable=bare-except;
-                    # should only get here if agm was before the bob date
-                    recreated_dirs_and_office = False
-                    directors = Party.get_current(identifier=corp_num, cursor=cursor)
-            else:
-                directors = Party.get_current(identifier=corp_num, cursor=cursor)
-            directors = [x.as_dict() for x in directors]
-            if office_event_id:
-                try:
-                    office_obj_list = (
-                        Office.get_by_event(event_id=office_event_id, cursor=cursor)).as_dict()
-                    offices = Office.convert_obj_list(office_obj_list)
-                except:  # noqa B901; pylint: disable=bare-except;
-                    # should only get here if agm was before the bob date
-                    recreated_dirs_and_office = False
-                    office_obj_list = Office.get_current(identifier=corp_num, cursor=cursor)
-                    offices = Office.convert_obj_list(office_obj_list)
-
-            else:
-                office_obj_list = Office.get_current(identifier=corp_num, cursor=cursor)
-                offices = Office.convert_obj_list(office_obj_list)
-            filing.body.update(
-                {
-                    'directors': directors,
-                    'offices': offices
-                }
-            )
-
-        filing.paper_only = not recreated_dirs_and_office
-        filing.effective_date = filing_event_info['period_end_dt']
-
-        return filing
-
-    @classmethod
-    def _get_coa(cls, cursor, filing, filing_event_info: dict) -> dict:
-        """Get change of address filing for registered and/or records office."""
-        corp_num = filing.business.corp_num
-        office_obj_list = Office.get_by_event(cursor, filing_event_info['event_id'])
-        if not office_obj_list:
-            raise FilingNotFoundException(
-                identifier=corp_num,
-                filing_type='change_of_address',
-                event_id=filing_event_info['event_id']
-            )
-
-        offices = Office.convert_obj_list(office_obj_list)
-
-        effective_date = filing_event_info['event_timestmp']
-        if filing.business.corp_type == Business.TypeCodes.COOP.value:
-            # check to see if this filing was made with an AR -> if it was then set the AR date as the effective date
-            annual_reports = cls._get_events(cursor=cursor, corp_num=corp_num, filing_type_code='OTANN')
-            for report in annual_reports:
-                if convert_to_json_date(report['date']) == convert_to_json_date(effective_date):
-                    effective_date = report['annualReportDate']
-                    break
-
-        filing.body = {
-            'offices': offices,
-            'eventId': filing_event_info['event_id']
-        }
-        filing.paper_only = False
-        filing.effective_date = effective_date
-
-        return filing
-
-    @classmethod
-    def _get_cod(cls, cursor, filing, filing_event_info: dict) -> dict:
-        """Get change of directors filing."""
-        corp_num = filing.business.corp_num
-        director_objs = Party.get_by_event(cursor, corp_num, filing_event_info['event_id'])
-
-        min_directors_allowed = 3 if corp_num[:2] == Business.TypeCodes.COOP.value else 1
-        if len(director_objs) < min_directors_allowed:
-            current_app.logger.error(f'Less than {min_directors_allowed} directors for {corp_num}')
-
-        # check to see if this filing was made with an AR -> if it was then set the AR date as the effective date
-        effective_date = filing_event_info['event_timestmp']
-        if filing.business.corp_type == Business.TypeCodes.COOP.value:
-            # check to see if this filing was made with an AR -> if it was then set the AR date as the effective date
-            annual_reports = cls._get_events(cursor=cursor, corp_num=corp_num, filing_type_code='OTANN')
-            for report in annual_reports:
-                if convert_to_json_date(report['date']) == convert_to_json_date(effective_date):
-                    effective_date = report['annualReportDate']
-                    break
-
-        filing.body = {
-            'directors': [x.as_dict() for x in director_objs],
-            'eventId': filing_event_info['event_id']
-        }
-        filing.paper_only = False
-        filing.effective_date = effective_date
-
-        return filing
-
-    @classmethod
-    def _get_inc(cls, cursor, filing, filing_event_info: dict) -> dict:
-        """Get incorporation filing."""
-        corp_num = filing.business.corp_num
-        office_obj_list = Office.get_by_event(cursor, filing_event_info['event_id'])
-        share_structure = ShareObject.get_all(cursor, corp_num, filing_event_info['event_id'])
-        parties = Party.get_by_event(cursor, corp_num, filing_event_info['event_id'], None)
-
-        if not office_obj_list:
-            raise FilingNotFoundException(identifier=corp_num, filing_type='change_of_address',
-                                          event_id=filing_event_info['event_id'])
-
-        offices = Office.convert_obj_list(office_obj_list)
-
-        filing.body = {
-            'offices': offices,
-            'eventId': filing_event_info['event_id'],
-            'shareStructure': {
-                'shareClasses': share_structure.to_dict()['shareClasses']
-            },
-            'parties': [x.as_dict() for x in parties]
-        }
-        filing.filing_type = 'incorporationApplication'
-        filing.paper_only = False
-
-        return filing
-
-    @classmethod
-    def _get_con(cls, cursor, filing, filing_event_info: dict) -> dict:
-        """Get change of name filing."""
-        corp_num = filing.business.corp_num
-        name_obj = CorpName.get_by_event(corp_num=corp_num, event_id=filing_event_info['event_id'], cursor=cursor)
-        if not name_obj:
-            raise FilingNotFoundException(
-                identifier=corp_num,
-                filing_type='change_of_name',
-                event_id=filing_event_info['event_id']
-            )
-
-        filing.body = {
-            **name_obj.as_dict()
-        }
-        filing.paper_only = False
-        filing.effective_date = filing_event_info['event_timestmp']
-
-        return filing
-
-    @classmethod
-    def _get_sr(cls, cursor, filing, filing_event_info: dict) -> dict:
-        """Get special resolution filing."""
-        querystring = (
-            """
-            select filing.event_id, filing.effective_dt, ledger_text.notation
-            from filing
-            join ledger_text on ledger_text.event_id = filing.event_id
-            where filing.event_id=:event_id
-            """
-        )
-
+    def _get_notation(cls, cursor, corp_num: str, filing_event_info: Dict) -> Dict:
+        """Get notation for the corresponding event id."""
+        querystring = ('select notation from ledger_text where event_id=:event_id')
         try:
-            corp_num = filing.business.corp_num
             cursor.execute(querystring, event_id=filing_event_info['event_id'])
-            sr_info = cursor.fetchone()
-            if not sr_info:
+            notation = cursor.fetchone()
+            if not notation:
                 raise FilingNotFoundException(
                     identifier=corp_num,
-                    filing_type=filing.filing_type,
-                    event_id=filing_event_info['event_id']
+                    filing_type=filing_event_info['filing_typ_cd']
                 )
 
-            sr_info = dict(zip([x[0].lower() for x in cursor.description], sr_info))
-            filing.body = {
-                'eventId': sr_info['event_id'],
-                'filedDate': convert_to_json_date(sr_info['effective_dt']),
-                'resolution': sr_info['notation']
-            }
-            filing.paper_only = True
-            filing.effective_date = filing_event_info['event_timestmp']
+            notation = dict(zip([x[0].lower() for x in cursor.description], notation))
 
-            return filing
+            return notation['notation']
 
         except Exception as err:
             current_app.logger.error(f'error getting special resolution filing for corp: {corp_num}')
             raise err
 
     @classmethod
-    def _get_vd(cls, cursor, filing, filing_event_info: dict) -> dict:
-        """Get voluntary dissolution filing."""
-        querystring = (
-            """
-            select filing.event_id, filing.effective_dt
-            from filing
-            where filing.event_id=:event_id
-            """
-        )
-
-        try:
-            corp_num = filing.business.corp_num
-            cursor.execute(querystring, event_id=filing_event_info['event_id'])
-            vd_info = cursor.fetchone()
-            if not vd_info:
-                raise FilingNotFoundException(
-                    identifier=corp_num,
-                    filing_type=filing.filing_type,
-                    event_id=filing_event_info['event_id']
-                )
-
-            vd_info = dict(zip([x[0].lower() for x in cursor.description], vd_info))
-            filing.body = {
-                'eventId': vd_info['event_id'],
-                'dissolutionDate': convert_to_json_date(vd_info['effective_dt'])
-            }
-            filing.paper_only = True
-            filing.effective_date = filing_event_info['event_timestmp']
-
-            return filing
-
-        except Exception as err:
-            current_app.logger.error(f'error voluntary dissolution filing for corp: {corp_num}')
-            raise err
+    # pylint: disable=too-many-arguments; one extra
+    def _create_party_roles(cls, cursor, party: Dict, business: Dict, event_id: str, corrected_id: str = None):
+        """Create a corp_party for each role."""
+        for role in party['roles']:
+            party['role_type'] = Party.role_types[(role['roleType'])]
+            if party['role_type'] == 'CPRTY' and corrected_id:
+                # set to old event id for update
+                party['prev_event_id'] = corrected_id
+            party['appointmentDate'] = role['appointmentDate']
+            Party.create_new_corp_party(cursor, event_id, party, business)
 
     @classmethod
-    def _get_placeholder_body(cls, filing, filing_event_info: dict) -> dict:
-        """Get placeholder filing body."""
-        # this currently doesn't do anything except return a basic filing obj containing the event id
-        filing.body = {
-            'eventId': filing_event_info['event_id']
-        }
-        filing.paper_only = True
-        return filing
+    def _get_ar_component_event(cls, cursor, corp_num: str, type_code: str, ar_filing_event_info: Dict) -> str:
+        """Get the event id for the corresponding component included in the AR."""
+        events = cls._get_events(cursor=cursor, corp_num=corp_num, filing_type_code=type_code)
+        event_id = None
+        tmp_timestamp = datetime.datetime.fromtimestamp(0)
+        for event in events:
+            if ar_filing_event_info['event_timestmp'] >= event['date'] > tmp_timestamp:
+                event_id = event['id']
+                tmp_timestamp = event['date']
+        return event_id if event_id else ar_filing_event_info['event_id']
 
+    # pylint: disable=too-many-branches, too-many-locals, too-many-statements;
     @classmethod
-    def _get_other(cls, cursor, filing, filing_event_info: dict) -> dict:
-        """Get basic info for a filing we aren't handling yet."""
-        querystring = (
-            """
-            select filing.event_id, filing.effective_dt, ledger_text.notation
-            from filing
-            left join ledger_text on ledger_text.event_id = filing.event_id
-            where filing.event_id=:event_id
-            """
-        )
-
-        try:
-            corp_num = filing.business.corp_num
-            cursor.execute(querystring, event_id=filing_event_info['event_id'])
-            filing_info = cursor.fetchone()
-            if not filing_info:
-                raise FilingNotFoundException(
-                    identifier=corp_num,
-                    filing_type=filing.filing_type,
-                    event_id=filing_event_info['event_id']
-                )
-
-            filing_info = dict(zip([x[0].lower() for x in cursor.description], filing_info))
-            filing.body = {
-                'eventId': filing_info['event_id'],
-                'filedDate': convert_to_json_date(filing_event_info['event_timestmp']),
-                'ledgerText': filing_info['notation']
-            }
-            filing.paper_only = True
-            filing.effective_date = filing_info['effective_dt']
-
-            return filing
-
-        except Exception as err:
-            current_app.logger.error(f'error getting {filing.filing_type} filing for corp: {corp_num}')
-            raise err
-
-    @classmethod
-    def _add_parties_from_filing(cls, cursor, filing):
-        """Add parties from the filing."""
-        parties = filing.body['parties']
-        business = filing.business.as_dict()
-        for party in parties:
-            for role in party['roles']:
-                party['role_type'] = Party.role_types[(role['roleType'])]
-                party['appointmentDate'] = role['appointmentDate']
-                Party.create_new_corp_party(cursor, filing.event_id, party, business)
-
-    @classmethod
-    def _add_office_from_filing(cls, cursor, filing):
-        """Add offices from the filing."""
-        office_desc = ''
-        text = 'Change to the %s.'
-        corp_num = filing.get_corp_num()
-
-        for office_type in filing.body['offices']:
-            office_arr = filing.body['offices'][office_type]
-            delivery_addr_id = Address.create_new_address(cursor, office_arr['deliveryAddress'], corp_num=corp_num)
-            mailing_addr_id = Address.create_new_address(cursor, office_arr['mailingAddress'], corp_num=corp_num)
-            office_desc = (office_type.replace('O', ' O')).title()
-            office_code = Office.OFFICE_TYPES_CODES[office_type]
-            # update office table to include new addresses
-            Office.update_office(cursor, filing.event_id, corp_num, delivery_addr_id,
-                                 mailing_addr_id, office_code)
-        # create new ledger text for address change
-        if filing.filing_type != 'incorporationApplication':
-            cls._insert_ledger_text(cursor, filing, text % (office_desc))
-
-    @classmethod
-    def get_filing(cls, filing, con=None, year: int = None) -> dict:  # pylint: disable=too-many-branches;
+    def get_filing(cls, filing: Filing, con=None, year: int = None) -> Dict:
         """Get a Filing."""
         try:
             if not con:
                 con = DB.connection
                 con.begin()
             cursor = con.cursor()
+            corp_num = filing.business.corp_num
             # get the filing event info
             filing_event_info = cls._get_filing_event_info(filing=filing, year=year, cursor=cursor)
             if not filing_event_info:
                 raise FilingNotFoundException(
-                    identifier=filing.business.corp_num,
-                    filing_type=filing.filing_type,
-                    event_id=filing.event_id
+                    identifier=corp_num,
+                    filing_type=filing.filing_type
                 )
-            if filing.filing_type == 'annualReport':
-                filing = cls._get_ar(cursor=cursor, filing=filing, filing_event_info=filing_event_info)
+            filing.paper_only = False
+            filing.effective_date = filing_event_info['event_timestmp']
+            filing.body = {
+                'eventId': filing_event_info['event_id']
+            }
+            # TODO: simplify after consolidating schema
+            schema_name = convert_to_snake(filing.filing_type)
+            schema = get_schema(f'{schema_name.replace("_application", "")}.json')
+            components = schema.get('properties').keys()
+            if filing.filing_type in components:
+                if filing.filing_type == 'changeOfAddress':
+                    components = ['legalType', 'offices']
+                else:
+                    components = schema['properties'][filing.filing_type].get('properties').keys()
 
-            elif filing.filing_type == 'changeOfAddress':
-                filing = cls._get_coa(cursor=cursor, filing=filing, filing_event_info=filing_event_info)
+            if 'annualReportDate' in components:
+                filing.body['annualReportDate'] = convert_to_json_date(filing_event_info['period_end_dt'])
+                filing.effective_date = filing_event_info['period_end_dt']
 
-            elif filing.filing_type == 'changeOfDirectors':
-                filing = cls._get_cod(cursor=cursor, filing=filing, filing_event_info=filing_event_info)
+            if 'annualGeneralMeetingDate' in components:
+                filing.body['annualGeneralMeetingDate'] = convert_to_json_date(filing_event_info.get('agm_date', None))
 
-            elif filing.filing_type == 'changeOfName':
-                filing = cls._get_con(cursor=cursor, filing=filing, filing_event_info=filing_event_info)
+            if 'offices' in components:
+                event_id = filing_event_info['event_id']
+                # special rules for ARs with offices included
+                if filing.filing_type == 'annualReport':
+                    event_id = cls._get_ar_component_event(
+                        cursor=cursor, corp_num=corp_num, type_code='OTADD', ar_filing_event_info=filing_event_info)
+                office_obj_list = Office.get_by_event(cursor=cursor, event_id=event_id)
+                if not office_obj_list:
+                    if filing.filing_type != 'annualReport':
+                        raise OfficeNotFoundException(identifier=corp_num)
+                    filing.paper_only = True
+                    office_obj_list = Office.get_current(identifier=corp_num, cursor=cursor)
 
-            elif filing.filing_type == 'specialResolution':
-                filing = cls._get_sr(cursor=cursor, filing=filing, filing_event_info=filing_event_info)
+                filing.body['offices'] = Office.convert_obj_list(office_obj_list)
 
-            elif filing.filing_type == 'voluntaryDissolution':
-                filing = cls._get_vd(cursor=cursor, filing=filing, filing_event_info=filing_event_info)
+            if 'directors' in components:
+                event_id = filing_event_info['event_id']
+                # special rules for coop ARs with directors included
+                if filing.filing_type == 'annualReport':
+                    event_id = cls._get_ar_component_event(
+                        cursor=cursor, corp_num=corp_num, type_code='OTCDR', ar_filing_event_info=filing_event_info)
+                directors = Party.get_by_event(cursor=cursor, corp_num=corp_num, event_id=event_id)
+                if not directors:
+                    if filing.filing_type != 'annualReport':
+                        raise PartiesNotFoundException(identifier=corp_num)
+                    filing.paper_only = True
+                    directors = Party.get_current(corp_num=corp_num, cursor=cursor)
 
-            elif filing.filing_type == 'incorporationApplication':
-                filing = cls._get_inc(cursor=cursor, filing=filing, filing_event_info=filing_event_info)
+                filing.body['directors'] = [x.as_dict() for x in directors]
 
-            elif filing.filing_type in ['alteration', 'correction']:
-                filing = cls._get_placeholder_body(filing=filing, filing_event_info=filing_event_info)
+            if 'parties' in components:
+                parties = Party.get_by_event(
+                    cursor=cursor, corp_num=corp_num, event_id=filing_event_info['event_id'], role_type=None)
+                if not parties:
+                    raise PartiesNotFoundException(identifier=corp_num)
+                filing.body['parties'] = [x.as_dict() for x in parties]
 
-            else:
-                # uncomment to bring in other filings as available on paper only
-                # filing = cls._get_other(cursor=cursor, filing=filing, filing_event_info=filing_event_info)
-                raise InvalidFilingTypeException(filing_type=filing.filing_type)
+            if 'shareStructure' in components:
+                share_structure = ShareObject.get_all(cursor, corp_num, filing_event_info['event_id'])
+                if share_structure:
+                    filing.body['shareStructure'] = share_structure.to_dict()
+
+            if 'nameTranslations' in components:
+                translations = CorpName.get_by_event(
+                    cursor=cursor,
+                    corp_num=corp_num,
+                    event_id=filing_event_info['event_id'],
+                    type_code='TR'
+                )
+                filing.body['nameTranslations'] = []
+                for translation in translations:
+                    if translation.event_id == filing_event_info['event_id']:
+                        filing.body['nameTranslations'].append({'name': translation.corp_name, 'new': True})
+                    elif translation.end_event_id == filing_event_info['event_id']:
+                        filing.body['nameTranslations'].append({'name': translation.corp_name, 'ceased': True})
+                if not filing.body['nameTranslations']:
+                    del filing.body['nameTranslations']
+
+            if 'nameRequest' in components or 'legalName' in components:
+                names = CorpName.get_by_event(corp_num=corp_num, event_id=filing_event_info['event_id'], cursor=cursor)
+                for name in names:
+                    if name.event_id == filing_event_info['event_id']:
+                        if 'nameRequest' in components:
+                            filing.body['nameRequest'] = {
+                                'legalName': name.corp_name,
+                                'legalType': filing.business.corp_type
+                            }
+                        else:
+                            filing.body['legalName'] = name.corp_name
+                        # should only ever be 1 active name for any given event
+                        break
+
+            if 'business' in components:
+                filing.body['business'] = {}
+                if filing_event_info['filing_type_code'] == 'NOALR':
+                    filing.body['business']['legalType'] = Business.TypeCodes.BC_COMP.value
+                elif filing_event_info['filing_type_code'] == 'NOALE':
+                    filing.body['business']['legalType'] = Business.TypeCodes.BCOMP.value
+                else:
+                    raise InvalidFilingTypeException(filing_type=filing_event_info['filing_type_code'])
+                filing.body['business']['identifier'] = f'BC{filing.business.corp_num}'
+
+            if 'provisionsRemoved' in components:
+                provisions = Business.get_corp_restriction(
+                    cursor=cursor, event_id=filing_event_info['event_id'], corp_num=corp_num)
+                if provisions and provisions['end_event_id'] == filing_event_info['event_id']:
+                    filing.body['provisionsRemoved'] = provisions['restriction_ind'] == 'Y'
+                else:
+                    filing.body['provisionsRemoved'] = False
+
+            if 'hasProvisions' in components:
+                provisions = Business.get_corp_restriction(
+                    cursor=cursor,
+                    event_id=filing_event_info['event_id'],
+                    corp_num=corp_num
+                )
+                if provisions and provisions['restriction_ind'] == 'Y':
+                    filing.body['hasProvisions'] = True
+                else:
+                    filing.body['hasProvisions'] = False
+
+            if 'resolution' in components:
+                filing.body['meetingDate'] = convert_to_json_datetime(filing.effective_date)
+                filing.body['resolution'] = cls._get_notation(
+                    cursor=cursor, corp_num=corp_num, filing_event_info=filing_event_info)
+                filing.paper_only = True
+
+            if 'dissolutionDate' in components:
+                filing.body['dissolutionDate'] = convert_to_json_datetime(filing.effective_date)
+                filing.paper_only = True
+
+            if 'contactPoint' in components:
+                filing.body['contactPoint'] = {'email': filing_event_info['email']}
+
+            if 'legalType' in components:
+                filing.body['legalType'] = filing.business.corp_type
+
+            if filing.filing_type == 'incorporationApplication' and \
+                    filing.business.corp_type == Business.TypeCodes.COOP.value:
+                filing.paper_only = True
 
             filing.header = {
                 'availableOnPaperOnly': filing.paper_only,
@@ -865,7 +709,7 @@ class Filing:
             raise err
 
     @classmethod
-    def get_historic_filings(cls, business: Business) -> list:
+    def get_historic_filings(cls, business: Business) -> List:
         """Get list all filings from before the bob-date=2019-03-08."""
         try:
             historic_filings = []
@@ -921,211 +765,81 @@ class Filing:
             # pass through exception to caller
             raise err
 
+    # pylint: disable=too-many-locals,too-many-statements,too-many-branches,too-many-nested-blocks;
     @classmethod
-    def add_filing(cls, con, filing) -> int:  # pylint: disable=too-many-locals,too-many-statements,too-many-branches;
+    def add_filing(cls, con, filing: Filing) -> int:
         """Add new filing to COLIN tables."""
         try:
-            corp_num = filing.business.corp_num
-            legal_type = filing.business.corp_type
-            filing.user_id = Filing.USERS[legal_type]
-            cursor = con.cursor()
+            if filing.filing_type not in ['annualReport', 'changeOfAddress', 'changeOfDirectors',
+                                          'incorporationApplication', 'alteration', 'transition', 'correction']:
+                raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
+            legal_type = filing.business.corp_type
+            corp_num = filing.business.corp_num
+
+            filing.user_id = Filing.USERS[legal_type]
+            business = filing.business.as_dict()
+            cursor = con.cursor()
             # create new event record, return event ID
             filing.event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num)
             # create new filing user
             cls._insert_filing_user(cursor=cursor, filing=filing)
+
+            # annualReportDate and annualGeneralMeetingDate will be available in annualReport
+            ar_date = filing.body.get('annualReportDate', None)
+            agm_date = filing.body.get('annualGeneralMeetingDate', None)
             # create new filing
-            if filing.filing_type == 'annualReport':
-                ar_date = filing.body['annualReportDate']
-                agm_date = filing.body['annualGeneralMeetingDate']
-                cls._insert_filing(cursor=cursor, filing=filing, ar_date=ar_date, agm_date=agm_date)
+            cls._insert_filing(cursor=cursor, filing=filing, ar_date=ar_date, agm_date=agm_date)
 
-                # update corporation record
-                Business.update_corporation(cursor=cursor, corp_num=corp_num, date=agm_date, annual_report=True)
+            if filing.filing_type == 'correction':
+                cls._process_correction(cursor, business, filing, corp_num)
+            else:
+                ar_text = cls._process_ar(cursor, filing, corp_num, ar_date, agm_date)
+                dir_text = cls._process_directors(cursor, filing, business, corp_num)
+                office_text = cls._process_office(cursor=cursor, filing=filing)
 
-                # update corp_state TO ACT (active) if it is in good standing. From CRUD:
-                # - the current corp_state != 'ACT' and,
-                # - they just filed the last outstanding ARs
-                agm_year = int(ar_date[:4])
-                if filing.business.corp_state != 'ACT':
-                    last_year = datetime.datetime.now().year - 1
-                    if agm_year >= last_year:
-                        Business.update_corp_state(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
-
-                # create new ledger text for annual report
-                text = agm_date if agm_date else f'NO AGM HELD IN {agm_year}'
-                cls._insert_ledger_text(cursor=cursor, filing=filing, text=f'ANNUAL REPORT - {text}')
-
-            elif filing.filing_type == 'changeOfAddress':
-                cls._insert_filing(cursor=cursor, filing=filing, ar_date=None, agm_date=None)
-
-                # create new addresses for delivery + mailing, return address ids
-
-                cls._add_office_from_filing(cursor=cursor, filing=filing)
-                # update corporation record
-                Business.update_corporation(cursor=cursor, corp_num=corp_num)
-
-            elif filing.filing_type == 'changeOfDirectors':
-                cls._insert_filing(cursor=cursor, filing=filing, ar_date=None, agm_date=None)
-
-                # create, cease, change directors
-                changed_dirs = []
-                for director in filing.body['directors']:
-                    if 'appointed' in director['actions']:
-                        Party.create_new_corp_party(cursor=cursor, event_id=filing.event_id, party=director,
-                                                    business=filing.business.as_dict())
-
-                    if 'ceased' in director['actions'] and not any(elem in ['nameChanged', 'addressChanged']
-                                                                   for elem in director['actions']):
-                        Party.end_director_by_name(
-                            cursor=cursor, director=director, event_id=filing.event_id, corp_num=corp_num
-                        )
-
-                    elif 'nameChanged' in director['actions'] or 'addressChanged' in director['actions']:
-                        if 'appointed' in director['actions']:
-                            current_app.logger.error(f'Director appointed with name/address change: {director}')
-                        changed_dirs.append(director)
-                        Party.end_director_by_name(
-                            cursor=cursor, director=director, event_id=filing.event_id, corp_num=corp_num
-                        )
-
-                # add back changed directors as new row - if ceased director with changes this will add them with
-                # cessation date + end event id filled
-                for director in changed_dirs:
-                    Party.create_new_corp_party(cursor=cursor, event_id=filing.event_id, party=director,
-                                                business=filing.business.as_dict())
-
-                # create new ledger text for address change
-                cls._insert_ledger_text(cursor=cursor, filing=filing, text='Director change.')
-                # update corporation record
-                Business.update_corporation(cursor=cursor, corp_num=corp_num)
-
-            elif filing.filing_type == 'incorporationApplication':
-                # set filing type
-                if legal_type == Business.TypeCodes.BCOMP.value:
-                    corp_num = corp_num[-7:]
-
-                cls._insert_filing(cursor=cursor, filing=filing, ar_date=None, agm_date=None)
-
-                # create name
-                corp_name_obj = CorpName()
-                corp_name_obj.corp_num = corp_num
-                corp_name_obj.event_id = filing.event_id
-                if name := filing.body['nameRequest'].get('legalName', None):
-                    corp_name_obj.corp_name = name
-                    corp_name_obj.type_code = CorpName.TypeCodes.CORP.value
-                else:
-                    corp_name_obj.corp_name = f'{corp_num} B.C. LTD.'
-                    corp_name_obj.type_code = CorpName.TypeCodes.NUMBERED_CORP.value
-                CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
-
-                # create corp state
-                Business.create_corp_state(cursor=cursor, corp_num=corp_num, event_id=filing.event_id)
-
-                # add offices, parties
-                cls._add_office_from_filing(cursor=cursor, filing=filing)
-                cls._add_parties_from_filing(cursor=cursor, filing=filing)
+                if parties := filing.body.get('parties', []):
+                    for party in parties:
+                        cls._create_party_roles(cursor=cursor,
+                                                party=party,
+                                                business=business,
+                                                event_id=filing.event_id)
                 # add shares if not coop
-                if legal_type != Business.TypeCodes.COOP.value:
-                    ShareObject.create_share_structure(
-                        cursor=cursor,
-                        corp_num=corp_num,
-                        event_id=filing.event_id,
-                        shares_list=filing.body.get('shareStructure', {}).get('shareClasses', [])
-                    )
-                # add name translations
-                if translations := filing.body.get('nameTranslations', {}).get('new', []):
-                    CorpName.create_translations(cursor, corp_num, filing.event_id, translations)
-
-            elif filing.filing_type == 'alteration':
-                cls._insert_filing(cursor=cursor, filing=filing, ar_date=None, agm_date=None)
-                if alter_corp_type := filing.body.get('business', {}).get('legalType'):
-                    Business.update_corp_type(
-                        cursor=cursor,
-                        corp_num=corp_num,
-                        corp_type=alter_corp_type
-                    )
-
+                cls._process_share_structure(cursor, filing, corp_num)
                 if filing.body.get('nameRequest'):
-                    # end old/create new name
-                    corp_name_obj = CorpName()
-                    corp_name_obj.corp_num = corp_num
-                    corp_name_obj.event_id = filing.event_id
-                    if name := filing.body['nameRequest'].get('legalName', None):
-                        corp_name_obj.corp_name = name
-                        corp_name_obj.type_code = CorpName.TypeCodes.CORP.value
-                    else:
-                        corp_name_obj.corp_name = f'{corp_num} B.C. LTD.'
-                        corp_name_obj.type_code = CorpName.TypeCodes.NUMBERED_CORP.value
-                    CorpName.end_current(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
-                    CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
+                    cls._create_corp_name(cursor, filing, corp_num)
 
-                if filing.body.get('nameTranslations'):
-                    if translations := filing.body.get('nameTranslations', {}).get('new', []):
-                        CorpName.create_translations(cursor, corp_num, filing.event_id, translations)
+                # add name translations
+                cls._process_name_translations(cursor, filing, corp_num)
 
-                    for translation in filing.body['nameTranslations'].get('modified', []):
-                        # end existing for old name
-                        CorpName.end_translation(
-                            cursor=cursor,
-                            event_id=filing.event_id,
-                            corp_num=corp_num,
-                            corp_name=translation['oldValue']
-                        )
-                        # create new one for new name
-                        CorpName.create_translations(cursor, corp_num, filing.event_id, [translation['newValue']])
-
-                    for name in filing.body['nameTranslations'].get('ceased', []):
-                        CorpName.end_translation(
-                            cursor=cursor,
-                            event_id=filing.event_id,
-                            corp_num=corp_num,
-                            corp_name=name
-                        )
-
-                if filing.body.get('shareStructure'):
-                    for date_str in filing.body['shareStructure'].get('resolutionDates', []):
-                        Business.create_resolution(
-                            cursor=cursor,
-                            corp_num=corp_num,
-                            event_id=filing.event_id,
-                            resolution_date=date_str
-                        )
-                    if filing.body['shareStructure'].get('shareClasses'):
-                        ShareObject.end_share_structure(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
-                        ShareObject.create_share_structure(
-                            cursor=cursor,
-                            corp_num=corp_num,
-                            event_id=filing.event_id,
-                            shares_list=filing.body['shareStructure']['shareClasses']
-                        )
+                # alter corp type
+                if alter_corp_type := filing.body.get('business', {}).get('legalType'):
+                    Business.update_corp_type(cursor=cursor, corp_num=corp_num, corp_type=alter_corp_type)
 
                 if filing.body.get('provisionsRemoved'):
-                    Business.end_current_corp_restriction(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
+                    provisions = Business.get_corp_restriction(cursor=cursor, event_id=None, corp_num=corp_num)
+                    if provisions and provisions['restriction_ind'] == 'Y':
+                        Business.end_current_corp_restriction(
+                            cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
 
-            elif filing.filing_type == 'correction':
-                cls._insert_filing(cursor=cursor, filing=filing, ar_date=None, agm_date=None)
-                for change in filing.body.get('diff'):
-                    if f"/filing/{filing.body['correctedFilingType']}/nameRequest" in change['path']:
-                        # end any existing corp names
-                        CorpName.end_current(
-                            cursor=cursor,
-                            event_id=filing.event_id,
-                            corp_num=corp_num
-                        )
-                        # create new corp name from NR in diff
-                        corp_name_obj = CorpName()
-                        corp_name_obj.corp_num = corp_num
-                        corp_name_obj.event_id = filing.event_id
-                        if name := change['newValue']['nameRequest'].get('legalName', None):
-                            corp_name_obj.corp_name = name
-                            corp_name_obj.type_code = CorpName.TypeCodes.CORP.value
-                        else:
-                            corp_name_obj.corp_name = f'{corp_num} B.C. LTD.'
-                            corp_name_obj.type_code = CorpName.TypeCodes.NUMBERED_CORP.value
-                        CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
-            else:
-                raise InvalidFilingTypeException(filing_type=filing.filing_type)
+                if filing.body.get('hasProvisions'):
+                    provisions = Business.get_corp_restriction(cursor=cursor, event_id=None, corp_num=corp_num)
+                    if provisions and provisions['restriction_ind'] == 'N':
+                        Business.end_current_corp_restriction(
+                            cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
+                        Business.create_corp_restriction(
+                            cursor=cursor, event_id=filing.event_id, corp_num=corp_num, provisions=True)
+                    elif not provisions:
+                        Business.create_corp_restriction(
+                            cursor=cursor, event_id=filing.event_id, corp_num=corp_num, provisions=True)
+                ledger_text = f'{ar_text}{dir_text}{office_text}'.replace('  ', '')
+                if ledger_text != '':
+                    cls._insert_ledger_text(cursor, filing, ledger_text)
+
+                # update corporation record
+                is_annual_report = filing.filing_type == 'annualReport'
+                Business.update_corporation(
+                    cursor=cursor, corp_num=corp_num, date=agm_date, annual_report=is_annual_report)
 
             return filing.event_id
 
@@ -1133,3 +847,318 @@ class Filing:
             # something went wrong, roll it all back
             current_app.logger.error(err.with_traceback(None))
             raise err
+
+    @classmethod
+    # pylint: disable=too-many-arguments;
+    def _process_ar(cls, cursor, filing: Filing, corp_num: str, ar_date: str, agm_date: str) -> str:
+        """Process specific to annual report."""
+        text = ''
+        if filing.filing_type == 'annualReport':
+            # update corp_state TO ACT (active) if it is in good standing. From CRUD:
+            # - the current corp_state != 'ACT' and,
+            # - they just filed the last outstanding ARs
+            agm_year = int(ar_date[:4])
+            if filing.business.corp_state != 'ACT':
+                last_year = datetime.datetime.now().year - 1
+                if agm_year >= last_year:
+                    Business.update_corp_state(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
+
+            # create new ledger text for annual report
+            ledger_year = agm_date if agm_date else f'NO AGM HELD IN {agm_year}'
+            text = f'ANNUAL REPORT - {ledger_year}'
+        return text
+
+    @classmethod
+    def _process_office(cls, cursor, filing: Filing) -> str:
+        """Add offices from the filing."""
+        # offices in annualReport is redundant, skip it
+        text = ''
+        if filing.filing_type != 'annualReport':
+            corp_num = filing.get_corp_num()
+
+            for office_type in filing.body.get('offices', []):
+                Office.create_new_office(
+                    cursor=cursor,
+                    addresses=filing.body['offices'][office_type],
+                    event_id=filing.event_id,
+                    corp_num=corp_num,
+                    office_type=office_type
+                )
+                # create new ledger text for address change
+                if filing.filing_type != 'incorporationApplication':
+                    office_desc = (office_type.replace('O', ' O')).title()
+                    if text:
+                        text = f'{text} Change to the {office_desc}.'
+                    else:
+                        text = f'Change to the {office_desc}.'
+        return text
+
+    @classmethod
+    def _process_directors(cls, cursor, filing: Filing, business: Business, corp_num: str) -> str:
+        """Process directors."""
+        text = ''
+        # directors in annualReport is redundant, skip it
+        if filing.filing_type != 'annualReport' and filing.body.get('directors', []):
+            # create, cease, change directors
+            changed_dirs = []
+            for director in filing.body.get('directors', []):
+                if 'appointed' in director['actions']:
+                    Party.create_new_corp_party(cursor=cursor, event_id=filing.event_id, party=director,
+                                                business=business)
+
+                if 'ceased' in director['actions'] and not any(elem in ['nameChanged', 'addressChanged']
+                                                               for elem in director['actions']):
+                    Party.end_director_by_name(
+                        cursor=cursor, director=director, event_id=filing.event_id, corp_num=corp_num
+                    )
+
+                elif 'nameChanged' in director['actions'] or 'addressChanged' in director['actions']:
+                    if 'appointed' in director['actions']:
+                        current_app.logger.error(f'Director appointed with name/address change: {director}')
+
+                    found_match = False
+                    current_parties = Party.get_current(cursor=cursor, corp_num=corp_num)
+                    for current_party in current_parties:
+                        # compare off of old value name (existing way)
+                        if Party.compare_parties(party=current_party, officer_json=director['officer']):
+                            director['prev_id'] = current_party.corp_party_id
+                            Party.end_director_by_name(
+                                cursor=cursor, director=director, event_id=filing.event_id, corp_num=corp_num
+                            )
+                            changed_dirs.append(director)
+                            Party.end_director_by_name(
+                                cursor=cursor, director=director, event_id=filing.event_id, corp_num=corp_num
+                            )
+                            found_match = True
+                    if not found_match:
+                        raise GenericException(
+                            error=f'Director does not exist in COLIN: {director["officer"]}',
+                            status_code=HTTPStatus.NOT_FOUND
+                        )
+
+            # add back changed directors as new row - if ceased director with changes this will add them with
+            # cessation date + end event id filled
+            for director in changed_dirs:
+                Party.create_new_corp_party(cursor=cursor, event_id=filing.event_id, party=director,
+                                            business=business)
+
+            # create new ledger text for address change
+            text = 'Director change.'
+        return text
+
+    @classmethod
+    def _create_corp_name(cls, cursor, filing: Filing, corp_num: str, name: str = None):
+        """Create name."""
+        if filing.filing_type == 'incorporationApplication':
+            # create corp state
+            Business.create_corp_state(cursor=cursor, corp_num=corp_num, event_id=filing.event_id)
+        elif filing.filing_type == 'alteration':
+            if alter_corp_type := filing.body.get('business', {}).get('legalType'):
+                Business.update_corp_type(
+                    cursor=cursor,
+                    corp_num=corp_num,
+                    corp_type=alter_corp_type
+                )
+
+            # end old
+            CorpName.end_current(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
+
+        if not name:
+            name = filing.body.get('nameRequest', {}).get('legalName', None)
+
+        corp_name_obj = CorpName()
+        corp_name_obj.corp_num = corp_num
+        corp_name_obj.event_id = filing.event_id
+        if name:
+            corp_name_obj.corp_name = name
+            corp_name_obj.type_code = CorpName.TypeCodes.CORP.value
+        else:
+            corp_name_obj.corp_name = f'{corp_num} B.C. LTD.'
+            corp_name_obj.type_code = CorpName.TypeCodes.NUMBERED_CORP.value
+        CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
+
+    @classmethod
+    def _process_share_structure(cls, cursor, filing: Filing, corp_num: str):
+        """Process share structure."""
+        if share_structure := filing.body.get('shareStructure', None):
+            for date_str in share_structure.get('resolutionDates', []):
+                Business.create_resolution(
+                    cursor=cursor,
+                    corp_num=corp_num,
+                    event_id=filing.event_id,
+                    resolution_date=date_str
+                )
+
+            if filing.business.corp_type != Business.TypeCodes.COOP.value and \
+                    (share_classes := share_structure.get('shareClasses', None)):
+                if filing.filing_type == 'alteration':
+                    ShareObject.end_share_structure(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
+
+                ShareObject.create_share_structure(
+                    cursor=cursor,
+                    corp_num=corp_num,
+                    event_id=filing.event_id,
+                    shares_list=share_classes
+                )
+
+    @classmethod
+    def _process_name_translations(cls, cursor, filing: Filing, corp_num: str):
+        """Process name translations."""
+        old_translations = CorpName.get_current_by_type(
+            cursor=cursor,
+            corp_num=corp_num,
+            type_code=CorpName.TypeCodes.TRANSLATION.value
+        )
+        if name_translations := filing.body.get('nameTranslations', []):
+            CorpName.create_translations(cursor, corp_num, filing.event_id, name_translations, old_translations)
+            #  End translations in db that are not present in the incoming filing json.
+            for old_translation in old_translations:
+                if not next((x for x in name_translations if x['name'] == old_translation.corp_name), None):
+                    CorpName.end_name(
+                        cursor=cursor,
+                        event_id=filing.event_id,
+                        corp_num=corp_num,
+                        corp_name=old_translation.corp_name,
+                        type_code=CorpName.TypeCodes.TRANSLATION.value
+                    )
+
+    @classmethod
+    # pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks;
+    def _process_correction(cls, cursor, business: Business, filing: Filing, corp_num: str):
+        """Process correction."""
+        corrected_event_id = filing.body['correctedFilingColinId']
+        # for each:
+        # get older values by old event id, if no end event id then correct it, else raise sentry error
+        for change in filing.body.get('diff'):
+            if f"/filing/{filing.body['correctedFilingType']}/nameRequest" in change['path']:
+                old_corp_name = CorpName.get_by_event(
+                    cursor=cursor,
+                    corp_num=corp_num,
+                    event_id=corrected_event_id
+                )[0]
+                if old_corp_name.end_event_id:
+                    raise GenericException(
+                        error=f'Manual intervention needed for correction due to comp name:{corp_num}',
+                        status_code=HTTPStatus.NOT_IMPLEMENTED
+                    )
+                # end old corp name
+                CorpName.end_name(
+                    cursor=cursor,
+                    event_id=filing.event_id,
+                    corp_num=corp_num,
+                    corp_name=old_corp_name.corp_name,
+                    type_code=old_corp_name.type_code
+                )
+                # create new corp name from NR in diff
+                name = change['newValue']['nameRequest'].get('legalName', None)
+                cls._create_corp_name(cursor, filing, corp_num, name)
+
+            elif fnmatch.fnmatch(change['path'],
+                                 f"/filing/{filing.body['correctedFilingType']}/nameTranslations/*/name"):
+                if change['oldValue']:
+                    old_translations = CorpName.get_by_event(
+                        cursor=cursor,
+                        corp_num=corp_num,
+                        event_id=corrected_event_id,
+                        type_code=CorpName.TypeCodes.TRANSLATION.value
+                    )
+                    for old_translation in old_translations:
+                        if change['oldValue'].upper() == old_translation.corp_name.upper() and \
+                                old_translation.end_event_id:
+                            raise GenericException(
+                                error='Manual intervention needed for correction due to name translation:'
+                                f'{corp_num}',
+                                status_code=HTTPStatus.NOT_IMPLEMENTED
+                            )
+                    CorpName.end_name(
+                        cursor=cursor,
+                        event_id=filing.event_id,
+                        corp_num=corp_num,
+                        corp_name=change['oldValue'],
+                        type_code=CorpName.TypeCodes.TRANSLATION.value
+                    )
+                if change['newValue']:
+                    CorpName.create_translations(
+                        cursor=cursor,
+                        corp_num=corp_num,
+                        event_id=filing.event_id,
+                        translations=[{'name': change['newValue']}],
+                        old_translations=[]
+                    )
+            elif f"/filing/{filing.body['correctedFilingType']}/offices" in change['path']:
+                old_offices = Office.get_by_event(cursor=cursor, event_id=corrected_event_id)
+                for office in old_offices:
+                    if office.office_type in change['path']:
+                        if office.end_event_id:
+                            raise GenericException(
+                                error=f'Manual intervention needed for correction due to office:{corp_num}',
+                                status_code=HTTPStatus.NOT_IMPLEMENTED
+                            )
+                        Office.create_new_office(
+                            cursor=cursor,
+                            addresses=change['newValue'],
+                            event_id=filing.event_id,
+                            corp_num=corp_num,
+                            office_type=office.office_type
+                        )
+            elif f"/filing/{filing.body['correctedFilingType']}/parties" in change['path']:
+                if not change['oldValue']:
+                    # this is a new director
+                    cls._create_party_roles(
+                        cursor=cursor,
+                        party=change['newValue'],
+                        business=business,
+                        event_id=filing.event_id,
+                        corrected_id=corrected_event_id
+                    )
+                else:
+                    # correcting existing director
+                    old_parties = Party.get_by_event(
+                        cursor=cursor,
+                        corp_num=corp_num,
+                        event_id=corrected_event_id,
+                        role_type=''
+                    )
+                    for old_party in old_parties:
+                        if Party.compare_parties(party=old_party, officer_json=change['oldValue']['officer']):
+                            if old_party.end_event_id:
+                                raise GenericException(
+                                    error='Manual intervention needed for correction due to party member:'
+                                    f'{corp_num}',
+                                    status_code=HTTPStatus.NOT_IMPLEMENTED
+                                )
+                            if change.get('newValue'):
+                                change['newValue']['prev_id'] = old_party.corp_party_id
+                            Party.end_director_by_name(
+                                cursor=cursor,
+                                director=change['oldValue'],
+                                event_id=filing.event_id,
+                                corp_num=corp_num
+                            )
+                            if change['newValue']:
+                                cls._create_party_roles(
+                                    cursor=cursor,
+                                    party=change['newValue'],
+                                    business=business,
+                                    event_id=filing.event_id,
+                                    corrected_id=corrected_event_id
+                                )
+                            break
+            elif f"/filing/{filing.body['correctedFilingType']}/shareStructure" in change['path']:
+                old_share_structure = ShareObject.get_all(
+                    cursor=cursor,
+                    corp_num=corp_num,
+                    event_id=corrected_event_id
+                )
+                if old_share_structure.end_event_id:
+                    raise GenericException(
+                        error=f'Manual intervention needed for correction due to share structure:{corp_num}',
+                        status_code=HTTPStatus.NOT_IMPLEMENTED
+                    )
+                ShareObject.end_share_structure(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
+                ShareObject.create_share_structure(
+                    cursor=cursor,
+                    corp_num=corp_num,
+                    event_id=filing.event_id,
+                    shares_list=change['newValue'].get('shareClasses', [])
+                )

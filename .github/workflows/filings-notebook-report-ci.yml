@@ -1,0 +1,48 @@
+name: Filings Notebook Report Job CI
+
+on:
+  pull_request:
+    types: [assigned, synchronize]
+    paths:
+      - "jobs/filings-notebook-report/**"
+
+jobs:
+  filings-notebook-report-ci:
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./jobs/filings-notebook-report
+
+    strategy:
+      matrix:
+        python-version: [3.8]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          make setup
+      - name: Lint with pylint
+        run: |
+          make lint
+      - name: Lint with flake8
+        run: |
+          make flake8
+      #- name: Test with pytest
+      #  run: |
+      #    make test
+      #- name: Upload coverage to Codecov
+      #  uses: codecov/codecov-action@v1
+      #  with:
+      #    file: ./queue_services/entity-pay/coverage.xml
+      #    flags: entitypay
+      #    name: codecov-entity-pay
+      #    fail_ci_if_error: true
+      - name: build to check strictness
+        run: |
+          make build-nc

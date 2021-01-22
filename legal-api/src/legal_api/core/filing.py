@@ -18,6 +18,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Dict, Optional
 
+from legal_api.core.utils import diff_dict, diff_list
 from legal_api.models import Business, Filing as FilingStorage  # noqa: I001
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.utils.datetime import date, datetime
@@ -39,6 +40,30 @@ class Filing:
         PAPER_ONLY = 'PAPER_ONLY'
         PENDING_CORRECTION = 'PENDING_CORRECTION'
 
+    class FilingTypes(Enum):
+        """Render an Enum of all Filing Types."""
+
+        ALTERATION = 'alteration'
+        AMALGAMATIONAPPLICATION = 'amalgamationApplication'
+        AMENDEDAGM = 'amendedAGM'
+        AMENDEDANNUALREPORT = 'amendedAnnualReport'
+        AMENDEDCHANGEOFDIRECTORS = 'amendedChangeOfDirectors'
+        ANNUALREPORT = 'annualReport'
+        APPOINTRECEIVER = 'appointReceiver'
+        CHANGEOFADDRESS = 'changeOfAddress'
+        CHANGEOFDIRECTORS = 'changeOfDirectors'
+        CHANGEOFNAME = 'changeOfName'
+        CONTINUEDOUT = 'continuedOut'
+        CONVERSION = 'conversion'
+        CORRECTION = 'correction'
+        DISSOLVED = 'dissolved'
+        INCORPORATIONAPPLICATION = 'incorporationApplication'
+        RESTORATIONAPPLICATION = 'restorationApplication'
+        SPECIALRESOLUTION = 'specialResolution'
+        TRANSITION = 'transition'
+        VOLUNTARYDISSOLUTION = 'voluntaryDissolution'
+        VOLUNTARYLIQUIDATION = 'voluntaryLiquidation'
+
     def __init__(self):
         """Create the Filing."""
         self._storage: Optional[FilingStorage] = None
@@ -51,7 +76,7 @@ class Filing:
         self._payment_status_code: str
         self._payment_token: str
         self._payment_completion_date: datetime
-        self._status: str
+        self._status: Optional[str] = None
         self._paper_only: bool
         self._payment_account: Optional[str] = None
 
@@ -91,17 +116,46 @@ class Filing:
         self.storage.payment_account = self._payment_account
 
     @property
-    def json(self) -> Optional[Dict]:
-        """Return a dict representing the filing json."""
-        _json = {}
-        if self._storage:
-            if self._storage.status == Filing.Status.COMPLETED.value:
-                _json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
-            else:
-                return self.raw
-        return _json
+    def status(self) -> str:
+        """Return the status of this Filing."""
+        if not self._status and self._storage:
+            self._status = self._storage.status
+        return self._status
 
     @property
+    def json(self) -> Optional[Dict]:
+        """Return a dict representing the filing json."""
+        if not self._storage or (self._storage and self._storage.status not in [Filing.Status.COMPLETED.value,
+                                                                                Filing.Status.PAID.value,
+                                                                                Filing.Status.PENDING.value,
+                                                                                ]):
+            return self.raw
+
+        # this will return the raw filing instead of the versioned filing until
+        # payment and processing are complete.
+        # This ASSUMES that the JSONSchemas remain valid for that period of time
+        # which fits with the N-1 approach to versioning, and
+        # that handling of filings stuck in PENDING are handled appropriately.
+        if self._storage.status in [Filing.Status.PAID.value,
+                                    Filing.Status.PENDING.value,
+                                    ]:
+            filing_json = self.raw
+        else:  # Filing.Status.COMPLETED.value
+            filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
+
+        if self.filing_type == Filing.FilingTypes.CORRECTION.value:
+            if correction_id := filing_json.get('filing', {}).get('correction', {}).get('correctedFilingId'):
+                if diff := self._diff(filing_json, correction_id):
+                    filing_json['filing']['correction']['diff'] = diff
+
+        return filing_json
+
+    @ json.setter
+    def json(self, filing_submission):
+        """Add the raw json to the filing."""
+        self._raw = filing_submission
+
+    @ property
     def storage(self) -> Optional[FilingStorage]:
         """
         (Deprecated) Return filing model.
@@ -112,20 +166,44 @@ class Filing:
             self._storage = FilingStorage()
         return self._storage
 
-    @storage.setter
+    @ storage.setter
     def storage(self, filing: FilingStorage):
         """Set filing storage."""
         self._storage = filing
 
-    @json.setter
-    def json(self, filing_submission):
-        """Add the raw json to the filing."""
-        self._raw = filing_submission
-
     def save(self):
-        """Save the filing."""
-        self.storage.filing_json = self._raw
-        self._storage.save()
+        """Save the filing.
+
+        This needs to be changed to fully implement the filing save rules currently in the storage class.
+        """
+        if self.storage:
+            self._storage.filing_json = self._raw
+            # self._storage.completion_date = self._completion_date TBD
+            # self._storage.filing_date = self._filing_date
+            # self._storage.filing_type = self._filing_type
+            # self._storage.effective_date = self._effective_date
+            # self._storage.payment_status_code = self._payment_status_code
+            # self._storage.payment_token = self._payment_token
+            # self._storage.payment_completion_date = self._payment_completion_date
+            # self._storage.status = self._status
+            # self._storage.paper_only = self._paper_only
+            self._storage.payment_account = self._payment_account
+            self.storage.save()
+
+    def _diff(self, filing_json, correction_id):
+        """Return the diff block for the filing this one corrects, if any."""
+        if filing_json and correction_id and self._storage and self.status in [Filing.Status.COMPLETED.value,
+                                                                               Filing.Status.PAID.value,
+                                                                               Filing.Status.PENDING.value,
+                                                                               ]:
+            if corrected_filing := Filing.find_by_id(correction_id):
+                if diff_nodes := diff_dict(filing_json,
+                                           corrected_filing.json,
+                                           ignore_keys=['header', 'business', 'correction'],
+                                           diff_list_callback=diff_list):
+                    diff_json = [d.json for d in diff_nodes]
+                    return diff_json
+        return None
 
     @staticmethod
     def validate():
@@ -145,6 +223,16 @@ class Filing:
             filing._storage = storage  # pylint: disable=protected-access
             return filing
 
+        return None
+
+    @staticmethod
+    def find_by_id(filing_id) -> Optional[Filing]:
+        """Return a Filing domain by the id."""
+        # TODO sleuth out the decorator issue
+        if storage := FilingStorage.find_by_id(filing_id):
+            filing = Filing()
+            filing._storage = storage  # pylint: disable=protected-access; setter/getter decorators issue
+            return filing
         return None
 
     @staticmethod

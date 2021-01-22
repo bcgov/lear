@@ -15,18 +15,18 @@ on:
 
 jobs:
   update-legal-filings-cd:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.repository == 'bcgov/lear'
     steps:
       - uses: actions/checkout@v2
       - name: Set env by input
         run: |
-          echo "::set-env name=TAG_NAME::${{ github.event.inputs.environement }}"
+          echo "TAG_NAME=${{ github.event.inputs.environement }}" >> $GITHUB_ENV
 
       - name: Set env by master branch
         if: env.TAG_NAME == '' && github.ref == 'refs/heads/master'
         run: |
-          echo "::set-env name=TAG_NAME::dev"
+          echo "TAG_NAME=dev" >> $GITHUB_ENV
 
       - uses: pwei1018/bcrs-cd-action@job
         with:

@@ -34,6 +34,7 @@ from registry_schemas.example_data import (
     FILING_HEADER,
     INCORPORATION_FILING_TEMPLATE,
     SPECIAL_RESOLUTION,
+    TRANSITION_FILING_TEMPLATE,
 )
 
 from legal_api.models import Business
@@ -821,6 +822,8 @@ def test_calc_annual_report_date(session, client, jwt):
             Business.LegalTypes.BCOMP.value, False),
         ('BC1234568', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.BCOMP.value,
             Business.LegalTypes.COMP.value, False),
+        ('BC1234567', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.COMP.value, None, False),
+        ('BC1234568', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.BCOMP.value, None, False),
         ('BC1234569', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.BCOMP.value, None, False),
         ('BC1234569', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.BCOMP.value, None, False),
         ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, None, False),
@@ -854,7 +857,9 @@ def test_get_correct_fee_codes(session, identifier, base_filing, filing_name, or
     filing['filing']['header']['name'] = filing_name
 
     if filing_name == 'alteration':
-        filing['filing']['alteration']['business']['legalType'] = orig_legal_type
+        filing['filing'][filing_name]['business']['legalType'] = orig_legal_type
+    elif filing_name == 'transition':
+        filing['filing']['business']['legalType'] = orig_legal_type
     elif filing_name == 'changeOfAddress':
         filing['filing'][filing_name] = CHANGE_OF_ADDRESS
     elif filing_name == 'changeOfDirectors':

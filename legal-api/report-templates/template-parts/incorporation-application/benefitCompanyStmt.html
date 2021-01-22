@@ -10,11 +10,7 @@
     <div class="section-data mt-4">
         <span class="bold">Name of Company:</span>
         {% if not incorporationApplication.nameRequest.nrNumber%}
-            {% if header.reportType == 'noa'%}
-                {{business.legalName}}
-            {% else %}
-                A company name using the Incorporation Number will be provided on the Recognition Date and Time.
-            {% endif %}
+            A company name using the Incorporation Number will be provided on the Recognition Date and Time.
         {% else %}
             <span class="bold">{{incorporationApplication.nameRequest.legalName}}</span>
         {% endif %}
@@ -24,12 +20,17 @@
 <div class="no-page-break">
     {% if listOfTranslations|length > 0 %}
         <div class="section-data mt-4">
-            <div class="bold">Translation(s) of Company Name:</div>
+            <div>
+                <span class="bold">Translation(s) of Company Name:</span>
+                {% if hasNameTranslationsCorrected %}
+                    <span class="chip">CORRECTED</span>
+                {% endif %}
+            </div>
             <table class="name-translation-table" role="presentation">
                 {% for translation in listOfTranslations %}
                     <tr>
                         <td class="pt-2">&bull;</td>
-                        <td class="pt-2">{{translation}}</td>
+                        <td class="pt-2">{{translation.name|upper}}</td>
                     </tr>
                 {% endfor %}
             </table>

@@ -32,13 +32,9 @@
                     "contextDir": "jobs/filings-notebook-report"
                 },
                 "strategy": {
-                    "type": "Source",
-                    "sourceStrategy": {
-                        "from": {
-                            "kind": "ImageStreamTag",
-                            "namespace": "gl2uos-tools",
-                            "name": "python:3.7"
-                        }
+                    "type": "Docker",
+                    "dockerStrategy": {
+                        "dockerfilePath": "Dockerfile"
                     }
                 },
                 "output": {

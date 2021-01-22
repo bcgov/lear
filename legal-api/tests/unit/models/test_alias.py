@@ -45,8 +45,8 @@ def test_alias_json(session):
     )
     alias.save()
     alias_json = {
-        'id': alias.id,
-        'alias': alias.alias,
+        'id': str(alias.id),
+        'name': alias.alias,
         'type': alias.type
     }
     assert alias_json == alias.json

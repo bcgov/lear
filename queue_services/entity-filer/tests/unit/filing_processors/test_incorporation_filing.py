@@ -103,6 +103,7 @@ def test_incorporation_filing_process_correction(app, session):
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
 
     correction_filing = copy.deepcopy(CORRECTION_INCORPORATION)
+    correction_filing['filing']['incorporationApplication']['nameTranslations'] = [{'name': 'A5 Ltd.'}]
     del correction_filing['filing']['incorporationApplication']['shareStructure']['shareClasses'][1]
     corrected_filing_rec = Filing(effective_date=effective_date, filing_json=correction_filing)
     corrected_business, corrected_filing_rec =\

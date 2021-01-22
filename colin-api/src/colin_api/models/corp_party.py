@@ -15,9 +15,11 @@
 
 Currently this only provides API versioning information
 """
+from __future__ import annotations
+
 import datetime
 import itertools
-from typing import List
+from typing import Dict, List, Optional
 
 from flask import current_app
 
@@ -42,6 +44,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
     cessation_date = None
     start_event_id = None
     end_event_id = None
+    corp_party_id = None
 
     role_types = {
         'Director': 'DIR',
@@ -81,7 +84,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return officer_obj
 
     @classmethod
-    def _build_parties_list(cls, cursor, corp_num: str, event_id: int = None):
+    def _build_parties_list(cls, cursor, corp_num: str, event_id: int = None) -> Optional[List]:
         parties = cursor.fetchall()
 
         if not parties:
@@ -111,6 +114,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                 party.start_event_id = (row.get('start_event_id', '')) or ''
                 party.end_event_id = (row.get('end_event_id', '')) or ''
                 party.role_type = (row.get('party_typ_cd', '')) or ''
+                party.corp_party_id = row.get('corp_party_id', None)
 
                 party_list.append(party)
         if event_id:
@@ -118,7 +122,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return cls.group_parties(party_list, completing_parties)
 
     @classmethod
-    def group_parties(cls, parties: List['Party'], completing_parties: dict):
+    def group_parties(cls, parties: List['Party'], completing_parties: dict) -> List:
         """Group parties based on roles for LEAR formatting."""
         role_dict = {v: k for k, v in cls.role_types.items()}  # Used as a lookup for role names
 
@@ -154,7 +158,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return grouped_list
 
     @classmethod
-    def get_completing_parties(cls, cursor, event_id):
+    def get_completing_parties(cls, cursor, event_id: int) -> Dict:
         """Retrieve the completing parties for an event."""
         query = f"""
                 select first_nme, middle_nme, last_nme, corp.recognition_dts from
@@ -185,48 +189,45 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return completing_parties
 
     @classmethod
-    def get_current(cls, cursor, identifier: str, role_type: str = 'Director'):
+    def get_current(cls, cursor, corp_num: str, role_type: str = 'Director') -> List:
         """Return current corp_parties for given identifier."""
         query = """
                 select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,
-                start_event_id, end_event_id,  business_nme, party_typ_cd
+                start_event_id, end_event_id,  business_nme, party_typ_cd, corp_party_id
                 from corp_party
                 where end_event_id is NULL and corp_num=:identifier
                 """
         if role_type:
             query += f" and party_typ_cd='{Party.role_types[role_type]}'"
 
-        if not identifier:
-            return None
-
         try:
             if not cursor:
                 cursor = DB.connection.cursor()
             cursor.execute(
                 query,
-                identifier=identifier
+                identifier=corp_num
             )
-            parties_list = cls._build_parties_list(cursor, identifier)
+            parties_list = cls._build_parties_list(cursor, corp_num)
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
-            current_app.logger.error('error getting current parties info for {}'.format(identifier))
+            current_app.logger.error(f'error getting current parties info for {corp_num}')
             raise err
 
         if not parties_list:
-            raise PartiesNotFoundException(identifier=identifier)
+            raise PartiesNotFoundException(identifier=corp_num)
 
         return parties_list
 
     @classmethod
-    def get_by_event(cls, cursor, identifier: str, event_id: int, role_type: str = 'Director'):
+    def get_by_event(cls, cursor, corp_num: str, event_id: int, role_type: str = 'Director') -> List:
         """Get all parties active or deleted during this event."""
         query = """
                 select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,
-                start_event_id, end_event_id, business_nme, party_typ_cd
+                start_event_id, end_event_id, business_nme, party_typ_cd, corp_party_id
                 from corp_party
                 where ((start_event_id<=:event_id and end_event_id is null) or (start_event_id<=:event_id and
                 cessation_dt is not null and end_event_id>=:event_id) or (start_event_id<:event_id and
-                end_event_id>:event_id)) and corp_num=:identifier
+                end_event_id>:event_id)) and corp_num=:corp_num
                 """
 
         if role_type:
@@ -236,26 +237,23 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             cursor.execute(
                 query,
                 event_id=event_id,
-                identifier=identifier
+                corp_num=corp_num
             )
 
-            parties_list = cls._build_parties_list(cursor, identifier, event_id)
+            parties_list = cls._build_parties_list(cursor, corp_num, event_id)
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
-            current_app.logger.error('error getting parties info for event {}'.format(event_id))
+            current_app.logger.error(f'error getting parties info for {corp_num}')
             raise err
 
         if not parties_list:
-            raise PartiesNotFoundException(event_id=event_id)
+            raise PartiesNotFoundException(identifier=corp_num)
 
         return parties_list
 
     @classmethod
-    def end_current(cls, cursor, event_id: int = None, corp_num: str = None):
+    def end_current(cls, cursor, event_id: int, corp_num: str):
         """Set all end_event_ids for current parties."""
-        if not event_id:
-            current_app.logger.error('Error in director: No event id given to end current parties.')
-
         try:
             cursor.execute(
                 """
@@ -268,11 +266,11 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             )
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
-            current_app.logger.error(f'Error in director: Failed to end current parties for event {event_id}')
+            current_app.logger.error(f'Error in director: Failed to end current parties for {corp_num}')
             raise err
 
     @classmethod
-    def end_director_by_name(cls, cursor, director: dict, event_id: int, corp_num: str):
+    def end_director_by_name(cls, cursor, director: Dict, event_id: int, corp_num: str):
         """Set all end_event_ids for given parties."""
         query = (
             """
@@ -298,10 +296,9 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                     and upper(trim(first_nme))=upper(:first_name) and upper(trim(last_nme))=upper(:last_name)
                     and (upper(trim(middle_nme))=upper(:middle_initial) or middle_nme is null)
                     """
-                first_name = officer['prevFirstName'] if 'nameChanged' in director['actions'] else officer['firstName']
-                last_name = officer['prevLastName'] if 'nameChanged' in director['actions'] else officer['lastName']
-                middle_initial = officer.get('prevMiddleInitial', '') if 'nameChanged' in director['actions'] \
-                    else officer.get('middleInitial', '')
+                first_name = officer.get('prevFirstName') or officer['firstName']
+                last_name = officer.get('prevLastName') or officer['lastName']
+                middle_initial = officer.get('prevMiddleInitial', '') or officer.get('middleInitial', '')
 
                 cursor.execute(
                     query,
@@ -321,23 +318,32 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             raise err
 
     @classmethod
-    def create_new_corp_party(cls, cursor, event_id: int, party: dict, business: dict):
+    # pylint: disable=too-many-locals; one extra
+    def create_new_corp_party(cls, cursor, event_id: int, party: Dict, business: Dict):
         """Insert new party into the corp_party table."""
-        query = """
-                insert into corp_party (corp_party_id, mailing_addr_id, delivery_addr_id, corp_num, party_typ_cd,
-                start_event_id, end_event_id, appointment_dt, cessation_dt, last_nme, middle_nme, first_nme,
-                bus_company_num, business_nme)
-                values (:corp_party_id, :mailing_addr_id, :delivery_addr_id, :corp_num, :party_typ_cd, :start_event_id,
-                :end_event_id, TO_DATE(:appointment_dt, 'YYYY-mm-dd'), TO_DATE(:cessation_dt, 'YYYY-mm-dd'), :last_nme,
-                :middle_nme, :first_nme, :bus_company_num, :business_name)
-                """
+        query = \
+            """
+            insert into corp_party (corp_party_id, mailing_addr_id, delivery_addr_id, corp_num, party_typ_cd,
+              start_event_id, end_event_id, appointment_dt, cessation_dt, last_nme, middle_nme, first_nme,
+              bus_company_num, business_nme, prev_party_id)
+            values (:corp_party_id, :mailing_addr_id, :delivery_addr_id, :corp_num, :party_typ_cd, :start_event_id,
+              :end_event_id, TO_DATE(:appointment_dt, 'YYYY-mm-dd'), TO_DATE(:cessation_dt, 'YYYY-mm-dd'),
+              :last_nme, :middle_nme, :first_nme, :bus_company_num, :business_name, :prev_party_id)
+            """
 
-        completing_party_query = """
-                insert into completing_party (event_id, mailing_addr_id, last_nme,
-                middle_nme, first_nme, email_req_address)
-                values (:event_id, :mailing_addr_id, :last_nme,
-                :middle_nme, :first_nme, :email)
-                """
+        completing_party_query = \
+            """
+            insert into completing_party (event_id, mailing_addr_id, last_nme, middle_nme, first_nme,
+              email_req_address)
+            values (:event_id, :mailing_addr_id, :last_nme, :middle_nme, :first_nme, :email)
+            """
+        completing_party_update_query = \
+            """
+            update completing_party
+            set mailing_addr_id=:mailing_addr_id, last_nme=:last_nme, middle_nme=:middle_nme, first_nme=:first_nme,
+              email_req_address=:email
+            where event_id=:event_id
+            """
 
         # create new corp party entry
         corp_num = business['business']['identifier']
@@ -370,7 +376,6 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             role_type = party.get('role_type', 'DIR')
 
             delivery_info = party['deliveryAddress'] if 'deliveryAddress' in party else party['mailingAddress']
-
             # create new address
             delivery_addr_id = Address.create_new_address(cursor=cursor, address_info=delivery_info, corp_num=corp_num)
             mailing_addr_id = delivery_addr_id
@@ -378,45 +383,99 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             if 'mailingAddress' in party:
                 mailing_addr_id = Address.create_new_address(
                     cursor=cursor, address_info=party['mailingAddress'], corp_num=corp_num)
-
             if role_type == 'CPRTY':
-                cursor.execute(
-                    completing_party_query,
-                    event_id=event_id,
-                    mailing_addr_id=mailing_addr_id,
-                    last_nme=party['officer']['lastName'],
-                    middle_nme=party['officer'].get('middleInitial', ''),
-                    first_nme=party['officer']['firstName'],
-                    email=party['officer']['email']
-                )
+                if party.get('prev_event_id'):
+                    # update old completing party entry instead of creating a new one
+                    cursor.execute(
+                        completing_party_update_query,
+                        event_id=party['prev_event_id'],
+                        mailing_addr_id=mailing_addr_id,
+                        last_nme=party['officer']['lastName'],
+                        middle_nme=party['officer'].get('middleInitial', ''),
+                        first_nme=party['officer']['firstName'],
+                        email=party['officer']['email']
+                    )
+                else:
+                    cursor.execute(
+                        completing_party_query,
+                        event_id=event_id,
+                        mailing_addr_id=mailing_addr_id,
+                        last_nme=party['officer']['lastName'],
+                        middle_nme=party['officer'].get('middleInitial', ''),
+                        first_nme=party['officer']['firstName'],
+                        email=party['officer']['email']
+                    )
             else:
-                cursor.execute(
-                    query,
-                    corp_party_id=corp_party_id,
-                    mailing_addr_id=mailing_addr_id,
-                    delivery_addr_id=delivery_addr_id,
-                    corp_num=corp_num,
-                    party_typ_cd=role_type,
-                    start_event_id=event_id,
-                    end_event_id=event_id if party.get('cessationDate', '') else None,
-                    appointment_dt=str(datetime.datetime.strptime(party['appointmentDate'], '%Y-%m-%d'))[:10],
-                    cessation_dt=str(datetime.datetime.strptime(party['cessationDate'], '%Y-%m-%d'))[:10]
-                    if party.get('cessationDate', None) else None,
-                    last_nme=party['officer']['lastName'],
-                    middle_nme=party['officer'].get('middleInitial', ''),
-                    first_nme=party['officer']['firstName'],
-                    bus_company_num=business['business'].get('businessNumber', None),
-                    business_name=party['officer'].get('orgName', ''),
-                )
+                date_format = '%Y-%m-%d'
+                if party.get('prev_id'):
+                    cursor.execute(
+                        query,
+                        corp_party_id=corp_party_id,
+                        mailing_addr_id=mailing_addr_id,
+                        delivery_addr_id=delivery_addr_id,
+                        corp_num=corp_num,
+                        party_typ_cd=role_type,
+                        start_event_id=event_id,
+                        end_event_id=event_id if party.get('cessationDate', '') else None,
+                        appointment_dt=str(datetime.datetime.strptime(party['appointmentDate'], date_format))[:10],
+                        cessation_dt=str(datetime.datetime.strptime(party['cessationDate'], date_format))[:10]
+                        if party.get('cessationDate', None) else None,
+                        last_nme=party['officer']['lastName'],
+                        middle_nme=party['officer'].get('middleInitial', ''),
+                        first_nme=party['officer']['firstName'],
+                        bus_company_num=business['business'].get('businessNumber', None),
+                        business_name=party['officer'].get('orgName', ''),
+                        prev_party_id=party['prev_id']
+                    )
+                else:
+                    query = query.replace(', prev_party_id', '').replace(', :prev_party_id', '')
+                    cursor.execute(
+                        query,
+                        corp_party_id=corp_party_id,
+                        mailing_addr_id=mailing_addr_id,
+                        delivery_addr_id=delivery_addr_id,
+                        corp_num=corp_num,
+                        party_typ_cd=role_type,
+                        start_event_id=event_id,
+                        end_event_id=event_id if party.get('cessationDate', '') else None,
+                        appointment_dt=str(datetime.datetime.strptime(party['appointmentDate'], date_format))[:10],
+                        cessation_dt=str(datetime.datetime.strptime(party['cessationDate'], date_format))[:10]
+                        if party.get('cessationDate', None) else None,
+                        last_nme=party['officer']['lastName'],
+                        middle_nme=party['officer'].get('middleInitial', ''),
+                        first_nme=party['officer']['firstName'],
+                        bus_company_num=business['business'].get('businessNumber', None),
+                        business_name=party['officer'].get('orgName', '')
+                    )
 
         except Exception as err:
-            current_app.logger.error(f'Error in corp_party: Failed create new party for event {event_id}')
+            current_app.logger.error(f'Error in corp_party: Failed create new party for {corp_num}')
             raise err
 
         return corp_party_id
 
     @classmethod
-    def reset_dirs_by_events(cls, cursor, event_ids: list):
+    def compare_parties(cls, party: Party, officer_json: Dict):
+        """Compare corp party with json, return true if their names are equal."""
+        if officer_json.get('prevFirstName') or officer_json.get('prevLastName') or officer_json.get('prevOrgName'):
+            first_name = officer_json.get('prevFirstName', '')
+            middle_name = officer_json.get('prevMiddleInitial', '')
+            last_name = officer_json.get('prevLastName', '')
+            org_name = officer_json.get('prevOrgName', '')
+        else:
+            first_name = officer_json.get('firstName', '')
+            middle_name = officer_json.get('middleInitial', '')
+            last_name = officer_json.get('lastName', '')
+            org_name = officer_json.get('orgName', '')
+        if party.officer.get('firstName', '').strip().upper() == first_name.strip().upper() \
+                and party.officer.get('middleInitial', '').strip().upper() == middle_name.strip().upper() \
+                and party.officer.get('lastName', '').strip().upper() == last_name.strip().upper() \
+                and party.officer.get('orgName', '').strip().upper() == org_name.strip().upper():
+            return True
+        return False
+
+    @classmethod
+    def reset_dirs_by_events(cls, cursor, event_ids: List):
         """Delete all parties created with given events and make all parties ended on given events active."""
         # get address ids of parties that will be deleted
         addrs_to_delete = Address.get_addresses_by_event(cursor=cursor, event_ids=event_ids, table='corp_party')

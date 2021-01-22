@@ -19,12 +19,15 @@ Provides all the search and retrieval from the business filings datastore.
 from datetime import datetime
 from http import HTTPStatus
 
-from flask import jsonify
+import requests
+from requests import exceptions  # noqa I001
+from flask import current_app, jsonify
 from flask_restplus import Resource, cors
 
 from legal_api.models import Business, Filing
 from legal_api.services import namex
 from legal_api.services.filings import validations
+from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
@@ -37,6 +40,7 @@ class TaskListResource(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @jwt.requires_auth
     def get(identifier):
         """Return a JSON object with meta information about the Service."""
         business = Business.find_by_identifier(identifier)
@@ -71,11 +75,15 @@ class TaskListResource(Resource):
                 # Append NR todo if there are no tasks and PAID or COMPLETED filings
                 if not paid_completed_filings:
                     rv.append(TaskListResource.create_incorporate_nr_todo(nr_response.json(), 1, True))
+            elif rv == 'pay_connection_error':
+                return {
+                    'message': 'Failed to get payment details for a filing. Please try again later.'
+                }, HTTPStatus.SERVICE_UNAVAILABLE
 
         return jsonify(tasks=rv)
 
     @staticmethod
-    def construct_task_list(business):
+    def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 extra
         """
         Return all current pending tasks to do.
 
@@ -101,7 +109,30 @@ class TaskListResource(Resource):
                                                                      Filing.Status.ERROR.value])
         # Create a todo item for each pending filing
         for filing in pending_filings:
-            task = {'task': filing.json, 'order': order, 'enabled': True}
+            filing_json = filing.json
+            if filing.payment_status_code == 'CREATED' and filing.payment_token:
+                # get current pay details from pay-api
+                try:
+                    headers = {
+                        'Authorization': f'Bearer {jwt.get_token_auth_header()}',
+                        'Content-Type': 'application/json'
+                    }
+                    pay_response = requests.get(
+                        url=f'{current_app.config.get("PAYMENT_SVC_URL")}/{filing.payment_token}',
+                        headers=headers
+                    )
+                    pay_details = {
+                        'isPaymentActionRequired': pay_response.json().get('isPaymentActionRequired', False),
+                        'paymentMethod': pay_response.json().get('paymentMethod', '')
+                    }
+                    filing_json['filing']['header'].update(pay_details)
+
+                except (exceptions.ConnectionError, exceptions.Timeout) as err:
+                    current_app.logger.error(
+                        f'Payment connection failure for {business.identifier} task list. ', err)
+                    return 'pay_connection_error'
+
+            task = {'task': filing_json, 'order': order, 'enabled': True}
             tasks.append(task)
             order += 1
 

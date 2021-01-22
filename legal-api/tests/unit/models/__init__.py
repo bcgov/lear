@@ -34,6 +34,7 @@ from legal_api.models import (
     User,
     db,
 )
+from legal_api.models.colin_event_id import ColinEventId
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
@@ -171,7 +172,7 @@ def factory_incorporation_filing(business, data_dict, filing_date=FROZEN_DATETIM
     return filing
 
 
-def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, payment_token=None):
+def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, payment_token=None, colin_id=None):
     """Create a completed filing."""
     if not payment_token:
         payment_token = str(base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace('=', '')
@@ -190,6 +191,11 @@ def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, p
         filing.payment_token = payment_token
         filing.effective_date = filing_date
         filing.payment_completion_date = filing_date
+        if colin_id:
+            colin_event = ColinEventId()
+            colin_event.colin_event_id = colin_id
+            colin_event.filing_id = filing.id
+            colin_event.save()
         filing.save()
     return filing
 

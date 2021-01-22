@@ -8,7 +8,7 @@ matplotlib
 spacy
 papermill
 schedule
-attrs==19.1.0
+attrs==19.2.0
 future==0.18.2
 Jinja2==2.11.2
 python-dateutil==2.8.1
@@ -30,8 +30,12 @@ Werkzeug==0.16.1
 certifi==2020.4.5.1
 urllib3==1.25.9
 idna==2.9
-git+https://github.com/bcgov/business-schemas.git@2.5.0#egg=registry_schemas
-git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
+pylint
+pylint-flask
+pep8
+autopep8
+git+https://github.com/bcgov/business-schemas.git@2.11.1#egg=registry_schemas
+
 
 
 

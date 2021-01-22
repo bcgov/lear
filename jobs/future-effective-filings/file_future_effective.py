@@ -21,18 +21,19 @@ import os
 import random
 from datetime import datetime, timezone
 
-import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 import requests
+import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 from dateutil.parser import parse
 from dotenv import find_dotenv, load_dotenv
 from entity_queue_common.service import ServiceWorker
-from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 from flask import Flask
-from nats.aio.client import Client as NATS, DEFAULT_CONNECT_TIMEOUT  # noqa N814; by convention the name is NATS
+from nats.aio.client import DEFAULT_CONNECT_TIMEOUT
+from nats.aio.client import Client as NATS  # noqa N814; by convention the name is NATS # pylint: disable=unused-import
+from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 
-import config
-from utils.logging import setup_logging
+import config  # pylint: disable=import-error
+from utils.logging import setup_logging  # pylint: disable=import-error
 
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
@@ -40,7 +41,8 @@ setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.
 default_nats_options = {
             'name': 'default_future_filing_job',
             'servers':  os.getenv('NATS_SERVERS', '').split(','),
-            'connect_timeout': os.getenv('NATS_CONNECT_TIMEOUT', DEFAULT_CONNECT_TIMEOUT)
+            'connect_timeout': os.getenv('NATS_CONNECT_TIMEOUT',  # pylint: disable=invalid-envvar-default
+                                         DEFAULT_CONNECT_TIMEOUT)
         }
 
 default_stan_options = {
@@ -74,15 +76,15 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
 
 def get_filings(app: Flask = None):
     """Get a filing with filing_id."""
-    r = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings/PAID')
-    if not r or r.status_code != 200:
+    response = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings/PAID')
+    if not response or response.status_code != 200:
         app.logger.error(f'Failed to collect filings from legal-api. \
-            {r} {r.json()} {r.status_code}')
+            {response} {response.json()} {response.status_code}')
         raise Exception
-    return r.json()
+    return response.json()
 
 
-async def run(loop, application: Flask = None):
+async def run(loop, application: Flask = None):  # pylint: disable=redefined-outer-name
     """Run the methods for applying future effective filings."""
     if application is None:
         application = create_app()
@@ -100,7 +102,7 @@ async def run(loop, application: Flask = None):
         try:
             filings = get_filings(app=application)
             if not filings:
-                application.logger.debug(f'No PAID filings found to apply.')
+                application.logger.debug('No PAID filings found to apply.')
             for filing in filings:
                 filing_id = filing['filing']['header']['filingId']
                 effective_date = filing['filing']['header']['effectiveDate']
@@ -111,7 +113,7 @@ async def run(loop, application: Flask = None):
                     msg = {'filing': {'id': filing_id}}
                     await queue_service.publish(subject, msg)
                     application.logger.debug(f'Successfully put filing {filing_id} on the queue.')
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except
             application.logger.error(err)
 
 if __name__ == '__main__':
@@ -120,5 +122,5 @@ if __name__ == '__main__':
         event_loop = asyncio.get_event_loop()
         event_loop.run_until_complete(run(event_loop, application))
     except Exception as err:  # pylint: disable=broad-except; Catching all errors from the frameworks
-        application.logger.error(err)
+        application.logger.error(err)  # pylint: disable=no-member
         raise err

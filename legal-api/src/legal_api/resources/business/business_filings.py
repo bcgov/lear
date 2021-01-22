@@ -62,7 +62,7 @@ class ListFilingResource(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def get(identifier, filing_id=None):  # pylint: disable=too-many-return-statements;
+    def get(identifier, filing_id=None):  # pylint: disable=too-many-return-statements,too-many-branches;
         # fix this while refactoring this whole module
         """Return a JSON object with meta information about the Service."""
         original_filing = str(request.args.get('original', None)).lower() == 'true'
@@ -81,6 +81,27 @@ class ListFilingResource(Resource):
                 filing_json = rv.json
                 filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
 
+            if filing_json['filing']['header']['status'] == Filing.Status.PENDING.value:
+                try:
+                    headers = {
+                        'Authorization': f'Bearer {jwt.get_token_auth_header()}',
+                        'Content-Type': 'application/json'
+                    }
+                    payment_svc_url = current_app.config.get('PAYMENT_SVC_URL')
+                    pay_response = requests.get(
+                        url=f'{payment_svc_url}/{filing_json["filing"]["header"]["paymentToken"]}',
+                        headers=headers
+                    )
+                    pay_details = {
+                        'isPaymentActionRequired': pay_response.json().get('isPaymentActionRequired', False),
+                        'paymentMethod': pay_response.json().get('paymentMethod', '')
+                    }
+                    filing_json['filing']['header'].update(pay_details)
+
+                except (exceptions.ConnectionError, exceptions.Timeout) as err:
+                    current_app.logger.error(
+                        f'Payment connection failure for getting {identifier} filing payment details. ', err)
+
             return jsonify(filing_json)
 
         business = Business.find_by_identifier(identifier)
@@ -95,6 +116,11 @@ class ListFilingResource(Resource):
 
             if str(request.accept_mimetypes) == 'application/pdf':
                 report_type = request.args.get('type', None)
+
+                if rv.filing_type == CoreFiling.FilingTypes.CORRECTION.value:
+                    # This is required until #5302 ticket implements
+                    rv.storage._filing_json['filing']['correction']['diff'] = rv.json['filing']['correction']['diff']  # pylint: disable=protected-access; # noqa: E501;
+
                 return legal_api.reports.get_pdf(rv.storage, report_type)
             return jsonify(rv.raw if original_filing else rv.json)
 
@@ -107,7 +133,7 @@ class ListFilingResource(Resource):
         filings = CoreFiling.get_filings_by_status(business.id,
                                                    [Filing.Status.COMPLETED.value, Filing.Status.PAID.value])
         for filing in filings:
-            filing_json = filing.json
+            filing_json = filing.raw
             filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
             rv.append(filing_json)
 
@@ -175,11 +201,14 @@ class ListFilingResource(Resource):
 
         # complete filing
         response, response_code = ListFilingResource.complete_filing(business, filing, draft, payment_account_id)
-        if response:
+        if response and (response_code != HTTPStatus.CREATED or filing.source == Filing.Source.COLIN.value):
             return response, response_code
 
         # all done
-        return jsonify(filing.json),\
+        filing_json = filing.json
+        if response:
+            filing_json['filing']['header'].update(response)
+        return jsonify(filing_json),\
             (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
 
     @staticmethod
@@ -301,16 +330,17 @@ class ListFilingResource(Resource):
             ListFilingResource._check_and_update_nr(filing)
 
             filing_types = ListFilingResource._get_filing_types(business, filing.filing_json)
-            err_msg, err_code = ListFilingResource._create_invoice(business,
+            pay_msg, pay_code = ListFilingResource._create_invoice(business,
                                                                    filing,
                                                                    filing_types,
                                                                    jwt,
                                                                    payment_account_id)
-            if err_code:
+            if pay_msg and pay_code != HTTPStatus.CREATED:
                 reply = filing.json
-                reply['errors'] = [err_msg, ]
-                return jsonify(reply), err_code
+                reply['errors'] = [pay_msg, ]
+                return jsonify(reply), pay_code
             ListFilingResource._set_effective_date(business, filing)
+            return pay_msg, pay_code
 
         return None, None
 
@@ -623,7 +653,7 @@ class ListFilingResource(Resource):
             filing.payment_status_code = rv.json().get('statusCode', '')
             filing.payment_account = payment_account_id
             filing.save()
-            return None, None
+            return {'isPaymentActionRequired': rv.json().get('isPaymentActionRequired', False)}, HTTPStatus.CREATED
 
         if rv.status_code == HTTPStatus.BAD_REQUEST:
             # Set payment error type used to retrieve error messages from pay-api
@@ -688,6 +718,12 @@ class InternalFilings(Resource):
                     if not filing_json['filing']['business'].get('legalName'):
                         business = Business.find_by_internal_id(filing.business_id)
                         filing_json['filing']['business']['legalName'] = business.legal_name
+                    if filing.filing_type == 'correction':
+                        colin_ids = \
+                            ColinEventId.get_by_filing_id(filing_json['filing']['correction']['correctedFilingId'])
+                        if not colin_ids:
+                            continue
+                        filing_json['filing']['correction']['correctedFilingColinId'] = colin_ids[0]  # should only be 1
                     filings.append(filing_json)
             return jsonify(filings), HTTPStatus.OK
 

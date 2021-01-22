@@ -21,12 +21,12 @@ objects:
           spec:
             containers:
             - name: "filings-notebook-report"
-              image: "docker-registry.default.svc:5000/gl2uos-tools/filings-notebook-report-runtime:${ENV_TAG}"
+              image: "docker-registry.default.svc:5000/gl2uos-tools/filings-notebook-report"
               imagePullPolicy: Always
               args:
               - /bin/sh
               - -c
-              - cd /opt/app-root/src; ./run.sh
+              - cd /opt/app-root; ./run.sh
               env:
                   - name: PG_USER
                     valueFrom:
@@ -40,14 +40,14 @@ objects:
                         name: postgresql-${ENV_TAG}
                   - name: PG_DB_NAME
                     valueFrom:                         
-                      configMapKeyRef:
+                      secretKeyRef:
                         key: DATABASE_NAME
-                        name: legal-api-${ENV_TAG}-config
+                        name: legal-api-${ENV_TAG}-secret
                   - name: PG_HOST
                     valueFrom:
-                      configMapKeyRef:
+                      secretKeyRef:
                         key: DATABASE_HOST
-                        name: legal-api-${ENV_TAG}-config
+                        name: legal-api-${ENV_TAG}-secret
                   - name: PG_PORT
                     value: '5432'      
                   - name: APP_FILE
@@ -57,7 +57,7 @@ objects:
                   - name: ERROR_EMAIL_RECIPIENTS
                     value: '[sbc_itoperationssupport@gov.bc.ca, steven.chen@gov.bc.ca]'
                   - name: INCORPORATION_FILINGS_DAILY_REPORT_RECIPIENTS
-                    value: '[Kaine.Sparks@gov.bc.ca, Linda.McClung@gov.bc.ca, Karla.Maria.Ramirez@gov.bc.ca, Olisa.Ezeh@gov.bc.ca, steven.chen@gov.bc.ca]'  
+                    value: '[Kaine.Sparks@gov.bc.ca, Linda.McClung@gov.bc.ca, Sinead.OCallaghan@gov.bc.ca, Olisa.Ezeh@gov.bc.ca, Cameron.Wulff@gov.bc.ca, steven.chen@gov.bc.ca]'  
                   - name: COOP_FILINGS_MONTHLY_REPORT_RECIPIENTS
                     value: '[Trish.Reimer@gov.bc.ca, Olisa.Ezeh@gov.bc.ca, steven.chen@gov.bc.ca]'
                   - name: COOPERATIVE_MONTHLY_REPORT_RECIPIENTS
@@ -72,6 +72,8 @@ objects:
                     value: '600'                      
                   - name: ENVIRONMENT
                     value: '${ENV_TAG}'  
+                  - name: DATA_DIR
+                    value: '/opt/app-root/data/'    
             restartPolicy: "Never"
             concurrencyPolicy: "Forbid"
 parameters: [

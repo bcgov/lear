@@ -15,6 +15,8 @@
 
 Currently this only provides API versioning information
 """
+from http import HTTPStatus
+
 from flask import current_app, jsonify
 from flask_restplus import Resource, cors
 
@@ -35,18 +37,20 @@ class ShareStruct(Resource):
     def get(legal_type: str, identifier: str):
         """Return the current directors for a business."""
         if not identifier:
-            return jsonify({'message': 'Identifier required'}), 404
+            return jsonify({'message': 'Identifier required'}), HTTPStatus.BAD_REQUEST
 
         try:
 
             cursor = DB.connection.cursor()
             if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
                 identifier = identifier[-7:]
-            shares = ShareObject.get_all(cursor, identifier)
+            shares = ShareObject.get_all(cursor=cursor, corp_num=identifier)
             if not shares:
-                return jsonify({'message': f'share sgructure for {identifier} not found'}), 404
-
-            return jsonify(shares.to_dict())
+                return jsonify({'message': f'No share structures found for {identifier}'}), HTTPStatus.NOT_FOUND
+            for share in shares:
+                if not share.end_event_id:
+                    return jsonify(share.to_dict())
+            return jsonify({'message': f'No current share structures found for {identifier}'}), HTTPStatus.NOT_FOUND
 
         except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify(
@@ -56,4 +60,5 @@ class ShareStruct(Resource):
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
-                {'message': 'Error when trying to retrieve share structure from COLIN'}), 500
+                {'message': 'Error when trying to retrieve share structure from COLIN'}
+            ), HTTPStatus.INTERNAL_SERVER_ERROR

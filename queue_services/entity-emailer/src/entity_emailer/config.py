@@ -78,6 +78,11 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    NAMEX_AUTH_SVC_URL = os.getenv('NAMEX_AUTH_SVC_URL', None)
+    NAMEX_SVC_URL = os.getenv('NAMEX_SVC_URL', None)
+    NAMEX_SERVICE_CLIENT_USERNAME = os.getenv('NAMEX_SERVICE_CLIENT_USERNAME', None)
+    NAMEX_SERVICE_CLIENT_SECRET = os.getenv('NAMEX_SERVICE_CLIENT_SECRET', None)
+
     # POSTGRESQL
     DB_USER = os.getenv('DATABASE_USERNAME', '')
     DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')

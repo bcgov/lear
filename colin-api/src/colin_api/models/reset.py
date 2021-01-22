@@ -208,7 +208,7 @@ class Reset:
         for filing_info in reset_obj.get_filings_for_reset():
             events.append(filing_info['event_id'])
             events_info.append(filing_info)
-            if filing_info['filing_typ_cd'] in Filing.FILING_TYPES['annual_report']['type_code_list']:
+            if filing_info['filing_typ_cd'] in Filing.FILING_TYPES['annualReport']['type_code_list']:
                 annual_report_events.append(filing_info['event_id'])
 
         try:

@@ -24,7 +24,12 @@ jobs:
       JWT_OIDC_JWKS_CACHE_TIMEOUT: 300
       GO_LIVE_DATE: 2019-08-12
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./legal-api
+
     strategy:
       matrix:
         python-version: [3.8]
@@ -48,25 +53,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        working-directory: ./legal-api
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements/dev.txt
+          make setup
       - name: Lint with pylint
-        working-directory: ./legal-api
         run: |
-          pylint --rcfile=setup.cfg --load-plugins=pylint_flask src
+          make lint
       - name: Lint with flake8
-        working-directory: ./legal-api
         run: |
-          flake8 src tests
+          make flake8
       - name: Test with pytest
-        working-directory: ./legal-api
         run: |
-          pip install .
-          export PYTHONPATH=./src/
-          pytest
+          make test
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
@@ -74,3 +71,6 @@ jobs:
           flags: legalapi
           name: codecov-legal-api
           fail_ci_if_error: true
+      - name: build to check strictness
+        run: |
+          make build-nc

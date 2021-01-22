@@ -1,0 +1,56 @@
+[[macros.html]]
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <title>Transition Application</title>
+      <meta charset="UTF-8">
+      <meta name="author" content="BC Registries and Online Services">
+      [[common/style.html]]
+   </head>
+   <body>
+      <div class="header">
+         <table class="header-table" role="presentation">
+            <tr class="no-page-break">
+               <td>
+                  [[logo.html]]
+               </td>
+               <td>
+                  <div class="report-type">TRANSITION APPLICATION</div>
+                  <div class="report-type-desc">BC Limited Company - Business Corporations Act</div>
+               </td>
+            </tr>
+         </table>
+         <div class="business-name-header">
+            <label class="lbl-business-name">{{business.legalName}}</label>
+         </div>
+      </div>
+      [[common/businessDetails.html]]
+      <div class="no-page-break">
+         <div class="section-header mt-5 pt-4">TRANSITION APPLICATION</div>
+         <div class="section-data pt-4">
+            This confirms there has been filed with the registrar all records necessary to ensure that the
+            information in the corporate registry respecting the directors of the company is, immediately
+            before the transition application is submitted to the registrar for filing, correct.         
+         </div>
+
+         <div class="section-data mt-4">
+            <span class="bold">Name of Company:</span>
+            {{business.legalName}}
+         </div>
+         <div class="section-data mt-4">
+            <span class="bold">Incorporation Number:</span>
+            {{business.identifier}}
+         </div>
+      </div>
+        
+      <div class="section-header mt-5 pt-4">NOTICE OF ARTICLES</div>
+      <div class="container pt-4">
+         [[notice-of-articles/benefitCompanyStmt.html]]
+         [[common/addresses.html]]
+         [[common/directors.html]]
+         [[notice-of-articles/restrictions.html]]
+         [[notice-of-articles/resolutionDates.html]]
+         [[common/shareStructure.html]]
+      </div>
+   </body>
+</html>
