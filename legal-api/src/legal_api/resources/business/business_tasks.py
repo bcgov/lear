@@ -193,8 +193,8 @@ class TaskListResource(Resource):
                         'name': 'annualReport',
                         'ARFilingYear': ar_year,
                         'status': 'NEW',
-                        'arMinDate': ar_min_date,
-                        'arMaxDate': ar_max_date
+                        'arMinDate': ar_min_date.isoformat(),
+                        'arMaxDate': ar_max_date.isoformat()
                     }
                 }
             },

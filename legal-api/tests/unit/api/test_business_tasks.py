@@ -78,7 +78,7 @@ AR_FILING_PREVIOUS_YEAR = {
 def test_get_tasks_no_filings(session, client, jwt):
     """Assert that to-do for the year after incorporation is returned when there are no filings."""
     identifier = 'CP7654321'
-    factory_business(identifier, founding_date=datetime(2017,2,1))  # incorporation in 2017
+    factory_business(identifier, founding_date=datetime(2017, 2, 1))  # incorporation in 2017
 
     # To-do are all years from the year after incorporation until this year
     this_year = datetime.now().year
@@ -179,8 +179,7 @@ def test_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt):
 def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt):
     """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""
     identifier = 'CP7654321'
-    b = factory_business(identifier, datetime.now() - datedelta.datedelta(years=2),
-                        last_ar_date=datetime(2018, 3, 3))
+    b = factory_business(identifier, datetime.now() - datedelta.datedelta(years=2), last_ar_date=datetime(2018, 3, 3))
     filings = factory_filing(b, AR_FILING_PREVIOUS_YEAR, datetime(2018, 8, 5, 7, 7, 58, 272362))
     print('test_get_all_business_filings - filing:', filings)
 
