@@ -61,6 +61,7 @@ def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, fou
 
     if previous_ar_date:
         business.last_ar_date = datetime.fromisoformat(previous_ar_date)
+        business.last_ar_year = datetime.fromisoformat(previous_ar_date).year
 
     previous_ar = copy.deepcopy(ANNUAL_REPORT)
     current_ar = copy.deepcopy(previous_ar)
