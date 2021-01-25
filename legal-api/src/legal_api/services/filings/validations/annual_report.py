@@ -16,7 +16,6 @@ from datetime import datetime
 from http import HTTPStatus
 from typing import Dict, List, Tuple
 
-import datedelta
 from flask_babel import _
 
 from legal_api.errors import Error
@@ -30,6 +29,28 @@ def requires_agm(business: Business) -> bool:
     # FUTURE: This is not dynamic enough
     agm_arr = ['CP', 'XP']
     return business.legal_type in agm_arr
+
+
+def get_ar_dates(business: Business, start_date, next_ar_year):
+    """Get ar min and max date for the specific year."""
+    check_agm = requires_agm(business)
+    ar_min_date = datetime(next_ar_year, 1, 1).date()
+
+    # Make sure min date is greater than or equal to last_ar_date or founding_date
+    if ar_min_date < start_date:
+        ar_min_date = start_date
+
+    ar_max_date = datetime(next_ar_year, 12, 31).date()
+
+    if check_agm:  # If this is a CO-OP
+        if next_ar_year == 2020:
+            # For year 2020, set the max date as October 31th next year (COVID extension).
+            ar_max_date = datetime(next_ar_year + 1, 10, 31).date()
+        else:
+            # If this is a CO-OP, set the max date as April 30th next year.
+            ar_max_date = datetime(next_ar_year + 1, 4, 30).date()
+
+    return ar_min_date, ar_max_date
 
 
 def validate(business: Business, annual_report: Dict) -> Error:
@@ -69,18 +90,17 @@ def validate_ar_year(*, business: Business, current_annual_report: Dict) -> Erro
 
     # The AR Date cannot be before the last AR Filed
     # or in or before the foundingDate
-    expected_date = business.founding_date + datedelta.YEAR
+    next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
+    start_date = (business.last_ar_date if business.last_ar_date else business.founding_date).date()
+    ar_min_date, ar_max_date = get_ar_dates(business, start_date, next_ar_year)
 
-    if business.last_ar_date:
-        expected_date = business.last_ar_date + datedelta.YEAR
-
-    if ar_date.year < expected_date.year:
+    if ar_date < ar_min_date:
         return Error(HTTPStatus.BAD_REQUEST,
                      [{'error': _('Annual Report Date cannot be before a previous Annual Report or the Founding Date.'),
                        'path': 'filing/annualReport/annualReportDate'}])
 
     # AR Date must be the next contiguous year, from either the last AR or foundingDate
-    if ar_date.year > expected_date.year:
+    if ar_date > ar_max_date:
         return Error(HTTPStatus.BAD_REQUEST,
                      [{'error': _('Annual Report Date must be the next Annual Report in contiguous order.'),
                        'path': 'filing/annualReport/annualReportDate'}])

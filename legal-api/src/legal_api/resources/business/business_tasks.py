@@ -57,7 +57,7 @@ class TaskListResource(Resource):
             if not validation_result['is_consumable']:
                 return jsonify({
                     'message': f'{identifier} is invalid', 'validation': validation_result
-                    }), HTTPStatus.FORBIDDEN
+                }), HTTPStatus.FORBIDDEN
 
         if not business:
             # Create Incorporate using NR to-do item
@@ -100,7 +100,6 @@ class TaskListResource(Resource):
         """
         tasks = []
         order = 1
-        check_agm = validations.annual_report.requires_agm(business)
 
         # Retrieve filings that are either incomplete, or drafts
         pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
@@ -147,7 +146,7 @@ class TaskListResource(Resource):
             next_ar_year += len(annual_report_filings)
             start_date = datetime(next_ar_year, 1, 1).date()
 
-        ar_min_date, ar_max_date = TaskListResource.get_ar_dates(check_agm, start_date, next_ar_year)
+        ar_min_date, ar_max_date = validations.annual_report.get_ar_dates(business, start_date, next_ar_year)
 
         start_year = next_ar_year
         while ar_min_date <= datetime.utcnow().date():
@@ -157,30 +156,9 @@ class TaskListResource(Resource):
             # Include all ar's to todo from last ar filing
             next_ar_year += 1
             start_date = datetime(next_ar_year, 1, 1).date()
-            ar_min_date, ar_max_date = TaskListResource.get_ar_dates(check_agm, start_date, next_ar_year)
+            ar_min_date, ar_max_date = validations.annual_report.get_ar_dates(business, start_date, next_ar_year)
             order += 1
         return tasks
-
-    @staticmethod
-    def get_ar_dates(check_agm, start_date, next_ar_year):
-        """Get ar min and max date for the specific year."""
-        ar_min_date = datetime(next_ar_year, 1, 1).date()
-
-        # Make sure min date is greater than or equal to last_ar_date or founding_date
-        if ar_min_date < start_date:
-            ar_min_date = start_date
-
-        ar_max_date = datetime(next_ar_year, 12, 31).date()
-
-        if check_agm:  # If this is a CO-OP
-            if next_ar_year == 2020:
-                # For year 2020, set the max date as October 31th next year (COVID extension).
-                ar_max_date = datetime(next_ar_year + 1, 10, 31).date()
-            else:
-                # If this is a CO-OP, set the max date as April 30th next year.
-                ar_max_date = datetime(next_ar_year + 1, 4, 30).date()
-
-        return ar_min_date, ar_max_date
 
     @staticmethod
     def create_todo(business, ar_year, ar_min_date, ar_max_date, order, enabled):  # pylint: disable=too-many-arguments
