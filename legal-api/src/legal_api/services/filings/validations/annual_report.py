@@ -43,6 +43,8 @@ def get_ar_dates(business: Business, start_date, next_ar_year):
     ar_max_date = datetime(next_ar_year, 12, 31).date()
 
     if check_agm:  # If this is a CO-OP
+        # This could extend by moving it into a table with start and end date against each year when extension
+        # is required. We need more discussion to understand different scenario's which can come across in future.
         if next_ar_year == 2020:
             # For year 2020, set the max date as October 31th next year (COVID extension).
             ar_max_date = datetime(next_ar_year + 1, 10, 31).date()
