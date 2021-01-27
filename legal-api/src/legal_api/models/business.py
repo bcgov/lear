@@ -71,6 +71,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
     restriction_ind = db.Column('restriction_ind', db.Boolean, unique=False, default=False)
+    last_ar_year = db.Column('last_ar_year', db.Integer)
 
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])

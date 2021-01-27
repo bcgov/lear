@@ -13,7 +13,7 @@
 # limitations under the License.
 """Test suite to ensure the Annual Report is validated correctly."""
 import copy
-from datetime import date
+from datetime import date, datetime
 from http import HTTPStatus
 
 import datedelta
@@ -39,7 +39,7 @@ def test_validate_ar_basic(session, test_name, now, ar_date, agm_date,
     identifier = 'CP1234567'
     founding_date = ar_date - datedelta.YEAR
     business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
-    business.founding_date = founding_date
+    business.founding_date = datetime(founding_date.year, founding_date.month, founding_date.day)
 
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['business']['identifier'] = identifier

@@ -116,9 +116,13 @@ AR_FILING = {
 def factory_business(identifier, founding_date=EPOCH_DATETIME, last_ar_date=None,
                      entity_type=Business.LegalTypes.COOP.value):
     """Create a business entity."""
+    last_ar_year = None
+    if last_ar_date:
+        last_ar_year = last_ar_date.year
     business = Business(legal_name=f'legal_name-{identifier}',
                         founding_date=founding_date,
                         last_ar_date=last_ar_date,
+                        last_ar_year=last_ar_year,
                         last_ledger_timestamp=EPOCH_DATETIME,
                         # dissolution_date=EPOCH_DATETIME,
                         identifier=identifier,
@@ -151,12 +155,13 @@ def factory_business_mailing_address(business):
     return business
 
 
-def factory_filing(business, data_dict, filing_date=FROZEN_DATETIME):
+def factory_filing(business, data_dict, filing_date=FROZEN_DATETIME, filing_type=None):
     """Create a filing."""
     filing = Filing()
     filing.business_id = business.id
     filing.filing_date = filing_date
     filing.filing_json = data_dict
+    filing._filing_type = filing_type
     filing.save()
     return filing
 

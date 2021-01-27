@@ -19,7 +19,6 @@ Provides all the search and retrieval from the business filings datastore.
 from datetime import datetime
 from http import HTTPStatus
 
-import datedelta
 import requests
 from requests import exceptions  # noqa I001
 from flask import current_app, jsonify
@@ -58,7 +57,7 @@ class TaskListResource(Resource):
             if not validation_result['is_consumable']:
                 return jsonify({
                     'message': f'{identifier} is invalid', 'validation': validation_result
-                    }), HTTPStatus.FORBIDDEN
+                }), HTTPStatus.FORBIDDEN
 
         if not business:
             # Create Incorporate using NR to-do item
@@ -101,10 +100,6 @@ class TaskListResource(Resource):
         """
         tasks = []
         order = 1
-        check_agm = validations.annual_report.requires_agm(business)
-
-        # If no filings exist in legal API db (set after this line), use the business' next anniversary date
-        todo_start_date = business.next_anniversary.date()
 
         # Retrieve filings that are either incomplete, or drafts
         pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
@@ -140,47 +135,33 @@ class TaskListResource(Resource):
             tasks.append(task)
             order += 1
 
-        last_ar_date = business.last_ar_date
-        if check_agm:
-            # If this is a CO-OP, set the start date to the first day of the year, since an AR filing
-            # is available as of Jan/01
-            if last_ar_date:
-                todo_start_date = (datetime(last_ar_date.year + 1, 1, 1)).date()
-            else:
-                # If this is the first calendar year since incorporation, there is no
-                # previous ar date. Use the next anniversary year.
-                todo_start_date = (datetime(todo_start_date.year, 1, 1)).date()
+        # If this is the first calendar year since incorporation, there is no previous ar year.
+        next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
+        start_date = (business.last_ar_date if business.last_ar_date else business.founding_date).date()
 
-        # Retrieve all previous annual report filings. If there are existing AR filings, determine
-        # the latest date of filing
+        # Checking for pending ar
         annual_report_filings = Filing.get_filings_by_type(business.id, 'annualReport')
         if annual_report_filings:
-            # get last AR date from annualReportDate; if not present in json, try annualGeneralMeetingDate and
-            # finally filing date
-            last_ar_date = \
-                annual_report_filings[0].filing_json['filing']['annualReport'].get('annualReportDate', None)
-            if not last_ar_date:
-                last_ar_date = annual_report_filings[0].filing_json['filing']['annualReport']\
-                    .get('annualGeneralMeetingDate', None)
-            if not last_ar_date:
-                last_ar_date = annual_report_filings[0].filing_date
-            last_ar_date = datetime.fromisoformat(last_ar_date)
-            if check_agm:
-                todo_start_date = (datetime(last_ar_date.year+1, 1, 1)).date()
-            else:
-                todo_start_date = (last_ar_date+datedelta.YEAR).date()
+            # Consider each filing as each year and add to find next ar year
+            next_ar_year += len(annual_report_filings)
+            start_date = datetime(next_ar_year, 1, 1).date()
 
-        start_year = todo_start_date.year
+        ar_min_date, ar_max_date = validations.annual_report.get_ar_dates(business, start_date, next_ar_year)
 
-        while todo_start_date <= datetime.now().date():
-            enabled = not pending_filings and todo_start_date.year == start_year
-            tasks.append(TaskListResource.create_todo(business, todo_start_date.year, order, enabled))
-            todo_start_date += datedelta.YEAR
+        start_year = next_ar_year
+        while ar_min_date <= datetime.utcnow().date():
+            enabled = not pending_filings and ar_min_date.year == start_year
+            tasks.append(TaskListResource.create_todo(business, next_ar_year, ar_min_date, ar_max_date, order, enabled))
+
+            # Include all ar's to todo from last ar filing
+            next_ar_year += 1
+            start_date = datetime(next_ar_year, 1, 1).date()
+            ar_min_date, ar_max_date = validations.annual_report.get_ar_dates(business, start_date, next_ar_year)
             order += 1
         return tasks
 
     @staticmethod
-    def create_todo(business, todo_year, order, enabled):
+    def create_todo(business, ar_year, ar_min_date, ar_max_date, order, enabled):  # pylint: disable=too-many-arguments
         """Return a to-do JSON object."""
         todo = {
             'task': {
@@ -188,8 +169,10 @@ class TaskListResource(Resource):
                     'business': business.json(),
                     'header': {
                         'name': 'annualReport',
-                        'ARFilingYear': todo_year,
-                        'status': 'NEW'
+                        'ARFilingYear': ar_year,
+                        'status': 'NEW',
+                        'arMinDate': ar_min_date.isoformat(),
+                        'arMaxDate': ar_max_date.isoformat()
                     }
                 }
             },
