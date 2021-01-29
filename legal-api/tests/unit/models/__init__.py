@@ -241,6 +241,22 @@ def factory_epoch_filing(business, filing_date=FROZEN_DATETIME):
     return filing
 
 
+def factory_business_comment(business: Business = None, comment_text: str = 'some text', user: User = None):
+    """Create a comment."""
+    if not business:
+        business = factory_business('CP1234567')
+
+    c = Comment()
+    c.business_id = business.id
+    c.timestamp = EPOCH_DATETIME
+    c.comment = comment_text
+    if user:
+        c.staff_id = user.id
+    c.save()
+
+    return c
+
+
 def factory_comment(
         business: Business = None, filing: Filing = None, comment_text: str = 'some text', user: User = None):
     """Create a comment."""

@@ -22,7 +22,7 @@ from legal_api.errors import Error
 from ...utils import get_str
 
 
-def validate(comment: Dict) -> Error:
+def validate(comment: Dict, is_filing: bool) -> Error:
     """Validate a standalone comment."""
     if not comment:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid comment is required.')}])
@@ -34,11 +34,12 @@ def validate(comment: Dict) -> Error:
         msg.append({'error': _('Comment text must be provided.'),
                     'path': comment_text_path})
 
-    filing_id_path = '/comment/filingId'
-    filing_id = get_str(comment, filing_id_path)
-    if not filing_id:
-        msg.append({'error': _('Filing ID must be provided.'),
-                    'path': filing_id_path})
+    if is_filing:
+        filing_id_path = '/comment/filingId'
+        filing_id = get_str(comment, filing_id_path)
+        if not filing_id:
+            msg.append({'error': _('Filing ID must be provided.'),
+                        'path': filing_id_path})
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
