@@ -51,6 +51,12 @@ def get_ar_dates(business: Business, start_date, next_ar_year):
         else:
             # If this is a CO-OP, set the max date as April 30th next year.
             ar_max_date = datetime(next_ar_year + 1, 4, 30).date()
+    elif business.legal_type == business.LegalTypes.BCOMP.value:
+        # For BCOMP min date is next anniversary date.
+        ar_min_date = business.next_anniversary.date()
+
+    if ar_max_date > datetime.utcnow().date():
+        ar_max_date = datetime.utcnow().date()
 
     return ar_min_date, ar_max_date
 
