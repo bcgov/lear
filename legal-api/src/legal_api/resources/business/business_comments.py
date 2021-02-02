@@ -35,13 +35,14 @@ from .api_namespace import API
 
 @cors_preflight('GET, POST')
 @API.route('/<string:identifier>/comments', methods=['GET', 'POST', 'OPTIONS'])
+@API.route('/<string:identifier>/comments/<int:comment_id>', methods=['GET', 'OPTIONS'])
 class BusinessCommentResource(Resource):
     """Business Comment service."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def get(identifier):
+    def get(identifier, comment_id=None):
         """Return a JSON object with meta information about the Service."""
         # basic checks
         business = Business.find_by_identifier(identifier)
@@ -50,6 +51,13 @@ class BusinessCommentResource(Resource):
             return jsonify(err_msg), err_code
 
         comments = db.session.query(Comment).filter(Comment.business_id == business.id, Comment.filing_id.is_(None))
+
+        if comment_id:
+            comment = comments.filter(Comment.id == comment_id).one_or_none()
+            if not comment:
+                return jsonify({'message': f'Comment {comment_id} not found'}), HTTPStatus.NOT_FOUND
+
+            return jsonify(comment.json)
 
         rv = []
         for comment in comments:
@@ -94,8 +102,7 @@ class BusinessCommentResource(Resource):
         except BusinessException as err:
             reply = json_input
             reply['errors'] = [{'error': err.error}, ]
-            return jsonify(reply), err.status_code or \
-                (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
+            return jsonify(reply), err.status_code
 
         # all done
         return jsonify(comment.json), HTTPStatus.CREATED

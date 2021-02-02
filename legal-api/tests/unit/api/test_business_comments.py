@@ -75,6 +75,19 @@ def test_get_all_business_comments_multiple(session, client, jwt):
     assert 2 == len(rv.json.get('comments'))
 
 
+def test_get_one_business_comment_by_id(session, client, jwt):
+    """Assert that a single comment is returned correctly."""
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    c = factory_business_comment(b, 'some specific text')
+
+    rv = client.get(f'/api/v1/businesses/{identifier}/comments/{c.id}',
+                    headers=create_header(jwt, [STAFF_ROLE]))
+
+    assert HTTPStatus.OK == rv.status_code
+    assert 'some specific text' == rv.json.get('comment').get('comment')
+
+
 def test_business_comment_json_output(session, client, jwt):
     """Assert the json output of a comment is correctly formatted."""
     identifier = 'CP7654321'
@@ -104,6 +117,17 @@ def test_get_comments_invalid_business_error(session, client, jwt):
 
     assert HTTPStatus.NOT_FOUND == rv.status_code
     assert 'CP2222222 not found' == rv.json.get('message')
+
+
+def test_get_business_comment_invalid_commentid_error(session, client, jwt):
+    """Assert that error is returned when comment ID doesn't exist."""
+    b = factory_business('CP1111111')
+
+    rv = client.get(f'/api/v1/businesses/{b.identifier}/comments/1',
+                    headers=create_header(jwt, [STAFF_ROLE]))
+
+    assert HTTPStatus.NOT_FOUND == rv.status_code
+    assert 'Comment 1 not found' == rv.json.get('message')
 
 
 def test_post_business_comment(session, client, jwt):
