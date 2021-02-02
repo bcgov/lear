@@ -20,14 +20,14 @@ from .comment import validate as comment_validate
 from .schemas import validate_against_schema
 
 
-def validate(comment_json: Dict) -> Error:
+def validate(comment_json: Dict, is_filing: bool) -> Error:
     """Validate the annual report JSON."""
     err = validate_against_schema(comment_json)
     if err:
         return err
 
     err = None
-    err = comment_validate(comment_json)
+    err = comment_validate(comment_json, is_filing)
     if err:
         return err
 

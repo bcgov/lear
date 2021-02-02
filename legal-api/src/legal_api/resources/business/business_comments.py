@@ -23,7 +23,7 @@ from flask import g, jsonify, request
 from flask_restplus import Resource, cors
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Comment, Filing, User, db
+from legal_api.models import Business, Comment, User, db
 from legal_api.services import authorized
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
@@ -34,22 +34,23 @@ from .api_namespace import API
 
 
 @cors_preflight('GET, POST')
-@API.route('/<string:identifier>/filings/<int:filing_id>/comments', methods=['GET', 'POST', 'OPTIONS'])
-@API.route('/<string:identifier>/filings/<int:filing_id>/comments/<int:comment_id>', methods=['GET', 'POST', 'OPTIONS'])
-class CommentResource(Resource):
-    """Filings Comment service."""
+@API.route('/<string:identifier>/comments', methods=['GET', 'POST', 'OPTIONS'])
+@API.route('/<string:identifier>/comments/<int:comment_id>', methods=['GET', 'OPTIONS'])
+class BusinessCommentResource(Resource):
+    """Business Comment service."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def get(identifier, filing_id, comment_id=None):
+    def get(identifier, comment_id=None):
         """Return a JSON object with meta information about the Service."""
         # basic checks
-        err_msg, err_code = CommentResource._basic_checks(identifier, filing_id, request)
+        business = Business.find_by_identifier(identifier)
+        err_msg, err_code = BusinessCommentResource._basic_checks(identifier, business, request)
         if err_msg:
             return jsonify(err_msg), err_code
 
-        comments = db.session.query(Comment).filter(Comment.filing_id == filing_id)
+        comments = db.session.query(Comment).filter(Comment.business_id == business.id, Comment.filing_id.is_(None))
 
         if comment_id:
             comment = comments.filter(Comment.id == comment_id).one_or_none()
@@ -67,10 +68,11 @@ class CommentResource(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def post(identifier, filing_id):
-        """Create a new comment for the filing."""
+    def post(identifier):
+        """Create a new comment for the business."""
         # basic checks
-        err_msg, err_code = CommentResource._basic_checks(identifier, filing_id, request)
+        business = Business.find_by_identifier(identifier)
+        err_msg, err_code = BusinessCommentResource._basic_checks(identifier, business, request)
         if err_msg:
             return jsonify(err_msg), err_code
 
@@ -83,15 +85,10 @@ class CommentResource(Resource):
                 HTTPStatus.UNAUTHORIZED
 
         # validate comment
-        err = validate(json_input, True)
+        err = validate(json_input, False)
         if err:
             json_input['errors'] = err.msg
             return jsonify(json_input), err.code
-
-        # confirm that the filing ID in the URL is the same as in the json
-        if json_input['comment']['filingId'] != filing_id:
-            json_input['errors'] = [{'error': 'Invalid filingId in request'}, ]
-            return jsonify(json_input), HTTPStatus.BAD_REQUEST
 
         # save comment
         user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
@@ -99,35 +96,26 @@ class CommentResource(Resource):
             comment = Comment()
             comment.comment = json_input['comment']['comment']
             comment.staff_id = user.id
-            comment.filing_id = filing_id
+            comment.business_id = business.id
             comment.timestamp = datetime.datetime.utcnow()
-
             comment.save()
         except BusinessException as err:
             reply = json_input
             reply['errors'] = [{'error': err.error}, ]
-            return jsonify(reply), err.status_code or \
-                (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
+            return jsonify(reply), err.status_code
 
         # all done
         return jsonify(comment.json), HTTPStatus.CREATED
 
     @staticmethod
-    def _basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
+    def _basic_checks(identifier: str, business: Business, client_request) -> Tuple[dict, int]:
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json()
         if client_request.method == 'POST' and not json_input:
-            return ({'message': f'No filing json data in body of post for {identifier}.'},
+            return ({'message': f'No comment json data in body of post for {identifier}.'},
                     HTTPStatus.BAD_REQUEST)
-
-        business = Business.find_by_identifier(identifier)
-        filing = Filing.find_by_id(filing_id)
 
         if not business:
             return ({'message': f'{identifier} not found'}, HTTPStatus.NOT_FOUND)
-
-        # check that filing belongs to this business
-        if not filing or filing.business_id != business.id:
-            return ({'message': f'Filing {filing_id} not found'}, HTTPStatus.NOT_FOUND)
 
         return (None, None)

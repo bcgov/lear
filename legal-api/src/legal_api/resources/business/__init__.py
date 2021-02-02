@@ -19,6 +19,7 @@ from .api_namespace import API
 from .business import BusinessResource
 from .business_address import AddressResource
 from .business_aliases import AliasResource
+from .business_comments import BusinessCommentResource
 from .business_directors import DirectorResource
 from .business_filings import ListFilingResource
 from .business_resolutions import ResolutionResource
