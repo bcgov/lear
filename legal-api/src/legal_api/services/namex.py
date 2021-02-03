@@ -28,7 +28,7 @@ from .utils import get_str
 class NameXService():
     """Provides services to use the namex-api."""
 
-    DATE_FORMAT = '%a, %d %b %Y %H:%M:%S %Z'
+    DATE_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
 
     class State(Enum):
         """Name request states."""
@@ -124,7 +124,7 @@ class NameXService():
 
         if nr_json['expirationDate']:
             expiration_date = datetime.strptime(nr_json['expirationDate'], NameXService.DATE_FORMAT)
-            if expiration_date < datetime.today():
+            if expiration_date < datetime.today().replace(tzinfo=pytz.utc):
                 is_expired = True
 
         # Not consumable and not approved
