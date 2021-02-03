@@ -28,7 +28,7 @@ from .utils import get_str
 class NameXService():
     """Provides services to use the namex-api."""
 
-    DATE_FORMAT = '%a, %d %b %Y %H:%M:%S %Z'
+    DATE_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
 
     class State(Enum):
         """Name request states."""
