@@ -124,7 +124,7 @@ class NameXService():
 
         if nr_json['expirationDate']:
             expiration_date = datetime.strptime(nr_json['expirationDate'], NameXService.DATE_FORMAT)
-            if expiration_date < datetime.today():
+            if expiration_date < datetime.today().replace(tzinfo=pytz.utc):
                 is_expired = True
 
         # Not consumable and not approved
