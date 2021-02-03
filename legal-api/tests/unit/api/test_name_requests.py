@@ -28,7 +28,7 @@ from tests import integration_namerequests
 
 # Mock NR Data
 
-expiration_date = 'Thu, 31 Dec 2099 23:59:59 GMT'
+expiration_date = '2099-12-31T07:59:00+00:00'
 nr_consumable_approved = {
   'consentFlag': None,
   'expirationDate': expiration_date,
