@@ -20,7 +20,7 @@ import copy
 from http import HTTPStatus
 
 from freezegun import freeze_time
-from registry_schemas.example_data import COMMENT_FILING
+from registry_schemas.example_data import COMMENT_BUSINESS
 
 from legal_api.models import User
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
@@ -30,10 +30,8 @@ from tests.unit.services.utils import create_header
 
 
 # prep sample post data for single comment
-SAMPLE_JSON_DATA = copy.deepcopy(COMMENT_FILING)
-del SAMPLE_JSON_DATA['comment']['filingId']
+SAMPLE_JSON_DATA = copy.deepcopy(COMMENT_BUSINESS)
 del SAMPLE_JSON_DATA['comment']['timestamp']
-del SAMPLE_JSON_DATA['comment']['submitterDisplayName']
 
 
 def test_get_all_business_comments_no_results(session, client, jwt):
@@ -135,7 +133,7 @@ def test_post_business_comment(session, client, jwt):
     b = factory_business('CP1111111')
 
     json_data = copy.deepcopy(SAMPLE_JSON_DATA)
-    json_data['comment']['businessId'] = b.id
+    json_data['comment']['businessId'] = b.identifier
 
     rv = client.post(f'/api/v1/businesses/{b.identifier}/comments',
                      json=json_data,
@@ -160,6 +158,7 @@ def test_post_comment_missing_business_id_error(session, client, jwt):
 
     # test missing business ID
     json_data = copy.deepcopy(SAMPLE_JSON_DATA)
+    del json_data['comment']['businessId']
 
     rv = client.post(f'/api/v1/businesses/{b.identifier}/comments',
                      json=json_data,
