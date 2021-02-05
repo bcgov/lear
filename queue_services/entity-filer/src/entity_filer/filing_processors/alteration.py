@@ -53,3 +53,8 @@ def post_process(business: Business, filing: Filing):
             sentry_sdk.capture_message(
                 f'Queue Error: Update Business for filing:{filing.id},error:{err}',
                 level='error')
+
+    # Alter the business name, if any
+    with suppress(IndexError, KeyError, TypeError):
+        business_json = dpath.util.get(filing, '/alteration/nameRequest')
+        business_info.set_legal_name(business.identifier, business, business_json)

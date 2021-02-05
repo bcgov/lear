@@ -24,15 +24,10 @@ from legal_api.services.bootstrap import AccountService
 from legal_api.services.utils import get_str
 
 
-def consume_nr(business: Business, filing: Filing, nr_num_path=None):
+def consume_nr(business: Business, filing: Filing, nr_num_path='/filing/incorporationApplication/nameRequest/nrNumber'):
     """Update the nr to a consumed state."""
     try:
-        # use the fact that getting a non-existant NR will fail with a KeyError to bail early
-        nr_num = ''
-        if nr_num_path:
-            nr_num = get_str(filing.filing_json, nr_num_path)
-        else:
-            nr_num = filing.filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber']
+        nr_num = get_str(filing.filing_json, nr_num_path)
         bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
         namex_svc_url = current_app.config.get('NAMEX_API')
         token = AccountService.get_bearer_token()
@@ -75,5 +70,5 @@ def has_new_nr_for_alteration(business: Business, filing: dict):
     legal_name = get_str(filing, '/filing/alteration/nameRequest/legalName')
     if nr_number and legal_name:
         # legal api validates legal name in filing json, confirm both are different
-        return legal_name != business.legal_name
+        return legal_name.lower() != business.legal_name.lower()
     return False
