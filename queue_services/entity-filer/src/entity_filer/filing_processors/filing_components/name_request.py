@@ -21,13 +21,13 @@ from entity_queue_common.service_utils import QueueException
 from flask import current_app
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.services.bootstrap import AccountService
+from legal_api.services.utils import get_str
 
 
-def consume_nr(business: Business, filing: Filing):
+def consume_nr(business: Business, filing: Filing, nr_num_path='/filing/incorporationApplication/nameRequest/nrNumber'):
     """Update the nr to a consumed state."""
     try:
-        # use the fact that getting a non-existant NR will fail with a KeyError to bail early
-        nr_num = filing.filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber']
+        nr_num = get_str(filing.filing_json, nr_num_path)
         bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
         namex_svc_url = current_app.config.get('NAMEX_API')
         token = AccountService.get_bearer_token()
@@ -61,4 +61,14 @@ def has_new_nr_for_correction(filing: dict):
         old_nr_number = corrected_filing_json.get('filing').get('incorporationApplication').\
             get('nameRequest').get('nrNumber', None)
         return old_nr_number != new_nr_number
+    return False
+
+
+def has_new_nr_for_alteration(business: Business, filing: dict):
+    """Return whether a alteration filing has new NR."""
+    nr_number = get_str(filing, '/filing/alteration/nameRequest/nrNumber')
+    legal_name = get_str(filing, '/filing/alteration/nameRequest/legalName')
+    if nr_number and legal_name:
+        # legal api validates legal name in filing json, confirm both are different
+        return legal_name.lower() != business.legal_name.lower()
     return False

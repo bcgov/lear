@@ -175,7 +175,11 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
             # post filing changes to other services
             if any('alteration' in x for x in legal_filings):
+                if name_request.has_new_nr_for_alteration(business, filing_submission.filing_json):
+                    name_request.consume_nr(business, filing_submission, '/filing/alteration/nameRequest/nrNumber')
                 alteration.post_process(business, filing_submission)
+                db.session.add(business)
+                db.session.commit()
 
             if any('incorporationApplication' in x for x in legal_filings):
                 if any('correction' in x for x in legal_filings):
