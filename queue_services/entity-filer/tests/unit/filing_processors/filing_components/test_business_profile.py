@@ -44,9 +44,11 @@ def test_update_business_profile(app, session, requests_mock,
     from flask import current_app
 
     email_address = 'no.one@never.get.there.com'
+    phone_number = '555-555-5555'
     new_data = {
         'contactPoint': {
-            'email': email_address
+            'email': email_address,
+            'phone': phone_number
         }
     }
     business = Business(identifier='BC1234567', legal_type='BEN')
@@ -55,7 +57,7 @@ def test_update_business_profile(app, session, requests_mock,
         # setup
         requests_mock.post(f'{current_app.config["ACCOUNT_SVC_AUTH_URL"]}',
                            json={'access_token': 'token'})
-        requests_mock.post(f'{current_app.config["ACCOUNT_SVC_ENTITY_URL"]}/{business.identifier}',
+        requests_mock.post(f'{current_app.config["ACCOUNT_SVC_ENTITY_URL"]}/{business.identifier}/contacts',
                            json=response_json,
                            status_code=response_status)
         requests_mock.put(f'{current_app.config["ACCOUNT_SVC_ENTITY_URL"]}/{business.identifier}',
