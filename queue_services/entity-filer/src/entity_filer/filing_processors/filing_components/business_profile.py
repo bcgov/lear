@@ -28,6 +28,9 @@ def update_business_profile(business: Business, profile_info: Dict) -> Dict:
     if not business or not profile_info:
         return {'error': babel('Business and profile_info required.')}
 
+    # contact phone is optional
+    phone = profile_info.get('phone', '')
+
     error = {'error': 'Unknown handling'}
     if email := profile_info.get('email'):
         # assume the JSONSchema ensures it is a valid email format
@@ -37,7 +40,7 @@ def update_business_profile(business: Business, profile_info: Dict) -> Dict:
         # Create an entity record
         data = json.dumps(
             {'email': email,
-             'phone': '',
+             'phone': phone,
              'phoneExtension': ''
              }
         )
