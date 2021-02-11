@@ -28,24 +28,25 @@ def consume_nr(business: Business, filing: Filing, nr_num_path='/filing/incorpor
     """Update the nr to a consumed state."""
     try:
         nr_num = get_str(filing.filing_json, nr_num_path)
-        bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
-        namex_svc_url = current_app.config.get('NAMEX_API')
-        token = AccountService.get_bearer_token()
+        if nr_num:
+            bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
+            namex_svc_url = current_app.config.get('NAMEX_API')
+            token = AccountService.get_bearer_token()
 
-        # Create an entity record
-        data = json.dumps({'consume': {'corpNum': business.identifier}})
-        rv = requests.patch(
-            url=''.join([namex_svc_url, nr_num]),
-            headers={**AccountService.CONTENT_TYPE_JSON,
-                     'Authorization': AccountService.BEARER + token},
-            data=data,
-            timeout=AccountService.timeout
-        )
-        if not rv.status_code == HTTPStatus.OK:
-            raise QueueException
+            # Create an entity record
+            data = json.dumps({'consume': {'corpNum': business.identifier}})
+            rv = requests.patch(
+                url=''.join([namex_svc_url, nr_num]),
+                headers={**AccountService.CONTENT_TYPE_JSON,
+                         'Authorization': AccountService.BEARER + token},
+                data=data,
+                timeout=AccountService.timeout
+            )
+            if not rv.status_code == HTTPStatus.OK:
+                raise QueueException
 
-        # remove the NR from the account
-        AccountService.delete_affiliation(bootstrap.account, nr_num)
+            # remove the NR from the account
+            AccountService.delete_affiliation(bootstrap.account, nr_num)
     except KeyError:
         pass  # return
     except Exception:  # pylint: disable=broad-except; note out any exception, but don't fail the call

@@ -56,5 +56,5 @@ def post_process(business: Business, filing: Filing):
 
     # Alter the business name, if any
     with suppress(IndexError, KeyError, TypeError):
-        business_json = dpath.util.get(filing, '/alteration/nameRequest')
+        business_json = dpath.util.get(filing.filing_json, '/filing/alteration/nameRequest')
         business_info.set_legal_name(business.identifier, business, business_json)
