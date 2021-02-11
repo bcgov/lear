@@ -28,6 +28,7 @@ def consume_nr(business: Business, filing: Filing, nr_num_path='/filing/incorpor
     """Update the nr to a consumed state."""
     try:
         nr_num = get_str(filing.filing_json, nr_num_path)
+        # skip this if none (nrNumber will not be available for numbered company)
         if nr_num:
             bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
             namex_svc_url = current_app.config.get('NAMEX_API')
