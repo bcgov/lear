@@ -275,6 +275,28 @@ class DocumentMetaService():
                 )
             )
 
+            # alteration notice
+            reports.append(
+                self.create_report_object(
+                    "Alteration Notice",
+                    self.get_general_filename("Alteration Notice")
+                )
+            )
+            # receipt
+            reports.append(
+                self.create_report_object(
+                    "Receipt",
+                    self.get_general_filename("Receipt")
+                )
+            )
+            # change of name
+            reports.append(
+                self.create_report_object(
+                    "Name Change",
+                    self.get_general_filename("Name Change")
+                )
+            )
+
         return reports
 
     def get_incorporation_application_reports(self, filing: dict):

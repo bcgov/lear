@@ -18,6 +18,7 @@ Test-Suite to ensure that the Document Meta Service is working as expected.
 """
 import copy
 from unittest.mock import patch
+import pytest
 
 from registry_schemas.example_data import (
     CORRECTION_INCORPORATION,
@@ -549,28 +550,35 @@ def test_correction(session, app):
         assert len(documents) == 0
 
 
-def test_alteration(session, app):
-    """Assert that no documents are returned for an Alteration filing."""
+@pytest.mark.parametrize(
+    'status, filing_id, business_identifier, expected_number',
+    [
+        ('COMPLETED', 12356, 'BC1234567', 4),
+        ('FILED', 12357, 'BC1234567', 0)
+    ]
+)
+def test_alteration(status, filing_id, business_identifier, expected_number, session, app):
+
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_business(identifier=business_identifier, entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
                 'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
+                    'filingId': filing_id,
+                    'status': status,
                     'name': 'alteration',
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
                 'business': {
-                    'identifier': 'BC1234567'
+                    'identifier': business_identifier
                 }
             }
         }
 
         documents = document_meta.get_documents(filing)
-        assert len(documents) == 1
+        assert len(documents) == expected_number
 
 
 def test_ia_fed(app):
