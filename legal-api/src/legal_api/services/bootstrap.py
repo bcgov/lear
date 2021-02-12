@@ -182,12 +182,11 @@ class AccountService:
             return HTTPStatus.UNAUTHORIZED
 
         # Create an entity record
-        entity_data = json.dumps({'businessIdentifier': business_registration,
-                                  'corpTypeCode': corp_type_code,
+        entity_data = json.dumps({'corpTypeCode': corp_type_code,
                                   'name': business_name
                                   })
         entity_record = requests.patch(
-            url=account_svc_entity_url,
+            url=account_svc_entity_url + '/' + business_registration,
             headers={**cls.CONTENT_TYPE_JSON,
                      'Authorization': cls.BEARER + token},
             data=entity_data,
