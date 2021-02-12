@@ -76,6 +76,12 @@ def test_account_affiliation_integration(account, app_ctx):
 
     assert r == HTTPStatus.OK
 
+    r = AccountService.update_entity(business_registration=business_registration,
+                                     business_name=business_registration,
+                                     corp_type_code='BEN')
+
+    assert r == HTTPStatus.OK
+
     r = AccountService.delete_affiliation(account=account,
                                           business_registration=business_registration)
 
