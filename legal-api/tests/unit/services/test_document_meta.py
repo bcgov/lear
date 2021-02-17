@@ -17,19 +17,17 @@
 Test-Suite to ensure that the Document Meta Service is working as expected.
 """
 import copy
-
-import pytest
-
 from unittest.mock import patch
 
+import pytest
+from legal_api.models import Business, Filing
+from legal_api.services import DocumentMetaService
 from registry_schemas.example_data import (
     CORRECTION_INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
     TRANSITION_FILING_TEMPLATE,
 )
 
-from legal_api.models import Business, Filing
-from legal_api.services import DocumentMetaService
 from tests.unit.models import factory_business, factory_filing
 
 
@@ -556,13 +554,15 @@ def test_correction(session, app):
     'status, filing_id, business_identifier, expected_number, alteration_json',
     [
         ('COMPLETED', 12356, 'BC1234567', 3, {'nameRequest':
-                                              {'nrNumber': 'NR 8798956', 'legalName': 'HAULER MEDIA INC.', 'legalType': 'BC'}}),
+                                              {'nrNumber': 'NR 8798956',
+                                               'legalName': 'HAULER MEDIA INC.',
+                                               'legalType': 'BC'}}),
         ('COMPLETED', 12357, 'BC1234567', 2, {'contactPoint': {'email': 'no_one@never.get'}}),
         ('PENDING', 12358, 'BC1234567', 0, {})
     ]
 )
 def test_alteration(status, filing_id, business_identifier, expected_number, alteration_json, session, app):
-    """Assert that the correct number of documents are returned for alterations in 3 scenarios"""
+    """Assert that the correct number of documents are returned for alterations in 3 scenarios."""
     document_meta = DocumentMetaService()
     factory_business(identifier=business_identifier, entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
