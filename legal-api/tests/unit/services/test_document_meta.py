@@ -20,14 +20,14 @@ import copy
 from unittest.mock import patch
 
 import pytest
-from legal_api.models import Business, Filing
-from legal_api.services import DocumentMetaService
 from registry_schemas.example_data import (
     CORRECTION_INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
     TRANSITION_FILING_TEMPLATE,
 )
 
+from legal_api.models import Business, Filing
+from legal_api.services import DocumentMetaService
 from tests.unit.models import factory_business, factory_filing
 
 
