@@ -17,7 +17,9 @@
 Test-Suite to ensure that the Document Meta Service is working as expected.
 """
 import copy
+
 import pytest
+
 from unittest.mock import patch
 
 from registry_schemas.example_data import (
@@ -560,7 +562,7 @@ def test_correction(session, app):
     ]
 )
 def test_alteration(status, filing_id, business_identifier, expected_number, alteration_json, session, app):
-
+    """Assert that the correct number of documents are returned for alterations in 3 scenarios"""
     document_meta = DocumentMetaService()
     factory_business(identifier=business_identifier, entity_type=Business.LegalTypes.BCOMP.value)
     with app.app_context():
