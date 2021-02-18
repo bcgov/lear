@@ -200,7 +200,7 @@ def test_alteration_name_change_to_numbered_company(session):
     business = factory_business(identifier=IDENTIFIER, entity_type=ENTITY_TYPE)
 
     # changes its name to a named company
-    filing = filing_named_company(business, TEMPLATE, NAMED_COMPANY_NAME)
+    filing_named_company(business, TEMPLATE, NAMED_COMPANY_NAME)
     update_business_legal_name(business, NAMED_COMPANY_NAME)
 
     # changes its name to a numbered company
