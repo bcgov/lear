@@ -1,0 +1,67 @@
+[[macros.html]]
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Certificate of Change Name</title>
+    <meta charset="UTF-8">
+    <meta name="author" content="BC Registries and Online Services">
+    [[certificate-of-name-change/style.html]]
+  </head>
+
+  <body>
+    <div class="outer-container">
+      <div class="outer-container-header">
+        <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
+      </div>      
+
+      <div class="certificate-statements">
+          [[certificate-of-name-change/logo.html]]
+
+          <div class="cert-title-container">
+            <div class="sub-header-1">Certificate of</div>
+            <div class="certificate-header">NAME CHANGE</div>
+            <div class="sub-header-2">Business Corporations Act</div>
+          </div>
+
+          <div class="certify-clause-container">
+            <span class="cert-statement">I hereby certify that</span>
+            <span class="company-name-header">{{ business.legalName }}</span>
+            <span class="cert-statement">changed its name to</span>
+            <span class="company-name-header">{{ alteration.nameRequest.legalName }}</span>
+            <span class="cert-statement">on {{ effective_date_time }}</span>
+          </div>
+
+          <p>______</p>
+
+          <div class="issue-details">
+            <div class="cert-statement">Issued under my hand at Victoria, British Columbia</div>
+            <div class="cert-statement">on {{ effective_date }}</div>
+          </div>
+      </div>
+
+      <br/>
+      <div>
+        <table class="footer-table" role="presentation">
+          <tr>
+            <td class="seal-container">[[certificate-of-name-change/seal.html]]</td>
+            <td class="registrar-info-container">
+              <div class="registrar-info">
+                <div>
+                  <div class="registrar-name">{{ registrarInfo.name }}</div>
+                  <div class="registrar-title">{{ registrarInfo.title }}</div>
+                </div>
+                <div>[[certificate-of-name-change/registrarSignature.html]]</div>
+                <div class="province-country-info">
+                  <div>Province of British Columbia</div>
+                  <div class="country">Canada</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </body>
+  <footer class="footer-style">ELECTRONIC CERTIFICATE</footer>
+</html>

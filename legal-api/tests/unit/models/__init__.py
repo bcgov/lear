@@ -115,7 +115,7 @@ AR_FILING = {
 
 def factory_business(identifier, founding_date=EPOCH_DATETIME, last_ar_date=None,
                      entity_type=Business.LegalTypes.COOP.value):
-    """Create a business entity."""
+    """Create a business entity.""" 
     last_ar_year = None
     if last_ar_date:
         last_ar_year = last_ar_date.year
@@ -129,8 +129,10 @@ def factory_business(identifier, founding_date=EPOCH_DATETIME, last_ar_date=None
                         tax_id='BN123456789',
                         fiscal_year_end_date=FROZEN_DATETIME,
                         legal_type=entity_type)
-
-    business.save()
+    
+    uow = versioning_manager.unit_of_work(db.session)   
+    uow.create_transaction(db.session)
+    business.save()    
     return business
 
 
@@ -162,6 +164,10 @@ def factory_filing(business, data_dict, filing_date=FROZEN_DATETIME, filing_type
     filing.filing_date = filing_date
     filing.filing_json = data_dict
     filing._filing_type = filing_type
+    
+    uow = versioning_manager.unit_of_work(db.session)
+    transaction = uow.create_transaction(db.session)
+    filing.transaction_id = transaction.id
     filing.save()
     return filing
 
