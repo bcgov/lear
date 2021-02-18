@@ -176,7 +176,8 @@ class Report:  # pylint: disable=too-few-public-methods
             # name change from named company to numbered company case
             if self._report_key == 'certificateOfNameChange' and 'legalName' not in filing['alteration']['nameRequest']:
                 versioned_business = \
-                    VersionedBusinessDetailsService.get_business_revision_after_filing(self._filing.id, self._business.id)
+                    VersionedBusinessDetailsService\
+                        .get_business_revision_after_filing(self._filing.id, self._business.id)
                 filing['alteration']['nameRequest']['legalName'] = versioned_business['legalName']
 
         filing['header']['reportType'] = self._report_key

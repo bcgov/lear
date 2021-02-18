@@ -190,7 +190,7 @@ def test_get_pdf(session, test_name, identifier, entity_type, report_type, templ
 
 
 def test_alteration_name_change_to_numbered_company(session):
-    """Assert alteration name change filings can be returned as a PDF.""" 
+    """Assert alteration name change filings can be returned as a PDF."""
     numbered_company_name = '1234567 B.C. Ltd.'
     named_company_name = 'New Name Ltd.'
     identifier = 'BC1234567'
@@ -216,7 +216,7 @@ def test_alteration_name_change_to_numbered_company(session):
     report = Report(filing)
     report._business = business
     report._report_key = report_type
-    populate_business_info_to_filing(report)  
+    populate_business_info_to_filing(report)
     set_dates(report)
     substitute_template_parts(report)
     set_description(report)
@@ -232,7 +232,7 @@ def test_alteration_name_change_to_numbered_company(session):
 
 
 def test_alteration_name_change_to_named_company(session):
-    """Assert alteration name change filings can be returned as a PDF.""" 
+    """Assert alteration name change filings can be returned as a PDF."""
     named_company_name = 'New Name Ltd.'
     identifier = 'BC1234567'
     entity_type = 'BEN'
@@ -249,7 +249,7 @@ def test_alteration_name_change_to_named_company(session):
     report = Report(filing)
     report._business = business
     report._report_key = report_type
-    populate_business_info_to_filing(report)  
+    populate_business_info_to_filing(report)
     set_dates(report)
     substitute_template_parts(report)
     set_description(report)
@@ -265,6 +265,7 @@ def test_alteration_name_change_to_named_company(session):
 
 
 def update_business_legal_name(business, legal_name):
+    """Update business legal name"""
     uow = versioning_manager.unit_of_work(db.session)
     uow.create_transaction(db.session)
     business.legal_name = legal_name
@@ -272,6 +273,7 @@ def update_business_legal_name(business, legal_name):
 
 
 def filing_named_company(business, template, legal_name):
+    """Create a filing for a name change with for named company"""
     filing_json = copy.deepcopy(template)
     filing_json['filing']['alteration']['nameRequest']['legalName'] = legal_name
     filing = factory_completed_filing(business, filing_json)
@@ -279,7 +281,8 @@ def filing_named_company(business, template, legal_name):
 
 
 def filing_numbered_company(business, template, legal_name):
+    """Create a filing for a name change with for numbered company"""
     filing_json = copy.deepcopy(template)
     del filing_json['filing']['alteration']['nameRequest']['legalName']
     filing = factory_completed_filing(business, filing_json)
-    return filing    
+    return filing
