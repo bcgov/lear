@@ -27,6 +27,7 @@ from .incorporation_application import validate_correction_ia
 from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
 from .voluntary_dissolution import validate as voluntary_dissolution_validate
+from .alteration import validate as alteration_validate
 
 
 def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable=too-many-branches
@@ -87,6 +88,9 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
                 elif k == Filing.FILINGS['incorporationApplication'].get('name'):
                     err = incorporation_application_validate(filing_json)
+
+                elif k == Filing.FILINGS['alteration'].get('name'):
+                    err = alteration_validate(business, filing_json)
 
                 if err:
                     return err
