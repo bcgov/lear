@@ -265,7 +265,7 @@ def test_alteration_name_change_to_named_company(session):
 
 
 def update_business_legal_name(business, legal_name):
-    """Update business legal name"""
+    """Update business legal name."""
     uow = versioning_manager.unit_of_work(db.session)
     uow.create_transaction(db.session)
     business.legal_name = legal_name
@@ -273,7 +273,7 @@ def update_business_legal_name(business, legal_name):
 
 
 def filing_named_company(business, template, legal_name):
-    """Create a filing for a name change with for named company"""
+    """Create a filing for a name change with for named company."""
     filing_json = copy.deepcopy(template)
     filing_json['filing']['alteration']['nameRequest']['legalName'] = legal_name
     filing = factory_completed_filing(business, filing_json)
@@ -281,7 +281,7 @@ def filing_named_company(business, template, legal_name):
 
 
 def filing_numbered_company(business, template, legal_name):
-    """Create a filing for a name change with for numbered company"""
+    """Create a filing for a name change with for numbered company."""
     filing_json = copy.deepcopy(template)
     del filing_json['filing']['alteration']['nameRequest']['legalName']
     filing = factory_completed_filing(business, filing_json)
