@@ -36,9 +36,9 @@ from registry_schemas.example_data import (
 )
 from sqlalchemy_continuum import versioning_manager
 
-from legal_api.models import db
-from legal_api.reports.report import Report
-from legal_api.services import VersionedBusinessDetailsService
+from legal_api.models import db  # noqa:I001
+from legal_api.reports.report import Report  # noqa:I001
+from legal_api.services import VersionedBusinessDetailsService  # noqa:I001
 from tests.unit.models import factory_business, factory_completed_filing  # noqa:E501,I001
 
 
@@ -189,7 +189,7 @@ def test_get_pdf(session, test_name, identifier, entity_type, report_type, templ
     assert template
 
 
-def test_alteration_name_change_to_numbered_company(session):
+def test_alteration_name_change(session):
     """Assert alteration name change filings can be returned as a PDF."""
     numbered_company_name = '1234567 B.C. Ltd.'
     named_company_name = 'New Name Ltd.'
@@ -201,67 +201,31 @@ def test_alteration_name_change_to_numbered_company(session):
     business = factory_business(identifier=identifier, entity_type=entity_type)
 
     # changes its name to a named company
-    filing_named_company(business, ALTERATION_FILING_TEMPLATE, named_company_name)
+    named_company_filing = filing_named_company(business, ALTERATION_FILING_TEMPLATE, named_company_name)
     update_business_legal_name(business, named_company_name)
+    named_company_report = create_alteration_report(named_company_filing, business, report_type)
+    named_company_report_filename = named_company_report._get_report_filename()
+    assert named_company_report_filename
+    named_company_report_template = named_company_report._get_template()
+    assert named_company_report_template
+    named_company_report_template_data = named_company_report._get_template_data()
+    assert named_company_report_template_data['alteration']['nameRequest']['legalName'] == named_company_name
 
     # changes its name to a numbered company
-    filing = filing_numbered_company(business, ALTERATION_FILING_TEMPLATE, numbered_company_name)
+    numbered_company_filing = filing_numbered_company(business, ALTERATION_FILING_TEMPLATE, numbered_company_name)
     update_business_legal_name(business, numbered_company_name)
 
     # new legal_name can be retrieved from the versioned business (numbered company case)
-    business_revision = VersionedBusinessDetailsService.get_business_revision_after_filing(filing.id, business.id)
+    business_revision = \
+        VersionedBusinessDetailsService.get_business_revision_after_filing(numbered_company_filing.id, business.id)
     assert business_revision['legalName'] == numbered_company_name
-
-    # report generation
-    report = Report(filing)
-    report._business = business
-    report._report_key = report_type
-    populate_business_info_to_filing(report)
-    set_dates(report)
-    substitute_template_parts(report)
-    set_description(report)
-    set_registrar_info(report)
-    set_meta_info(report)
-
-    filename = report._get_report_filename()
-    assert filename
-    template = report._get_template()
-    assert template
-    template_data = report._get_template_data()
-    assert template_data['alteration']['nameRequest']['legalName'] == numbered_company_name
-
-
-def test_alteration_name_change_to_named_company(session):
-    """Assert alteration name change filings can be returned as a PDF."""
-    named_company_name = 'New Name Ltd.'
-    identifier = 'BC1234567'
-    entity_type = 'BEN'
-    report_type = 'certificateOfNameChange'
-
-    # An existing business
-    business = factory_business(identifier=identifier, entity_type=entity_type)
-
-    # changes its name to a named company
-    filing = filing_named_company(business, ALTERATION_FILING_TEMPLATE, named_company_name)
-    update_business_legal_name(business, named_company_name)
-
-    # report generation
-    report = Report(filing)
-    report._business = business
-    report._report_key = report_type
-    populate_business_info_to_filing(report)
-    set_dates(report)
-    substitute_template_parts(report)
-    set_description(report)
-    set_registrar_info(report)
-    set_meta_info(report)
-
-    filename = report._get_report_filename()
-    assert filename
-    template = report._get_template()
-    assert template
-    template_data = report._get_template_data()
-    assert template_data['alteration']['nameRequest']['legalName'] == named_company_name
+    numbered_company_report = create_alteration_report(numbered_company_filing, business, report_type)
+    numbered_company_filename = numbered_company_report._get_report_filename()
+    assert numbered_company_filename
+    numbered_company_template = numbered_company_report._get_template()
+    assert numbered_company_template
+    numbered_company_template_data = numbered_company_report._get_template_data()
+    assert numbered_company_template_data['alteration']['nameRequest']['legalName'] == numbered_company_name
 
 
 def update_business_legal_name(business, legal_name):
@@ -286,3 +250,17 @@ def filing_numbered_company(business, template, legal_name):
     del filing_json['filing']['alteration']['nameRequest']['legalName']
     filing = factory_completed_filing(business, filing_json)
     return filing
+
+
+def create_alteration_report(filing, business, report_type):
+    """Create a report for alteration."""
+    report = Report(filing)
+    report._business = business
+    report._report_key = report_type
+    populate_business_info_to_filing(report)
+    set_dates(report)
+    substitute_template_parts(report)
+    set_description(report)
+    set_registrar_info(report)
+    set_meta_info(report)
+    return report

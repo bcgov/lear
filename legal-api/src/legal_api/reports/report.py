@@ -22,7 +22,6 @@ from pathlib import Path
 import pycountry
 import requests
 from flask import current_app, jsonify
-
 from legal_api.models import Business, Filing
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import VersionedBusinessDetailsService
@@ -100,18 +99,15 @@ class Report:  # pylint: disable=too-few-public-methods
             'bc-annual-report/legalObligations',
             'bc-address-change/addresses',
             'bc-director-change/directors',
-            'certificate-of-incorporation/logo',
-            'certificate-of-incorporation/registrarSignature',
-            'certificate-of-incorporation/seal',
-            'certificate-of-name-change/logo',
-            'certificate-of-name-change/registrarSignature',
-            'certificate-of-name-change/seal',
             'certificate-of-name-change/style',
+            'common/certificateLogo',
+            'common/certificateRegistrarSignature',
+            'common/certificateSeal',
+            'common/certificateStyle',
             'common/addresses',
             'common/shareStructure',
             'common/correctedOnCertificate',
             'common/style',
-            'common/certificateStyle',
             'common/businessDetails',
             'common/directors',
             'incorporation-application/benefitCompanyStmt',
