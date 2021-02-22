@@ -164,9 +164,6 @@ def factory_filing(business, data_dict, filing_date=FROZEN_DATETIME, filing_type
     filing.filing_date = filing_date
     filing.filing_json = data_dict
     filing._filing_type = filing_type
-    uow = versioning_manager.unit_of_work(db.session)
-    transaction = uow.create_transaction(db.session)
-    filing.transaction_id = transaction.id
     filing.save()
     return filing
 
