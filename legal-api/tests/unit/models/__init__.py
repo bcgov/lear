@@ -115,7 +115,7 @@ AR_FILING = {
 
 def factory_business(identifier, founding_date=EPOCH_DATETIME, last_ar_date=None,
                      entity_type=Business.LegalTypes.COOP.value):
-    """Create a business entity."""
+    """Create a business entity with a versioned business."""
     last_ar_year = None
     if last_ar_date:
         last_ar_year = last_ar_date.year
@@ -130,8 +130,10 @@ def factory_business(identifier, founding_date=EPOCH_DATETIME, last_ar_date=None
                         fiscal_year_end_date=FROZEN_DATETIME,
                         legal_type=entity_type)
 
+    # Versioning business
     uow = versioning_manager.unit_of_work(db.session)
     uow.create_transaction(db.session)
+
     business.save()
     return business
 
