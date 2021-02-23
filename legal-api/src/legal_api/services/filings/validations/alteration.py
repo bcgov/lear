@@ -18,7 +18,7 @@ from typing import Dict
 from flask_babel import _ as babel
 
 from legal_api.errors import Error
-from legal_api.models import Business, Filing
+from legal_api.models import Business
 
 from ... import namex
 from ...utils import get_str
@@ -33,7 +33,7 @@ def validate(business: Business, filing: Dict) -> Error:
     nr_path = '/filing/alteration/nameRequest/nrNumber'
     nr_number = get_str(filing.json, nr_path)
 
-    if (nr_number) {
+    if nr_number:
         # ensure NR is approved or conditionally approved
         nr_response = namex.query_nr_number(nr_number)
         validation_result = namex.validate_nr(nr_response.json())
@@ -52,12 +52,11 @@ def validate(business: Business, filing: Dict) -> Error:
         nr_name = namex.get_approved_name(nr_response.json())
         if nr_name != legal_name:
             msg.append({'error': babel('Alteration of Name Request has a different legal name.'), 'path': path})
-    } else {
+    else:
         legal_name_path = '/filing/business/legalName'
         legal_name = get_str(filing, legal_name_path)
         if not legal_name:
             msg.append({'error': babel('Alteration from Named to Numbered Company can only be done for a Named Company.'), 'path': legal_name_path})
-    }
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
