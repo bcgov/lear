@@ -1,4 +1,4 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2021 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -27,30 +27,37 @@ from ...utils import get_str
 def validate(business: Business, filing: Dict) -> Error:
     """Validate the Alteration filing."""
     if not business or not filing:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
 
     nr_path = '/filing/alteration/nameRequest/nrNumber'
     nr_number = get_str(filing.json, nr_path)
 
-    # ensure NR is approved or conditionally approved
-    nr_response = namex.query_nr_number(nr_number)
-    validation_result = namex.validate_nr(nr_response.json())
-    if not validation_result['is_approved']:
-        msg.append({'error': babel('Alteration of Name Request is not approved.'), 'path': nr_path})
+    if (nr_number) {
+        # ensure NR is approved or conditionally approved
+        nr_response = namex.query_nr_number(nr_number)
+        validation_result = namex.validate_nr(nr_response.json())
+        if not validation_result['is_approved']:
+            msg.append({'error': babel('Alteration of Name Request is not approved.'), 'path': nr_path})
 
-    # ensure business type is BCOMP
-    path = '/filing/alteration/nameRequest/legalType'
-    legal_type = get_str(filing, path)
-    if legal_type != Business.LegalTypes.BCOMP.value:
-        msg.append({'error': babel('Alteration of Name Request is not vaild for this type.'), 'path': path})
+        # ensure business type is BCOMP
+        path = '/filing/alteration/nameRequest/legalType'
+        legal_type = get_str(filing, path)
+        if legal_type != Business.LegalTypes.BCOMP.value:
+            msg.append({'error': babel('Alteration of Name Request is not vaild for this type.'), 'path': path})
 
-    # ensure NR request has the same legal name
-    path = '/filing/alteration/nameRequest/legalName'
-    legal_name = get_str(filing, path)
-    nr_name = namex.get_approved_name(nr_response.json())
-    if nr_name != legal_name:
-        msg.append({'error': babel('Alteration of Name Request has a different legal name.'), 'path': path})    
+        # ensure NR request has the same legal name
+        path = '/filing/alteration/nameRequest/legalName'
+        legal_name = get_str(filing, path)
+        nr_name = namex.get_approved_name(nr_response.json())
+        if nr_name != legal_name:
+            msg.append({'error': babel('Alteration of Name Request has a different legal name.'), 'path': path})
+    } else {
+        legal_name_path = '/filing/business/legalName'
+        legal_name = get_str(filing, legal_name_path)
+        if not legal_name:
+            msg.append({'error': babel('Alteration from Named to Numbered Company can only be done for a Named Company.'), 'path': legal_name_path})
+    }
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
