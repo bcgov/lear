@@ -56,8 +56,8 @@ def validate(business: Business, filing: Dict) -> Error:
         legal_name_path = '/filing/business/legalName'
         legal_name = get_str(filing, legal_name_path)
         if not legal_name:
-            msg.append({'error': _('Alteration from Named to Numbered Company can only be done for a Named Company.'), 
-                    'path': legal_name_path})
+            msg.append({'error': _('Alteration from Named to Numbered Company can only be done for a Named Company.'),
+                        'path': legal_name_path})
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
