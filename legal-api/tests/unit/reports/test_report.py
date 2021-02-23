@@ -51,7 +51,8 @@ def create_report(identifier, entity_type, report_type, template):
         filing_json['filing'][f'{report_type}'] = copy.deepcopy(template)
     filing_json['filing']['business']['identifier'] = identifier
     filing_json['filing']['business']['legalType'] = entity_type
-    filing_json['filing']['header']['name'] = report_type
+    if report_type != 'certificate':
+        filing_json['filing']['header']['name'] = report_type
 
     business = factory_business(identifier=identifier, entity_type=entity_type)
     if report_type == 'correction':
@@ -160,6 +161,7 @@ def set_meta_info(report):
         ('BEN COA', 'BC1234567', 'BEN', 'changeOfAddress', CORP_CHANGE_OF_ADDRESS),
         ('BEN COD', 'BC1234567', 'BEN', 'changeOfDirectors', CHANGE_OF_DIRECTORS_MAILING),
         ('BEN INC', 'BC1234567', 'BEN', 'incorporationApplication', INCORPORATION_FILING_TEMPLATE),
+        ('BEN CER', 'BC1234567', 'BEN', 'certificate', INCORPORATION_FILING_TEMPLATE),
         ('BEN TRANS', 'BC1234567', 'BEN', 'transition', TRANSITION_FILING_TEMPLATE),
     ]
 )
