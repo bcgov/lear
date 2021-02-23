@@ -100,10 +100,11 @@ class Report:  # pylint: disable=too-few-public-methods
             'bc-annual-report/legalObligations',
             'bc-address-change/addresses',
             'bc-director-change/directors',
-            'certificate-of-incorporation/logo',
-            'certificate-of-incorporation/registrarSignature',
-            'certificate-of-incorporation/seal',
-            'certificate-of-incorporation/style',
+            'certificate-of-name-change/style',
+            'common/certificateLogo',
+            'common/certificateRegistrarSignature',
+            'common/certificateSeal',
+            'common/certificateStyle',
             'common/addresses',
             'common/shareStructure',
             'common/correctedOnCertificate',
@@ -168,6 +169,13 @@ class Report:  # pylint: disable=too-few-public-methods
             # since we reset _report_key with correction type
             if filing['header']['name'] == 'correction':
                 self._format_with_diff_data(filing)
+
+            # name change from named company to numbered company case
+            if self._report_key == 'certificateOfNameChange' and 'legalName' not in filing['alteration']['nameRequest']:
+                versioned_business = \
+                    VersionedBusinessDetailsService.get_business_revision_after_filing(self._filing.id,
+                                                                                       self._business.id)
+                filing['alteration']['nameRequest']['legalName'] = versioned_business['legalName']
 
         filing['header']['reportType'] = self._report_key
         self._set_dates(filing)
@@ -558,6 +566,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'voluntaryDissolution': {
             'filingDescription': 'Voluntary Dissolution',
             'fileName': 'voluntaryDissolution'
+        },
+        'certificateOfNameChange': {
+            'filingDescription': 'Certificate of Name Change',
+            'fileName': 'certificateOfNameChange'
         }
     }
 
