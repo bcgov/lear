@@ -1,0 +1,210 @@
+# Copyright 2020 The Province of British Columbia
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+---
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  annotations:
+    description: |
+      The Network Security Policies (NSP) for the associated
+      BC Registries applications.
+  name: ${APP_NAME}-nsp
+objects:
+  - apiVersion: security.devops.gov.bc.ca/v1alpha1
+    kind: ExternalNetwork
+    metadata:
+      # This metadata field will be what you see with the command
+      # `oc get externalnetwork` or `kubctl get externalnetwork`.
+      name: all-things-external
+      labels:
+        app: ${APP_NAME}
+    spec:
+      # This name will be used internally by Aporeto; it should match
+      # the `name` field in metadata above.
+      description: |
+        specify a custom external network that can be
+        referenced by name. This allows pods to talk out to the
+        internet as needed.
+      entries:
+        - 0.0.0.0/0
+      servicePorts:
+        - "tcp/80"
+        - "tcp/443"
+
+  - apiVersion: security.devops.gov.bc.ca/v1alpha1
+    kind: ExternalNetwork
+    metadata:
+      # This metadata field will be what you see with the command
+      # `oc get externalnetwork` or `kubctl get externalnetwork`.
+      name: external-services
+      labels:
+        app: ${APP_NAME}
+    spec:
+      # This name will be used internally by Aporeto; it should match
+      # the `name` field in metadata above.
+      description: |
+        specify a custom external network that can be
+        referenced by name. This allows pods to talk out to the
+        internet as needed.
+      entries:
+        - dev.oidc.gov.bc.ca
+        - sentry.io
+        - pay-api-dev.pathfinder.gov.bc.ca
+        - bcol-api-dev.pathfinder.gov.bc.ca
+        - legal-api-dev.pathfinder.gov.bc.ca
+        - namex-dev.pathfinder.gov.bc.ca
+        - report-api-dev.pathfinder.gov.bc.ca
+      servicePorts:
+        - "tcp/443"
+
+  - apiVersion: security.devops.gov.bc.ca/v1alpha1
+    kind: ExternalNetwork
+    metadata:
+      # This metadata field will be what you see with the command
+      # `oc get externalnetwork` or `kubctl get externalnetwork`.
+      name: external-oracle-service
+      labels:
+        app: ${APP_NAME}
+    spec:
+      description: |
+        Define the network parameters for accessing Oracle database.
+      entries:
+        - 142.34.88.27
+      servicePorts:
+        - tcp/1521
+
+  - apiVersion: security.devops.gov.bc.ca/v1alpha1
+    kind: ExternalNetwork
+    metadata:
+      # This metadata field will be what you see with the command
+      # `oc get externalnetwork` or `kubctl get externalnetwork`.
+      name: rocketchat
+      labels:
+        app: ${APP_NAME}
+    spec:
+      description: |
+        Define the network parameters for accessing remote resources.
+      entries:
+        - chat.developer.gov.bc.ca
+      servicePorts:
+        - tcp/443
+
+  - apiVersion: security.devops.gov.bc.ca/v1alpha1
+    kind: NetworkSecurityPolicy
+    metadata:
+      name: api-to-external-services
+      labels:
+        app: ${APP_NAME}
+    spec:
+      description: |
+        allow the API pods to communicate with the internet so it can
+        talk to SSO on the OCP3 cluster.
+      source:
+        - - '$namespace=${NAMESPACE}-${TAG}'
+          - 'role=api'
+      destination:
+        - - 'ext:name=external-services'
+
+  - apiVersion: security.devops.gov.bc.ca/v1alpha1
+    kind: NetworkSecurityPolicy
+    metadata:
+      name: api-to-db
+      labels:
+        app: ${APP_NAME}
+    spec:
+      description: |
+        allow the API to communicate with the database pod.
+      source:
+        - - '$namespace=${NAMESPACE}-${TAG}'
+          - 'role=api'
+      destination:
+        - - '$namespace=${NAMESPACE}-${TAG}'
+          - 'role=db'
+
+  - apiVersion: security.devops.gov.bc.ca/v1alpha1
+    kind: NetworkSecurityPolicy
+    metadata:
+      name: queue-to-db
+      labels:
+        app: ${APP_NAME}
+    spec:
+      description: |
+        allow the queue service to communicate with the database pod.
+      source:
+        - - '$namespace=${NAMESPACE}-${TAG}'
+          - 'role=queue'
+      destination:
+        - - '$namespace=${NAMESPACE}-${TAG}'
+          - 'role=db'
+
+  - apiVersion: security.devops.gov.bc.ca/v1alpha1
+    kind: NetworkSecurityPolicy
+    metadata:
+      name: queue-to-api
+      labels:
+        app: ${APP_NAME}
+    spec:
+      description: |
+        allow the queue service to communicate with the API pod.
+      source:
+        - - '$namespace=${NAMESPACE}-${TAG}'
+          - 'role=queue'
+      destination:
+        - - '$namespace=${NAMESPACE}-${TAG}'
+          - 'role=api'
+
+  - apiVersion: security.devops.gov.bc.ca/v1alpha1
+    kind: NetworkSecurityPolicy
+    metadata:
+      name: to-${NATS_NAMESPACE}-${TAG}
+      labels:
+        app: ${APP_NAME}
+    spec:
+      description: |
+        allow communicate with the EDB namespace (nats and minio services).
+      source:
+        - - '$namespace=${NAMESPACE}-${TAG}'
+        - - '$namespace=${NATS_NAMESPACE}-${TAG}'
+      destination:
+        - - '$namespace=${NATS_NAMESPACE}-${TAG}'
+        - - '$namespace=${NAMESPACE}-${TAG}'
+
+parameters:
+  - name: NAMESPACE
+    displayName: Namespace Name
+    description: The base namespace name for the project.
+    required: true
+    value: cc892f
+
+  - name: TAG
+    displayName: Environment TAG name
+    description: The TAG name for this environment, e.g., dev, test, prod
+    value: dev
+    required: true
+
+  - name: APP_NAME
+    displayName: Name
+    description: The name assigned to all of the OpenShift resources associated to the server instance.
+    required: true
+    value: lear
+
+  - name: NATS_NAMESPACE
+    description: |
+      The the name where NATS is located; it can be the same as NAMESPACE
+      or different.
+    required: true
+    value: d893f6
+
+

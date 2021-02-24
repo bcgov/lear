@@ -29,7 +29,7 @@ jobs:
           make setup
       - name: Lint with pylint
         run: |
-          make lint
+          make pylint
       - name: Lint with flake8
         run: |
           make flake8

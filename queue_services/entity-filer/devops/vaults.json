@@ -1,0 +1,18 @@
+[
+    {
+        "vault": "shared",
+        "application": [
+            "nats"
+        ]
+    },
+    {
+        "vault": "entity",
+        "application": [
+            "postgres-legal",
+            "entity-filer",
+            "nats-filer",
+            "entity-service-account",
+            "sentry"
+        ]
+    }
+]

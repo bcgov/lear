@@ -1,0 +1,10 @@
+[
+    {
+        "vault": "entity",
+        "application": [
+            "colin-api",
+            "test-oracle",
+            "sentry"
+        ]
+    }
+]
