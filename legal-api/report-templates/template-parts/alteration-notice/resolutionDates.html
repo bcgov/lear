@@ -1,0 +1,15 @@
+{% if alteration.shareStructure.resolutionDates|length > 0 %}
+  <div class="no-page-break">
+    <div class="separator mt-4"></div>
+    <div class="section-title mt-4">Resolution or Court Order Dates</div>
+    <div class="section-data mt-4">
+      Date(s) of Resolution(s) or Court Order(s) attaching or altering Special Rights
+      and Restrictions attached to a class or a series of shares:
+    </div>
+    <ul class="section-data resolution-date-list">
+      {% for resolution in alteration.shareStructure.resolutionDates %}
+        <li class="resolution-date-list-item pt-2">{{resolution.date}}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}

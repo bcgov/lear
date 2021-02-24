@@ -120,6 +120,13 @@ class Report:  # pylint: disable=too-few-public-methods
             'notice-of-articles/directors',
             'notice-of-articles/resolutionDates',
             'notice-of-articles/restrictions',
+            'alteration-notice/businessTypeChange',
+            'alteration-notice/effectiveDate',
+            'alteration-notice/legalNameChange',
+            'alteration-notice/nameTranslation',
+            'alteration-notice/resolutionDates',
+            'alteration-notice/shareStructure',
+            'alteration-notice/companyProvisions',
             'addresses',
             'certification',
             'directors',
@@ -171,11 +178,13 @@ class Report:  # pylint: disable=too-few-public-methods
                 self._format_with_diff_data(filing)
 
             # name change from named company to numbered company case
-            if self._report_key == 'certificateOfNameChange' and 'legalName' not in filing['alteration']['nameRequest']:
-                versioned_business = \
-                    VersionedBusinessDetailsService.get_business_revision_after_filing(self._filing.id,
-                                                                                       self._business.id)
+            if self._report_key in ('certificateOfNameChange','alterationNotice') and 'namerequest' in filing['alteration'] and 'legalName' not in filing['alteration']['nameRequest']:
+                versioned_business = VersionedBusinessDetailsService.get_business_revision_after_filing(self._filing.id, self._business.id)
                 filing['alteration']['nameRequest']['legalName'] = versioned_business['legalName']
+
+            if self._report_key == 'alterationNotice':
+                versioned_business = VersionedBusinessDetailsService.get_business_revision_before_filing(self._filing.id, self._business.id)
+                filing['alteration']['business']['legalType'] = versioned_business['legalType']
 
         filing['header']['reportType'] = self._report_key
         self._set_dates(filing)
@@ -511,6 +520,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'noa': {
             'filingDescription': 'Notice of Articles',
             'fileName': 'noticeOfArticles'
+        },
+        'alterationNotice': {
+            'filingDescription': 'Alteration Notice',
+            'fileName': 'alterationNotice'
         },
         'transition': {
             'filingDescription': 'Transition Application',

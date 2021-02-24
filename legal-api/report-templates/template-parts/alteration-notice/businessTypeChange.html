@@ -1,0 +1,40 @@
+<div class="no-page-break">
+    {% if business.legalType != alteration.nameRequest.legalType %}
+        <div class="separator mt-4"></div>
+        <div class="section-title mt-4">Change of Business Type</div>
+        <div class="section-data mt-4">        
+            Changing from a 
+            {% if business.legalType == 'BEN' %}
+                Benefit 
+            {% else %}
+                {{business.legalType}} 
+            {% endif %}
+            Company to a 
+            {% if alteration.nameRequest.legalType == 'BEN' %}
+                <b> Benefit </b>
+            {% else %}
+                <b> {{alteration.nameRequest.legalType}} </b>
+            {% endif %}
+            <b>Company.</b> 
+            <div class="section-data mt-4">
+                <table class="section-data-table">
+                    <tr class="no-page-break">
+                    <td><b>Incorporation Number</b>
+                        <div class="pt-2">{{ business.identifier }}</div>
+                    </td>
+                    <td><b>Name of Company </b>
+                        <div class="pt-2">{{business.legalName}}</div>
+                    </td>          
+                    </tr>         
+                </table>
+            </div>
+            <div class="section-data mt-3">
+                <b>Benefit Company Statement</b>
+                <div class="pt-3">
+                This company is a benefit company and, as such, has purposes that include conducting its
+                business in a responsible and sustainable manner and promoting one or more public benefits.
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>

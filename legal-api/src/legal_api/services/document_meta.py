@@ -36,6 +36,7 @@ class DocumentMetaService():
 
         CERTIFICATE = 'certificate'
         NOTICE_OF_ARTICLES = 'noa'
+        ALTERATION_NOTICE = 'alterationNotice'
 
     def __init__(self):
         """Create the document meta instance."""

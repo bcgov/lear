@@ -87,6 +87,17 @@
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">{{effective_date_time}}</div>
             </td>
+         {% elif header.reportType == 'alterationNotice' %}
+            <td>
+               <div class="bold">Incorporation Number:</div>
+               <div class="bold pt-2">Filed Date and Time:</div>
+               <div class="bold pt-2">Alteration Date and Time:</div>
+            </td>
+            <td>
+               <div>{{business.identifier}}</div>
+               <div class="pt-2">{{filing_date_time}}</div>
+               <div class="pt-2">{{effective_date_time}}</div>
+            </td>
          {% endif %}
 
          <td class="registar-certify-section">

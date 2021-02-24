@@ -1,0 +1,20 @@
+<div class="no-page-break">
+    {% if alteration.nameTranslations|length > 0 %}
+        <div class="separator mt-4"></div>
+        <div class="section-title mt-4">Company Name Translation(s)</div>
+            <div class="section-data mt-4">
+                <table class="section-data-table">
+                    {% for translation in alteration.nameTranslations %}
+                        {% if 'id' in translation %}
+                            <td>
+                                <div class="upper-text">{{translation.name}}</div>
+                        {% else %}
+                                <div class="upper-text pt-3">{{translation.name}}</div>
+                            </td>
+                        {% endif %}
+                    {% endfor %}
+                </table>
+            </div>
+    {% endif %}
+</div>
+
