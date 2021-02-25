@@ -31,28 +31,35 @@ def validate(business: Business, filing: Dict) -> Error:
     msg = []
 
     nr_path = '/filing/alteration/nameRequest/nrNumber'
-    nr_number = get_str(filing.json, nr_path)
+    nr_number = get_str(filing, nr_path)
+
+    current_legal_type_path = '/filing/business/legalType'
+    current_legal_type = get_str(filing, current_legal_type_path)
 
     if nr_number:
+        # ensure legalTypes are valid
+        new_legal_type = get_str(filing, '/filing/alteration/nameRequest/legalType')
+        if current_legal_type not in ('ULC', 'BC') or new_legal_type != 'BEN':
+            msg.append({'error': _('Alteration not valid for selected LegatTypes.'), 'path': nr_path})
+
         # ensure NR is approved or conditionally approved
         nr_response = namex.query_nr_number(nr_number)
-        validation_result = namex.validate_nr(nr_response.json())
+        validation_result = namex.validate_nr(nr_response)
         if not validation_result['is_approved']:
             msg.append({'error': _('Alteration of Name Request is not approved.'), 'path': nr_path})
-
-        # ensure business type is BCOMP
-        path = '/filing/alteration/nameRequest/legalType'
-        legal_type = get_str(filing, path)
-        if legal_type != Business.LegalTypes.BCOMP.value:
-            msg.append({'error': _('Alteration of Name Request is not vaild for this type.'), 'path': path})
 
         # ensure NR request has the same legal name
         path = '/filing/alteration/nameRequest/legalName'
         legal_name = get_str(filing, path)
-        nr_name = namex.get_approved_name(nr_response.json())
+        nr_name = namex.get_approved_name(nr_response)
         if nr_name != legal_name:
             msg.append({'error': _('Alteration of Name Request has a different legal name.'), 'path': path})
     else:
+        # ensure legalTypes are valid
+        new_legal_type = get_str(filing, '/filing/alteration/business/legalType')
+        if current_legal_type not in ('ULC', 'BC') or new_legal_type != 'BEN':
+            msg.append({'error': _('Alteration not valid for selected LegatTypes.'), 'path': nr_path})
+
         legal_name_path = '/filing/business/legalName'
         legal_name = get_str(filing, legal_name_path)
         if not legal_name:

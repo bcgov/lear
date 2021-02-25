@@ -35,6 +35,8 @@ def test_valid_alteration(session):
     f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     f['filing']['header']['identifier'] = identifier
 
+    del f['filing']['alteration']['nameRequest']
+
     err = validate(business, f)
 
     if err:
@@ -50,20 +52,21 @@ def test_valid_nr_alteration(session):
     identifier = 'BC1234567'
     business = factory_business(identifier)
 
-    ALTERATION_FILING['filing']['alteration']['nameRequest']['nrNumber'] = identifier
-    ALTERATION_FILING['filing']['alteration']['nameRequest']['legalName'] = 'legal_name-BC1234567'
-
     f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     f['filing']['header']['identifier'] = identifier
 
+    f['filing']['business']['identifier'] = identifier
+    f['filing']['business']['legalName'] = 'legal_name-BC1234567'
+
     f['filing']['alteration']['nameRequest']['nrNumber'] = identifier
     f['filing']['alteration']['nameRequest']['legalName'] = 'legal_name-BC1234567_Changed'
+    f['filing']['alteration']['nameRequest']['legalType'] = 'BEN'
 
     nr_response = {
         'state': 'APPROVED',
         'expirationDate': '',
         'names': [{
-            'name': 'legal_name-BC1234567',
+            'name': 'legal_name-BC1234567_Changed',
             'state': 'APPROVED',
             'consumptionDate': ''
         }]
@@ -78,17 +81,17 @@ def test_valid_nr_alteration(session):
     assert None is err
 
 
-def test_invalid_nr_correction(session):
+def test_invalid_nr_alteration(session):
     """Test that an invalid NR alteration fails validation."""
     # setup
     identifier = 'BC1234567'
     business = factory_business(identifier)
 
-    ALTERATION_FILING['filing']['alteration']['nameRequest']['nrNumber'] = identifier
-    ALTERATION_FILING['filing']['alteration']['nameRequest']['legalName'] = 'legal_name-BC1234567'
-
     f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     f['filing']['header']['identifier'] = identifier
+
+    f['filing']['business']['identifier'] = identifier
+    f['filing']['business']['legalName'] = 'legal_name-BC1234567'
 
     f['filing']['alteration']['nameRequest']['nrNumber'] = 'BC1234568'
     f['filing']['alteration']['nameRequest']['legalType'] = 'CP'
@@ -98,24 +101,13 @@ def test_invalid_nr_correction(session):
         'state': 'INPROGRESS',
         'expirationDate': '',
         'names': [{
-            'name': 'legal_name-BC1234567',
-            'state': 'APPROVED',
-            'consumptionDate': ''
-        }, {
             'name': 'legal_name-BC1234567_Changed',
             'state': 'INPROGRESS',
             'consumptionDate': ''
         }]
     }
 
-    class MockResponse:
-        def __init__(self, json_data):
-            self.json_data = json_data
-
-        def json(self):
-            return self.json_data
-
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+    with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
         err = validate(business, f)
 
     if err:
