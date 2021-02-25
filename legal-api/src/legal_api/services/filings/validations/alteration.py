@@ -39,7 +39,7 @@ def validate(business: Business, filing: Dict) -> Error:
     if nr_number:
         # ensure legalTypes are valid
         new_legal_type = get_str(filing, '/filing/alteration/nameRequest/legalType')
-        if current_legal_type not in ('ULC', 'BC') or new_legal_type != 'BEN':
+        if current_legal_type not in ('ULC', 'BC', 'LTD') or new_legal_type != 'BEN':
             msg.append({'error': _('Alteration not valid for selected LegatTypes.'), 'path': nr_path})
 
         # ensure NR is approved or conditionally approved
@@ -57,7 +57,7 @@ def validate(business: Business, filing: Dict) -> Error:
     else:
         # ensure legalTypes are valid
         new_legal_type = get_str(filing, '/filing/alteration/business/legalType')
-        if current_legal_type not in ('ULC', 'BC') or new_legal_type != 'BEN':
+        if current_legal_type not in ('ULC', 'BC', 'LTD') or new_legal_type != 'BEN':
             msg.append({'error': _('Alteration not valid for selected LegatTypes.'), 'path': nr_path})
 
         legal_name_path = '/filing/business/legalName'
