@@ -216,7 +216,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .order_by(business_version.transaction_id).one_or_none()
         return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
 
-
     @staticmethod
     def get_business_revision_before_filing(filing_id, business_id) -> dict:
         """Consolidates the business info as of a particular transaction."""
