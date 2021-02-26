@@ -180,8 +180,9 @@ class Report:  # pylint: disable=too-few-public-methods
             # name change from named company to numbered company case
             if self._report_key in ('certificateOfNameChange', 'alterationNotice') and 'nameRequest' in \
                     filing['alteration'] and 'legalName' not in filing['alteration']['nameRequest']:
-                versioned_business = VersionedBusinessDetailsService.get_business_revision_after_filing(self._filing.id,
-                                                                                                        self._business.id)
+                versioned_business = \
+                    VersionedBusinessDetailsService.get_business_revision_after_filing(self._filing.id,
+                                                                                       self._business.id)
                 filing['alteration']['nameRequest']['legalName'] = versioned_business['legalName']
 
             if self._report_key == 'alterationNotice':
@@ -423,8 +424,7 @@ class Report:  # pylint: disable=too-few-public-methods
             party['hasRemoved'] = True
             parties.append(party)
 
-    def _format_share_class_with_diff_data(self, incorporation_application,
-                                           diff):  # pylint: disable=too-many-locals,no-self-use; # noqa: E501;
+    def _format_share_class_with_diff_data(self, incorporation_application, diff):  # pylint: disable=too-many-locals,no-self-use; # noqa: E501;
         share_classes_path = '/filing/incorporationApplication/shareStructure/shareClasses/'
         share_classes_corrected = \
             set([re.search(r'\/shareClasses\/([\w\-]+)', x['path'])[1] for x in diff if  # pylint: disable=consider-using-set-comprehension; # noqa: E501
