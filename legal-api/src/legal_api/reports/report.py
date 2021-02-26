@@ -370,7 +370,7 @@ class Report:  # pylint: disable=too-few-public-methods
     def _format_name_translations_with_diff_data(self, filing, diff):  # pylint: disable=no-self-use;
         name_translations_path = '/filing/incorporationApplication/nameTranslations'
         name_translations = next((x for x in diff if x['path']
-                                 .startswith(name_translations_path)
+                                  .startswith(name_translations_path)
                                   and (x['path'].endswith('/name') or
                                        x['path'].endswith('/nameTranslations'))), None)
         filing['hasNameTranslationsCorrected'] = name_translations is not None
@@ -379,20 +379,20 @@ class Report:  # pylint: disable=too-few-public-methods
         office_path = '/filing/incorporationApplication/offices/'
         reg_mailing_address = \
             next((x for x in diff if x['path']
-                 .startswith(office_path + 'registeredOffice/mailingAddress/')
+                  .startswith(office_path + 'registeredOffice/mailingAddress/')
                   and self._has_change(x.get('oldValue'), x.get('newValue'))), None)
         reg_delivery_address = \
             next((x for x in diff if x['path']
-                 .startswith(office_path + 'registeredOffice/deliveryAddress/')
+                  .startswith(office_path + 'registeredOffice/deliveryAddress/')
                   and self._has_change(x.get('oldValue'), x.get('newValue'))), None)
 
         rec_mailing_address = \
             next((x for x in diff if x['path']
-                 .startswith(office_path + 'recordsOffice/mailingAddress/')
+                  .startswith(office_path + 'recordsOffice/mailingAddress/')
                   and self._has_change(x.get('oldValue'), x.get('newValue'))), None)
         rec_delivery_address = \
             next((x for x in diff if x['path']
-                 .startswith(office_path + 'recordsOffice/deliveryAddress/')
+                  .startswith(office_path + 'recordsOffice/deliveryAddress/')
                   and self._has_change(x.get('oldValue'), x.get('newValue'))), None)
 
         offices = incorporation_application['offices']
