@@ -224,7 +224,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         filing = Filing.find_by_id(filing_id)
         business_version = version_class(Business)
         business_revision = db.session.query(business_version) \
-            .filter(business_version.transaction_id <= filing.transaction_id) \
+            .filter(business_version.transaction_id < filing.transaction_id) \
             .filter(business_version.operation_type != 2) \
             .filter(business_version.id == business.id) \
             .order_by(business_version.transaction_id).first()
