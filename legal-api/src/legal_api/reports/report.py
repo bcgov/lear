@@ -65,7 +65,7 @@ class Report:  # pylint: disable=too-few-public-methods
 
     def _get_report_filename(self):
         filing_date = str(self._filing.filing_date)[:19]
-        legal_entity_number = self._business.identifier if self._business else\
+        legal_entity_number = self._business.identifier if self._business else \
             self._filing.filing_json['filing']['business']['identifier']
         description = ReportMeta.reports[self._report_key]['filingDescription']
         return '{}_{}_{}.pdf'.format(legal_entity_number, filing_date, description).replace(' ', '_')
@@ -178,12 +178,15 @@ class Report:  # pylint: disable=too-few-public-methods
                 self._format_with_diff_data(filing)
 
             # name change from named company to numbered company case
-            if self._report_key in ('certificateOfNameChange','alterationNotice') and 'namerequest' in filing['alteration'] and 'legalName' not in filing['alteration']['nameRequest']:
-                versioned_business = VersionedBusinessDetailsService.get_business_revision_after_filing(self._filing.id, self._business.id)
+            if self._report_key in ('certificateOfNameChange', 'alterationNotice') and 'nameRequest' in \
+                    filing['alteration'] and 'legalName' not in filing['alteration']['nameRequest']:
+                versioned_business = VersionedBusinessDetailsService.get_business_revision_after_filing(self._filing.id,
+                                                                                                        self._business.id)
                 filing['alteration']['nameRequest']['legalName'] = versioned_business['legalName']
 
             if self._report_key == 'alterationNotice':
-                versioned_business = VersionedBusinessDetailsService.get_business_revision_before_filing(self._filing.id, self._business.id)
+                versioned_business = VersionedBusinessDetailsService.get_business_revision_before_filing(
+                    self._filing.id, self._business.id)
                 filing['alteration']['business']['legalType'] = versioned_business['legalType']
 
         filing['header']['reportType'] = self._report_key
@@ -244,7 +247,7 @@ class Report:  # pylint: disable=too-few-public-methods
             original_filing = Filing.find_by_id(filing.get('correction').get('correctedFilingId'))
             original_filing_datetime = LegislationDatetime.as_legislation_timezone(original_filing.filing_date)
             original_filing_hour = original_filing_datetime.strftime('%I').lstrip('0')
-            filing['original_filing_date_time'] = original_filing_datetime.\
+            filing['original_filing_date_time'] = original_filing_datetime. \
                 strftime(f'%B %-d, %Y at {original_filing_hour}:%M %p Pacific Time')
 
     def _set_directors(self, filing):
@@ -367,7 +370,7 @@ class Report:  # pylint: disable=too-few-public-methods
     def _format_name_translations_with_diff_data(self, filing, diff):  # pylint: disable=no-self-use;
         name_translations_path = '/filing/incorporationApplication/nameTranslations'
         name_translations = next((x for x in diff if x['path']
-                                  .startswith(name_translations_path)
+                                 .startswith(name_translations_path)
                                   and (x['path'].endswith('/name') or
                                        x['path'].endswith('/nameTranslations'))), None)
         filing['hasNameTranslationsCorrected'] = name_translations is not None
@@ -376,20 +379,20 @@ class Report:  # pylint: disable=too-few-public-methods
         office_path = '/filing/incorporationApplication/offices/'
         reg_mailing_address = \
             next((x for x in diff if x['path']
-                  .startswith(office_path + 'registeredOffice/mailingAddress/')
+                 .startswith(office_path + 'registeredOffice/mailingAddress/')
                   and self._has_change(x.get('oldValue'), x.get('newValue'))), None)
         reg_delivery_address = \
             next((x for x in diff if x['path']
-                  .startswith(office_path + 'registeredOffice/deliveryAddress/')
+                 .startswith(office_path + 'registeredOffice/deliveryAddress/')
                   and self._has_change(x.get('oldValue'), x.get('newValue'))), None)
 
         rec_mailing_address = \
             next((x for x in diff if x['path']
-                  .startswith(office_path + 'recordsOffice/mailingAddress/')
+                 .startswith(office_path + 'recordsOffice/mailingAddress/')
                   and self._has_change(x.get('oldValue'), x.get('newValue'))), None)
         rec_delivery_address = \
             next((x for x in diff if x['path']
-                  .startswith(office_path + 'recordsOffice/deliveryAddress/')
+                 .startswith(office_path + 'recordsOffice/deliveryAddress/')
                   and self._has_change(x.get('oldValue'), x.get('newValue'))), None)
 
         offices = incorporation_application['offices']
@@ -401,7 +404,8 @@ class Report:  # pylint: disable=too-few-public-methods
     def _format_party_with_diff_data(self, incorporation_application, diff):
         party_path = '/filing/incorporationApplication/parties/'
         parties_corrected = \
-            set([re.search(r'\/parties\/([\w\-]+)', x['path'])[1] for x in diff if  # pylint: disable=consider-using-set-comprehension; # noqa: E501;
+            set([re.search(r'\/parties\/([\w\-]+)', x['path'])[1] for x in diff if
+                 # pylint: disable=consider-using-set-comprehension; # noqa: E501;
                  x['path'].startswith(party_path)
                  and self._has_change(x.get('oldValue'), x.get('newValue'))])
 
@@ -420,10 +424,12 @@ class Report:  # pylint: disable=too-few-public-methods
             party['hasRemoved'] = True
             parties.append(party)
 
-    def _format_share_class_with_diff_data(self, incorporation_application, diff):  # pylint: disable=too-many-locals,no-self-use; # noqa: E501;
+    def _format_share_class_with_diff_data(self, incorporation_application,
+                                           diff):  # pylint: disable=too-many-locals,no-self-use; # noqa: E501;
         share_classes_path = '/filing/incorporationApplication/shareStructure/shareClasses/'
         share_classes_corrected = \
-            set([re.search(r'\/shareClasses\/([\w\-]+)', x['path'])[1] for x in diff if  # pylint: disable=consider-using-set-comprehension; # noqa: E501
+            set([re.search(r'\/shareClasses\/([\w\-]+)', x['path'])[1] for x in diff if
+                 # pylint: disable=consider-using-set-comprehension; # noqa: E501
                  x['path'].startswith(share_classes_path)
                  and '/series' not in x['path']
                  and self._has_change(x.get('oldValue'), x.get('newValue'))])
@@ -443,7 +449,8 @@ class Report:  # pylint: disable=too-few-public-methods
 
         self._format_share_series_with_diff_data(share_classes, share_classes_path, diff)
 
-    def _format_share_series_with_diff_data(self, share_classes, share_classes_path, diff):  # pylint: disable=too-many-locals,no-self-use; # noqa: E501;
+    def _format_share_series_with_diff_data(self, share_classes, share_classes_path,
+                                            diff):  # pylint: disable=too-many-locals,no-self-use; # noqa: E501;
         share_series_corrected = \
             [re.search(r'\/shareClasses\/([\w\-]+)\/series\/([\w\-]+)', x['path']) for x in diff if
              x['path'].startswith(share_classes_path)
@@ -495,7 +502,7 @@ class Report:  # pylint: disable=too-few-public-methods
                 legal_name,
                 self._filing.filing_json['filing']['business']['identifier'])
 
-    @ staticmethod
+    @staticmethod
     def _get_environment():
         namespace = os.getenv('POD_NAMESPACE', '').lower()
         if namespace.endswith('dev'):
