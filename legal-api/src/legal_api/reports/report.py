@@ -404,8 +404,7 @@ class Report:  # pylint: disable=too-few-public-methods
     def _format_party_with_diff_data(self, incorporation_application, diff):
         party_path = '/filing/incorporationApplication/parties/'
         parties_corrected = \
-            set([re.search(r'\/parties\/([\w\-]+)', x['path'])[1] for x in diff if
-                 # pylint: disable=consider-using-set-comprehension; # noqa: E501;
+            set([re.search(r'\/parties\/([\w\-]+)', x['path'])[1] for x in diff if  # pylint: disable=consider-using-set-comprehension; # noqa: E501;
                  x['path'].startswith(party_path)
                  and self._has_change(x.get('oldValue'), x.get('newValue'))])
 
@@ -428,8 +427,7 @@ class Report:  # pylint: disable=too-few-public-methods
                                            diff):  # pylint: disable=too-many-locals,no-self-use; # noqa: E501;
         share_classes_path = '/filing/incorporationApplication/shareStructure/shareClasses/'
         share_classes_corrected = \
-            set([re.search(r'\/shareClasses\/([\w\-]+)', x['path'])[1] for x in diff if
-                 # pylint: disable=consider-using-set-comprehension; # noqa: E501
+            set([re.search(r'\/shareClasses\/([\w\-]+)', x['path'])[1] for x in diff if  # pylint: disable=consider-using-set-comprehension; # noqa: E501
                  x['path'].startswith(share_classes_path)
                  and '/series' not in x['path']
                  and self._has_change(x.get('oldValue'), x.get('newValue'))])
@@ -449,8 +447,7 @@ class Report:  # pylint: disable=too-few-public-methods
 
         self._format_share_series_with_diff_data(share_classes, share_classes_path, diff)
 
-    def _format_share_series_with_diff_data(self, share_classes, share_classes_path,
-                                            diff):  # pylint: disable=too-many-locals,no-self-use; # noqa: E501;
+    def _format_share_series_with_diff_data(self, share_classes, share_classes_path, diff):  # pylint: disable=too-many-locals,no-self-use; # noqa: E501;
         share_series_corrected = \
             [re.search(r'\/shareClasses\/([\w\-]+)\/series\/([\w\-]+)', x['path']) for x in diff if
              x['path'].startswith(share_classes_path)
