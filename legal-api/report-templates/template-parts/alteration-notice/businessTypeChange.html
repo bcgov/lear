@@ -3,19 +3,7 @@
         <div class="separator mt-4"></div>
         <div class="section-title mt-4">Change of Business Type</div>
         <div class="section-data mt-4">        
-            Changing from a 
-            {% if business.legalType == 'BEN' %}
-                Benefit 
-            {% else %}
-                {{business.legalType}} 
-            {% endif %}
-            Company to a 
-            {% if alteration.business.legalType == 'BEN' %}
-                <strong> Benefit </strong>
-            {% else %}
-                <strong> {{alteration.business.legalType}} </strong>
-            {% endif %}
-            <strong>Company.</strong>
+            Changing from {{business.legalType}} to a {{alteration.business.legalType}}
             <div class="section-data mt-4">
                 <table class="section-data-table">
                     <tr class="no-page-break">
