@@ -119,7 +119,7 @@ class Report:  # pylint: disable=too-few-public-methods
             'notice-of-articles/benefitCompanyStmt',
             'notice-of-articles/directors',
             'notice-of-articles/restrictions',
-            'notice-of-articles/resolutionDates',
+            'common/resolutionDates',
             'alteration-notice/businessTypeChange',
             'alteration-notice/effectiveDate',
             'alteration-notice/legalNameChange',
