@@ -14,6 +14,7 @@
 """Common validations share through the different filings."""
 from legal_api.errors import Error
 
+
 def validate_share_structure(incorporation_json, filing_type) -> Error:  # pylint: disable=too-many-branches
     """Validate the share structure data of the incorporation filing."""
     share_classes = incorporation_json['filing'][filing_type] \

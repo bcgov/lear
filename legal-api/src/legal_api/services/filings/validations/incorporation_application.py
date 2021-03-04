@@ -18,11 +18,11 @@ from typing import Dict, List, Optional
 
 import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
-
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
 from legal_api.utils.datetime import datetime as dt
-from legal_api.core.filing import Filing  # pylint: disable=reimported
+
+from legal_api.core.filing import Filing as coreFiling  # pylint: disable=reimported
 from .common_validations import validate_share_structure
 from ... import namex
 from ...utils import get_str
@@ -46,7 +46,7 @@ def validate(incorporation_json: Dict):
     if err:
         msg.extend(err)
 
-    err = validate_share_structure(incorporation_json, Filing.FilingTypes.INCORPORATIONAPPLICATION.value)
+    err = validate_share_structure(incorporation_json, coreFiling.FilingTypes.INCORPORATIONAPPLICATION.value)
     if err:
         msg.extend(err)
 
