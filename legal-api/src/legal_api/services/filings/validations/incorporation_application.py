@@ -22,8 +22,8 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
 from legal_api.utils.datetime import datetime as dt
+from legal_api.core.filing import Filing  # pylint: disable=reimported
 from .common_validations import validate_share_structure
-from legal_api.core.filing import Filing
 from ... import namex
 from ...utils import get_str
 
