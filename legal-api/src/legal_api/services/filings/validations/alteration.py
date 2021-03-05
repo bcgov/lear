@@ -15,8 +15,10 @@
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Dict
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
+
 from legal_api.errors import Error
-from legal_api.core.filing import Filing
+from legal_api.core.filing import Filing  # noqa: I001
+
 from .common_validations import validate_share_structure
 
 

@@ -18,12 +18,13 @@ from typing import Dict, List, Optional
 
 import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
+
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
 from legal_api.utils.datetime import datetime as dt
 
-from legal_api.core.filing import Filing as coreFiling  # pylint: disable=reimported
-from .common_validations import validate_share_structure
+from legal_api.core.filing import Filing as coreFiling  # noqa: I001
+from .common_validations import validate_share_structure  # noqa: I001
 from ... import namex
 from ...utils import get_str
 
@@ -155,6 +156,7 @@ def validate_parties_mailing_address(incorporation_json) -> Error:
         return msg
 
     return None
+
 
 def validate_incorporation_effective_date(incorporation_json) -> Error:
     """Return an error or warning message based on the effective date validation rules.
