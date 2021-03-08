@@ -347,7 +347,7 @@ class ListFilingResource(Resource):
     @staticmethod
     def _put_basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
         """Perform basic checks to ensure put can do something."""
-        json_input = client_request.get_json(force=True)
+        json_input = client_request.get_json()
         if not json_input:
             return ({'message':
                      f'No filing json data in body of post for {identifier}.'},
