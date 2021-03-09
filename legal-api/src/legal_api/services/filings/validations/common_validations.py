@@ -42,30 +42,39 @@ def validate_share_structure(incorporation_json, filing_type) -> Error:  # pylin
             if not item.get('currency', None):
                 err_path = '/filing/{0}/shareClasses/{1}/currency/'.format(filing_type, index)
                 msg.append({'error': 'Share class %s must specify currency' % item['name'], 'path': err_path})
-        for series_index, series in enumerate(item.get('series', [])):
-            err_path = '/filing/{0}/shareClasses/{1}/series/{2}'.format(filing_type, index, series_index)
-            if series['name'] in memoize_names:
-                msg.append({'error': 'Share series %s name already used in a share class or series.' % series['name'],
-                            'path': err_path})
-            else:
-                memoize_names.append(series['name'])
-
-            if series['hasMaximumShares']:
-                if not series.get('maxNumberOfShares', None):
-                    msg.append({
-                        'error': 'Share series %s must provide value for maximum number of shares' % series['name'],
-                        'path': '%s/maxNumberOfShares' % err_path
-                    })
-                else:
-                    if item['hasMaximumShares'] and item.get('maxNumberOfShares', None) and \
-                            int(series['maxNumberOfShares']) > int(item['maxNumberOfShares']):
-                        msg.append({
-                            'error': 'Series %s share quantity must be less than or equal to that of its class %s'
-                                     % (series['name'], item['name']),
-                            'path': '%s/maxNumberOfShares' % err_path
-                        })
+        response = validate_series(item, memoize_names, filing_type, index)
+        if response:
+            msg.extend(response)
 
     if msg:
         return msg
 
     return None
+
+
+def validate_series(item, memoize_names, filing_type, index) -> Error:
+    """Validate the series in the shareStructure."""
+    msg = []
+    for series_index, series in enumerate(item.get('series', [])):
+        err_path = '/filing/{0}/shareClasses/{1}/series/{2}'.format(filing_type, index, series_index)
+        if series['name'] in memoize_names:
+            msg.append({'error': 'Share series %s name already used in a share class or series.' % series['name'],
+                        'path': err_path})
+        else:
+            memoize_names.append(series['name'])
+
+        if series['hasMaximumShares']:
+            if not series.get('maxNumberOfShares', None):
+                msg.append({
+                    'error': 'Share series %s must provide value for maximum number of shares' % series['name'],
+                    'path': '%s/maxNumberOfShares' % err_path
+                })
+            else:
+                if item['hasMaximumShares'] and item.get('maxNumberOfShares', None) and \
+                        int(series['maxNumberOfShares']) > int(item['maxNumberOfShares']):
+                    msg.append({
+                        'error': 'Series %s share quantity must be less than or equal to that of its class %s'
+                                 % (series['name'], item['name']),
+                        'path': '%s/maxNumberOfShares' % err_path
+                    })
+    return msg

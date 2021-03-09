@@ -17,13 +17,13 @@ from typing import Dict
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
 
+from .alteration import validate as alteration_validate
 from .annual_report import validate as annual_report_validate
 from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
 from .change_of_name import validate as con_validate
 from .correction import validate as correction_validate
 from .incorporation_application import validate as incorporation_application_validate
-from .alteration import validate as alteration_validate  # noqa: I001
 from .incorporation_application import validate_correction_ia
 from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
