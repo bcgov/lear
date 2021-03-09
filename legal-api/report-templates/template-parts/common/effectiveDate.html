@@ -1,0 +1,10 @@
+<div class="no-page-break">
+    {% if header.reportType == 'alterationNotice' %}
+        <div class="section-title mt-4">Alteration Effective Date</div>
+    {% else %}
+        <div class="section-title mt-4">Effective Date</div>
+    {% endif %}
+    <div class="section-data mt-3">
+        {{header.effective_date_time}}
+    </div>
+</div>
