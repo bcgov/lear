@@ -15,9 +15,9 @@
          <tr class="no-page-break">
             <td>
                <div class="share-name">{{share_class.name}}</div>
-               {% if share_class.hasCorrected and header.reportType != 'alterationNotice' %}
+               {% if share_class.hasCorrected and header.name != 'alteration' %}
                   <span class="chip">CORRECTED</span>
-               {% elif share_class.hasRemoved and header.reportType != 'alterationNotice' %}
+               {% elif share_class.hasRemoved and header.name != 'alteration' %}
                   <span class="chip">REMOVED</span>
                {% endif %}
             </td>
@@ -56,9 +56,9 @@
             <tr class="dashed-row-separator no-page-break">
                <td>
                   <div class="series-name">&bull;&nbsp;{{ series.name }}</div>
-                  {% if series.hasCorrected and header.reportType != 'alterationNotice' %}
+                  {% if series.hasCorrected and header.name != 'alteration' %}
                      <span class="chip">CORRECTED</span>
-                  {% elif series.hasRemoved and header.reportType != 'alterationNotice' %}
+                  {% elif series.hasRemoved and header.name != 'alteration' %}
                      <span class="chip">REMOVED</span>
                   {% endif %}
                </td>

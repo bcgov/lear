@@ -218,7 +218,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
     @staticmethod
     def get_business_revision_before_filing(filing_id, business_id) -> dict:
-        """Consolidates the business info as of a particular transaction."""
+        """Consolidates the business info of the previous filing."""
         business = Business.find_by_internal_id(business_id)
         filing = Filing.find_by_id(filing_id)
         business_version = version_class(Business)
