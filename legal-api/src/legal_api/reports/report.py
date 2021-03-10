@@ -160,6 +160,8 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['header']['filingId'] = self._filing.id
             if self._report_key == 'incorporationApplication':
                 self._format_incorporation_data(filing)
+            elif self._report_key == 'alterationNotice':
+                self._format_alteration_data(filing)
             else:
                 # set registered office address from either the COA filing or status quo data in AR filing
                 with suppress(KeyError):
@@ -337,6 +339,19 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['shareClasses'] = filing['incorporationApplication']['shareClasses']
         else:
             filing['shareClasses'] = filing['incorporationApplication']['shareStructure']['shareClasses']
+
+    def _format_alteration_data(self, filing):
+        self._get_translations(filing)
+        if filing['alteration'].get('shareStructure', None):
+            filing['shareClasses'] = filing['alteration']['shareStructure']['shareClasses']
+
+    def _get_translations(self, filing):  # pylint: disable=no-self-use;
+        """Discard from the list of Translations records with action as removed."""
+        list_translations = []
+        for item in filing['alteration'].get('nameTranslations', []):
+            if item['action'] != 'removed':
+                list_translations.append(item)
+        filing['listOfTranslations'] = list_translations
 
     def _has_change(self, old_value, new_value):  # pylint: disable=no-self-use;
         """Check to fix the hole in diff.

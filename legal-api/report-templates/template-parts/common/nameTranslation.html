@@ -1,10 +1,12 @@
 <div class="no-page-break">
-    {% if alteration.nameTranslations|length > 0 %}
-        <div class="separator mt-4"></div>
-        <div class="section-title mt-4">Company Name Translation(s)</div>
-            <div class="section-data mt-4">
-                <table class="section-data-table" role="presentation">
-                    {% for translation in alteration.nameTranslations %}
+    <div class="separator mt-4"></div>
+    <div class="section-title mt-4">Company Name Translation(s)</div>
+        <div class="section-data mt-4">
+            <table class="section-data-table" role="presentation">
+                {% if listOfTranslations|length == 0 %}
+                    <span>None</span>
+                {% else %}
+                    {% for translation in listOfTranslations %}
                         {% if 'id' in translation %}
                             <td>
                                 <div class="upper-text">{{translation.name}}</div>
@@ -13,8 +15,8 @@
                             </td>
                         {% endif %}
                     {% endfor %}
-                </table>
-            </div>
-    {% endif %}
+                {% endif %}
+            </table>
+        </div>    
 </div>
 
