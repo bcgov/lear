@@ -23,28 +23,9 @@ def validate_share_structure(incorporation_json, filing_type) -> Error:  # pylin
     memoize_names = []
 
     for index, item in enumerate(share_classes):
-        if item['name'] in memoize_names:
-            err_path = '/filing/{0}/shareClasses/{1}/name/'.format(filing_type, index)
-            msg.append({'error': 'Share class %s name already used in a share class or series.' % item['name'],
-                        'path': err_path})
-        else:
-            memoize_names.append(item['name'])
-
-        if item['hasMaximumShares']:
-            if not item.get('maxNumberOfShares', None):
-                err_path = '/filing/{0}/shareClasses/{1}/maxNumberOfShares/'.format(filing_type, index)
-                msg.append({'error': 'Share class %s must provide value for maximum number of shares' % item['name'],
-                            'path': err_path})
-        if item['hasParValue']:
-            if not item.get('parValue', None):
-                err_path = '/filing/{0}/shareClasses/{1}/parValue/'.format(filing_type, index)
-                msg.append({'error': 'Share class %s must specify par value' % item['name'], 'path': err_path})
-            if not item.get('currency', None):
-                err_path = '/filing/{0}/shareClasses/{1}/currency/'.format(filing_type, index)
-                msg.append({'error': 'Share class %s must specify currency' % item['name'], 'path': err_path})
-        response = validate_series(item, memoize_names, filing_type, index)
-        if response:
-            msg.extend(response)
+        shares_msg = validate_shares(item, memoize_names, filing_type, index)
+        if shares_msg:
+            msg.extend(shares_msg)
 
     if msg:
         return msg
@@ -53,7 +34,7 @@ def validate_share_structure(incorporation_json, filing_type) -> Error:  # pylin
 
 
 def validate_series(item, memoize_names, filing_type, index) -> Error:
-    """Validate the series in the shareStructure."""
+    """Validate shareStructure includes a wellformed series."""
     msg = []
     for series_index, series in enumerate(item.get('series', [])):
         err_path = '/filing/{0}/shareClasses/{1}/series/{2}'.format(filing_type, index, series_index)
@@ -77,4 +58,33 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
                                  % (series['name'], item['name']),
                         'path': '%s/maxNumberOfShares' % err_path
                     })
+    return msg
+
+
+def validate_shares(item, memoize_names, filing_type, index) -> Error:
+    """Validate a wellformed share structure."""
+    msg = []
+    if item['name'] in memoize_names:
+        err_path = '/filing/{0}/shareClasses/{1}/name/'.format(filing_type, index)
+        msg.append({'error': 'Share class %s name already used in a share class or series.' % item['name'],
+                    'path': err_path})
+    else:
+        memoize_names.append(item['name'])
+
+    if item['hasMaximumShares'] and not item.get('maxNumberOfShares', None):
+        err_path = '/filing/{0}/shareClasses/{1}/maxNumberOfShares/'.format(filing_type, index)
+        msg.append({'error': 'Share class %s must provide value for maximum number of shares' % item['name'],
+                    'path': err_path})
+    if item['hasParValue']:
+        if not item.get('parValue', None):
+            err_path = '/filing/{0}/shareClasses/{1}/parValue/'.format(filing_type, index)
+            msg.append({'error': 'Share class %s must specify par value' % item['name'], 'path': err_path})
+        if not item.get('currency', None):
+            err_path = '/filing/{0}/shareClasses/{1}/currency/'.format(filing_type, index)
+            msg.append({'error': 'Share class %s must specify currency' % item['name'], 'path': err_path})
+
+    series_msg = validate_series(item, memoize_names, filing_type, index)
+    if series_msg:
+        msg.extend(series_msg)
+
     return msg
