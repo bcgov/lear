@@ -357,6 +357,22 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return name_translations_arr
 
     @staticmethod
+    def get_name_translations_before_revision(transaction_id, business_id) -> dict:
+        """Consolidates all name translations before deletion given a transaction id."""
+        name_translations_version = version_class(Alias)
+        name_translations_list = db.session.query(name_translations_version) \
+            .filter(name_translations_version.transaction_id <= transaction_id) \
+            .filter(name_translations_version.operation_type != 2) \
+            .filter(name_translations_version.business_id == business_id) \
+            .filter(name_translations_version.type == 'TRANSLATION') \
+            .order_by(name_translations_version.transaction_id).all()
+        name_translations_arr = []
+        for name_translation in name_translations_list:
+            name_translation_json = VersionedBusinessDetailsService.name_translations_json(name_translation)
+            name_translations_arr.append(name_translation_json)
+        return name_translations_arr
+
+    @staticmethod
     def get_resolution_dates_revision(transaction_id, business_id) -> dict:
         """Consolidates all resolutions upto the given transaction id."""
         resolution_version = version_class(Resolution)
