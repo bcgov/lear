@@ -33,18 +33,17 @@ def validate(business: Business, filing: Dict) -> Error:
     nr_path = '/filing/alteration/nameRequest/nrNumber'
     nr_number = get_str(filing, nr_path)
 
-    current_legal_type_path = '/filing/business/legalType'
-    current_legal_type = get_str(filing, current_legal_type_path)
+    legal_type_path = '/filing/business/legalType'
+    legal_type = get_str(filing, legal_type_path)
 
     if nr_number:
-        # ensure legalTypes are valid
-        new_legal_type = get_str(filing, '/filing/alteration/nameRequest/legalType')
-        if current_legal_type not in ('ULC', 'BC', 'LTD') or new_legal_type != 'BEN':
-            msg.append({'error': _('Alteration not valid for selected LegatTypes.'), 'path': nr_path})
-
         # ensure NR is approved or conditionally approved
         nr_response = namex.query_nr_number(nr_number)
         validation_result = namex.validate_nr(nr_response)
+
+        if not nr_response['requestTypeCd'] in ('CCP', 'BEC'):
+            msg.append({'error': _('Alteration only available for Change of Name Name requests.'), 'path': nr_path})
+
         if not validation_result['is_approved']:
             msg.append({'error': _('Alteration of Name Request is not approved.'), 'path': nr_path})
 
@@ -55,10 +54,9 @@ def validate(business: Business, filing: Dict) -> Error:
         if nr_name != legal_name:
             msg.append({'error': _('Alteration of Name Request has a different legal name.'), 'path': path})
     else:
-        # ensure legalTypes are valid
-        new_legal_type = get_str(filing, '/filing/alteration/business/legalType')
-        if current_legal_type not in ('ULC', 'BC', 'LTD') or new_legal_type != 'BEN':
-            msg.append({'error': _('Alteration not valid for selected LegatTypes.'), 'path': nr_path})
+        # ensure legalType is valid
+        if legal_type not in ('ULC', 'BC', 'BEN'):
+            msg.append({'error': _('Alteration not valid for selected Legal Type.'), 'path': nr_path})
 
         legal_name_path = '/filing/business/legalName'
         legal_name = get_str(filing, legal_name_path)

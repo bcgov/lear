@@ -65,6 +65,7 @@ def test_valid_nr_alteration(session):
     nr_response = {
         'state': 'APPROVED',
         'expirationDate': '',
+        'requestTypeCd': 'BEC',
         'names': [{
             'name': 'legal_name-BC1234567_Changed',
             'state': 'APPROVED',
@@ -100,6 +101,7 @@ def test_invalid_nr_alteration(session):
     nr_response = {
         'state': 'INPROGRESS',
         'expirationDate': '',
+        'requestTypeCd': 'XCLP',
         'names': [{
             'name': 'legal_name-BC1234567_Changed',
             'state': 'INPROGRESS',
