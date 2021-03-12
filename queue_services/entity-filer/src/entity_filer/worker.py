@@ -37,6 +37,7 @@ from entity_queue_common.service_utils import FilingException, QueueException, l
 from flask import Flask
 from legal_api import db
 from legal_api.models import Business, Filing
+from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
@@ -180,6 +181,11 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 alteration.post_process(business, filing_submission)
                 db.session.add(business)
                 db.session.commit()
+                AccountService.update_entity(
+                    business_registration=business.identifier,
+                    business_name=business.legal_name,
+                    corp_type_code=business.legal_type
+                )
 
             if any('incorporationApplication' in x for x in legal_filings):
                 if any('correction' in x for x in legal_filings):

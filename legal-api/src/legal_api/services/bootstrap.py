@@ -169,6 +169,37 @@ class AccountService:
         return HTTPStatus.OK
 
     @classmethod
+    def update_entity(cls,
+                      business_registration: str,
+                      business_name: str,
+                      corp_type_code: str):
+        """Update an entity."""
+        account_svc_entity_url = current_app.config.get('ACCOUNT_SVC_ENTITY_URL')
+
+        token = cls.get_bearer_token()
+
+        if not token:
+            return HTTPStatus.UNAUTHORIZED
+
+        # Create an entity record
+        entity_data = json.dumps({
+            'businessIdentifier': business_registration,
+            'corpTypeCode': corp_type_code,
+            'name': business_name
+        })
+        entity_record = requests.patch(
+            url=account_svc_entity_url + '/' + business_registration,
+            headers={**cls.CONTENT_TYPE_JSON,
+                     'Authorization': cls.BEARER + token},
+            data=entity_data,
+            timeout=cls.timeout
+        )
+
+        if entity_record.status_code != HTTPStatus.OK:
+            return HTTPStatus.BAD_REQUEST
+        return HTTPStatus.OK
+
+    @classmethod
     def delete_affiliation(cls, account: int, business_registration: str) -> Dict:
         """Affiliate a business to an account.
 

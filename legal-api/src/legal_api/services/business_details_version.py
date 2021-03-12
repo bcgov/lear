@@ -217,6 +217,19 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
 
     @staticmethod
+    def get_business_revision_after_filing(filing_id, business_id) -> dict:
+        """Consolidates the business info as of a particular transaction."""
+        business = Business.find_by_internal_id(business_id)
+        filing = Filing.find_by_id(filing_id)
+        business_version = version_class(Business)
+        business_revision = db.session.query(business_version) \
+            .filter(business_version.transaction_id > filing.transaction_id) \
+            .filter(business_version.operation_type != 2) \
+            .filter(business_version.id == business.id) \
+            .order_by(business_version.transaction_id).one_or_none()
+        return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
+
+    @staticmethod
     def get_office_revision(transaction_id, business_id) -> dict:
         """Consolidates all office changes upto the given transaction id."""
         offices_json = {}

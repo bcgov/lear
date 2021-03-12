@@ -3,46 +3,47 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Certificate of Incorporation</title>
+    <title>Certificate of Change Name</title>
     <meta charset="UTF-8">
     <meta name="author" content="BC Registries and Online Services">
     [[common/certificateStyle.html]]
+    [[certificate-of-name-change/style.html]]
   </head>
 
   <body>
     <div class="outer-container">
       <div class="outer-container-header">
         <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
-        [[common/correctedOnCertificate.html]]
       </div>      
 
       <div class="certificate-statements">
           [[common/certificateLogo.html]]
 
           <div class="cert-title-container">
-            <div class="sub-header-1">Certificate  of</div>
-            <div class="incorporation-header">INCORPORATION</div>
+            <div class="sub-header-1">Certificate of</div>
+            <div class="certificate-header">NAME CHANGE</div>
             <div class="sub-header-2">Business Corporations Act</div>
           </div>
 
           <div class="certify-clause-container">
-            <div class="cert-statement">I hereby certify that</div>
-            <div class="company-name-header"><div class="company-name-text">{{ business.legalName }}</div></div>
-            <div class="cert-statement-no-spacing">was incorporated under the Business Corporations Act</div>
-            <div class="cert-statement">on {{ business.formatted_founding_date_time }}</div>
+            <span class="cert-statement">I hereby certify that</span>
+            <span class="company-name-header">{{ business.legalName }}</span>
+            <span class="cert-statement">changed its name to</span>
+            <span class="company-name-header">{{ alteration.nameRequest.legalName }}</span>
+            <span class="cert-statement">on {{ effective_date_time }}</span>
           </div>
 
           <p>______</p>
 
           <div class="issue-details">
             <div class="cert-statement">Issued under my hand at Victoria, British Columbia</div>
-            <div class="cert-statement">on {{ business.formatted_founding_date }}</div>
+            <div class="cert-statement">on {{ effective_date }}</div>
           </div>
       </div>
 
       <br/>
       <div>
-        <table class="footer-table" role="presentation">
+        <table class="footer-table" role="none">
           <tr>
             <td class="seal-container">[[common/certificateSeal.html]]</td>
             <td class="registrar-info-container">

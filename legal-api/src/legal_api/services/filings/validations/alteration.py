@@ -19,9 +19,12 @@ from flask_babel import _ as babel # noqa: N81
 
 from legal_api.errors import Error
 from legal_api.models import Business
+from legal_api.core.filing import Filing
 
 from legal_api.services import namex
 from legal_api.services.utils import get_str
+
+from .common_validations import validate_share_structure
 
 
 def validate(business: Business, filing: Dict) -> Error:
@@ -59,6 +62,12 @@ def validate(business: Business, filing: Dict) -> Error:
         if not get_str(filing, legal_name_path):
             msg.append({'error': babel('Alteration from Named to Numbered Company can only be done for a Named Company.'),
                         'path': legal_name_path})
+
+    share_structure_path: Final = '/filing/alteration/shareStructure'
+    if get_str(filing, share_structure_path):
+        err = validate_share_structure(filing, Filing.FilingTypes.ALTERATION.value)
+        if err:
+            msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

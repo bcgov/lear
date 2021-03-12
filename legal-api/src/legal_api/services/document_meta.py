@@ -91,7 +91,7 @@ class DocumentMetaService():
         elif filing_type == 'correction':
             documents = self.get_correction_reports(filing)
         elif filing_type == 'alteration':
-            documents = self.get_alteration_reports()
+            documents = self.get_alteration_reports(filing)
         elif filing_type == 'transition':
             documents = self.get_transition_reports()
 
@@ -262,7 +262,7 @@ class DocumentMetaService():
 
         return reports
 
-    def get_alteration_reports(self):  # pylint: disable=no-self-use
+    def get_alteration_reports(self, filing: dict):  # pylint: disable=no-self-use
         """Return alteration meta object(s)."""
         reports = []
 
@@ -274,6 +274,20 @@ class DocumentMetaService():
                     DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
                 )
             )
+
+            reports.append(
+                self.create_report_object(
+                    'Alteration Notice',
+                    self.get_general_filename('Alteration Notice')
+                )
+            )
+            if 'nameRequest' in filing['filing']['alteration']:
+                reports.append(
+                    self.create_report_object(
+                        'Change of Name Certificate',
+                        self.get_general_filename('Change of Name Certificate')
+                    )
+                )
 
         return reports
 
