@@ -2,17 +2,21 @@
     <div class="separator mt-4"></div>
     <div class="section-title mt-4">Company Name Translation(s)</div>
         <div class="section-data mt-3">
-            <table class="section-data-table" role="presentation">
+            <table class="section-translation-table" role="presentation">
                 {% if listOfTranslations|length == 0 and nameTranslations| length %}
-                    <div class="mt-2">None</div>
+                    <div class="mt-2">NONE</div>
                 {% else %}
                     {% for translation in listOfTranslations %}
                         {% if 'id' in translation %}
-                            <td>
-                                <div class="upper-text">{{translation.name}}</div>
+                            <tr>
+                                <td><div class="upper-text">{{translation.name}}</div></td>
+                                <td><div class="upper-text">MODIFIED</div></td>
+                            </tr>
                         {% else %}
-                                <div class="upper-text mt-2">{{translation.name}}</div>
-                            </td>
+                            <tr>
+                                <td><div class="upper-text">{{translation.name}}</div></td>
+                                <td><div class="upper-text">ADDED</div></td>
+                            </tr>
                         {% endif %}
                     {% endfor %}
                 {% endif %}

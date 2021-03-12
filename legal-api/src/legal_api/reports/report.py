@@ -343,6 +343,7 @@ class Report:  # pylint: disable=too-few-public-methods
             self._filing.transaction_id, self._business.id)
         if filing['alteration'].get('shareStructure', None):
             filing['shareClasses'] = filing['alteration']['shareStructure']['shareClasses']
+            filing['resolutions'] = filing['alteration']['shareStructure'].get('resolutionDates', [])
         # Get previous business type
         versioned_business = VersionedBusinessDetailsService.get_business_revision_before_filing(
             self._filing.id, self._business.id)

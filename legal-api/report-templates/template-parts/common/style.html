@@ -144,6 +144,12 @@
 		border-collapse: collapse;
 	}
 
+    .section-translation-table {
+		width: 100%;
+		table-layout: fixed;
+		border-collapse: collapse;
+	}
+
 	.section-data-table td {
 		vertical-align: top;
 		overflow-wrap: break-word;
@@ -160,9 +166,19 @@
 		padding-top: 1rem;
 	}
 
+    /* vertical padding to upper border */
+	.section-translation-table tr:not(:first-child) td {
+		padding-top: 0.25rem;
+	}
+
 	/* vertical padding to lower border */
 	.section-data-table tr:not(:last-child) td {
 		padding-bottom: 1rem;
+	}
+
+    /* vertical padding to lower border */
+	.section-translation-table tr:not(:last-child) td {
+		padding-bottom: 0.25rem;
 	}
 
 	td.col-33 { width: 33%; }
