@@ -13,55 +13,51 @@
 # limitations under the License.
 """Validation for the Alteration filing."""
 from http import HTTPStatus
-from typing import Dict
+from typing import Dict, Final
 
-from flask_babel import _
+from flask_babel import _ as babel # noqa: N81
 
 from legal_api.errors import Error
 from legal_api.models import Business
 
-from ... import namex
-from ...utils import get_str
+from legal_api.services import namex
+from legal_api.services.utils import get_str
 
 
 def validate(business: Business, filing: Dict) -> Error:
     """Validate the Alteration filing."""
     if not business or not filing:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
 
-    nr_path = '/filing/alteration/nameRequest/nrNumber'
-    nr_number = get_str(filing, nr_path)
-
-    legal_type_path = '/filing/business/legalType'
-    legal_type = get_str(filing, legal_type_path)
-
-    if nr_number:
+    nr_path: Final = '/filing/alteration/nameRequest/nrNumber'
+    if nr_number := get_str(filing, nr_path):
         # ensure NR is approved or conditionally approved
         nr_response = namex.query_nr_number(nr_number)
         validation_result = namex.validate_nr(nr_response)
 
         if not nr_response['requestTypeCd'] in ('CCP', 'BEC'):
-            msg.append({'error': _('Alteration only available for Change of Name Name requests.'), 'path': nr_path})
+            msg.append({'error': babel('Alteration only available for Change of Name Name requests.'), 'path': nr_path})
 
         if not validation_result['is_approved']:
-            msg.append({'error': _('Alteration of Name Request is not approved.'), 'path': nr_path})
+            msg.append({'error': babel('Alteration of Name Request is not approved.'), 'path': nr_path})
 
         # ensure NR request has the same legal name
-        path = '/filing/alteration/nameRequest/legalName'
-        legal_name = get_str(filing, path)
+        legal_name_path: Final = '/filing/alteration/nameRequest/legalName'
+        legal_name = get_str(filing, legal_name_path)
         nr_name = namex.get_approved_name(nr_response)
         if nr_name != legal_name:
-            msg.append({'error': _('Alteration of Name Request has a different legal name.'), 'path': path})
+            msg.append({'error': babel('Alteration of Name Request has a different legal name.'), 'path': legal_name_path})
     else:
         # ensure legalType is valid
-        if legal_type not in ('ULC', 'BC', 'BEN'):
-            msg.append({'error': _('Alteration not valid for selected Legal Type.'), 'path': nr_path})
+        legal_type_path: Final = '/filing/business/legalType'
+        if get_str(filing, legal_type_path) not in ('ULC', 'BC', 'BEN'):
+            msg.append({'error': babel('Alteration not valid for selected Legal Type.'), 'path': legal_type_path})
 
-        legal_name_path = '/filing/business/legalName'
-        legal_name = get_str(filing, legal_name_path)
-        if not legal_name:
-            msg.append({'error': _('Alteration from Named to Numbered Company can only be done for a Named Company.'),
+        # ensure company is named if being altered to numbered
+        legal_name_path: Final = '/filing/business/legalName'
+        if not get_str(filing, legal_name_path):
+            msg.append({'error': babel('Alteration from Named to Numbered Company can only be done for a Named Company.'),
                         'path': legal_name_path})
 
     if msg:
