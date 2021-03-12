@@ -17,6 +17,7 @@ from typing import Dict
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
 
+from .alteration import validate as alteration_validate
 from .annual_report import validate as annual_report_validate
 from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
@@ -87,6 +88,9 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
                 elif k == Filing.FILINGS['incorporationApplication'].get('name'):
                     err = incorporation_application_validate(filing_json)
+
+                elif k == Filing.FILINGS['alteration'].get('name'):
+                    err = alteration_validate(filing_json)
 
                 if err:
                     return err
