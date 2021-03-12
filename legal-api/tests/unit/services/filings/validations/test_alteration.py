@@ -14,14 +14,15 @@
 """Test Correction validations."""
 import copy
 from http import HTTPStatus
-import pytest
 from unittest.mock import patch
 
+import pytest
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
 
 from legal_api.services import NameXService
 from legal_api.services.filings import validate
 from tests.unit.models import factory_business
+
 
 ALTERATION_FILING = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
 
