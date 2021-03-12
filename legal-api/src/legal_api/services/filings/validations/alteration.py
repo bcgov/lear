@@ -12,20 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Alteration filing."""
+from flask_babel import _ as babel # noqa: N81
 from http import HTTPStatus
 from typing import Dict, Final
 
-from flask_babel import _ as babel # noqa: N81
-
+from legal_api.core.filing import Filing
 from legal_api.errors import Error
 from legal_api.models import Business
-from legal_api.core.filing import Filing
 
 from legal_api.services import namex
 from legal_api.services.utils import get_str
 
 from .common_validations import validate_share_structure
-
 
 def validate(business: Business, filing: Dict) -> Error:
     """Validate the Alteration filing."""
@@ -50,7 +48,8 @@ def validate(business: Business, filing: Dict) -> Error:
         legal_name = get_str(filing, legal_name_path)
         nr_name = namex.get_approved_name(nr_response)
         if nr_name != legal_name:
-            msg.append({'error': babel('Alteration of Name Request has a different legal name.'), 'path': legal_name_path})
+            msg.append({'error': babel('Alteration of Name Request has a different legal name.'), 
+                'path': legal_name_path})
     else:
         # ensure legalType is valid
         legal_type_path: Final = '/filing/business/legalType'
@@ -60,7 +59,7 @@ def validate(business: Business, filing: Dict) -> Error:
         # ensure company is named if being altered to numbered
         legal_name_path: Final = '/filing/business/legalName'
         if not get_str(filing, legal_name_path):
-            msg.append({'error': babel('Alteration from Named to Numbered Company can only be done for a Named Company.'),
+            msg.append({'error': babel('Alteration to Numbered Company can only be done for a Named Company.'),
                         'path': legal_name_path})
 
     share_structure_path: Final = '/filing/alteration/shareStructure'

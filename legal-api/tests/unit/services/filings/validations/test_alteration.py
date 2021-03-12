@@ -13,8 +13,8 @@
 # limitations under the License.
 """Test Correction validations."""
 import copy
-import pytest
 from http import HTTPStatus
+import pytest
 from unittest.mock import patch
 
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
@@ -23,7 +23,6 @@ from legal_api.services import NameXService
 from legal_api.services.filings import validate
 from tests.unit.models import factory_business
 
-
 ALTERATION_FILING = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
 
 TEST_DATA = [
@@ -31,6 +30,7 @@ TEST_DATA = [
     (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEC', True),
     (True, 'legal_name-BC1234568', 'CP', 'XCLP', False)
 ]
+
 
 @pytest.mark.parametrize('use_nr, new_name, legal_type, nr_type, should_pass', TEST_DATA)
 def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass):
