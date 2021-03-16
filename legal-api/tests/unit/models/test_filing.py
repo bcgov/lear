@@ -25,8 +25,8 @@ import datedelta
 import pytest
 from flask import current_app
 from freezegun import freeze_time
-from legal_api.models import Business, Filing, User
-from legal_api.exceptions import BusinessException
+from legal_api.models import Business, Filing, User  # noqa: I001
+from legal_api.exceptions import BusinessException  # noqa: I001
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
