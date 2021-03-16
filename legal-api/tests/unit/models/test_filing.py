@@ -31,15 +31,21 @@ from registry_schemas.example_data import (
     CORRECTION_AR,
     FILING_HEADER,
     SPECIAL_RESOLUTION,
+    ALTERATION_FILING_TEMPLATE,
+    COURT_ORDER
 )
 from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Filing, User
+from legal_api.models import Business, Filing, User
 from tests import EPOCH_DATETIME
 from tests.conftest import not_raises
-from tests.unit.models import factory_business, factory_completed_filing, factory_filing
-
+from tests.unit.models import (
+    factory_business,
+    factory_business_mailing_address,
+    factory_completed_filing,
+    factory_filing
+)
 
 def test_minimal_filing_json(session):
     """Assert that a minimal filing can be created."""
@@ -672,3 +678,20 @@ def test_linked_not_correction(session):
     # test
     assert filing1.json['filing']['header']['isCorrected'] is False
     assert filing2.json['filing']['header']['affectedFilings'] is not None
+
+
+def test_alteration_filing_with_court_order(session):
+    """Assert that an alteration filing with court order can be created."""
+    identifier = 'BC1156638'
+    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
+    factory_business_mailing_address(b)
+    filing = factory_filing(b, ALTERATION_FILING_TEMPLATE)
+    filing.court_order_file_number = COURT_ORDER['fileNumber']
+    filing.court_order_date = COURT_ORDER['orderDate']
+    filing.court_order_effect_of_order = COURT_ORDER['effectOfOrder']
+    filing.filing_json = ALTERATION_FILING_TEMPLATE
+    filing.save()
+    assert filing.id is not None
+    assert filing.json['filing']['alteration']['courtOrder']['fileNumber'] == COURT_ORDER['fileNumber']
+    assert filing.json['filing']['alteration']['courtOrder']['orderDate'] == COURT_ORDER['orderDate']
+    assert filing.json['filing']['alteration']['courtOrder']['effectOfOrder'] == COURT_ORDER['effectOfOrder']

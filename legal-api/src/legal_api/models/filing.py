@@ -143,6 +143,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
     payment_account = db.Column('payment_account', db.String(30))
     _source = db.Column('source', db.String(15), default=Source.LEAR.value)
+    court_order_file_number = db.Column('court_order_file_number', db.String(20))
+    court_order_date = db.Column('court_order_date', db.DateTime(timezone=True), default=None)
+    court_order_effect_of_order = db.Column('court_order_effect_of_order', db.String(500))
 
     # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,

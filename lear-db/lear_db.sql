@@ -342,7 +342,10 @@ CREATE TABLE public.filings (
     payment_completion_date timestamp with time zone,
     paper_only boolean,
     completion_date timestamp with time zone,
-    effective_date timestamp with time zone
+    effective_date timestamp with time zone,
+    court_order_file_number character varying(20),
+    court_order_date timestamp with time zone,
+    court_order_effect_of_order character varying(500)
 );
 
 
