@@ -217,6 +217,19 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
 
     @staticmethod
+    def get_business_revision_before_filing(filing_id, business_id) -> dict:
+        """Consolidates the business info of the previous filing."""
+        business = Business.find_by_internal_id(business_id)
+        filing = Filing.find_by_id(filing_id)
+        business_version = version_class(Business)
+        business_revision = db.session.query(business_version) \
+            .filter(business_version.transaction_id < filing.transaction_id) \
+            .filter(business_version.operation_type != 2) \
+            .filter(business_version.id == business.id) \
+            .order_by(business_version.transaction_id).first()
+        return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
+
+    @staticmethod
     def get_business_revision_after_filing(filing_id, business_id) -> dict:
         """Consolidates the business info as of a particular transaction."""
         business = Business.find_by_internal_id(business_id)
@@ -336,6 +349,22 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(name_translations_version.type == 'TRANSLATION') \
             .filter(or_(name_translations_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                         name_translations_version.end_transaction_id > transaction_id)) \
+            .order_by(name_translations_version.transaction_id).all()
+        name_translations_arr = []
+        for name_translation in name_translations_list:
+            name_translation_json = VersionedBusinessDetailsService.name_translations_json(name_translation)
+            name_translations_arr.append(name_translation_json)
+        return name_translations_arr
+
+    @staticmethod
+    def get_name_translations_before_revision(transaction_id, business_id) -> dict:
+        """Consolidates all name translations before deletion given a transaction id."""
+        name_translations_version = version_class(Alias)
+        name_translations_list = db.session.query(name_translations_version) \
+            .filter(name_translations_version.transaction_id <= transaction_id) \
+            .filter(name_translations_version.operation_type != 2) \
+            .filter(name_translations_version.business_id == business_id) \
+            .filter(name_translations_version.type == 'TRANSLATION') \
             .order_by(name_translations_version.transaction_id).all()
         name_translations_arr = []
         for name_translation in name_translations_list:

@@ -1,0 +1,26 @@
+<div class="no-page-break">
+    <div class="separator mt-4"></div>
+    <div class="section-title mt-4">Company Name Translation(s)</div>
+        <div class="section-data mt-3">
+            <table class="section-translation-table" role="presentation">
+                {% if listOfTranslations|length == 0 and nameTranslations| length %}
+                    <div class="mt-2">NONE</div>
+                {% else %}
+                    {% for translation in listOfTranslations %}
+                        {% if 'id' in translation %}
+                            <tr>
+                                <td><div class="upper-text">{{translation.name}}</div></td>
+                                <td><div class="upper-text">MODIFIED</div></td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td><div class="upper-text">{{translation.name}}</div></td>
+                                <td><div class="upper-text">ADDED</div></td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </table>
+        </div>    
+</div>
+

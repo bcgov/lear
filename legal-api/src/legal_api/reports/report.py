@@ -65,7 +65,7 @@ class Report:  # pylint: disable=too-few-public-methods
 
     def _get_report_filename(self):
         filing_date = str(self._filing.filing_date)[:19]
-        legal_entity_number = self._business.identifier if self._business else\
+        legal_entity_number = self._business.identifier if self._business else \
             self._filing.filing_json['filing']['business']['identifier']
         description = ReportMeta.reports[self._report_key]['filingDescription']
         return '{}_{}_{}.pdf'.format(legal_entity_number, filing_date, description).replace(' ', '_')
@@ -116,10 +116,15 @@ class Report:  # pylint: disable=too-few-public-methods
             'incorporation-application/effectiveDate',
             'incorporation-application/incorporator',
             'incorporation-application/nameRequest',
-            'notice-of-articles/benefitCompanyStmt',
+            'common/benefitCompanyStmt',
             'notice-of-articles/directors',
-            'notice-of-articles/resolutionDates',
             'notice-of-articles/restrictions',
+            'common/resolutionDates',
+            'alteration-notice/businessTypeChange',
+            'common/effectiveDate',
+            'common/legalNameChange',
+            'common/nameTranslation',
+            'alteration-notice/companyProvisions',
             'addresses',
             'certification',
             'directors',
@@ -155,6 +160,8 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['header']['filingId'] = self._filing.id
             if self._report_key == 'incorporationApplication':
                 self._format_incorporation_data(filing)
+            elif self._report_key == 'alterationNotice':
+                self._format_alteration_data(filing)
             else:
                 # set registered office address from either the COA filing or status quo data in AR filing
                 with suppress(KeyError):
@@ -171,7 +178,8 @@ class Report:  # pylint: disable=too-few-public-methods
                 self._format_with_diff_data(filing)
 
             # name change from named company to numbered company case
-            if self._report_key == 'certificateOfNameChange' and 'legalName' not in filing['alteration']['nameRequest']:
+            if self._report_key in ('certificateOfNameChange', 'alterationNotice') and 'nameRequest' in \
+                    filing['alteration'] and 'legalName' not in filing['alteration']['nameRequest']:
                 versioned_business = \
                     VersionedBusinessDetailsService.get_business_revision_after_filing(self._filing.id,
                                                                                        self._business.id)
@@ -235,7 +243,7 @@ class Report:  # pylint: disable=too-few-public-methods
             original_filing = Filing.find_by_id(filing.get('correction').get('correctedFilingId'))
             original_filing_datetime = LegislationDatetime.as_legislation_timezone(original_filing.filing_date)
             original_filing_hour = original_filing_datetime.strftime('%I').lstrip('0')
-            filing['original_filing_date_time'] = original_filing_datetime.\
+            filing['original_filing_date_time'] = original_filing_datetime. \
                 strftime(f'%B %-d, %Y at {original_filing_hour}:%M %p Pacific Time')
 
     def _set_directors(self, filing):
@@ -326,6 +334,23 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['shareClasses'] = filing['incorporationApplication']['shareClasses']
         else:
             filing['shareClasses'] = filing['incorporationApplication']['shareStructure']['shareClasses']
+
+    def _format_alteration_data(self, filing):
+        # Get current list of translations in alteration. None if it is deletion
+        filing['listOfTranslations'] = filing['alteration'].get('nameTranslations', [])
+        # Get previous translations for deleted translations. No record created in aliases version for deletions
+        filing['nameTranslations'] = VersionedBusinessDetailsService.get_name_translations_before_revision(
+            self._filing.transaction_id, self._business.id)
+        if filing['alteration'].get('shareStructure', None):
+            filing['shareClasses'] = filing['alteration']['shareStructure']['shareClasses']
+            filing['resolutions'] = filing['alteration']['shareStructure'].get('resolutionDates', [])
+        # Get previous business type
+        versioned_business = VersionedBusinessDetailsService.get_business_revision_before_filing(
+            self._filing.id, self._business.id)
+        new_legal_type = versioned_business['legalType']
+        filing['alteration']['business']['legalType'] = new_legal_type
+        with suppress(KeyError):
+            filing['legalTypeDescription'] = ReportMeta.entity_description[new_legal_type]
 
     def _has_change(self, old_value, new_value):  # pylint: disable=no-self-use;
         """Check to fix the hole in diff.
@@ -486,7 +511,7 @@ class Report:  # pylint: disable=too-few-public-methods
                 legal_name,
                 self._filing.filing_json['filing']['business']['identifier'])
 
-    @ staticmethod
+    @staticmethod
     def _get_environment():
         namespace = os.getenv('POD_NAMESPACE', '').lower()
         if namespace.endswith('dev'):
@@ -511,6 +536,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'noa': {
             'filingDescription': 'Notice of Articles',
             'fileName': 'noticeOfArticles'
+        },
+        'alterationNotice': {
+            'filingDescription': 'Alteration Notice',
+            'fileName': 'alterationNotice'
         },
         'transition': {
             'filingDescription': 'Transition Application',
