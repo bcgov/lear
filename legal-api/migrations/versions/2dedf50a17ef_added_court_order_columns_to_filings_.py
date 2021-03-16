@@ -23,4 +23,5 @@ def upgrade():
 
 
 def downgrade():
+    # No columns removed
     pass

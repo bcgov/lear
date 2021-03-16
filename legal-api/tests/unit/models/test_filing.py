@@ -25,27 +25,28 @@ import datedelta
 import pytest
 from flask import current_app
 from freezegun import freeze_time
+from legal_api.exceptions import BusinessException
+from legal_api.models import Business, Filing, User
 from registry_schemas.example_data import (
+    ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
     CORRECTION_AR,
+    COURT_ORDER,
     FILING_HEADER,
     SPECIAL_RESOLUTION,
-    ALTERATION_FILING_TEMPLATE,
-    COURT_ORDER
 )
 from sqlalchemy_continuum import versioning_manager
 
-from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Filing, User
 from tests import EPOCH_DATETIME
 from tests.conftest import not_raises
 from tests.unit.models import (
     factory_business,
     factory_business_mailing_address,
     factory_completed_filing,
-    factory_filing
+    factory_filing,
 )
+
 
 def test_minimal_filing_json(session):
     """Assert that a minimal filing can be created."""
