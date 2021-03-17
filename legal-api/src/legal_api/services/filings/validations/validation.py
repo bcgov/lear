@@ -90,7 +90,7 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
                     err = incorporation_application_validate(filing_json)
 
                 elif k == Filing.FILINGS['alteration'].get('name'):
-                    err = alteration_validate(filing_json)
+                    err = alteration_validate(business, filing_json)
 
                 if err:
                     return err
