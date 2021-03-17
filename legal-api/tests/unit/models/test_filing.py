@@ -23,10 +23,9 @@ from http import HTTPStatus
 
 import datedelta
 import pytest
+import registry_schemas
 from flask import current_app
 from freezegun import freeze_time
-from legal_api.models import Business, Filing, User  # noqa: I001
-from legal_api.exceptions import BusinessException  # noqa: I001
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
@@ -36,8 +35,11 @@ from registry_schemas.example_data import (
     FILING_HEADER,
     SPECIAL_RESOLUTION,
 )
+from sqlalchemy.exc import DataError
 from sqlalchemy_continuum import versioning_manager
 
+from legal_api.exceptions import BusinessException
+from legal_api.models import Business, Filing, User
 from tests import EPOCH_DATETIME
 from tests.conftest import not_raises
 from tests.unit.models import (
@@ -696,3 +698,38 @@ def test_alteration_filing_with_court_order(session):
     assert filing.json['filing']['alteration']['courtOrder']['fileNumber'] == COURT_ORDER['fileNumber']
     assert filing.json['filing']['alteration']['courtOrder']['orderDate'] == COURT_ORDER['orderDate']
     assert filing.json['filing']['alteration']['courtOrder']['effectOfOrder'] == COURT_ORDER['effectOfOrder']
+
+    assert registry_schemas.validate(filing.json, 'alteration')
+
+
+@pytest.mark.parametrize('invalid_court_order', [
+    {
+        'fileNumber': '123456789012345678901',  # long fileNumber
+        'orderDate': '2021-01-30T09:56:01+01:00',
+        'effectOfOrder': 'Valid effect of order'
+    },
+    {
+        'fileNumber': 'Valid file number',
+        'orderDate': 'a2021-01-30T09:56:01',  # Invalid date
+        'effectOfOrder': 'Valid effect of order'
+    },
+    {
+        'fileNumber': 'Valid File Number',
+        'orderDate': '2021-01-30T09:56:01+01:00',
+        'effectOfOrder': ('a' * 501)  # long effectOfOrder
+    }
+])
+def test_validate_invalid_court_orders(session, invalid_court_order):
+    """Assert not valid court orders."""
+    identifier = 'BC1156677'
+    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
+    factory_business_mailing_address(b)
+    filing = factory_filing(b, ALTERATION_FILING_TEMPLATE)
+    filing.court_order_file_number = invalid_court_order['fileNumber']
+    filing.court_order_date = invalid_court_order['orderDate']
+    filing.court_order_effect_of_order = invalid_court_order['effectOfOrder']
+
+    with pytest.raises(DataError) as excinfo:
+        filing.save()
+
+    assert excinfo
