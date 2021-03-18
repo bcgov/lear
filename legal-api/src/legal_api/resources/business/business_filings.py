@@ -485,6 +485,15 @@ class ListFilingResource(Resource):
                 datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['effectiveDate']) \
                 if filing.filing_json['filing']['header'].get('effectiveDate', None) else datetime.datetime.utcnow()
 
+            if 'alteration' in filing.filing_json['filing'] and 'courtOrder' in filing. \
+                                                                filing_json['filing']['alteration']:
+                filing.court_order_file_number = filing.filing_json['filing']['alteration']['courtOrder']['fileNumber']
+                filing.court_order_date = filing.filing_json['filing']['alteration']['courtOrder']['orderDate']
+
+                if 'effectOfOrder' in filing.filing_json['filing']['alteration']['courtOrder']:
+                    filing.court_order_effect_of_order = filing. \
+                        filing_json['filing']['alteration']['courtOrder']['effectOfOrder']
+
             filing.save()
         except BusinessException as err:
             return None, None, {'error': err.error}, err.status_code

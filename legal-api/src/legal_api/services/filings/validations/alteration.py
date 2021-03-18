@@ -23,10 +23,10 @@ from legal_api.models import Business
 from legal_api.services import namex
 from legal_api.services.utils import get_str
 
-from .common_validations import validate_share_structure
+from .common_validations import validate_court_order, validate_share_structure
 
 
-def validate(business: Business, filing: Dict) -> Error:
+def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-many-branches
     """Validate the Alteration filing."""
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
@@ -68,6 +68,13 @@ def validate(business: Business, filing: Dict) -> Error:
         err = validate_share_structure(filing, Filing.FilingTypes.ALTERATION.value)
         if err:
             msg.extend(err)
+
+    if 'courtOrder' in filing['filing']['alteration']:
+        court_order_path: Final = '/filing/alteration/courtOrder'
+        if get_str(filing, court_order_path):
+            err = validate_court_order(court_order_path, filing['filing']['alteration']['courtOrder'])
+            if err:
+                msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
