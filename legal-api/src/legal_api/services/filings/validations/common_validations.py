@@ -113,17 +113,18 @@ def validate_court_order(court_order_path, court_order_snippet) -> Error:
         msg.append({'error': 'Length of court order effect of order must be from 5 to 500 characters.',
                     'path': err_path})
 
+    court_order_date_path = court_order_path + '/orderDate'
     if 'orderDate'not in court_order_snippet:
-        err_path = court_order_path + '/orderDate'
+        err_path = court_order_date_path
         msg.append({'error': 'Court order date is required.', 'path': err_path})
     else:
         try:
             court_order_date = dt.fromisoformat(court_order_snippet['orderDate'])
             if court_order_date.timestamp() > datetime.utcnow().timestamp():
-                err_path = court_order_path + '/orderDate'
+                err_path = court_order_date_path
                 msg.append({'error': 'Court order date cannot be in the future.', 'path': err_path})
         except ValueError:
-            err_path = court_order_path + '/orderDate'
+            err_path = court_order_date_path
             msg.append({'error': 'Invalid court order date format.', 'path': err_path})
 
     if msg:
