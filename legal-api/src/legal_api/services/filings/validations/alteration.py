@@ -69,12 +69,11 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
         if err:
             msg.extend(err)
 
-    if 'courtOrder' in filing['filing']['alteration']:
-        court_order_path: Final = '/filing/alteration/courtOrder'
-        if get_str(filing, court_order_path):
-            err = validate_court_order(court_order_path, filing['filing']['alteration']['courtOrder'])
-            if err:
-                msg.extend(err)
+    court_order_path: Final = '/filing/alteration/courtOrder'
+    if get_str(filing, court_order_path):
+        err = validate_court_order(court_order_path, filing['filing']['alteration']['courtOrder'])
+        if err:
+            msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
