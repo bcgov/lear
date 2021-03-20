@@ -24,12 +24,13 @@ from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
 
 from legal_api.models import Business, Filing
 from legal_api.services.authz import STAFF_ROLE
-from tests import integration_payment
+from tests import integration_namerequests, integration_payment
 from tests.unit.models import factory_business, factory_business_mailing_address
 from tests.unit.services.utils import create_header
 
 
 @integration_payment
+@integration_namerequests
 def test_alteration_success_bc_to_ben(client, jwt, session):
     """Assert that a valid BC to BEN alteration can be posted."""
     identifier = 'BC1156638'
@@ -54,6 +55,7 @@ def test_alteration_success_bc_to_ben(client, jwt, session):
 
 
 @integration_payment
+@integration_namerequests
 def test_alteration_success_ben_to_bc(client, jwt, session):
     """Assert that a valid BEN to BC alteration can be posted."""
     identifier = 'BC1156638'

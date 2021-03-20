@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Endpoints to check and manage the health of the service."""
-from flask_restplus import Namespace, Resource
+from flask_restx import Namespace, Resource
 from sqlalchemy import exc, text
 
 from legal_api.models import db

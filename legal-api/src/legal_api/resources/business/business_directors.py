@@ -16,7 +16,7 @@ from datetime import datetime
 from http import HTTPStatus
 
 from flask import jsonify, request
-from flask_restplus import Resource, cors
+from flask_restx import Resource, cors
 
 from legal_api.models import Business, PartyRole
 from legal_api.utils.util import cors_preflight

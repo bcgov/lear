@@ -20,7 +20,7 @@ from http import HTTPStatus
 from typing import Tuple
 
 from flask import g, jsonify, request
-from flask_restplus import Resource, cors
+from flask_restx import Resource, cors
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business, Comment, Filing, User, db

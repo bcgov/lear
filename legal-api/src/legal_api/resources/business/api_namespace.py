@@ -15,7 +15,7 @@
 
 Provides the mount point for all of the business entity end-points.
 """
-from flask_restplus import Namespace
+from flask_restx import Namespace
 
 
 API = Namespace('businesses', description='Legal API Services - Businesses')

@@ -18,7 +18,7 @@ Retrieve the Addresses for the entity.
 from http import HTTPStatus
 
 from flask import jsonify, request
-from flask_restplus import Resource, cors
+from flask_restx import Resource, cors
 
 from legal_api.models import Address, Business, db
 from legal_api.utils.util import cors_preflight

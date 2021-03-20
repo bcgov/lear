@@ -120,7 +120,10 @@ def test_bcorps_get_tasks_pending_filings(session, client, jwt):
     business = factory_business(
         identifier, datetime.today() - datedelta.datedelta(years=3), None, Business.LegalTypes.BCOMP.value)
     factory_business_mailing_address(business)
-    rv = client.get(f'/api/v1/businesses/{identifier}/tasks')
+    rv = client.get(
+        f'/api/v1/businesses/{identifier}/tasks',
+        headers=create_header(jwt, [STAFF_ROLE], identifier)
+    )
 
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('tasks')) == 3  # To-do for the current year
@@ -145,7 +148,6 @@ def test_bcorps_get_tasks_pending_filings(session, client, jwt):
     rv = client.get(f'/api/v1/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
     assert len(rv.json.get('tasks')) == 3
     assert rv.json['tasks'][0]['task']['filing']['header']['status'] == 'PENDING'
-    assert rv.json['header']['paymentMethod']
 
 
 def test_get_tasks_current_year_filing_exists(session, client, jwt):

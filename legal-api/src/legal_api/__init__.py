@@ -24,7 +24,7 @@ from http import HTTPStatus
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 from flask import redirect, Flask  # noqa: I001
-from registry_schemas import __version__ as registry_schemas_version
+from registry_schemas import __version__ as registry_schemas_version  # noqa: I005
 from registry_schemas.flask import SchemaServices  # noqa: I001
 
 from legal_api import config, errorhandlers, models

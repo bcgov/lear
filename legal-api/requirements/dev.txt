@@ -1,13 +1,10 @@
 # Everything the developer needs in addition to the production requirements
--r prod.txt
-
 # Testing
-attrs<=19.1.0
 coverage
 freezegun
-hypothesis<=4.38.1
+hypothesis
 pyhamcrest
-pytest<6
+pytest
 pytest-mock
 pytest-asyncio
 requests-mock
@@ -22,9 +19,9 @@ flake8-isort
 flake8-quotes
 pep8-naming
 pydocstyle<4
-pylint<=2.3.1
+pylint
 pylint-flask
-isort<5,>=4.2.5
+isort
 pytest-cov
 
 # docker

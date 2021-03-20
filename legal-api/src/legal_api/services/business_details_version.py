@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """This provides the service for getting business details as of a filing."""
+# pylint: disable=singleton-comparison ; pylint does not recognize sqlalchemy ==
 from datetime import datetime
 
 import pycountry

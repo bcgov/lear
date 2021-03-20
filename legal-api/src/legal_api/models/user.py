@@ -112,7 +112,7 @@ class User(db.Model):
             raise BusinessException('unable_to_get_or_create_user',
                                     '{"code": "unable_to_get_or_create_user",'
                                     '"description": "Unable to get or create user from the JWT, ABORT"}'
-                                    )
+                                    ) from err
 
     @classmethod
     def find_by_username(cls, username):

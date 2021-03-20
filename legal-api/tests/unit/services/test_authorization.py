@@ -204,8 +204,8 @@ def test_authorized_bad_url(monkeypatch, app, jwt):
 
 def test_authorized_invalid_roles(monkeypatch, app, jwt):
     """Assert that an invalid role returns False."""
-    import flask  # noqa: F401; import actually used in mock
-    # setup
+    import flask  # noqa: F401 ; import actually used in mock
+    # setup noqa: I003
     identifier = 'CP1234567'
     username = 'username'
     roles = ['NONE']
