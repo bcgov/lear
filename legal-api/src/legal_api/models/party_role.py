@@ -19,10 +19,8 @@ from enum import Enum
 
 from sqlalchemy import Date, cast, or_
 
-from .db import db
-
-
-from .party import Party  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
+from .db import db  # noqa: I001
+from .party import Party  # noqa: I001,F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
 
 
 class PartyRole(db.Model):

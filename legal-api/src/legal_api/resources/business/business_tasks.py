@@ -22,7 +22,7 @@ from http import HTTPStatus
 import requests
 from requests import exceptions  # noqa I001
 from flask import current_app, jsonify
-from flask_restplus import Resource, cors
+from flask_restx import Resource, cors
 
 from legal_api.models import Business, Filing
 from legal_api.services import namex
@@ -150,6 +150,7 @@ class TaskListResource(Resource):
 
         start_year = next_ar_year
         while ar_min_date <= datetime.utcnow().date():
+            # while next_ar_year <= datetime.utcnow().date():
             enabled = not pending_filings and ar_min_date.year == start_year
             tasks.append(TaskListResource.create_todo(business, next_ar_year, ar_min_date, ar_max_date, order, enabled))
 

@@ -426,7 +426,6 @@ def test_cancel_payment_for_pending_filing(session, client, jwt):
     assert not rv.json.get('errors')
     assert rv.json['filing']['header']['filingId']
     assert rv.json['filing']['header']['paymentToken']
-    assert rv.json['filing']['header']['paymentToken'] == '153'
 
     # check stored filing
     filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
@@ -466,7 +465,6 @@ def test_post_valid_ar_with_routing_slip(session, client, jwt):
     assert not rv.json.get('errors')
     assert rv.json['filing']['header']['filingId']
     assert rv.json['filing']['header']['paymentToken']
-    assert rv.json['filing']['header']['paymentToken'] == '153'
 
     # check stored filing
     filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
@@ -523,7 +521,6 @@ def test_cancel_payment_failed_connection_pay_api(monkeypatch, session, client, 
     assert not rv.json.get('errors')
     assert rv.json['filing']['header']['filingId']
     assert rv.json['filing']['header']['paymentToken']
-    assert rv.json['filing']['header']['paymentToken'] == '153'
 
     filing_id = rv.json['filing']['header']['filingId']
 

@@ -20,7 +20,7 @@ from http import HTTPStatus
 
 from flask import jsonify, request
 from flask_babel import _ as babel  # noqa: N813
-from flask_restplus import Resource, cors
+from flask_restx import Resource, cors
 
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.business.business_filings import ListFilingResource

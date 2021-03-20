@@ -15,7 +15,7 @@
 from datetime import date
 from typing import Dict
 
-import dpath
+import dpath.util
 
 
 def get_date(filing: Dict, path: str) -> date:
@@ -35,7 +35,7 @@ def get_date(filing: Dict, path: str) -> date:
     try:
         raw = dpath.util.get(filing, path)
         return date.fromisoformat(raw)
-    except (IndexError, KeyError, TypeError):
+    except (IndexError, KeyError, TypeError, ValueError):
         return None
 
 
@@ -56,7 +56,7 @@ def get_str(filing: Dict, path: str) -> str:
     try:
         raw = dpath.util.get(filing, path)
         return str(raw)
-    except (IndexError, KeyError, TypeError):
+    except (IndexError, KeyError, TypeError, ValueError):
         return None
 
 
@@ -70,5 +70,5 @@ def get_bool(filing: Dict, path: str) -> str:
     try:
         raw = dpath.util.get(filing, path)
         return bool(raw)
-    except (IndexError, KeyError, TypeError):
+    except (IndexError, KeyError, TypeError, ValueError):
         return None

@@ -15,7 +15,7 @@
 from http import HTTPStatus
 
 from flask import jsonify
-from flask_restplus import Resource, cors
+from flask_restx import Resource, cors
 
 from legal_api.models import Business, ShareClass
 from legal_api.utils.util import cors_preflight
