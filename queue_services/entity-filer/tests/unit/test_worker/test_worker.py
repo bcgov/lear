@@ -14,6 +14,7 @@
 """The Test Suites to ensure that the worker is operating correctly."""
 import copy
 import datetime
+from operator import le
 import random
 from unittest.mock import patch
 
@@ -96,76 +97,6 @@ async def test_process_filing_missing_app(app, session):
         await process_filing(filing_msg, flask_app=None)
 
 
-async def test_process_ar_filing(app, session):
-    """Assert that an AR filling can be applied to the model correctly."""
-    # vars
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
-    identifier = 'CP1234567'
-
-    # setup
-    business = create_business(identifier)
-    business_id = business.id
-    now = datetime.date(2020, 9, 17)
-    ar_date = datetime.date(2020, 8, 5)
-    agm_date = datetime.date(2020, 7, 1)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['business']['identifier'] = identifier
-    ar['filing']['annualReport']['annualReportDate'] = ar_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = agm_date.isoformat()
-
-    # TEST
-    with freeze_time(now):
-        filing = create_filing(payment_id, ar, business.id)
-        filing_id = filing.id
-        filing_msg = {'filing': {'id': filing_id}}
-        await process_filing(filing_msg, app)
-
-    # Get modified data
-    filing = Filing.find_by_id(filing_id)
-    business = Business.find_by_internal_id(business_id)
-
-    # check it out
-    assert filing.transaction_id
-    assert filing.business_id == business_id
-    assert filing.status == Filing.Status.COMPLETED.value
-    assert datetime.datetime.date(business.last_agm_date) == agm_date
-    assert datetime.datetime.date(business.last_ar_date) == agm_date
-
-
-async def test_process_ar_filing_no_agm(app, session):
-    """Assert that a no agm AR filling can be applied to the model correctly."""
-    # vars
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
-    identifier = 'CP1234567'
-
-    # setup
-    business = create_business(identifier)
-    business_id = business.id
-    now = datetime.date(2020, 9, 17)
-    ar_date = datetime.date(2020, 8, 5)
-    agm_date = None
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['business']['identifier'] = identifier
-    ar['filing']['annualReport']['annualReportDate'] = ar_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
-
-    # TEST
-    with freeze_time(now):
-        filing = create_filing(payment_id, ar, business.id)
-        filing_id = filing.id
-        filing_msg = {'filing': {'id': filing_id}}
-        await process_filing(filing_msg, app)
-
-    # Get modified data
-    filing = Filing.find_by_id(filing_id)
-    business = Business.find_by_internal_id(business_id)
-
-    # check it out
-    assert filing.transaction_id
-    assert filing.business_id == business_id
-    assert filing.status == Filing.Status.COMPLETED.value
-    assert business.last_agm_date == agm_date
-    assert datetime.datetime.date(business.last_ar_date) == ar_date
 
 
 async def test_process_coa_filing(app, session):
@@ -354,12 +285,16 @@ async def test_process_cod_mailing_address(app, session):
     assert filing.status == Filing.Status.COMPLETED.value
 
 
-async def test_process_combined_filing(app, session):
+async def test_process_combined_filing(app, session, mocker):
     """Assert that an AR filling can be applied to the model correctly."""
+    # mock out the email sender and event publishing
+    mocker.patch ('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch ('entity_filer.worker.publish_event', return_value=None)
+
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
-    business = create_business(identifier)
+    business = create_business(identifier, legal_type='CP')
     agm_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualGeneralMeetingDate'))
     ar_date = datetime.date.fromisoformat(COMBINED_FILING['filing']['annualReport'].get('annualReportDate'))
     new_delivery_address = COMBINED_FILING['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']  # noqa: E501; line too long by 1 char
@@ -448,14 +383,19 @@ async def test_process_combined_filing(app, session):
     check_directors(business, directors, director_ceased_id, ceased_directors, active_directors)
 
 
-async def test_process_filing_completed(app, session):
+async def test_process_filing_completed(app, session, mocker):
     """Assert that an AR filling status is set to completed once processed."""
+    from entity_filer.worker import publish_email_message
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
 
+    # mock out the email sender and event publishing
+    mocker.patch ('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch ('entity_filer.worker.publish_event', return_value=None)
+
     # setup
-    business = create_business(identifier)
+    business = create_business(identifier, legal_type='CP')
     business_id = business.id
     filing_id = (create_filing(payment_id, AR_FILING, business.id)).id
     filing_msg = {'filing': {'id': filing_id}}
@@ -503,8 +443,10 @@ async def test_correction_filing(app, session):
 
     correction_filing_id = correction_filing.id
     filing_msg = {'filing': {'id': correction_filing_id}}
-
+    
+    # TEST
     await process_filing(filing_msg, app)
+
 
     # Get modified data
     original_filing = Filing.find_by_id(original_filing_id)

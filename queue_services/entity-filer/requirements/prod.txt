@@ -1,5 +1,5 @@
 Flask
-dpath==1.4.2
+dpath
 jsonschema
 python-dateutil
 python-dotenv
@@ -8,4 +8,4 @@ asyncio-nats-client
 asyncio-nats-streaming
 pycountry
 attr
-Werkzeug<1
+Werkzeug

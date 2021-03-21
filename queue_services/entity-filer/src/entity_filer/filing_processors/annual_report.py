@@ -13,6 +13,7 @@
 # limitations under the License.
 """File processing rules and actions for the annual report."""
 import datetime
+from contextlib import suppress
 from typing import Dict
 
 from entity_queue_common.service_utils import logger
@@ -24,20 +25,17 @@ def process(business: Business, filing: Dict):
     """Render the annual_report onto the business model objects."""
     agm_date = filing['annualReport'].get('annualGeneralMeetingDate')
     ar_date = filing['annualReport'].get('annualReportDate')
-    if agm_date and validations.annual_report.requires_agm(business):
-        agm_date = datetime.date.fromisoformat(agm_date)
     if ar_date:
         ar_date = datetime.date.fromisoformat(ar_date)
     else:
         # should never get here (schema validation should prevent this from making it to the filer)
         logger.error('No annualReportDate given for in annual report. Filing id: %s', filing.id)
 
-    if agm_date is not None:
-        business.last_agm_date = agm_date
+    business.last_ar_date = ar_date
+    if agm_date and validations.annual_report.requires_agm(business):
+        with suppress(ValueError):
+            agm_date = datetime.date.fromisoformat(agm_date)
+            business.last_agm_date = agm_date
+            business.last_ar_date = agm_date
 
-    if agm_date is not None:
-        business.last_ar_date = agm_date
-    else:
-        business.last_ar_date = ar_date
-
-    business.last_ar_year += 1
+    business.last_ar_year = business.last_ar_year + 1 if business.last_ar_year else business.founding_date.year + 1

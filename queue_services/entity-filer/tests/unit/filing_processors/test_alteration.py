@@ -60,8 +60,7 @@ def test_alteration_process(app, session, orig_legal_type, new_legal_type):
 async def test_worker_alteration(app, session, orig_legal_type, new_legal_type):
     """Assert the worker process calls the alteration correctly."""
     identifier = 'BC1234567'
-    business = create_business(identifier)
-    business.legal_type = orig_legal_type
+    business = create_business(identifier, legal_type=orig_legal_type)
     filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     filing['filing']['business']['legalType'] = orig_legal_type
     filing['filing']['alteration']['business']['legalType'] = new_legal_type

@@ -1,9 +1,8 @@
 # Everything the developer needs in addition to the production requirements
--r prod.txt
 
 # Testing
 freezegun
-pytest<6
+pytest
 pytest-aiohttp
 pytest-asyncio
 pytest-mock
@@ -24,9 +23,8 @@ autopep8
 coverage
 pylint
 pylint-flask
-isort<5,>=4.2.5
+isort
 pytest-cov
 
 # docker
 lovely-pytest-docker
-pytest_docker
