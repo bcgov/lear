@@ -130,9 +130,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                            filing_submission.business_id, filing_submission.id, filing_msg)
             return None, None
 
-        legal_filings = filing_submission.legal_filings()
-
-        if legal_filings:
+        if legal_filings := filing_submission.legal_filings():
             uow = versioning_manager.unit_of_work(db.session)
             transaction = uow.create_transaction(db.session)
 
@@ -140,7 +138,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
             for filing in legal_filings:
                 if filing.get('alteration'):
-                    alteration.process(business, filing)
+                    alteration.process(business, filing_submission, filing)
 
                 if filing.get('annualReport'):
                     annual_report.process(business, filing)
