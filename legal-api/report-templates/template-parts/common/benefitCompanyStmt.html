@@ -1,14 +1,14 @@
-<div class="no-page-break">
-    {% if business.legalType == 'BEN' or alteration.business.legalType == 'BEN' %}
-        <div class="section-title mt-4">Benefit Company Statement</div>
-        <div class="section-data mt-4">
-            This company is a benefit company and, as such, has purposes that include conducting its
-            business in a responsible and sustainable manner and promoting one or more public benefits.
-        </div>
-    {% endif %}
-</div>
-
-{% if header.reportType != 'alterationNotice' %}
+{% if header.reportType == 'alterationNotice' %}}
+    <div class="no-page-break">
+        {% if business.legalType == 'BEN' or alteration.business.legalType == 'BEN' %}
+            <div class="section-title mt-4">Benefit Company Statement</div>
+            <div class="section-data mt-4">
+                This company is a benefit company and, as such, has purposes that include conducting its
+                business in a responsible and sustainable manner and promoting one or more public benefits.
+            </div>
+        {% endif %}
+    </div>
+{% else %}
     <div class="no-page-break">
         <div class="section-data mt-4">
             <span class="bold">Name of Company:</span>
