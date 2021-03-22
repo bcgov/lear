@@ -19,20 +19,25 @@ import dpath
 import sentry_sdk
 from legal_api.models import Business, Filing
 
-from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, shares
+from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, filings, shares
 
 
-def process(business: Business, filing: Dict):
+def process(business: Business, filing_submission: Filing, filing: Dict):
     """Render the Alteration onto the model objects."""
     # Alter the corp type, if any
     with suppress(IndexError, KeyError, TypeError):
         business_json = dpath.util.get(filing, '/alteration/business')
         business_info.set_corp_type(business, business_json)
 
+    # update court order, if any is present
+    with suppress(IndexError, KeyError, TypeError):
+        court_order_json = dpath.util.get(filing, '/alteration/courtOrder')
+        filings.update_filing_court_order(filing_submission, court_order_json)
+
     # update name translations, if any
     with suppress(IndexError, KeyError, TypeError):
-        business_json = dpath.util.get(filing, '/alteration/nameTranslations')
-        aliases.update_aliases(business, business_json)
+        alias_json = dpath.util.get(filing, '/alteration/nameTranslations')
+        aliases.update_aliases(business, alias_json)
 
     # update share structure and resolutions, if any
     with suppress(IndexError, KeyError, TypeError):

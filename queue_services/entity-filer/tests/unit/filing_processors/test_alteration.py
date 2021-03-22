@@ -14,10 +14,11 @@
 """The Unit Tests for the Incorporation filing."""
 import copy
 import random
+from datetime import datetime
 
 import pytest
-from legal_api.models import Business
-from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
+from legal_api.models import Business, Filing
+from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE, FILING_HEADER
 
 from entity_filer.filing_processors import alteration
 from entity_filer.worker import process_filing
@@ -42,9 +43,13 @@ def test_alteration_process(app, session, orig_legal_type, new_legal_type):
     alteration_filing['filing']['alteration']['nameTranslations'] = [{'name': 'A5 Ltd.'}]
     alteration_filing['filing']['business']['legalType'] = orig_legal_type
     alteration_filing['filing']['alteration']['business']['legalType'] = new_legal_type
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_submission = create_filing(payment_id, alteration_filing, business_id=business.id)
 
     # test
-    alteration.process(business, alteration_filing['filing'])
+    alteration.process(business=business,
+                       filing_submission=filing_submission,
+                       filing=alteration_filing['filing'])
 
     # validate
     assert business.legal_type == new_legal_type
@@ -77,3 +82,35 @@ async def test_worker_alteration(app, session, orig_legal_type, new_legal_type):
     # Check outcome
     business = Business.find_by_internal_id(business.id)
     assert business.legal_type == new_legal_type
+
+async def test_worker_alteration_court_order(app, session):
+    """Assert the worker process calls the alteration correctly."""
+    identifier = 'BC1234567'
+    business = create_business(identifier, legal_type='BC')
+
+    file_number: Final  = '#1234-5678/90'
+    order_date: Final = '2021-01-30T09:56:01+08:00'
+    effect_of_order: Final  = 'hasPlan'
+
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['alteration'] = {'courtOrder':
+                                   {
+                                       'fileNumber': file_number,
+                                       'orderDate': order_date,
+                                       'effectOfOrder': effect_of_order
+                                    }
+    }
+ 
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
+
+    filing_msg = {'filing': {'id': filing_id}}
+
+    # Test
+    await process_filing(filing_msg, app)
+
+    # Check outcome
+    final_filing = Filing.find_by_id(filing_id)
+    assert file_number == final_filing.court_order_file_number
+    assert datetime.fromisoformat(order_date) == final_filing.court_order_date
+    assert effect_of_order == final_filing.court_order_effect_of_order
