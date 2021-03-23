@@ -62,7 +62,7 @@ def convert_to_pacific_time(thedate: str) -> str:
 
 
 def convert_to_date_pacific_time(thedate: str) -> str:
-    """Convert the datetime string to pacific time string."""
+    """Convert the datetime string to date only pacific time string."""
     try:
         # tries converting two formats before bailing
         try:
