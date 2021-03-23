@@ -13,12 +13,14 @@
 # limitations under the License.
 """Time conversion methods."""
 import datetime
+from typing import Final
 
 from flask import current_app
 from pytz import timezone
 
 
-PACIFIC_TIMEZONE = timezone('US/Pacific')
+PACIFIC_TIMEZONE: Final = timezone('US/Pacific')
+UTC_TIMEZONE: Final = timezone('UTC')
 
 
 def convert_to_json_date(thedate: datetime.datetime) -> str:
@@ -40,7 +42,7 @@ def convert_to_json_datetime(thedate: datetime.datetime) -> str:
         # timezone info not in var (they are pacififc times so add timezone)
         thedate = thedate.astimezone(PACIFIC_TIMEZONE)
         # convert to utc time
-        thedate = thedate.astimezone(timezone('UTC'))
+        thedate = thedate.astimezone(UTC_TIMEZONE)
         # return as string
         return thedate.strftime('%Y-%m-%dT%H:%M:%S-00:00')
     except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
@@ -56,7 +58,7 @@ def convert_to_pacific_time(thedate: str) -> str:
             datetime_obj = datetime.datetime.strptime(thedate, '%Y-%m-%dT%H:%M:%S.%f+00:00')
         except Exception:  # pylint: disable=broad-except;
             datetime_obj = datetime.datetime.strptime(thedate, '%Y-%m-%dT%H:%M:%S+00:00')
-        datetime_utc = datetime_obj.replace(tzinfo=timezone('UTC'))
+        datetime_utc = datetime_obj.replace(tzinfo=UTC_TIMEZONE)
         datetime_pst = datetime_utc.astimezone(PACIFIC_TIMEZONE)
         return datetime_pst.strftime('%Y-%m-%dT%H:%M:%S')
     except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
@@ -72,7 +74,7 @@ def convert_to_date_pacific_time(thedate: str) -> str:
             datetime_obj = datetime.datetime.strptime(thedate, '%Y-%m-%dT%H:%M:%S.%f%z')
         except Exception:  # pylint: disable=broad-except;
             datetime_obj = datetime.datetime.strptime(thedate, '%Y-%m-%dT%H:%M:%S%z')
-        datetime_utc = datetime_obj.replace(tzinfo=timezone('UTC'))
+        datetime_utc = datetime_obj.replace(tzinfo=UTC_TIMEZONE)
         datetime_pst = datetime_utc.astimezone(PACIFIC_TIMEZONE)
         return datetime_pst.strftime('%Y-%m-%d')
     except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
