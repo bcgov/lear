@@ -18,6 +18,9 @@ from flask import current_app
 from pytz import timezone
 
 
+PACIFIC_TIMEZONE = timezone('US/Pacific')
+
+
 def convert_to_json_date(thedate: datetime.datetime) -> str:
     """Convert datetime to string formatted as YYYY-MM-DD, per JSON Schema specs."""
     if not thedate:
@@ -35,7 +38,7 @@ def convert_to_json_datetime(thedate: datetime.datetime) -> str:
         return None
     try:
         # timezone info not in var (they are pacififc times so add timezone)
-        thedate = thedate.astimezone(timezone('US/Pacific'))
+        thedate = thedate.astimezone(PACIFIC_TIMEZONE)
         # convert to utc time
         thedate = thedate.astimezone(timezone('UTC'))
         # return as string
@@ -54,7 +57,7 @@ def convert_to_pacific_time(thedate: str) -> str:
         except Exception:  # pylint: disable=broad-except;
             datetime_obj = datetime.datetime.strptime(thedate, '%Y-%m-%dT%H:%M:%S+00:00')
         datetime_utc = datetime_obj.replace(tzinfo=timezone('UTC'))
-        datetime_pst = datetime_utc.astimezone(timezone('US/Pacific'))
+        datetime_pst = datetime_utc.astimezone(PACIFIC_TIMEZONE)
         return datetime_pst.strftime('%Y-%m-%dT%H:%M:%S')
     except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
         current_app.logger.error(f'Tried to convert {thedate}, but failed: {err}')
@@ -70,7 +73,7 @@ def convert_to_date_pacific_time(thedate: str) -> str:
         except Exception:  # pylint: disable=broad-except;
             datetime_obj = datetime.datetime.strptime(thedate, '%Y-%m-%dT%H:%M:%S%z')
         datetime_utc = datetime_obj.replace(tzinfo=timezone('UTC'))
-        datetime_pst = datetime_utc.astimezone(timezone('US/Pacific'))
+        datetime_pst = datetime_utc.astimezone(PACIFIC_TIMEZONE)
         return datetime_pst.strftime('%Y-%m-%d')
     except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
         current_app.logger.error(f'Tried to convert {thedate}, but failed: {err}')

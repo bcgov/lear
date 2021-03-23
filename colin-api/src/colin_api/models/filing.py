@@ -26,17 +26,13 @@ from typing import Dict, List, Optional
 from flask import current_app
 from registry_schemas.utils import get_schema
 
-from colin_api.exceptions import GenericException  # noqa: I001
-from colin_api.exceptions import InvalidFilingTypeException  # noqa: I001
-from colin_api.exceptions import OfficeNotFoundException  # noqa: I001
-from colin_api.exceptions import PartiesNotFoundException  # noqa: I001
+from colin_api.exceptions import (
+    FilingNotFoundException, GenericException, InvalidFilingTypeException, OfficeNotFoundException,
+    PartiesNotFoundException,)
 from colin_api.models import Business, CorpName, Office, Party, ShareObject
 from colin_api.resources.db import DB
 from colin_api.utils import (
     convert_to_date_pacific_time, convert_to_json_date, convert_to_json_datetime, convert_to_snake,)
-
-
-from colin_api.exceptions import FilingNotFoundException  # noqa: I001; noqa: I001; noqa: I001
 
 
 # Code smells:
