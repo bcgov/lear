@@ -61,6 +61,22 @@ def convert_to_pacific_time(thedate: str) -> str:
         raise err
 
 
+def convert_to_date_pacific_time(thedate: str) -> str:
+    """Convert the datetime string to pacific time string."""
+    try:
+        # tries converting two formats before bailing
+        try:
+            datetime_obj = datetime.datetime.strptime(thedate, '%Y-%m-%dT%H:%M:%S.%f%z')
+        except Exception:  # pylint: disable=broad-except;
+            datetime_obj = datetime.datetime.strptime(thedate, '%Y-%m-%dT%H:%M:%S%z')
+        datetime_utc = datetime_obj.replace(tzinfo=timezone('UTC'))
+        datetime_pst = datetime_utc.astimezone(timezone('US/Pacific'))
+        return datetime_pst.strftime('%Y-%m-%d')
+    except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
+        current_app.logger.error(f'Tried to convert {thedate}, but failed: {err}')
+        raise err
+
+
 def stringify_list(list_orig: list) -> str:
     """Stringify the given list for sql query - used when inserting lists for reset query's."""
     list_str = ''
