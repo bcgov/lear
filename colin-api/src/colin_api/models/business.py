@@ -579,7 +579,10 @@ class Business:  # pylint: disable=too-many-instance-attributes
                 """,
                 event_id=event_id
             )
-            court_order_date = cursor.fetchone()[0]
+            court_order_date = ''
+            if row := cursor.fetchone():
+                court_order_date = row[0]
+
             return court_order_date
         except Exception as err:
             current_app.logger.error(f'Error looking up court order date for {event_id}')
