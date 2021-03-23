@@ -28,10 +28,8 @@ from legal_api.exceptions import BusinessException
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 
-from .db import db
-
-
-from .comment import Comment  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+from .db import db  # noqa: I001
+from .comment import Comment  # noqa: I001,F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 
 
 class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -267,11 +265,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             self._filing_type = json_data.get('filing').get('header').get('name')
             if not self._filing_type:
                 raise Exception
-        except Exception:
+        except Exception as err:
             raise BusinessException(
                 error='No filings found.',
                 status_code=HTTPStatus.UNPROCESSABLE_ENTITY
-            )
+            ) from err
 
         if self._payment_token:
             valid, err = rsbc_schemas.validate(json_data, 'filing')
@@ -378,8 +376,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             json_submission['filing']['header']['isCorrectionPending'] = self.is_correction_pending
 
             return json_submission
-        except Exception:  # noqa: B901, E722
-            raise KeyError
+        except Exception as err:  # noqa: B901, E722
+            raise KeyError from err
 
     @classmethod
     def find_by_id(cls, filing_id: str = None):
@@ -414,7 +412,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         query = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
             filter(Filing._status.in_(status)). \
-            order_by(Filing.filing_date.desc(), Filing.effective_date.desc())  # pylint: disable=no-member;
+            order_by(Filing._filing_date.desc(), Filing.effective_date.desc())  # pylint: disable=no-member;
         # member provided via SQLAlchemy
 
         if after_date:

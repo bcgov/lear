@@ -66,7 +66,7 @@ def process(business: Business, filing: Dict):  # pylint: disable=too-many-branc
             new_director_role = create_role(party=party, role_info=role)
             business.party_roles.append(new_director_role)
 
-        if any([action != 'appointed' for action in new_director['actions']]):
+        if any([action != 'appointed' for action in new_director['actions']]):  # pylint: disable=use-a-generator
             # get name of director in json for comparison *
             new_director_name = \
                 new_director['officer'].get('firstName') + new_director['officer'].get('middleInitial', '') + \

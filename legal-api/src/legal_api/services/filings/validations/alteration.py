@@ -23,15 +23,48 @@ from legal_api.models import Business
 from legal_api.services import namex
 from legal_api.services.utils import get_str
 
-from .common_validations import validate_share_structure
+from .common_validations import validate_court_order, validate_share_structure
 
 
-def validate(business: Business, filing: Dict) -> Error:
+def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-many-branches
     """Validate the Alteration filing."""
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
 
+    msg.extend(company_name_validation(filing))
+    msg.extend(share_structure_validation(filing))
+    msg.extend(court_order_validation(filing))
+
+    if msg:
+        return Error(HTTPStatus.BAD_REQUEST, msg)
+
+    return None
+
+
+def court_order_validation(filing):
+    """Validate court order."""
+    court_order_path: Final = '/filing/alteration/courtOrder'
+    if get_str(filing, court_order_path):
+        err = validate_court_order(court_order_path, filing['filing']['alteration']['courtOrder'])
+        if err:
+            return err
+    return []
+
+
+def share_structure_validation(filing):
+    """Validate share structure."""
+    share_structure_path: Final = '/filing/alteration/shareStructure'
+    if get_str(filing, share_structure_path):
+        err = validate_share_structure(filing, Filing.FilingTypes.ALTERATION.value)
+        if err:
+            return err
+    return []
+
+
+def company_name_validation(filing):
+    """Validate share structure."""
+    msg = []
     nr_path: Final = '/filing/alteration/nameRequest/nrNumber'
     if nr_number := get_str(filing, nr_path):
         # ensure NR is approved or conditionally approved
@@ -63,13 +96,4 @@ def validate(business: Business, filing: Dict) -> Error:
             msg.append({'error': babel('Alteration to Numbered Company can only be done for a Named Company.'),
                         'path': legal_name_path})
 
-    share_structure_path: Final = '/filing/alteration/shareStructure'
-    if get_str(filing, share_structure_path):
-        err = validate_share_structure(filing, Filing.FilingTypes.ALTERATION.value)
-        if err:
-            msg.extend(err)
-
-    if msg:
-        return Error(HTTPStatus.BAD_REQUEST, msg)
-
-    return None
+    return msg

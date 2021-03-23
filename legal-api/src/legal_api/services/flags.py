@@ -14,10 +14,31 @@
 """Manage the Feature Flags initialization, setup and service."""
 from flask import current_app
 from ldclient import get as ldclient_get, set_config as ldclient_set_config  # noqa: I001
-from ldclient.config import Config
-from ldclient.file_data_source import FileDataSource
+from ldclient.config import Config  # noqa: I005
+from ldclient.impl.integrations.files.file_data_source import _FileDataSource
+from ldclient.interfaces import UpdateProcessor
 
 from legal_api.models import User
+
+
+class FileDataSource(UpdateProcessor):
+    """FileDataStore has been removed, so this provides similar functionality."""
+
+    @classmethod
+    def factory(cls, **kwargs):
+        """Provide a way to use local files as a source of feature flag state.
+
+        .. deprecated:: 6.8.0
+          This module and this implementation class are deprecated and may be changed or removed in the future.
+          Please use :func:`ldclient.integrations.Files.new_data_source()`.
+
+        The keyword arguments are the same as the arguments to :func:`ldclient.integrations.Files.new_data_source()`.
+        """
+        return lambda config, store, ready: _FileDataSource(store, ready,
+                                                            paths=kwargs.get('paths'),
+                                                            auto_update=kwargs.get('auto_update', False),
+                                                            poll_interval=kwargs.get('poll_interval', 1),
+                                                            force_polling=kwargs.get('force_polling', False))
 
 
 class Flags():
@@ -48,8 +69,7 @@ class Flags():
         if self.sdk_key or app.env != 'production':
 
             if app.env == 'production':
-                config = Config(sdk_key=self.sdk_key,
-                                connect_timeout=5)
+                config = Config(sdk_key=self.sdk_key)
             else:
                 factory = FileDataSource.factory(paths=['flags.json'],
                                                  auto_update=True)

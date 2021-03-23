@@ -211,14 +211,14 @@ class AccountService:
 
         token = cls.get_bearer_token()
 
-        # Create an account:business affiliation
+        # Delete an account:business affiliation
         affiliate = requests.delete(
             url=account_svc_affiliate_url + '/' + business_registration,
             headers={**cls.CONTENT_TYPE_JSON,
                      'Authorization': cls.BEARER + token},
             timeout=cls.timeout
         )
-        # Create an entity record
+        # Delete an entity record
         entity_record = requests.delete(
             url=account_svc_entity_url + '/' + business_registration,
             headers={**cls.CONTENT_TYPE_JSON,

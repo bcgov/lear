@@ -23,7 +23,7 @@ from requests import exceptions  # noqa: I001; grouping out of order to make bot
 from flask import current_app, g, jsonify, request
 from flask_babel import _
 from flask_jwt_oidc import JwtManager
-from flask_restplus import Resource, cors
+from flask_restx import Resource, cors
 from werkzeug.local import LocalProxy
 
 import legal_api.reports

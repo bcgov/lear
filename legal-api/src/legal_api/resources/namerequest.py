@@ -16,7 +16,7 @@
 Provides a proxy endpoint to retrieve name request data.
 """
 from flask import abort, current_app, jsonify, make_response
-from flask_restplus import Namespace, Resource, cors
+from flask_restx import Namespace, Resource, cors
 
 from legal_api.services import namex
 from legal_api.utils.util import cors_preflight
@@ -45,3 +45,4 @@ class NameRequest(Resource):
         except Exception as err:
             current_app.logger.error(err)
             abort(500)
+            return {}, 500  # to appease the linter

@@ -13,7 +13,7 @@
 # limitations under the License.
 """Exposes all of the resource endpoints mounted in Flask-Blueprint style.
 
-Uses restplus namespaces to mount individual api endpoints into the service.
+Uses restx namespaces to mount individual api endpoints into the service.
 
 All services have 2 defaults sets of endpoints:
  - ops
@@ -21,7 +21,7 @@ All services have 2 defaults sets of endpoints:
 That are used to expose operational health information about the service, and meta information.
 """
 from flask import Blueprint
-from flask_restplus import Api
+from flask_restx import Api
 
 from .business import API as BUSINESS_API
 from .meta import API as META_API
@@ -32,7 +32,7 @@ from .ops import API as OPS_API
 __all__ = ('API_BLUEPRINT', 'OPS_BLUEPRINT')
 
 # This will add the Authorize button to the swagger docs
-# TODO oauth2 & openid may not yet be supported by restplus <- check on this
+# TODO oauth2 & openid may not yet be supported by restx <- check on this
 AUTHORIZATIONS = {
     'apikey': {
         'type': 'apiKey',

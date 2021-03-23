@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common validations share through the different filings."""
+from datetime import datetime
+
 from legal_api.errors import Error
+from legal_api.utils.datetime import datetime as dt
 
 
 def validate_share_structure(incorporation_json, filing_type) -> Error:  # pylint: disable=too-many-branches
@@ -88,3 +91,43 @@ def validate_shares(item, memoize_names, filing_type, index) -> Error:
         msg.extend(series_msg)
 
     return msg
+
+
+def validate_court_order(court_order_path, court_order):
+    """Validate the courtOrder data of the filing."""
+    msg = []
+
+    # TODO remove it when the issue with schema validation is fixed
+    if 'fileNumber' not in court_order:
+        err_path = court_order_path + '/fileNumber'
+        msg.append({'error': 'Court order file number is required.', 'path': err_path})
+    else:
+        if len(court_order['fileNumber']) < 5 or len(court_order['fileNumber']) > 20:
+            err_path = court_order_path + '/fileNumber'
+            msg.append({'error': 'Length of court order file number must be from 5 to 20 characters.',
+                        'path': err_path})
+
+    if 'effectOfOrder' not in court_order and (len(court_order['effectOfOrder']) < 5 or
+                                               len(court_order['effectOfOrder']) > 500):
+        err_path = court_order_path + '/effectOfOrder'
+        msg.append({'error': 'Length of court order effect of order must be from 5 to 500 characters.',
+                    'path': err_path})
+
+    court_order_date_path = court_order_path + '/orderDate'
+    if 'orderDate'not in court_order:
+        err_path = court_order_date_path
+        msg.append({'error': 'Court order date is required.', 'path': err_path})
+    else:
+        try:
+            court_order_date = dt.fromisoformat(court_order['orderDate'])
+            if court_order_date.timestamp() > datetime.utcnow().timestamp():
+                err_path = court_order_date_path
+                msg.append({'error': 'Court order date cannot be in the future.', 'path': err_path})
+        except ValueError:
+            err_path = court_order_date_path
+            msg.append({'error': 'Invalid court order date format.', 'path': err_path})
+
+    if msg:
+        return msg
+
+    return None

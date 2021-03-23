@@ -18,7 +18,7 @@ TODO: Move in internal filings calls.
 from http import HTTPStatus
 
 from flask import jsonify, request
-from flask_restplus import Resource, cors
+from flask_restx import Resource, cors
 
 from legal_api.models import Business
 from legal_api.services import COLIN_SVC_ROLE

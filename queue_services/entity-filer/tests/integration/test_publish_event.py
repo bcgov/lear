@@ -70,6 +70,6 @@ async def test_publish_event(app, session, stan_server, event_loop, client_id, e
     assert len(msgs) == 1
 
     event_msg = json.loads(msgs[0].data.decode('utf-8'))
-    assert event_msg['filing']['filingId'] == 101
-    assert event_msg['filing']['identifier'] == 'CP1234567'
-    assert event_msg['filing']['legalFilings'] == ['annualReport']
+    assert event_msg['data']['filing']['header']['filingId'] == 101
+    assert event_msg['identifier'] == 'CP1234567'
+    assert event_msg['data']['filing']['legalFilings'] == ['annualReport']

@@ -16,7 +16,7 @@
 Currently this only provides API versioning information
 """
 from flask import jsonify
-from flask_restplus import Namespace, Resource
+from flask_restx import Namespace, Resource
 from registry_schemas import __version__ as registry_schemas_version
 
 from legal_api.utils.run_version import get_run_version
