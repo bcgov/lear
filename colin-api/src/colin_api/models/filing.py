@@ -696,7 +696,7 @@ class Filing:
             if 'legalType' in components:
                 filing.body['legalType'] = filing.business.corp_type
 
-            if 'courtOrder' in components:
+            if 'courtOrder' in components and filing_event_info.get('court_order_num', None):
                 court_order_date = Business.get_court_order_date(cursor, filing_event_info['event_id'])
                 filing.body['courtOrder'] = {'fileNumber': filing_event_info['court_order_num'],
                                              'orderDate': court_order_date}

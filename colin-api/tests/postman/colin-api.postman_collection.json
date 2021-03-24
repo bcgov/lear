@@ -8446,6 +8446,9 @@
 											"});",
 											"",
 											"var jsonData = pm.response.json();",
+											"pm.test(\"should not return courtOrder\", () => {",
+											"    pm.expect(jsonData.filing.alteration.courtOrder).not.exist;",
+											"});",
 											"pm.test(\"Set the newCorpName\", () => {",
 											"    pm.expect(jsonData.filing.business.legalName).to.exist;",
 											"    pm.environment.set(\"newCorpName\", (jsonData.filing.business.legalName));",
@@ -8823,6 +8826,14 @@
 											"});",
 											"",
 											"var jsonData = pm.response.json();",
+											"pm.test(\"should return a valid courtOrder\", () => {",
+											"    pm.expect(jsonData.filing.alteration.courtOrder).to.exist;",
+											"    pm.expect(jsonData.filing.alteration.courtOrder.fileNumber).to.exist;",
+											"    pm.expect(jsonData.filing.alteration.courtOrder.orderDate).to.exist;",
+											"    pm.expect(jsonData.filing.alteration.courtOrder.fileNumber.length).to.be.above(0);",
+											"    pm.expect(jsonData.filing.alteration.courtOrder.orderDate.length).to.be.above(0);",
+											"});",
+											"",
 											"pm.test(\"Set the newCorpName\", () => {",
 											"    pm.expect(jsonData.filing.business.legalName).to.exist;",
 											"    pm.environment.set(\"newCorpName\", (jsonData.filing.business.legalName));",
@@ -8837,7 +8848,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"alteration\",\n\t\t\t\"date\": \"{{today}}\",\n\t\t\t\"certifiedBy\": \"full name\",\n\t\t\t\"learEffectiveDate\": \"{{today}}T14:46:23.315651+00:00\"\n        },\n        \"business\": {\n            \"identifier\": \"BC{{newCorpNum}}\",\n            \"legalName\": \"{{newCorpName}}\",\n            \"legalType\": \"BC\"\n        },\n        \"alteration\": {\n            \"provisionsRemoved\": false,\n            \"business\": {\n                \"legalType\": \"BEN\",\n                \"identifier\": \"BC{{newCorpNum}}\"\n            },\n            \"contactPoint\": {\n                \"email\": \"test@test.ca\"\n            },\n            \"nameRequest\": {\n                \"legalName\": \"altered name {{newCorpNum}}\",\n                \"nrNumber\": \"NR123567\",\n                \"legalType\": \"BC\"\n            },\n            \"nameTranslations\": [\n\t\t\t\t{\"name\": \"Financière de l’Odet {{newCorpNum}}\"},\n                {\"name\": \"another new translation {{newCorpNum}}\"},\n                {\"id\": \"1\", \"name\": \"modified translation1 {{newCorpNum}}\"},\n                {\"id\": \"2\", \"name\": \"modified translation2 {{newCorpNum}}\"}\n            ],\n            \"shareStructure\": {\n                \"resolutionDates\": [\"2020-05-23\", \"2020-06-01\"],\n                \"shareClasses\": [{\n                    \"name\": \"altered class 1\",\n                    \"priority\": 1,\n                    \"maxNumberOfShares\": 600,\n                    \"parValue\": 1,\n                    \"currency\": \"CAD\",\n                    \"hasMaximumShares\": true,\n                    \"hasParValue\": true,\n                    \"hasRightsOrRestrictions\": false,\n                    \"series\": [{\n                        \"name\": \"altered series1\",\n                        \"priority\": 1,\n                        \"maxNumberOfShares\": 600,\n                        \"hasMaximumShares\": true,\n                        \"hasRightsOrRestrictions\": false\n                    }]\n                }]\n            }\n        }\n    }\n}",
+									"raw": "{\n    \"filing\": {\n        \"header\": {\n            \"name\": \"alteration\",\n\t\t\t\"date\": \"{{today}}\",\n\t\t\t\"certifiedBy\": \"full name\",\n\t\t\t\"learEffectiveDate\": \"{{today}}T14:46:23.315651+00:00\"\n        },\n        \"business\": {\n            \"identifier\": \"BC{{newCorpNum}}\",\n            \"legalName\": \"{{newCorpName}}\",\n            \"legalType\": \"BC\"\n        },\n        \"alteration\": {\n            \"provisionsRemoved\": false,\n            \"business\": {\n                \"legalType\": \"BEN\",\n                \"identifier\": \"BC{{newCorpNum}}\"\n            },\n            \"contactPoint\": {\n                \"email\": \"test@test.ca\"\n            },\n            \"nameRequest\": {\n                \"legalName\": \"altered name {{newCorpNum}}\",\n                \"nrNumber\": \"NR123567\",\n                \"legalType\": \"BC\"\n            },\n            \"nameTranslations\": [\n\t\t\t\t{\"name\": \"Financière de l’Odet {{newCorpNum}}\"},\n                {\"name\": \"another new translation {{newCorpNum}}\"},\n                {\"id\": \"1\", \"name\": \"modified translation1 {{newCorpNum}}\"},\n                {\"id\": \"2\", \"name\": \"modified translation2 {{newCorpNum}}\"}\n            ],\n            \"shareStructure\": {\n                \"resolutionDates\": [\"2020-05-23\", \"2020-06-01\"],\n                \"shareClasses\": [{\n                    \"name\": \"altered class 1\",\n                    \"priority\": 1,\n                    \"maxNumberOfShares\": 600,\n                    \"parValue\": 1,\n                    \"currency\": \"CAD\",\n                    \"hasMaximumShares\": true,\n                    \"hasParValue\": true,\n                    \"hasRightsOrRestrictions\": false,\n                    \"series\": [{\n                        \"name\": \"altered series1\",\n                        \"priority\": 1,\n                        \"maxNumberOfShares\": 600,\n                        \"hasMaximumShares\": true,\n                        \"hasRightsOrRestrictions\": false\n                    }]\n                }]\n            },\n            \"courtOrder\": {\n                \"fileNumber\": \"#1234-5678/90\",\n                \"orderDate\":  \"2021-01-30T09:56:01+08:00\",\n                \"effectOfOrder\": \"Order to disclose financial data\"\n            }\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
