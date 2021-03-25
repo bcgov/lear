@@ -31,8 +31,7 @@ from colin_api.exceptions import (
     PartiesNotFoundException,)
 from colin_api.models import Business, CorpName, Office, Party, ShareObject
 from colin_api.resources.db import DB
-from colin_api.utils import (
-    convert_to_date_pacific_time, convert_to_json_date, convert_to_json_datetime, convert_to_snake,)
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_snake
 
 
 # Code smells:
@@ -697,9 +696,9 @@ class Filing:
                 filing.body['legalType'] = filing.business.corp_type
 
             if 'courtOrder' in components and filing_event_info.get('court_order_num', None):
-                court_order_date = Business.get_court_order_date(cursor, filing_event_info['event_id'])
+                effect_of_order = 'planOfArrangement' if filing_event_info['arrangement_ind'] == 'Y' else ''
                 filing.body['courtOrder'] = {'fileNumber': filing_event_info['court_order_num'],
-                                             'orderDate': court_order_date}
+                                             'effectOfOrder': effect_of_order}
 
             if filing.filing_type == 'incorporationApplication' and \
                     filing.business.corp_type == Business.TypeCodes.COOP.value:
@@ -860,13 +859,6 @@ class Filing:
                 Business.update_corporation(
                     cursor=cursor, corp_num=corp_num, date=agm_date, annual_report=is_annual_report)
 
-                if filing.filing_type == 'alteration' and (court_order := filing.body.get('courtOrder', None)):
-                    Business.create_resolution(
-                        cursor=cursor,
-                        corp_num=corp_num,
-                        event_id=filing.event_id,
-                        resolution_date=convert_to_date_pacific_time(court_order['orderDate'])
-                    )
             return filing.event_id
 
         except Exception as err:
