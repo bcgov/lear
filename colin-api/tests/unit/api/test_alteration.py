@@ -29,6 +29,7 @@ def test_incorporate_bcomp(client):
     rv = client.post('/api/v1/businesses/BC')
     test_bcomp = f"{rv.json['corpNum']}"
     legal_name = f'legal name - {test_bcomp}'
+    ledger_timestamp = '2019-04-15T20:05:49.068272+00:00'
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing['filing']['header']['learEffectiveDate'] = \
         f'{filing["filing"]["header"]["date"]}T15:22:39.868757+00:00'
@@ -38,15 +39,15 @@ def test_incorporate_bcomp(client):
             'cacheId': 1,
             'foundingDate': '2007-04-08T00:00:00+00:00',
             'identifier': f'{test_bcomp}',
-            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-            'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',
+            'lastLedgerTimestamp': ledger_timestamp,
+            'lastPreBobFilingTimestamp': ledger_timestamp,
             'legalName': legal_name,
             'legalType': 'BC'
         }
 
     rv = client.post(f'/api/v1/businesses/BC/{test_bcomp}/filings/incorporationApplication',
                      data=json.dumps(filing), headers=headers)
-    # assert rv.json
+    assert rv.json
     assert 201 == rv.status_code
     filing = rv.json['filing']
     alteration_filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
@@ -58,15 +59,15 @@ def test_incorporate_bcomp(client):
             'cacheId': 1,
             'foundingDate': '2007-04-08T00:00:00+00:00',
             'identifier': f'BC{test_bcomp}',
-            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-            'lastPreBobFilingTimestamp': '2019-04-15T20:05:49.068272+00:00',
+            'lastLedgerTimestamp': ledger_timestamp,
+            'lastPreBobFilingTimestamp': ledger_timestamp,
             'legalName': legal_name,
             'legalType': 'BC'
         }
 
     rv = client.post(f'/api/v1/businesses/BC/BC{test_bcomp}/filings/alteration',
                      data=json.dumps(alteration_filing), headers=headers)
-
+    assert rv.json
     assert 201 == rv.status_code
 
     result_alteration_filing = rv.json['filing']
