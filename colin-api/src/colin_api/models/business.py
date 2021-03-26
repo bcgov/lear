@@ -569,26 +569,6 @@ class Business:  # pylint: disable=too-many-instance-attributes
             raise err
 
     @classmethod
-    def get_court_order_date(cls, cursor, event_id: str) -> str:
-        """Get order date for a filing."""
-        try:
-            cursor.execute(
-                """
-                select TO_CHAR(resolution_dt, 'YYYY-mm-dd') from resolution
-                where start_event_id = :event_id
-                """,
-                event_id=event_id
-            )
-            court_order_date = ''
-            if row := cursor.fetchone():
-                court_order_date = row[0]
-
-            return court_order_date
-        except Exception as err:
-            current_app.logger.error(f'Error looking up court order date for {event_id}')
-            raise err
-
-    @classmethod
     def reset_corporations(cls, cursor, event_info: List, event_ids: List):
         """Reset the corporations to what they were before the given events."""
         if not event_info:
