@@ -29,6 +29,7 @@ ALTERATION_FILING = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
 TEST_DATA = [
     (False, '', '', '', True),
     (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEC', True),
+    (True, 'legal_name-BC1234567_Changed', 'BC', 'CCR', True),
     (True, 'legal_name-BC1234568', 'CP', 'XCLP', False)
 ]
 
