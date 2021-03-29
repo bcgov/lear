@@ -71,7 +71,7 @@ def company_name_validation(filing):
         nr_response = namex.query_nr_number(nr_number)
         validation_result = namex.validate_nr(nr_response)
 
-        if not nr_response['requestTypeCd'] in ('CCP', 'BEC'):
+        if not nr_response['requestTypeCd'] in ('CCR', 'CCP', 'BEC'):
             msg.append({'error': babel('Alteration only available for Change of Name Name requests.'), 'path': nr_path})
 
         if not validation_result['is_approved']:
