@@ -340,7 +340,7 @@ class Filing:
                     effective_dt=filing.effective_date,
                     filing_date=filing.filing_date
                 )
-            elif filing_type_code in ['NOCAD', 'NOALE', 'NOALR', 'BEINC', 'CRBIN', 'TRANS']:
+            elif filing_type_code in ['NOCAD', 'BEINC', 'CRBIN', 'TRANS']:
                 insert_stmnt = insert_stmnt + ', arrangement_ind, ods_typ_cd) '
                 values_stmnt = values_stmnt + ", 'N', 'F')"
                 cursor.execute(
@@ -348,6 +348,23 @@ class Filing:
                     event_id=filing.event_id,
                     filing_type_code=filing_type_code,
                     effective_dt=filing.effective_date
+                )
+            elif filing_type_code in ['NOALA', 'NOALB', 'NOALC', 'NOALE', 'NOALR', 'NOALU']:
+                arragement_ind = 'N'
+                court_order_num = None
+                if court_order := filing.body.get('courtOrder', None):
+                    arragement_ind = 'Y' if court_order.get('effectOfOrder', None) else 'N'
+                    court_order_num = court_order['fileNumber']
+
+                insert_stmnt = insert_stmnt + ', arrangement_ind, court_order_num, ods_typ_cd) '
+                values_stmnt = values_stmnt + ", :arragement_ind, :court_order_num, 'F')"
+                cursor.execute(
+                    insert_stmnt + values_stmnt,
+                    event_id=filing.event_id,
+                    filing_type_code=filing_type_code,
+                    effective_dt=filing.effective_date,
+                    arragement_ind=arragement_ind,
+                    court_order_num=court_order_num
                 )
             else:
                 current_app.logger.error(f'error in filing: Did not recognize filing type code: {filing_type_code}')
@@ -401,7 +418,7 @@ class Filing:
         # build base querystring
         querystring = ("""
             select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt,
-            agm_date, effective_dt, event.corp_num, user_id, filing_typ_cd
+            agm_date, effective_dt, event.corp_num, user_id, filing_typ_cd, arrangement_ind, court_order_num
             from event
             join filing on filing.event_id = event.event_id
             left join filing_user on event.event_id = filing_user.event_id
@@ -681,6 +698,11 @@ class Filing:
 
             if 'legalType' in components:
                 filing.body['legalType'] = filing.business.corp_type
+
+            if 'courtOrder' in components and filing_event_info.get('court_order_num', None):
+                effect_of_order = 'planOfArrangement' if filing_event_info['arrangement_ind'] == 'Y' else ''
+                filing.body['courtOrder'] = {'fileNumber': filing_event_info['court_order_num'],
+                                             'effectOfOrder': effect_of_order}
 
             if filing.filing_type == 'incorporationApplication' and \
                     filing.business.corp_type == Business.TypeCodes.COOP.value:
