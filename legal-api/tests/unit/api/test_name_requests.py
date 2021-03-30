@@ -177,24 +177,6 @@ def test_name_requests_not_found(client):
 
 
 @integration_namerequests
-def test_name_request_query_nr_number(app, client):
-    """Assert that nr_response is json and verify the correct nrNum."""
-    with app.app_context():
-        nr_response = namex.query_nr_number('NR 3252362')
-
-        assert nr_response['nrNum'] == 'NR 3252362'
-
-
-@integration_namerequests
-def test_name_request_query_nr_number_not_found(app, client):
-    """Assert that a name request error response is correct."""
-    with app.app_context():
-        nr_response = namex.query_nr_number('NR 1234567')
-
-        assert nr_response.status_code == HTTPStatus.NOT_FOUND
-
-
-@integration_namerequests
 def test_name_request_update_expiration(app, client):
     """Assert that nr expiration can be updated."""
     with app.app_context():

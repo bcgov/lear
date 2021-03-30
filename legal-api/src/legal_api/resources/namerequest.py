@@ -37,11 +37,12 @@ class NameRequest(Resource):
         try:
             nr_response = namex.query_nr_number(identifier)
 
-            # Override api response to return a 404 if NR is not found
-            if hasattr(nr_response, 'status_code') and nr_response.status_code == 404:
+            # Errors in general will just pass though,
+            # 404 is overriden as it is giving namex-api specific messaging
+            if nr_response.status_code == 404:
                 return make_response(jsonify(message='{} not found.'.format(identifier)), 404)
 
-            return nr_response
+            return jsonify(nr_response.json())
         except Exception as err:
             current_app.logger.error(err)
             abort(500)

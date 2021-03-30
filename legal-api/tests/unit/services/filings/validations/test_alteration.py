@@ -33,6 +33,13 @@ TEST_DATA = [
     (True, 'legal_name-BC1234568', 'CP', 'XCLP', False)
 ]
 
+class MockResponse:
+            def __init__(self, json_data, status_code):
+                self.json_data = json_data
+                self.status_code = status_code
+
+            def json(self):
+                return self.json_data
 
 @pytest.mark.parametrize('use_nr, new_name, legal_type, nr_type, should_pass', TEST_DATA)
 def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass):
@@ -52,16 +59,18 @@ def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass)
         f['filing']['alteration']['nameRequest']['legalName'] = new_name
         f['filing']['alteration']['nameRequest']['legalType'] = legal_type
 
-        nr_response = {
-            'state': 'APPROVED',
-            'expirationDate': '',
-            'requestTypeCd': nr_type,
-            'names': [{
-                'name': new_name,
-                'state': 'APPROVED',
-                'consumptionDate': ''
-            }]
-        }
+        nr_json = {
+                    "state": "APPROVED",
+                    "expirationDate": "",
+                    "requestTypeCd": nr_type,
+                    "names": [{
+                        "name": new_name,
+                        "state": "APPROVED",
+                        "consumptionDate": ""
+                    }]
+                }
+
+        nr_response = MockResponse(nr_json, 200)
 
         with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
             err = validate(business, f)
