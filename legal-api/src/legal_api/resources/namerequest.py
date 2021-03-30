@@ -38,9 +38,8 @@ class NameRequest(Resource):
             nr_response = namex.query_nr_number(identifier)
 
             # Override api response to return a 404 if NR is not found
-            if hasattr(nr_response, 'status_code'):
-                if nr_response.status_code == 404:
-                    return make_response(jsonify(message='{} not found.'.format(identifier)), 404)
+            if hasattr(nr_response, 'status_code') and nr_response.status_code == 404:
+                return make_response(jsonify(message='{} not found.'.format(identifier)), 404)
 
             return nr_response
         except Exception as err:
