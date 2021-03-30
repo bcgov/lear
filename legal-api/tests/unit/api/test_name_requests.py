@@ -16,7 +16,6 @@
 
 Test-Suite to ensure that the /nameRequests endpoint is working as expected.
 """
-from flask import jsonify
 from http import HTTPStatus
 
 import datedelta

@@ -15,9 +15,9 @@
 
 Provides a proxy endpoint to retrieve name request data.
 """
+from http import HTTPStatus
 from flask import abort, current_app, jsonify, make_response
 from flask_restx import Namespace, Resource, cors
-from http import HTTPStatus
 
 from legal_api.services import namex
 from legal_api.utils.util import cors_preflight
