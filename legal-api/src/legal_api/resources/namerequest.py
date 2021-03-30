@@ -15,7 +15,6 @@
 
 Provides a proxy endpoint to retrieve name request data.
 """
-from http import HTTPStatus
 from flask import abort, current_app, jsonify, make_response
 from flask_restx import Namespace, Resource, cors
 
@@ -40,8 +39,8 @@ class NameRequest(Resource):
 
             # Override api response to return a 404 if NR is not found
             if hasattr(nr_response, 'status_code'):
-                if nr_response.status_code == HTTPStatus.NOT_FOUND:
-                    return make_response(jsonify(message='{} not found.'.format(identifier)), HTTPStatus.NOT_FOUND)
+                if nr_response.status_code == 404:
+                    return make_response(jsonify(message='{} not found.'.format(identifier)), 404)
 
             return nr_response
         except Exception as err:
