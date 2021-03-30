@@ -69,6 +69,11 @@ class NameXService():
             'Authorization': 'Bearer ' + token
         })
 
+        # Return if not successful so downstream can handle the error
+        if nr_response.status_code != 200:
+            return nr_response
+
+        # Return the json if successful
         return nr_response.json()
 
     @staticmethod

@@ -16,9 +16,11 @@
 
 Test-Suite to ensure that the /nameRequests endpoint is working as expected.
 """
+from flask import jsonify
 from http import HTTPStatus
 
 import datedelta
+import json
 import pytz
 
 from legal_api.services import namex
@@ -168,11 +170,29 @@ def test_name_requests_success(client):
 
 @integration_namerequests
 def test_name_requests_not_found(client):
-    """Assert that a name request can be received."""
+    """Assert that name request is not found."""
     rv = client.get('/api/v1/nameRequests/NR 1234567')
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': 'NR 1234567 not found.'}
+
+
+@integration_namerequests
+def test_name_request_query_nr_number(app, client):
+    """Assert that nr_response is json and verify the correct nrNum."""
+    with app.app_context():
+        nr_response = namex.query_nr_number('NR 3252362')
+
+        assert nr_response['nrNum'] == 'NR 3252362'
+
+
+@integration_namerequests
+def test_name_request_query_nr_number_not_found(app, client):
+    """Assert that a name request error response is correct."""
+    with app.app_context():
+        nr_response = namex.query_nr_number('NR 1234567')
+
+        assert nr_response.status_code == HTTPStatus.NOT_FOUND
 
 
 @integration_namerequests
