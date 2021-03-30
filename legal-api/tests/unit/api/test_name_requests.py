@@ -19,7 +19,6 @@ Test-Suite to ensure that the /nameRequests endpoint is working as expected.
 from http import HTTPStatus
 
 import datedelta
-import json
 import pytz
 
 from legal_api.services import namex
