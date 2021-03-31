@@ -69,7 +69,7 @@ class NameXService():
             'Authorization': 'Bearer ' + token
         })
 
-        return nr_response.json()
+        return nr_response
 
     @staticmethod
     def update_nr(nr_json):

@@ -168,7 +168,7 @@ def test_name_requests_success(client):
 
 @integration_namerequests
 def test_name_requests_not_found(client):
-    """Assert that a name request can be received."""
+    """Assert that name request is not found."""
     rv = client.get('/api/v1/nameRequests/NR 1234567')
 
     assert rv.status_code == HTTPStatus.NOT_FOUND

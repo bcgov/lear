@@ -63,12 +63,12 @@ def share_structure_validation(filing):
 
 
 def company_name_validation(filing):
-    """Validate share structure."""
+    """Validate company name."""
     msg = []
     nr_path: Final = '/filing/alteration/nameRequest/nrNumber'
     if nr_number := get_str(filing, nr_path):
         # ensure NR is approved or conditionally approved
-        nr_response = namex.query_nr_number(nr_number)
+        nr_response = namex.query_nr_number(nr_number).json()
         validation_result = namex.validate_nr(nr_response)
 
         if not nr_response['requestTypeCd'] in ('CCR', 'CCP', 'BEC'):
