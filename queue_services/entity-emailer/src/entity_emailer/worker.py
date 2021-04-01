@@ -56,7 +56,7 @@ async def publish_event(payload: dict):
     try:
         subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
         await qsm.service.publish(subject, payload)
-    except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the email, so ignore all.
+    except Exception as err:  # noqa B902; pylint: disable=W0703; we don't want to fail out the email, so ignore all.
         capture_message(f'Queue Publish Event Error: email msg={payload}, error={err}', level='error')
         logger.error('Queue Publish Event Error: email msg=%s', payload, exc_info=True)
 
@@ -129,7 +129,7 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
                      '\n\nThis message has been put back on the queue for reprocessing.',
                      json.dumps(email_msg), exc_info=True)
         raise err  # we don't want to handle the error, so that the message gets put back on the queue
-    except (QueueException, Exception):  # pylint: disable=broad-except
+    except (QueueException, Exception):  # noqa B902; pylint: disable=W0703;
         # Catch Exception so that any error is still caught and the message is removed from the queue
         capture_message('Queue Error: ' + json.dumps(email_msg), level='error')
         logger.error('Queue Error: %s', json.dumps(email_msg), exc_info=True)
