@@ -186,6 +186,11 @@ class Report:  # pylint: disable=too-few-public-methods
                 filing['alteration']['nameRequest']['legalName'] = versioned_business['legalName']
 
         filing['header']['reportType'] = self._report_key
+
+        if (filing['header']['reportType'] == 'alterationNotice' and filing['previousLegalType'] != 'BEN' and \
+        filing['business']['legalType'] == 'BEN') or (filing['header']['reportType'] == 'noa' and \
+        filing['business']['legalType'] == 'BEN'):
+            filing['isBenefitCompanyStmt']= True
         self._set_dates(filing)
         self._set_description(filing)
         self._set_tax_id(filing)
@@ -337,20 +342,21 @@ class Report:  # pylint: disable=too-few-public-methods
 
     def _format_alteration_data(self, filing):
         # Get current list of translations in alteration. None if it is deletion
-        filing['listOfTranslations'] = filing['alteration'].get('nameTranslations', [])
-        # Get previous translations for deleted translations. No record created in aliases version for deletions
-        filing['nameTranslations'] = VersionedBusinessDetailsService.get_name_translations_before_revision(
-            self._filing.transaction_id, self._business.id)
+        if 'nameTranslations' in filing['alteration']:
+            filing['listOfTranslations'] = filing['alteration'].get('nameTranslations', [])
+            # Get previous translations for deleted translations. No record created in aliases version for deletions
+            filing['nameTranslations'] = VersionedBusinessDetailsService.get_name_translations_before_revision(
+                self._filing.transaction_id, self._business.id)
         if filing['alteration'].get('shareStructure', None):
             filing['shareClasses'] = filing['alteration']['shareStructure']['shareClasses']
             filing['resolutions'] = filing['alteration']['shareStructure'].get('resolutionDates', [])
         # Get previous business type
         versioned_business = VersionedBusinessDetailsService.get_business_revision_before_filing(
             self._filing.id, self._business.id)
-        new_legal_type = versioned_business['legalType']
-        filing['alteration']['business']['legalType'] = new_legal_type
+        prev_legal_type = versioned_business['legalType']
+        filing['previousLegalType'] = prev_legal_type
         with suppress(KeyError):
-            filing['legalTypeDescription'] = ReportMeta.entity_description[new_legal_type]
+            filing['previousLegalTypeDescription'] = ReportMeta.entity_description[prev_legal_type]
 
     def _has_change(self, old_value, new_value):  # pylint: disable=no-self-use;
         """Check to fix the hole in diff.

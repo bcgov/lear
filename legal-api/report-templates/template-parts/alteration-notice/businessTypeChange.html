@@ -1,20 +1,20 @@
 <div class="no-page-break">
-    {% if alteration.business.legalType and business.legalType != alteration.business.legalType %}
+    {% if previousLegalType and business.legalType != previousLegalType %}
         <div class="separator mt-4"></div>
         <div class="section-title mt-4">Change of Business Type</div>
         <div class="section-data mt-4">
-            {% if legalTypeDescription %}
-                Changing from {{business.legalType}} Company to a <strong>{{legalTypeDescription}}.</strong>
+            {% if previousLegalTypeDescription %}
+                Changing from {{previousLegalTypeDescription}} to a <span class="bold">{{entityDescription}}.</span>
             {% else %}
-                Changing from {{business.legalType}} to a <strong>{{alteration.business.legalType}} Company.</strong>
+                Changing from {{previousLegalType}} Company to a <span class="bold">{{entityDescription}}.</span>
             {% endif %}
             <div class="section-data mt-4">
                 <table class="section-data-table">
                     <tr class="no-page-break">
-                    <td><strong>Incorporation Number</strong>
+                    <td><span class="bold">Incorporation Number</span>
                         <div class="pt-2">{{ business.identifier }}</div>
                     </td>
-                    <td><strong>Name of Company </strong>
+                    <td><span class="bold">Name of Company </span>
                         <div class="pt-2">{{business.legalName}}</div>
                     </td>          
                     </tr>         

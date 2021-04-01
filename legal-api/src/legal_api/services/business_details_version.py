@@ -227,7 +227,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(business_version.transaction_id < filing.transaction_id) \
             .filter(business_version.operation_type != 2) \
             .filter(business_version.id == business.id) \
-            .order_by(business_version.transaction_id).first()
+            .order_by(business_version.transaction_id.desc()).first()
         return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
 
     @staticmethod
