@@ -41,7 +41,13 @@ from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
 from entity_emailer import config
-from entity_emailer.email_processors import bn_notification, filing_notification, mras_notification, name_request
+from entity_emailer.email_processors import (
+    affiliation_notification,
+    bn_notification,
+    filing_notification,
+    mras_notification,
+    name_request,
+)
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
@@ -87,6 +93,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
         etype = email_msg.get('type', None)
         if etype and etype == 'bc.registry.names.request':
             email = name_request.process(email_msg)
+            send_email(email, token)
+        elif etype and etype == 'bc.registry.affiliation':
+            email = affiliation_notification.process(email_msg, token)
             send_email(email, token)
         else:
             etype = email_msg['email']['type']

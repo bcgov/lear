@@ -12,53 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the Incorporation email processor."""
-from typing import Final
 from unittest.mock import patch
 
 import pytest
 from legal_api.models import Business
 
 from entity_emailer.email_processors import filing_notification
-from tests.unit import (
-    prep_alteration_filing,
-    prep_incorp_filing,
-    prep_incorporation_correction_filing,
-    prep_maintenance_filing,
-)
+from tests.unit import prep_incorp_filing, prep_incorporation_correction_filing, prep_maintenance_filing
 
 
-testing_email: Final = 'test@test.com'
-
-
-@pytest.mark.parametrize(['type', 'status', 'subject'], [
-    ('incorporationApplication', 'PAID', 'Confirmation of Filing from the Business Registry'),
-    ('incorporationApplication', 'COMPLETED', 'Incorporation Documents from the Business Registry'),
-    ('alteration', 'DRAFT', 'How to use BCRegistry.ca'),
+@pytest.mark.parametrize('status', [
+    ('PAID'),
+    ('COMPLETED'),
 ])
-def test_notifications(app, session, type, status, subject):
+def test_incorp_notification(app, session, status):
     """Assert that the legal name is changed."""
     # setup filing + business for email
-    if type == 'incorporationApplication':
-        filing = prep_incorp_filing(session, 'BC1234567', '1', status)
-    else:
-        filing = prep_alteration_filing(session, 'BC1234567', status)
-
+    filing = prep_incorp_filing(session, 'BC1234567', '1', status)
     token = 'token'
     # test processor
     with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
-        if type != 'incorporationApplication':
-            with patch.object(filing_notification, 'get_recipients', return_value=testing_email):
-                email = filing_notification.process(
-                    {'filingId': filing.id, 'type': type, 'option': status}, token)
+        email = filing_notification.process(
+            {'filingId': filing.id, 'type': 'incorporationApplication', 'option': status}, token)
+        if status == 'PAID':
+            assert 'comp_party@email.com' in email['recipients']
+            assert email['content']['subject'] == 'Confirmation of Filing from the Business Registry'
         else:
-            email = filing_notification.process(
-                {'filingId': filing.id, 'type': type, 'option': status}, token)
-            if status == 'PAID':
-                assert 'comp_party@email.com' in email['recipients']
+            assert email['content']['subject'] == 'Incorporation Documents from the Business Registry'
 
-        assert email['content']['subject'] == subject
-
-        assert testing_email in email['recipients']
+        assert 'test@test.com' in email['recipients']
         assert email['content']['body']
         assert email['content']['attachments'] == []
         assert mock_get_pdfs.call_args[0][0] == status
@@ -85,14 +67,14 @@ def test_correction_incorporation_notification(app, session, status, has_name_ch
         email = filing_notification.process(
             {'filingId': filing.id, 'type': 'correction', 'option': status}, token)
         if status == 'PAID':
-            assert testing_email in email['recipients']
+            assert 'comp_party@email.com' not in email['recipients']
             assert email['content']['subject'] == 'Confirmation of Correction of Incorporation Application'
             assert 'Incorporation Application (Corrected)' in email['content']['body']
         else:
             assert email['content']['subject'] == \
                        'Incorporation Application Correction Documents from the Business Registry'
 
-        assert testing_email in email['recipients']
+        assert 'test@test.com' in email['recipients']
         assert email['content']['body']
         if has_name_change_with_new_nr:
             assert 'Incorporation Certificate (Corrected)' in email['content']['body']
@@ -119,12 +101,12 @@ def test_maintenance_notification(app, session, status, filing_type):
     token = 'token'
     # test processor
     with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
-        with patch.object(filing_notification, 'get_recipients', return_value=testing_email) \
+        with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
           as mock_get_recipients:
             email = filing_notification.process(
                 {'filingId': filing.id, 'type': filing_type, 'option': status}, token)
 
-            assert testing_email in email['recipients']
+            assert 'test@test.com' in email['recipients']
             assert email['content']['body']
             assert email['content']['attachments'] == []
             assert mock_get_pdfs.call_args[0][0] == status

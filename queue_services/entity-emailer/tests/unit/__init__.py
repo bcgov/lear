@@ -87,11 +87,13 @@ def prep_incorp_filing(session, identifier, payment_id, option):
     return filing
 
 
-def prep_alteration_filing(session, identifier, option):
+def prep_alteration_filing(session, identifier, option, company_name):
     """Return an alteration filing prepped for email notification."""
     business = create_business(identifier)
     filing_template = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     filing_template['filing']['business'] = {'identifier': business.identifier}
+    filing_template['filing']['business'] = \
+        {'identifier': f'{identifier}', 'legalype': Business.LegalTypes.BCOMP.value, 'legalName': company_name}
     filing = create_filing(filing_json=filing_template, business_id=business.id)
     filing.save()
 
