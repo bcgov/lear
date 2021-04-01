@@ -16,6 +16,7 @@ import copy
 
 from legal_api.models import Business, Filing
 from registry_schemas.example_data import (
+    ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
     CORP_CHANGE_OF_ADDRESS,
@@ -32,7 +33,8 @@ FILING_TYPE_MAPPER = {
     # annual report structure is different than other 2
     'annualReport': ANNUAL_REPORT['filing']['annualReport'],
     'changeOfAddress': CORP_CHANGE_OF_ADDRESS,
-    'changeOfDirectors': CHANGE_OF_DIRECTORS
+    'changeOfDirectors': CHANGE_OF_DIRECTORS,
+    'alteration': ALTERATION_FILING_TEMPLATE
 }
 
 
@@ -82,6 +84,17 @@ def prep_incorp_filing(session, identifier, payment_id, option):
         transaction = uow.create_transaction(session)
         filing.transaction_id = transaction.id
         filing.save()
+    return filing
+
+
+def prep_alteration_filing(session, identifier, option):
+    """Return an alteration filing prepped for email notification."""
+    business = create_business(identifier)
+    filing_template = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    filing_template['filing']['business'] = {'identifier': business.identifier}
+    filing = create_filing(filing_json=filing_template, business_id=business.id)
+    filing.save()
+
     return filing
 
 

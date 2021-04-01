@@ -228,6 +228,10 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         elif filing_type in ['changeOfAddress', 'changeOfDirectors', 'alteration', 'correction']:
             subject = 'Notice of Articles'
 
+    elif status == Filing.Status.DRAFT.value:
+        if filing_type == 'alteration':
+            subject = 'How to use BCRegistry.ca'
+
     if not subject:  # fallback case - should never happen
         subject = 'Notification from the BC Business Registry'
 

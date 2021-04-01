@@ -18,27 +18,41 @@ import pytest
 from legal_api.models import Business
 
 from entity_emailer.email_processors import filing_notification
-from tests.unit import prep_incorp_filing, prep_incorporation_correction_filing, prep_maintenance_filing
+from tests.unit import (
+    prep_alteration_filing,
+    prep_incorp_filing,
+    prep_incorporation_correction_filing,
+    prep_maintenance_filing,
+)
 
 
-@pytest.mark.parametrize('status', [
-    ('PAID'),
-    ('COMPLETED'),
+@pytest.mark.parametrize(['type', 'status', 'subject'], [
+    ('incorporationApplication', 'PAID', 'Confirmation of Filing from the Business Registry'),
+    ('incorporationApplication', 'COMPLETED', 'Incorporation Documents from the Business Registry'),
+    ('alteration', 'DRAFT', 'How to use BCRegistry.ca'),
 ])
-def test_incorp_notification(app, session, status):
+def test_notifications(app, session, type, status, subject):
     """Assert that the legal name is changed."""
     # setup filing + business for email
-    filing = prep_incorp_filing(session, 'BC1234567', '1', status)
+    if type == 'incorporationApplication':
+        filing = prep_incorp_filing(session, 'BC1234567', '1', status)
+    else:
+        filing = prep_alteration_filing(session, 'BC1234567', status)
+
     token = 'token'
     # test processor
     with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
-        email = filing_notification.process(
-            {'filingId': filing.id, 'type': 'incorporationApplication', 'option': status}, token)
-        if status == 'PAID':
-            assert 'comp_party@email.com' in email['recipients']
-            assert email['content']['subject'] == 'Confirmation of Filing from the Business Registry'
+        if type != 'incorporationApplication':
+            with patch.object(filing_notification, 'get_recipients', return_value='test@test.com'):
+                email = filing_notification.process(
+                    {'filingId': filing.id, 'type': type, 'option': status}, token)
         else:
-            assert email['content']['subject'] == 'Incorporation Documents from the Business Registry'
+            email = filing_notification.process(
+                {'filingId': filing.id, 'type': type, 'option': status}, token)
+            if status == 'PAID':
+                assert 'comp_party@email.com' in email['recipients']
+
+        assert email['content']['subject'] == subject
 
         assert 'test@test.com' in email['recipients']
         assert email['content']['body']
@@ -67,7 +81,7 @@ def test_correction_incorporation_notification(app, session, status, has_name_ch
         email = filing_notification.process(
             {'filingId': filing.id, 'type': 'correction', 'option': status}, token)
         if status == 'PAID':
-            assert 'comp_party@email.com' in email['recipients']
+            assert 'test@test.com' in email['recipients']
             assert email['content']['subject'] == 'Confirmation of Correction of Incorporation Application'
             assert 'Incorporation Application (Corrected)' in email['content']['body']
         else:

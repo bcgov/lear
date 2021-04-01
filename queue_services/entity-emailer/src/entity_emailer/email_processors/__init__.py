@@ -94,6 +94,7 @@ def substitute_template_parts(template_code: str) -> str:
     """
     template_parts = [
         'business-dashboard-link',
+        'business-dashboard-link-alt',
         'business-info',
         'cra-notice',
         'footer',
