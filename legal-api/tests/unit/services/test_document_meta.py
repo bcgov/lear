@@ -111,6 +111,28 @@ def test_available_on_paper_only(session, app):
         assert len(document_meta.get_documents(filing)) == 0
 
 
+def test_available_in_colin_only(session, app):
+    """Assert that no documents are returned for a colin-only filing."""
+    document_meta = DocumentMetaService()
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    with app.app_context():
+        filing = {
+            'filing': {
+                'header': {
+                    'filingId': 12356,
+                    'status': 'COMPLETED',
+                    'name': 'changeOfAddress',
+                    'availableInColinOnly': True,
+                    'date': FILING_DATE
+                },
+                'business': {
+                    'identifier': 'BC1234567'
+                }
+            }
+        }
+        assert len(document_meta.get_documents(filing)) == 0
+
+
 def test_coa_paid(session, app):
     """Assert that an Address Change document is returned for a PAID COA filing."""
     document_meta = DocumentMetaService()

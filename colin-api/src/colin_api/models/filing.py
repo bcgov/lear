@@ -150,6 +150,7 @@ class Filing:
     filing_type = None
     filing_date = None
     paper_only = None
+    colin_only = None
     user_id = None
 
     def __init__(self):
@@ -561,6 +562,7 @@ class Filing:
                     filing_type=filing.filing_type
                 )
             filing.paper_only = False
+            filing.colin_only = False
             filing.effective_date = filing_event_info['event_timestmp']
             filing.body = {
                 'eventId': filing_event_info['event_id']
@@ -710,6 +712,7 @@ class Filing:
 
             filing.header = {
                 'availableOnPaperOnly': filing.paper_only,
+                'availableInColinOnly': filing.colin_only,
                 'certifiedBy': filing_event_info['certifiedBy'],
                 'colinIds': [filing.body['eventId']],
                 'date': convert_to_json_date(filing_event_info['event_timestmp']),
