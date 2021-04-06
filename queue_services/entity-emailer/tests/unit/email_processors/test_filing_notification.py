@@ -67,7 +67,7 @@ def test_correction_incorporation_notification(app, session, status, has_name_ch
         email = filing_notification.process(
             {'filingId': filing.id, 'type': 'correction', 'option': status}, token)
         if status == 'PAID':
-            assert 'comp_party@email.com' in email['recipients']
+            assert 'comp_party@email.com' not in email['recipients']
             assert email['content']['subject'] == 'Confirmation of Correction of Incorporation Application'
             assert 'Incorporation Application (Corrected)' in email['content']['body']
         else:

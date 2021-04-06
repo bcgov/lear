@@ -127,7 +127,7 @@ def get_nr_bearer_token():
                         auth=(client_id, client_secret))
     try:
         return res.json().get('access_token')
-    except Exception:  # pylint: disable=broad-except
+    except Exception:  # noqa B902; pylint: disable=W0703;
         logger.error('Failed to get nr token')
         capture_message('Failed to get nr token', level='error')
         return None

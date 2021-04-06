@@ -54,7 +54,7 @@ async def test_publish_event(app, session, stan_server, event_loop, client_id, e
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)
-    except Exception as err:
+    except Exception as err: # noqa B902
         print(err)
 
     # check it out
