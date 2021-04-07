@@ -187,10 +187,15 @@ class Report:  # pylint: disable=too-few-public-methods
 
         filing['header']['reportType'] = self._report_key
 
-        if (filing['header']['reportType'] == 'alterationNotice' and filing['previousLegalType'] != 'BEN' and \
-        filing['business']['legalType'] == 'BEN') or (filing['header']['reportType'] == 'noa' and \
-        filing['business']['legalType'] == 'BEN'):
-            filing['isBenefitCompanyStmt']= True
+        if (filing['header']['reportType'] == 'alterationNotice'
+            and filing['previousLegalType'] != 'BEN'
+            and filing['business']['legalType'] == 'BEN'
+            ) or (
+            filing['header']['reportType'] == 'noa'
+            and filing['business']['legalType'] == 'BEN'
+        ):
+            filing['isBenefitCompanyStmt'] = True
+
         self._set_dates(filing)
         self._set_description(filing)
         self._set_tax_id(filing)

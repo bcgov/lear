@@ -15,8 +15,9 @@
 from __future__ import annotations
 
 # from dataclasses import dataclass, field
+import copy
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from legal_api.core.utils import diff_dict, diff_list
 from legal_api.models import Business, Filing as FilingStorage  # noqa: I001
@@ -77,7 +78,7 @@ class Filing:
         self._payment_token: str
         self._payment_completion_date: datetime
         self._status: Optional[str] = None
-        self._paper_only: bool
+        self._paper_only: bool = False
         self._payment_account: Optional[str] = None
 
     @property
@@ -139,6 +140,9 @@ class Filing:
         if self._storage.status in [Filing.Status.PAID.value,
                                     Filing.Status.PENDING.value,
                                     ]:
+            if self._storage.tech_correction_json:
+                return self._storage.tech_correction_json
+
             filing_json = self.raw
         else:  # Filing.Status.COMPLETED.value
             filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
@@ -246,3 +250,21 @@ class Filing:
             filings.append(filing)
 
         return filings
+
+    def legal_filings(self) -> Optional[List]:
+        """Return a list of the filings extracted from this filing submission.
+
+        Returns: {
+            List: or None of the Legal Filing JSON segments.
+            }
+        """
+        if not (filing := self.json):
+            return None
+
+        legal_filings = []
+        for k in filing['filing'].keys():  # pylint: disable=unsubscriptable-object
+            if FilingStorage.FILINGS.get(k, None):
+                legal_filings.append(
+                    {k: copy.deepcopy(filing['filing'].get(k))})  # pylint: disable=unsubscriptable-object
+
+        return legal_filings

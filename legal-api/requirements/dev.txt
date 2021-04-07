@@ -26,4 +26,3 @@ pytest-cov
 
 # docker
 lovely-pytest-docker
-pytest_docker
