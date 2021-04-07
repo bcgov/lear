@@ -127,12 +127,41 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     }
 
     __tablename__ = 'filings'
+    # this mapper is used so that new and old versions of the service can be run simultaneously,
+    # making rolling upgrades easier
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            '_completion_date',
+            '_filing_date',
+            '_filing_json',
+            '_filing_type',
+            '_payment_completion_date',
+            '_payment_status_code',
+            '_payment_token',
+            '_source',
+            '_status',
+            'business_id',
+            'court_order_date',
+            'court_order_effect_of_order',
+            'court_order_file_number',
+            'effective_date',
+            'paper_only',
+            'parent_filing_id',
+            'payment_account',
+            'submitter_id',
+            'tech_correction_json',
+            'temp_reg',
+            'transaction_id'
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     _completion_date = db.Column('completion_date', db.DateTime(timezone=True))
     _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _filing_type = db.Column('filing_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
+    tech_correction_json = db.Column('tech_correction_json', JSONB)
     effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _payment_status_code = db.Column('payment_status_code', db.String(50))
     _payment_token = db.Column('payment_id', db.String(4096))
