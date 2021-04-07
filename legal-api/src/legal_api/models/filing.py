@@ -387,7 +387,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 json_submission['filing']['header']['availableOnPaperOnly'] = self.paper_only
 
             if self.colin_only:
-                son_submission['filing']['header']['availableInColinOnly'] = self.colin_only
+                json_submission['filing']['header']['availableInColinOnly'] = self.colin_only
             if self.effective_date:
                 json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()
             if self._payment_status_code:
