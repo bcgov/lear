@@ -1,4 +1,15 @@
-FROM python:3.8.5-buster
+# platform=linux/amd64
+FROM python:3.8.6-buster
+
+ARG VCS_REF="missing"
+ARG BUILD_DATE="missing"
+
+ENV VCS_REF=${VCS_REF}
+ENV BUILD_DATE=${BUILD_DATE}
+
+LABEL org.label-schema.vcs-ref=${VCS_REF} \
+    org.label-schema.build-date=${BUILD_DATE}
+
 USER root
 
 # Create working directory
