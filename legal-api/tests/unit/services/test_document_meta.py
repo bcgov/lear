@@ -1061,6 +1061,8 @@ def test_transition_bcomp_paid(session, app):
         filing['filing']['header']['date'] = FILING_DATE
         filing['filing']['header']['status'] = 'PAID'
         filing['filing']['header']['availableOnPaperOnly'] = False
+        filing['filing']['header']['availableInColinOnly'] = False
+
         documents = document_meta.get_documents(filing)
 
         assert len(documents) == 1
