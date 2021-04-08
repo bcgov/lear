@@ -514,7 +514,8 @@ class Business:  # pylint: disable=too-many-instance-attributes
             if corp_frozen_type_code not in [x.value for x in Business.CorpFrozenTypes.__members__.values()]:
                 current_app.logger.error(f'Tried to update {corp_num} with invalid corp frozen type \
                                             code {corp_frozen_type_code}')
-                raise Exception
+                raise ValueError(f'Tried to update {corp_num} with invalid corp frozen type \
+                                    code {corp_frozen_type_code}')
 
             cursor.execute(
                 """
