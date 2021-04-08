@@ -865,7 +865,7 @@ class Filing:
 
                 # Freeze entity for Alteration
                 if filing.filing_type == 'alteration':
-                    Business.update_corp_frozen_type(cursor, corp_num, Business.CorpFrozenTypes.COMPANY.value)
+                    Business.update_corp_frozen_type(cursor, corp_num, Business.CorpFrozenTypes.COMPANY_FROZEN.value)
 
             return filing.event_id
 
