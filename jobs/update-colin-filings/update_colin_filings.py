@@ -154,7 +154,7 @@ def run():
                         # pylint: disable=no-member; false positive
                         application.logger.error(f'Failed to update filing {filing_id} with colin event id.')
 
-        except Exception as err:
+        except Exception as err:  # noqa: B902
             # pylint: disable=no-member; false positive
             application.logger.error(err)
 
