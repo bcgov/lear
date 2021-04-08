@@ -46,6 +46,12 @@ class Business:  # pylint: disable=too-many-instance-attributes
         BC_COMP = 'BC'
         ULC_COMP = 'ULC'
 
+    class CorpFrozenTypes(Enum):
+        """Render an Enum of the Corporation Frozen Type Codes."""
+
+        COMPANY = 'C'
+        SELFSERV = 'S'
+
     # temp converter because legal doesn't have codes only class (legal_type)
     CORP_TYPE_CONVERSION = {
         LearBusinessTypes.COOP.value: [
@@ -495,6 +501,29 @@ class Business:  # pylint: disable=too-many-instance-attributes
                 """,
                 corp_num=corp_num,
                 corp_type=corp_type
+            )
+
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+
+    @classmethod
+    def update_corp_frozen_type(cls, cursor, corp_num: str, corp_frozen_type_code: str):
+        """Update corp frozen type code in corporations table."""
+        try:
+            if corp_frozen_type_code not in [x.value for x in Business.CorpFrozenTypes.__members__.values()]:
+                current_app.logger.error(f'Tried to update {corp_num} with invalid corp frozen type \
+                                            code {corp_frozen_type_code}')
+                raise Exception
+
+            cursor.execute(
+                """
+                UPDATE corporation
+                SET corp_frozen_typ_cd = :corp_frozen_type_code
+                WHERE corp_num = :corp_num
+                """,
+                corp_num=corp_num,
+                corp_frozen_type_code=corp_frozen_type_code
             )
 
         except Exception as err:
