@@ -1,0 +1,20 @@
+[
+    {
+        "vault": "shared",
+        "application": [
+            "nats"
+        ]
+    },
+    {
+        "vault": "entity",
+        "application": [
+            "jwt",
+            "postgres-legal",
+            "legal-api",
+            "nats-filer",
+            "entity-service-account",
+            "launchdarkly",
+            "sentry"
+        ]
+    }
+]

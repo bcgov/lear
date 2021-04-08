@@ -107,17 +107,14 @@ def validate_court_order(court_order_path, court_order):
             msg.append({'error': 'Length of court order file number must be from 5 to 20 characters.',
                         'path': err_path})
 
-    if 'effectOfOrder' not in court_order and (len(court_order['effectOfOrder']) < 5 or
-                                               len(court_order['effectOfOrder']) > 500):
+    if 'effectOfOrder' in court_order and (len(court_order['effectOfOrder']) < 5 or
+                                           len(court_order['effectOfOrder']) > 500):
         err_path = court_order_path + '/effectOfOrder'
         msg.append({'error': 'Length of court order effect of order must be from 5 to 500 characters.',
                     'path': err_path})
 
     court_order_date_path = court_order_path + '/orderDate'
-    if 'orderDate'not in court_order:
-        err_path = court_order_date_path
-        msg.append({'error': 'Court order date is required.', 'path': err_path})
-    else:
+    if 'orderDate' in court_order:
         try:
             court_order_date = dt.fromisoformat(court_order['orderDate'])
             if court_order_date.timestamp() > datetime.utcnow().timestamp():

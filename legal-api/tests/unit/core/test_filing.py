@@ -54,6 +54,45 @@ def test_filing_json_draft(session):
 
     assert filing.json == filing_submission
 
+def test_technical_filing_json_draft(session):
+    """Assert that the technical json field gets the draft filing correctly.
+
+    technical filings should bypass all checks.
+
+    danger Will Robinson
+    
+    This builds on test_filing_json_draft, so if that is broken, this wont work either.
+    """
+    # setup
+    filing = Filing()
+    filing_submission = {
+        'filing': {
+            'header': {
+                'name': 'specialResolution',
+                'date': '2019-04-08'
+            },
+            'specialResolution': {
+                'resolution': 'Year challenge is hitting oppo for the win.'
+            }}}
+
+    filing.json = filing_submission
+    filing.save()
+    # sanity check
+    assert filing.json == filing_submission
+
+    # test
+    non_compliant_json  = {
+        'dope': 'this would fail any validator, but can bypass everything.',
+        'dogsLife': "do the humans really know what's best?"}
+    filing.storage.tech_correction_json = non_compliant_json
+    # over ride the state and skip state setting listeners for this test
+    filing._storage.skip_status_listener = True
+    filing._storage._status = Filing.Status.PENDING.value
+    filing.save()
+
+    # validate
+    assert filing.json == non_compliant_json
+
 
 def test_filing_json_completed(session):
     """Assert that the json field gets the completed filing correctly."""
