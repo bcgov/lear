@@ -712,7 +712,7 @@ class Filing:
 
             filing.header = {
                 'availableOnPaperOnly': filing.paper_only,
-                'availableInColinOnly': filing.colin_only,
+                'inColinOnly': filing.colin_only,
                 'certifiedBy': filing_event_info['certifiedBy'],
                 'colinIds': [filing.body['eventId']],
                 'date': convert_to_json_date(filing_event_info['event_timestmp']),
