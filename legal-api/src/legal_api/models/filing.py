@@ -152,6 +152,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'court_order_file_number',
             'effective_date',
             'paper_only',
+            'colin_only',
             'parent_filing_id',
             'payment_account',
             'submitter_id',
@@ -386,8 +387,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             if json_submission['filing']['header'].get('availableOnPaperOnly', None) is None:
                 json_submission['filing']['header']['availableOnPaperOnly'] = self.paper_only
 
-            if self.colin_only:
+            # if in Colin only is not defined in filing json, use the flag on the filing record
+            if json_submission['filing']['header'].get('inColinOnly', None) is None:
                 json_submission['filing']['header']['inColinOnly'] = self.colin_only
+
             if self.effective_date:
                 json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()
             if self._payment_status_code:
