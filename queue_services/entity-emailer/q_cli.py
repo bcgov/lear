@@ -26,11 +26,18 @@ import os
 import random
 import signal
 import sys
+import time
+import uuid
+from datetime import datetime, timezone
+from typing import Final
+
+from entity_queue_common.service_utils import error_cb, logger, signal_handler
 
 from nats.aio.client import Client as NATS  # noqa N814; by convention the name is NATS
 from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 
-from entity_queue_common.service_utils import error_cb, logger, signal_handler
+
+affiliation_type: Final = 'bc.registry.affiliation'
 
 
 async def run(loop, email_info):  # pylint: disable=too-many-locals
@@ -81,7 +88,11 @@ async def run(loop, email_info):  # pylint: disable=too-many-locals
                                     functools.partial(signal_handler, sig_loop=loop, sig_nc=nc, task=close)
                                     )
 
-        payload = {'email': email_info}
+        if email_info['type'] == affiliation_type:
+            payload = email_info
+        else:
+            payload = {'email': email_info}
+
         print('publishing:', payload)
         await sc.publish(subject=subscription_options().get('subject'),
                          payload=json.dumps(payload).encode('utf-8'))
@@ -107,10 +118,29 @@ if __name__ == '__main__':
             option = arg
         elif opt in ('-i', '--identifier'):
             identifier = arg
-    if not all([fid, etype, option]):
+    if not etype or (etype not in [affiliation_type] and not all([fid, etype, option])):
         print('q_cli.py -f <filing_id> -t <email_type> -o <option> -i <identifier>')
         sys.exit()
+    elif etype and etype in [affiliation_type] and not all([fid, etype]):
+        print('q_cli.py -f <filing_id> -t <email_type>')
+        sys.exit()
 
-    email_info = {'filingId': fid, 'type': etype, 'option': option, 'identifier': identifier}
+    if etype in [affiliation_type]:
+        msg_id = str(uuid.uuid4())
+        source = f'/businesses/{identifier}'
+        time = datetime.utcfromtimestamp(time.time()).replace(tzinfo=timezone.utc).isoformat()
+        email_info = {
+                        'specversion': '1.x-wip',
+                        'type': etype,
+                        'source': source,
+                        'id': msg_id,
+                        'time': time,
+                        'datacontenttype': 'application/json',
+                        'identifier': identifier,
+                        'data': {'filing': {'header': {'filingId': fid}}},
+                     }
+    else:
+        email_info = {'filingId': fid, 'type': etype, 'option': option, 'identifier': identifier}
+
     event_loop = asyncio.get_event_loop()
     event_loop.run_until_complete(run(event_loop, email_info))
