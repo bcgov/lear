@@ -1,5 +1,5 @@
 <div class="no-page-break">
-    {% if listOfTranslations|length == 0 %}
+    {% if listOfTranslations|length or nameTranslations|length %}
         <div class="separator mt-4"></div>
         <div class="section-title mt-4">Company Name Translation(s)</div>
         <div class="section-data mt-3">
