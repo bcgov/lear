@@ -1,10 +1,10 @@
 <div class="no-page-break">
-    {% if listOfTranslations|length or nameTranslations|length %}
+    {% if listOfTranslations|length or previousNameTranslations|length %}
         <div class="separator mt-4"></div>
         <div class="section-title mt-4">Company Name Translation(s)</div>
         <div class="section-data mt-3">
             <table class="section-translation-table" role="presentation">
-                {% if listOfTranslations|length == 0 and nameTranslations| length %}
+                {% if listOfTranslations|length == 0 and previousNameTranslations|length %}
                     <div class="mt-2">NONE</div>
                 {% else %}
                     {% for translation in listOfTranslations %}

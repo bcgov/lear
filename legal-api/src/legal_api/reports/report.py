@@ -350,7 +350,7 @@ class Report:  # pylint: disable=too-few-public-methods
         if 'nameTranslations' in filing['alteration']:
             filing['listOfTranslations'] = filing['alteration'].get('nameTranslations', [])
             # Get previous translations for deleted translations. No record created in aliases version for deletions
-            filing['nameTranslations'] = VersionedBusinessDetailsService.get_name_translations_before_revision(
+            filing['previousNameTranslations'] = VersionedBusinessDetailsService.get_name_translations_before_revision(
                 self._filing.transaction_id, self._business.id)
         if filing['alteration'].get('shareStructure', None):
             filing['shareClasses'] = filing['alteration']['shareStructure']['shareClasses']
