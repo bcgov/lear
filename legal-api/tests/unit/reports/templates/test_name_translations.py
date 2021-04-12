@@ -13,38 +13,44 @@
 # limitations under the License.
 """Name Translation template tests."""
 
-
+from typing import Final
 from pathlib import Path
 
 from flask import current_app
 from jinja2 import Template
 
 
-def test_no_rendering(session):
-    """Test Company Name Translation(s) section should not rendered when no current translation nor previous ones."""
+title: Final = 'Company Name Translation(s)'
+
+
+def get_template():
+    """Returns the template."""
     template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
     template_code = Path(f'{template_path}/template-parts/common/nameTranslation.html').read_text()
-    template = Template(template_code)
+    return Template(template_code)
+
+
+def test_no_rendering(session):
+    """Test Company Name Translation(s) section should not rendered when no current translation nor previous ones."""
+    template = get_template()
     rendered = template.render(listOfTranslations=[], previousNameTranslations=[])
-    assert 'Company Name Translation(s)' not in rendered
+    assert title not in rendered
 
 
 def test_render_none(session):
     """Test Company Name Translation(s) should render none when no current translation and there were previous ones."""
-    template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
-    template_code = Path(f'{template_path}/template-parts/common/nameTranslation.html').read_text()
-    template = Template(template_code)
-    rendered = template.render(listOfTranslations=[], previousNameTranslations=['Une Grande Enterprise'])
-    assert 'Company Name Translation(s)' in rendered
+    template = get_template()
+    name_translation = {'name': 'Une Grande Enterprise'}
+    rendered = template.render(listOfTranslations=[], previousNameTranslations=[name_translation])
+    assert title in rendered
     assert 'Une Grande Enterprise' not in rendered
     assert 'NONE' in rendered
 
 
 def test_render_translations(session):
     """Test Company Name Translation(s) should render when there are current translations."""
-    template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
-    template_code = Path(f'{template_path}/template-parts/common/nameTranslation.html').read_text()
-    template = Template(template_code)
-    rendered = template.render(listOfTranslations=['Ma Enterprise'], previousNameTranslations=[])
-    assert 'Company Name Translation(s)' in rendered
+    template = get_template()
+    name_translation = {'name': 'Ma Enterprise'}
+    rendered = template.render(listOfTranslations=[name_translation], previousNameTranslations=[])
+    assert title in rendered
     assert 'Ma Enterprise' in rendered
