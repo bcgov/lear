@@ -596,6 +596,19 @@ def test_save_filing_with_colin_id(session):
     assert filing.status == Filing.Status.PAID.value
 
 
+def test_save_filing_colin_only(session):
+    """Assert that the in colin only flag is retrieved and saved."""
+    from legal_api.models import Filing
+    # setup
+    filing = Filing()
+    filing.filing_json = FILING_HEADER
+    filing.save()
+
+    # test
+    assert filing.json['filing']['header']['inColinOnly'] is False
+    assert filing.colin_only == False
+
+
 def test_uncorrected_filing(session):
     """Assert that a uncorrected filing is unaffected."""
     from legal_api.models import Filing

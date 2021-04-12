@@ -152,6 +152,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'court_order_file_number',
             'effective_date',
             'paper_only',
+            'colin_only',
             'parent_filing_id',
             'payment_account',
             'submitter_id',
@@ -173,6 +174,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
     _status = db.Column('status', db.String(20), default=Status.DRAFT)
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
+    colin_only = db.Column('colin_only', db.Boolean, unique=False, default=False)
     payment_account = db.Column('payment_account', db.String(30))
     _source = db.Column('source', db.String(15), default=Source.LEAR.value)
     court_order_file_number = db.Column('court_order_file_number', db.String(20))
@@ -384,6 +386,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             # if availableOnPaper is not defined in filing json, use the flag on the filing record
             if json_submission['filing']['header'].get('availableOnPaperOnly', None) is None:
                 json_submission['filing']['header']['availableOnPaperOnly'] = self.paper_only
+
+            # if in Colin only is not defined in filing json, use the flag on the filing record
+            if json_submission['filing']['header'].get('inColinOnly', None) is None:
+                json_submission['filing']['header']['inColinOnly'] = self.colin_only
 
             if self.effective_date:
                 json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()

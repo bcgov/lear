@@ -51,6 +51,7 @@ def test_business_not_found(session, app):
                     'status': 'DONT_CARE',
                     'name': 'changeOfAddress',
                     'availableOnPaperOnly': False,
+                    'inColinOnly': False,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -76,6 +77,7 @@ def test_wrong_filing_status(session, app):
                     'status': 'NOT_PAID_OR_COMPLETE',
                     'name': 'changeOfAddress',
                     'availableOnPaperOnly': False,
+                    'inColinOnly': False,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -101,6 +103,30 @@ def test_available_on_paper_only(session, app):
                     'status': 'COMPLETED',
                     'name': 'changeOfAddress',
                     'availableOnPaperOnly': True,
+                    'inColinOnly': False,
+                    'date': FILING_DATE
+                },
+                'business': {
+                    'identifier': 'BC1234567'
+                }
+            }
+        }
+        assert len(document_meta.get_documents(filing)) == 0
+
+
+def test_available_in_colin_only(session, app):
+    """Assert that no documents are returned for a colin-only filing."""
+    document_meta = DocumentMetaService()
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    with app.app_context():
+        filing = {
+            'filing': {
+                'header': {
+                    'filingId': 12356,
+                    'status': 'COMPLETED',
+                    'name': 'changeOfAddress',
+                    'availableOnPaperOnly': False,
+                    'inColinOnly': True,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -122,6 +148,7 @@ def test_coa_paid(session, app):
                     'filingId': 12356,
                     'status': 'PAID',
                     'name': 'changeOfAddress',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -151,6 +178,7 @@ def test_coa_completed_bc(session, app):
                     'filingId': 12356,
                     'status': 'COMPLETED',
                     'name': 'changeOfAddress',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -186,6 +214,7 @@ def test_coa_completed_cp(session, app):
                     'filingId': 12356,
                     'status': 'COMPLETED',
                     'name': 'changeOfAddress',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -215,6 +244,7 @@ def test_ar(session, app):
                     'filingId': 12356,
                     'status': 'COMPLETED',
                     'name': 'annualReport',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -245,6 +275,7 @@ def test_cod_paid(session, app):
                     'filingId': 12356,
                     'status': 'PAID',
                     'name': 'changeOfDirectors',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -275,6 +306,7 @@ def test_cod_completed_bc(session, app):
                     'filingId': 12356,
                     'status': 'COMPLETED',
                     'name': 'changeOfDirectors',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -310,6 +342,7 @@ def test_cod_completed_cp(session, app):
                     'filingId': 12356,
                     'status': 'COMPLETED',
                     'name': 'changeOfDirectors',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -339,6 +372,7 @@ def test_con_paid(session, app):
                     'filingId': 12356,
                     'status': 'PAID',
                     'name': 'changeOfName',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -369,6 +403,7 @@ def test_con_completed_bc(session, app):
                     'filingId': 12356,
                     'status': 'COMPLETED',
                     'name': 'changeOfName',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -404,6 +439,7 @@ def test_con_completed_cp(session, app):
                     'filingId': 12356,
                     'status': 'COMPLETED',
                     'name': 'changeOfName',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -433,6 +469,7 @@ def test_special_resolution_paid(session, app):
                     'filingId': 12356,
                     'status': 'PAID',
                     'name': 'specialResolution',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -456,6 +493,7 @@ def test_special_resolution_completed(session, app):
                     'filingId': 12356,
                     'status': 'COMPLETED',
                     'name': 'specialResolution',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -485,6 +523,7 @@ def test_voluntary_dissolution_paid(session, app):
                     'filingId': 12356,
                     'status': 'PAID',
                     'name': 'voluntaryDissolution',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -508,6 +547,7 @@ def test_voluntary_dissolution_completed(session, app):
                     'filingId': 12356,
                     'status': 'COMPLETED',
                     'name': 'voluntaryDissolution',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -537,6 +577,7 @@ def test_correction(session, app):
                     'filingId': 12356,
                     'status': 'COMPLETED',
                     'name': 'correction',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -572,6 +613,7 @@ def test_alteration(status, filing_id, business_identifier, expected_number, alt
                     'filingId': filing_id,
                     'status': status,
                     'name': 'alteration',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -597,6 +639,7 @@ def test_ia_fed(app):
                     'filingId': 12356,
                     'status': 'PAID',
                     'name': 'incorporationApplication',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'effectiveDate': LegislationDatetime.tomorrow_midnight().isoformat(),
                     'date': FILING_DATE
@@ -631,6 +674,7 @@ def test_ia_paid(app):
                     'filingId': 12356,
                     'status': 'PAID',
                     'name': 'incorporationApplication',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'effectiveDate': FILING_DATE,
                     'date': FILING_DATE
@@ -665,6 +709,7 @@ def test_ia_completed(session, app):
                     'filingId': 12356,
                     'status': 'COMPLETED',
                     'name': 'incorporationApplication',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'effectiveDate': FILING_DATE,
                     'date': FILING_DATE
@@ -714,6 +759,7 @@ def test_ia_completed_bcomp(session, app):
                     'filingId': 12356,
                     'status': 'COMPLETED',
                     'name': 'incorporationApplication',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'effectiveDate': FILING_DATE,
                     'date': FILING_DATE
@@ -761,6 +807,7 @@ def test_ia_completed_bcomp_original(session, app):
                     'filingId': original_filing.id,
                     'status': 'COMPLETED',
                     'name': 'incorporationApplication',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'effectiveDate': FILING_DATE,
                     'date': FILING_DATE
@@ -806,6 +853,7 @@ def test_correction_ia(session, app):
                     'filingId': 12357,
                     'status': 'COMPLETED',
                     'name': 'correction',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -853,6 +901,7 @@ def test_correction_ia_with_cert_nr_change(session, app):
                     'filingId': 12357,
                     'status': 'COMPLETED',
                     'name': 'correction',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -907,6 +956,7 @@ def test_correction_ia_with_cert_name_correction(session, app):
                     'filingId': 12357,
                     'status': 'COMPLETED',
                     'name': 'correction',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -962,6 +1012,7 @@ def test_correction_ia_with_named_to_numbered(session, app):
                     'filingId': 12357,
                     'status': 'COMPLETED',
                     'name': 'correction',
+                    'inColinOnly': False,
                     'availableOnPaperOnly': False,
                     'date': FILING_DATE
                 },
@@ -1010,6 +1061,8 @@ def test_transition_bcomp_paid(session, app):
         filing['filing']['header']['date'] = FILING_DATE
         filing['filing']['header']['status'] = 'PAID'
         filing['filing']['header']['availableOnPaperOnly'] = False
+        filing['filing']['header']['inColinOnly'] = False
+
         documents = document_meta.get_documents(filing)
 
         assert len(documents) == 1
@@ -1030,6 +1083,7 @@ def test_transition_bcomp_completed(session, app):
         filing['filing']['header']['date'] = FILING_DATE
         filing['filing']['header']['status'] = 'COMPLETED'
         filing['filing']['header']['availableOnPaperOnly'] = False
+        filing['filing']['header']['inColinOnly'] = False
         documents = document_meta.get_documents(filing)
 
         assert len(documents) == 2
