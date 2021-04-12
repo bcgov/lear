@@ -15,7 +15,7 @@
 
 The Business class and Schema are held in this module
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 import datedelta
@@ -125,6 +125,15 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
         return db.session.query(Address).filter(Address.business_id == self.id).\
             filter(Address.address_type == Address.DELIVERY)
+
+    @property
+    def good_standing(self):
+        """Return true if in good standing, otherwise false."""
+        last_ar = self.founding_date
+        if self.last_ar_date:
+            last_ar = self.last_ar_date
+
+        return last_ar + datedelta.datedelta(years=1, months=2, days=1) > datetime.now(timezone.utc)
 
     def save(self):
         """Render a Business to the local cache."""
