@@ -14,7 +14,8 @@
 """Callbacks and utility functions used to support the service loop."""
 from typing import Callable
 
-import stan
+from stan.aio.client import Client as StanClient
+from stan.aio.client import Msg as StanMessage
 
 from .exceptions import EmailException, FilingException, QueueException
 from .handlers import error_cb, signal_handler
@@ -22,11 +23,11 @@ from .run_version import get_run_version
 from .service_logger import logger
 
 
-async def subscribe_to_queue(stan_client: stan.aio.client.Client,
+async def subscribe_to_queue(stan_client: StanClient,
                              subject: str,
                              queue: str,
                              durable_name: str,
-                             call_back: Callable[[stan.aio.client.Msg], None]) \
+                             call_back: Callable[[StanMessage], None]) \
         -> str:
     """Subscribe to the Queue using the environment setup.
 
