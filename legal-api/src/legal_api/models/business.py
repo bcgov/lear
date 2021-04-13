@@ -129,10 +129,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     @property
     def good_standing(self):
         """Return true if in good standing, otherwise false."""
-        last_ar = self.founding_date
-        if self.last_ar_date:
-            last_ar = self.last_ar_date
-
+        last_ar = self.last_ar_date or self.founding_date
         return last_ar + datedelta.datedelta(years=1, months=2, days=1) > datetime.now(timezone.utc)
 
     def save(self):
