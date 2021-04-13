@@ -16,7 +16,7 @@ itsdangerous==1.1.0
 multidict==5.1.0
 pkg-resources==0.0.0
 protobuf==3.15.6
-python-dotenv==0.15.0
+python-dotenv==0.17.0
 sentry-sdk==1.0.0
 six==1.15.0
 typing-extensions==3.7.4.3
