@@ -49,10 +49,11 @@ class Business:  # pylint: disable=too-many-instance-attributes
     class CorpFrozenTypes(Enum):
         """Render an Enum of the Corporation Frozen Type Codes.
 
-            The following frozen states are used for:
-            COMPANY_FROZEN is when the Registrar has frozen a company
-            SELF_SERVED_FROZEN is a legacy code used to freeze a company and now is deprecated.
+        The following frozen states are used for:
+        COMPANY_FROZEN is when the Registrar has frozen a company
+        SELF_SERVED_FROZEN is a legacy code used to freeze a company and now is deprecated.
         """
+
         COMPANY_FROZEN = 'C'
         SELF_SERVED_FROZEN = 'S'  # Deprecated
 
