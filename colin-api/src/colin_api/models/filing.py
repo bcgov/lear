@@ -866,6 +866,10 @@ class Filing:
                 Business.update_corporation(
                     cursor=cursor, corp_num=corp_num, date=agm_date, annual_report=is_annual_report)
 
+                # Freeze entity for Alteration
+                if filing.filing_type == 'alteration':
+                    Business.update_corp_frozen_type(cursor, corp_num, Business.CorpFrozenTypes.COMPANY_FROZEN.value)
+
             return filing.event_id
 
         except Exception as err:
