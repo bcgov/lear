@@ -47,10 +47,14 @@ class Business:  # pylint: disable=too-many-instance-attributes
         ULC_COMP = 'ULC'
 
     class CorpFrozenTypes(Enum):
-        """Render an Enum of the Corporation Frozen Type Codes."""
+        """Render an Enum of the Corporation Frozen Type Codes.
 
+            The following frozen states are used for:
+            COMPANY_FROZEN is when the Registrar has frozen a company
+            SELF_SERVED_FROZEN is a legacy code used to freeze a company and now is deprecated.
+        """
         COMPANY_FROZEN = 'C'
-        SELF_SERVED_FROZEN = 'S'
+        SELF_SERVED_FROZEN = 'S'  # Deprecated
 
     # temp converter because legal doesn't have codes only class (legal_type)
     CORP_TYPE_CONVERSION = {
