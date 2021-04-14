@@ -682,6 +682,40 @@ def test_delete_filing_not_authorized(session, client, jwt):
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
 
+@pytest.mark.parametrize(
+    'legal_type',
+    [
+        Business.LegalTypes.COMP,
+        Business.LegalTypes.CONTINUE_IN,
+        Business.LegalTypes.CO_1860,
+        Business.LegalTypes.CO_1862,
+        Business.LegalTypes.CO_1878,
+        Business.LegalTypes.CO_1890,
+        Business.LegalTypes.CO_1897,
+        Business.LegalTypes.BC_ULC_COMPANY,
+        Business.LegalTypes.ULC_CONTINUE_IN,
+        Business.LegalTypes.ULC_CO_1860,
+        Business.LegalTypes.ULC_CO_1862,
+        Business.LegalTypes.ULC_CO_1878,
+        Business.LegalTypes.ULC_CO_1890,
+        Business.LegalTypes.ULC_CO_1897
+    ])
+def test_delete_draft_filing_limited_and_unlimited_companies(session, client, jwt, legal_type):
+    """Assert that draft filing cannot be delete for limited and unlimited companies."""
+    identifier = 'BC7654321'
+    factory_business(identifier, entity_type=legal_type.value)
+    headers = create_header(jwt, [STAFF_ROLE], identifier)
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings?draft=true',
+                     json=ALTERATION_FILING_TEMPLATE,
+                     headers=headers
+                     )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    filing_id = rv.json['filing']['header']['filingId']
+    rv = client.delete(f'/api/v1/businesses/{identifier}/filings/{filing_id}', headers=headers)
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+
 def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
     """Assert that a valid filing can NOT be updated once it has been paid."""
     import copy

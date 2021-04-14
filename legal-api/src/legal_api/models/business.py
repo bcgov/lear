@@ -17,6 +17,7 @@ The Business class and Schema are held in this module
 """
 from datetime import datetime
 from enum import Enum
+from typing import Final
 
 import datedelta
 from sqlalchemy.exc import OperationalError, ResourceClosedError
@@ -48,8 +49,37 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         """Render an Enum of the Business Legal Types."""
 
         COOP = 'CP'
-        COMP = 'BC'
         BCOMP = 'BEN'
+        COMP = 'BC'
+        CONTINUE_IN = 'C'
+        CO_1860 = 'QA'
+        CO_1862 = 'QB'
+        CO_1878 = 'QC'
+        CO_1890 = 'QD'
+        CO_1897 = 'QE'
+        BC_ULC_COMPANY = 'ULC'
+        ULC_CONTINUE_IN = 'CUL'
+        ULC_CO_1860 = 'UQA'
+        ULC_CO_1862 = 'UQB'
+        ULC_CO_1878 = 'UQC'
+        ULC_CO_1890 = 'UQD'
+        ULC_CO_1897 = 'UQE'
+
+    LIMITED_COMPANIES: Final = [LegalTypes.COMP,
+                                LegalTypes.CONTINUE_IN,
+                                LegalTypes.CO_1860,
+                                LegalTypes.CO_1862,
+                                LegalTypes.CO_1878,
+                                LegalTypes.CO_1890,
+                                LegalTypes.CO_1897]
+
+    UNLIMITED_COMPANIES: Final = [LegalTypes.BC_ULC_COMPANY,
+                                  LegalTypes.ULC_CONTINUE_IN,
+                                  LegalTypes.ULC_CO_1860,
+                                  LegalTypes.ULC_CO_1862,
+                                  LegalTypes.ULC_CO_1878,
+                                  LegalTypes.ULC_CO_1890,
+                                  LegalTypes.ULC_CO_1897]
 
     __versioned__ = {}
     __tablename__ = 'businesses'
