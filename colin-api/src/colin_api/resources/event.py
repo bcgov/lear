@@ -13,7 +13,7 @@
 # limitations under the License.
 """Event info endpoint for colin db."""
 from flask import current_app, jsonify
-from flask_restplus import Resource, cors
+from flask_restx import Resource, cors
 
 from colin_api.resources.business import API
 from colin_api.resources.db import DB

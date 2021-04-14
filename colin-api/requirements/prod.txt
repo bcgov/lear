@@ -3,13 +3,13 @@ gunicorn
 Flask
 Flask-Script
 Flask-Moment
-Flask-RESTplus
+Flask-RESTX
 flask-jwt-oidc>=0.1.5
 jsonschema
 pycountry
 python-dotenv
 psycopg2-binary
 sentry-sdk[flask]
-attrs<19.2.0
-werkzeug<1.0
+attrs
+Werkzeug
 pytz

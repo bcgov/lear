@@ -21,7 +21,7 @@ All services have 2 defaults sets of endpoints:
 That are used to expose operational health information about the service, and meta information.
 """
 from flask import Blueprint
-from flask_restplus import Api
+from flask_restx import Api
 
 from .business import API as BUSINESS_API
 from .event import API as EVENT_API

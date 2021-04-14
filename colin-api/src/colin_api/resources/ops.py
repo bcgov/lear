@@ -14,7 +14,7 @@
 """Endpoints to check and manage the health of the service."""
 import cx_Oracle
 from flask import current_app
-from flask_restplus import Namespace, Resource
+from flask_restx import Namespace, Resource
 
 from colin_api.resources.db import DB
 
