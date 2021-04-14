@@ -13,9 +13,10 @@
 # limitations under the License.
 """Name Translation template tests."""
 
-from typing import Final
 from pathlib import Path
+from typing import Final
 
+import pytest
 from flask import current_app
 from jinja2 import Template
 
@@ -30,27 +31,22 @@ def get_template():
     return Template(template_code)
 
 
-def test_no_rendering(session):
-    """Test Company Name Translation(s) section should not rendered when no current translation nor previous ones."""
+@pytest.mark.parametrize('list_of_translations,previous_translations', [
+    ([{'name': 'Ma Enterprise'}], []),
+    ([], [{'name': 'Ma Enterprise'}]),
+    ([], [])])
+def test_render_translations(session, list_of_translations, previous_translations):
+    """Test Company Name Translation(s) rendering."""
     template = get_template()
-    rendered = template.render(listOfTranslations=[], previousNameTranslations=[])
-    assert title not in rendered
-
-
-def test_render_none(session):
-    """Test Company Name Translation(s) should render none when no current translation and there were previous ones."""
-    template = get_template()
-    name_translation = {'name': 'Une Grande Enterprise'}
-    rendered = template.render(listOfTranslations=[], previousNameTranslations=[name_translation])
-    assert title in rendered
-    assert 'Une Grande Enterprise' not in rendered
-    assert 'NONE' in rendered
-
-
-def test_render_translations(session):
-    """Test Company Name Translation(s) should render when there are current translations."""
-    template = get_template()
-    name_translation = {'name': 'Ma Enterprise'}
-    rendered = template.render(listOfTranslations=[name_translation], previousNameTranslations=[])
-    assert title in rendered
-    assert 'Ma Enterprise' in rendered
+    rendered = template.render(listOfTranslations=list_of_translations,
+                               previousNameTranslations=previous_translations)
+    if len(list_of_translations):
+        assert title in rendered
+        assert list_of_translations[0]['name'] in rendered
+        assert 'NONE' not in rendered
+    elif len(previous_translations):
+        assert title in rendered
+        assert previous_translations[0]['name'] not in rendered
+        assert 'NONE' in rendered
+    else:
+        assert title not in rendered
