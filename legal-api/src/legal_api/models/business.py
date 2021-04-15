@@ -163,7 +163,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
             'legalName': self.legal_name,
             'legalType': self.legal_type,
-            'hasRestrictions': self.restriction_ind
+            'hasRestrictions': self.restriction_ind,
+            'goodStanding': self.good_standing
         }
         # if self.last_remote_ledger_timestamp:
         #     # this is not a typo, we want the external facing view object ledger timestamp to be the remote one
