@@ -250,7 +250,8 @@ def test_business_json(session):
         'lastAnnualReport': datetime.date(EPOCH_DATETIME).isoformat(),
         'lastAnnualGeneralMeetingDate': datetime.date(EPOCH_DATETIME).isoformat(),
         'nextAnnualReport': (EPOCH_DATETIME + datedelta.YEAR).isoformat(),
-        'hasRestrictions': True
+        'hasRestrictions': True,
+        'goodStanding': False  # good standing will be false because the epoch is 1970
     }
 
     assert business.json() == d
