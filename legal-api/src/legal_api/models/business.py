@@ -15,7 +15,6 @@
 
 The Business class and Schema are held in this module
 """
-from datetime import datetime, timezone
 from enum import Enum
 
 import datedelta
@@ -24,6 +23,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
+from legal_api.utils.datetime import datetime
 
 from .db import db  # noqa: I001
 from .address import Address  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
@@ -129,8 +129,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     @property
     def good_standing(self):
         """Return true if in good standing, otherwise false."""
-        last_ar = self.last_ar_date or self.founding_date
-        return last_ar + datedelta.datedelta(years=1, months=2, days=1) > datetime.now(timezone.utc)
+        # Date of last AR or founding date if they haven't yet filed one
+        last_ar_date = self.last_ar_date or self.founding_date
+        # Good standing is if last AR was filed within the past 1 year, 2 months and 1 day
+        return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
 
     def save(self):
         """Render a Business to the local cache."""
