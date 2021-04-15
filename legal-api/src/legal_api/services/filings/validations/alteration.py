@@ -106,6 +106,7 @@ def type_change_validation(filing):
     legal_type_path: Final = '/filing/alteration/business/legalType'
     # you must alter to a bc benefit company
     if get_str(filing, legal_type_path) != 'BEN':
-        msg.append({'error': babel('Your business type has not been updated to a BC Benefit Company.'), 'path': legal_type_path})
+        msg.append({'error': babel('Your business type has not been updated to a BC Benefit Company.'),
+                    'path': legal_type_path})
         return msg
     return []
