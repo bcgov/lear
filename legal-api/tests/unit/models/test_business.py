@@ -204,6 +204,29 @@ def test_business_find_by_identifier_no_identifier(session):
     assert b is None
 
 
+TEST_GOOD_STANDING_DATA = [
+    (datetime.now() - datedelta.datedelta(months=6), True),
+    (datetime.now() - datedelta.datedelta(years=1, months=6), False)
+]
+
+
+@pytest.mark.parametrize('last_ar_date, expected', TEST_GOOD_STANDING_DATA)
+def test_good_standing(session, last_ar_date, expected):
+    """Assert that the business is in good standing when conditions are met."""
+    designation = '001'
+    business = Business(legal_name=f'legal_name-{designation}',
+                        founding_date=datetime.utcfromtimestamp(0),
+                        last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                        dissolution_date=None,
+                        identifier=f'CP1234{designation}',
+                        tax_id=f'BN0000{designation}',
+                        fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362),
+                        last_ar_date=last_ar_date)
+    business.save()
+
+    assert business.good_standing is expected
+
+
 def test_business_json(session):
     """Assert that the business model is saved correctly."""
     business = Business(legal_name='legal_name',
