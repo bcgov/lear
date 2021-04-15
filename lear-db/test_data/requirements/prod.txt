@@ -3,4 +3,4 @@ python-dotenv
 psycopg2-binary
 pycountry
 requests
-werkzeug < 1.0
+Werkzeug

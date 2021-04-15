@@ -18,7 +18,7 @@ Currently this only provides API versioning information
 from http import HTTPStatus
 
 from flask import current_app, jsonify
-from flask_restplus import Resource, cors
+from flask_restx import Resource, cors
 
 from colin_api.exceptions import GenericException
 from colin_api.models import Business, Office

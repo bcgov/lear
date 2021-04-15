@@ -114,6 +114,7 @@ venv.bak/
 */*/.idea/*
 /**/.idea/*
 .idea/*
+*.iml
 
 # Misc backups
 *.bak
