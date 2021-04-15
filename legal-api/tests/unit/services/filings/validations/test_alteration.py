@@ -51,7 +51,7 @@ def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass,
 
     f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     f['filing']['header']['identifier'] = identifier
-    f['filing']['business']['legalType'] = legal_type
+    f['filing']['alteration']['business']['legalType'] = legal_type
 
     if use_nr:
         f['filing']['business']['identifier'] = identifier
