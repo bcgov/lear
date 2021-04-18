@@ -27,10 +27,10 @@ from tests.unit.models import factory_business
 ALTERATION_FILING = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
 
 TEST_DATA = [
-    (False, '', '', '', True),
-    (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEC', True),
-    (True, 'legal_name-BC1234567_Changed', 'BC', 'CCR', True),
-    (True, 'legal_name-BC1234568', 'CP', 'XCLP', False)
+    (False, '', 'BEN', '', True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEC', True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'BC', 'CCR', False, 1),
+    (True, 'legal_name-BC1234568', 'CP', 'XCLP', False, 2)
 ]
 
 class MockResponse:
@@ -41,8 +41,9 @@ class MockResponse:
             def json(self):
                 return self.json_data
 
-@pytest.mark.parametrize('use_nr, new_name, legal_type, nr_type, should_pass', TEST_DATA)
-def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass):
+
+@ pytest.mark.parametrize('use_nr, new_name, legal_type, nr_type, should_pass, num_errors', TEST_DATA)
+def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass, num_errors):
     """Test that a valid Alteration without NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
@@ -50,6 +51,7 @@ def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass)
 
     f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     f['filing']['header']['identifier'] = identifier
+    f['filing']['alteration']['business']['legalType'] = legal_type
 
     if use_nr:
         f['filing']['business']['identifier'] = identifier
@@ -88,4 +90,4 @@ def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass)
         # check that validation failed
         assert err
         assert HTTPStatus.BAD_REQUEST == err.code
-        assert len(err.msg) == 1
+        assert len(err.msg) == num_errors
