@@ -45,7 +45,7 @@ def test_has_new_nr_for_correction(app, session, test_name, nr_number, expected_
         filing_rec = Filing(effective_date=effective_date, filing_json=filing)
 
         # test
-        business, filing_rec = incorporation_filing.process(None, filing['filing'], filing_rec)
+        business, filing_rec = incorporation_filing.process(None, filing, filing_rec)
 
         # Assertions
         assert business.identifier == next_corp_num

@@ -92,11 +92,10 @@ def update_affiliation(business: Business, filing: Filing):
         )
 
 
-def process(business: Business, filing: Dict, filing_rec: Filing):
-    # pylint: disable=too-many-locals; 1 extra
+def process(business: Business, filing: Dict, filing_rec: Filing):  # pylint: disable=too-many-branches
     """Process the incoming incorporation filing."""
     # Extract the filing information for incorporation
-    incorp_filing = filing.get('incorporationApplication')
+    incorp_filing = filing.get('filing', {}).get('incorporationApplication')
     is_correction = filing_rec.filing_type == 'correction'
 
     if not incorp_filing:
@@ -109,11 +108,17 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
     if is_correction:
         business_info.set_legal_name(business.identifier, business, business_info_obj)
     else:
-        # Reserve the Corp Number for this entity
-        corp_num = get_next_corp_num(business_info_obj['legalType'])
-        if not corp_num:
-            raise QueueException(
-                f'incorporationApplication {filing_rec.id} unable to get a business registration number.')
+
+        if filing_rec.colin_event_ids:
+            corp_num = filing['filing']['business']['identifier']
+
+        else:
+            # Reserve the Corp Number for this entity
+            corp_num = get_next_corp_num(business_info_obj['legalType'])
+            if not corp_num:
+                raise QueueException(
+                    f'incorporationApplication {filing_rec.id} unable to get a business registration number.')
+
         # Initial insert of the business record
         business = Business()
         business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
@@ -126,13 +131,13 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
     if parties := incorp_filing.get('parties'):
         update_parties(business, parties)
 
-    if share_structure := incorp_filing['shareStructure']:
+    if share_structure := incorp_filing.get('shareStructure'):
         shares.update_share_structure(business, share_structure)
 
     if name_translations := incorp_filing.get('nameTranslations'):
         aliases.update_aliases(business, name_translations)
 
-    if not is_correction:
+    if not is_correction and not filing_rec.colin_event_ids:
         # Update the filing json with identifier and founding date.
         ia_json = copy.deepcopy(filing_rec.filing_json)
         ia_json['filing']['business']['identifier'] = business.identifier
