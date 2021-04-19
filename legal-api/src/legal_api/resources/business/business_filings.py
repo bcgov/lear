@@ -235,6 +235,21 @@ class ListFilingResource(Resource):
         if not filing:
             return jsonify({'message': _('Filing Not Found.')}), HTTPStatus.NOT_FOUND
 
+        if filing.deletion_locked:  # should not be deleted
+            business = Business.find_by_identifier(identifier)
+            if (filing.status == Filing.Status.DRAFT.value and
+                    filing.filing_type == 'alteration' and
+                    business.legal_type in [lt.value for lt in (Business.LIMITED_COMPANIES +
+                                                                Business.UNLIMITED_COMPANIES)]):
+                response = jsonify({
+                                'message': _('You must complete this alteration filing to become a BC Benefit Company.')
+                                }), HTTPStatus.UNAUTHORIZED
+            else:
+                response = jsonify({
+                                'message': _('This filing cannot be deleted at this moment.')
+                                }), HTTPStatus.UNAUTHORIZED
+            return response
+
         try:
             filing.delete()
         except BusinessException as err:

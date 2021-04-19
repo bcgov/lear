@@ -19,6 +19,7 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 import copy
 from datetime import datetime
 from http import HTTPStatus
+from typing import Final
 
 import datedelta
 import pytest
@@ -680,6 +681,58 @@ def test_delete_filing_not_authorized(session, client, jwt):
     rv = client.delete(f'/api/v1/businesses/{identifier}/filings/{filings.id}', headers=headers)
 
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+
+ULC_LTD_DELETION_LOCKED_MESSAGE: Final = 'You must complete this alteration filing to become a BC Benefit Company.'
+GENERIC_DELETION_LOCKED_MESSAGE: Final = 'This filing cannot be deleted at this moment.'
+
+
+@pytest.mark.parametrize(
+    'legal_type,deletion_locked,message',
+    [
+        (Business.LegalTypes.COMP, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.CONTINUE_IN, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.CO_1860, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.CO_1862, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.CO_1878, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.CO_1890, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.CO_1897, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.BC_ULC_COMPANY, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.ULC_CONTINUE_IN, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.ULC_CO_1860, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.ULC_CO_1862, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.ULC_CO_1878, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.ULC_CO_1890, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.ULC_CO_1897, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.ULC_CO_1897, False, None),
+        (Business.LegalTypes.COOP, True, GENERIC_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.COOP, False, None),
+        (Business.LegalTypes.BCOMP, True, GENERIC_DELETION_LOCKED_MESSAGE),
+        (Business.LegalTypes.BCOMP, False, None),
+    ])
+def test_deleting_filings_deletion_locked(session, client, jwt, legal_type, deletion_locked, message):
+    """Assert that filing cannot be deleted with deletion_locked flag."""
+    identifier = 'BC7654321'
+    factory_business(identifier, entity_type=legal_type.value)
+    headers = create_header(jwt, [STAFF_ROLE], identifier)
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings?draft=true',
+                     json=ALTERATION_FILING_TEMPLATE,
+                     headers=headers
+                     )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    filing_id = rv.json['filing']['header']['filingId']
+    if deletion_locked:
+        filing = Filing.find_by_id(filing_id)
+        filing.deletion_locked = True
+        filing.save()
+
+    rv = client.delete(f'/api/v1/businesses/{identifier}/filings/{filing_id}', headers=headers)
+    if deletion_locked:
+        assert rv.status_code == HTTPStatus.UNAUTHORIZED
+        assert rv.json.get('message') == message
+    else:
+        assert rv.status_code == HTTPStatus.OK
 
 
 def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
