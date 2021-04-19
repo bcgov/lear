@@ -236,19 +236,7 @@ class ListFilingResource(Resource):
             return jsonify({'message': _('Filing Not Found.')}), HTTPStatus.NOT_FOUND
 
         if filing.deletion_locked:  # should not be deleted
-            business = Business.find_by_identifier(identifier)
-            if (filing.status == Filing.Status.DRAFT.value and
-                    filing.filing_type == 'alteration' and
-                    business.legal_type in [lt.value for lt in (Business.LIMITED_COMPANIES +
-                                                                Business.UNLIMITED_COMPANIES)]):
-                response = jsonify({
-                                'message': _('You must complete this alteration filing to become a BC Benefit Company.')
-                                }), HTTPStatus.UNAUTHORIZED
-            else:
-                response = jsonify({
-                                'message': _('This filing cannot be deleted at this moment.')
-                                }), HTTPStatus.UNAUTHORIZED
-            return response
+            return ListFilingResource._create_deletion_locked_response(identifier, filing)
 
         try:
             filing.delete()
@@ -264,6 +252,23 @@ class ListFilingResource(Resource):
                     current_app.logger.error('Unable to deregister and delete temp reg:', identifier)
 
         return jsonify({'message': _('Filing deleted.')}), HTTPStatus.OK
+
+    @staticmethod
+    def _create_deletion_locked_response(identifier, filing):
+        business = Business.find_by_identifier(identifier)
+        if (filing.status == Filing.Status.DRAFT.value and
+                filing.filing_type == 'alteration' and
+                business.legal_type in [lt.value for lt in (Business.LIMITED_COMPANIES +
+                                                            Business.UNLIMITED_COMPANIES)]):
+            response = jsonify({
+                            'message': _('You must complete this alteration filing to become a BC Benefit Company.')
+                            }), HTTPStatus.UNAUTHORIZED
+        else:
+            response = jsonify({
+                            'message': _('This filing cannot be deleted at this moment.')
+                            }), HTTPStatus.UNAUTHORIZED
+
+        return response
 
     @staticmethod
     @cors.crossdomain(origin='*')
