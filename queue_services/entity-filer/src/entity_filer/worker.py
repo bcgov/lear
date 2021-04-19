@@ -164,7 +164,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     voluntary_dissolution.process(business, filing)
 
                 elif filing.get('incorporationApplication'):
-                    business, filing_submission = incorporation_filing.process(business, filing, filing_submission)
+                    business, filing_submission = incorporation_filing.process(business,
+                                                                               filing_core_submission.json,
+                                                                               filing_submission)
 
                 if filing.get('correction'):
                     filing_submission = correction.process(filing_submission, filing)
