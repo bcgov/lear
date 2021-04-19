@@ -36,6 +36,7 @@ from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
 from legal_api import db
+from legal_api.core import Filing as FilingCore
 from legal_api.models import Business, Filing
 from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
@@ -115,22 +116,28 @@ async def publish_event(business: Business, filing: Filing):
 
 
 async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches,too-many-statements
-    """Render the filings contained in the submission."""
+    """Render the filings contained in the submission.
+
+    Start the migration to using core/Filing
+    """
     if not flask_app:
         raise QueueException('Flask App not available.')
 
     with flask_app.app_context():
-        filing_submission = Filing.find_by_id(filing_msg['filing']['id'])
+        # filing_submission = Filing.find_by_id(filing_msg['filing']['id'])
+        filing_core_submission = FilingCore.find_by_id(filing_msg['filing']['id'])
 
-        if not filing_submission:
+        if not filing_core_submission:
             raise QueueException
 
-        if filing_submission.status == Filing.Status.COMPLETED.value:
+        filing_submission = filing_core_submission.storage
+
+        if filing_core_submission.status == Filing.Status.COMPLETED.value:
             logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
                            filing_submission.business_id, filing_submission.id, filing_msg)
             return None, None
 
-        if legal_filings := filing_submission.legal_filings():
+        if legal_filings := filing_core_submission.legal_filings():
             uow = versioning_manager.unit_of_work(db.session)
             transaction = uow.create_transaction(db.session)
 
