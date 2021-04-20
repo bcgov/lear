@@ -92,9 +92,9 @@ def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_da
             json={
                 'corpName': corp_name,
                 'filingDateTime': filing_date_time,
-                "effectiveDateTime": filing.effective_date,
-                "filingIdentifier": filing.id,
-                "businessNumber": filing.business_id
+                'effectiveDateTime': filing.effective_date,
+                'filingIdentifier': filing.id,
+                'businessNumber': filing.business_id
             },
             headers=headers
         )
