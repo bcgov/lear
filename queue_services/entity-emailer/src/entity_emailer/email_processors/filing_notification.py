@@ -219,6 +219,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
             subject = f'Confirmation of {address_director} Change'
         elif filing_type == 'annualReport':
             subject = 'Confirmation of Annual Report'
+        elif filing_type == 'alteration':
+            subject = 'Confirmation of Alteration from the Business Registry'
 
     elif status == Filing.Status.COMPLETED.value:
         if filing_type == 'incorporationApplication':
