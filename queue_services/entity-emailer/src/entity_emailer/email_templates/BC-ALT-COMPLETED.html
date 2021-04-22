@@ -27,7 +27,13 @@
             [[business-info.html]]
 
             [[whitespace-24px.html]]
-            <p>The Notice of Articles is attached to this email.</p>
+            <p>The following documents are attached to this email:</p>
+            <ul class="outputs">
+              <li>Notice of Articles</li>
+              {% if additional_info.nameChange %}
+              <li>Certificate of Name Change</li>
+              {% endif %}
+            </ul>
 
             [[whitespace-16px.html]]
             [[business-dashboard-link.html]]
