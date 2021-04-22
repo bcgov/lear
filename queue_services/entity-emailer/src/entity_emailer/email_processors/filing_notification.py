@@ -41,7 +41,7 @@ FILING_TYPE_CONVERTER = {
 
 
 def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_date_time: str) -> list:
-    # pylint: disable=too-many-locals, too-many-branches
+    # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     """Get the pdfs for the incorporation output."""
     pdfs = []
     headers = {
