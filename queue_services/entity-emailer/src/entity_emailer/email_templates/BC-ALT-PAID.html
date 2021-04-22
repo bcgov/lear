@@ -30,7 +30,11 @@
             </ul>
 
             [[whitespace-16px.html]]
+            {% if header.isFutureEffective %}
+            <p>A Notice of Articles will be issued after the alteration is effective.</p>
+            {% else %}
             <p>A Notice of Articles will be issued after the alteration has been processed.</p>
+            {% endif %}
 
             [[whitespace-16px.html]]
             [[business-dashboard-link.html]]

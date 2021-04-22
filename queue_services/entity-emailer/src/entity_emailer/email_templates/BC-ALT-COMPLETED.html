@@ -17,7 +17,11 @@
           [[header.html]]
 
           <div class="container">
-            <p>Your alteration is now effective.</p>
+            {% if header.isFutureEffective %}
+            <p>The alteration filing for {{business.legalName}} is now effective.</p>
+            {% else %}
+            <p>The alteration filing has been processed by the BC Business Registry.</p>
+            {% endif %}
 
             [[whitespace-16px.html]]
             [[business-info.html]]
