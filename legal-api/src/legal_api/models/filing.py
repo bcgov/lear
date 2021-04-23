@@ -158,7 +158,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'submitter_id',
             'tech_correction_json',
             'temp_reg',
-            'transaction_id'
+            'transaction_id',
+            'deletion_locked'
         ]
     }
 
@@ -180,6 +181,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     court_order_file_number = db.Column('court_order_file_number', db.String(20))
     court_order_date = db.Column('court_order_date', db.DateTime(timezone=True), default=None)
     court_order_effect_of_order = db.Column('court_order_effect_of_order', db.String(500))
+    deletion_locked = db.Column('deletion_locked', db.Boolean, unique=False, default=False)
 
     # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
