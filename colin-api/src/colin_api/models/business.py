@@ -45,6 +45,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
         BCOMP = 'BEN'
         BC_COMP = 'BC'
         ULC_COMP = 'ULC'
+        CCC_COMP = 'CC'
 
     class CorpFrozenTypes(Enum):
         """Render an Enum of the Corporation Frozen Type Codes.
@@ -70,7 +71,8 @@ class Business:  # pylint: disable=too-many-instance-attributes
         LearBusinessTypes.BC_COMP.value: [
             TypeCodes.BCOMP.value,
             TypeCodes.BC_COMP.value,
-            TypeCodes.ULC_COMP.value
+            TypeCodes.ULC_COMP.value,
+            TypeCodes.CCC_COMP.value
         ]
     }
 

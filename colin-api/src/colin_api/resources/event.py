@@ -30,23 +30,55 @@ class EventInfo(Resource):
     def get(corp_type, event_id):
         """Return all event_ids of the corp_type that are greater than the given event_id."""
         querystring = ("""
-            select event.event_id, corp_num, filing.filing_typ_cd
+            select event.event_id, corporation.corp_num, corporation.corp_typ_cd, filing.filing_typ_cd
             from event
             join filing on event.event_id = filing.event_id
-            where corp_num like :corp_type
+            join corporation on EVENT.corp_num = corporation.corp_num
+            where corporation.corp_typ_cd = :corp_type
             """)
-
         try:
             cursor = DB.connection.cursor()
             if event_id != 'earliest':
-                querystring += 'and event.event_id > :max_event_id'
-                cursor.execute(querystring, max_event_id=event_id, corp_type=corp_type + '%')
+                querystring += 'and event.event_id > :max_event_id '
+                cursor.execute(querystring, max_event_id=event_id, corp_type=corp_type)
             else:
                 querystring += "and event_timestmp > TO_DATE('2019-03-08', 'yyyy-mm-dd') order by event.event_id asc"
-                cursor.execute(querystring, corp_type=corp_type + '%')
-
+                cursor.execute(querystring, corp_type=corp_type)
             event_info = cursor.fetchall()
             event_list = []
+            for event in event_info:
+                event = dict(zip([x[0].lower() for x in cursor.description], event))
+                event_list.append(event)
+            return jsonify({'events': event_list})
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            current_app.logger.error(err.with_traceback(None))
+            return jsonify(
+                {'message': 'Error when trying to retrieve events from COLIN'}), 500
+
+
+@cors_preflight('GET')
+@API.route('/event/corp_num/<string:corp_num>')
+class CorpEventInfo(Resource):
+    """Return a subset of event related info for a given corp num."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    def get(corp_num):
+        """Return all event_ids of the corp_type that are greater than the given event_id."""
+        querystring = ("""
+            select e.event_id, e.corp_num, f.filing_typ_cd
+            from event e
+            join filing f on e.event_id = f.event_id
+            where e.corp_num = :corp_num
+            order by e.event_id asc
+            """)
+        try:
+            cursor = DB.connection.cursor()
+            cursor.execute(querystring, corp_num=corp_num)
+            event_info = cursor.fetchall()
+            event_list = []
+
             for event in event_info:
                 event = dict(zip([x[0].lower() for x in cursor.description], event))
                 event_list.append(event)

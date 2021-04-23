@@ -53,27 +53,48 @@ class Filing:
         'annualReport': {
             'type_code_list': ['OTANN', 'ANNBC'],
             Business.TypeCodes.COOP.value: 'OTANN',
-            Business.TypeCodes.BCOMP.value: 'ANNBC'
+            Business.TypeCodes.BCOMP.value: 'ANNBC',
+            Business.TypeCodes.BC_COMP.value: 'ANNBC',
+            Business.TypeCodes.ULC_COMP.value: 'ANNBC',
+            Business.TypeCodes.CCC_COMP.value: 'ANNBC',
         },
         'changeOfDirectors': {
             'type_code_list': ['OTCDR', 'NOCDR'],
             Business.TypeCodes.COOP.value: 'OTCDR',
-            Business.TypeCodes.BCOMP.value: 'NOCDR'
+            Business.TypeCodes.BCOMP.value: 'NOCDR',
+            Business.TypeCodes.BC_COMP.value: 'NOCDR',
+            Business.TypeCodes.ULC_COMP.value: 'NOCDR',
+            Business.TypeCodes.CCC_COMP.value: 'NOCDR'
         },
         'changeOfAddress': {
             'type_code_list': ['OTADD', 'NOCAD'],
             Business.TypeCodes.COOP.value: 'OTADD',
-            Business.TypeCodes.BCOMP.value: 'NOCAD'
+            Business.TypeCodes.BCOMP.value: 'NOCAD',
+            Business.TypeCodes.BC_COMP.value: 'NOCAD',
+            Business.TypeCodes.ULC_COMP.value: 'NOCAD',
+            Business.TypeCodes.CCC_COMP.value: 'NOCAD',
+
         },
         'incorporationApplication': {
-            'type_code_list': ['OTINC', 'BEINC'],
+            'type_code_list': ['OTINC', 'BEINC', 'ICORP', 'ICORU', 'ICORC'],
             Business.TypeCodes.COOP.value: 'OTINC',
-            Business.TypeCodes.BCOMP.value: 'BEINC'
+            Business.TypeCodes.BCOMP.value: 'BEINC',
+            Business.TypeCodes.BC_COMP.value: 'ICORP',
+            Business.TypeCodes.ULC_COMP.value: 'ICORU',
+            Business.TypeCodes.CCC_COMP.value: 'ICORC',
+        },
+        'conversion': {
+            'type_code_list': ['CONVL'],
+            Business.TypeCodes.BC_COMP.value: 'CONVL',
+            Business.TypeCodes.ULC_COMP.value: 'CONVL',
+            Business.TypeCodes.CCC_COMP.value: 'CONVL'
         },
         'alteration': {
-            'type_code_list': ['NOALE', 'NOALR'],
+            'type_code_list': ['NOALA', 'NOALR'],
             Business.TypeCodes.BCOMP.value: 'NOALR',
-            Business.TypeCodes.BC_COMP.value: 'NOALE'
+            Business.TypeCodes.BC_COMP.value: 'NOALA',
+            Business.TypeCodes.ULC_COMP.value: 'NOALA',
+            Business.TypeCodes.CCC_COMP.value: 'NOALA'
         },
         'correction': {
             'type_code_list': ['CRBIN'],
