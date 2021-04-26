@@ -18,6 +18,17 @@ from legal_api.errors import Error
 from legal_api.utils.datetime import datetime as dt
 
 
+def has_at_least_one_share_class(filing_json, filing_type) -> Error:  # pylint: disable=too-many-branches
+    """Ensure that share structure contain at least 1 class by the end of the alteration or IA Correction filing."""
+    share_classes = filing_json['filing'][filing_type] \
+        .get('shareStructure', {}).get('shareClasses', [])
+
+    if len(share_classes) == 0:
+        return 'A company must have a minimum of one share class.'
+
+    return None
+
+
 def validate_share_structure(incorporation_json, filing_type) -> Error:  # pylint: disable=too-many-branches
     """Validate the share structure data of the incorporation filing."""
     share_classes = incorporation_json['filing'][filing_type] \

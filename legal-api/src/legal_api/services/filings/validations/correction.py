@@ -20,6 +20,8 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
 
+from .common_validations import has_at_least_one_share_class
+
 
 def validate(business: Business, filing: Dict) -> Error:
     """Validate the Correction filing."""
@@ -37,6 +39,9 @@ def validate(business: Business, filing: Dict) -> Error:
     elif not business.id == corrected_filing.business_id:
         path = '/filing/correction/correctedFilingId'
         msg.append({'error': _('Corrected filing is not a valid filing for this business.'), 'path': path})
+
+    if err := has_at_least_one_share_class(filing, 'correction'):
+        msg.append({'error': _(err), 'path': '/filing/incorporationApplication/shareStructure'})
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

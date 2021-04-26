@@ -23,7 +23,7 @@ from legal_api.models import Business
 from legal_api.services import namex
 from legal_api.services.utils import get_str
 
-from .common_validations import validate_court_order, validate_share_structure
+from .common_validations import has_at_least_one_share_class, validate_court_order, validate_share_structure
 
 
 def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-many-branches
@@ -36,6 +36,9 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
     msg.extend(share_structure_validation(filing))
     msg.extend(court_order_validation(filing))
     msg.extend(type_change_validation(filing))
+
+    if err := has_at_least_one_share_class(filing, 'alteration'):
+        msg.append({'error': babel(err), 'path': '/filing/alteration/shareStructure'})
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
