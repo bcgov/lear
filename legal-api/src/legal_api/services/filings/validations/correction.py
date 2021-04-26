@@ -40,7 +40,7 @@ def validate(business: Business, filing: Dict) -> Error:
         path = '/filing/correction/correctedFilingId'
         msg.append({'error': _('Corrected filing is not a valid filing for this business.'), 'path': path})
 
-    if err := has_at_least_one_share_class(filing, 'correction'):
+    if err := has_at_least_one_share_class(filing, 'incorporationApplication'):
         msg.append({'error': _(err), 'path': '/filing/incorporationApplication/shareStructure'})
 
     if msg:
