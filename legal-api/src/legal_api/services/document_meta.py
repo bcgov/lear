@@ -37,6 +37,7 @@ class DocumentMetaService():
         CERTIFICATE = 'certificate'
         NOTICE_OF_ARTICLES = 'noa'
         ALTERATION_NOTICE = 'alterationNotice'
+        CERTIFICATE_OF_NAME_CHANGE = 'certificateOfNameChange'
 
     def __init__(self):
         """Create the document meta instance."""
@@ -281,14 +282,16 @@ class DocumentMetaService():
             reports.append(
                 self.create_report_object(
                     'Alteration Notice',
-                    self.get_general_filename('Alteration Notice')
+                    self.get_general_filename('Alteration Notice'),
+                    DocumentMetaService.ReportType.ALTERATION_NOTICE.value
                 )
             )
             if 'nameRequest' in filing['filing']['alteration']:
                 reports.append(
                     self.create_report_object(
                         'Change of Name Certificate',
-                        self.get_general_filename('Change of Name Certificate')
+                        self.get_general_filename('Change of Name Certificate'),
+                        DocumentMetaService.ReportType.CERTIFICATE_OF_NAME_CHANGE.value
                     )
                 )
 
