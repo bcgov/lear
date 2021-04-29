@@ -20,99 +20,63 @@ from unittest.mock import patch
 import pytest
 from legal_api.models import Filing
 from legal_api.models.colin_event_id import ColinEventId
-from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE
+from registry_schemas.example_data import CORRECTION_INCORPORATION, CONVERSION_FILING_TEMPLATE
 
-from entity_filer.filing_processors import incorporation_filing
+from entity_filer.filing_processors import conversion
 from tests.unit import create_filing
 
 
-def test_incorporation_filing_process_with_nr(app, session):
+def test_conversion_process_with_nr(app, session):
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     next_corp_num = 'BC0001095'
-    with patch.object(incorporation_filing, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
-        filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    with patch.object(conversion, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
+        filing = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
         identifier = 'NR 1234567'
-        filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
-        filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
+        filing['filing']['conversion']['nameRequest']['nrNumber'] = identifier
+        filing['filing']['conversion']['nameRequest']['legalName'] = 'Test'
         create_filing('123', filing)
 
         effective_date = datetime.utcnow()
         filing_rec = Filing(effective_date=effective_date, filing_json=filing)
 
         # test
-        business, filing_rec = incorporation_filing.process(None, filing, filing_rec)
+        business, filing_rec = conversion.process(None, filing, filing_rec)
 
         # Assertions
         assert business.identifier == next_corp_num
         assert business.founding_date == effective_date
-        assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
-        assert business.legal_name == filing['filing']['incorporationApplication']['nameRequest']['legalName']
+        assert business.legal_type == filing['filing']['conversion']['nameRequest']['legalType']
+        assert business.legal_name == filing['filing']['conversion']['nameRequest']['legalName']
         assert len(business.share_classes.all()) == 2
         assert len(business.offices.all()) == 2  # One office is created in create_business method.
 
-    mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+    mock_get_next_corp_num.assert_called_with(filing['filing']['conversion']['nameRequest']['legalType'])
 
 
-def test_incorporation_filing_process_no_nr(app, session):
+def test_conversion_process_no_nr(app, session):
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     next_corp_num = 'BC0001095'
-    with patch.object(incorporation_filing, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
-        filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    with patch.object(conversion, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
+        filing = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
         create_filing('123', filing)
 
         effective_date = datetime.utcnow()
         filing_rec = Filing(effective_date=effective_date, filing_json=filing)
 
         # test
-        business, filing_rec = incorporation_filing.process(None, filing, filing_rec)
+        business, filing_rec = conversion.process(None, filing, filing_rec)
 
         # Assertions
         assert business.identifier == next_corp_num
         assert business.founding_date == effective_date
-        assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
+        assert business.legal_type == filing['filing']['conversion']['nameRequest']['legalType']
         assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
         assert len(business.share_classes.all()) == 2
         assert len(business.offices.all()) == 2  # One office is created in create_business method.
 
-    mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
-
-
-def test_incorporation_filing_process_correction(app, session):
-    """Assert that the incorporation correction is correctly populated to model objects."""
-    # setup
-    next_corp_num = 'BC0001095'
-    with patch.object(incorporation_filing, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
-        filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-        create_filing('123', filing)
-
-        effective_date = datetime.utcnow()
-        filing_rec = Filing(effective_date=effective_date, filing_json=filing)
-
-        # test
-        business, filing_rec = incorporation_filing.process(None, filing, filing_rec)
-
-        # Assertions
-        assert business.identifier == next_corp_num
-        assert business.founding_date == effective_date
-        assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
-        assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
-        assert len(business.share_classes.all()) == 2
-        assert len(business.offices.all()) == 2  # One office is created in create_business method.
-
-    mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
-
-    correction_filing = copy.deepcopy(CORRECTION_INCORPORATION)
-    correction_filing['filing']['incorporationApplication']['nameTranslations'] = [{'name': 'A5 Ltd.'}]
-    del correction_filing['filing']['incorporationApplication']['shareStructure']['shareClasses'][1]
-    corrected_filing_rec = Filing(effective_date=effective_date, filing_json=correction_filing)
-    corrected_business, corrected_filing_rec =\
-        incorporation_filing.process(business, correction_filing, corrected_filing_rec)
-    assert corrected_business.identifier == next_corp_num
-    assert corrected_business.legal_name == \
-           correction_filing['filing']['incorporationApplication']['nameRequest']['legalName']
-    assert len(corrected_business.share_classes.all()) == 1
+    mock_get_next_corp_num.assert_called_with(filing['filing']['conversion']['nameRequest']['legalType'])
 
 
 @pytest.mark.parametrize('test_name,response,expected', [
@@ -122,7 +86,7 @@ def test_incorporation_filing_process_correction(app, session):
 ])
 def test_get_next_corp_num(requests_mock, app, test_name, response, expected):
     """Assert that the corpnum is the correct format."""
-    from entity_filer.filing_processors.incorporation_filing import get_next_corp_num
+    from entity_filer.filing_processors.conversion import get_next_corp_num
     from flask import current_app
 
     with app.app_context():
@@ -132,18 +96,18 @@ def test_get_next_corp_num(requests_mock, app, test_name, response, expected):
 
     assert corp_num == expected
 
-def test_incorporation_filing_coop_from_colin(app, session):
+def test_conversion_coop_from_colin(app, session):
     """Assert that an existing coop incorporation is loaded corrrectly."""
     # setup
     corp_num = 'CP0000001'
     colind_id = 1
-    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
 
     # Change the template to be a CP == Cooperative
     filing['filing']['business']['legalType'] = 'CP'
     filing['filing']['business']['identifier'] = corp_num
-    filing['filing']['incorporationApplication']['nameRequest']['legalType'] = 'CP'
-    filing['filing']['incorporationApplication'].pop('shareStructure')
+    filing['filing']['conversion']['nameRequest']['legalType'] = 'CP'
+    filing['filing']['conversion'].pop('shareStructure')
     effective_date = datetime.utcnow()
     # Create the Filing obeject in the DB
     filing_rec = Filing(effective_date=effective_date,
@@ -157,12 +121,12 @@ def test_incorporation_filing_coop_from_colin(app, session):
     filing_rec.save()
 
     # test
-    business, filing_rec = incorporation_filing.process(None, filing, filing_rec)
+    business, filing_rec = conversion.process(None, filing, filing_rec)
 
     # Assertions
     assert business.identifier == corp_num
     assert business.founding_date.replace(tzinfo=None) == effective_date
-    assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
+    assert business.legal_type == filing['filing']['conversion']['nameRequest']['legalType']
     assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
     assert len(business.offices.all()) == 2  # One office is created in create_business method.
 
@@ -172,17 +136,17 @@ def test_incorporation_filing_coop_from_colin(app, session):
     ('ULC'),
     ('CC'),
 ])
-def test_incorporation_filing_bc_company_from_colin(app, session, legal_type):
+def test_conversion_bc_company_from_colin(app, session, legal_type):
     """Assert that an existing bc company(LTD, ULC, CCC) incorporation is loaded corrrectly."""
     # setup
     corp_num = 'BC0000001'
     colind_id = 1
-    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
 
     # Change the template to be LTD, ULC or CCC
     filing['filing']['business']['legalType'] = legal_type
     filing['filing']['business']['identifier'] = corp_num
-    filing['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_type
+    filing['filing']['conversion']['nameRequest']['legalType'] = legal_type
     effective_date = datetime.utcnow()
     # Create the Filing object in the DB
     filing_rec = Filing(effective_date=effective_date,
@@ -196,12 +160,12 @@ def test_incorporation_filing_bc_company_from_colin(app, session, legal_type):
     filing_rec.save()
 
     # test
-    business, filing_rec = incorporation_filing.process(None, filing, filing_rec)
+    business, filing_rec = conversion.process(None, filing, filing_rec)
 
     # Assertions
     assert business.identifier == corp_num
     assert business.founding_date.replace(tzinfo=None) == effective_date
-    assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
+    assert business.legal_type == filing['filing']['conversion']['nameRequest']['legalType']
     assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
     assert len(business.offices.all()) == 2  # One office is created in create_business method.
     assert len(business.share_classes.all()) == 2
