@@ -110,22 +110,6 @@ def validate_court_order(court_order_path, court_order):
     """Validate the courtOrder data of the filing."""
     msg = []
 
-    # TODO remove it when the issue with schema validation is fixed
-    if 'fileNumber' not in court_order:
-        err_path = court_order_path + '/fileNumber'
-        msg.append({'error': 'Court order file number is required.', 'path': err_path})
-    else:
-        if len(court_order['fileNumber']) < 5 or len(court_order['fileNumber']) > 20:
-            err_path = court_order_path + '/fileNumber'
-            msg.append({'error': 'Length of court order file number must be from 5 to 20 characters.',
-                        'path': err_path})
-
-    if 'effectOfOrder' in court_order and (len(court_order['effectOfOrder']) < 5 or
-                                           len(court_order['effectOfOrder']) > 500):
-        err_path = court_order_path + '/effectOfOrder'
-        msg.append({'error': 'Length of court order effect of order must be from 5 to 500 characters.',
-                    'path': err_path})
-
     court_order_date_path = court_order_path + '/orderDate'
     if 'orderDate' in court_order:
         try:
