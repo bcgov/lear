@@ -45,6 +45,8 @@ class Report:  # pylint: disable=too-few-public-methods
         self._report_key = report_type if report_type else self._filing.filing_type
         if self._report_key == 'correction':
             self._report_key = self._filing.filing_json['filing']['correction']['correctedFilingType']
+        elif self._report_key == 'alteration':
+            self._report_key = 'alterationNotice'
         if self._filing.business_id:
             self._business = Business.find_by_internal_id(self._filing.business_id)
             Report._populate_business_info_to_filing(self._filing, self._business)

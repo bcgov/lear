@@ -41,7 +41,7 @@ FILING_TYPE_CONVERTER = {
 
 
 def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_date_time: str) -> list:
-    # pylint: disable=too-many-locals, too-many-branches
+    # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     """Get the pdfs for the incorporation output."""
     pdfs = []
     headers = {
@@ -63,7 +63,7 @@ def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_da
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             if filing.filing_type == 'correction':
                 file_name = original_filing_type[0].upper() + \
-                            ' '.join(re.findall('[a-zA-Z][^A-Z]*', original_filing_type[1:]))
+                    ' '.join(re.findall('[a-zA-Z][^A-Z]*', original_filing_type[1:]))
                 file_name = f'{file_name} (Corrected)'
             else:
                 file_name = filing.filing_type[0].upper() + \
@@ -156,6 +156,30 @@ def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_da
                         'attachOrder': '2'
                     }
                 )
+
+        if filing.filing_type == 'alteration' and get_additional_info(filing).get('nameChange', False):
+            # add certificate of name change
+            certificate = requests.get(
+                f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+                '?type=certificateOfNameChange',
+                headers=headers
+            )
+            if certificate.status_code != HTTPStatus.OK:
+                logger.error('Failed to get certificateOfNameChange pdf for filing: %s', filing.id)
+                capture_message(f'Email Queue: filing id={filing.id}, error=certificateOfNameChange generation',
+                                level='error')
+            else:
+                certificate_encoded = base64.b64encode(certificate.content)
+                file_name = 'Certificate of Name Change.pdf'
+                pdfs.append(
+                    {
+                        'fileName': file_name,
+                        'fileBytes': certificate_encoded.decode('utf-8'),
+                        'fileUrl': '',
+                        'attachOrder': '2'
+                    }
+                )
+
     return pdfs
 
 
@@ -222,6 +246,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
             subject = f'Confirmation of {address_director} Change'
         elif filing_type == 'annualReport':
             subject = 'Confirmation of Annual Report'
+        elif filing_type == 'alteration':
+            subject = 'Confirmation of Alteration from the Business Registry'
 
     elif status == Filing.Status.COMPLETED.value:
         if filing_type == 'incorporationApplication':
@@ -260,4 +286,7 @@ def get_additional_info(filing: Filing) -> dict:
         original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
         if original_filing_type == 'incorporationApplication':
             additional_info['nameChange'] = NameXService.has_correction_changed_name(filing.filing_json)
+    elif filing.filing_type == 'alteration':
+        additional_info['nameChange'] = 'nameRequest' in filing.filing_json['filing']['alteration']
+
     return additional_info
