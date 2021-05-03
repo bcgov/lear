@@ -37,8 +37,7 @@ def get_ar_dates(business: Business, start_date: datetime, next_ar_year):
     ar_min_date = datetime(next_ar_year, 1, 1).date()
 
     # Make sure min date is greater than or equal to last_ar_date or founding_date
-    if ar_min_date < start_date:
-        ar_min_date = start_date
+    ar_min_date = max(ar_min_date, start_date)
 
     ar_max_date = datetime(next_ar_year, 12, 31).date()
 
