@@ -72,7 +72,7 @@ def test_correction_incorporation_notification(app, session, status, has_name_ch
             assert 'Incorporation Application (Corrected)' in email['content']['body']
         else:
             assert email['content']['subject'] == \
-                       'Incorporation Application Correction Documents from the Business Registry'
+                'Incorporation Application Correction Documents from the Business Registry'
 
         assert 'test@test.com' in email['recipients']
         assert email['content']['body']
@@ -91,8 +91,10 @@ def test_correction_incorporation_notification(app, session, status, has_name_ch
     ('PAID', 'annualReport'),
     ('PAID', 'changeOfAddress'),
     ('PAID', 'changeOfDirectors'),
+    ('PAID', 'alteration'),
     ('COMPLETED', 'changeOfAddress'),
-    ('COMPLETED', 'changeOfDirectors')
+    ('COMPLETED', 'changeOfDirectors'),
+    ('COMPLETED', 'alteration')
 ])
 def test_maintenance_notification(app, session, status, filing_type):
     """Assert that the legal name is changed."""
@@ -102,7 +104,7 @@ def test_maintenance_notification(app, session, status, filing_type):
     # test processor
     with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
-          as mock_get_recipients:
+                as mock_get_recipients:
             email = filing_notification.process(
                 {'filingId': filing.id, 'type': filing_type, 'option': status}, token)
 
