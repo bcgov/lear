@@ -27,6 +27,7 @@ from flask_restx import Resource, cors
 from werkzeug.local import LocalProxy
 
 import legal_api.reports
+from legal_api.constants import BOB_DATE
 from legal_api.core import Filing as CoreFiling
 from legal_api.exceptions import BusinessException
 from legal_api.models import Address, Business, Filing, RegistrationBootstrap, User, db
@@ -172,9 +173,9 @@ class ListFilingResource(Resource):
         # get header params
         payment_account_id = request.headers.get('accountId', None)
 
-        # validate filing
-        if not draft and not ListFilingResource._is_before_epoch_filing(json_input,
-                                                                        Business.find_by_identifier(identifier)):
+        if not draft \
+                and not ListFilingResource._is_historical_colin_filing(json_input) \
+                and not ListFilingResource._is_before_epoch_filing(json_input, Business.find_by_identifier(identifier)):
             if identifier.startswith('T'):
                 business_validate = RegistrationBootstrap.find_by_identifier(identifier)
             else:
@@ -393,18 +394,29 @@ class ListFilingResource(Resource):
         return filing_date < epoch_filing[0].filing_date
 
     @staticmethod
+    def _is_historical_colin_filing(filing_json: str):
+        if filing_json['filing']['header']['source'] == 'COLIN' \
+                and filing_json['filing']['header']['date'] < BOB_DATE:
+            return True
+
+        return False
+
+    @staticmethod
     def _process_colin_filing(identifier: str, filing: Filing, business: Business) -> Tuple[dict, int]:
         try:
             if not filing.colin_event_ids:
                 raise KeyError
-            if not ListFilingResource._is_before_epoch_filing(filing.filing_json, business):
-                payload = {'filing': {'id': filing.id}}
-                queue.publish_json(payload)
-            else:
-                epoch_filing = Filing.get_filings_by_status(business_id=business.id, status=[Filing.Status.EPOCH.value])
+
+            if epoch_filing := \
+                    Filing.get_filings_by_status(business_id=business.id, status=[Filing.Status.EPOCH.value])\
+                    and ListFilingResource._is_before_epoch_filing(filing.filing_json, business):
                 filing.transaction_id = epoch_filing[0].transaction_id
                 filing.set_processed()
                 filing.save()
+            else:
+                payload = {'filing': {'id': filing.id}}
+                queue.publish_json(payload)
+
             return {'filing': {'id': filing.id}}, HTTPStatus.CREATED
         except KeyError:
             current_app.logger.error('Business:%s missing filing/header/colinIds, unable to post to queue',
