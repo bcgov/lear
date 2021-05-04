@@ -407,9 +407,10 @@ class ListFilingResource(Resource):
             if not filing.colin_event_ids:
                 raise KeyError
 
-            if (epoch_filing := \
-                    Filing.get_filings_by_status(business_id=business.id, status=[Filing.Status.EPOCH.value]))\
-                and ListFilingResource._is_before_epoch_filing(filing.filing_json, business):
+            if (epoch_filing :=
+                    Filing.get_filings_by_status(business_id=business.id, status=[Filing.Status.EPOCH.value])
+                ) and \
+                    ListFilingResource._is_before_epoch_filing(filing.filing_json, business):
                 filing.transaction_id = epoch_filing[0].transaction_id
                 filing.set_processed()
                 filing.save()
