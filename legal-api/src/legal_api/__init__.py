@@ -47,10 +47,13 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     app.config.from_object(config.CONFIGURATION[run_mode])
 
     # Configure Sentry
-    if app.config.get('SENTRY_DSN', None):
-        sentry_sdk.init(
-            dsn=app.config.get('SENTRY_DSN'),
-            integrations=[FlaskIntegration()]
+    if dsn := app.config.get('SENTRY_DSN', None):
+        # pylint==2.7.4 errors out on the syntatic sugar for sentry_sdk
+        # the error is skipped by disable=abstract-class-instantiated
+        sentry_sdk.init(  # pylint: disable=abstract-class-instantiated
+            dsn=dsn,
+            integrations=[FlaskIntegration()],
+            send_default_pii=False
         )
 
     errorhandlers.init_app(app)
