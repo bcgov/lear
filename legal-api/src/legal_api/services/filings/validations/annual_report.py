@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Annual Report filing."""
-from datetime import datetime
 from http import HTTPStatus
 from typing import Dict, List, Tuple
 
@@ -20,8 +19,8 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Business
-
-from ...utils import get_date
+from legal_api.services.utils import get_date
+from legal_api.utils.datetime import datetime
 
 
 def requires_agm(business: Business) -> bool:
