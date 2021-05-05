@@ -23,7 +23,7 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import Filing
+from legal_api.models import Business, Filing
 from legal_api.services import NameXService
 from sentry_sdk import capture_message
 
@@ -40,8 +40,14 @@ FILING_TYPE_CONVERTER = {
 }
 
 
-def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_date_time: str) -> list:
-    # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+def _get_pdfs(
+        status: str,
+        token: str,
+        business: dict,
+        filing: Filing,
+        filing_date_time: str,
+        effective_date: str) -> list:
+    # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the pdfs for the incorporation output."""
     pdfs = []
     headers = {
@@ -87,14 +93,15 @@ def _get_pdfs(status: str, token: str, business: dict, filing: Filing, filing_da
         else:
             corp_name = business.get('legalName')
 
+        business_data = Business.find_by_internal_id(filing.business_id)
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
             json={
                 'corpName': corp_name,
                 'filingDateTime': filing_date_time,
-                'effectiveDateTime': filing.effective_date,
-                'filingIdentifier': filing.id,
-                'businessNumber': filing.business_id
+                'effectiveDateTime': effective_date,
+                'filingIdentifier': str(filing.id),
+                'businessNumber': business_data.tax_id if business_data.tax_id else ''
             },
             headers=headers
         )
@@ -228,7 +235,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     )
 
     # get attachments
-    pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date)
+    pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
 
     # get recipients
     recipients = get_recipients(status, filing.filing_json, token)
@@ -287,6 +294,9 @@ def get_additional_info(filing: Filing) -> dict:
         if original_filing_type == 'incorporationApplication':
             additional_info['nameChange'] = NameXService.has_correction_changed_name(filing.filing_json)
     elif filing.filing_type == 'alteration':
-        additional_info['nameChange'] = 'nameRequest' in filing.filing_json['filing']['alteration']
+        name_request = filing.filing_json.get('filing', {}).get('alteration', {}).get('nameRequest', None)
+        business = filing.filing_json.get('filing', {}).get('business', {})
+        additional_info['nameChange'] = name_request and 'legalName' in name_request and \
+            name_request['legalName'] != business.get('legalName', None)
 
     return additional_info
